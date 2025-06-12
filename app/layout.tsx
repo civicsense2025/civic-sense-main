@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Civic Spark - Daily Civic Education",
+  title: "CivicSense - Daily Civic Education",
   description: "Learn about civics with daily quizzes and challenges",
     generator: 'v0.dev'
 }

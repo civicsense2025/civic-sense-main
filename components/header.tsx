@@ -9,22 +9,16 @@ import { usePathname } from "next/navigation"
 
 interface HeaderProps {
   onSignInClick: () => void
+  className?: string
 }
 
-export function Header({ onSignInClick }: HeaderProps) {
+export function Header({ onSignInClick, className }: HeaderProps) {
   const { user } = useAuth()
   const pathname = usePathname()
 
   return (
-    <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
-            <span className="font-bold text-xl hidden sm:inline-block">Civic Spark</span>
-          </Link>
-        </div>
-
+    <div className={className}>
+      <div className="flex items-center gap-4 justify-center">
         <nav className="flex items-center gap-2">
           <Link href="/" className={pathname === "/" ? "font-medium" : ""}>
             <Button variant={pathname === "/" ? "default" : "ghost"} size="sm">
@@ -45,6 +39,6 @@ export function Header({ onSignInClick }: HeaderProps) {
           <UserMenu onSignInClick={onSignInClick} />
         </div>
       </div>
-    </header>
+    </div>
   )
 }

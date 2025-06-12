@@ -6,13 +6,14 @@ import { cn } from "@/lib/utils"
 interface CategoryCloudProps {
   onSelectCategory: (category: CategoryType | null) => void
   selectedCategory: CategoryType | null
+  className?: string
 }
 
-export function CategoryCloud({ onSelectCategory, selectedCategory }: CategoryCloudProps) {
+export function CategoryCloud({ onSelectCategory, selectedCategory, className }: CategoryCloudProps) {
   return (
-    <div className="mb-6">
-      <h2 className="text-lg font-semibold mb-3">Topic Categories</h2>
-      <div className="flex flex-wrap gap-2">
+    <div className={cn("mb-6", className)}>
+      <h2 className="text-lg font-semibold mb-3 text-center">Topic Categories</h2>
+      <div className="flex flex-wrap gap-2 justify-center">
         <Button
           variant={selectedCategory === null ? "default" : "outline"}
           size="sm"
