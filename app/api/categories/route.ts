@@ -2,12 +2,22 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://example.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "example-anon-key"
 )
 
 export async function GET() {
   try {
+    // Check if we have valid environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('Supabase environment variables not configured, returning mock data')
+      return NextResponse.json({ 
+        categories: [], 
+        synonyms: [],
+        error: 'Database not configured'
+      })
+    }
+
     // Get canonical categories
     const { data: categories, error: categoriesError } = await supabase
       .from('categories')

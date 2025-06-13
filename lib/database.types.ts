@@ -276,6 +276,15 @@ export type Database = {
           total_quizzes_completed: number | null
           updated_at: string | null
           user_id: string
+          weekly_goal: number | null
+          weekly_completed: number | null
+          week_start_date: string | null
+          preferred_categories: Json | null
+          adaptive_difficulty: boolean | null
+          learning_style: string | null
+          total_xp: number | null
+          current_level: number | null
+          xp_to_next_level: number | null
         }
         Insert: {
           created_at?: string | null
@@ -289,6 +298,15 @@ export type Database = {
           total_quizzes_completed?: number | null
           updated_at?: string | null
           user_id: string
+          weekly_goal?: number | null
+          weekly_completed?: number | null
+          week_start_date?: string | null
+          preferred_categories?: Json | null
+          adaptive_difficulty?: boolean | null
+          learning_style?: string | null
+          total_xp?: number | null
+          current_level?: number | null
+          xp_to_next_level?: number | null
         }
         Update: {
           created_at?: string | null
@@ -302,6 +320,15 @@ export type Database = {
           total_quizzes_completed?: number | null
           updated_at?: string | null
           user_id?: string
+          weekly_goal?: number | null
+          weekly_completed?: number | null
+          week_start_date?: string | null
+          preferred_categories?: Json | null
+          adaptive_difficulty?: boolean | null
+          learning_style?: string | null
+          total_xp?: number | null
+          current_level?: number | null
+          xp_to_next_level?: number | null
         }
         Relationships: []
       }
@@ -408,6 +435,279 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+        ]
+      }
+      user_learning_goals: {
+        Row: {
+          id: string
+          user_id: string
+          goal_type: string
+          target_value: number
+          category: string | null
+          difficulty_level: number | null
+          is_active: boolean | null
+          target_date: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          goal_type: string
+          target_value: number
+          category?: string | null
+          difficulty_level?: number | null
+          is_active?: boolean | null
+          target_date?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          goal_type?: string
+          target_value?: number
+          category?: string | null
+          difficulty_level?: number | null
+          is_active?: boolean | null
+          target_date?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_custom_decks: {
+        Row: {
+          id: string
+          user_id: string
+          deck_name: string
+          description: string | null
+          deck_type: string
+          preferences: Json | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          deck_name: string
+          description?: string | null
+          deck_type?: string
+          preferences?: Json | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          deck_name?: string
+          description?: string | null
+          deck_type?: string
+          preferences?: Json | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_deck_content: {
+        Row: {
+          id: string
+          deck_id: string
+          topic_id: string | null
+          question_id: string | null
+          priority_score: number | null
+          added_at: string | null
+        }
+        Insert: {
+          id?: string
+          deck_id: string
+          topic_id?: string | null
+          question_id?: string | null
+          priority_score?: number | null
+          added_at?: string | null
+        }
+        Update: {
+          id?: string
+          deck_id?: string
+          topic_id?: string | null
+          question_id?: string | null
+          priority_score?: number | null
+          added_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_deck_content_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "user_custom_decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_category_skills: {
+        Row: {
+          id: string
+          user_id: string
+          category: string
+          skill_level: number | null
+          questions_attempted: number | null
+          questions_correct: number | null
+          last_practiced_at: string | null
+          mastery_level: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          category: string
+          skill_level?: number | null
+          questions_attempted?: number | null
+          questions_correct?: number | null
+          last_practiced_at?: string | null
+          mastery_level?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          category?: string
+          skill_level?: number | null
+          questions_attempted?: number | null
+          questions_correct?: number | null
+          last_practiced_at?: string | null
+          mastery_level?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          id: string
+          user_id: string
+          achievement_type: string
+          achievement_data: Json | null
+          earned_at: string | null
+          is_milestone: boolean | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          achievement_type: string
+          achievement_data?: Json | null
+          earned_at?: string | null
+          is_milestone?: boolean | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          achievement_type?: string
+          achievement_data?: Json | null
+          earned_at?: string | null
+          is_milestone?: boolean | null
+        }
+        Relationships: []
+      }
+      user_streak_history: {
+        Row: {
+          id: string
+          user_id: string
+          streak_type: string
+          streak_value: number
+          category: string | null
+          start_date: string
+          end_date: string | null
+          is_active: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          streak_type: string
+          streak_value: number
+          category?: string | null
+          start_date: string
+          end_date?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          streak_type?: string
+          streak_value?: number
+          category?: string | null
+          start_date?: string
+          end_date?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      user_question_memory: {
+        Row: {
+          id: string
+          user_id: string
+          question_id: string
+          easiness_factor: number | null
+          repetition_count: number | null
+          interval_days: number | null
+          next_review_date: string | null
+          last_reviewed_at: string | null
+          consecutive_correct: number | null
+          total_attempts: number | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          question_id: string
+          easiness_factor?: number | null
+          repetition_count?: number | null
+          interval_days?: number | null
+          next_review_date?: string | null
+          last_reviewed_at?: string | null
+          consecutive_correct?: number | null
+          total_attempts?: number | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          question_id?: string
+          easiness_factor?: number | null
+          repetition_count?: number | null
+          interval_days?: number | null
+          next_review_date?: string | null
+          last_reviewed_at?: string | null
+          consecutive_correct?: number | null
+          total_attempts?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_question_memory_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          }
         ]
       }
     }
@@ -593,3 +893,30 @@ export type DbUserQuestionResponseUpdate = TablesUpdate<'user_question_responses
 export type DbProfileUpdate = TablesUpdate<'profiles'>
 export type DbCategoryUpdate = TablesUpdate<'categories'>
 export type DbEventUpdate = TablesUpdate<'events'>
+
+// Add new type exports for the new tables
+export type DbUserLearningGoal = Tables<'user_learning_goals'>
+export type DbUserCustomDeck = Tables<'user_custom_decks'>
+export type DbUserDeckContent = Tables<'user_deck_content'>
+export type DbUserCategorySkill = Tables<'user_category_skills'>
+export type DbUserAchievement = Tables<'user_achievements'>
+export type DbUserStreakHistory = Tables<'user_streak_history'>
+export type DbUserQuestionMemory = Tables<'user_question_memory'>
+
+// Insert types
+export type DbUserLearningGoalInsert = TablesInsert<'user_learning_goals'>
+export type DbUserCustomDeckInsert = TablesInsert<'user_custom_decks'>
+export type DbUserDeckContentInsert = TablesInsert<'user_deck_content'>
+export type DbUserCategorySkillInsert = TablesInsert<'user_category_skills'>
+export type DbUserAchievementInsert = TablesInsert<'user_achievements'>
+export type DbUserStreakHistoryInsert = TablesInsert<'user_streak_history'>
+export type DbUserQuestionMemoryInsert = TablesInsert<'user_question_memory'>
+
+// Update types
+export type DbUserLearningGoalUpdate = TablesUpdate<'user_learning_goals'>
+export type DbUserCustomDeckUpdate = TablesUpdate<'user_custom_decks'>
+export type DbUserDeckContentUpdate = TablesUpdate<'user_deck_content'>
+export type DbUserCategorySkillUpdate = TablesUpdate<'user_category_skills'>
+export type DbUserAchievementUpdate = TablesUpdate<'user_achievements'>
+export type DbUserStreakHistoryUpdate = TablesUpdate<'user_streak_history'>
+export type DbUserQuestionMemoryUpdate = TablesUpdate<'user_question_memory'>
