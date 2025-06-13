@@ -22,6 +22,9 @@ yarn-error.log*
 # env files
 .env*
 
+# AI configuration with API keys
+ai-config.json
+
 # vercel
 .vercel
 
