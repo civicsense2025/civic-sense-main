@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-quiz": "tsx scripts/generate-quiz-content.ts",
+    "generate-quiz-import": "npx tsx scripts/generate-quiz-content.ts generate-and-import",
+    "test-generator": "npx tsx scripts/test-quiz-generator.ts",
+    "test-source-validation": "npx tsx scripts/test-source-validation.ts",
+    "test-20-questions": "npx tsx scripts/test-20-questions.ts",
+    "import-quiz": "npx tsx scripts/import-quiz-data.ts import-csv",
+    "optimize-questions": "npx tsx scripts/optimize-question-content.ts",
+    "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/post-generate-types.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -38,12 +46,14 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@supabase/supabase-js": "latest",
+    "@types/dotenv": "^6.1.1",
     "autoprefixer": "^10.4.20",
     "canvas-confetti": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dotenv": "^16.5.0",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
@@ -56,9 +66,11 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
+    "supabase": "^2.24.3",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
+    "vercel": "^43.1.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -67,6 +79,7 @@
     "@types/react-dom": "^19",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.20.2",
     "typescript": "^5"
   }
 }
