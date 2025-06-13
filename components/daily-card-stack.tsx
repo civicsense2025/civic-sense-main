@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { topicsData, type CategoryType } from "@/lib/quiz-data"
+import { useRouter } from "next/navigation"
+import { dataService } from "@/lib/data-service"
+import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
 import { CivicCard } from "./civic-card"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel"
-import { GameModal } from "./game-modal"
 import { Button } from "@/components/ui/button"
 
 // Helper to get today's date at midnight for consistent comparison
@@ -29,17 +30,33 @@ export function DailyCardStack({
   requireAuth = false,
   onAuthRequired,
 }: DailyCardStackProps) {
-  const cardBaseHeight = "h-[400px]"
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const router = useRouter()
+  const cardBaseHeight = "h-[500px]"
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set())
   const [currentDate, setCurrentDate] = useState(getTodayAtMidnight()) // Store current date for rendering logic
   const [quizAttempts, setQuizAttempts] = useState<number>(0)
   const [streak, setStreak] = useState<number>(0)
   const [lastActivity, setLastActivity] = useState<Date | null>(null)
+  const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
+  const [isLoadingTopics, setIsLoadingTopics] = useState(true)
 
-  // Convert topics object to array for easier mapping
-  const topicsList = Object.values(topicsData)
+  // Load topics from data service
+  useEffect(() => {
+    const loadTopics = async () => {
+      try {
+        setIsLoadingTopics(true)
+        const topicsData = await dataService.getAllTopics()
+        setTopicsList(Object.values(topicsData))
+      } catch (error) {
+        console.error('Error loading topics:', error)
+        setTopicsList([])
+      } finally {
+        setIsLoadingTopics(false)
+      }
+    }
+
+    loadTopics()
+  }, [])
 
   // Filter topics based on category and search query
   const filteredTopics = topicsList.filter((topic) => {
@@ -92,7 +109,7 @@ export function DailyCardStack({
   }, [quizAttempts])
 
   const handleExploreGame = (topicId: string) => {
-    const topic = topicsData[topicId]
+    const topic = topicsList.find(t => t.topic_id === topicId)
     if (!topic) return
 
     const topicDate = new Date(topic.date)
@@ -110,8 +127,8 @@ export function DailyCardStack({
       return
     }
 
-    setSelectedTopicId(topicId)
-    setIsModalOpen(true)
+    // Navigate to quiz page
+    router.push(`/quiz/${topicId}`)
 
     // Increment quiz attempts if not completed already
     if (!completedTopics.has(topicId)) {
@@ -119,45 +136,14 @@ export function DailyCardStack({
     }
   }
 
-  const handleGameComplete = (topicId: string) => {
-    const now = new Date()
-    setLastActivity(now)
-    localStorage.setItem("civicAppLastActivity", now.toString())
 
-    // Update streak
-    const lastActivityDate = lastActivity ? new Date(lastActivity) : null
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-
-    if (lastActivityDate) {
-      const lastDate = new Date(lastActivityDate)
-      lastDate.setHours(0, 0, 0, 0)
-
-      if (lastDate.getTime() === yesterday.getTime()) {
-        // Last activity was yesterday, increment streak
-        const newStreak = streak + 1
-        setStreak(newStreak)
-        localStorage.setItem("civicAppStreak", newStreak.toString())
-      } else if (lastDate.getTime() < yesterday.getTime()) {
-        // Last activity was before yesterday, reset streak
-        setStreak(1)
-        localStorage.setItem("civicAppStreak", "1")
-      }
-      // If last activity was today, don't change streak
-    } else {
-      // First activity ever
-      setStreak(1)
-      localStorage.setItem("civicAppStreak", "1")
-    }
-
-    setCompletedTopics((prev) => {
-      const newCompleted = new Set(prev)
-      newCompleted.add(topicId)
-      return newCompleted
-    })
+  if (isLoadingTopics) {
+    return (
+      <div className="w-full max-w-sm mx-auto text-center p-8 bg-card rounded-2xl shadow-lg">
+        <p className="text-lg font-medium">Loading topics...</p>
+      </div>
+    )
   }
 
   if (filteredTopics.length === 0) {
@@ -231,13 +217,6 @@ export function DailyCardStack({
           </div>
         </Carousel>
       </div>
-
-      <GameModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        topicId={selectedTopicId}
-        onGameComplete={handleGameComplete}
-      />
     </>
   )
 }

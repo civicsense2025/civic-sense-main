@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { QuizEngine } from "./quiz/quiz-engine"
 import { TopicInfo } from "./quiz/topic-info"
-import { questionsData, topicsData } from "@/lib/quiz-data"
+import { dataService } from "@/lib/data-service"
+import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 
 interface GameModalProps {
   isOpen: boolean
@@ -15,12 +16,42 @@ interface GameModalProps {
 
 export function GameModal({ isOpen, onClose, topicId, onGameComplete }: GameModalProps) {
   const [showQuiz, setShowQuiz] = useState(false)
+  const [topicData, setTopicData] = useState<TopicMetadata | null>(null)
+  const [questions, setQuestions] = useState<QuizQuestion[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load topic and questions data when topicId changes
+  useEffect(() => {
+    const loadData = async () => {
+      if (!topicId) {
+        setTopicData(null)
+        setQuestions([])
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        setIsLoading(true)
+        const [topicResult, questionsResult] = await Promise.all([
+          dataService.getTopicById(topicId),
+          dataService.getQuestionsByTopic(topicId)
+        ])
+        
+        setTopicData(topicResult)
+        setQuestions(questionsResult)
+      } catch (error) {
+        console.error('Error loading topic/questions:', error)
+        setTopicData(null)
+        setQuestions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [topicId])
 
   if (!topicId) return null
-
-  const topicData = topicsData[topicId]
-  // Make sure we handle the case where there are no questions for this topic
-  const questions = questionsData[topicId] || []
 
   const handleQuizComplete = () => {
     onGameComplete(topicId)
@@ -55,7 +86,11 @@ export function GameModal({ isOpen, onClose, topicId, onGameComplete }: GameModa
         </DialogHeader>
 
         <div className="flex-grow p-6 overflow-y-auto">
-          {!topicData ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <p className="text-center text-slate-600 dark:text-slate-400">Loading...</p>
+            </div>
+          ) : !topicData ? (
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-center text-slate-600 dark:text-slate-400">Topic information not available.</p>
             </div>

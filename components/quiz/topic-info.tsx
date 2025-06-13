@@ -7,13 +7,15 @@ import { ArrowRight } from "lucide-react"
 interface TopicInfoProps {
   topicData: TopicMetadata
   onStartQuiz: () => void
+  requireAuth?: boolean
+  onAuthRequired?: () => void
 }
 
-export function TopicInfo({ topicData, onStartQuiz }: TopicInfoProps) {
+export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthRequired }: TopicInfoProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">{topicData.topic_title}</h2>
+        <h2 className="text-4xl font-bold mb-6 leading-tight">{topicData.topic_title}</h2>
         <p className="mb-6 text-slate-700 dark:text-slate-300">{topicData.description}</p>
 
         <div className="mb-6 bg-slate-100 dark:bg-slate-800 p-6 rounded-xl">
@@ -28,9 +30,15 @@ export function TopicInfo({ topicData, onStartQuiz }: TopicInfoProps) {
       </div>
 
       <div className="mt-auto">
-        <Button onClick={onStartQuiz} className="w-full rounded-xl">
-          Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        {requireAuth ? (
+          <Button onClick={onAuthRequired} className="w-full rounded-xl">
+            Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button onClick={onStartQuiz} className="w-full rounded-xl">
+            Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   )
