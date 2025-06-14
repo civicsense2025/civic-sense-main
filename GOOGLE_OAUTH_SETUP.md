@@ -29,11 +29,21 @@ The Google OAuth integration has been implemented with the following components:
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth 2.0 Client IDs"
    - Choose "Web application" as the application type
-   - Add these to "Authorized redirect URIs":
-     ```
-     https://your-project-ref.supabase.co/auth/v1/callback
-     http://localhost:3000/auth/callback (for development)
-     ```
+   
+   **Add these to "Authorized JavaScript origins":**
+   ```
+   http://localhost:3000 (for development)
+   https://localhost:3000 (for development with HTTPS)
+   https://yourdomain.com (for production)
+   ```
+   
+   **Add these to "Authorized redirect URIs":**
+   ```
+   http://localhost:3000/auth/callback (for development)
+   https://localhost:3000/auth/callback (for development with HTTPS)
+   https://yourdomain.com/auth/callback (for production)
+   ```
+   
    - Save your **Client ID** and **Client Secret**
 
 ### 2. Supabase Configuration
@@ -74,10 +84,29 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 2. **Test Google Sign-In**
+   - Navigate to `http://localhost:3000`
    - Click on sign-in from your app
    - Try the "Continue with Google" button
    - You should be redirected to Google's OAuth consent screen
    - After authorization, you should be redirected back to your app
+
+### 5. Localhost Testing Configuration
+
+For testing on localhost, make sure you have these exact URLs configured:
+
+**In Google Cloud Console:**
+- Authorized JavaScript origins: `http://localhost:3000`
+- Authorized redirect URIs: `http://localhost:3000/auth/callback`
+
+**In Supabase Dashboard:**
+- Site URL: `http://localhost:3000`
+- Additional redirect URLs: `http://localhost:3000/auth/callback`
+
+**Important Notes for Localhost:**
+- Use `http://` (not `https://`) for localhost unless you have SSL configured
+- The port number (3000) must match exactly
+- No trailing slashes in the URLs
+- Test in an incognito/private browser window to avoid cached auth states
 
 ## How It Works
 

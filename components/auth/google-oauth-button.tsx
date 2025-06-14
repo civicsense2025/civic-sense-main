@@ -30,41 +30,44 @@ export function GoogleOAuthButton({
       const { error } = await authHelpers.signInWithGoogle()
       
       if (error) {
-        setError(error.message)
-        onError?.(error.message)
+        const errorMessage = error.message || "Failed to sign in with Google"
+        setError(errorMessage)
+        onError?.(errorMessage)
       } else {
         onSuccess?.()
       }
     } catch (err) {
-      const errorMessage = "Failed to sign in with Google. Please try again."
+      const errorMessage = "An unexpected error occurred"
       setError(errorMessage)
       onError?.(errorMessage)
-      console.error('Google OAuth error:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="text-sm">{error}</AlertDescription>
         </Alert>
       )}
       
       <Button
         type="button"
-        variant="outline"
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className={`w-full flex items-center justify-center space-x-2 ${className}`}
+        className={`
+          w-full h-12 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 
+          border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 
+          font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow-md
+          ${className}
+        `}
       >
-        {isLoading ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-        ) : (
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
+        <div className="flex items-center justify-center space-x-3">
+          {/* Google Logo SVG */}
+          <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -82,13 +85,16 @@ export function GoogleOAuthButton({
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-        )}
-        <span>
-          {isLoading 
-            ? `${variant === "sign-up" ? "Creating account" : "Signing in"}...`
-            : `${variant === "sign-up" ? "Sign up" : "Continue"} with Google`
-          }
-        </span>
+          
+          <span>
+            {isLoading 
+              ? "Connecting..." 
+              : variant === "sign-up" 
+                ? "Continue with Google" 
+                : "Sign in with Google"
+            }
+          </span>
+        </div>
       </Button>
     </div>
   )

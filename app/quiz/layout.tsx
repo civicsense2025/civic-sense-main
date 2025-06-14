@@ -57,21 +57,21 @@ export default function QuizLayout({
             <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
               <div className="flex items-center justify-between">
                 {/* Clean branding */}
-                <Link 
-                  href="/" 
+                  <Link 
+                    href="/" 
                   className="group hover:opacity-70 transition-opacity"
-                >
+                  >
                   <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                    CivicSense
+                      CivicSense
                   </h1>
-                </Link>
+                  </Link>
                 
                 {/* Minimal user menu */}
-                <UserMenu 
-                  onSignInClick={() => setIsAuthDialogOpen(true)} 
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                />
+                  <UserMenu 
+                    onSignInClick={() => setIsAuthDialogOpen(true)} 
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                  />
               </div>
             </div>
           </div>

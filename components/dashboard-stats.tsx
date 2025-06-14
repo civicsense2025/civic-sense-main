@@ -185,7 +185,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
               {statsData.currentLevel}
             </p>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Level</p>
+            <p className="text-xs text-slate-700 dark:text-slate-200">Level</p>
           </CardContent>
         </Card>
 
@@ -196,7 +196,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
               {completionPercentage}%
             </p>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Complete</p>
+            <p className="text-xs text-slate-700 dark:text-slate-200">Complete</p>
           </CardContent>
         </Card>
 
@@ -208,7 +208,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
               <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
                 {statsData.currentStreak}
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Streak</p>
+              <p className="text-xs text-slate-700 dark:text-slate-200">Streak</p>
             </CardContent>
           </Card>
         )}
@@ -221,7 +221,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
               <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
                 {statsData.averageScore}%
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Avg Score</p>
+              <p className="text-xs text-slate-700 dark:text-slate-200">Avg Score</p>
             </CardContent>
           </Card>
         )}
@@ -255,8 +255,8 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-3xl font-bold text-slate-800 dark:text-slate-200">
               {statsData.currentLevel}
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Level</p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
+            <p className="text-sm text-slate-700 dark:text-slate-200">Level</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               {statsData.totalXP.toLocaleString()} XP
             </p>
           </div>
@@ -267,8 +267,8 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-3xl font-bold text-slate-800 dark:text-slate-200">
               {completionPercentage}%
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Complete</p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
+            <p className="text-sm text-slate-700 dark:text-slate-200">Complete</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               {statsData.completedTopics}/{statsData.totalTopics} topics
             </p>
           </div>
@@ -279,8 +279,8 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-3xl font-bold text-slate-800 dark:text-slate-200">
               {statsData.currentStreak}
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Day Streak</p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
+            <p className="text-sm text-slate-700 dark:text-slate-200">Day Streak</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               {statsData.currentStreak > 0 ? 'Keep it up!' : 'Start today!'}
             </p>
           </div>
@@ -291,8 +291,8 @@ export function DashboardStats({ className, compact = false, collapsible = false
             <p className="text-3xl font-bold text-slate-800 dark:text-slate-200">
               {statsData.averageScore}%
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Avg Score</p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
+            <p className="text-sm text-slate-700 dark:text-slate-200">Avg Score</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               {statsData.recentActivity.length} quizzes
             </p>
           </div>
@@ -310,7 +310,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
             value={completionPercentage} 
             className="h-3 bg-slate-200 dark:bg-slate-700" 
           />
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+          <p className="text-sm text-slate-700 dark:text-slate-200 mt-2">
             {statsData.completedTopics} of {statsData.totalTopics} civic topics completed
           </p>
         </div>
@@ -326,7 +326,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
                     <p className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
                       {activity.topicTitle}
                     </p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
                       {new Date(activity.completedAt).toLocaleDateString()}
                     </p>
                   </div>

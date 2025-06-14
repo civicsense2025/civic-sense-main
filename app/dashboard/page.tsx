@@ -219,7 +219,7 @@ export default function DashboardPage() {
   const getTierBadge = () => {
     if (isPro) {
       return (
-        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg">
+                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-black shadow-lg">
           <Star className="h-3 w-3 mr-1" />
           Pro
         </Badge>

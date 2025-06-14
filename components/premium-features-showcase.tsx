@@ -307,7 +307,7 @@ export function PremiumFeaturesShowcase({ className, onClose }: PremiumFeaturesS
                         "w-full",
                         tier.id === 'premium' 
                           ? "bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600"
-                          : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                          : "bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600"
                       )}
                     >
                       {isUpgrading === tier.id ? (

@@ -3,8 +3,8 @@
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { cn, shuffleArray } from "@/lib/utils"
+import { useState, useMemo } from "react"
 
 interface TrueFalseQuestionProps {
   question: QuizQuestion
@@ -16,14 +16,20 @@ interface TrueFalseQuestionProps {
 export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSelectAnswer }: TrueFalseQuestionProps) {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
 
-  const options = [
-    { id: "true", label: "True", emoji: "✅" },
-    { id: "false", label: "False", emoji: "❌" },
-  ]
+  // Randomize True/False order once per question
+  const randomizedOptions = useMemo(() => {
+    const options = [
+      { id: "true", label: "True", emoji: "✅" },
+      { id: "false", label: "False", emoji: "❌" },
+    ]
+    
+    // Shuffle the options to randomize their order
+    return shuffleArray(options)
+  }, [question.question]) // Re-randomize when question changes
 
   return (
     <RadioGroup value={selectedAnswer || ""} onValueChange={onSelectAnswer} className="space-y-4">
-      {options.map((option, index) => {
+      {randomizedOptions.map((option, index) => {
         const isCorrect = isSubmitted && option.id === question.correct_answer
         const isIncorrect = isSubmitted && selectedAnswer === option.id && option.id !== question.correct_answer
         const isSelected = selectedAnswer === option.id
@@ -38,7 +44,7 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
               isSubmitted && "cursor-default",
               isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20 scale-105 shadow-lg",
               isIncorrect && "border-red-500 bg-red-50 dark:bg-red-900/20 scale-95",
-              !isSubmitted && isSelected && "border-primary bg-primary/5 scale-102 shadow-md",
+              !isSubmitted && isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-md",
               !isSubmitted && !isSelected && isHovered && "bg-slate-50 dark:bg-slate-800/50 scale-101 shadow-sm",
               !isSubmitted && !isSelected && !isHovered && "hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-101",
             )}
@@ -52,7 +58,6 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
               "text-4xl transition-all duration-300",
               isSelected && !isSubmitted && "scale-125",
               isHovered && !isSubmitted && "scale-110",
-              isCorrect && "animate-bounce",
             )}>
               {option.emoji}
             </div>
@@ -77,8 +82,8 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
                 isCorrect && "text-green-700 dark:text-green-300",
                 isIncorrect && "text-red-700 dark:text-red-300",
                 isSubmitted && "cursor-default",
-                isSelected && !isSubmitted && "text-primary font-bold",
-                isHovered && !isSubmitted && "text-primary",
+                isSelected && !isSubmitted && "text-blue-600 dark:text-blue-400 font-bold",
+                isHovered && !isSubmitted && "text-blue-600 dark:text-blue-400",
               )}
             >
               <div className="flex items-center justify-between">
@@ -91,21 +96,25 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
               </div>
             </Label>
             
-            {/* Animated feedback icons */}
+            {/* Clean feedback indicators - no bouncing emojis */}
             {isCorrect && (
-              <span className="text-green-600 text-2xl animate-in zoom-in duration-500 delay-200">
-                🎉
-              </span>
+              <div className="flex items-center text-green-600">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+              </div>
             )}
             {isIncorrect && (
-              <span className="text-red-600 text-2xl animate-in zoom-in duration-500 delay-200">
-                💔
-              </span>
+              <div className="flex items-center text-red-600">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✗</span>
+                </div>
+              </div>
             )}
             
             {/* Selection indicator */}
             {isSelected && !isSubmitted && (
-              <div className="w-3 h-3 bg-primary rounded-full opacity-80" />
+              <div className="w-3 h-3 bg-blue-500 rounded-full opacity-80" />
             )}
           </div>
         )

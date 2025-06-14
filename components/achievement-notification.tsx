@@ -127,7 +127,7 @@ export function AchievementNotification({
       case 'Speed': return 'bg-yellow-500'
       case 'Mastery': return 'bg-red-500'
       case 'Exploration': return 'bg-teal-500'
-      case 'Engagement': return 'bg-pink-500'
+      case 'Engagement': return 'bg-yellow-500'
       case 'Special Events': return 'bg-indigo-500'
       case 'Leveling Up': return 'bg-amber-500'
       default: return 'bg-gray-500'
@@ -160,7 +160,7 @@ export function AchievementNotification({
                 ? "border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20" 
                 : "border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20"
             )}>
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500"></div>
               
               <CardContent className="p-8 text-center">
                 <Button
@@ -278,8 +278,8 @@ export function AchievementNotification({
 
           {/* Level Up Display */}
           {showLevelUp && levelUpInfo && (
-            <Card className="relative overflow-hidden border-2 border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-2xl">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"></div>
+                    <Card className="relative overflow-hidden border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 shadow-2xl">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500"></div>
               
               <CardContent className="p-8 text-center">
                 <Button

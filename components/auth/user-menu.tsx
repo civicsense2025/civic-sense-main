@@ -177,7 +177,7 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
               <div className="text-xs text-muted-foreground">Streak</div>
             </div>
             <div>
-              <div className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{userStats.completedQuizzes}</div>
+                                          <div className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{userStats.completedQuizzes}</div>
               <div className="text-xs text-muted-foreground">Complete</div>
             </div>
           </div>

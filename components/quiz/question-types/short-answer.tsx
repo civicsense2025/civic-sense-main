@@ -85,7 +85,7 @@ export function ShortAnswerQuestion({
             // Make input more visible by default
             !isSubmitted && !isFocused && "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900",
             // Enhanced focus state
-            !isSubmitted && isFocused && "border-primary bg-blue-50 dark:bg-blue-950/30 scale-105 shadow-lg ring-2 ring-blue-200 dark:ring-blue-800",
+            !isSubmitted && isFocused && "border-blue-500 bg-blue-50 dark:bg-blue-950/30 scale-105 shadow-lg ring-2 ring-blue-200 dark:ring-blue-800",
             // With input value but not focused
             !isSubmitted && !isFocused && inputValue && "border-blue-400 bg-blue-50/50 dark:bg-blue-900/20",
             // Hover state when empty
@@ -100,22 +100,22 @@ export function ShortAnswerQuestion({
         {isTyping && !isSubmitted && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary rounded-full opacity-60 animate-pulse" />
-              <div className="w-2 h-2 bg-primary rounded-full opacity-80 animate-pulse" style={{ animationDelay: '0.2s' }} />
-              <div className="w-2 h-2 bg-primary rounded-full opacity-100 animate-pulse" style={{ animationDelay: '0.4s' }} />
+              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-60 animate-pulse" />
+              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-80 animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-100 animate-pulse" style={{ animationDelay: '0.4s' }} />
             </div>
           </div>
         )}
         
         {/* Character count */}
         {!isSubmitted && inputValue && (
-          <div className="absolute right-3 bottom-2 text-xs text-muted-foreground">
+          <div className="absolute right-3 bottom-2 text-xs text-slate-500 dark:text-slate-400">
             {inputValue.length} characters
           </div>
         )}
       </div>
 
-      {/* Real-time feedback while typing */}
+      {/* Real-time feedback while typing - simplified */}
       {!isSubmitted && inputValue && (
         <div className={cn(
           "p-3 rounded-lg border-l-4 transition-all duration-300 animate-in slide-in-from-top duration-200",
@@ -132,51 +132,30 @@ export function ShortAnswerQuestion({
             ) : (
               <span className="text-blue-600 font-medium flex items-center">
                 <span className="mr-2">💭</span>
-                Keep thinking... You're on the right track!
+                Keep thinking...
               </span>
             )}
           </p>
         </div>
       )}
 
-      {/* Final feedback after submission */}
-      {isSubmitted && (
-        <div className={cn(
-          "mt-4 p-4 rounded-lg border-l-4 animate-in slide-in-from-bottom duration-500",
-          isCorrect 
-            ? "border-green-500 bg-green-50 dark:bg-green-900/20" 
-            : "border-red-500 bg-red-50 dark:bg-red-900/20"
-        )}>
-          <p className="font-medium flex items-center mb-2">
-            {isCorrect ? (
-              <>
-                <span className="text-2xl mr-2 animate-bounce">🎉</span>
-                <span className="text-green-600">Perfect! You got it right!</span>
-              </>
-            ) : (
-              <>
-                <span className="text-2xl mr-2">🤔</span>
-                <span className="text-red-600">Not quite right, but good effort!</span>
-              </>
-            )}
-          </p>
-          
-          {!isCorrect && (
-            <div className="space-y-2 text-sm">
-              <p>
-                <span className="font-medium text-red-700 dark:text-red-300">Your answer:</span>{" "}
-                <span className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
-                  {inputValue || "(no answer provided)"}
-                </span>
-              </p>
-              <p>
-                <span className="font-medium text-green-700 dark:text-green-300">Correct answer:</span>{" "}
-                <span className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded font-medium">
-                  {question.correct_answer}
-                </span>
-              </p>
-            </div>
-          )}
+      {/* Consolidated feedback after submission - no redundant messaging */}
+      {isSubmitted && !isCorrect && (
+        <div className="mt-4 p-4 rounded-lg border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 animate-in slide-in-from-bottom duration-500">
+          <div className="space-y-2 text-sm">
+            <p>
+              <span className="font-medium text-slate-700 dark:text-slate-200">Your answer:</span>{" "}
+              <span className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
+                {inputValue || "(no answer provided)"}
+              </span>
+            </p>
+            <p>
+              <span className="font-medium text-slate-700 dark:text-slate-200">Correct answer:</span>{" "}
+              <span className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded font-medium">
+                {question.correct_answer}
+              </span>
+            </p>
+          </div>
         </div>
       )}
     </div>

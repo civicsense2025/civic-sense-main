@@ -10,7 +10,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token'
   }
 })
 
@@ -20,7 +22,11 @@ export const authHelpers = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     })
     return { data, error }
@@ -39,5 +45,15 @@ export const authHelpers = {
   async getUser() {
     const { data: { user }, error } = await supabase.auth.getUser()
     return { user, error }
+  },
+
+  // Helper to handle OAuth callback on client side
+  async handleOAuthCallback() {
+    const { data, error } = await supabase.auth.getSession()
+    if (error) {
+      console.error('Error getting session after OAuth:', error)
+      return { error }
+    }
+    return { data, error: null }
   }
 }

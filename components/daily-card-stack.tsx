@@ -7,11 +7,18 @@ import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
 import { CivicCard } from "./civic-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar } from "lucide-react"
+import { Calendar, ChevronDown, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // Helper to get today's date in user's local timezone
 const getTodayAtMidnight = () => {
@@ -62,8 +69,6 @@ const getDateCategory = (date: Date, currentDate: Date) => {
   if (diffDays > 0) return 'future'
   return 'past'
 }
-
-
 
 interface DailyCardStackProps {
   selectedCategory: CategoryType | null
@@ -166,7 +171,22 @@ export function DailyCardStack({
     return dateA - dateB
   })
 
+  // Helper function to get navigation display text (always dates)
+  const getNavigationText = (topic: TopicMetadata) => {
+    return new Date(topic.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
 
+  // Helper function to get center display text (with weekday for current item)
+  const getCenterDisplayText = (topic: TopicMetadata) => {
+    return new Date(topic.date).toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
 
   // Effect to update current date if the component stays mounted across midnight
   useEffect(() => {
@@ -349,58 +369,117 @@ End: Last card
         <div className="mb-8 sm:mb-16">
           {/* Mobile & Desktop: improved spacing navigation */}
           <div className="flex items-center justify-between px-2 sm:px-8">
-            {/* Previous button - far left */}
-            <button
-              onClick={handlePrevious}
-              disabled={currentStackIndex === 0}
-              className={`
-                text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0
-                ${currentStackIndex === 0 
-                  ? 'opacity-30 cursor-not-allowed' 
-                  : 'opacity-70 hover:opacity-100'
-                }
-              `}
-            >
-              {currentStackIndex > 0 && (
-                <>
-                  ← {new Date(allFilteredTopics[currentStackIndex - 1].date).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </>
-              )}
-            </button>
-            
-            {/* Current date - center with breathing room */}
-            <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide text-center flex-grow mx-4 sm:mx-8">
-              {new Date(allFilteredTopics[currentStackIndex].date).toLocaleDateString('en-US', { 
-                weekday: 'short',
-                month: 'short', 
-                day: 'numeric' 
-              })}
+            <TooltipProvider>
+              {/* Previous button - far left */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handlePrevious}
+                    disabled={currentStackIndex === 0}
+                    className={`
+                      text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0
+                      ${currentStackIndex === 0 
+                        ? 'opacity-30 cursor-not-allowed' 
+                        : 'opacity-70 hover:opacity-100'
+                      }
+                    `}
+                  >
+                    {currentStackIndex > 0 && (
+                      <>
+                        ← {getNavigationText(allFilteredTopics[currentStackIndex - 1])}
+                      </>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                {currentStackIndex > 0 && (
+                  <TooltipContent>
+                    <p>{allFilteredTopics[currentStackIndex - 1].topic_title}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              
+              {/* Current date with dropdown - center with breathing room */}
+              <div className="flex items-center justify-center flex-grow mx-4 sm:mx-8">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity">
+                      <span>{getCenterDisplayText(allFilteredTopics[currentStackIndex])}</span>
+                      <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-slate-900 dark:text-slate-50" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                    {allFilteredTopics.map((topic, index) => {
+                      const isLocked = isTopicLocked(topic)
+                      const isCompleted = isTopicCompleted(topic.topic_id)
+                      const isCurrent = index === currentStackIndex
+                      
+                      return (
+                        <DropdownMenuItem
+                          key={topic.topic_id}
+                          onClick={() => !isLocked && setCurrentStackIndex(index)}
+                          className={cn(
+                            "flex items-center justify-between p-3 cursor-pointer text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100",
+                            isCurrent && "bg-primary/10 font-medium",
+                            isLocked && "opacity-50 cursor-not-allowed",
+                            isCompleted && "text-green-600 dark:text-green-400"
+                          )}
+                          disabled={isLocked}
+                        >
+                          <div className="flex items-center space-x-3 flex-grow min-w-0">
+                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
+                            <div className="flex-grow min-w-0">
+                              <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">
+                                {topic.topic_title}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {new Date(topic.date).toLocaleDateString('en-US', { 
+                                  weekday: 'short',
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+              </div>
             </div>
+          </div>
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            {isLocked && <Lock className="h-3 w-3 text-slate-400" />}
+                            {isCompleted && <span className="text-xs text-green-600 dark:text-green-400">✓</span>}
+                            {isCurrent && <span className="text-xs text-primary">●</span>}
+        </div>
+                        </DropdownMenuItem>
+                      )
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-            {/* Next button - far right */}
-            <button
-              onClick={handleNext}
-              disabled={currentStackIndex === allFilteredTopics.length - 1}
-              className={`
-                text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0
-                ${currentStackIndex === allFilteredTopics.length - 1
-                  ? 'opacity-30 cursor-not-allowed' 
-                  : 'opacity-70 hover:opacity-100'
-                }
-              `}
-            >
-              {currentStackIndex < allFilteredTopics.length - 1 && (
-                <>
-                  {new Date(allFilteredTopics[currentStackIndex + 1].date).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })} →
-                </>
-              )}
-            </button>
+              {/* Next button - far right */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleNext}
+                    disabled={currentStackIndex === allFilteredTopics.length - 1}
+                    className={`
+                      text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0
+                      ${currentStackIndex === allFilteredTopics.length - 1
+                        ? 'opacity-30 cursor-not-allowed' 
+                        : 'opacity-70 hover:opacity-100'
+                      }
+                    `}
+                  >
+                    {currentStackIndex < allFilteredTopics.length - 1 && (
+                      <>
+                        {getNavigationText(allFilteredTopics[currentStackIndex + 1])} →
+                      </>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                {currentStackIndex < allFilteredTopics.length - 1 && (
+                  <TooltipContent>
+                    <p>{allFilteredTopics[currentStackIndex + 1].topic_title}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       )}
@@ -418,7 +497,7 @@ End: Last card
         )}
       </div>
 
-      <PremiumGate 
+      <PremiumGate
         isOpen={showPremiumGate}
         onClose={() => setShowPremiumGate(false)}
         feature="advanced_analytics"

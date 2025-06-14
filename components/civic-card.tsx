@@ -1,9 +1,11 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Lock, Clock } from "lucide-react"
-import type { TopicMetadata } from "@/lib/quiz-data"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Lock, Calendar, Clock } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import type { TopicMetadata } from "@/lib/quiz-data"
 
 interface CivicCardProps {
   topic: TopicMetadata
@@ -22,8 +24,7 @@ function Countdown({ targetDate }: CountdownProps) {
     days: number
     hours: number
     minutes: number
-    seconds: number
-  } | null>(null)
+  }>({ days: 0, hours: 0, minutes: 0 })
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -34,125 +35,147 @@ function Countdown({ targetDate }: CountdownProps) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24))
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000)
 
-        setTimeLeft({ days, hours, minutes, seconds })
+        setTimeLeft({ days, hours, minutes })
       } else {
-        setTimeLeft(null)
+        setTimeLeft({ days: 0, hours: 0, minutes: 0 })
       }
     }
 
-    // Calculate immediately
     calculateTimeLeft()
-
-    // Update every second
-    const timer = setInterval(calculateTimeLeft, 1000)
+    const timer = setInterval(calculateTimeLeft, 60000) // Update every minute
 
     return () => clearInterval(timer)
   }, [targetDate])
 
-  if (!timeLeft) {
-    return (
-      <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400">
-        <span className="text-sm font-medium tracking-wide">Available Now!</span>
-      </div>
-    )
-  }
-
   const formatTimeUnit = (value: number, unit: string) => {
     if (value === 0) return null
     return (
-      <div className="text-center">
-        <div className="text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300">
-          {value.toString().padStart(2, '0')}
-        </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-          {unit}
-        </div>
-      </div>
+      <span className="inline-flex items-center">
+        <span className="font-semibold text-neutral-900 dark:text-neutral-100">{value}</span>
+        <span className="ml-1 text-neutral-600 dark:text-neutral-300 text-sm">{unit}{value !== 1 ? 's' : ''}</span>
+      </span>
     )
   }
 
-  return (
-    <div className="flex flex-col items-center space-y-3">
-      <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-        <Clock className="w-4 h-4" />
-        <span className="text-sm font-medium tracking-wide">Unlocks in:</span>
+  const { days, hours, minutes } = timeLeft
+
+  // Smart display logic
+  if (days > 0) {
+    // Show days + hours for >24h away
+    return (
+      <div className="flex items-center justify-center space-x-2 text-lg">
+        <Clock className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
+        <div className="flex space-x-2">
+          {formatTimeUnit(days, 'day')}
+          {hours > 0 && formatTimeUnit(hours, 'hour')}
+        </div>
       </div>
-      
-      <div className="flex items-center space-x-4">
-        {timeLeft.days > 0 && formatTimeUnit(timeLeft.days, timeLeft.days === 1 ? 'day' : 'days')}
-        {(timeLeft.days > 0 || timeLeft.hours > 0) && formatTimeUnit(timeLeft.hours, timeLeft.hours === 1 ? 'hr' : 'hrs')}
-        {timeLeft.days === 0 && formatTimeUnit(timeLeft.minutes, timeLeft.minutes === 1 ? 'min' : 'mins')}
+    )
+  } else if (hours > 0) {
+    // Show hours + minutes for <24h
+    return (
+      <div className="flex items-center justify-center space-x-2 text-lg">
+        <Clock className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
+        <div className="flex space-x-2">
+          {formatTimeUnit(hours, 'hour')}
+          {minutes > 0 && formatTimeUnit(minutes, 'minute')}
+        </div>
       </div>
-    </div>
-  )
+    )
+  } else {
+    // Show only minutes for <1h
+    return (
+      <div className="flex items-center justify-center space-x-2 text-lg">
+        <Clock className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
+        {formatTimeUnit(Math.max(minutes, 1), 'minute')}
+      </div>
+    )
+  }
 }
 
 export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLocked }: CivicCardProps) {
+  const router = useRouter()
+  
   const handleClick = () => {
     if (!isLocked) {
-      onExploreGame(topic.topic_id)
+      router.push(`/quiz/${topic.topic_id}`)
     }
   }
 
-  // Parse the topic date to get the unlock time (assuming it unlocks at midnight)
   const getUnlockDate = () => {
     const topicDate = new Date(topic.date)
-    // Set to midnight of the topic date in local timezone
-    return new Date(topicDate.getFullYear(), topicDate.getMonth(), topicDate.getDate())
+    // Set to 6 AM on the topic date
+    topicDate.setHours(6, 0, 0, 0)
+    return topicDate
   }
 
   return (
-    <div 
-      className={`
-        group cursor-pointer transition-all duration-300
-        ${isLocked ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-80'}
-        max-w-2xl mx-auto
-      `}
-      onClick={handleClick}
-    >
-      {/* Minimal card with tons of whitespace */}
-      <div className="py-8 sm:py-16 px-4 sm:px-8 text-center space-y-8 sm:space-y-12">
-        
-        {/* Large emoji */}
-        <div className="text-6xl sm:text-8xl">
-          {topic.emoji}
-        </div>
+    <div className={`${baseHeight} group relative`}>
+      <div 
+        className={`
+          h-full transition-all duration-300 cursor-pointer
+          ${!isLocked ? 'hover:scale-[1.02]' : ''}
+        `}
+        onClick={handleClick}
+      >
+        <div className="h-full flex flex-col justify-center text-center space-y-8 px-4">
+          {/* Status indicators */}
+          <div className="flex justify-center">
+            {isLocked && (
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full">
+                <Lock className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                <span className="text-sm text-neutral-600 dark:text-neutral-300">Locked</span>
+              </div>
+            )}
+            {isCompleted && (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                ✓ Complete
+              </Badge>
+            )}
+          </div>
 
-        {/* Large, clean typography */}
-        <div className="space-y-4 sm:space-y-6">
-          <h2 className="text-2xl sm:text-4xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight px-2">
-            {topic.topic_title}
-          </h2>
-          
-          <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto font-light px-4">
-            {topic.description}
-          </p>
-        </div>
+          {/* Emoji */}
+          <div className="text-8xl">{topic.emoji}</div>
 
-        {/* Minimal CTA */}
-        <div className="pt-4 sm:pt-8">
-          {isLocked ? (
-            <Countdown targetDate={getUnlockDate()} />
-          ) : (
-            <Button
-              className={`
-                px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base font-medium tracking-wide
-                ${isCompleted 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900'
-                }
-                rounded-full transition-all duration-200
-                group-hover:scale-105
-                ${!isCompleted && !isLocked ? 'animate-breathe-glow' : ''}
-              `}
-              disabled={isLocked}
-            >
-              <span>{isCompleted ? 'Review Quiz' : 'Start Quiz'}</span>
-              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
-            </Button>
-          )}
+          {/* Main Content */}
+          <div className="space-y-6">
+            <h1 className="text-4xl md:text-5xl font-light text-neutral-900 dark:text-neutral-100 leading-tight">
+              {topic.topic_title}
+            </h1>
+            
+            {/* Categories moved under title */}
+            <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              {topic.categories?.slice(0, 2).join(' • ') || 'Civic Education'}
+            </div>
+            
+            <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-200 leading-relaxed max-w-4xl mx-auto">
+              {topic.description}
+            </p>
+          </div>
+
+          {/* Countdown or Actions */}
+          <div className="space-y-6">
+            {isLocked ? (
+              <div className="space-y-6">
+                <Countdown targetDate={getUnlockDate()} />
+                <p className="text-base text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto">
+                  This quiz will unlock at 6 AM on {new Date(topic.date).toLocaleDateString()}
+                </p>
+              </div>
+            ) : (
+              <Button 
+                size="lg"
+                className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-12 py-4 rounded-xl transition-all duration-200 hover:shadow-lg text-xl animate-breathe-glow"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleClick()
+                }}
+              >
+                {isCompleted ? 'Review Quiz' : 'Start Quiz'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

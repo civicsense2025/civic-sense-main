@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { QuizQuestion } from '@/lib/quiz-data'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, shuffleArray } from '@/lib/utils'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
 interface MatchingQuestionProps {
@@ -33,8 +33,13 @@ export function MatchingQuestion({
   disabled = false 
 }: MatchingQuestionProps) {
   const pairs = question.matching_pairs || []
-  const leftItems = pairs.map(p => p.left)
-  const rightItems = [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5)
+  
+  // Randomize both left and right items once per question
+  const { leftItems, rightItems } = useMemo(() => {
+    const left = shuffleArray(pairs.map(p => p.left))
+    const right = shuffleArray(pairs.map(p => p.right))
+    return { leftItems: left, rightItems: right }
+  }, [pairs])
   
   const [matchState, setMatchState] = useState<MatchState>({
     selectedLeft: null,

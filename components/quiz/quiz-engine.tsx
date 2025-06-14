@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice"
 import { TrueFalseQuestion } from "./question-types/true-false"
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ArrowRight, HelpCircle, ExternalLink, Clock, Zap } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { cn, shuffleArray } from "@/lib/utils"
 
 interface QuizEngineProps {
   questions: QuizQuestion[]
@@ -29,6 +29,9 @@ interface UserAnswer {
 }
 
 export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) {
+  // Randomize questions once when component mounts
+  const randomizedQuestions = useMemo(() => shuffleArray(questions), [questions])
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -42,9 +45,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const [streak, setStreak] = useState(0)
   const [animateProgress, setAnimateProgress] = useState(false)
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const isLastQuestion = currentQuestionIndex === questions.length - 1
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100
+  const currentQuestion = randomizedQuestions[currentQuestionIndex]
+  const isLastQuestion = currentQuestionIndex === randomizedQuestions.length - 1
+  const progress = ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100
 
   // Timer effect
   useEffect(() => {
@@ -281,7 +284,7 @@ Space / h: Toggle hint
   }
 
   if (showResults) {
-    return <QuizResults userAnswers={userAnswers} questions={questions} onFinish={handleFinishQuiz} topicId={topicId} />
+    return <QuizResults userAnswers={userAnswers} questions={randomizedQuestions} onFinish={handleFinishQuiz} topicId={topicId} />
   }
 
   const renderQuestion = () => {
@@ -351,7 +354,7 @@ Space / h: Toggle hint
       <div className="mb-4 sm:mb-6">
         <div className="flex justify-between items-center mb-2">
           <div className="text-sm font-medium">
-            Question {currentQuestionIndex + 1} of {questions.length}
+            Question {currentQuestionIndex + 1} of {randomizedQuestions.length}
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Streak indicator */}
@@ -387,7 +390,7 @@ Space / h: Toggle hint
           />
           {/* Progress glow effect */}
           <div 
-            className="absolute top-0 left-0 h-2 sm:h-3 bg-gradient-to-r from-primary/50 to-transparent rounded-full transition-all duration-500"
+            className="absolute top-0 left-0 h-2 sm:h-3 bg-gradient-to-r from-blue-500/50 to-transparent rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -441,7 +444,7 @@ Space / h: Toggle hint
           {renderQuestion()}
         </div>
 
-        {/* Simplified feedback for mobile */}
+        {/* Consolidated feedback - no redundant messaging */}
         {isAnswerSubmitted && (
           <div className="mt-4 sm:mt-6 animate-in slide-in-from-bottom-4 duration-500">
             <div className={cn(
@@ -453,7 +456,7 @@ Space / h: Toggle hint
               <p className="font-semibold mb-2 flex items-center text-sm sm:text-base">
                 {selectedAnswer === currentQuestion.correct_answer ? (
                   <>
-                    <span className="text-xl sm:text-2xl mr-2 animate-bounce">🎉</span>
+                    <span className="text-xl sm:text-2xl mr-2">🎉</span>
                     <span className="text-green-700 dark:text-green-300">Correct!</span>
                     {timeLeft > 45 && <span className="ml-2 text-xs sm:text-sm text-green-600">⚡ Fast!</span>}
                   </>
@@ -461,7 +464,7 @@ Space / h: Toggle hint
                   <>
                     <span className="text-xl sm:text-2xl mr-2">😔</span>
                     <span className="text-red-700 dark:text-red-300">
-                      {timeLeft === 0 ? "Time's up!" : "Incorrect"}
+                      {timeLeft === 0 ? "Time's up!" : "Not quite right"}
                     </span>
                   </>
                 )}
@@ -480,7 +483,7 @@ Space / h: Toggle hint
             disabled={!selectedAnswer || timeLeft === 0} 
             className={cn(
               "rounded-full px-6 sm:px-8 py-2 sm:py-3 transition-all duration-200 hover:scale-105",
-              selectedAnswer && "bg-primary/90 shadow-lg"
+              selectedAnswer && "bg-blue-600 hover:bg-blue-700 shadow-lg"
             )}
           >
             Submit Answer

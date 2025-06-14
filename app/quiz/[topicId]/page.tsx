@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
+import { QuizProgressIndicator } from "@/components/quiz-progress-indicator"
 import { dataService } from "@/lib/data-service"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 
@@ -32,6 +33,8 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [showPremiumGate, setShowPremiumGate] = useState(false)
   const [quizAttempts, setQuizAttempts] = useState(0)
+  const [completedToday, setCompletedToday] = useState(0)
+  const [streak, setStreak] = useState(0)
 
   const FREE_QUIZ_LIMIT = 3
   const PREMIUM_QUIZ_LIMIT = 20 // Premium users get more quizzes per day
@@ -41,6 +44,19 @@ export default function QuizPage({ params }: QuizPageProps) {
     const savedAttempts = localStorage.getItem("civicAppQuizAttempts")
     if (savedAttempts) {
       setQuizAttempts(Number.parseInt(savedAttempts, 10))
+    }
+
+    // Load completed quizzes today
+    const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+    if (savedCompleted) {
+      const completedTopics = JSON.parse(savedCompleted)
+      setCompletedToday(completedTopics.length)
+    }
+
+    // Load streak
+    const savedStreak = localStorage.getItem("civicAppStreak")
+    if (savedStreak) {
+      setStreak(Number.parseInt(savedStreak, 10))
     }
   }, [])
 
@@ -114,6 +130,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     if (!completedTopics.includes(resolvedParams.topicId)) {
       completedTopics.push(resolvedParams.topicId)
       localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(completedTopics))
+      setCompletedToday(completedTopics.length)
     }
 
     // Update streak logic could go here
@@ -158,6 +175,8 @@ export default function QuizPage({ params }: QuizPageProps) {
     )
   }
 
+  const currentLimit = user && (isPremium || isPro) ? PREMIUM_QUIZ_LIMIT : FREE_QUIZ_LIMIT
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
       {/* Minimal navigation */}
@@ -169,8 +188,17 @@ export default function QuizPage({ params }: QuizPageProps) {
           ← Back to Home
         </button>
         
-        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-50 tracking-wide text-center">
-          Quiz {user && (isPremium || isPro) ? `(${quizAttempts}/${PREMIUM_QUIZ_LIMIT} today)` : `(${quizAttempts}/${FREE_QUIZ_LIMIT} today)`}
+        {/* Enhanced progress indicator */}
+        <div className="flex items-center space-x-4">
+          <QuizProgressIndicator
+            current={quizAttempts}
+            limit={currentLimit}
+            variant="streak"
+            showStreak={streak > 0}
+            streak={streak}
+            completedToday={completedToday}
+            isPremium={isPremium || isPro}
+          />
         </div>
         
         <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
