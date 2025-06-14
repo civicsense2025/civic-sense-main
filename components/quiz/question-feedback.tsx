@@ -55,12 +55,24 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
 
   // Load feedback data
   useEffect(() => {
-    if (!questionId) return
+    if (!questionId) {
+      console.warn('QuestionFeedback: No questionId provided')
+      return
+    }
+
+    if (typeof questionId !== 'string' || questionId.trim() === '') {
+      console.warn('QuestionFeedback: Invalid questionId:', questionId)
+      return
+    }
 
     const loadFeedbackData = async () => {
       try {
+        console.log('Loading feedback data for question:', questionId)
+        
         // Load stats
         const statsData = await questionFeedbackOperations.getQuestionStats(questionId)
+        console.log('Stats data received:', statsData)
+        
         if (statsData) {
           setStats({
             thumbs_up_count: statsData.thumbs_up_count || 0,
@@ -69,11 +81,23 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
             rating_percentage: statsData.rating_percentage,
             total_reports: statsData.total_reports || 0
           })
+        } else {
+          // Set default stats if no data exists
+          setStats({
+            thumbs_up_count: 0,
+            thumbs_down_count: 0,
+            total_ratings: 0,
+            rating_percentage: null,
+            total_reports: 0
+          })
         }
 
         // Load user's feedback if logged in
         if (user) {
+          console.log('Loading user feedback for user:', user.id)
           const userFeedbackData = await questionFeedbackOperations.getUserFeedback(questionId, user.id)
+          console.log('User feedback data received:', userFeedbackData)
+          
           const rating = userFeedbackData.find(f => f.feedback_type === 'rating')
           const report = userFeedbackData.find(f => f.feedback_type === 'report')
           
@@ -84,6 +108,23 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
         }
       } catch (error) {
         console.error('Error loading feedback data:', error)
+        // Log more detailed error information
+        if (error instanceof Error) {
+          console.error('Error message:', error.message)
+          console.error('Error stack:', error.stack)
+        } else {
+          console.error('Unknown error type:', typeof error, error)
+        }
+        
+        // Set default values on error to prevent component from breaking
+        setStats({
+          thumbs_up_count: 0,
+          thumbs_down_count: 0,
+          total_ratings: 0,
+          rating_percentage: null,
+          total_reports: 0
+        })
+        setUserFeedback({ hasReported: false })
       }
     }
 
@@ -144,6 +185,11 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
       }
     } catch (error) {
       console.error('Error submitting rating:', error)
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error('Rating error message:', error.message)
+      }
+      
       toast({
         title: "Error",
         description: "Failed to submit rating. Please try again.",
@@ -199,6 +245,11 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
       })
     } catch (error) {
       console.error('Error submitting report:', error)
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error('Report error message:', error.message)
+      }
+      
       toast({
         title: "Error",
         description: "Failed to submit report. Please try again.",

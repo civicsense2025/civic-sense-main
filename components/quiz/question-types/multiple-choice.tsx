@@ -77,7 +77,14 @@ export function MultipleChoiceQuestion({
                 isHovered && !isSubmitted && "text-primary",
               )}
             >
-              {option.label}
+              <div className="flex items-center justify-between">
+                <span>{option.label}</span>
+                {!isSubmitted && (
+                  <kbd className="ml-2 px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded border opacity-60 group-hover:opacity-100 transition-opacity">
+                    {index + 1}
+                  </kbd>
+                )}
+              </div>
             </Label>
             
             {/* Animated feedback icons */}

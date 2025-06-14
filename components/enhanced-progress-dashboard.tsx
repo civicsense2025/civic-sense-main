@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
+import { usePremium } from "@/hooks/usePremium"
+import { PremiumGate } from "@/components/premium-gate"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -11,7 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Trophy, Target, Calendar, TrendingUp, BookOpen, Award, 
   Zap, Star, Brain, Clock, Plus, Settings, Flame,
-  CheckCircle, PlayCircle, BarChart3
+  CheckCircle, PlayCircle, BarChart3, Sparkles, Crown,
+  ChevronRight, Activity, Users, Lightbulb
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { 
@@ -21,6 +24,7 @@ import type {
   CustomDeck, 
   LearningGoal 
 } from "@/lib/enhanced-gamification"
+import { enhancedProgressOperations, skillTrackingOperations, achievementOperations, learningGoalOperations } from "@/lib/enhanced-gamification"
 
 interface EnhancedProgressDashboardProps {
   isOpen: boolean
@@ -29,6 +33,7 @@ interface EnhancedProgressDashboardProps {
 
 export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressDashboardProps) {
   const { user } = useAuth()
+  const { hasFeatureAccess, isPremium, isPro } = usePremium()
   const [activeTab, setActiveTab] = useState("overview")
   const [progress, setProgress] = useState<EnhancedUserProgress | null>(null)
   const [skills, setSkills] = useState<CategorySkill[]>([])
@@ -36,6 +41,8 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
   const [customDecks, setCustomDecks] = useState<CustomDeck[]>([])
   const [learningGoals, setLearningGoals] = useState<LearningGoal[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showPremiumGate, setShowPremiumGate] = useState(false)
+  const [premiumFeature, setPremiumFeature] = useState<'advanced_analytics' | 'historical_progress' | 'custom_decks'>('advanced_analytics')
 
   useEffect(() => {
     if (user && isOpen) {
@@ -46,93 +53,56 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
   const loadProgressData = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, these would be actual API calls
-      // For now, showing the structure
+      if (!user) return
+
+      // Load real progress data from the enhanced gamification system
+      const [progressData, skillsData, achievementsData, goalsData] = await Promise.all([
+        enhancedProgressOperations.getComprehensiveStats(user.id),
+        skillTrackingOperations.getCategorySkills(user.id),
+        achievementOperations.getUserAchievements(user.id),
+        learningGoalOperations.getByUser(user.id)
+      ])
+
+      setProgress(progressData)
+      setSkills(skillsData)
+      setAchievements(achievementsData)
+      setLearningGoals(goalsData)
       
-      const mockProgress: EnhancedUserProgress = {
-        currentStreak: 7,
-        longestStreak: 15,
-        totalQuizzesCompleted: 23,
-        totalQuestionsAnswered: 460,
-        totalCorrectAnswers: 368,
-        totalXp: 2850,
-        currentLevel: 8,
-        xpToNextLevel: 1150,
-        weeklyGoal: 5,
-        weeklyCompleted: 3,
-        weekStartDate: new Date().toISOString().split('T')[0],
-        preferredCategories: ["Government", "Elections", "Civil Rights"],
-        adaptiveDifficulty: true,
-        learningStyle: "mixed",
-        accuracyPercentage: 80,
-        categoriesMastered: 2,
-        categoriesAttempted: 6,
-        activeGoals: 2,
-        customDecksCount: 3,
-        achievementsThisWeek: 2
-      }
-
-      const mockSkills: CategorySkill[] = [
-        {
-          category: "Government",
-          skillLevel: 95,
-          questionsAttempted: 45,
-          questionsCorrect: 42,
-          lastPracticed: new Date().toISOString(),
-          masteryLevel: "expert",
-          accuracyPercentage: 93,
-          progressToNextLevel: 100
-        },
-        {
-          category: "Elections",
-          skillLevel: 78,
-          questionsAttempted: 32,
-          questionsCorrect: 26,
-          lastPracticed: new Date().toISOString(),
-          masteryLevel: "advanced",
-          accuracyPercentage: 81,
-          progressToNextLevel: 40
-        },
-        {
-          category: "Civil Rights",
-          skillLevel: 65,
-          questionsAttempted: 28,
-          questionsCorrect: 20,
-          lastPracticed: new Date().toISOString(),
-          masteryLevel: "intermediate",
-          accuracyPercentage: 71,
-          progressToNextLevel: 65
-        }
-      ]
-
-      const mockAchievements: Achievement[] = [
-        {
-          type: "streak_7",
-          data: { streakLength: 7 },
-          earnedAt: new Date().toISOString(),
-          isMilestone: true,
-          title: "Week Warrior",
-          description: "Maintain a 7-day learning streak",
-          emoji: "⚡"
-        },
-        {
-          type: "category_mastery",
-          data: { category: "Government" },
-          earnedAt: new Date(Date.now() - 86400000).toISOString(),
-          isMilestone: true,
-          title: "Government Expert",
-          description: "Reach expert level in Government",
-          emoji: "🎓"
-        }
-      ]
-
-      setProgress(mockProgress)
-      setSkills(mockSkills)
-      setAchievements(mockAchievements)
+      // Custom decks would be loaded here when implemented
       setCustomDecks([])
-      setLearningGoals([])
+      
     } catch (error) {
       console.error('Error loading progress data:', error)
+      
+      // Fallback to mock data if real data fails
+      const mockProgress: EnhancedUserProgress = {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalQuizzesCompleted: 0,
+        totalQuestionsAnswered: 0,
+        totalCorrectAnswers: 0,
+        totalXp: 0,
+        currentLevel: 1,
+        xpToNextLevel: 100,
+        weeklyGoal: 3,
+        weeklyCompleted: 0,
+        weekStartDate: new Date().toISOString().split('T')[0],
+        preferredCategories: [],
+        adaptiveDifficulty: true,
+        learningStyle: "mixed",
+        accuracyPercentage: 0,
+        categoriesMastered: 0,
+        categoriesAttempted: 0,
+        activeGoals: 0,
+        customDecksCount: 0,
+        achievementsThisWeek: 0
+      }
+
+      setProgress(mockProgress)
+      setSkills([])
+      setAchievements([])
+      setLearningGoals([])
+      setCustomDecks([])
     } finally {
       setIsLoading(false)
     }
@@ -142,7 +112,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
 
   const getMasteryColor = (level: CategorySkill['masteryLevel']) => {
     switch (level) {
-      case 'expert': return 'text-purple-600 bg-purple-100 dark:bg-purple-900/20'
+      case 'expert': return 'text-indigo-700 bg-indigo-100 dark:bg-indigo-900/20'
       case 'advanced': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/20'
       case 'intermediate': return 'text-green-600 bg-green-100 dark:bg-green-900/20'
       case 'beginner': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20'
@@ -161,217 +131,267 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
     return Math.round((xpIntoCurrentLevel / xpNeededForLevel) * 100)
   }
 
+  const handlePremiumFeatureClick = (feature: 'advanced_analytics' | 'historical_progress' | 'custom_decks') => {
+    if (!hasFeatureAccess(feature)) {
+      setPremiumFeature(feature)
+      setShowPremiumGate(true)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2 text-2xl">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            <span>Enhanced Learning Dashboard</span>
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0 gap-0">
+        <DialogHeader className="px-8 pt-8 pb-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <DialogTitle className="flex items-center space-x-3 text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+            <div className="relative">
+              <TrendingUp className="h-8 w-8 text-blue-600" />
+                              <Sparkles className="h-4 w-4 text-indigo-600 absolute -top-1 -right-1 animate-pulse" />
+            </div>
+            <span>Learning Dashboard</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-base text-muted-foreground mt-2 leading-relaxed">
             Track your civic education journey with detailed analytics and personalized learning paths
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="skills">Skills</TabsTrigger>
-              <TabsTrigger value="achievements">Achievements</TabsTrigger>
-              <TabsTrigger value="decks">Custom Decks</TabsTrigger>
-              <TabsTrigger value="goals">Goals</TabsTrigger>
-            </TabsList>
+        <div className="flex-1 overflow-y-auto px-8 pb-8">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-20 animate-pulse"></div>
+              </div>
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 pt-6">
+              <TabsList className="grid w-full grid-cols-5 h-14 p-1 bg-muted/50 backdrop-blur-sm">
+                <TabsTrigger 
+                  value="overview" 
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 font-medium"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="skills" 
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 font-medium"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Skills
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="achievements" 
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 font-medium"
+                >
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Achievements
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="decks" 
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 font-medium"
+                  onClick={() => handlePremiumFeatureClick('custom_decks')}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Decks
+                  {!hasFeatureAccess('custom_decks') && (
+                    <Crown className="h-3 w-3 ml-1 text-yellow-500" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="goals" 
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md transition-all duration-200 font-medium"
+                >
+                  <Target className="h-4 w-4 mr-2" />
+                  Goals
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              {/* Level and XP */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Star className="h-5 w-5 text-yellow-500" />
-                    <span>Level {progress?.currentLevel}</span>
+            <TabsContent value="overview" className="space-y-8 animate-in fade-in-50 duration-500">
+              {/* Level & XP Card */}
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-3 text-xl">
+                    <div className="relative">
+                      <Crown className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <span className="font-bold">Level Progress</span>
                   </CardTitle>
-                  <CardDescription>
-                    {progress?.totalXp.toLocaleString()} total XP • {progress?.xpToNextLevel.toLocaleString()} XP to next level
-                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Progress value={getLevelProgress()} className="h-3" />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                    <span>Level {progress?.currentLevel}</span>
-                    <span>Level {(progress?.currentLevel || 1) + 1}</span>
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-3xl font-bold text-blue-600">Level {progress?.currentLevel || 1}</span>
+                                                 <p className="text-sm text-muted-foreground">
+                           {(progress?.currentLevel || 1) >= 50 ? "Legendary Scholar" :
+                            (progress?.currentLevel || 1) >= 20 ? "Civic Champion" :
+                            (progress?.currentLevel || 1) >= 10 ? "Dedicated Learner" :
+                            (progress?.currentLevel || 1) >= 5 ? "Rising Star" : "Civic Learner"}
+                         </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold">{progress?.totalXp || 0} XP</span>
+                        <p className="text-sm text-muted-foreground">Total Experience</p>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={progress ? ((progress.totalXp % 100) / 100) * 100 : 0} 
+                      className="h-3" 
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Progress to next level</span>
+                      <span>{progress?.xpToNextLevel || 100} XP needed</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Main Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
-                        <p className="text-3xl font-bold text-orange-600 flex items-center">
-                          {progress?.currentStreak}
-                          <Flame className="h-5 w-5 ml-1" />
-                        </p>
-                      </div>
-                      <Calendar className="h-8 w-8 text-orange-600/70" />
+              {/* Weekly Goal Card */}
+              <Card className="border border-indigo-200 dark:border-indigo-800">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-3 text-xl">
+                    <div className="relative">
+                      <Target className="h-6 w-6 text-indigo-600" />
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Accuracy</p>
-                        <p className="text-3xl font-bold text-green-600">
-                          {progress?.accuracyPercentage}%
-                        </p>
-                      </div>
-                      <Target className="h-8 w-8 text-green-600/70" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Weekly Progress</p>
-                        <p className="text-3xl font-bold text-blue-600">
-                          {progress?.weeklyCompleted}/{progress?.weeklyGoal}
-                        </p>
-                      </div>
-                      <BarChart3 className="h-8 w-8 text-blue-600/70" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Categories Mastered</p>
-                        <p className="text-3xl font-bold text-purple-600">
-                          {progress?.categoriesMastered}
-                        </p>
-                      </div>
-                      <Trophy className="h-8 w-8 text-purple-600/70" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Weekly Goal Progress */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Target className="h-5 w-5" />
-                    <span>Weekly Goal Progress</span>
+                    <span className="font-bold">Weekly Goal Progress</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Quizzes this week</span>
-                      <span>{progress?.weeklyCompleted} / {progress?.weeklyGoal}</span>
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-medium">Quizzes this week</span>
+                      <span className="text-2xl font-bold text-indigo-600">
+                        {progress?.weeklyCompleted} / {progress?.weeklyGoal}
+                      </span>
                     </div>
                     <Progress 
                       value={(progress?.weeklyCompleted || 0) / (progress?.weeklyGoal || 1) * 100} 
-                      className="h-2" 
+                      className="h-3" 
                     />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Keep going!</span>
+                      <span>{Math.max(0, (progress?.weeklyGoal || 3) - (progress?.weeklyCompleted || 0))} more to go</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Recent Achievements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Award className="h-5 w-5" />
-                    <span>Recent Achievements</span>
+              <Card className="border border-amber-200 dark:border-amber-800">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 text-xl">
+                      <div className="relative">
+                        <Award className="h-6 w-6 text-amber-600" />
+                        <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
+                      </div>
+                      <span className="font-bold">Recent Achievements</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                      {achievements.length} Total
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
                     {achievements.slice(0, 3).map((achievement, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-accent/50">
-                        <span className="text-2xl">{achievement.emoji}</span>
-                        <div className="flex-1">
-                          <p className="font-medium">{achievement.title}</p>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                      <div key={index} className="group flex items-center space-x-4 p-4 rounded-xl border border-amber-200/50 dark:border-amber-800/30 hover:shadow-md transition-all duration-200">
+                        <div className="relative">
+                          <span className="text-3xl group-hover:scale-110 transition-transform duration-200">{achievement.emoji}</span>
+                          {achievement.isMilestone && (
+                            <div className="absolute -inset-1 bg-yellow-400/30 rounded-full"></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-lg text-amber-900 dark:text-amber-100 truncate">{achievement.title}</p>
+                          <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">{achievement.description}</p>
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                            {new Date(achievement.earnedAt).toLocaleDateString()}
+                          </p>
                         </div>
                         {achievement.isMilestone && (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <Badge className="bg-yellow-500 text-white border-0 shadow-sm">
+                            <Crown className="h-3 w-3 mr-1" />
                             Milestone
                           </Badge>
                         )}
                       </div>
                     ))}
+                    {achievements.length > 3 && (
+                      <Button variant="ghost" className="w-full mt-4 text-amber-700 hover:text-amber-800 hover:bg-amber-50">
+                        View All Achievements
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="skills" className="space-y-6">
+            <TabsContent value="skills" className="space-y-8 animate-in fade-in-50 duration-500">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Category Skills</h3>
-                <Button variant="outline" size="sm">
+                <div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">Category Skills</h3>
+                  <p className="text-muted-foreground mt-1">Track your mastery across different civic topics</p>
+                </div>
+                <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-300 transition-colors">
                   <Settings className="h-4 w-4 mr-2" />
                   Skill Settings
                 </Button>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {skills.map((skill, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="font-semibold text-lg">{skill.category}</h4>
+                  <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden">
+                    <CardContent className="p-8">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="space-y-2">
+                          <h4 className="font-bold text-2xl text-foreground">{skill.category}</h4>
                           <Badge 
-                            className={cn("capitalize", getMasteryColor(skill.masteryLevel))}
+                            className={cn("capitalize text-sm font-semibold px-3 py-1", getMasteryColor(skill.masteryLevel))}
                           >
+                            <Crown className="h-3 w-3 mr-1" />
                             {skill.masteryLevel}
                           </Badge>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{Math.round(skill.skillLevel)}</p>
-                          <p className="text-sm text-muted-foreground">Skill Level</p>
+                        <div className="text-right space-y-1">
+                          <p className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+                            {Math.round(skill.skillLevel)}
+                          </p>
+                          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Skill Level</p>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progress to next level</span>
-                            <span>{skill.progressToNextLevel}%</span>
+                      <div className="space-y-6">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Progress to next level</span>
+                            <span className="text-lg font-bold text-blue-600">{skill.progressToNextLevel}%</span>
                           </div>
-                          <Progress value={skill.progressToNextLevel} className="h-2" />
+                          <Progress 
+                            value={skill.progressToNextLevel} 
+                            className="h-3 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/20 dark:to-purple-950/20" 
+                          />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Accuracy</p>
-                            <p className="font-semibold">{skill.accuracyPercentage}%</p>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Accuracy</p>
+                            <p className="text-2xl font-bold text-green-600">{skill.accuracyPercentage}%</p>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Questions Attempted</p>
-                            <p className="font-semibold">{skill.questionsAttempted}</p>
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Questions Attempted</p>
+                            <p className="text-2xl font-bold text-blue-600">{skill.questionsAttempted}</p>
                           </div>
                         </div>
 
                         {skill.lastPracticed && (
-                          <p className="text-xs text-muted-foreground">
-                            Last practiced: {new Date(skill.lastPracticed).toLocaleDateString()}
-                          </p>
+                          <div className="pt-4 border-t border-muted/50">
+                            <p className="text-sm text-muted-foreground flex items-center">
+                              <Clock className="h-4 w-4 mr-2" />
+                              Last practiced: {new Date(skill.lastPracticed).toLocaleDateString()}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </CardContent>
@@ -380,88 +400,182 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
               </div>
             </TabsContent>
 
-            <TabsContent value="achievements" className="space-y-6">
+            <TabsContent value="achievements" className="space-y-8 animate-in fade-in-50 duration-500">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Achievements ({achievements.length})</h3>
-                <div className="flex space-x-2">
-                  <Badge variant="secondary">
+                <div>
+                  <h3 className="text-2xl font-bold">Achievement Gallery</h3>
+                  <p className="text-muted-foreground mt-1">Celebrate your learning milestones and accomplishments</p>
+                </div>
+                <div className="flex space-x-3">
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 px-3 py-1">
+                    <Crown className="h-3 w-3 mr-1" />
                     {achievements.filter(a => a.isMilestone).length} Milestones
+                  </Badge>
+                  <Badge variant="outline" className="px-3 py-1">
+                    <Trophy className="h-3 w-3 mr-1" />
+                    {achievements.length} Total
                   </Badge>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {achievements.map((achievement, index) => (
-                  <Card key={index} className={cn(
-                    "transition-all hover:shadow-md",
-                    achievement.isMilestone && "ring-2 ring-yellow-200 dark:ring-yellow-800"
-                  )}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-3">
-                        <span className="text-3xl">{achievement.emoji}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-semibold">{achievement.title}</h4>
-                            {achievement.isMilestone && (
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                Milestone
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {achievement.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Earned: {new Date(achievement.earnedAt).toLocaleDateString()}
-                          </p>
+              {/* Achievement Categories */}
+              {achievements.length > 0 ? (
+                <div className="space-y-8">
+                  {/* Milestone Achievements */}
+                  {achievements.filter(a => a.isMilestone).length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Crown className="h-5 w-5 text-yellow-600" />
+                          <span>Milestone Achievements</span>
+                          <Badge className="bg-yellow-500 text-white">
+                            {achievements.filter(a => a.isMilestone).length}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>Major accomplishments that mark significant progress</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {achievements.filter(a => a.isMilestone).map((achievement, index) => (
+                            <div key={index} className="p-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 dark:bg-yellow-900/10 hover:shadow-lg transition-all">
+                              <div className="flex items-start space-x-4">
+                                <div className="relative">
+                                  <span className="text-4xl block">{achievement.emoji}</span>
+                                  <div className="absolute -inset-2 bg-yellow-400/20 rounded-full"></div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <h4 className="font-bold text-xl text-foreground leading-tight">{achievement.title}</h4>
+                                    <Badge className="bg-yellow-500 text-white border-0 shadow-sm ml-2 flex-shrink-0">
+                                      <Sparkles className="h-3 w-3 mr-1" />
+                                      Milestone
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                                    {achievement.description}
+                                  </p>
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs text-muted-foreground flex items-center">
+                                      <Calendar className="h-3 w-3 mr-1" />
+                                      {new Date(achievement.earnedAt).toLocaleDateString()}
+                                    </p>
+                                    <div className="flex items-center text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                      <Crown className="h-3 w-3 mr-1" />
+                                      Major Achievement
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Regular Achievements by Category */}
+                  {achievements.filter(a => !a.isMilestone).length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Star className="h-5 w-5 text-blue-600" />
+                          <span>All Achievements</span>
+                          <Badge variant="outline">
+                            {achievements.filter(a => !a.isMilestone).length}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>Your complete collection of learning achievements</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {achievements.filter(a => !a.isMilestone).map((achievement, index) => (
+                            <div key={index} className="p-4 rounded-lg border hover:shadow-md transition-all hover:border-blue-300">
+                              <div className="flex items-start space-x-3">
+                                <span className="text-3xl">{achievement.emoji}</span>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{achievement.description}</p>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    {new Date(achievement.earnedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Trophy className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                    <h4 className="text-xl font-bold mb-2">No Achievements Yet</h4>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Complete quizzes and maintain learning streaks to unlock your first achievements!
+                    </p>
+                    <Button onClick={onClose}>
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      Start Learning
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
-            <TabsContent value="decks" className="space-y-6">
+            <TabsContent value="decks" className="space-y-8 animate-in fade-in-50 duration-500">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Custom Learning Decks</h3>
-                <Button>
+                <div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Custom Learning Decks</h3>
+                  <p className="text-muted-foreground mt-1">Create personalized study collections tailored to your interests</p>
+                </div>
+                <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-lg">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Deck
                 </Button>
               </div>
 
               {customDecks.length === 0 ? (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h4 className="text-lg font-semibold mb-2">No Custom Decks Yet</h4>
-                    <p className="text-muted-foreground mb-4">
-                      Create personalized learning decks based on your interests and learning goals.
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-green-950/10 dark:via-background dark:to-blue-950/10">
+                  <CardContent className="p-16 text-center">
+                    <div className="relative mb-6">
+                      <BookOpen className="h-20 w-20 mx-auto text-green-500/60" />
+                      <div className="absolute -inset-4 bg-green-400/10 rounded-full animate-pulse"></div>
+                    </div>
+                    <h4 className="text-2xl font-bold mb-3 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                      No Custom Decks Yet
+                    </h4>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
+                      Create personalized learning decks based on your interests and learning goals. 
+                      Mix and match topics to create the perfect study experience.
                     </p>
-                    <Button>
+                    <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-lg">
                       <Plus className="h-4 w-4 mr-2" />
                       Create Your First Deck
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {customDecks.map((deck, index) => (
-                    <Card key={index}>
+                    <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
                       <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">{deck.name}</h4>
-                          <Badge variant="outline">{deck.type}</Badge>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-bold text-xl">{deck.name}</h4>
+                          <Badge variant="outline" className="capitalize px-3 py-1">
+                            {deck.type}
+                          </Badge>
                         </div>
                         {deck.description && (
-                          <p className="text-sm text-muted-foreground mb-3">{deck.description}</p>
+                          <p className="text-muted-foreground mb-4 leading-relaxed">{deck.description}</p>
                         )}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-sm font-medium text-muted-foreground flex items-center">
+                            <Users className="h-4 w-4 mr-2" />
                             {deck.contentCount} questions
                           </span>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
                             <PlayCircle className="h-4 w-4 mr-2" />
                             Practice
                           </Button>
@@ -473,50 +587,71 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
               )}
             </TabsContent>
 
-            <TabsContent value="goals" className="space-y-6">
+            <TabsContent value="goals" className="space-y-8 animate-in fade-in-50 duration-500">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Learning Goals</h3>
-                <Button>
+                <div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">Learning Goals</h3>
+                  <p className="text-muted-foreground mt-1">Set and track specific objectives for your civic education journey</p>
+                </div>
+                <Button className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg">
                   <Plus className="h-4 w-4 mr-2" />
                   Set Goal
                 </Button>
               </div>
 
               {learningGoals.length === 0 ? (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h4 className="text-lg font-semibold mb-2">No Learning Goals Set</h4>
-                    <p className="text-muted-foreground mb-4">
-                      Set specific learning goals to guide your civic education journey.
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-indigo-950/10 dark:via-background dark:to-blue-950/10">
+                  <CardContent className="p-16 text-center">
+                    <div className="relative mb-6">
+                      <Target className="h-20 w-20 mx-auto text-indigo-500/60" />
+                                              <div className="absolute -inset-4 bg-indigo-400/10 rounded-full animate-pulse"></div>
+                    </div>
+                                          <h4 className="text-2xl font-bold mb-3 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                      No Learning Goals Set
+                    </h4>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
+                      Set specific learning goals to guide your civic education journey. 
+                      Track your progress and stay motivated with clear objectives.
                     </p>
-                    <Button>
+                    <Button className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg">
                       <Plus className="h-4 w-4 mr-2" />
                       Set Your First Goal
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {learningGoals.map((goal, index) => (
-                    <Card key={index}>
+                    <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
                       <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold capitalize">{goal.goalType.replace('_', ' ')}</h4>
-                          <Badge variant={goal.isActive ? "default" : "secondary"}>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-bold text-xl capitalize">{goal.goalType.replace('_', ' ')}</h4>
+                          <Badge 
+                            variant={goal.isActive ? "default" : "secondary"}
+                            className={cn(
+                              "px-3 py-1",
+                              goal.isActive 
+                                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white" 
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                            )}
+                          >
                             {goal.isActive ? "Active" : "Completed"}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Target: {goal.targetValue} {goal.category && `in ${goal.category}`}
+                        <p className="text-muted-foreground mb-4 leading-relaxed">
+                          Target: <span className="font-semibold">{goal.targetValue}</span> 
+                          {goal.category && <span> in {goal.category}</span>}
                         </p>
                         {goal.progress !== undefined && (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>Progress</span>
-                              <span>{goal.progress}%</span>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Progress</span>
+                              <span className="text-lg font-bold text-indigo-700">{goal.progress}%</span>
                             </div>
-                            <Progress value={goal.progress} className="h-2" />
+                            <Progress 
+                              value={goal.progress} 
+                              className="h-3 bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-950/20 dark:to-blue-950/20" 
+                            />
                           </div>
                         )}
                       </CardContent>
@@ -525,9 +660,26 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                 </div>
               )}
             </TabsContent>
-          </Tabs>
-        )}
+                      </Tabs>
+          )}
+        </div>
       </DialogContent>
+      
+      <PremiumGate
+        feature={premiumFeature}
+        isOpen={showPremiumGate}
+        onClose={() => setShowPremiumGate(false)}
+        title={
+          premiumFeature === 'custom_decks' ? 'Custom Learning Decks' :
+          premiumFeature === 'historical_progress' ? 'Historical Progress' :
+          'Advanced Analytics'
+        }
+        description={
+          premiumFeature === 'custom_decks' ? 'Create unlimited personalized study collections' :
+          premiumFeature === 'historical_progress' ? 'View your learning progress over time' :
+          'Access detailed performance analytics and insights'
+        }
+      />
     </Dialog>
   )
 } 

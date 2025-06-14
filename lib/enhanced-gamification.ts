@@ -92,72 +92,343 @@ export interface EnhancedUserProgress {
   achievementsThisWeek: number
 }
 
-// Achievement definitions
+// Achievement definitions - Comprehensive learner achievement system
 const ACHIEVEMENT_DEFINITIONS = {
+  // First Steps & Onboarding
   first_quiz: {
     title: "First Steps",
-    description: "Complete your first quiz",
+    description: "Complete your first civic quiz",
     emoji: "🎯",
-    xpReward: 50
+    xpReward: 50,
+    category: "onboarding"
   },
+  first_perfect: {
+    title: "Flawless Debut",
+    description: "Score 100% on your first quiz",
+    emoji: "💯",
+    xpReward: 100,
+    category: "performance"
+  },
+  
+  // Streak Achievements
   streak_3: {
-    title: "Hot Streak",
+    title: "Getting Started",
     description: "Maintain a 3-day learning streak",
     emoji: "🔥",
-    xpReward: 100
+    xpReward: 100,
+    category: "consistency"
   },
   streak_7: {
     title: "Week Warrior",
     description: "Maintain a 7-day learning streak",
     emoji: "⚡",
     xpReward: 250,
-    isMilestone: true
+    isMilestone: true,
+    category: "consistency"
+  },
+  streak_14: {
+    title: "Two Week Champion",
+    description: "Maintain a 14-day learning streak",
+    emoji: "🏃",
+    xpReward: 500,
+    isMilestone: true,
+    category: "consistency"
   },
   streak_30: {
     title: "Month Master",
     description: "Maintain a 30-day learning streak",
     emoji: "🏆",
     xpReward: 1000,
-    isMilestone: true
+    isMilestone: true,
+    category: "consistency"
   },
-  category_mastery: {
-    title: "Subject Expert",
-    description: "Reach expert level in a category",
-    emoji: "🎓",
-    xpReward: 500,
-    isMilestone: true
+  streak_100: {
+    title: "Centurion",
+    description: "Maintain a 100-day learning streak",
+    emoji: "👑",
+    xpReward: 5000,
+    isMilestone: true,
+    category: "consistency"
   },
-  perfect_quiz: {
-    title: "Flawless Victory",
-    description: "Score 100% on a quiz",
-    emoji: "💯",
-    xpReward: 150
+
+  // Quiz Completion Milestones
+  quizzes_5: {
+    title: "Getting the Hang of It",
+    description: "Complete 5 quizzes",
+    emoji: "📝",
+    xpReward: 150,
+    category: "progress"
   },
-  speed_demon: {
-    title: "Speed Demon",
-    description: "Complete a quiz in under 5 minutes",
-    emoji: "⚡",
-    xpReward: 200
-  },
-  knowledge_seeker: {
+  quizzes_10: {
     title: "Knowledge Seeker",
     description: "Complete 10 quizzes",
     emoji: "📚",
-    xpReward: 300
+    xpReward: 300,
+    category: "progress"
   },
-  scholar: {
+  quizzes_25: {
+    title: "Civic Enthusiast",
+    description: "Complete 25 quizzes",
+    emoji: "🎓",
+    xpReward: 750,
+    isMilestone: true,
+    category: "progress"
+  },
+  quizzes_50: {
     title: "Civic Scholar",
     description: "Complete 50 quizzes",
-    emoji: "🎓",
+    emoji: "🎖️",
     xpReward: 1500,
-    isMilestone: true
+    isMilestone: true,
+    category: "progress"
   },
-  expert: {
+  quizzes_100: {
     title: "Civic Expert",
     description: "Complete 100 quizzes",
-    emoji: "👑",
+    emoji: "🏅",
     xpReward: 3000,
-    isMilestone: true
+    isMilestone: true,
+    category: "progress"
+  },
+  quizzes_250: {
+    title: "Civic Master",
+    description: "Complete 250 quizzes",
+    emoji: "👑",
+    xpReward: 7500,
+    isMilestone: true,
+    category: "progress"
+  },
+
+  // Performance Achievements
+  perfect_quiz: {
+    title: "Perfect Score",
+    description: "Score 100% on a quiz",
+    emoji: "💯",
+    xpReward: 150,
+    category: "performance"
+  },
+  perfect_streak_3: {
+    title: "Triple Perfect",
+    description: "Score 100% on 3 consecutive quizzes",
+    emoji: "🎯",
+    xpReward: 500,
+    isMilestone: true,
+    category: "performance"
+  },
+  perfect_streak_5: {
+    title: "Perfection Master",
+    description: "Score 100% on 5 consecutive quizzes",
+    emoji: "⭐",
+    xpReward: 1000,
+    isMilestone: true,
+    category: "performance"
+  },
+  high_accuracy: {
+    title: "Precision Expert",
+    description: "Maintain 90%+ accuracy over 20 quizzes",
+    emoji: "🎯",
+    xpReward: 750,
+    isMilestone: true,
+    category: "performance"
+  },
+
+  // Speed Achievements
+  speed_demon: {
+    title: "Speed Demon",
+    description: "Complete a quiz in under 3 minutes",
+    emoji: "⚡",
+    xpReward: 200,
+    category: "speed"
+  },
+  lightning_fast: {
+    title: "Lightning Fast",
+    description: "Complete a quiz in under 2 minutes",
+    emoji: "⚡",
+    xpReward: 400,
+    category: "speed"
+  },
+  speed_and_accuracy: {
+    title: "Quick & Accurate",
+    description: "Complete a quiz in under 3 minutes with 100% accuracy",
+    emoji: "🚀",
+    xpReward: 600,
+    isMilestone: true,
+    category: "speed"
+  },
+
+  // Category Mastery
+  category_novice: {
+    title: "Category Explorer",
+    description: "Reach novice level in any category",
+    emoji: "🌱",
+    xpReward: 100,
+    category: "mastery"
+  },
+  category_intermediate: {
+    title: "Category Specialist",
+    description: "Reach intermediate level in any category",
+    emoji: "📈",
+    xpReward: 300,
+    category: "mastery"
+  },
+  category_advanced: {
+    title: "Category Expert",
+    description: "Reach advanced level in any category",
+    emoji: "🎓",
+    xpReward: 500,
+    isMilestone: true,
+    category: "mastery"
+  },
+  category_master: {
+    title: "Subject Master",
+    description: "Reach expert level in any category",
+    emoji: "👨‍🎓",
+    xpReward: 1000,
+    isMilestone: true,
+    category: "mastery"
+  },
+  multi_category_master: {
+    title: "Renaissance Scholar",
+    description: "Reach expert level in 3 different categories",
+    emoji: "🌟",
+    xpReward: 2500,
+    isMilestone: true,
+    category: "mastery"
+  },
+
+  // Exploration Achievements
+  category_sampler: {
+    title: "Curious Mind",
+    description: "Try quizzes from 5 different categories",
+    emoji: "🔍",
+    xpReward: 200,
+    category: "exploration"
+  },
+  well_rounded: {
+    title: "Well-Rounded Citizen",
+    description: "Complete quizzes in all available categories",
+    emoji: "🌐",
+    xpReward: 1000,
+    isMilestone: true,
+    category: "exploration"
+  },
+  difficulty_challenger: {
+    title: "Challenge Seeker",
+    description: "Complete quizzes at all difficulty levels",
+    emoji: "⛰️",
+    xpReward: 500,
+    category: "exploration"
+  },
+
+  // Social & Engagement
+  early_bird: {
+    title: "Early Bird",
+    description: "Complete a quiz before 8 AM",
+    emoji: "🌅",
+    xpReward: 100,
+    category: "engagement"
+  },
+  night_owl: {
+    title: "Night Owl",
+    description: "Complete a quiz after 10 PM",
+    emoji: "🦉",
+    xpReward: 100,
+    category: "engagement"
+  },
+  weekend_warrior: {
+    title: "Weekend Warrior",
+    description: "Complete 5 quizzes on weekends",
+    emoji: "🏖️",
+    xpReward: 300,
+    category: "engagement"
+  },
+  comeback_kid: {
+    title: "Comeback Kid",
+    description: "Return to learning after a 7+ day break",
+    emoji: "🔄",
+    xpReward: 200,
+    category: "engagement"
+  },
+
+  // Special Achievements
+  constitution_day: {
+    title: "Constitution Day Scholar",
+    description: "Complete a Constitutional Law quiz on Constitution Day",
+    emoji: "📜",
+    xpReward: 500,
+    isMilestone: true,
+    category: "special"
+  },
+  election_day: {
+    title: "Election Day Participant",
+    description: "Complete an Elections quiz on Election Day",
+    emoji: "🗳️",
+    xpReward: 500,
+    isMilestone: true,
+    category: "special"
+  },
+  independence_day: {
+    title: "Independence Day Patriot",
+    description: "Complete any quiz on July 4th",
+    emoji: "🎆",
+    xpReward: 300,
+    category: "special"
+  },
+
+  // Learning Behavior
+  mistake_learner: {
+    title: "Learning from Mistakes",
+    description: "Improve your score by 20+ points on a retaken quiz",
+    emoji: "📊",
+    xpReward: 250,
+    category: "learning"
+  },
+  persistent_learner: {
+    title: "Never Give Up",
+    description: "Retake the same quiz 3 times to improve",
+    emoji: "💪",
+    xpReward: 300,
+    category: "learning"
+  },
+  knowledge_retention: {
+    title: "Knowledge Keeper",
+    description: "Maintain high performance on review quizzes",
+    emoji: "🧠",
+    xpReward: 400,
+    category: "learning"
+  },
+
+  // Level-based Achievements
+  level_5: {
+    title: "Rising Star",
+    description: "Reach level 5",
+    emoji: "⭐",
+    xpReward: 250,
+    category: "levels"
+  },
+  level_10: {
+    title: "Dedicated Learner",
+    description: "Reach level 10",
+    emoji: "🌟",
+    xpReward: 500,
+    isMilestone: true,
+    category: "levels"
+  },
+  level_20: {
+    title: "Civic Champion",
+    description: "Reach level 20",
+    emoji: "🏆",
+    xpReward: 1000,
+    isMilestone: true,
+    category: "levels"
+  },
+  level_50: {
+    title: "Legendary Scholar",
+    description: "Reach level 50",
+    emoji: "👑",
+    xpReward: 5000,
+    isMilestone: true,
+    category: "levels"
   }
 } as const
 
@@ -837,38 +1108,126 @@ export async function updateEnhancedProgress(
     // 2. Update weekly progress
     await enhancedProgressOperations.updateWeeklyProgress(userId)
 
-    // 3. Check for basic achievements
+    // 3. Get comprehensive stats for achievement checking
     const beforeStats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    const afterStats = await enhancedProgressOperations.getComprehensiveStats(userId)
     
-    if (beforeStats.totalQuizzesCompleted === 1) {
+    // 4. Check for achievements based on quiz completion
+    const isFirstQuiz = beforeStats.totalQuizzesCompleted === 0
+    const isPerfectScore = quizData.correctAnswers === quizData.totalQuestions
+    const isFastCompletion = quizData.timeSpentSeconds < 180 // 3 minutes
+    const isVeryFastCompletion = quizData.timeSpentSeconds < 120 // 2 minutes
+    const accuracyPercentage = (quizData.correctAnswers / quizData.totalQuestions) * 100
+    
+    // First quiz achievements
+    if (isFirstQuiz) {
       const achievement = await achievementOperations.checkAndAward(userId, 'first_quiz')
       if (achievement) results.newAchievements.push(achievement)
+      
+      if (isPerfectScore) {
+        const perfectAchievement = await achievementOperations.checkAndAward(userId, 'first_perfect')
+        if (perfectAchievement) results.newAchievements.push(perfectAchievement)
+      }
     }
 
-    if (beforeStats.currentStreak >= 3) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'streak_3')
-      if (achievement) results.newAchievements.push(achievement)
+    // Quiz completion milestones
+    const totalCompleted = afterStats.totalQuizzesCompleted
+    const milestones = [5, 10, 25, 50, 100, 250]
+    for (const milestone of milestones) {
+      if (totalCompleted === milestone) {
+        const achievement = await achievementOperations.checkAndAward(userId, `quizzes_${milestone}`)
+        if (achievement) results.newAchievements.push(achievement)
+      }
     }
 
-    if (beforeStats.currentStreak >= 7) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'streak_7')
-      if (achievement) results.newAchievements.push(achievement)
+    // Streak achievements
+    const currentStreak = afterStats.currentStreak
+    const streakMilestones = [3, 7, 14, 30, 100]
+    for (const milestone of streakMilestones) {
+      if (currentStreak === milestone) {
+        const achievement = await achievementOperations.checkAndAward(userId, `streak_${milestone}`)
+        if (achievement) results.newAchievements.push(achievement)
+      }
     }
 
-    if (quizData.correctAnswers === quizData.totalQuestions) {
+    // Performance achievements
+    if (isPerfectScore) {
       const achievement = await achievementOperations.checkAndAward(userId, 'perfect_quiz')
       if (achievement) results.newAchievements.push(achievement)
+      
+      // Check for perfect streaks (would need to track consecutive perfect scores)
+      // This would require additional database tracking
     }
 
-    if (quizData.timeSpentSeconds < 300) { // 5 minutes
+    // Speed achievements
+    if (isFastCompletion) {
       const achievement = await achievementOperations.checkAndAward(userId, 'speed_demon')
       if (achievement) results.newAchievements.push(achievement)
     }
+    
+    if (isVeryFastCompletion) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'lightning_fast')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+    
+    if (isFastCompletion && isPerfectScore) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'speed_and_accuracy')
+      if (achievement) results.newAchievements.push(achievement)
+    }
 
-    // 4. Update category skills and spaced repetition
+    // Time-based achievements
+    const now = new Date()
+    const hour = now.getHours()
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6
+    
+    if (hour < 8) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'early_bird')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+    
+    if (hour >= 22) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'night_owl')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+
+    // Special date achievements
+    const today = now.toISOString().split('T')[0]
+    const month = now.getMonth() + 1
+    const day = now.getDate()
+    
+    if (month === 7 && day === 4) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'independence_day')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+    
+    if (month === 9 && day === 17) { // Constitution Day
+      const hasConstitutionalCategory = quizData.questionResponses.some(q => 
+        q.category.toLowerCase().includes('constitutional') || 
+        q.category.toLowerCase().includes('constitution')
+      )
+      if (hasConstitutionalCategory) {
+        const achievement = await achievementOperations.checkAndAward(userId, 'constitution_day')
+        if (achievement) results.newAchievements.push(achievement)
+      }
+    }
+
+    // Level-based achievements
+    const currentLevel = afterStats.currentLevel
+    const levelMilestones = [5, 10, 20, 50]
+    for (const milestone of levelMilestones) {
+      if (currentLevel === milestone) {
+        const achievement = await achievementOperations.checkAndAward(userId, `level_${milestone}`)
+        if (achievement) results.newAchievements.push(achievement)
+      }
+    }
+
+    // 5. Update category skills and check for mastery achievements
     const categoryUpdates = new Map<string, { correct: number; total: number }>()
+    const categoriesInQuiz = new Set<string>()
     
     for (const response of quizData.questionResponses) {
+      categoriesInQuiz.add(response.category)
+      
       // Update spaced repetition
       await spacedRepetitionOperations.updateQuestionMemory(
         userId,
@@ -885,7 +1244,7 @@ export async function updateEnhancedProgress(
       })
     }
 
-    // Update skills for each category
+    // Update skills for each category and check for mastery achievements
     for (const [category, stats] of categoryUpdates) {
       const isCorrect = stats.correct > stats.total / 2 // Majority correct
       const skillUpdate = await skillTrackingOperations.updateCategorySkill(
@@ -894,11 +1253,53 @@ export async function updateEnhancedProgress(
         isCorrect
       )
       results.skillUpdates.push(skillUpdate)
+      
+      // Check for category mastery achievements
+      const masteryAchievements = {
+        'novice': 'category_novice',
+        'intermediate': 'category_intermediate', 
+        'advanced': 'category_advanced',
+        'expert': 'category_master'
+      }
+      
+      const achievementType = masteryAchievements[skillUpdate.masteryLevel as keyof typeof masteryAchievements]
+      if (achievementType) {
+        const achievement = await achievementOperations.checkAndAward(userId, achievementType, { category })
+        if (achievement) results.newAchievements.push(achievement)
+      }
     }
 
-    // 5. Check for level up
-    const afterStats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    // Check for exploration achievements
+    const allSkills = await skillTrackingOperations.getCategorySkills(userId)
+    const categoriesAttempted = allSkills.length
+    const expertCategories = allSkills.filter(skill => skill.masteryLevel === 'expert').length
+    
+    if (categoriesAttempted === 5) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'category_sampler')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+    
+    if (expertCategories === 3) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'multi_category_master')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+
+    // Check for high accuracy achievement
+    if (afterStats.totalQuizzesCompleted >= 20 && afterStats.accuracyPercentage >= 90) {
+      const achievement = await achievementOperations.checkAndAward(userId, 'high_accuracy')
+      if (achievement) results.newAchievements.push(achievement)
+    }
+
+    // 6. Check for level up
     results.levelUp = afterStats.currentLevel > beforeStats.currentLevel
+
+    // Award XP for achievements
+    for (const achievement of results.newAchievements) {
+      const definition = ACHIEVEMENT_DEFINITIONS[achievement.type as keyof typeof ACHIEVEMENT_DEFINITIONS]
+      if (definition?.xpReward) {
+        await achievementOperations.awardXP(userId, definition.xpReward)
+      }
+    }
 
     return results
 

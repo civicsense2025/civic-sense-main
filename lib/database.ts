@@ -508,26 +508,56 @@ export const questionFeedbackOperations = {
 
   // Get user's feedback for a question
   async getUserFeedback(questionId: string, userId: string) {
-    const { data, error } = await supabase
-      .from('question_feedback')
-      .select('*')
-      .eq('question_id', questionId)
-      .eq('user_id', userId)
+    try {
+      console.log('Fetching user feedback for question:', questionId, 'user:', userId)
+      
+      const { data, error } = await supabase
+        .from('question_feedback')
+        .select('*')
+        .eq('question_id', questionId)
+        .eq('user_id', userId)
 
-    if (error) throw error
-    return data as DbQuestionFeedback[]
+      if (error) {
+        console.error('Error fetching user feedback:', error)
+        throw error
+      }
+      
+      console.log('User feedback fetched successfully:', data)
+      return data as DbQuestionFeedback[]
+    } catch (err) {
+      console.error('Exception in getUserFeedback:', err)
+      throw err
+    }
   },
 
   // Get feedback statistics for a question
   async getQuestionStats(questionId: string) {
-    const { data, error } = await supabase
-      .from('question_feedback_stats')
-      .select('*')
-      .eq('question_id', questionId)
-      .single()
+    try {
+      console.log('Fetching question stats for:', questionId)
+      
+      const { data, error } = await supabase
+        .from('question_feedback_stats')
+        .select('*')
+        .eq('question_id', questionId)
+        .single()
 
-    if (error && error.code !== 'PGRST116') throw error
-    return data
+      if (error) {
+        console.log('Question stats error:', error)
+        if (error.code !== 'PGRST116') {
+          console.error('Unexpected error fetching question stats:', error)
+          throw error
+        }
+        // PGRST116 means no rows found, which is expected for new questions
+        console.log('No stats found for question (expected for new questions)')
+        return null
+      }
+      
+      console.log('Question stats fetched successfully:', data)
+      return data
+    } catch (err) {
+      console.error('Exception in getQuestionStats:', err)
+      throw err
+    }
   },
 
   // Get feedback statistics for multiple questions

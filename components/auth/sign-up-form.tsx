@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { GoogleOAuthButton } from "./google-oauth-button"
 
 interface SignUpFormProps {
   onSuccess: () => void
@@ -46,34 +47,67 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    <div className="space-y-6">
+      {/* Google OAuth Button */}
+      <GoogleOAuthButton 
+        variant="sign-up"
+        onSuccess={onSuccess}
+        onError={setError}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or create account with email
+          </span>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      </div>
+      {/* Email/Password Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Creating account..." : "Sign Up"}
-      </Button>
-    </form>
+        <div className="space-y-2">
+          <Label htmlFor="signup-email">Email</Label>
+          <Input
+            id="signup-email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signup-password">Password</Label>
+          <Input 
+            id="signup-password" 
+            type="password" 
+            placeholder="Create a secure password"
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            minLength={6}
+          />
+          <p className="text-xs text-muted-foreground">
+            Password must be at least 6 characters long
+          </p>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Sign Up"}
+        </Button>
+      </form>
+    </div>
   )
 }

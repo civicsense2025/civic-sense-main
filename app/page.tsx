@@ -1,65 +1,93 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DailyCardStack } from "@/components/daily-card-stack"
-import { CategoryCloud } from "@/components/category-cloud"
-import { TopicSearch } from "@/components/topic-search"
-import { DashboardStats } from "@/components/dashboard-stats"
-import type { CategoryType } from "@/lib/quiz-data"
+import { Calendar } from "@/components/calendar"
+import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { useAuth } from "@/components/auth/auth-provider"
-import { Header } from "@/components/header"
+import { UserMenu } from "@/components/auth/user-menu"
+import { dataService } from "@/lib/data-service"
+import Link from "next/link"
+
+
+type ViewMode = 'cards' | 'calendar'
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const { user } = useAuth()
+
+  useEffect(() => {
+    const loadTopics = async () => {
+      try {
+        const allTopics = await dataService.getAllTopics()
+        setTopicsList(Object.values(allTopics))
+      } catch (error) {
+        console.error('Failed to load topics:', error)
+      }
+    }
+    loadTopics()
+  }, [])
 
   const handleAuthSuccess = () => {
     setIsAuthDialogOpen(false)
   }
 
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+  }
+
   return (
-    <>
-      <main className="flex flex-col items-center min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 dark:from-slate-900 dark:to-slate-800 p-4 sm:p-6 md:p-8 selection:bg-primary/20">
-        <div className="w-full max-w-3xl mx-auto mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1"></div>
-            <div className="text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-2">
-                CivicSense
-              </h1>
-              <p className="text-lg text-slate-700 dark:text-slate-300">
-                Your daily dose of civic engagement.
-              </p>
-            </div>
-            <div className="flex-1 flex justify-end">
-              {user && (
-                <DashboardStats className="animate-in slide-in-from-right duration-500" />
-              )}
+    <>      
+      <main className="min-h-screen bg-white dark:bg-slate-950">
+        {/* Minimal header */}
+        <div className="border-b border-slate-100 dark:border-slate-900">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
+            <div className="flex items-center justify-between">
+              {/* Clean branding */}
+              <Link 
+                href="/" 
+                className="group hover:opacity-70 transition-opacity"
+              >
+                <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
+                  CivicSense
+                </h1>
+              </Link>
+              
+              {/* Minimal user menu */}
+              <UserMenu 
+                onSignInClick={() => setIsAuthDialogOpen(true)} 
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
             </div>
           </div>
-          <TopicSearch searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         </div>
 
-        <DailyCardStack
-          selectedCategory={selectedCategory}
-          searchQuery={searchQuery}
-          requireAuth={!user}
-          onAuthRequired={() => setIsAuthDialogOpen(true)}
-        />
-
-        <div className="w-full max-w-3xl mx-auto mt-8">
-          <CategoryCloud
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            className="flex justify-center"
-          />
-        </div>
-
-        <div className="w-full max-w-3xl mx-auto mt-8 flex justify-center">
-          <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
+        {/* Main content with tons of whitespace */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-8">
+          {viewMode === 'cards' ? (
+            <DailyCardStack 
+              selectedCategory={selectedCategory}
+              searchQuery={searchQuery}
+              requireAuth={false}
+              onAuthRequired={handleAuthSuccess}
+            />
+          ) : (
+            <div className="py-8 sm:py-16">
+              <Calendar 
+                topics={topicsList}
+                onDateSelect={handleDateSelect}
+                selectedDate={selectedDate}
+                className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-8"
+              />
+            </div>
+          )}
         </div>
 
         <AuthDialog

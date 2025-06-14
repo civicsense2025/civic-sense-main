@@ -8,6 +8,8 @@ import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { TopicInfo } from "@/components/quiz/topic-info"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AuthDialog } from "@/components/auth/auth-dialog"
+import { usePremium } from "@/hooks/usePremium"
+import { PremiumGate } from "@/components/premium-gate"
 import { dataService } from "@/lib/data-service"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 
@@ -21,15 +23,18 @@ export default function QuizPage({ params }: QuizPageProps) {
   const resolvedParams = use(params)
   const router = useRouter()
   const { user } = useAuth()
+  const { hasFeatureAccess, isPremium, isPro } = usePremium()
   const [topic, setTopic] = useState<TopicMetadata | null>(null)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showTopicInfo, setShowTopicInfo] = useState(true)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
+  const [showPremiumGate, setShowPremiumGate] = useState(false)
   const [quizAttempts, setQuizAttempts] = useState(0)
 
   const FREE_QUIZ_LIMIT = 3
+  const PREMIUM_QUIZ_LIMIT = 20 // Premium users get more quizzes per day
 
   useEffect(() => {
     // Load quiz attempts from localStorage
@@ -73,18 +78,27 @@ export default function QuizPage({ params }: QuizPageProps) {
   }, [resolvedParams.topicId])
 
   const handleStartQuiz = () => {
-    // Check if user needs to authenticate
+    // Check quiz limits based on user tier
     if (!user && quizAttempts >= FREE_QUIZ_LIMIT) {
       setIsAuthDialogOpen(true)
       return
     }
-
-    // Increment quiz attempts if not authenticated
-    if (!user) {
-      const newAttempts = quizAttempts + 1
-      setQuizAttempts(newAttempts)
-      localStorage.setItem("civicAppQuizAttempts", newAttempts.toString())
+    
+    if (user && !isPremium && !isPro && quizAttempts >= FREE_QUIZ_LIMIT) {
+      setShowPremiumGate(true)
+      return
     }
+    
+    if (user && (isPremium || isPro) && quizAttempts >= PREMIUM_QUIZ_LIMIT) {
+      // Even premium users have some limits to prevent abuse
+      alert("You've reached your daily quiz limit. Please try again tomorrow!")
+      return
+    }
+
+    // Increment quiz attempts
+    const newAttempts = quizAttempts + 1
+    setQuizAttempts(newAttempts)
+    localStorage.setItem("civicAppQuizAttempts", newAttempts.toString())
 
     setShowTopicInfo(false)
   }
@@ -120,7 +134,7 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg font-medium">Loading quiz...</p>
@@ -131,7 +145,7 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   if (error || !topic) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md mx-auto p-8">
           <h1 className="text-2xl font-bold mb-4">Quiz Not Found</h1>
           <p className="text-muted-foreground mb-6">{error || "The requested quiz could not be found."}</p>
@@ -145,57 +159,54 @@ export default function QuizPage({ params }: QuizPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 dark:from-slate-900 dark:to-slate-800">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-700">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={handleBackToHome}
-            className="flex items-center space-x-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Home</span>
-          </Button>
-          
-          <div className="text-center">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
-              CivicSense Quiz
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {topic.topic_title}
-            </p>
-          </div>
-          
-          <div className="w-24" /> {/* Spacer for centering */}
+    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
+      {/* Minimal navigation */}
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <button
+          onClick={handleBackToHome}
+          className="text-xs sm:text-sm font-medium tracking-wide transition-opacity opacity-70 hover:opacity-100"
+        >
+          ← Back to Home
+        </button>
+        
+        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-50 tracking-wide text-center">
+          Quiz {user && (isPremium || isPro) ? `(${quizAttempts}/${PREMIUM_QUIZ_LIMIT} today)` : `(${quizAttempts}/${FREE_QUIZ_LIMIT} today)`}
         </div>
+        
+        <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {showTopicInfo ? (
-          <TopicInfo
-            topicData={topic}
-            onStartQuiz={handleStartQuiz}
-            requireAuth={!user && quizAttempts >= FREE_QUIZ_LIMIT}
-            onAuthRequired={() => setIsAuthDialogOpen(true)}
+      {showTopicInfo ? (
+        <TopicInfo
+          topicData={topic}
+          onStartQuiz={handleStartQuiz}
+          requireAuth={!user && quizAttempts >= FREE_QUIZ_LIMIT}
+          onAuthRequired={() => setIsAuthDialogOpen(true)}
+        />
+      ) : (
+        <div className="bg-white dark:bg-slate-950">
+          <QuizEngine
+            questions={questions}
+            topicId={resolvedParams.topicId}
+            onComplete={handleQuizComplete}
           />
-        ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8">
-            <QuizEngine
-              questions={questions}
-              topicId={resolvedParams.topicId}
-              onComplete={handleQuizComplete}
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Auth Dialog */}
       <AuthDialog
         isOpen={isAuthDialogOpen}
         onClose={() => setIsAuthDialogOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Premium Gate */}
+      <PremiumGate
+        feature="advanced_analytics"
+        isOpen={showPremiumGate}
+        onClose={() => setShowPremiumGate(false)}
+        title="Unlimited Daily Quizzes"
+        description="Upgrade to Premium for unlimited daily quizzes and advanced learning features"
       />
     </div>
   )

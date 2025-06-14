@@ -76,6 +76,107 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setTimeout(() => setAnimateProgress(false), 300)
   }, [currentQuestionIndex])
 
+  // Keyboard shortcuts for quiz interaction
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't interfere with form inputs or if modifiers are pressed
+      if (event.target instanceof HTMLInputElement || 
+          event.target instanceof HTMLTextAreaElement ||
+          event.ctrlKey || event.metaKey || event.altKey) {
+        return
+      }
+
+      // If answer is already submitted, only allow next question navigation
+      if (isAnswerSubmitted) {
+        switch (event.key) {
+          case 'Enter':
+          case ' ': // Spacebar
+          case 'ArrowRight':
+          case 'n': // Next
+            event.preventDefault()
+            handleNextQuestion()
+            break
+          case '?':
+            event.preventDefault()
+            alert(`Quiz Keyboard Shortcuts:
+Enter / Space / → / n: Next question (after answering)
+?: Show this help`)
+            break
+        }
+        return
+      }
+
+      // Before submitting answer
+      switch (event.key) {
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+          if (currentQuestion.question_type === 'multiple_choice') {
+            event.preventDefault()
+            const options = ['A', 'B', 'C', 'D']
+            const selectedOption = options[parseInt(event.key) - 1]
+            if (selectedOption && currentQuestion[`option_${selectedOption.toLowerCase()}` as keyof QuizQuestion]) {
+              handleAnswerSelect(selectedOption)
+            }
+          }
+          break
+        case 't':
+        case 'T':
+          if (currentQuestion.question_type === 'true_false') {
+            event.preventDefault()
+            handleAnswerSelect('True')
+          }
+          break
+        case 'f':
+        case 'F':
+          if (currentQuestion.question_type === 'true_false') {
+            event.preventDefault()
+            handleAnswerSelect('False')
+          }
+          break
+        case 'Enter':
+          if (selectedAnswer) {
+            event.preventDefault()
+            handleSubmitAnswer()
+          }
+          break
+        case ' ': // Spacebar for hint
+          event.preventDefault()
+          setShowHint(!showHint)
+          break
+        case 'h':
+          event.preventDefault()
+          setShowHint(!showHint)
+          break
+        case '?':
+          event.preventDefault()
+          const helpText = currentQuestion.question_type === 'multiple_choice' 
+            ? `Quiz Keyboard Shortcuts:
+1-4: Select answer options A-D
+Enter: Submit answer
+Space / h: Toggle hint
+?: Show this help`
+            : currentQuestion.question_type === 'true_false'
+            ? `Quiz Keyboard Shortcuts:
+t: Select True
+f: Select False
+Enter: Submit answer
+Space / h: Toggle hint
+?: Show this help`
+            : `Quiz Keyboard Shortcuts:
+Enter: Submit answer
+Space / h: Toggle hint
+?: Show this help`
+          alert(helpText)
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentQuestion, selectedAnswer, isAnswerSubmitted, showHint])
+
   const handleTimeUp = () => {
     if (isAnswerSubmitted) return
     
@@ -245,35 +346,33 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header with progress and timer */}
-      <div className="mb-6">
+    <div className="flex flex-col h-full px-4 sm:px-8 py-4 sm:py-6">
+      {/* Compact header with progress and timer */}
+      <div className="mb-4 sm:mb-6">
         <div className="flex justify-between items-center mb-2">
           <div className="text-sm font-medium">
             Question {currentQuestionIndex + 1} of {questions.length}
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Streak indicator */}
             {streak > 0 && (
-              <div className="flex items-center space-x-1 text-sm font-medium text-orange-600 dark:text-orange-400">
-                <Zap className="h-4 w-4" />
-                <span>{streak} streak!</span>
+              <div className="flex items-center space-x-1 text-xs sm:text-sm font-medium text-orange-600 dark:text-orange-400">
+                <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span>{streak}</span>
               </div>
             )}
             
             {/* Timer */}
             <div className={cn(
-              "flex items-center space-x-2 px-3 py-1 rounded-full transition-all duration-300",
+              "flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-full transition-all duration-300",
               getTimerBgColor(),
               timeLeft <= 10 && "animate-pulse-glow"
             )}>
-              <Clock className={cn("h-4 w-4", getTimerColor())} />
-              <span className={cn("text-sm font-mono font-bold", getTimerColor())}>
+              <Clock className={cn("h-3 w-3 sm:h-4 sm:w-4", getTimerColor())} />
+              <span className={cn("text-xs sm:text-sm font-mono font-bold", getTimerColor())}>
                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
               </span>
             </div>
-            
-            <div className="text-sm font-medium">Category: {currentQuestion.category}</div>
           </div>
         </div>
         
@@ -282,23 +381,23 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           <Progress 
             value={progress} 
             className={cn(
-              "h-3 transition-all duration-500 ease-out",
+              "h-2 sm:h-3 transition-all duration-500 ease-out",
               animateProgress && "scale-105"
             )} 
           />
           {/* Progress glow effect */}
           <div 
-            className="absolute top-0 left-0 h-3 bg-gradient-to-r from-primary/50 to-transparent rounded-full transition-all duration-500"
+            className="absolute top-0 left-0 h-2 sm:h-3 bg-gradient-to-r from-primary/50 to-transparent rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       <div className="flex-grow">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 sm:mb-8">
+          <div className="flex items-start justify-between">
             <h3 className={cn(
-              "text-3xl font-bold mb-4 transition-all duration-300 leading-tight",
+              "text-xl sm:text-3xl font-bold mb-4 transition-all duration-300 leading-tight pr-2",
               showFeedback && "scale-105"
             )}>
               {currentQuestion.question}
@@ -311,11 +410,11 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
                     size="icon" 
                     onClick={() => setShowHint(!showHint)} 
                     className={cn(
-                      "ml-2 transition-all duration-200 hover:scale-110",
+                      "ml-2 transition-all duration-200 hover:scale-110 flex-shrink-0",
                       showHint && "bg-blue-100 dark:bg-blue-900/20"
                     )}
                   >
-                    <HelpCircle className="h-5 w-5" />
+                    <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="sr-only">Show hint</span>
                   </Button>
                 </TooltipTrigger>
@@ -342,67 +441,45 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           {renderQuestion()}
         </div>
 
-        {/* Animated feedback */}
+        {/* Simplified feedback for mobile */}
         {isAnswerSubmitted && (
-          <div className="mt-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-4 sm:mt-6 animate-in slide-in-from-bottom-4 duration-500">
             <div className={cn(
               "p-4 rounded-xl border-l-4 transition-all duration-300",
               selectedAnswer === currentQuestion.correct_answer 
                 ? "bg-green-50 dark:bg-green-900/20 border-green-500" 
                 : "bg-red-50 dark:bg-red-900/20 border-red-500"
             )}>
-              <p className="font-semibold mb-2 flex items-center">
+              <p className="font-semibold mb-2 flex items-center text-sm sm:text-base">
                 {selectedAnswer === currentQuestion.correct_answer ? (
                   <>
-                    <span className="text-2xl mr-2 animate-bounce">🎉</span>
+                    <span className="text-xl sm:text-2xl mr-2 animate-bounce">🎉</span>
                     <span className="text-green-700 dark:text-green-300">Correct!</span>
-                    {timeLeft > 45 && <span className="ml-2 text-sm text-green-600">⚡ Lightning fast!</span>}
+                    {timeLeft > 45 && <span className="ml-2 text-xs sm:text-sm text-green-600">⚡ Fast!</span>}
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl mr-2">😔</span>
+                    <span className="text-xl sm:text-2xl mr-2">😔</span>
                     <span className="text-red-700 dark:text-red-300">
                       {timeLeft === 0 ? "Time's up!" : "Incorrect"}
                     </span>
                   </>
                 )}
               </p>
-              <p className="text-sm mb-4">{currentQuestion.explanation}</p>
-
-              {/* Show sources with animation */}
-              {currentQuestion.sources.length > 0 && (
-                <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-3 animate-in fade-in duration-700 delay-300">
-                  <p className="text-xs font-medium mb-2">📚 Learn more:</p>
-                  <div className="space-y-2 text-sm">
-                    {currentQuestion.sources.map((source, index) => (
-                      <div key={index} className="flex items-center animate-in slide-in-from-left duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-                        <a
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline flex items-center text-xs transition-all duration-200 hover:scale-105"
-                        >
-                          {source.name}
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="text-sm mb-3 leading-relaxed">{currentQuestion.explanation}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Action buttons with animations */}
-      <div className="mt-6 flex justify-end">
+      <div className="mt-4 sm:mt-6 flex justify-end">
         {!isAnswerSubmitted ? (
           <Button 
             onClick={handleSubmitAnswer} 
             disabled={!selectedAnswer || timeLeft === 0} 
             className={cn(
-              "rounded-xl transition-all duration-200 hover:scale-105",
+              "rounded-full px-6 sm:px-8 py-2 sm:py-3 transition-all duration-200 hover:scale-105",
               selectedAnswer && "bg-primary/90 shadow-lg"
             )}
           >
@@ -411,12 +488,34 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         ) : (
           <Button 
             onClick={handleNextQuestion} 
-            className="rounded-xl transition-all duration-200 hover:scale-105 animate-in slide-in-from-right duration-300"
+            className="rounded-full px-6 sm:px-8 py-2 sm:py-3 transition-all duration-200 hover:scale-105 animate-in slide-in-from-right duration-300"
           >
             {isLastQuestion ? "See Results" : "Next Question"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         )}
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div className="mt-4 text-center">
+        <p className="text-xs text-slate-300 dark:text-slate-600">
+          {currentQuestion.question_type === 'multiple_choice' && !isAnswerSubmitted && (
+            <>Use <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">1-4</kbd> to select, </>
+          )}
+          {currentQuestion.question_type === 'true_false' && !isAnswerSubmitted && (
+            <>Use <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">T</kbd>/<kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">F</kbd> to select, </>
+          )}
+          {!isAnswerSubmitted ? (
+            <>
+              <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Enter</kbd> to submit, <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Space</kbd> for hint
+            </>
+          ) : (
+            <>
+              <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Enter</kbd> for next question
+            </>
+          )}
+          , <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">?</kbd> for help
+        </p>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { topicOperations, questionOperations, categoryOperations } from './datab
 import { mockTopicsData, mockQuestionsData } from './mock-data'
 import type { TopicMetadata, QuizQuestion } from './quiz-data'
 import { allCategories } from './quiz-data'
+import { cleanObjectContent } from './utils'
 
 // Cache for database availability check
 let isDatabaseAvailable: boolean | null = null
@@ -48,7 +49,7 @@ async function checkDatabaseAvailability(): Promise<boolean> {
  * Convert database topic to app format
  */
 function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
-  return {
+  const topic = {
     topic_id: dbTopic.topic_id,
     topic_title: dbTopic.topic_title,
     description: dbTopic.description,
@@ -58,6 +59,9 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
     dayOfWeek: dbTopic.day_of_week,
     categories: Array.isArray(dbTopic.categories) ? dbTopic.categories : [],
   }
+  
+  // Clean any citation strings from the content
+  return cleanObjectContent(topic)
 }
 
 /**
@@ -91,9 +95,9 @@ export const dataService = {
       console.error('Database availability check failed:', error)
     }
     
-    // Fallback to mock data
+    // Fallback to mock data (also clean it)
     console.log(`📋 Using mock data: ${Object.keys(mockTopicsData).length} topics`)
-    return mockTopicsData
+    return cleanObjectContent(mockTopicsData)
   },
 
   /**
@@ -111,8 +115,9 @@ export const dataService = {
       }
     }
     
-    // Fallback to mock data
-    return mockTopicsData[topicId] || null
+    // Fallback to mock data (also clean it)
+    const topic = mockTopicsData[topicId] || null
+    return topic ? cleanObjectContent(topic) : null
   },
 
   /**
@@ -124,14 +129,17 @@ export const dataService = {
     if (isDbAvailable) {
       try {
         const dbQuestions = await questionOperations.getByTopic(topicId)
-        return dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        const questions = dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        // Clean citation strings from questions
+        return cleanObjectContent(questions)
       } catch (error) {
         console.error('Error fetching questions from database:', error)
       }
     }
     
-    // Fallback to mock data
-    return mockQuestionsData[topicId] || []
+    // Fallback to mock data (also clean it)
+    const questions = mockQuestionsData[topicId] || []
+    return cleanObjectContent(questions)
   },
 
   /**
@@ -162,8 +170,8 @@ export const dataService = {
       }
     }
     
-    // Fallback to mock data
-    return mockQuestionsData
+    // Fallback to mock data (also clean it)
+    return cleanObjectContent(mockQuestionsData)
   },
 
   /**

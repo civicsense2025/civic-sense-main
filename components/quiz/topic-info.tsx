@@ -13,17 +13,15 @@ interface TopicInfoProps {
 
 export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthRequired }: TopicInfoProps) {
   return (
-    <div className="flex flex-col h-full">
-      <div className="mb-6">
-        <h2 className="text-4xl font-bold mb-6 leading-tight">{topicData.topic_title}</h2>
-        <p className="mb-6 text-slate-700 dark:text-slate-300">{topicData.description}</p>
-
-        <div className="mb-6 bg-slate-100 dark:bg-slate-800 p-6 rounded-xl">
-          <h3 className="text-lg font-semibold mb-3 flex items-center">
-            <span className="text-primary mr-2">🔍</span> Why This Matters To You
+    <div className="flex flex-col h-full px-4 sm:px-8 py-8">
+      <div className="mb-8">
+        <div className="bg-slate-50 dark:bg-slate-900 p-6 sm:p-8 rounded-2xl">
+          <h3 className="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+            <span className="text-2xl mr-3">{topicData.emoji}</span> 
+            Why This Matters
           </h3>
           <div
-            className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300"
+            className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: topicData.why_this_matters }}
           />
         </div>
@@ -31,11 +29,11 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
 
       <div className="mt-auto">
         {requireAuth ? (
-          <Button onClick={onAuthRequired} className="w-full rounded-xl">
+          <Button onClick={onAuthRequired} className="w-full py-3 sm:py-4 text-base font-medium rounded-full">
             Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={onStartQuiz} className="w-full rounded-xl">
+          <Button onClick={onStartQuiz} className="w-full py-3 sm:py-4 text-base font-medium rounded-full">
             Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         )}

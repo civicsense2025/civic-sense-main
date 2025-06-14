@@ -27,11 +27,23 @@ export function ShortAnswerQuestion({
   
   const isCorrect = isSubmitted && inputValue.toLowerCase().trim() === question.correct_answer.toLowerCase().trim()
 
+  // Clear input when moving to a new question (selectedAnswer becomes null)
   useEffect(() => {
-    if (selectedAnswer) {
+    if (selectedAnswer === null) {
+      setInputValue("")
+    } else if (selectedAnswer) {
       setInputValue(selectedAnswer)
     }
   }, [selectedAnswer])
+
+  // Clear input when question changes (additional safety)
+  useEffect(() => {
+    setInputValue("")
+    setIsTyping(false)
+    if (typingTimeout) {
+      clearTimeout(typingTimeout)
+    }
+  }, [question.question_number])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -70,11 +82,17 @@ export function ShortAnswerQuestion({
           placeholder="Type your answer here..."
           className={cn(
             "p-6 text-lg transition-all duration-300 border-2",
+            // Make input more visible by default
+            !isSubmitted && !isFocused && "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900",
+            // Enhanced focus state
+            !isSubmitted && isFocused && "border-primary bg-blue-50 dark:bg-blue-950/30 scale-105 shadow-lg ring-2 ring-blue-200 dark:ring-blue-800",
+            // With input value but not focused
+            !isSubmitted && !isFocused && inputValue && "border-blue-400 bg-blue-50/50 dark:bg-blue-900/20",
+            // Hover state when empty
+            !isSubmitted && !isFocused && !inputValue && "hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-101",
+            // Submitted states
             isSubmitted && isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
             isSubmitted && !isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
-            !isSubmitted && isFocused && "border-primary scale-105 shadow-lg",
-            !isSubmitted && !isFocused && inputValue && "border-blue-300 bg-blue-50/50 dark:bg-blue-900/10",
-            !isSubmitted && !isFocused && !inputValue && "hover:border-slate-400 hover:scale-101",
           )}
         />
         
@@ -82,9 +100,9 @@ export function ShortAnswerQuestion({
         {isTyping && !isSubmitted && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary rounded-full opacity-60" />
-              <div className="w-2 h-2 bg-primary rounded-full opacity-80" />
-              <div className="w-2 h-2 bg-primary rounded-full opacity-100" />
+              <div className="w-2 h-2 bg-primary rounded-full opacity-60 animate-pulse" />
+              <div className="w-2 h-2 bg-primary rounded-full opacity-80 animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div className="w-2 h-2 bg-primary rounded-full opacity-100 animate-pulse" style={{ animationDelay: '0.4s' }} />
             </div>
           </div>
         )}
