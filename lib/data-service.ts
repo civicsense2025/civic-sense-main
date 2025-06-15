@@ -4,6 +4,7 @@ import { topicOperations, questionOperations, categoryOperations } from './datab
 import { mockTopicsData, mockQuestionsData } from './mock-data'
 import type { TopicMetadata, QuizQuestion } from './quiz-data'
 import { allCategories } from './quiz-data'
+import { cleanObjectContent } from './utils'
 
 // Cache for database availability check
 let isDatabaseAvailable: boolean | null = null
@@ -48,7 +49,7 @@ async function checkDatabaseAvailability(): Promise<boolean> {
  * Convert database topic to app format
  */
 function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
-  return {
+  const topic = {
     topic_id: dbTopic.topic_id,
     topic_title: dbTopic.topic_title,
     description: dbTopic.description,
@@ -58,6 +59,9 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
     dayOfWeek: dbTopic.day_of_week,
     categories: Array.isArray(dbTopic.categories) ? dbTopic.categories : [],
   }
+  
+  // Clean any citation strings from the content
+  return cleanObjectContent(topic)
 }
 
 /**
@@ -68,20 +72,33 @@ export const dataService = {
    * Get all topics
    */
   async getAllTopics(): Promise<Record<string, TopicMetadata>> {
+    console.log(`🔄 getAllTopics called`)
     try {
+      console.log(`🔍 Checking database availability...`)
       const isDbAvailable = await checkDatabaseAvailability()
+      console.log(`📊 Database available: ${isDbAvailable}`)
       
       if (isDbAvailable) {
+        console.log(`🔄 Attempting to fetch from database...`)
         try {
           const dbTopics = await topicOperations.getAll()
           const topicsRecord: Record<string, TopicMetadata> = {}
           
           dbTopics.forEach(dbTopic => {
+            // Strict date filtering - only include topics with valid dates
+            if (!dbTopic.date || 
+                dbTopic.date === null || 
+                dbTopic.date === undefined ||
+                (typeof dbTopic.date === 'string' && dbTopic.date.trim() === '')) {
+              console.warn(`Excluding topic "${dbTopic.topic_title}" - invalid or missing date: ${dbTopic.date}`)
+              return
+            }
+            
             const appTopic = dbTopicToAppFormat(dbTopic)
             topicsRecord[appTopic.topic_id] = appTopic
           })
           
-          console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics from database`)
+          console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics from database (excluded topics with invalid dates)`)
           return topicsRecord
         } catch (error) {
           console.error('Error fetching topics from database:', error)
@@ -91,9 +108,35 @@ export const dataService = {
       console.error('Database availability check failed:', error)
     }
     
-    // Fallback to mock data
-    console.log(`📋 Using mock data: ${Object.keys(mockTopicsData).length} topics`)
-    return mockTopicsData
+    // Fallback to mock data (also filter strictly)
+    console.log(`🔄 Falling back to mock data...`)
+    console.log(`📦 Mock data keys:`, Object.keys(mockTopicsData))
+    console.log(`📦 Mock data sample:`, Object.values(mockTopicsData).slice(0, 2))
+    
+    const filteredMockData: Record<string, TopicMetadata> = {}
+    Object.entries(mockTopicsData).forEach(([topicId, topic]) => {
+      console.log(`🔍 Checking mock topic "${topic.topic_title}":`, {
+        date: topic.date,
+        dateType: typeof topic.date,
+        hasDate: !!topic.date,
+        isValidString: typeof topic.date === 'string' && topic.date.trim() !== ''
+      })
+      
+      // Strict filtering for mock data too
+      if (topic.date && 
+          topic.date !== null && 
+          topic.date !== undefined && 
+          !(typeof topic.date === 'string' && topic.date.trim() === '')) {
+        filteredMockData[topicId] = topic
+        console.log(`✅ Including mock topic "${topic.topic_title}"`)
+      } else {
+        console.warn(`❌ Excluding mock topic "${topic.topic_title}" - invalid or missing date: ${topic.date}`)
+      }
+    })
+    
+    console.log(`📋 Using mock data: ${Object.keys(filteredMockData).length} topics (excluded topics with invalid dates)`)
+    console.log(`📋 Final filtered mock data:`, filteredMockData)
+    return cleanObjectContent(filteredMockData)
   },
 
   /**
@@ -111,27 +154,48 @@ export const dataService = {
       }
     }
     
-    // Fallback to mock data
-    return mockTopicsData[topicId] || null
+    // Fallback to mock data (also clean it)
+    const topic = mockTopicsData[topicId] || null
+    return topic ? cleanObjectContent(topic) : null
   },
 
   /**
    * Get questions for a topic
    */
   async getQuestionsByTopic(topicId: string): Promise<QuizQuestion[]> {
+    console.log(`=== FETCHING QUESTIONS FOR TOPIC: ${topicId} ===`)
     const isDbAvailable = await checkDatabaseAvailability()
     
     if (isDbAvailable) {
       try {
+        console.log(`Fetching questions from database for topic: ${topicId}`)
         const dbQuestions = await questionOperations.getByTopic(topicId)
-        return dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        console.log(`Database returned ${dbQuestions.length} questions for topic ${topicId}`)
+        
+        const questions = dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        
+        // Log question details for debugging
+        console.log(`Converted questions:`, questions.map(q => ({
+          topic_id: q.topic_id,
+          question_number: q.question_number,
+          question_type: q.question_type,
+          question_preview: q.question.slice(0, 50) + '...'
+        })))
+        
+        // Clean citation strings from questions
+        const cleanedQuestions = cleanObjectContent(questions)
+        console.log(`Final cleaned questions count: ${cleanedQuestions.length}`)
+        return cleanedQuestions
       } catch (error) {
         console.error('Error fetching questions from database:', error)
       }
     }
     
-    // Fallback to mock data
-    return mockQuestionsData[topicId] || []
+    // Fallback to mock data (also clean it)
+    console.log(`Using mock data for topic: ${topicId}`)
+    const questions = mockQuestionsData[topicId] || []
+    console.log(`Mock data returned ${questions.length} questions for topic ${topicId}`)
+    return cleanObjectContent(questions)
   },
 
   /**
@@ -162,8 +226,8 @@ export const dataService = {
       }
     }
     
-    // Fallback to mock data
-    return mockQuestionsData
+    // Fallback to mock data (also clean it)
+    return cleanObjectContent(mockQuestionsData)
   },
 
   /**

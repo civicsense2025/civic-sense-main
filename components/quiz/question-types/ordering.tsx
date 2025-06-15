@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { QuizQuestion } from '@/lib/quiz-data'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, shuffleArray } from '@/lib/utils'
 import { CheckCircle, XCircle, GripVertical, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface OrderingQuestionProps {
@@ -29,10 +29,9 @@ export function OrderingQuestion({
 }: OrderingQuestionProps) {
   const originalItems = question.ordering_items || []
   
-  // Initialize items with shuffled positions
+  // Initialize items with shuffled positions using Fisher-Yates algorithm
   const [items, setItems] = useState<OrderingItem[]>(() => {
-    const shuffled = [...originalItems]
-      .sort(() => Math.random() - 0.5)
+    const shuffled = shuffleArray([...originalItems])
       .map((item, index) => ({
         ...item,
         currentPosition: index + 1
@@ -96,8 +95,7 @@ export function OrderingQuestion({
   }, [items, originalItems, onAnswer])
 
   const handleReset = useCallback(() => {
-    const shuffled = [...originalItems]
-      .sort(() => Math.random() - 0.5)
+    const shuffled = shuffleArray([...originalItems])
       .map((item, index) => ({
         ...item,
         currentPosition: index + 1
@@ -144,7 +142,7 @@ export function OrderingQuestion({
                   </div>
                   
                   {/* Drag Handle */}
-                  <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-600 dark:text-slate-300 flex-shrink-0" />
                   
                   {/* Content */}
                   <div className="flex-1 text-sm">

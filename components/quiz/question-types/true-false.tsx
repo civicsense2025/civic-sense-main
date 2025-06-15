@@ -3,8 +3,9 @@
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { cn, shuffleArray } from "@/lib/utils"
+import { useState, useMemo, useEffect } from "react"
+import { AudioControls } from "../audio-controls"
 
 interface TrueFalseQuestionProps {
   question: QuizQuestion
@@ -15,90 +16,174 @@ interface TrueFalseQuestionProps {
 
 export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSelectAnswer }: TrueFalseQuestionProps) {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
+  const [keyboardHighlight, setKeyboardHighlight] = useState<string | null>(null)
 
-  const options = [
-    { id: "true", label: "True", emoji: "✅" },
-    { id: "false", label: "False", emoji: "❌" },
-  ]
+  // Randomize True/False order once per question
+  const randomizedOptions = useMemo(() => {
+    const options = [
+      { id: "True", label: "True", emoji: "✅", key: "T" },
+      { id: "False", label: "False", emoji: "❌", key: "F" },
+    ]
+    
+    // Shuffle the options to randomize their order
+    return shuffleArray(options)
+  }, [question.question]) // Re-randomize when question changes
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isSubmitted || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      const key = event.key.toUpperCase()
+      if (key === 'T' || key === 'F') {
+        event.preventDefault()
+        const option = randomizedOptions.find(opt => opt.key === key)
+        if (option) {
+          setKeyboardHighlight(option.id)
+          onSelectAnswer(option.id)
+          
+          // Clear highlight after a short delay
+          setTimeout(() => setKeyboardHighlight(null), 200)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [randomizedOptions, isSubmitted, onSelectAnswer])
+
+  const handleOptionClick = (optionId: string) => {
+    if (isSubmitted) {
+      console.log('True/false click blocked: already submitted')
+      return
+    }
+    console.log('True/false option clicked:', optionId)
+    onSelectAnswer(optionId)
+  }
 
   return (
     <RadioGroup value={selectedAnswer || ""} onValueChange={onSelectAnswer} className="space-y-4">
-      {options.map((option, index) => {
-        const isCorrect = isSubmitted && option.id === question.correct_answer
-        const isIncorrect = isSubmitted && selectedAnswer === option.id && option.id !== question.correct_answer
+      {randomizedOptions.map((option, index) => {
+        const isCorrect = isSubmitted && option.id.toLowerCase() === question.correct_answer.toLowerCase()
+        const isIncorrect = isSubmitted && selectedAnswer === option.id && option.id.toLowerCase() !== question.correct_answer.toLowerCase()
         const isSelected = selectedAnswer === option.id
         const isHovered = hoveredOption === option.id
+        const isKeyboardHighlighted = keyboardHighlight === option.id
 
         return (
           <div
             key={option.id}
             className={cn(
-              "flex items-center space-x-3 rounded-xl border-2 p-6 transition-all duration-300 cursor-pointer group",
+              "flex items-center rounded-xl border-2 p-6 transition-all duration-300 cursor-pointer group relative",
               "animate-in slide-in-from-left duration-300",
               isSubmitted && "cursor-default",
               isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20 scale-105 shadow-lg",
-              isIncorrect && "border-red-500 bg-red-50 dark:bg-red-900/20 scale-95",
-              !isSubmitted && isSelected && "border-primary bg-primary/5 scale-102 shadow-md",
+              isIncorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
+              !isSubmitted && isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-102 shadow-md",
               !isSubmitted && !isSelected && isHovered && "bg-slate-50 dark:bg-slate-800/50 scale-101 shadow-sm",
               !isSubmitted && !isSelected && !isHovered && "hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-101",
+              isKeyboardHighlighted && "ring-2 ring-blue-400 ring-opacity-75"
             )}
-            style={{ animationDelay: `${index * 150}ms` }}
+            style={{ 
+              animationDelay: `${index * 150}ms`,
+              animationFillMode: 'both'
+            }}
             onMouseEnter={() => !isSubmitted && setHoveredOption(option.id)}
             onMouseLeave={() => setHoveredOption(null)}
-            onClick={() => !isSubmitted && onSelectAnswer(option.id)}
+            onClick={() => handleOptionClick(option.id)}
           >
+            {/* Number indicator on the left */}
+            <div className={cn(
+              "flex items-center justify-center w-10 h-10 rounded-full border-2 mr-4 transition-all duration-200 flex-shrink-0",
+              isSelected && !isSubmitted && "bg-blue-500 border-blue-500 text-white scale-110",
+              !isSelected && !isSubmitted && "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400",
+              isSubmitted && "opacity-50",
+              isCorrect && "bg-green-500 border-green-500 text-white scale-110",
+              isIncorrect && "bg-red-500 border-red-500 text-white",
+              isHovered && !isSubmitted && !isSelected && "border-blue-400 text-blue-600 dark:text-blue-400 scale-105",
+              isKeyboardHighlighted && "ring-2 ring-blue-400 ring-opacity-75"
+            )}>
+              <span className="text-sm font-bold">
+                {index + 1}
+              </span>
+            </div>
+
             {/* Large emoji indicator */}
             <div className={cn(
-              "text-4xl transition-all duration-300",
+              "text-4xl transition-all duration-300 mr-4",
               isSelected && !isSubmitted && "scale-125",
               isHovered && !isSubmitted && "scale-110",
-              isCorrect && "animate-bounce",
             )}>
               {option.emoji}
             </div>
 
+            {/* Hidden radio input for accessibility */}
             <RadioGroupItem
               value={option.id}
               id={option.id}
               disabled={isSubmitted}
-              className={cn(
-                "transition-all duration-200",
-                isCorrect && "text-green-500 border-green-500 scale-110",
-                isIncorrect && "text-red-500 border-red-500",
-                isSelected && !isSubmitted && "scale-110",
-                isHovered && !isSubmitted && "scale-105",
-              )}
+              className="sr-only"
             />
             
-            <Label
-              htmlFor={option.id}
-              className={cn(
-                "flex-grow cursor-pointer text-lg font-medium transition-all duration-200",
-                isCorrect && "text-green-700 dark:text-green-300",
-                isIncorrect && "text-red-700 dark:text-red-300",
-                isSubmitted && "cursor-default",
-                isSelected && !isSubmitted && "text-primary font-bold",
-                isHovered && !isSubmitted && "text-primary",
-              )}
-            >
-              {option.label}
-            </Label>
+            {/* Option text with audio controls */}
+            <div className="flex-grow flex items-center justify-between">
+              <Label
+                htmlFor={option.id}
+                className={cn(
+                  "cursor-pointer text-xl sm:text-2xl md:text-3xl font-medium transition-all duration-200 text-left flex-grow leading-relaxed",
+                  isCorrect && "text-green-700 dark:text-green-300",
+                  isIncorrect && "text-red-700 dark:text-red-300",
+                  isSubmitted && "cursor-default",
+                  isSelected && !isSubmitted && "text-blue-600 dark:text-blue-400 font-bold",
+                  isHovered && !isSubmitted && "text-blue-600 dark:text-blue-400",
+                )}
+              >
+                {option.label}
+              </Label>
+              
+              {/* Audio controls for this option */}
+              <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <AudioControls 
+                  text={option.label}
+                  variant="minimal"
+                  label={`${option.label} option`}
+                />
+              </div>
+            </div>
             
-            {/* Animated feedback icons */}
+            {/* Clean feedback indicators */}
             {isCorrect && (
-              <span className="text-green-600 text-2xl animate-in zoom-in duration-500 delay-200">
-                🎉
-              </span>
+              <div className="flex items-center text-green-600 ml-4">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+              </div>
             )}
             {isIncorrect && (
-              <span className="text-red-600 text-2xl animate-in zoom-in duration-500 delay-200">
-                💔
-              </span>
+              <div className="flex items-center text-red-600 ml-4">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✗</span>
+                </div>
+              </div>
             )}
             
-            {/* Selection indicator */}
+            {/* Selection indicator for non-submitted answers */}
             {isSelected && !isSubmitted && (
-              <div className="w-3 h-3 bg-primary rounded-full opacity-80" />
+              <div className="w-3 h-3 bg-blue-500 rounded-full opacity-80 ml-4" />
+            )}
+
+            {/* Keyboard shortcut hint */}
+            {!isSubmitted && (
+              <div className={cn(
+                "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden md:block",
+                isSelected && "opacity-100"
+              )}>
+                <kbd className="px-1.5 py-0.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded border">
+                  {option.key}
+                </kbd>
+              </div>
             )}
           </div>
         )

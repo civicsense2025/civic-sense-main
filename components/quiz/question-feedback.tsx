@@ -13,8 +13,9 @@ import { questionFeedbackOperations } from "@/lib/database"
 import { useToast } from "@/components/ui/use-toast"
 
 interface QuestionFeedbackProps {
-  questionId: string
+  questionId: string // This will be the question number as string
   questionText: string
+  topicId: string // Add topicId prop
   className?: string
 }
 
@@ -42,7 +43,7 @@ const REPORT_REASONS = [
   { value: 'other', label: 'Other', description: 'Something else is wrong' }
 ]
 
-export function QuestionFeedback({ questionId, questionText, className }: QuestionFeedbackProps) {
+export function QuestionFeedback({ questionId, questionText, topicId, className }: QuestionFeedbackProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const [stats, setStats] = useState<FeedbackStats | null>(null)
@@ -55,12 +56,31 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
 
   // Load feedback data
   useEffect(() => {
-    if (!questionId) return
+    if (!questionId) {
+      console.warn('QuestionFeedback: No questionId provided')
+      return
+    }
+
+    if (typeof questionId !== 'string' || questionId.trim() === '') {
+      console.warn('QuestionFeedback: Invalid questionId:', questionId)
+      return
+    }
 
     const loadFeedbackData = async () => {
       try {
-        // Load stats
-        const statsData = await questionFeedbackOperations.getQuestionStats(questionId)
+        console.log('Loading feedback data for question:', questionId, 'topic:', topicId)
+        
+        // Convert questionId to number for the database lookup
+        const questionNumber = parseInt(questionId, 10)
+        if (isNaN(questionNumber)) {
+          console.error('Invalid question number:', questionId)
+          return
+        }
+        
+        // Load stats using topic ID and question number
+        const statsData = await questionFeedbackOperations.getQuestionStatsByNumber(topicId, questionNumber)
+        console.log('Stats data received:', statsData)
+        
         if (statsData) {
           setStats({
             thumbs_up_count: statsData.thumbs_up_count || 0,
@@ -69,11 +89,23 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
             rating_percentage: statsData.rating_percentage,
             total_reports: statsData.total_reports || 0
           })
+        } else {
+          // Set default stats if no data exists
+          setStats({
+            thumbs_up_count: 0,
+            thumbs_down_count: 0,
+            total_ratings: 0,
+            rating_percentage: null,
+            total_reports: 0
+          })
         }
 
         // Load user's feedback if logged in
         if (user) {
-          const userFeedbackData = await questionFeedbackOperations.getUserFeedback(questionId, user.id)
+          console.log('Loading user feedback for user:', user.id)
+          const userFeedbackData = await questionFeedbackOperations.getUserFeedbackByNumber(topicId, questionNumber, user.id)
+          console.log('User feedback data received:', userFeedbackData)
+          
           const rating = userFeedbackData.find(f => f.feedback_type === 'rating')
           const report = userFeedbackData.find(f => f.feedback_type === 'report')
           
@@ -84,6 +116,23 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
         }
       } catch (error) {
         console.error('Error loading feedback data:', error)
+        // Log more detailed error information
+        if (error instanceof Error) {
+          console.error('Error message:', error.message)
+          console.error('Error stack:', error.stack)
+        } else {
+          console.error('Unknown error type:', typeof error, error)
+        }
+        
+        // Set default values on error to prevent component from breaking
+        setStats({
+          thumbs_up_count: 0,
+          thumbs_down_count: 0,
+          total_ratings: 0,
+          rating_percentage: null,
+          total_reports: 0
+        })
+        setUserFeedback({ hasReported: false })
       }
     }
 
@@ -103,9 +152,16 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
     try {
       setIsSubmitting(true)
       
+      // Convert questionId to number for the database lookup
+      const questionNumber = parseInt(questionId, 10)
+      if (isNaN(questionNumber)) {
+        console.error('Invalid question number:', questionId)
+        return
+      }
+      
       // If user already rated the same way, remove the rating
       if (userFeedback.rating === rating) {
-        await questionFeedbackOperations.deleteFeedback(questionId, user.id, 'rating')
+        await questionFeedbackOperations.deleteFeedbackByNumber(topicId, questionNumber, user.id, 'rating')
         setUserFeedback(prev => ({ ...prev, rating: undefined }))
         
         // Update stats optimistically
@@ -123,7 +179,7 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
         })
       } else {
         // Submit new rating
-        await questionFeedbackOperations.submitRating(questionId, user.id, rating)
+        await questionFeedbackOperations.submitRatingByNumber(topicId, questionNumber, user.id, rating)
         const oldRating = userFeedback.rating
         setUserFeedback(prev => ({ ...prev, rating }))
         
@@ -144,6 +200,11 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
       }
     } catch (error) {
       console.error('Error submitting rating:', error)
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error('Rating error message:', error.message)
+      }
+      
       toast({
         title: "Error",
         description: "Failed to submit rating. Please try again.",
@@ -176,8 +237,16 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
     try {
       setIsSubmitting(true)
       
-      await questionFeedbackOperations.submitReport(
-        questionId, 
+      // Convert questionId to number for the database lookup
+      const questionNumber = parseInt(questionId, 10)
+      if (isNaN(questionNumber)) {
+        console.error('Invalid question number:', questionId)
+        return
+      }
+      
+      await questionFeedbackOperations.submitReportByNumber(
+        topicId,
+        questionNumber, 
         user.id, 
         reportReason, 
         reportDetails.trim() || undefined
@@ -199,6 +268,11 @@ export function QuestionFeedback({ questionId, questionText, className }: Questi
       })
     } catch (error) {
       console.error('Error submitting report:', error)
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error('Report error message:', error.message)
+      }
+      
       toast({
         title: "Error",
         description: "Failed to submit report. Please try again.",
