@@ -92,7 +92,9 @@ export function QuestionFeedbackDisplay({
       <div className={cn(
         "p-5 rounded-xl border transition-all duration-300",
         feedback.bgClass
-      )}>
+      )}
+        data-audio-content="true"
+      >
         <div className="text-center space-y-4">
           {/* Result emoji and text */}
           <div className="space-y-3">
