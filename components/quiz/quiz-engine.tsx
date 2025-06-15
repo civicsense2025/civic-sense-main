@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { QuizResults } from "./quiz-results"
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice"
 import { TrueFalseQuestion } from "./question-types/true-false"
-import { ShortAnswerQuestion } from "./question-types/short-answer"
+import { ShortAnswerQuestion, checkAnswerIntelligently, checkAnswerDetailed } from "./question-types/short-answer"
 import { FillInBlankQuestion } from "./question-types/fill-in-blank"
 import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
@@ -74,6 +74,109 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
   console.log(`Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
   return uniqueQuestions
 }
+
+// Memoized components to prevent unnecessary re-renders
+const MemoizedQuestionDisplay = memo(({ 
+  question, 
+  showHint 
+}: { 
+  question: QuizQuestion
+  showHint: boolean 
+}) => (
+  <>
+    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {question.question}
+    </h1>
+    
+    {/* Hint - clean and minimal with animation */}
+    {showHint && (
+      <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 border border-slate-100 dark:border-slate-800">
+          <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+            💡 {question.hint}
+          </p>
+        </div>
+      </div>
+    )}
+  </>
+))
+
+MemoizedQuestionDisplay.displayName = 'MemoizedQuestionDisplay'
+
+// Memoized boost buttons
+const MemoizedBoostButtons = memo(({
+  boostEffects,
+  timeFrozen,
+  answerRevealUsed,
+  hasUsedSecondChance,
+  isAnswerSubmitted,
+  questionType,
+  onUseTimeFreeze,
+  onUseAnswerReveal,
+  onUseSecondChance
+}: {
+  boostEffects: BoostEffects
+  timeFrozen: boolean
+  answerRevealUsed: boolean
+  hasUsedSecondChance: boolean
+  isAnswerSubmitted: boolean
+  questionType: string
+  onUseTimeFreeze: () => void
+  onUseAnswerReveal: () => void
+  onUseSecondChance: () => void
+}) => {
+  if (!boostEffects.timeFreezeAvailable && 
+      !boostEffects.answerRevealAvailable && 
+      !boostEffects.secondChanceAvailable) {
+    return null
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-3 animate-in fade-in duration-300">
+      {boostEffects.timeFreezeAvailable && !timeFrozen && (
+        <Button 
+          onClick={onUseTimeFreeze}
+          variant="outline"
+          size="sm"
+          className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all hover:scale-105"
+        >
+          <Snowflake className="h-4 w-4 mr-1" />
+          Freeze Time
+        </Button>
+      )}
+      
+      {boostEffects.answerRevealAvailable && 
+       !answerRevealUsed && 
+       questionType === 'multiple_choice' && (
+        <Button 
+          onClick={onUseAnswerReveal}
+          variant="outline"
+          size="sm"
+          className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all hover:scale-105"
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          Reveal Answer
+        </Button>
+      )}
+      
+      {boostEffects.secondChanceAvailable && 
+       !hasUsedSecondChance && 
+       isAnswerSubmitted && (
+        <Button 
+          onClick={onUseSecondChance}
+          variant="outline"
+          size="sm"
+          className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all hover:scale-105"
+        >
+          <RotateCcw className="h-4 w-4 mr-1" />
+          Second Chance
+        </Button>
+      )}
+    </div>
+  )
+})
+
+MemoizedBoostButtons.displayName = 'MemoizedBoostButtons'
 
 export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) {
   const { user } = useAuth()
@@ -185,38 +288,53 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const initialTime = 60 + currentBoostEffects.extraTimeSeconds
   const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(initialTime)
 
-  const currentQuestion = randomizedQuestions[currentQuestionIndex]
-  const isLastQuestion = currentQuestionIndex === randomizedQuestions.length - 1
-  const progress = ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100
+  // Memoized values
+  const currentQuestion = useMemo(() => randomizedQuestions[currentQuestionIndex], [randomizedQuestions, currentQuestionIndex])
+  const isLastQuestion = useMemo(() => currentQuestionIndex === randomizedQuestions.length - 1, [currentQuestionIndex, randomizedQuestions.length])
+  const progress = useMemo(() => ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100, [currentQuestionIndex, randomizedQuestions.length])
 
-  // Mobile detection and quiz start tracking
+  // Mobile detection with debounce
   useEffect(() => {
-    // Detect mobile device
+    let timeoutId: NodeJS.Timeout
+    
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        setIsMobile(window.innerWidth < 768)
+      }, 150)
     }
     
     checkMobile()
     window.addEventListener('resize', checkMobile)
     
-    // Track quiz start
-    if (randomizedQuestions.length > 0) {
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
+
+  // Track quiz start ONCE per quiz session
+  const hasTrackedQuizStart = useRef(false)
+  useEffect(() => {
+    if (randomizedQuestions.length > 0 && !hasTrackedQuizStart.current) {
+      hasTrackedQuizStart.current = true
+      
       const activeBoosts = Object.entries(currentBoostEffects)
         .filter(([key, value]) => value && value !== 0 && value !== false)
         .map(([key]) => key)
 
       trackQuiz.quizStarted({
         quiz_id: topicId,
-        quiz_category: mapCategoryToAnalytics(currentQuestion?.category || 'General'),
-        quiz_difficulty: 'intermediate', // Could be determined from question tags
+        quiz_category: mapCategoryToAnalytics(randomizedQuestions[0]?.category || 'General'),
+        quiz_difficulty: 'intermediate',
         user_level: currentLevel,
         active_boosts: activeBoosts,
         streak_count: currentStreak
       })
+      
+      console.log('🎯 Quiz started event tracked for:', topicId)
     }
-    
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [randomizedQuestions.length, topicId, currentQuestion?.category, currentLevel, currentStreak, currentBoostEffects, trackQuiz])
+  }, [randomizedQuestions.length, topicId, trackQuiz, currentBoostEffects, currentLevel, currentStreak])
 
   // Log current question for debugging
   useEffect(() => {
@@ -237,7 +355,6 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     if (partialState) {
       setCurrentQuestionIndex(partialState.currentQuestionIndex)
       setUserAnswers(partialState.userAnswers)
-      // Note: We don't restore the exact start time to avoid confusion
     }
     
     // Initialize boost system and load user XP
@@ -246,7 +363,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   }, [user, topicId, boostManager])
 
   // Load user XP from gamification system
-  const loadUserXP = async () => {
+  const loadUserXP = useCallback(async () => {
     if (!user) return
     
     try {
@@ -256,10 +373,10 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       console.error('Error loading user XP:', error)
       setUserXP(0)
     }
-  }
+  }, [user])
 
-  // Boost handlers
-  const handleBoostActivated = (effects: BoostEffects) => {
+  // Boost handlers with useCallback for optimization
+  const handleBoostActivated = useCallback((effects: BoostEffects) => {
     setCurrentBoostEffects(effects)
     
     // Apply automatic effects
@@ -268,9 +385,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     }
     
     console.log('🚀 Boost effects activated:', effects)
-  }
+  }, [showHint])
 
-  const handleUseTimeFreeze = () => {
+  const handleUseTimeFreeze = useCallback(() => {
     if (!user || !currentBoostEffects.timeFreezeAvailable) return
     
     setTimeFrozen(true)
@@ -297,9 +414,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     boostManager.useBoost(user.id, 'time_freeze')
     
     console.log('❄️ Time frozen for 10 seconds')
-  }
+  }, [user, currentBoostEffects.timeFreezeAvailable, stopTimer, trackGameification, currentLevel, isAnswerSubmitted, resetTimer, boostManager])
 
-  const handleUseAnswerReveal = () => {
+  const handleUseAnswerReveal = useCallback(() => {
     if (!user || !currentBoostEffects.answerRevealAvailable || answerRevealUsed) return
     
     setAnswerRevealUsed(true)
@@ -315,9 +432,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     boostManager.useBoost(user.id, 'answer_reveal')
     
     console.log('🔍 Answer reveal used')
-  }
+  }, [user, currentBoostEffects.answerRevealAvailable, answerRevealUsed, trackGameification, currentLevel, boostManager])
 
-  const handleUseSecondChance = () => {
+  const handleUseSecondChance = useCallback(() => {
     if (!user || !currentBoostEffects.secondChanceAvailable || hasUsedSecondChance) return
     
     // Track boost activation
@@ -342,7 +459,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     boostManager.useBoost(user.id, 'second_chance')
     
     console.log('🔄 Second chance activated')
-  }
+  }, [user, currentBoostEffects.secondChanceAvailable, hasUsedSecondChance, trackGameification, currentLevel, resetTimer, boostManager])
 
   // Save partial state whenever answers change
   useEffect(() => {
@@ -357,99 +474,99 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     quizDatabase.savePartialQuizState(user.id, topicId, partialState)
   }, [user, topicId, currentQuestionIndex, userAnswers, quizStartTime])
 
-  // Keyboard shortcuts - FIXED: Simplified dependencies and improved responsiveness
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't handle shortcuts if user is typing in an input
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return
-      }
-
-      // Don't handle shortcuts after answer is submitted
-      if (isAnswerSubmitted) return
-
-      // Add debug logging to track key events
-      console.log('Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
-
-      switch (event.key) {
-        case 'Enter':
-          event.preventDefault()
-          event.stopPropagation()
-          if (selectedAnswer && !isAnswerSubmitted) {
-            console.log('Submitting answer via Enter key:', selectedAnswer)
-            handleSubmitAnswer()
-          }
-          break
-        case ' ':
-          event.preventDefault()
-          event.stopPropagation()
-          setShowHint(prev => {
-            const newShowHint = !prev
-            if (newShowHint && currentQuestion) {
-              // Track hint usage
-              trackQuiz.hintUsed(
-                `${topicId}-${currentQuestion.question_number}`,
-                'manual',
-                true // Assume effectiveness for now
-              )
-            }
-            return newShowHint
-          })
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-          if (currentQuestion?.question_type === 'multiple_choice') {
-            event.preventDefault()
-            event.stopPropagation()
-            const optionIndex = parseInt(event.key) - 1
-            const options = [
-              currentQuestion.option_a,
-              currentQuestion.option_b,
-              currentQuestion.option_c,
-              currentQuestion.option_d
-            ].filter(Boolean)
-            
-            if (optionIndex < options.length) {
-              const optionId = String.fromCharCode(65 + optionIndex) // A, B, C, D
-              console.log('Selecting option via keyboard:', optionId)
-              handleAnswerSelect(optionId)
-            }
-          }
-          break
-        case 't':
-        case 'T':
-          if (currentQuestion?.question_type === 'true_false') {
-            event.preventDefault()
-            event.stopPropagation()
-            console.log('Selecting True via keyboard')
-            handleAnswerSelect('True')
-          }
-          break
-        case 'f':
-        case 'F':
-          if (currentQuestion?.question_type === 'true_false') {
-            event.preventDefault()
-            event.stopPropagation()
-            console.log('Selecting False via keyboard')
-            handleAnswerSelect('False')
-          }
-          break
-        case 's':
-        case 'S':
-          if (event.ctrlKey || event.metaKey) return // Don't interfere with save shortcuts
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('Skipping question via keyboard')
-          handleSkipQuestion()
-          break
-      }
+  // Optimized keyboard event handler
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Don't handle shortcuts if user is typing in an input
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      return
     }
 
+    // Don't handle shortcuts after answer is submitted
+    if (isAnswerSubmitted) return
+
+    console.log('Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
+
+    switch (event.key) {
+      case 'Enter':
+        event.preventDefault()
+        event.stopPropagation()
+        if (selectedAnswer && !isAnswerSubmitted) {
+          console.log('Submitting answer via Enter key:', selectedAnswer)
+          handleSubmitAnswer()
+        }
+        break
+      case ' ':
+        event.preventDefault()
+        event.stopPropagation()
+        setShowHint(prev => {
+          const newShowHint = !prev
+          if (newShowHint && currentQuestion) {
+            // Track hint usage
+            trackQuiz.hintUsed(
+              `${topicId}-${currentQuestion.question_number}`,
+              'manual',
+              true
+            )
+          }
+          return newShowHint
+        })
+        break
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+        if (currentQuestion?.question_type === 'multiple_choice') {
+          event.preventDefault()
+          event.stopPropagation()
+          const optionIndex = parseInt(event.key) - 1
+          const options = [
+            currentQuestion.option_a,
+            currentQuestion.option_b,
+            currentQuestion.option_c,
+            currentQuestion.option_d
+          ].filter(Boolean)
+          
+          if (optionIndex < options.length) {
+            const optionId = String.fromCharCode(65 + optionIndex) // A, B, C, D
+            console.log('Selecting option via keyboard:', optionId)
+            handleAnswerSelect(optionId)
+          }
+        }
+        break
+      case 't':
+      case 'T':
+        if (currentQuestion?.question_type === 'true_false') {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('Selecting True via keyboard')
+          handleAnswerSelect('True')
+        }
+        break
+      case 'f':
+      case 'F':
+        if (currentQuestion?.question_type === 'true_false') {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('Selecting False via keyboard')
+          handleAnswerSelect('False')
+        }
+        break
+      case 's':
+      case 'S':
+        if (event.ctrlKey || event.metaKey) return // Don't interfere with save shortcuts
+        event.preventDefault()
+        event.stopPropagation()
+        console.log('Skipping question via keyboard')
+        handleSkipQuestion()
+        break
+    }
+  }, [selectedAnswer, isAnswerSubmitted, currentQuestion, topicId, trackQuiz])
+
+  // Register keyboard handler
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedAnswer, isAnswerSubmitted, currentQuestion?.question_type, currentQuestion?.option_a, currentQuestion?.option_b, currentQuestion?.option_c, currentQuestion?.option_d])
+  }, [handleKeyDown])
 
   // Reset question state when moving to next question
   useEffect(() => {
@@ -459,43 +576,31 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setShowHint(false)
     setShowFeedback(false)
     setQuestionStartTime(Date.now())
-    setShowSources(false) // Reset sources visibility
+    setShowSources(false)
+    setHasUsedSecondChance(false)
+    setAnswerRevealUsed(false)
     resetTimer()
     
-    // Scroll to top of question
+    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    
-    // Auto-play question if global autoplay is enabled - with better timing
-    if (autoPlayEnabled && currentQuestion?.question) {
-      // Shorter delay and better error handling
-      const timer = setTimeout(() => {
-        try {
-          playText(currentQuestion.question, { autoPlay: true })
-        } catch (error) {
-          console.warn('Auto-play failed:', error)
-        }
-      }, 500)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [currentQuestionIndex, resetTimer]) // Added resetTimer to dependencies
+  }, [currentQuestionIndex, resetTimer])
 
-  // Separate effect for audio auto-play to prevent conflicts
+  // Optimized audio auto-play effect
   useEffect(() => {
-    if (autoPlayEnabled && currentQuestion?.question && currentQuestionIndex >= 0) {
-      const timer = setTimeout(() => {
-        try {
-          playText(currentQuestion.question, { autoPlay: true })
-        } catch (error) {
-          console.warn('Auto-play failed:', error)
-        }
-      }, 500)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [currentQuestionIndex, autoPlayEnabled, playText])
+    if (!autoPlayEnabled || !currentQuestion?.question || currentQuestionIndex < 0) return
+    
+    const timer = setTimeout(() => {
+      try {
+        playText(currentQuestion.question, { autoPlay: true })
+      } catch (error) {
+        console.warn('Auto-play failed:', error)
+      }
+    }, 300) // Reduced delay for better responsiveness
+    
+    return () => clearTimeout(timer)
+  }, [currentQuestionIndex, autoPlayEnabled, currentQuestion?.question, playText])
 
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
     if (isAnswerSubmitted) return
     
     console.log('Time up for question:', currentQuestion?.question_number)
@@ -522,15 +627,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         currentBoostEffects[key as keyof typeof currentBoostEffects] && 
         currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
       ) || null,
-      confidence_level: 1 // Low confidence for timeout
+      confidence_level: 1
     })
     
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
-  }
+  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, showHint, currentBoostEffects])
 
-  const handleSkipQuestion = () => {
+  const handleSkipQuestion = useCallback(() => {
     if (isAnswerSubmitted) {
       console.log('Skip blocked: answer already submitted')
       return
@@ -551,18 +656,29 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setSelectedAnswer("skipped")
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
-  }
+  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime])
 
-  const handleAnswerSelect = (answer: string) => {
+  const handleAnswerSelect = useCallback((answer: string) => {
     if (isAnswerSubmitted) {
       console.log('Answer selection blocked: already submitted')
       return
     }
     console.log('Selecting answer:', answer)
     setSelectedAnswer(answer)
-  }
+    
+    // Micro-animation: gentle scale effect on the submit button
+    if (isMobile) {
+      const answerButton = document.querySelector('[data-answer-button]')
+      if (answerButton) {
+        answerButton.classList.add('animate-gentle-scale')
+        setTimeout(() => {
+          answerButton.classList.remove('animate-gentle-scale')
+        }, 500)
+      }
+    }
+  }, [isAnswerSubmitted, isMobile])
 
-  const handleInteractiveAnswer = (answer: string, isCorrect: boolean) => {
+  const handleInteractiveAnswer = useCallback((answer: string, isCorrect: boolean) => {
     if (isAnswerSubmitted) {
       console.log('Interactive answer blocked: already submitted')
       return
@@ -610,7 +726,6 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
     
-    // Log question response for enhanced gamification tracking
     console.log('🎮 Question response:', {
       questionId: currentQuestion.question_number,
       category: currentQuestion.category,
@@ -622,18 +737,17 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     
     // Auto-play explanation if global autoplay is enabled
     if (autoPlayEnabled && currentQuestion?.explanation) {
-      // Delay to let the feedback UI render first
       setTimeout(() => {
         try {
           playText(currentQuestion.explanation, { autoPlay: true })
         } catch (error) {
           console.warn('Auto-play explanation failed:', error)
         }
-      }, 1000)
+      }, 800)
     }
-  }
+  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, showHint, currentBoostEffects, autoPlayEnabled, playText])
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = useCallback(() => {
     if (!selectedAnswer || isAnswerSubmitted) {
       console.log('Submit blocked:', { selectedAnswer, isAnswerSubmitted })
       return
@@ -645,7 +759,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     // Determine if answer is correct based on question type
     let isCorrect = false
     if (currentQuestion.question_type === 'short_answer') {
-      isCorrect = selectedAnswer.toLowerCase().trim() === currentQuestion.correct_answer.toLowerCase().trim()
+      // Check if the user's answer was shown as correct in real-time feedback
+      const answerStatus = checkAnswerDetailed(selectedAnswer, currentQuestion.correct_answer)
+      isCorrect = answerStatus === 'correct'
     } else if (currentQuestion.question_type === 'true_false') {
       isCorrect = selectedAnswer.toLowerCase() === currentQuestion.correct_answer.toLowerCase()
     } else {
@@ -659,6 +775,21 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       isCorrect,
       timeSpent
     }
+    
+    // Track question answered event
+    trackQuiz.questionAnswered({
+      question_id: `${topicId}-${currentQuestion.question_number}`,
+      question_category: currentQuestion?.category || 'general',
+      answer_correct: isCorrect,
+      response_time_seconds: timeSpent,
+      attempt_number: hasUsedSecondChance ? 2 : 1,
+      hint_used: showHint,
+      boost_active: Object.keys(currentBoostEffects).find(key => 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
+      ) || null,
+      confidence_level: isCorrect ? (timeSpent < 10 ? 5 : timeSpent < 30 ? 4 : 3) : 2
+    })
     
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
@@ -675,7 +806,6 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
     
-    // Log question response for enhanced gamification tracking
     console.log('🎮 Question response:', {
       questionId: currentQuestion.question_number,
       category: currentQuestion.category,
@@ -687,26 +817,27 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     
     // Auto-play explanation if global autoplay is enabled
     if (autoPlayEnabled && currentQuestion?.explanation) {
-      // Delay to let the feedback UI render first
       setTimeout(() => {
         try {
           playText(currentQuestion.explanation, { autoPlay: true })
         } catch (error) {
           console.warn('Auto-play explanation failed:', error)
         }
-      }, 1000)
+      }, 800)
     }
-  }
+  }, [selectedAnswer, isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, hasUsedSecondChance, showHint, currentBoostEffects, autoPlayEnabled, playText])
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     if (isLastQuestion) {
       handleFinishQuiz()
     } else {
+      // Scroll to top when moving to next question
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       setCurrentQuestionIndex(prev => prev + 1)
     }
-  }
+  }, [isLastQuestion])
 
-  const handleFinishQuiz = async () => {
+  const handleFinishQuiz = useCallback(async () => {
     // Calculate quiz metrics
     const totalQuestions = randomizedQuestions.length
     const correctAnswers = userAnswers.filter(a => a.isCorrect).length
@@ -727,9 +858,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       user_level: currentLevel,
       active_boosts: activeBoosts,
       streak_count: currentStreak,
-      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier, // Estimated XP
+      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier,
       streak_maintained: correctAnswers > 0,
-      new_level_reached: false, // Will be updated from gamification results
+      new_level_reached: false,
       boosts_used: activeBoosts
     })
 
@@ -776,18 +907,17 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         if (results.levelUp) {
           trackGameification.levelUp({
             new_level: currentLevel + 1,
-            xp_total: 0, // Could calculate from user data
+            xp_total: 0,
             primary_activity: 'quiz'
           })
         }
       } catch (error) {
         console.error('❌ Failed to update gamification progress:', error)
-        // Continue to show results even if gamification update fails
       }
     }
     
     setShowResults(true)
-  }
+  }, [randomizedQuestions, userAnswers, topicId, currentQuestion, trackQuiz, currentLevel, currentStreak, currentBoostEffects, user, updateProgress, trackGameification])
 
   if (showResults) {
     return (
@@ -801,34 +931,20 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   }
 
   const renderQuestion = () => {
+    const questionProps = {
+      question: currentQuestion,
+      selectedAnswer,
+      isSubmitted: isAnswerSubmitted,
+      onSelectAnswer: handleAnswerSelect
+    }
+
     switch (currentQuestion.question_type) {
       case "multiple_choice":
-        return (
-          <MultipleChoiceQuestion
-            question={currentQuestion}
-            selectedAnswer={selectedAnswer}
-            isSubmitted={isAnswerSubmitted}
-            onSelectAnswer={handleAnswerSelect}
-          />
-        )
+        return <MultipleChoiceQuestion {...questionProps} />
       case "true_false":
-        return (
-          <TrueFalseQuestion
-            question={currentQuestion}
-            selectedAnswer={selectedAnswer}
-            isSubmitted={isAnswerSubmitted}
-            onSelectAnswer={handleAnswerSelect}
-          />
-        )
+        return <TrueFalseQuestion {...questionProps} />
       case "short_answer":
-        return (
-          <ShortAnswerQuestion
-            question={currentQuestion}
-            selectedAnswer={selectedAnswer}
-            isSubmitted={isAnswerSubmitted}
-            onSelectAnswer={handleAnswerSelect}
-          />
-        )
+        return <ShortAnswerQuestion {...questionProps} />
       case "fill_in_blank":
         return (
           <FillInBlankQuestion
@@ -864,24 +980,37 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className={cn(
-        "max-w-4xl mx-auto space-y-8",
-        isMobile ? "px-3 py-4 pb-24" : "px-6 py-8 space-y-12"
+        "max-w-4xl mx-auto space-y-6",
+        isMobile ? "px-3 py-4 pb-20" : "px-6 py-8 space-y-12"
       )}>
+        {/* Progress bar - enhanced with animation - hidden on mobile */}
+        <div className={cn("relative", "hidden md:block")}>
+          <Progress 
+            value={progress} 
+            className={cn(
+              "h-2 transition-all duration-500",
+              animateProgress && "scale-y-150"
+            )} 
+          />
+          <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent w-12 animate-shimmer" />
+        </div>
+
         {/* Question section - Apple style */}
         <div className="text-center space-y-8">
-          {/* Question text - made smaller */}
+          {/* Question text and hint */}
           <div className="space-y-4">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto">
-              {currentQuestion.question}
-            </h1>
+            <MemoizedQuestionDisplay 
+              question={currentQuestion} 
+              showHint={showHint} 
+            />
             
             {/* Timer and hint button */}
-            <div className="flex items-center justify-center space-x-6">
+            <div className="flex items-center justify-center space-x-6 animate-in fade-in duration-300">
               {/* Timer - use key to force reset when question changes */}
               <QuestionTimer
                 key={`timer-${currentQuestionIndex}`}
                 initialTime={60}
-                isActive={isTimerActive && !isAnswerSubmitted}
+                isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
                 onTimeUp={handleTimeUp}
               />
               
@@ -889,29 +1018,18 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
                 variant="ghost" 
                 onClick={() => setShowHint(!showHint)} 
                 className={cn(
-                  "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light text-sm h-auto p-2",
+                  "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light text-sm h-auto p-2 transition-all hover:scale-105",
                   showHint && "text-blue-600 dark:text-blue-400"
                 )}
               >
                 {showHint ? "Hide hint" : "Show hint"}
               </Button>
             </div>
-            
-            {/* Hint - clean and minimal */}
-            {showHint && (
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 border border-slate-100 dark:border-slate-800">
-                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                    💡 {currentQuestion.hint}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Question content - only show if answer not submitted */}
           {!isAnswerSubmitted && (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               {renderQuestion()}
             </div>
           )}
@@ -932,80 +1050,36 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         {!isAnswerSubmitted && !isMobile && (
           <div className="space-y-6">
             {/* Boost Action Buttons */}
-            {(currentBoostEffects.timeFreezeAvailable || 
-              currentBoostEffects.answerRevealAvailable || 
-              currentBoostEffects.secondChanceAvailable) && (
-              <div className="flex items-center justify-center gap-3">
-                {currentBoostEffects.timeFreezeAvailable && !timeFrozen && (
-                  <Button 
-                    onClick={handleUseTimeFreeze}
-                    variant="outline"
-                    size="sm"
-                    className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                  >
-                    <Snowflake className="h-4 w-4 mr-1" />
-                    Freeze Time
-                  </Button>
-                )}
-                
-                {currentBoostEffects.answerRevealAvailable && 
-                 !answerRevealUsed && 
-                 currentQuestion.question_type === 'multiple_choice' && (
-                  <Button 
-                    onClick={handleUseAnswerReveal}
-                    variant="outline"
-                    size="sm"
-                    className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Reveal Answer
-                  </Button>
-                )}
-                
-                {currentBoostEffects.secondChanceAvailable && 
-                 !hasUsedSecondChance && 
-                 isAnswerSubmitted && (
-                  <Button 
-                    onClick={handleUseSecondChance}
-                    variant="outline"
-                    size="sm"
-                    className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Second Chance
-                  </Button>
-                )}
-              </div>
-            )}
+            <MemoizedBoostButtons
+              boostEffects={currentBoostEffects}
+              timeFrozen={timeFrozen}
+              answerRevealUsed={answerRevealUsed}
+              hasUsedSecondChance={hasUsedSecondChance}
+              isAnswerSubmitted={isAnswerSubmitted}
+              questionType={currentQuestion.question_type}
+              onUseTimeFreeze={handleUseTimeFreeze}
+              onUseAnswerReveal={handleUseAnswerReveal}
+              onUseSecondChance={handleUseSecondChance}
+            />
             
             {/* Main Action Buttons */}
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center justify-center gap-6 animate-in fade-in duration-300">
               <Button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Skip button clicked')
-                  handleSkipQuestion()
-                }}
+                onClick={handleSkipQuestion}
                 variant="ghost"
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light transition-all hover:scale-105"
               >
                 Skip
               </Button>
               
               <Button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Submit button clicked', { selectedAnswer, isAnswerSubmitted, timeLeft })
-                  handleSubmitAnswer()
-                }}
+                onClick={handleSubmitAnswer}
                 disabled={!selectedAnswer || timeLeft === 0} 
                 className={cn(
                   "rounded-full px-8 py-3 font-light transition-all duration-200",
                   selectedAnswer 
-                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
-                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white scale-100 hover:scale-105" 
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed scale-95"
                 )}
               >
                 Submit Answer
@@ -1014,17 +1088,20 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
 
-        {/* Gamification display - show streak and level (desktop only) */}
+        {/* Gamification display - enhanced animation */}
         {user && !isMobile && (
-          <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50">
+          <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-1">
-                <Flame className="h-4 w-4 text-orange-500" />
+                <Flame className={cn(
+                  "h-4 w-4 text-orange-500 transition-all",
+                  streak > 0 && "animate-pulse"
+                )} />
                 <span className="font-medium text-slate-900 dark:text-slate-100">{currentStreak}</span>
                 <span className="text-slate-500 dark:text-slate-400">streak</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs transition-all hover:scale-105">
                   Level {currentLevel}
                 </Badge>
               </div>
@@ -1032,24 +1109,26 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
 
-        {/* Debug panel - show current state for troubleshooting (desktop only) */}
+        {/* Debug panel - quiz info only (desktop only) */}
         {process.env.NODE_ENV === 'development' && !isMobile && (
-          <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-50 max-w-sm">
-            <div className="text-xs font-bold mb-2">Debug Info:</div>
-            <div>Selected: {selectedAnswer || 'None'}</div>
-            <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
-            <div>Timer: {timeLeft}s</div>
-            <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
-            <div>Type: {currentQuestion?.question_type}</div>
-            <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
-            <div>Streak: {currentStreak}</div>
-            <div>Level: {currentLevel}</div>
+          <div className="fixed top-4 right-4 z-50 max-w-sm">
+            <div className="bg-black/80 text-white p-4 rounded-lg text-xs font-mono backdrop-blur-sm">
+              <div className="text-xs font-bold mb-2">Quiz Debug:</div>
+              <div>Selected: {selectedAnswer || 'None'}</div>
+              <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
+              <div>Timer: {timeLeft}s {timeFrozen && '(Frozen)'}</div>
+              <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
+              <div>Type: {currentQuestion?.question_type}</div>
+              <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
+              <div>Streak: {currentStreak}</div>
+              <div>Level: {currentLevel}</div>
+            </div>
           </div>
         )}
 
         {/* Keyboard shortcuts - minimal - only show when answer not submitted */}
-        {!isAnswerSubmitted && (
-          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-8 hidden md:block">
+        {!isAnswerSubmitted && !isMobile && (
+          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
             <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
               {currentQuestion.question_type === 'multiple_choice' && (
                 <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">1-4</span> to select • </>
@@ -1064,37 +1143,28 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         )}
       </div>
 
-      {/* Fixed Bottom Bar for Mobile */}
+      {/* Fixed Bottom Bar for Mobile - enhanced and larger */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-slate-200 dark:border-slate-800 p-4 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-6 pb-8 z-50 animate-in slide-in-from-bottom duration-300 shadow-2xl">
           {!isAnswerSubmitted ? (
             <div className="flex items-center justify-center gap-4">
               <Button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleSkipQuestion()
-                }}
+                onClick={handleSkipQuestion}
                 variant="ghost"
-                size="sm"
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light flex-1"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium flex-1 h-12 text-base transition-all hover:scale-105"
               >
                 Skip
               </Button>
               
               <Button 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleSubmitAnswer()
-                }}
-                disabled={!selectedAnswer || timeLeft === 0} 
-                size="sm"
+                onClick={handleSubmitAnswer}
+                disabled={!selectedAnswer || timeLeft === 0}
+                data-answer-button
                 className={cn(
-                  "rounded-full px-6 py-2 font-light transition-all duration-200 flex-2",
+                  "rounded-full px-8 py-4 h-14 font-medium transition-all duration-300 flex-2 text-base shadow-lg",
                   selectedAnswer 
-                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
-                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white hover:scale-105 active:scale-95" 
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed scale-95"
                 )}
               >
                 Submit Answer
@@ -1104,10 +1174,19 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
             <div className="flex items-center justify-center">
               <Button 
                 onClick={handleNextQuestion}
-                size="sm"
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-full px-6 py-2 font-light w-full"
+                data-next-button
+                className={cn(
+                  "w-full h-14 rounded-xl font-semibold text-lg",
+                  "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
+                  "transform transition-all duration-300",
+                  "animate-bounce-subtle",
+                  "shadow-lg hover:shadow-xl"
+                )}
               >
-                {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
+                <span className="flex items-center justify-center gap-2">
+                  {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
+                  <span className="animate-pulse">→</span>
+                                </span>
               </Button>
             </div>
           )}

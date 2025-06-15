@@ -26,7 +26,6 @@ import { useGlobalAudio } from "@/components/global-audio-controls"
 const getTodayAtMidnight = () => {
   // Use mock date for demo (June 14, 2025)
   const mockToday = new Date(2025, 5, 14) // Month is 0-indexed, so 5 = June
-  console.log(`📅 Mock "today" date set to:`, mockToday.toISOString(), `(${mockToday.toLocaleDateString()})`)
   return mockToday
   
   // Uncomment below for production use with real current date:
@@ -35,47 +34,65 @@ const getTodayAtMidnight = () => {
   // return localToday
 }
 
-// More lenient date parsing
+// Optimized date parsing with caching and proper timezone handling
+const dateCache = new Map<string, Date | null>()
+
 const parseTopicDate = (dateString: string | Date | null | undefined) => {
   if (!dateString) return null
   
+  // Use cache for string dates to avoid repeated parsing
+  const cacheKey = typeof dateString === 'string' ? dateString : null
+  if (cacheKey && dateCache.has(cacheKey)) {
+    return dateCache.get(cacheKey)
+  }
+  
   try {
+    let parsed: Date | null = null
+    
     if (dateString instanceof Date) {
       if (isNaN(dateString.getTime())) return null
-      return new Date(dateString.getFullYear(), dateString.getMonth(), dateString.getDate())
+      // Create a new date in local timezone without time component
+      parsed = new Date(dateString.getFullYear(), dateString.getMonth(), dateString.getDate())
     }
     
     if (typeof dateString === 'string') {
       if (dateString.trim() === '' || dateString === 'null' || dateString === 'undefined') {
-        return null
+        parsed = null
       }
-      
-      let parsed: Date
-      
-      // Handle ISO format (YYYY-MM-DD)
-      if (dateString.includes('-') && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Handle ISO format (YYYY-MM-DD) - avoid timezone issues
+      else if (dateString.includes('-') && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-').map(Number)
-        if (isNaN(year) || isNaN(month) || isNaN(day)) return null
-        parsed = new Date(year, month - 1, day)
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          parsed = null
+        } else {
+          // Create date in local timezone to avoid UTC conversion issues
+          parsed = new Date(year, month - 1, day)
+        }
       } 
       // Handle natural language dates (e.g., "June 14, 2025")
       else {
-        parsed = new Date(dateString)
-        if (isNaN(parsed.getTime())) {
+        const tempDate = new Date(dateString)
+        if (isNaN(tempDate.getTime())) {
           console.warn(`Failed to parse date: "${dateString}"`)
-          return null
+          parsed = null
+        } else {
+          // Normalize to local date (remove time component and timezone issues)
+          parsed = new Date(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate())
         }
-        // Normalize to local date (remove time component)
-        parsed = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
       }
-      
-      console.log(`🔍 parseTopicDate: "${dateString}" -> ${parsed ? parsed.toISOString() : 'null'}`)
-      return isNaN(parsed.getTime()) ? null : parsed
     }
     
-    return null
+    // Cache the result for string inputs
+    if (cacheKey) {
+      dateCache.set(cacheKey, parsed)
+    }
+    
+    return parsed
   } catch (error) {
     console.warn(`parseTopicDate error parsing "${dateString}":`, error)
+    if (cacheKey) {
+      dateCache.set(cacheKey, null)
+    }
     return null
   }
 }
@@ -122,8 +139,6 @@ const getDateCategory = (date: string | Date, currentDate: Date) => {
   
   const diffTime = localTopicDate.getTime() - localCurrentDate.getTime()
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-  
-  console.log(`📅 Date comparison: topic="${localTopicDate.toLocaleDateString()}" vs current="${localCurrentDate.toLocaleDateString()}" = ${diffDays} days difference`)
   
   if (diffDays === 0) return 'today'
   if (diffDays > 0) return 'future'
@@ -275,31 +290,21 @@ export function DailyCardStack({
   const organizedTopics: OrganizedTopics = useMemo(() => {
     // If topicsList is not loaded yet, return empty structure
     if (!topicsList || topicsList.length === 0) {
-      console.log(`❌ No topics to filter: topicsList length = ${topicsList?.length || 0}`)
       return { today: [], future: [], past: [] }
     }
-
-    console.log(`🔍 Starting to filter ${topicsList.length} topics`)
-    console.log(`Current date for filtering:`, currentDate)
 
     return topicsList
       .filter((topic) => {
         if (!topic) return false
         
-        console.log(`🔍 FILTERING TOPIC: "${topic.topic_title || 'Unnamed'}"`)
-        console.log(`  Topic date: "${topic.date || 'No date'}"`)
-        
         // More lenient date validation
         if (!topic.date) {
-          console.warn(`❌ Topic "${topic.topic_title || 'Unnamed'}" has no date, excluding`)
           return false
         }
         
         const parsedDate = parseTopicDate(topic.date)
-        console.log(`  Parsed date:`, parsedDate)
         
         if (!parsedDate) {
-          console.warn(`❌ Topic "${topic.topic_title || 'Unnamed'}" has unparseable date "${topic.date}", excluding`)
           return false
         }
         
@@ -314,9 +319,7 @@ export function DailyCardStack({
             cat.toLowerCase() === selectedCategory.toLowerCase()
           )
           
-          if (!matchesCategory) {
-            console.log(`❌ Category filter excluding "${topic.topic_title || 'Unnamed'}": selected="${selectedCategory}", topic categories=${JSON.stringify(topicCategories)}`)
-          }
+
         }
         
         // Search filtering
@@ -325,27 +328,18 @@ export function DailyCardStack({
           (topic.topic_title && topic.topic_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (topic.description && topic.description.toLowerCase().includes(searchQuery.toLowerCase()))
         
-        const passes = matchesCategory && matchesSearch
-        console.log(`  ✅ Topic "${topic.topic_title || 'Unnamed'}" passes filters: ${passes} (category: ${matchesCategory}, search: ${matchesSearch})`)
-        
-        return passes
+        return matchesCategory && matchesSearch
       })
       .reduce((acc, topic) => {
         if (!topic) return acc
         
-        console.log(`🔍 CATEGORIZING TOPIC: "${topic.topic_title || 'Unnamed'}"`)
         const topicDate = parseTopicDate(topic.date)
-        console.log(`  Topic date:`, topicDate)
-        console.log(`  Current date:`, currentDate)
-        
         if (!topicDate) return acc
         
         const category = getDateCategory(topicDate, currentDate)
-        console.log(`  Date category:`, category)
         
         if (category && acc[category]) {
           acc[category].push(topic)
-          console.log(`  ✅ Added to ${category} category`)
         }
         return acc
       }, { today: [], future: [], past: [] } as OrganizedTopics)
@@ -389,34 +383,19 @@ export function DailyCardStack({
     return completedTopics.has(topicId)
   }, [completedTopics])
 
-  // Log final results
-  console.log(`=== FINAL FILTERING RESULTS ===`)
-  console.log(`Total after filtering: ${organizedTopics.today.length + organizedTopics.future.length + organizedTopics.past.length}`)
-  console.log(`Today: ${organizedTopics.today.length}, Future: ${organizedTopics.future.length}, Past: ${organizedTopics.past.length}`)
-  console.log(`Selected category: ${selectedCategory}`)
-  console.log(`Search query: "${searchQuery}"`)
-  console.log(`Development mode: ${process.env.NODE_ENV === 'development'}`)
-  console.log(`Topics without questions: ${topicsWithoutQuestions.size}`)
 
-  // Sort each category - most recent first
-  organizedTopics.today.sort((a, b) => {
+
+  // Sort each category - most recent first (with cached parsing)
+  const sortByDate = (a: TopicMetadata, b: TopicMetadata) => {
     const dateA = parseTopicDate(a.date)
     const dateB = parseTopicDate(b.date)
     if (!dateA || !dateB) return 0
     return dateB.getTime() - dateA.getTime() // Most recent first
-  })
-  organizedTopics.future.sort((a, b) => {
-    const dateA = parseTopicDate(a.date)
-    const dateB = parseTopicDate(b.date)
-    if (!dateA || !dateB) return 0
-    return dateB.getTime() - dateA.getTime() // Most recent first
-  })
-  organizedTopics.past.sort((a, b) => {
-    const dateA = parseTopicDate(a.date)
-    const dateB = parseTopicDate(b.date)
-    if (!dateA || !dateB) return 0
-    return dateB.getTime() - dateA.getTime() // Most recent first
-  })
+  }
+  
+  organizedTopics.today.sort(sortByDate)
+  organizedTopics.future.sort(sortByDate)
+  organizedTopics.past.sort(sortByDate)
 
   // Combine all topics and sort chronologically - most recent first
   const allFilteredTopics = useMemo(() => {
@@ -428,35 +407,7 @@ export function DailyCardStack({
       ...(organizedTopics.today || []),
       ...(organizedTopics.future || []),
       ...(organizedTopics.past || [])
-    ].sort((a, b) => {
-      const dateA = parseTopicDate(a?.date)
-      const dateB = parseTopicDate(b?.date)
-      if (!dateA || !dateB) return 0
-      
-      const dateATime = dateA.getTime()
-      const dateBTime = dateB.getTime()
-      const todayTime = currentDate.getTime()
-      
-      // For past dates: most recent first (descending order)
-      if (dateATime < todayTime && dateBTime < todayTime) {
-        return dateBTime - dateATime
-      }
-      
-      // For future dates: most recent first (descending order)
-      if (dateATime > todayTime && dateBTime > todayTime) {
-        return dateBTime - dateATime
-      }
-      
-      // Mixed past/future: future dates come first, then past dates
-      if (dateATime >= todayTime && dateBTime < todayTime) {
-        return -1 // A (future) comes before B (past)
-      }
-      if (dateATime < todayTime && dateBTime >= todayTime) {
-        return 1 // B (future) comes before A (past)
-      }
-      
-      return dateBTime - dateATime // Default: most recent first
-    })
+    ].sort(sortByDate)
   }, [organizedTopics, currentDate])
 
   // Show detailed topic status for debugging
@@ -473,12 +424,7 @@ export function DailyCardStack({
     [allFilteredTopics, isTopicComingSoon]
   )
   
-  console.log(`Available topics: ${availableTopics.length}`)
-  console.log(`Locked topics: ${lockedTopics.length}`)
-  console.log(`Coming soon topics: ${comingSoonTopics.length}`)
-  
   if (process.env.NODE_ENV === 'development') {
-    console.log(`🚧 Development mode: "coming soon" checks are disabled`)
     if (comingSoonTopics.length > 0) {
       console.log(`Topics that would be marked "coming soon" in production:`, comingSoonTopics.map(t => t.topic_title))
     }
@@ -666,8 +612,6 @@ export function DailyCardStack({
     router.push(`/quiz/${topicId}`)
   }
 
-
-
   const updateUrlWithTopic = (index: number) => {
     if (allFilteredTopics[index]) {
       const topicId = allFilteredTopics[index].topic_id
@@ -734,7 +678,7 @@ export function DailyCardStack({
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex flex-col justify-center">
+    <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
       {/* Navigation */}
       {allFilteredTopics.length > 1 && (
         <div className="mb-8 sm:mb-16">
@@ -775,7 +719,11 @@ export function DailyCardStack({
                       <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-slate-900 dark:text-slate-50" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                  <DropdownMenuContent 
+                    align="center" 
+                    className="w-[90vw] max-w-md max-h-96 overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-slate-200 dark:border-slate-700 shadow-xl"
+                    sideOffset={8}
+                  >
                     {allFilteredTopics.map((topic, index) => {
                       const isLocked = isTopicLocked(topic)
                       const isCompleted = isTopicCompleted(topic.topic_id)
@@ -873,6 +821,27 @@ export function DailyCardStack({
             />
         )}
       </div>
+
+      {/* Fixed Start Quiz Button - Safari optimized */}
+      {allFilteredTopics.length > 0 && 
+       !isTopicLocked(allFilteredTopics[currentStackIndex]) && 
+       !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) && (
+        <Button 
+          size="lg"
+          className="fixed bottom-6 left-1/2 z-50 bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-8 sm:px-12 py-3 sm:py-4 rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
+          style={{ 
+            transform: 'translateX(-50%) translateZ(0)',
+            WebkitTransform: 'translateX(-50%) translateZ(0)',
+            position: 'fixed',
+            willChange: 'auto',
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden'
+          }}
+          onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
+        >
+          {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}
+        </Button>
+      )}
 
       <PremiumGate
         isOpen={showPremiumGate}

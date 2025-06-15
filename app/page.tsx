@@ -77,8 +77,8 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Main content with tons of whitespace */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-8">
+        {/* Main content - centered for better viewport experience */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-2 sm:py-4">
                 {viewMode === 'cards' ? (
                   <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
                     <DailyCardStack 

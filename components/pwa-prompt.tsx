@@ -101,6 +101,33 @@ export function PWAPrompt({ className }: PWAPromptProps) {
       }
     }
 
+    // Also try to detect mobile browsers that support PWA but don't fire beforeinstallprompt
+    const detectMobileInstallability = () => {
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          (window.navigator as any).standalone
+      
+      // For mobile Safari (iOS) or mobile Chrome without beforeinstallprompt
+      if (isMobile && !isStandalone && !deferredPrompt) {
+        setDisplayMode(prev => ({
+          ...prev,
+          isInstallable: true
+        }))
+        
+        // Show prompt for mobile users even without beforeinstallprompt
+        if (!hasBeenDismissed && !promptShownRef.current && user) {
+          setTimeout(() => {
+            setShowPrompt(true)
+            promptShownRef.current = true
+          }, 5000) // Wait 5 seconds for mobile
+        }
+      }
+    }
+
+    // Check installability immediately and after a delay
+    setTimeout(detectMobileInstallability, 2000)
+
     const handleAppInstalled = () => {
       console.log('PWA: App installed')
       setDisplayMode(prev => ({
@@ -131,15 +158,35 @@ export function PWAPrompt({ className }: PWAPromptProps) {
 
   // Handle manual install prompt
   const handleInstallClick = async () => {
+    console.log('PWA: Install clicked', { 
+      hasDeferredPrompt: !!deferredPrompt,
+      userAgent: navigator.userAgent,
+      isStandalone: window.matchMedia('(display-mode: standalone)').matches
+    })
+
     if (!deferredPrompt) {
-      // Fallback: show manual instructions
-      setShowMobileInstructions(true)
+      // Check if this is a mobile device or supports manual installation
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+      const isIOS = /iphone|ipad|ipod/.test(userAgent)
+      
+      console.log('PWA: No deferred prompt, showing manual instructions', { isMobile, isIOS })
+      
+      // For iOS or other mobile browsers, show manual instructions
+      if (isMobile || isIOS) {
+        setShowMobileInstructions(true)
+        return
+      }
+      
+      // For desktop without deferred prompt, show a helpful message
+      alert('To install CivicSense:\n\n1. Look for an install icon in your browser\'s address bar\n2. Or use your browser\'s menu to "Install" or "Add to Home Screen"\n3. Some browsers require HTTPS and may need you to interact with the page first')
       return
     }
 
     setIsInstalling(true)
 
     try {
+      console.log('PWA: Showing install prompt...')
       await deferredPrompt.prompt()
       const choiceResult = await deferredPrompt.userChoice
       
@@ -148,12 +195,23 @@ export function PWAPrompt({ className }: PWAPromptProps) {
       if (choiceResult.outcome === 'accepted') {
         console.log('PWA: User accepted the install prompt')
         setShowPrompt(false)
+        
+        // Track successful installation
+        if (typeof window !== 'undefined' && 'gtag' in window) {
+          (window as any).gtag('event', 'pwa_install_success', {
+            event_category: 'engagement',
+            event_label: 'browser_install'
+          })
+        }
       } else {
         console.log('PWA: User dismissed the install prompt')
         handleDismiss()
       }
     } catch (error) {
       console.error('PWA: Error during installation:', error)
+      
+      // Show fallback instructions on error
+      setShowMobileInstructions(true)
     } finally {
       setIsInstalling(false)
       setDeferredPrompt(null)
@@ -202,7 +260,7 @@ export function PWAPrompt({ className }: PWAPromptProps) {
               </Button>
             </div>
             <CardDescription>
-              Install CivicSense for the best experience
+              Add CivicSense to your home screen for quick access to civic education
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -253,19 +311,39 @@ export function PWAPrompt({ className }: PWAPromptProps) {
   // Main PWA prompt
   if (!showPrompt) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleShowPrompt}
-        className={cn(
-          "fixed bottom-20 right-4 z-40 bg-white/90 dark:bg-black/90 backdrop-blur border shadow-lg hover:shadow-xl transition-all duration-300",
-          "hidden sm:flex", // Only show on mobile
-          className
+      <>
+        {/* Mobile prompt button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleShowPrompt}
+          className={cn(
+            "fixed bottom-20 right-4 z-40 bg-white/90 dark:bg-black/90 backdrop-blur border shadow-lg hover:shadow-xl transition-all duration-300",
+            "flex sm:hidden", // Show on mobile, hide on desktop
+            className
+          )}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Install App
+        </Button>
+        
+        {/* Desktop prompt button - smaller, less intrusive */}
+        {displayMode.isInstallable && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShowPrompt}
+            className={cn(
+              "fixed top-4 right-4 z-40 bg-white/90 dark:bg-black/90 backdrop-blur border shadow-lg hover:shadow-xl transition-all duration-300",
+              "hidden sm:flex", // Hide on mobile, show on desktop
+              className
+            )}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            <span className="text-sm">Install CivicSense</span>
+          </Button>
         )}
-      >
-        <Download className="h-4 w-4 mr-2" />
-        Install App
-      </Button>
+      </>
     )
   }
 
@@ -283,10 +361,10 @@ export function PWAPrompt({ className }: PWAPromptProps) {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">CS</span>
                 </div>
-                <CardTitle className="text-lg font-semibold">Install CivicSense</CardTitle>
+                <CardTitle className="text-lg font-semibold">Add CivicSense to Home Screen</CardTitle>
               </div>
               <CardDescription className="text-sm">
-                Get the full app experience with offline access
+                Transform into an informed citizen with daily civic education
               </CardDescription>
             </div>
             <Button
@@ -304,27 +382,27 @@ export function PWAPrompt({ className }: PWAPromptProps) {
           {/* Benefits */}
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="space-y-1">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto">
-                <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto">
+                <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-xs font-medium">Faster</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Native speed</p>
+              <p className="text-xs font-medium">Daily Learning</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Quick access</p>
             </div>
             
             <div className="space-y-1">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto">
-                <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto">
+                <Download className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
-              <p className="text-xs font-medium">Offline</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Works anywhere</p>
+              <p className="text-xs font-medium">Offline Quizzes</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Learn anywhere</p>
             </div>
             
             <div className="space-y-1">
               <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto">
                 <Smartphone className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-xs font-medium">Native</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">App-like feel</p>
+              <p className="text-xs font-medium">Track Progress</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Build knowledge</p>
             </div>
           </div>
 
@@ -361,7 +439,7 @@ export function PWAPrompt({ className }: PWAPromptProps) {
           <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
             <div className="flex items-center justify-center space-x-1">
               <Star className="h-3 w-3" />
-              <span>Free • No ads • Works offline</span>
+              <span>Free civic education • Build democratic confidence</span>
             </div>
           </div>
         </CardContent>
@@ -417,13 +495,13 @@ export function PWAStatus() {
     }
   }, [])
 
-  // Only show in development
+  // Only show in development and on desktop
   if (process.env.NODE_ENV === 'production') {
     return null
   }
 
   return (
-    <div className="fixed top-4 left-4 z-50 bg-black/80 text-white text-xs p-2 rounded font-mono">
+    <div className="fixed top-4 left-4 z-50 bg-black/80 text-white text-xs p-2 rounded font-mono hidden md:block">
       <div>Mode: {status.displayMode}</div>
       <div>Installed: {status.isInstalled ? 'Yes' : 'No'}</div>
       <div>Installable: {status.isInstallable ? 'Yes' : 'No'}</div>

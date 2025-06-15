@@ -5,6 +5,116 @@ import { useStatsig } from '@/components/providers/statsig-provider'
 import { useAuth } from '@/components/auth/auth-provider'
 import { z } from 'zod'
 
+// Add event sampling configuration at the top of the file
+const ANALYTICS_CONFIG = {
+  // High priority events - always track (critical for business)
+  highPriority: [
+    'user_registration',
+    'user_login', 
+    'quiz_completed',
+    'achievement_unlocked',
+    'level_up',
+    'subscription_started',
+    'subscription_cancelled',
+    'error_occurred' // Always track errors
+  ],
+  
+  // Medium priority events - sample these to conserve events
+  mediumPriority: {
+    events: [
+      'quiz_started',
+      'page_view',
+      'boost_activated',
+      'feature_discovered'
+    ],
+    sampleRate: 0.3 // Track 30% of these events
+  },
+  
+  // Low priority events - minimal sampling
+  lowPriority: {
+    events: [
+      'question_answered',
+      'hint_used',
+      'button_clicked',
+      'scroll_depth'
+    ],
+    sampleRate: 0.1 // Track 10% of these events
+  }
+}
+
+// Event sampling utility
+function shouldTrackEvent(eventName: string): boolean {
+  // Always track high priority events
+  if (ANALYTICS_CONFIG.highPriority.includes(eventName)) {
+    return true
+  }
+  
+  // Sample medium priority events
+  if (ANALYTICS_CONFIG.mediumPriority.events.includes(eventName)) {
+    return Math.random() < ANALYTICS_CONFIG.mediumPriority.sampleRate
+  }
+  
+  // Sample low priority events
+  if (ANALYTICS_CONFIG.lowPriority.events.includes(eventName)) {
+    return Math.random() < ANALYTICS_CONFIG.lowPriority.sampleRate
+  }
+  
+  // Default to tracking unknown events (but log warning)
+  console.warn(`Unknown event type: ${eventName}`)
+  return true
+}
+
+// Session-based event batching (optional optimization)
+class EventBatcher {
+  private static instance: EventBatcher
+  private batch: Array<{ eventName: string; metadata: any }> = []
+  private batchTimeout: NodeJS.Timeout | null = null
+  private readonly BATCH_SIZE = 5
+  private readonly BATCH_TIMEOUT = 10000 // 10 seconds
+
+  static getInstance(): EventBatcher {
+    if (!EventBatcher.instance) {
+      EventBatcher.instance = new EventBatcher()
+    }
+    return EventBatcher.instance
+  }
+
+  addEvent(eventName: string, metadata: any) {
+    if (!shouldTrackEvent(eventName)) {
+      console.log(`🔇 Skipping event due to sampling: ${eventName}`)
+      return
+    }
+
+    this.batch.push({ eventName, metadata })
+    
+    if (this.batch.length >= this.BATCH_SIZE) {
+      this.flush()
+    } else if (!this.batchTimeout) {
+      this.batchTimeout = setTimeout(() => this.flush(), this.BATCH_TIMEOUT)
+    }
+  }
+
+  private flush() {
+    if (this.batch.length === 0) return
+    
+    console.log(`📊 Flushing ${this.batch.length} events to Statsig`)
+    // Here you would send the batch to Statsig
+    // For now, send them individually but this structure allows for batching
+    
+    this.batch.forEach(({ eventName, metadata }) => {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', eventName, metadata)
+      }
+    })
+    
+    this.batch = []
+    if (this.batchTimeout) {
+      clearTimeout(this.batchTimeout)
+      this.batchTimeout = null
+    }
+  }
+}
+
 // Event validation schemas
 const QuizEventSchema = z.object({
   quiz_id: z.string(),
@@ -147,10 +257,35 @@ export function mapCategoryToAnalytics(questionCategory: string): 'constitution'
 
 // Core analytics hook
 export const useAnalytics = () => {
-  const { logEvent, isReady } = useStatsig()
   const { user } = useAuth()
+  
+  // Try to get Statsig context, but provide fallback if not available
+  let logEvent: (eventName: string, value: number, metadata: Record<string, any>) => void
+  let isReady: boolean
+  
+  try {
+    const statsig = useStatsig()
+    logEvent = statsig.logEvent
+    isReady = statsig.isReady
+  } catch (error) {
+    // Fallback when Statsig provider is not available
+    logEvent = (eventName: string, value: number, metadata: Record<string, any>) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📊 Analytics Event (Fallback): ${eventName}`, { value, metadata })
+      }
+    }
+    isReady = true // Always ready in fallback mode
+  }
 
   const trackEvent = (eventName: string, value: number = 1, metadata: Record<string, any> = {}) => {
+    // Check if we should track this event (sampling)
+    if (!shouldTrackEvent(eventName)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔇 Skipping event due to sampling: ${eventName}`)
+      }
+      return
+    }
+
     if (!isReady) {
       console.warn('Statsig not ready, event queued:', eventName)
       // Could implement event queuing here
@@ -166,11 +301,18 @@ export const useAnalytics = () => {
       session_duration_seconds: getSessionDuration(),
       time_of_day: getTimeOfDay(),
       day_of_week: getDayOfWeek(),
-      user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
+      user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+      // Add event priority for debugging
+      event_priority: ANALYTICS_CONFIG.highPriority.includes(eventName) ? 'HIGH' :
+                     ANALYTICS_CONFIG.mediumPriority.events.includes(eventName) ? 'MEDIUM' : 'LOW'
     }
 
     try {
       logEvent(eventName, value, enrichedMetadata)
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📊 Analytics Event Tracked: ${eventName} (${enrichedMetadata.event_priority} priority)`)
+      }
     } catch (error) {
       console.error('Analytics tracking error:', error, { eventName, metadata: enrichedMetadata })
     }
@@ -427,10 +569,31 @@ export const useAnalytics = () => {
     trackEvent(`custom_${eventName}`, value, metadata)
   }
 
+  // Error tracking - always high priority
+  const trackError = (errorType: string, errorMessage: string, metadata: Record<string, any> = {}) => {
+    const errorMetadata = {
+      ...metadata,
+      error_type: errorType,
+      error_message: errorMessage.slice(0, 500), // Limit message length
+      session_id: getSessionId(),
+      timestamp: new Date().toISOString(),
+      user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
+      url: typeof window !== 'undefined' ? window.location.href : ''
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`🚨 Analytics Error Event: ${errorType}`, errorMetadata)
+    }
+
+    // Use trackEvent but with error-specific event name
+    trackEvent('error_occurred', 1, errorMetadata)
+  }
+
   return {
     // Core tracking
     trackEvent,
     trackCustomEvent,
+    trackError,
     
     // Category-specific tracking
     trackAuth,
@@ -501,15 +664,14 @@ export const trackUserJourney = {
     }
   },
 
-  conversionEvent: (event: string, value?: number) => {
+  conversionEvent: (event: string, value?: number, trackCustomEvent?: (eventName: string, value: number, metadata: Record<string, any>) => void) => {
     if (typeof window !== 'undefined') {
       const journeyStart = sessionStorage.getItem('user_journey_start')
-      if (journeyStart) {
+      if (journeyStart && trackCustomEvent) {
         const start = JSON.parse(journeyStart)
         const timeToConversion = (Date.now() - start.timestamp) / 1000
         
         // Track conversion with journey context
-        const { trackCustomEvent } = useAnalytics()
         trackCustomEvent('user_journey_conversion', value || 1, {
           conversion_event: event,
           time_to_conversion_seconds: timeToConversion,

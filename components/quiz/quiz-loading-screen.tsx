@@ -20,10 +20,10 @@ export function QuizLoadingScreen({ onComplete, duration = 5000 }: QuizLoadingSc
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    // Cycle through messages
+    // Cycle through messages with more breathing room
     const messageInterval = setInterval(() => {
       setCurrentMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length)
-    }, 600)
+    }, 1800)
 
     // Update progress
     const progressInterval = setInterval(() => {
@@ -53,14 +53,16 @@ export function QuizLoadingScreen({ onComplete, duration = 5000 }: QuizLoadingSc
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
         </div>
 
-        {/* Loading message */}
+        {/* Loading message with fixed height container to prevent layout shift */}
         <div className="space-y-4">
-          <p 
-            key={currentMessageIndex}
-            className="text-lg text-slate-700 dark:text-slate-300 animate-in fade-in duration-300"
-          >
-            {LOADING_MESSAGES[currentMessageIndex]}
-          </p>
+          <div className="h-7 flex items-center justify-center">
+            <p 
+              key={currentMessageIndex}
+              className="text-lg text-slate-700 dark:text-slate-300 animate-in fade-in duration-300"
+            >
+              {LOADING_MESSAGES[currentMessageIndex]}
+            </p>
+          </div>
           
           {/* Progress bar */}
           <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">

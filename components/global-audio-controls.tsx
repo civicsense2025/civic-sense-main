@@ -27,6 +27,7 @@ import { Crown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
+import { useAnalytics } from "@/utils/analytics"
 
 interface VoiceOption {
   voice: SpeechSynthesisVoice
@@ -831,6 +832,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
 
   const { user } = useAuth()
   const { isPremium, isPro } = usePremium()
+  const { trackEngagement } = useAnalytics()
   const [isSupported, setIsSupported] = useState(false)
   const manager = GlobalAudioManager.getInstance()
   const [isOpen, setIsOpen] = useState(false)
@@ -840,8 +842,9 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const [pitch, setPitch] = useState([1.0])
   const [volume, setVolume] = useState([0.8])
   const [isMuted, setIsMuted] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(true)
   const [isVisible, setIsVisible] = useState(true)
+  const [isInQuiz, setIsInQuiz] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
   const [diagnostics, setDiagnostics] = useState<{
     voiceCount: number
@@ -870,6 +873,9 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
 
       try {
         setIsCloudTTSLoading(true)
+        
+        // Stop any existing browser TTS before starting Cloud TTS
+        manager.stop()
         
         const requestBody: any = {
           text,
@@ -913,6 +919,23 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       manager.setCloudTTSHandler(null)
     }
   }, [useCloudTTS, user, isPremium, isPro, targetLanguage, voiceGender, voiceType, autoDetectLanguage, rate, pitch, volume, manager])
+
+  // Detect if we're in a quiz page to adjust positioning
+  useEffect(() => {
+    const checkQuizPage = () => {
+      if (typeof window !== 'undefined') {
+        setIsInQuiz(window.location.pathname.includes('/quiz/'))
+      }
+    }
+    
+    checkQuizPage()
+    // Listen for navigation changes
+    window.addEventListener('popstate', checkQuizPage)
+    
+    return () => {
+      window.removeEventListener('popstate', checkQuizPage)
+    }
+  }, [])
 
   // Check for speech synthesis support and load voices
   useEffect(() => {
@@ -1123,6 +1146,9 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       setLastError(null)
       setIsCloudTTSLoading(true)
       
+      // Stop any existing browser TTS before starting Cloud TTS
+      manager.stop()
+      
       // Chirp 3 HD voices don't support pitch adjustments, so we exclude pitch for premium voices
       const requestBody: any = {
         text,
@@ -1131,7 +1157,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         voiceType: voiceType,
         autoDetectLanguage: autoDetectLanguage,
         speakingRate: rate[0],
-        volumeGainDb: (volume[0] - 0.5) * 20 // Convert 0-1 to -10 to +10 dB
+        volumeGainDb: (volume[0] - 0.5) * 20
       }
       
       // Only include pitch for non-Chirp3 voices (if we add other voice types later)
@@ -1309,6 +1335,72 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     }
   }
 
+  // Track audio events with analytics integration
+  const handleAudioPlay = (contentType: 'quiz_question' | 'explanation' | 'hint', userInitiated: boolean) => {
+    const startTime = Date.now()
+    
+    // Track when audio finishes or is stopped
+    const handleAudioEnd = (completionPercentage: number) => {
+      const duration = (Date.now() - startTime) / 1000
+      
+      trackEngagement.audioContentPlayed({
+        content_type: contentType,
+        duration_seconds: duration,
+        completion_percentage: completionPercentage,
+        user_initiated: userInitiated,
+        accessibility_feature: isAccessibilityEnabled()
+      })
+    }
+
+    return handleAudioEnd
+  }
+
+  const isAccessibilityEnabled = () => {
+    // Check if user has accessibility preferences enabled
+    try {
+      const prefs = localStorage.getItem('accessibilityPreferences')
+      if (prefs) {
+        const parsed = JSON.parse(prefs)
+        return parsed.audioEnabled || parsed.autoPlayQuestions || parsed.autoPlayAnswers
+      }
+    } catch (e) {
+      console.warn('Error checking accessibility preferences:', e)
+    }
+    return false
+  }
+
+  // Enhanced play function with analytics
+  const handlePlayWithAnalytics = (text: string, contentType: 'quiz_question' | 'explanation' | 'hint' = 'quiz_question') => {
+    const audioEndHandler = handleAudioPlay(contentType, true)
+    
+    playText(text, {
+      voice: selectedVoice || undefined,
+      rate: rate[0],
+      pitch: pitch[0],
+      volume: volume[0],
+      onStart: () => {
+        console.log(`🎵 Started playing ${contentType}`)
+      },
+      onEnd: () => {
+        audioEndHandler(100) // Assume 100% completion for manual plays
+      }
+    })
+  }
+
+  // Enhanced auto-play with analytics
+  const handleAutoPlayWithAnalytics = () => {
+    if (!currentText) {
+      readCurrentPage()
+    } else {
+      const audioEndHandler = handleAudioPlay('explanation', false)
+      restart()
+      // Track completion when audio naturally ends
+      setTimeout(() => {
+        audioEndHandler(100)
+      }, (currentText.length / 10) * 1000) // Rough estimation of reading time
+    }
+  }
+
   if (!isSupported || !isVisible) {
     return null
   }
@@ -1316,7 +1408,11 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   return (
     <TooltipProvider>
       <div className={cn(
-        "fixed bottom-6 right-6 z-50 transition-all duration-300 ease-out",
+        "fixed right-6 z-50 transition-all duration-300 ease-out",
+        // Position higher when in mobile quiz to avoid footer
+        isInQuiz && isMinimized 
+          ? "bottom-20" // Higher position to avoid mobile footer in quiz
+          : "bottom-6", // Normal position
         isMinimized ? "w-14 h-14" : "w-80",
         className
       )}>

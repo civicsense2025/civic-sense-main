@@ -2,9 +2,9 @@
 
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, EyeOff } from "lucide-react"
+import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, EyeOff, Sparkles } from "lucide-react"
 import confetti from "canvas-confetti"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback, memo, useRef } from "react"
 import { SocialShare } from "@/components/social-share"
 import { dataService } from "@/lib/data-service"
 import { cn } from "@/lib/utils"
@@ -18,7 +18,6 @@ import { useGamification } from "@/hooks/useGamification"
 import { progressiveXpOperations } from "@/lib/enhanced-gamification"
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
-
 
 interface UserAnswer {
   questionId: number
@@ -34,13 +33,247 @@ interface QuizResultsProps {
   topicId: string
 }
 
+// Memoized components for performance
+const MemoizedScoreDisplay = memo(({ 
+  animatedScore, 
+  score, 
+  badge 
+}: { 
+  animatedScore: number
+  score: number
+  badge: { text: string; emoji: string; color: string }
+}) => {
+  const getScoreColor = useCallback(() => {
+    if (score >= 90) return "text-green-600 dark:text-green-400"
+    if (score >= 80) return "text-blue-600 dark:text-blue-400"
+    if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
+  }, [score])
+
+  return (
+    <>
+      <div className="relative inline-flex items-center justify-center w-32 h-32 animate-in zoom-in duration-500">
+        <svg className="absolute inset-0 w-full h-full -rotate-90">
+          <circle
+            cx="64"
+            cy="64"
+            r="60"
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="none"
+            className="text-slate-200 dark:text-slate-700"
+          />
+          <circle
+            cx="64"
+            cy="64"
+            r="60"
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="none"
+            strokeDasharray={`${(animatedScore / 100) * 377} 377`}
+            className={cn("transition-all duration-1000 ease-out", getScoreColor())}
+          />
+        </svg>
+        <div className={cn(
+          "text-4xl font-light transition-all duration-500",
+          getScoreColor(),
+          animatedScore === score && "scale-110"
+        )}>
+          {animatedScore}%
+        </div>
+      </div>
+
+      <div className={cn(
+        "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg transition-all duration-500 hover:scale-105",
+        badge.color,
+        "animate-in slide-in-from-bottom-4 duration-700 delay-300"
+      )}>
+        <span className="text-2xl mr-3 animate-bounce">{badge.emoji}</span>
+        {badge.text}
+      </div>
+    </>
+  )
+})
+
+MemoizedScoreDisplay.displayName = 'MemoizedScoreDisplay'
+
+const MemoizedStatCard = memo(({ 
+  icon, 
+  label, 
+  value, 
+  delay = 0 
+}: { 
+  icon: string
+  label: string
+  value: string | number
+  delay?: number
+}) => (
+  <div 
+    className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <div className="text-2xl mb-2">{icon}</div>
+    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{label}</div>
+    <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{value}</div>
+  </div>
+))
+
+MemoizedStatCard.displayName = 'MemoizedStatCard'
+
+const MemoizedQuestionReview = memo(({ 
+  question, 
+  userAnswer, 
+  index,
+  showExplanations,
+  topicId,
+  formatTime,
+  getSelectedAnswerText
+}: {
+  question: QuizQuestion
+  userAnswer: UserAnswer | undefined
+  index: number
+  showExplanations: boolean
+  topicId: string
+  formatTime: (seconds: number) => string
+  getSelectedAnswerText: (question: QuizQuestion, answerKey: string) => string
+}) => {
+  const isCorrect = userAnswer?.isCorrect || false
+  const selectedAnswer = userAnswer?.answer || ""
+  const timeSpent = userAnswer?.timeSpent || 0
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <div 
+      className={cn(
+        "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 transition-all duration-300",
+        "hover:shadow-lg animate-in fade-in slide-in-from-bottom-4",
+        isExpanded && "scale-[1.02]"
+      )}
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className="flex items-start gap-4">
+        {/* Question number with enhanced styling */}
+        <div className={cn(
+          "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold transition-all duration-300",
+          isCorrect 
+            ? "bg-green-500 border-green-500 text-white animate-in zoom-in duration-300" 
+            : "bg-red-500 border-red-500 text-white animate-in zoom-in duration-300 animate-pulse"
+        )}>
+          {index + 1}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start mb-3">
+            <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
+              {question.question}
+            </p>
+            <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
+              <Clock className="h-4 w-4 mr-1" />
+              {formatTime(timeSpent)}
+            </div>
+          </div>
+
+          {/* Answer feedback with smooth transitions */}
+          <div className="space-y-2 mb-4">
+            {isCorrect ? (
+              <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300">
+                <CheckCircle className="inline h-4 w-4 mr-1" />
+                <span className="font-medium">Your answer:</span>{" "}
+                <span className="font-semibold">
+                  {question.question_type === "multiple_choice"
+                    ? getSelectedAnswerText(question, selectedAnswer)
+                    : selectedAnswer}
+                </span>
+              </p>
+            ) : (
+              <>
+                <p className="text-red-600 dark:text-red-400 text-sm animate-in fade-in duration-300">
+                  <XCircle className="inline h-4 w-4 mr-1" />
+                  <span className="font-medium">Your answer:</span>{" "}
+                  <span className="line-through opacity-75">
+                    {question.question_type === "multiple_choice"
+                      ? getSelectedAnswerText(question, selectedAnswer)
+                      : selectedAnswer || "(no answer)"}
+                  </span>
+                </p>
+                <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300 delay-100">
+                  <CheckCircle className="inline h-4 w-4 mr-1" />
+                  <span className="font-medium">Correct answer:</span>{" "}
+                  <span className="font-semibold">
+                    {question.question_type === "multiple_choice"
+                      ? getSelectedAnswerText(question, question.correct_answer)
+                      : question.correct_answer}
+                  </span>
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Explanation with smooth expand/collapse */}
+          {showExplanations && (
+            <div 
+              className={cn(
+                "overflow-hidden transition-all duration-500",
+                isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+              )}
+            >
+              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
+                <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                  {question.explanation}
+                </p>
+              </div>
+
+              {/* Sources using SourceMetadataCard */}
+              {question.sources.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
+                    📚 Learn more:
+                  </p>
+                  <div className="space-y-3">
+                    {question.sources.map((source, idx) => (
+                      <SourceMetadataCard
+                        key={idx}
+                        source={source}
+                        showThumbnail={true}
+                        compact={false}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Expand/Collapse button */}
+          {showExplanations && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
+            >
+              {isExpanded ? "Hide details" : "Show details"}
+              <Sparkles className="h-3 w-3 ml-1" />
+            </Button>
+          )}
+
+          {/* Question Feedback */}
+          <QuestionFeedback 
+            questionId={question.question_number?.toString() || `${question.question_number}`}
+            questionText={question.question}
+            topicId={topicId}
+          />
+        </div>
+      </div>
+    </div>
+  )
+})
+
+MemoizedQuestionReview.displayName = 'MemoizedQuestionReview'
+
 export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizResultsProps) {
   const { user } = useAuth()
   const { progress, refreshProgress } = useGamification()
-  const correctAnswers = userAnswers.filter((answer) => answer.isCorrect).length
-  const totalQuestions = questions.length
-  const score = Math.round((correctAnswers / totalQuestions) * 100)
-  const isPerfectScore = correctAnswers === totalQuestions
   const [topicTitle, setTopicTitle] = useState("Civic Quiz")
   const [showStats, setShowStats] = useState(false)
   const [animatedScore, setAnimatedScore] = useState(0)
@@ -49,18 +282,32 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
   const [showAchievements, setShowAchievements] = useState(false)
   const [progressUpdated, setProgressUpdated] = useState(false)
   const [showExplanations, setShowExplanations] = useState(true)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Calculate additional stats
-  const averageTime = Math.round(userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0) / userAnswers.length)
-  const fastestAnswer = Math.min(...userAnswers.map(a => a.timeSpent))
-  const streak = calculateLongestStreak(userAnswers)
-  const totalTime = userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0)
+  // Memoized calculations
+  const { correctAnswers, totalQuestions, score, isPerfectScore } = useMemo(() => {
+    const correct = userAnswers.filter((answer) => answer.isCorrect).length
+    const total = questions.length
+    const scorePercent = Math.round((correct / total) * 100)
+    return {
+      correctAnswers: correct,
+      totalQuestions: total,
+      score: scorePercent,
+      isPerfectScore: correct === total
+    }
+  }, [userAnswers, questions])
 
-  function calculateLongestStreak(answers: UserAnswer[]): number {
+  // Memoized stats calculations
+  const { averageTime, fastestAnswer, streak, totalTime } = useMemo(() => {
+    const times = userAnswers.map(a => a.timeSpent)
+    const total = times.reduce((sum, time) => sum + time, 0)
+    const avg = Math.round(total / userAnswers.length)
+    const fastest = Math.min(...times)
+    
+    // Calculate longest streak
     let maxStreak = 0
     let currentStreak = 0
-    
-    answers.forEach(answer => {
+    userAnswers.forEach(answer => {
       if (answer.isCorrect) {
         currentStreak++
         maxStreak = Math.max(maxStreak, currentStreak)
@@ -69,8 +316,47 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
       }
     })
     
-    return maxStreak
-  }
+    return {
+      averageTime: avg,
+      fastestAnswer: fastest,
+      streak: maxStreak,
+      totalTime: total
+    }
+  }, [userAnswers])
+
+  // Memoized helper functions
+  const formatTime = useCallback((seconds: number) => {
+    if (seconds < 60) return `${seconds}s`
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}m ${remainingSeconds}s`
+  }, [])
+
+  const getSelectedAnswerText = useCallback((question: QuizQuestion, answerKey: string): string => {
+    const optionMap: Record<string, string> = {
+      option_a: question.option_a || "",
+      option_b: question.option_b || "",
+      option_c: question.option_c || "",
+      option_d: question.option_d || "",
+    }
+    return optionMap[answerKey] || answerKey
+  }, [])
+
+  const getScoreBadge = useCallback(() => {
+    if (score >= 90) return { text: "Excellent!", emoji: "🏆", color: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" }
+    if (score >= 80) return { text: "Great Job!", emoji: "🎉", color: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" }
+    if (score >= 70) return { text: "Good Work!", emoji: "👍", color: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300" }
+    return { text: "Keep Trying!", emoji: "💪", color: "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" }
+  }, [score])
+
+  const getPerformanceMessage = useCallback(() => {
+    if (score >= 90) return "Outstanding performance! You've mastered this topic! 🌟"
+    if (score >= 80) return "Excellent work! You have a strong understanding! 🎯"
+    if (score >= 70) return "Good job! You're on the right track! 📈"
+    return "Keep studying! Practice makes perfect! 💪"
+  }, [score])
+
+  const badge = getScoreBadge()
 
   // Load topic title
   useEffect(() => {
@@ -87,12 +373,18 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
     loadTopicTitle()
   }, [topicId])
 
-  // Save quiz results and update progress
-  useEffect(() => {
-    const saveQuizAndUpdateProgress = async () => {
-      if (!user || progressUpdated) return
+  // Debounced save quiz results
+  const saveQuizResults = useCallback(async () => {
+    if (!user || progressUpdated) return
 
-      try {
+    try {
+      // Clear any existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+
+      // Debounce the save operation
+      saveTimeoutRef.current = setTimeout(async () => {
         // Prepare quiz attempt data for database
         const quizAttemptData: QuizAttemptData = {
           userId: user.id,
@@ -110,11 +402,11 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
           }))
         }
 
-        // Save to database (this also updates user progress)
+        // Save to database
         const savedAttempt = await quizDatabase.saveQuizAttempt(quizAttemptData)
         console.log('Quiz attempt saved to database:', savedAttempt.id)
 
-        // Also save to localStorage as backup/cache for dashboard
+        // Also save to localStorage as backup/cache
         const quizResult = {
           topicId,
           topicTitle,
@@ -135,62 +427,72 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         const savedResults = existingResults ? JSON.parse(existingResults) : []
         savedResults.push(quizResult)
         
-        // Keep only the last 50 results to prevent localStorage bloat
+        // Keep only the last 50 results
         if (savedResults.length > 50) {
           savedResults.splice(0, savedResults.length - 50)
         }
         
         localStorage.setItem(resultsKey, JSON.stringify(savedResults))
 
-        // Clear any partial quiz state since we completed it
+        // Clear any partial quiz state
         quizDatabase.clearPartialQuizState(user.id, topicId)
 
-        // Note: Enhanced gamification progress is now handled in the QuizEngine component
-        // to avoid double-processing. The quiz engine calls updateProgress before showing results.
-        console.log('💾 Quiz results saved to database and localStorage')
+        console.log('💾 Quiz results saved')
 
-        // Refresh gamification progress to get updated stats
+        // Refresh gamification progress
         if (refreshProgress) {
           await refreshProgress()
         }
 
         setProgressUpdated(true)
 
-        // Show achievements after a delay to let the score animation finish
+        // Show achievements after a delay
         setTimeout(() => {
-          // Check if we have any new achievements from the progress data
           if (progress?.currentStreak && progress.currentStreak > 0) {
-            // This could trigger achievement notifications based on updated progress
             console.log('🎮 Updated gamification stats available')
           }
         }, 3000)
 
-      } catch (error) {
-        console.error('Error updating enhanced progress:', {
-          error: error instanceof Error ? error.message : error,
-          stack: error instanceof Error ? error.stack : undefined,
-          userId: user.id,
-          topicId
-        })
-        setProgressUpdated(true) // Don't retry on error
+      }, 500) // 500ms debounce
+
+    } catch (error) {
+      console.error('Error saving quiz results:', error)
+      setProgressUpdated(true)
+    }
+  }, [user, progressUpdated, topicId, topicTitle, totalQuestions, correctAnswers, score, totalTime, userAnswers, refreshProgress, progress])
+
+  // Save quiz results
+  useEffect(() => {
+    saveQuizResults()
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
       }
     }
+  }, [saveQuizResults])
 
-    saveQuizAndUpdateProgress()
-  }, [user, topicId, topicTitle, correctAnswers, totalQuestions, totalTime, isPerfectScore, userAnswers, questions, progressUpdated])
-
-  // Animate score counter
+  // Optimized score animation with requestAnimationFrame
   useEffect(() => {
-    const duration = 2000 // 2 seconds
-    const steps = 60
-    const increment = score / steps
-    let current = 0
-    
-    const timer = setInterval(() => {
-      current += increment
-      if (current >= score) {
-        setAnimatedScore(score)
-        clearInterval(timer)
+    const duration = 2000
+    const startTime = Date.now()
+    const startValue = 0
+    const endValue = score
+
+    const animate = () => {
+      const now = Date.now()
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+      const currentValue = Math.round(startValue + (endValue - startValue) * easeOutQuart)
+      
+      setAnimatedScore(currentValue)
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
         setShowStats(true)
         
         // Trigger confetti for good scores
@@ -201,111 +503,63 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
               spread: 70,
               origin: { y: 0.6 }
             })
-          }, 500)
+          }, 300)
         }
-      } else {
-        setAnimatedScore(Math.round(current))
       }
-    }, duration / steps)
+    }
 
-    return () => clearInterval(timer)
+    requestAnimationFrame(animate)
   }, [score])
 
-  // Confetti effect for perfect scores
+  // Optimized confetti effect for perfect scores
   useEffect(() => {
-    if (isPerfectScore && animatedScore === score) {
-      const duration = 3000
-      const end = Date.now() + duration
+    if (!isPerfectScore || animatedScore !== score) return
 
-      function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min
+    const duration = 3000
+    const animationEnd = Date.now() + duration
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min
+    }
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now()
+
+      if (timeLeft <= 0) {
+        clearInterval(interval)
+        return
       }
 
-      const interval = setInterval(() => {
-        const timeLeft = end - Date.now()
+      const particleCount = 50 * (timeLeft / duration)
 
-        if (timeLeft <= 0) {
-          clearInterval(interval)
-          return
-        }
+      // Shoot confetti from different sides
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      })
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      })
+    }, 250)
 
-        const particleCount = 50 * (timeLeft / duration)
-
-        confetti({
-          particleCount,
-          startVelocity: 30,
-          spread: 360,
-          origin: {
-            x: randomInRange(0.1, 0.3),
-            y: Math.random() - 0.2
-          }
-        })
-        confetti({
-          particleCount,
-          startVelocity: 30,
-          spread: 360,
-          origin: {
-            x: randomInRange(0.7, 0.9),
-            y: Math.random() - 0.2
-          }
-        })
-      }, 250)
-
-      return () => clearInterval(interval)
-    }
+    return () => clearInterval(interval)
   }, [isPerfectScore, animatedScore, score])
 
-  const getSelectedAnswerText = (question: QuizQuestion, answerKey: string): string => {
-    const optionMap: Record<string, string> = {
-      option_a: question.option_a || "",
-      option_b: question.option_b || "",
-      option_c: question.option_c || "",
-      option_d: question.option_d || "",
-    }
-    return optionMap[answerKey] || answerKey
-  }
-
-  const getScoreColor = () => {
-    if (score >= 90) return "text-green-600 dark:text-green-400"
-    if (score >= 80) return "text-blue-600 dark:text-blue-400"
-    if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
-    return "text-red-600 dark:text-red-400"
-  }
-
-  const getScoreBadge = () => {
-    if (score >= 90) return { text: "Excellent!", emoji: "🏆", color: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" }
-    if (score >= 80) return { text: "Great Job!", emoji: "🎉", color: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" }
-    if (score >= 70) return { text: "Good Work!", emoji: "👍", color: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300" }
-    return { text: "Keep Trying!", emoji: "💪", color: "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" }
-  }
-
-  const badge = getScoreBadge()
-
-  const getPerformanceMessage = () => {
-    if (score >= 90) return "Outstanding performance! You've mastered this topic! 🌟"
-    if (score >= 80) return "Excellent work! You have a strong understanding! 🎯"
-    if (score >= 70) return "Good job! You're on the right track! 📈"
-    return "Keep studying! Practice makes perfect! 💪"
-  }
-
-  const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}m ${remainingSeconds}s`
-  }
-
-  const handleCloseAchievements = () => {
+  const handleCloseAchievements = useCallback(() => {
     setShowAchievements(false)
     setNewAchievements([])
     setLevelUpInfo(undefined)
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
+        {/* Header with animation */}
+        <div className="text-center space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
           <h1 className="text-3xl font-light text-slate-900 dark:text-slate-50">
             Quiz Complete! 🎉
           </h1>
@@ -316,67 +570,50 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
 
         {/* Score Display - Clean Design */}
         <div className="text-center space-y-6">
-          <div className="relative inline-flex items-center justify-center w-32 h-32">
-            <div className="absolute inset-0">
-              <Progress 
-                value={animatedScore} 
-                className="w-full h-full rounded-full"
-              />
-            </div>
-            <div className={cn(
-              "text-4xl font-light transition-all duration-500",
-              getScoreColor(),
-              animatedScore === score && "scale-110"
-            )}>
-              {animatedScore}%
-            </div>
-          </div>
+          <MemoizedScoreDisplay 
+            animatedScore={animatedScore} 
+            score={score} 
+            badge={badge} 
+          />
 
-          <div className={cn(
-            "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg",
-            badge.color
-          )}>
-            <span className="text-2xl mr-3">{badge.emoji}</span>
-            {badge.text}
-          </div>
-
-          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
             {getPerformanceMessage()}
           </p>
         </div>
 
-        {/* Stats Cards - Enhanced with gamification data */}
+        {/* Stats Cards - Enhanced with staggered animations */}
         {showStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">⏱️</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Avg Time</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(averageTime)}</div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">⚡</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fastest</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(fastestAnswer)}</div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">🔥</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Global Streak</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{progress?.currentStreak || 0}</div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">🎚️</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Level</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{progress?.currentLevel || 1}</div>
-            </div>
+            <MemoizedStatCard 
+              icon="⏱️" 
+              label="Avg Time" 
+              value={formatTime(averageTime)} 
+              delay={0}
+            />
+            <MemoizedStatCard 
+              icon="⚡" 
+              label="Fastest" 
+              value={formatTime(fastestAnswer)} 
+              delay={100}
+            />
+            <MemoizedStatCard 
+              icon="🔥" 
+              label="Global Streak" 
+              value={progress?.currentStreak || 0} 
+              delay={200}
+            />
+            <MemoizedStatCard 
+              icon="🎚️" 
+              label="Level" 
+              value={progress?.currentLevel || 1} 
+              delay={300}
+            />
           </div>
         )}
 
         {/* Question Review */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between animate-in fade-in duration-500">
             <h3 className="text-xl font-medium text-slate-900 dark:text-slate-50">
               Question Review ({correctAnswers}/{totalQuestions} correct)
             </h3>
@@ -384,7 +621,7 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
               variant="outline"
               size="sm"
               onClick={() => setShowExplanations(!showExplanations)}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 transition-all hover:scale-105"
             >
               {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               <span className="text-sm">
@@ -396,121 +633,40 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
           <div className="space-y-4">
             {questions.map((question, index) => {
               const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
-              const isCorrect = userAnswer?.isCorrect || false
-              const selectedAnswer = userAnswer?.answer || ""
-              const timeSpent = userAnswer?.timeSpent || 0
-
+              
               return (
-                <div 
-                  key={question.question_number} 
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Question number with keyboard shortcut styling */}
-                    <div className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold",
-                      isCorrect 
-                        ? "bg-green-500 border-green-500 text-white" 
-                        : "bg-red-500 border-red-500 text-white"
-                    )}>
-                      {index + 1}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-3">
-                        <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
-                          {question.question}
-                        </p>
-                        <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {formatTime(timeSpent)}
-                        </div>
-                      </div>
-
-                      {/* Answer feedback */}
-                      <div className="space-y-2 mb-4">
-                        {isCorrect ? (
-                          <p className="text-green-600 dark:text-green-400 text-sm">
-                            <span className="font-medium">Your answer:</span>{" "}
-                            {question.question_type === "multiple_choice"
-                              ? getSelectedAnswerText(question, selectedAnswer)
-                              : selectedAnswer}
-                          </p>
-                        ) : (
-                          <>
-                            <p className="text-red-600 dark:text-red-400 text-sm">
-                              <span className="font-medium">Your answer:</span>{" "}
-                              {question.question_type === "multiple_choice"
-                                ? getSelectedAnswerText(question, selectedAnswer)
-                                : selectedAnswer || "(no answer)"}
-                            </p>
-                            <p className="text-green-600 dark:text-green-400 text-sm">
-                              <span className="font-medium">Correct answer:</span>{" "}
-                              {question.question_type === "multiple_choice"
-                                ? getSelectedAnswerText(question, question.correct_answer)
-                                : question.correct_answer}
-                            </p>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Explanation */}
-                      {showExplanations && (
-                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
-                          <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                            {question.explanation}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Sources using SourceMetadataCard */}
-                      {showExplanations && question.sources.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
-                            📚 Learn more:
-                          </p>
-                          <div className="space-y-3">
-                            {question.sources.map((source, idx) => (
-                              <SourceMetadataCard
-                                key={idx}
-                                source={source}
-                                showThumbnail={true}
-                                compact={false}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Question Feedback */}
-                      <QuestionFeedback 
-                        questionId={question.question_number?.toString() || `${question.question_number}`}
-                        questionText={question.question}
-                        topicId={topicId}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <MemoizedQuestionReview
+                  key={question.question_number}
+                  question={question}
+                  userAnswer={userAnswer}
+                  index={index}
+                  showExplanations={showExplanations}
+                  topicId={topicId}
+                  formatTime={formatTime}
+                  getSelectedAnswerText={getSelectedAnswerText}
+                />
               )
             })}
           </div>
         </div>
 
         {/* Premium Data Teaser */}
-        <PremiumDataTeaser 
-          variant="banner"
-          className="mb-6"
-        />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <PremiumDataTeaser 
+            variant="banner"
+            className="mb-6"
+          />
+        </div>
 
         {/* Actions */}
-        <div className="space-y-4">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex justify-center">
             <SocialShare title={topicTitle} score={score} totalQuestions={totalQuestions} />
           </div>
 
           <Button 
             onClick={onFinish} 
-            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white h-12 text-lg"
+            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white h-12 text-lg transition-all hover:scale-[1.02] hover:shadow-lg"
           >
             Complete Quiz 🎉
           </Button>

@@ -121,20 +121,19 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
     return parsed
   }, [topicData.why_this_matters])
 
-  // Auto-play the topic title and first blurb when autoplay is enabled
+  // Auto-play the topic title and all blurbs when autoplay is enabled
   useEffect(() => {
     if (autoPlayEnabled && topicData.topic_title) {
-      // Build text to read: title + first couple of blurbs
+      // Build text to read: title + all blurbs
       let textToRead = `${topicData.topic_title}. Why this matters: `
       
       if (blurbs.length > 0) {
-        // Add first 2 blurbs
-        const firstBlurbs = blurbs.slice(0, 2)
-        textToRead += firstBlurbs.map(blurb => `${blurb.title}. ${blurb.content}`).join('. ')
+        // Add all blurbs
+        textToRead += blurbs.map(blurb => `${blurb.title}. ${blurb.content}`).join('. ')
       } else if (topicData.why_this_matters) {
         // Fallback to raw content if no blurbs parsed
         const plainText = topicData.why_this_matters.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-        textToRead += plainText.slice(0, 300) // Limit length
+        textToRead += plainText.slice(0, 600) // Limit length
       }
       
       // Small delay to ensure UI is ready
@@ -152,7 +151,7 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
           <div className="text-6xl sm:text-8xl mb-4">
             {topicData.emoji}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-8">
+          <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-8">
             {topicData.topic_title}
           </h1>
           <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
@@ -193,17 +192,23 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
         )}
       </div>
 
-      <div className="mt-auto">
-        {requireAuth ? (
-          <Button onClick={onAuthRequired} className="w-full py-6 sm:py-8 text-lg sm:text-xl font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow">
-            Sign Up to Start Quiz <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        ) : (
-          <Button onClick={onStartQuiz} className="w-full py-6 sm:py-8 text-lg sm:text-xl font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow">
-            Start Quiz <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        )}
+      {/* Floating action button - now fully centered in viewport */}
+      <div className="fixed inset-0 flex items-end justify-center pointer-events-none z-50">
+        <div className="pb-[10vh] pointer-events-auto">
+          {requireAuth ? (
+            <Button onClick={onAuthRequired} className="py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
+              Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          ) : (
+            <Button onClick={onStartQuiz} className="py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
+              Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          )}
+        </div>
       </div>
+      
+      {/* Spacer to ensure content doesn't overlap with fixed button */}
+      <div className="h-24"></div>
     </div>
   )
 }

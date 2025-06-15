@@ -33,7 +33,7 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess }: AuthDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto p-0 gap-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+      <DialogContent className="max-w-md p-0 gap-0 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
         <DialogHeader className="sr-only">
           <DialogTitle>
             {activeTab === "donate" ? "Support CivicSense" : "Join CivicSense"}

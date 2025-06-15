@@ -15,8 +15,8 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
   return (
     <div className={className}>
       {/* Explanation text */}
-      <div className="text-left max-w-2xl mx-auto space-y-6">
-        <p className="text-slate-700 dark:text-slate-300 font-light leading-relaxed text-lg">
+      <div className="text-left max-w-2xl mx-auto space-y-4">
+        <p className="text-slate-700 dark:text-slate-300 font-light leading-relaxed text-base">
           {question.explanation}
         </p>
         

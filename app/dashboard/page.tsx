@@ -31,6 +31,7 @@ import { enhancedProgressOperations, type EnhancedUserProgress, type Achievement
 import { quizDatabase } from "@/lib/quiz-database"
 import Link from "next/link"
 import { useAnalytics } from "@/utils/analytics"
+import { EnhancedProgressDashboard } from "@/components/enhanced-progress-dashboard"
 
 interface DashboardData {
   totalQuizzes: number
@@ -408,290 +409,290 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
-      {/* Clean header */}
-      <div className="border-b border-slate-100 dark:border-slate-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Clean branding */}
-            <Link 
-              href="/" 
-              className="group hover:opacity-70 transition-opacity"
-            >
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                CivicSense
-              </h1>
-            </Link>
-            
-            {/* Minimal user menu */}
-            <UserMenu 
-              onSignInClick={() => {}} 
-              searchQuery=""
-              onSearchChange={() => {}}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="min-h-screen bg-white dark:bg-black">
-        <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
-        {/* Clean header with lots of whitespace */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}
-          </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-            Track your civic knowledge and create custom learning experiences
-          </p>
-          <div className="flex justify-center pt-2">
-            {getTierBadge()}
-          </div>
-        </div>
-
-        {/* Main progress section - Apple style */}
-        <div className="text-center space-y-8">
-          <div className="space-y-2">
-            <div className="text-6xl font-light text-slate-900 dark:text-white">
-              {completionPercentage}%
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 font-light">
-              {dashboardData.completedQuizzes} of {dashboardData.totalQuizzes} topics completed
-            </p>
-          </div>
-          
-          {/* Clean progress bar */}
-          <div className="max-w-md mx-auto">
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1">
-              <div 
-                className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${completionPercentage}%` }}
+    <div className="container mx-auto px-4 py-8">
+        {/* Clean header */}
+        <div className="border-b border-slate-100 dark:border-slate-900">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
+            <div className="flex items-center justify-between">
+              {/* Clean branding */}
+              <Link 
+                href="/" 
+                className="group hover:opacity-70 transition-opacity"
+              >
+                <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
+                  CivicSense
+                </h1>
+              </Link>
+              
+              {/* Minimal user menu */}
+              <UserMenu 
+                onSignInClick={() => {}} 
+                searchQuery=""
+                onSearchChange={() => {}}
               />
             </div>
           </div>
         </div>
 
-        {/* Key stats - minimal design */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-          <div className="space-y-2">
-            <div className="text-3xl font-light text-slate-900 dark:text-white">
-              {enhancedProgress?.currentLevel || 1}
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 font-light">Current Level</p>
-            <p className="text-sm text-slate-500 dark:text-slate-500">
-              {enhancedProgress?.totalXp?.toLocaleString() || 0} XP earned
+        <div className="min-h-screen bg-white dark:bg-black">
+          <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+          {/* Clean header with lots of whitespace */}
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+              Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}
+            </h1>
+            <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+              Track your civic knowledge and create custom learning experiences
             </p>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="text-3xl font-light text-slate-900 dark:text-white">
-              {dashboardData.currentStreak}
+            <div className="flex justify-center pt-2">
+              {getTierBadge()}
             </div>
-            <p className="text-slate-600 dark:text-slate-400 font-light">Day Streak</p>
-            <p className="text-sm text-slate-500 dark:text-slate-500">
-              Keep it going!
-            </p>
           </div>
-          
-          <div className="space-y-2">
-            <div className="text-3xl font-light text-slate-900 dark:text-white">
-              {Math.round(dashboardData.averageScore)}%
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 font-light">Average Score</p>
-            <p className="text-sm text-slate-500 dark:text-slate-500">
-              Across all quizzes
-            </p>
-          </div>
-        </div>
 
-        {/* Skills section - clean list */}
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-light text-slate-900 dark:text-white">Civic Skills</h2>
-            <Button variant="ghost" asChild className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-              <Link href="/skills">
-                View All →
-              </Link>
-            </Button>
+          {/* Main progress section - Apple style */}
+          <div className="text-center space-y-8">
+            <div className="space-y-2">
+              <div className="text-6xl font-light text-slate-900 dark:text-white">
+                {completionPercentage}%
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-light">
+                {dashboardData.completedQuizzes} of {dashboardData.totalQuizzes} topics completed
+              </p>
+            </div>
+            
+            {/* Clean progress bar */}
+            <div className="max-w-md mx-auto">
+              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1">
+                <div 
+                  className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-6">
-            {userSkills.slice(0, 3).map((skill, index) => (
-              <div key={skill.id} className="group">
-                <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{CIVIC_CATEGORIES.find(c => c.name === skill.category_name)?.emoji || '📚'}</span>
-                      <h3 className="font-medium text-slate-900 dark:text-white">{skill.skill_name}</h3>
-                      <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700">
-                        {skill.mastery_level}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 font-light ml-8">
-                      {skill.description}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
-                        {skill.progress_percentage}%
+
+          {/* Key stats - minimal design */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            <div className="space-y-2">
+              <div className="text-3xl font-light text-slate-900 dark:text-white">
+                {enhancedProgress?.currentLevel || 1}
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-light">Current Level</p>
+              <p className="text-sm text-slate-500 dark:text-slate-500">
+                {enhancedProgress?.totalXp?.toLocaleString() || 0} XP earned
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="text-3xl font-light text-slate-900 dark:text-white">
+                {dashboardData.currentStreak}
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-light">Day Streak</p>
+              <p className="text-sm text-slate-500 dark:text-slate-500">
+                Keep it going!
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="text-3xl font-light text-slate-900 dark:text-white">
+                {Math.round(dashboardData.averageScore)}%
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-light">Average Score</p>
+              <p className="text-sm text-slate-500 dark:text-slate-500">
+                Across all quizzes
+              </p>
+            </div>
+          </div>
+
+          {/* Skills section - clean list */}
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white">Civic Skills</h2>
+              <Button variant="ghost" asChild className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                <Link href="/skills">
+                  View All →
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              {userSkills.slice(0, 3).map((skill, index) => (
+                <div key={skill.id} className="group">
+                  <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{CIVIC_CATEGORIES.find(c => c.name === skill.category_name)?.emoji || '📚'}</span>
+                        <h3 className="font-medium text-slate-900 dark:text-white">{skill.skill_name}</h3>
+                        <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700">
+                          {skill.mastery_level}
+                        </Badge>
                       </div>
-                      <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1">
-                        <div 
-                          className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-500"
-                          style={{ width: `${skill.progress_percentage}%` }}
-                        />
-                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 font-light ml-8">
+                        {skill.description}
+                      </p>
                     </div>
                     
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-400"
-                      onClick={() => {
-                        setSelectedSkill(skill.skill_slug)
-                        setIsSkillModalOpen(true)
-                      }}
-                    >
-                      Details
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent activity - clean list */}
-        {dashboardData.recentActivity.length > 0 && (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-light text-slate-900 dark:text-white">Recent Activity</h2>
-            
-            <div className="space-y-4">
-              {dashboardData.recentActivity.slice(0, 5).map((activity, index) => (
-                <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                      {activity.topicTitle}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
-                        {new Date(activity.completedAt).toLocaleDateString()}
-                      </p>
-                      {activity.timeSpent && (
-                        <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
-                          {Math.round(activity.timeSpent / 60)}m
-                        </p>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {skill.progress_percentage}%
+                        </div>
+                        <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1">
+                          <div 
+                            className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-500"
+                            style={{ width: `${skill.progress_percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-400"
+                        onClick={() => {
+                          setSelectedSkill(skill.skill_slug)
+                          setIsSkillModalOpen(true)
+                        }}
+                      >
+                        Details
+                      </Button>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn(
-                      "text-lg font-light",
-                      activity.score >= 80 ? "text-green-600 dark:text-green-400" :
-                      activity.score >= 60 ? "text-blue-600 dark:text-blue-400" :
-                      "text-orange-600 dark:text-orange-400"
-                    )}>
-                      {activity.score}%
-                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Premium features teaser */}
-        <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">
-          <PremiumDataTeaser 
-            variant="banner"
-            onUpgradeClick={() => setActiveTab('subscription')}
-          />
-        </div>
-
-        {/* Navigation tabs - minimal */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
-            <TabsTrigger 
-              value="overview" 
-              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
-              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-            >
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger 
-              value="subscription" 
-              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-            >
-              Account
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-12">
-            {/* Learning objectives */}
-            {user && (
-              <div className="max-w-2xl mx-auto">
-                <LearningObjectivesCard 
-                  limit={5} 
-                  onViewSkill={(skillSlug) => {
-                    setSelectedSkill(skillSlug)
-                    setIsSkillModalOpen(true)
-                  }}
-                />
+          {/* Recent activity - clean list */}
+          {dashboardData.recentActivity.length > 0 && (
+            <div className="space-y-8">
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white">Recent Activity</h2>
+              
+              <div className="space-y-4">
+                {dashboardData.recentActivity.slice(0, 5).map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-slate-900 dark:text-white truncate">
+                        {activity.topicTitle}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+                          {new Date(activity.completedAt).toLocaleDateString()}
+                        </p>
+                        {activity.timeSpent && (
+                          <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+                            {Math.round(activity.timeSpent / 60)}m
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={cn(
+                        "text-lg font-light",
+                        activity.score >= 80 ? "text-green-600 dark:text-green-400" :
+                        activity.score >= 60 ? "text-blue-600 dark:text-blue-400" :
+                        "text-orange-600 dark:text-orange-400"
+                      )}>
+                        {activity.score}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </TabsContent>
+            </div>
+          )}
 
-          <TabsContent value="analytics" className="space-y-12">
-            <div className="max-w-4xl mx-auto">
-              {hasFeatureAccess('advanced_analytics') ? (
-                <PremiumAnalytics />
-              ) : (
-                <div className="text-center py-16">
-                  <div className="text-4xl mb-4">📊</div>
-                  <h3 className="text-xl font-light mb-2 text-slate-900 dark:text-white">Advanced Analytics</h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto font-light">
-                    Unlock detailed insights into your learning progress and skill development
-                  </p>
-                  <Button 
-                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 rounded-full px-8"
-                    onClick={() => setActiveTab('subscription')}
-                  >
-                    Upgrade to Premium
-                  </Button>
+          {/* Premium features teaser */}
+          <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">
+            <PremiumDataTeaser 
+              variant="banner"
+              onUpgradeClick={() => setActiveTab('subscription')}
+            />
+          </div>
+
+          {/* Navigation tabs - minimal */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
+              <TabsTrigger 
+                value="overview" 
+                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analytics" 
+                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+              >
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger 
+                value="subscription" 
+                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+              >
+                Account
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-12">
+              {/* Learning objectives */}
+              {user && (
+                <div className="max-w-2xl mx-auto">
+                  <LearningObjectivesCard 
+                    limit={5} 
+                    onViewSkill={(skillSlug) => {
+                      setSelectedSkill(skillSlug)
+                      setIsSkillModalOpen(true)
+                    }}
+                  />
                 </div>
               )}
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="subscription" className="space-y-12">
-            <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <h3 className="text-xl font-light text-slate-900 dark:text-white">Current Plan</h3>
-                <PremiumSubscriptionCard />
+            <TabsContent value="analytics" className="space-y-12">
+              <div className="max-w-4xl mx-auto">
+                {hasFeatureAccess('advanced_analytics') ? (
+                  <PremiumAnalytics />
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="text-4xl mb-4">📊</div>
+                    <h3 className="text-xl font-light mb-2 text-slate-900 dark:text-white">Advanced Analytics</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto font-light">
+                      Unlock detailed insights into your learning progress and skill development
+                    </p>
+                    <Button 
+                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 rounded-full px-8"
+                      onClick={() => setActiveTab('subscription')}
+                    >
+                      Upgrade to Premium
+                    </Button>
+                  </div>
+                )}
               </div>
-              
-              <div className="space-y-6">
-                <h3 className="text-xl font-light text-slate-900 dark:text-white">Upgrade Options</h3>
-                <PremiumFeaturesShowcase />
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
 
-        {/* Skill detail modal */}
-        <SkillDetailModal 
-          isOpen={isSkillModalOpen} 
-          onClose={() => setIsSkillModalOpen(false)} 
-          skillSlug={selectedSkill || undefined}
-        />
+            <TabsContent value="subscription" className="space-y-12">
+              <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <h3 className="text-xl font-light text-slate-900 dark:text-white">Current Plan</h3>
+                  <PremiumSubscriptionCard />
+                </div>
+                
+                <div className="space-y-6">
+                  <h3 className="text-xl font-light text-slate-900 dark:text-white">Upgrade Options</h3>
+                  <PremiumFeaturesShowcase />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Skill detail modal */}
+          <SkillDetailModal 
+            isOpen={isSkillModalOpen} 
+            onClose={() => setIsSkillModalOpen(false)} 
+            skillSlug={selectedSkill || undefined}
+          />
+        </div>
       </div>
     </div>
-    </>
   )
 } 

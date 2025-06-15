@@ -373,7 +373,7 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
 
   return (
     <div 
-      className={`relative w-full ${baseHeight} cursor-pointer group transition-all duration-300 hover:scale-[1.02] focus-within:scale-[1.02] ${
+      className={`relative w-full ${baseHeight} cursor-pointer ${
         isLocked ? 'opacity-90' : ''
       }`}
       onClick={handleClick}
@@ -408,13 +408,22 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
 
         {/* Main Content */}
         <div className="space-y-6">
-          <h1 className="text-4xl md:text-5xl font-light text-neutral-900 dark:text-neutral-100 leading-tight">
+          <h1 className="text-3xl md:text-4xl font-light text-neutral-900 dark:text-neutral-100 leading-tight">
             {topic.topic_title}
           </h1>
           
-          {/* Categories moved under title */}
-          <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-            {topic.categories?.slice(0, 2).join(' • ') || 'Civic Education'}
+          {/* Categories as badges with Space Mono font */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {(topic.categories?.slice(0, 2) || ['Civic Education']).map((category, index) => (
+              <Badge 
+                key={index}
+                variant="outline" 
+                className="font-mono text-xs px-3 py-1 rounded-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900"
+                style={{ fontFamily: 'Space Mono, monospace' }}
+              >
+                {category}
+              </Badge>
+            ))}
           </div>
           
           <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-200 leading-relaxed max-w-4xl mx-auto">
@@ -476,19 +485,7 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
                 </div>
               </div>
             </div>
-          ) : (
-            /* Available quiz - show start button */
-            <Button 
-              size="lg"
-              className="bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-12 py-4 rounded-xl transition-all duration-200 hover:shadow-lg text-xl animate-breathe-glow"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleClick()
-              }}
-            >
-              {isCompleted ? 'Review Quiz' : 'Start Quiz'}
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
 

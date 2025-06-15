@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { QuestionExplanation } from "./question-explanation"
+import { useGlobalAudio } from "@/components/global-audio-controls"
 
 interface QuestionFeedbackDisplayProps {
   question: QuizQuestion
@@ -22,6 +23,7 @@ export function QuestionFeedbackDisplay({
   className
 }: QuestionFeedbackDisplayProps) {
   const [isMobile, setIsMobile] = useState(false)
+  const { autoPlayEnabled, playText, stop } = useGlobalAudio()
 
   // Mobile detection
   useEffect(() => {
@@ -73,27 +75,39 @@ export function QuestionFeedbackDisplay({
 
   const feedback = getFeedbackContent()
 
+  // Auto-play feedback (correct/incorrect and correct answer) when shown
+  useEffect(() => {
+    if (!autoPlayEnabled) return
+    let feedbackText = feedback.title
+    if (!isCorrectAnswer && selectedAnswer !== "skipped") {
+      feedbackText += `. The correct answer was: ${question.correct_answer}.`
+    }
+    playText(feedbackText, { autoPlay: true })
+    // Stop audio if unmounting or skipping
+    return () => stop()
+  }, [autoPlayEnabled, feedback.title, isCorrectAnswer, selectedAnswer, question.correct_answer, playText, stop])
+
   return (
-    <div className={cn("max-w-3xl mx-auto space-y-8", className)}>
+    <div className={cn("max-w-3xl mx-auto space-y-6", className)}>
       <div className={cn(
-        "p-8 rounded-xl border transition-all duration-300",
+        "p-5 rounded-xl border transition-all duration-300",
         feedback.bgClass
       )}>
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-4">
           {/* Result emoji and text */}
-          <div className="space-y-4">
-            <div className="text-4xl">
+          <div className="space-y-3">
+            <div className="text-3xl">
               {feedback.emoji}
             </div>
             <div className="space-y-2">
-              <h2 className={cn("text-2xl font-light", feedback.titleClass)}>
+              <h2 className={cn("text-xl font-light", feedback.titleClass)}>
                 {feedback.title}
-                {feedback.showBonus && <span className="text-lg ml-2">⚡</span>}
+                {feedback.showBonus && <span className="text-base ml-2">⚡</span>}
               </h2>
               
               {/* Show correct answer if wrong */}
               {!isCorrectAnswer && selectedAnswer !== "skipped" && (
-                <p className="text-slate-600 dark:text-slate-400 font-light">
+                <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
                   The correct answer was: <span className="font-medium">{question.correct_answer}</span>
                 </p>
               )}
@@ -105,10 +119,13 @@ export function QuestionFeedbackDisplay({
           
           {/* Next question button (desktop only) */}
           {!isMobile && (
-            <div className="flex justify-center pt-4">
+            <div className="flex justify-center pt-3">
               <Button 
-                onClick={onNextQuestion} 
-                className="rounded-full px-8 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-light"
+                onClick={() => {
+                  stop();
+                  onNextQuestion();
+                }} 
+                className="rounded-full px-6 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-light text-sm"
               >
                 {isLastQuestion ? "See Results" : "Next Question"} →
               </Button>

@@ -1,211 +1,213 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { StatsigProvider as BaseStatsigProvider, useStatsigClient } from '@statsig/react-bindings'
+import React, { useEffect } from 'react'
+import {
+  LogLevel,
+  StatsigProvider as BaseStatsigProvider,
+  useClientAsyncInit,
+  useStatsigClient
+} from '@statsig/react-bindings'
+import { runStatsigAutoCapture } from '@statsig/web-analytics'
 import { useAuth } from '@/components/auth/auth-provider'
 
-interface StatsigContextType {
-  isReady: boolean
-  hasError: boolean
-  checkGate: (gateName: string) => boolean
-  getConfig: (configName: string) => any
-  getExperiment: (experimentName: string) => any
-  logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>) => void
-}
-
-const StatsigContext = createContext<StatsigContextType | undefined>(undefined)
-
-interface StatsigProviderProps {
+interface StatsigWrapperProps {
   children: React.ReactNode
 }
 
-export function StatsigProvider({ children }: StatsigProviderProps) {
-  const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY
+function StatsigContent({ children }: StatsigWrapperProps) {
   const { user, isLoading: authLoading } = useAuth()
-  const [initError, setInitError] = useState<Error | null>(null)
+  const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY
 
-  // Wait for auth to complete before initializing Statsig
-  if (authLoading) {
-    return <>{children}</>
-  }
-
-  if (!clientKey) {
-    console.warn('NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.')
-    return (
-      <StatsigContext.Provider value={{
-        isReady: false,
-        hasError: false,
-        checkGate: () => false,
-        getConfig: () => ({}),
-        getExperiment: () => ({}),
-        logEvent: () => {}
-      }}>
-        {children}
-      </StatsigContext.Provider>
-    )
-  }
-
-  // If there was an initialization error, provide fallback context
-  if (initError) {
-    console.warn('Statsig failed to initialize, running in fallback mode:', initError.message)
-    return (
-      <StatsigContext.Provider value={{
-        isReady: false,
-        hasError: true,
-        checkGate: () => false, // Default to false for feature gates
-        getConfig: () => ({}), // Return empty config
-        getExperiment: () => ({}), // Return empty experiment
-        logEvent: (eventName, value, metadata) => {
-          // Fallback logging - you could send to another analytics service here
-          console.log('Statsig Event (fallback):', { eventName, value, metadata })
-        }
-      }}>
-        {children}
-      </StatsigContext.Provider>
-    )
-  }
-
-  // Create user object for Statsig
+  // Create user object for Statsig following their documentation
   const statsigUser = user ? {
     userID: user.id,
     email: user.email || undefined,
     custom: {
       created_at: user.created_at,
-      // Add any other user metadata you want to use for targeting
+      full_name: user.user_metadata?.full_name || undefined,
+      avatar_url: user.user_metadata?.avatar_url || undefined
     }
   } : {
     userID: 'anonymous'
   }
 
+  // Use the official useClientAsyncInit pattern from Statsig docs
+  const { client } = useClientAsyncInit(
+    clientKey || '',
+    statsigUser,
+    {
+      environment: { 
+        tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' 
+      },
+      logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Error,
+    }
+  )
+
+  // Initialize auto-capture when client is ready (following docs exactly)
+  useEffect(() => {
+    if (client) {
+      runStatsigAutoCapture(client)
+      console.log('[Statsig] Client initialized and auto-capture started')
+    }
+  }, [client])
+
   return (
-    <BaseStatsigProvider
-      sdkKey={clientKey}
-      user={statsigUser}
-      options={{
-        environment: { tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' },
-        // Disable logging in production for better performance
-        disableLogging: process.env.NODE_ENV === 'production',
-        // Enable compression for smaller payloads
-        disableCompression: false,
-      }}
-    >
-      <StatsigInnerProvider onError={setInitError}>
-        {children}
-      </StatsigInnerProvider>
+    <BaseStatsigProvider client={client} loadingComponent={<div>Loading...</div>}>
+      {children}
     </BaseStatsigProvider>
   )
 }
 
-function StatsigInnerProvider({ children, onError }: { children: React.ReactNode, onError: (error: Error) => void }) {
-  const [isReady, setIsReady] = useState(false)
-  const [hasError, setHasError] = useState(false)
-  const { client } = useStatsigClient()
+export function StatsigProvider({ children }: StatsigWrapperProps) {
+  const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY
 
-  useEffect(() => {
-    if (client) {
-      try {
-        // The client should already be initialized when we get it
-        setIsReady(true)
-        setHasError(false)
-      } catch (error) {
-        console.error('Error setting up Statsig client:', error)
-        setHasError(true)
-        onError(error as Error)
-      }
-    }
-  }, [client, onError])
-
-  const checkGate = (gateName: string) => {
-    if (!client || !isReady || hasError) return false
-    try {
-      return client.checkGate(gateName)
-    } catch (error) {
-      console.error('Error checking gate:', error)
-      return false
-    }
-  }
-
-  const getConfig = (configName: string) => {
-    if (!client || !isReady || hasError) return {}
-    try {
-      return client.getDynamicConfig(configName)
-    } catch (error) {
-      console.error('Error getting config:', error)
-      return {}
-    }
-  }
-
-  const getExperiment = (experimentName: string) => {
-    if (!client || !isReady || hasError) return {}
-    try {
-      return client.getExperiment(experimentName)
-    } catch (error) {
-      console.error('Error getting experiment:', error)
-      return {}
-    }
-  }
-
-  const logEvent = (eventName: string, value?: string | number, metadata?: Record<string, any>) => {
-    if (!client || !isReady) {
-      // Fallback logging when Statsig is not ready
-      console.log('Statsig Event (not ready):', { eventName, value, metadata })
-      return
-    }
-    try {
-      client.logEvent(eventName, value, metadata)
-    } catch (error) {
-      console.error('Error logging event:', error)
-      // Fallback logging
-      console.log('Statsig Event (error fallback):', { eventName, value, metadata })
-    }
+  // If no client key, render children without Statsig
+  if (!clientKey) {
+    console.warn('[Statsig] NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.')
+    return <>{children}</>
   }
 
   return (
-    <StatsigContext.Provider value={{
-      isReady,
-      hasError,
-      checkGate,
-      getConfig,
-      getExperiment,
-      logEvent
-    }}>
+    <StatsigContent>
       {children}
-    </StatsigContext.Provider>
+    </StatsigContent>
   )
 }
 
+// Hook to safely use Statsig client with proper error handling
 export function useStatsig() {
-  const context = useContext(StatsigContext)
-  if (context === undefined) {
-    throw new Error('useStatsig must be used within a StatsigProvider')
+  try {
+    const { client } = useStatsigClient()
+    
+    return {
+      client,
+      isReady: !!client,
+      hasError: false,
+      
+      // Feature Gates
+      checkGate: (gateName: string): boolean => {
+        if (!client) {
+          console.warn(`[Statsig] Cannot check gate "${gateName}" - client not ready`)
+          return false
+        }
+        try {
+          return client.checkGate(gateName)
+        } catch (error) {
+          console.error(`[Statsig] Error checking gate "${gateName}":`, error)
+          return false
+        }
+      },
+      
+      // Dynamic Configs
+      getConfig: (configName: string): any => {
+        if (!client) {
+          console.warn(`[Statsig] Cannot get config "${configName}" - client not ready`)
+          return {}
+        }
+        try {
+          return client.getDynamicConfig(configName)
+        } catch (error) {
+          console.error(`[Statsig] Error getting config "${configName}":`, error)
+          return {}
+        }
+      },
+      
+      // Experiments
+      getExperiment: (experimentName: string): any => {
+        if (!client) {
+          console.warn(`[Statsig] Cannot get experiment "${experimentName}" - client not ready`)
+          return {}
+        }
+        try {
+          return client.getExperiment(experimentName)
+        } catch (error) {
+          console.error(`[Statsig] Error getting experiment "${experimentName}":`, error)
+          return {}
+        }
+      },
+      
+      // Event Logging (following docs pattern exactly)
+      logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>): void => {
+        if (!client) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Statsig] Event logged (no client): ${eventName}`, { value, metadata })
+          }
+          return
+        }
+        
+        try {
+          client.logEvent(eventName, value, metadata)
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Statsig] Event logged: ${eventName}`, { value, metadata })
+          }
+        } catch (error) {
+          console.error(`[Statsig] Error logging event "${eventName}":`, error)
+          // Fallback logging for development
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Statsig] Event logged (fallback): ${eventName}`, { value, metadata })
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // This happens when useStatsigClient is called outside of StatsigProvider
+    console.warn('[Statsig] useStatsig called outside of StatsigProvider context:', error)
+    
+    return {
+      client: null,
+      isReady: false,
+      hasError: true,
+      checkGate: () => false,
+      getConfig: () => ({}),
+      getExperiment: () => ({}),
+      logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Statsig] Event logged (no provider): ${eventName}`, { value, metadata })
+        }
+      }
+    }
   }
-  return context
 }
 
-// Convenience hooks for common use cases
+// Convenience hooks for specific use cases
 export function useFeatureFlag(gateName: string) {
   const { checkGate, isReady, hasError } = useStatsig()
+  
   return {
     isEnabled: checkGate(gateName),
     isReady,
-    hasError
+    hasError,
+    // Helper to check if we should show the feature
+    shouldShow: isReady && checkGate(gateName)
   }
 }
 
 export function useStatsigConfig(configName: string) {
   const { getConfig, isReady, hasError } = useStatsig()
+  
   return {
     config: getConfig(configName),
     isReady,
-    hasError
+    hasError,
+    // Helper to get config value with fallback
+    getValue: (key: string, fallback: any = null) => {
+      const config = getConfig(configName)
+      return config?.get ? config.get(key, fallback) : fallback
+    }
   }
 }
 
 export function useStatsigExperiment(experimentName: string) {
   const { getExperiment, isReady, hasError } = useStatsig()
+  
   return {
     experiment: getExperiment(experimentName),
     isReady,
-    hasError
+    hasError,
+    // Helper to get experiment value with fallback
+    getValue: (key: string, fallback: any = null) => {
+      const experiment = getExperiment(experimentName)
+      return experiment?.get ? experiment.get(key, fallback) : fallback
+    }
   }
 } 

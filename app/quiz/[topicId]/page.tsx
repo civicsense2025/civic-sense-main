@@ -12,6 +12,7 @@ import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { QuizProgressIndicator } from "@/components/quiz-progress-indicator"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
+import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 
@@ -225,11 +226,13 @@ export default function QuizPage({ params }: QuizPageProps) {
         />
       ) : (
         <div className="bg-white dark:bg-slate-950">
-          <QuizEngine
-            questions={questions}
-            topicId={resolvedParams.topicId}
-            onComplete={handleQuizComplete}
-          />
+          <QuizErrorBoundary>
+            <QuizEngine
+              questions={questions}
+              topicId={resolvedParams.topicId}
+              onComplete={handleQuizComplete}
+            />
+          </QuizErrorBoundary>
         </div>
       )}
 
