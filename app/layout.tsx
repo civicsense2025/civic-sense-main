@@ -7,14 +7,7 @@ import { AuthProvider } from "@/components/auth/auth-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
-import dynamic from 'next/dynamic'
-import { PWAPrompt, PWAStatus } from "@/components/pwa-prompt"
-
-// Import GlobalAudioControls dynamically with SSR disabled to prevent hydration issues
-const GlobalAudioControls = dynamic(
-  () => import('@/components/global-audio-controls').then(mod => mod.GlobalAudioControls),
-  { ssr: false }
-)
+import { ClientGlobalAudio } from "@/components/client-global-audio"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -161,9 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
               <Toaster />
-              <GlobalAudioControls />
-              <PWAPrompt />
-              <PWAStatus />
+              <ClientGlobalAudio />
             </StatsigProvider>
           </AuthProvider>
         </ThemeProvider>

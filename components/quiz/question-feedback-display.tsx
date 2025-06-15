@@ -119,7 +119,21 @@ export function QuestionFeedbackDisplay({
           {/* Explanation and sources */}
           <QuestionExplanation question={question} />
           
-          {/* Next question button (desktop only) */}
+          {/* Add mobile-specific Next Question button that's fixed at bottom */}
+          {isMobile && (
+            <div className="fixed-bottom-button pointer-events-auto pb-4">
+              <Button 
+                onClick={() => {
+                  stop();
+                  onNextQuestion();
+                }} 
+                className="rounded-full px-8 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium text-base"
+              >
+                {isLastQuestion ? "See Results" : "Next Question"} →
+              </Button>
+            </div>
+          )}
+          
           {!isMobile && (
             <div className="flex justify-center pt-3">
               <Button 

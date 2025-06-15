@@ -828,15 +828,7 @@ export function DailyCardStack({
        !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) && (
         <Button 
           size="lg"
-          className="fixed bottom-6 left-1/2 z-50 bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-8 sm:px-12 py-3 sm:py-4 rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
-          style={{ 
-            transform: 'translateX(-50%) translateZ(0)',
-            WebkitTransform: 'translateX(-50%) translateZ(0)',
-            position: 'fixed',
-            willChange: 'auto',
-            WebkitBackfaceVisibility: 'hidden',
-            backfaceVisibility: 'hidden'
-          }}
+          className="fixed-bottom-button bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-8 sm:px-12 py-3 sm:py-4 rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
           onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
         >
           {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}

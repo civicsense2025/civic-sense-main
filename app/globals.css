@@ -819,3 +819,21 @@ button, .card, .quiz-option {
   animation: gentle-scale 0.5s ease-in-out;
 }
 
+/* Fixed button positioning for consistent UI across the app */
+.fixed-bottom-button {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 32px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fixed-bottom-button {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+

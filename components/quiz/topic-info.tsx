@@ -193,8 +193,8 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
       </div>
 
       {/* Floating action button - now fully centered in viewport */}
-      <div className="fixed inset-0 flex items-end justify-center pointer-events-none z-50">
-        <div className="pb-[10vh] pointer-events-auto">
+      <div className="fixed inset-x-0 bottom-0 flex items-center justify-center pointer-events-none z-50">
+        <div className="fixed-bottom-button pointer-events-auto">
           {requireAuth ? (
             <Button onClick={onAuthRequired} className="py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
               Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
@@ -208,7 +208,7 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
       </div>
       
       {/* Spacer to ensure content doesn't overlap with fixed button */}
-      <div className="h-24"></div>
+      <div className="h-32"></div>
     </div>
   )
 }
