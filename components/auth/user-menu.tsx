@@ -83,7 +83,8 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
     loadUserStats()
   }, [user])
 
-  if (isLoading) {
+  // Prevent hydration mismatch by showing loading state until mounted
+  if (!mounted || isLoading) {
     return (
       <div className="flex items-center space-x-2">
         <Button variant="ghost" size="sm" disabled className="h-9 w-9 rounded-full" />

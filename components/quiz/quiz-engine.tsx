@@ -25,6 +25,7 @@ import { useGamification } from "@/hooks/useGamification"
 import type { BoostEffects } from "@/lib/game-boosts"
 import { BoostManager } from "@/lib/game-boosts"
 import { enhancedProgressOperations } from "@/lib/enhanced-gamification"
+import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
 
 interface QuizEngineProps {
   questions: QuizQuestion[]
@@ -76,6 +77,9 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
 
 export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) {
   const { user } = useAuth()
+  
+  // Analytics integration
+  const { trackQuiz, trackGameification, trackEngagement } = useAnalytics()
   
   // Global audio integration
   const { autoPlayEnabled, playText } = useGlobalAudio()
@@ -174,6 +178,8 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const [hasUsedSecondChance, setHasUsedSecondChance] = useState(false)
   const [answerRevealUsed, setAnswerRevealUsed] = useState(false)
   const [timeFrozen, setTimeFrozen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showSources, setShowSources] = useState(false)
 
   // Use the timer hook with boost extra time
   const initialTime = 60 + currentBoostEffects.extraTimeSeconds
@@ -182,6 +188,35 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const currentQuestion = randomizedQuestions[currentQuestionIndex]
   const isLastQuestion = currentQuestionIndex === randomizedQuestions.length - 1
   const progress = ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100
+
+  // Mobile detection and quiz start tracking
+  useEffect(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    // Track quiz start
+    if (randomizedQuestions.length > 0) {
+      const activeBoosts = Object.entries(currentBoostEffects)
+        .filter(([key, value]) => value && value !== 0 && value !== false)
+        .map(([key]) => key)
+
+      trackQuiz.quizStarted({
+        quiz_id: topicId,
+        quiz_category: mapCategoryToAnalytics(currentQuestion?.category || 'General'),
+        quiz_difficulty: 'intermediate', // Could be determined from question tags
+        user_level: currentLevel,
+        active_boosts: activeBoosts,
+        streak_count: currentStreak
+      })
+    }
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [randomizedQuestions.length, topicId, currentQuestion?.category, currentLevel, currentStreak, currentBoostEffects, trackQuiz])
 
   // Log current question for debugging
   useEffect(() => {
@@ -241,6 +276,14 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setTimeFrozen(true)
     stopTimer()
     
+    // Track boost activation
+    trackGameification.boostActivated({
+      boost_type: 'time_freeze',
+      activation_context: 'mid_quiz',
+      user_level: currentLevel,
+      remaining_uses: 0
+    })
+    
     // Unfreeze after 10 seconds
     setTimeout(() => {
       setTimeFrozen(false)
@@ -260,6 +303,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     if (!user || !currentBoostEffects.answerRevealAvailable || answerRevealUsed) return
     
     setAnswerRevealUsed(true)
+    
+    // Track boost activation
+    trackGameification.boostActivated({
+      boost_type: 'answer_reveal',
+      activation_context: 'specific_question',
+      user_level: currentLevel,
+      remaining_uses: 0
+    })
+    
     boostManager.useBoost(user.id, 'answer_reveal')
     
     console.log('🔍 Answer reveal used')
@@ -267,6 +319,14 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
 
   const handleUseSecondChance = () => {
     if (!user || !currentBoostEffects.secondChanceAvailable || hasUsedSecondChance) return
+    
+    // Track boost activation
+    trackGameification.boostActivated({
+      boost_type: 'second_chance',
+      activation_context: 'specific_question',
+      user_level: currentLevel,
+      remaining_uses: 0
+    })
     
     // Reset the question state for a retry
     setSelectedAnswer(null)
@@ -323,7 +383,18 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         case ' ':
           event.preventDefault()
           event.stopPropagation()
-          setShowHint(prev => !prev)
+          setShowHint(prev => {
+            const newShowHint = !prev
+            if (newShowHint && currentQuestion) {
+              // Track hint usage
+              trackQuiz.hintUsed(
+                `${topicId}-${currentQuestion.question_number}`,
+                'manual',
+                true // Assume effectiveness for now
+              )
+            }
+            return newShowHint
+          })
           break
         case '1':
         case '2':
@@ -388,7 +459,11 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setShowHint(false)
     setShowFeedback(false)
     setQuestionStartTime(Date.now())
+    setShowSources(false) // Reset sources visibility
     resetTimer()
+    
+    // Scroll to top of question
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     
     // Auto-play question if global autoplay is enabled - with better timing
     if (autoPlayEnabled && currentQuestion?.question) {
@@ -434,6 +509,21 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       isCorrect: false,
       timeSpent
     }
+    
+    // Track question answered event
+    trackQuiz.questionAnswered({
+      question_id: `${topicId}-${currentQuestion.question_number}`,
+      question_category: currentQuestion?.category || 'general',
+      answer_correct: false,
+      response_time_seconds: timeSpent,
+      attempt_number: 1,
+      hint_used: showHint,
+      boost_active: Object.keys(currentBoostEffects).find(key => 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
+      ) || null,
+      confidence_level: 1 // Low confidence for timeout
+    })
     
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
@@ -489,6 +579,21 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       isCorrect,
       timeSpent
     }
+    
+    // Track question answered event
+    trackQuiz.questionAnswered({
+      question_id: `${topicId}-${currentQuestion.question_number}`,
+      question_category: currentQuestion?.category || 'general',
+      answer_correct: isCorrect,
+      response_time_seconds: timeSpent,
+      attempt_number: 1,
+      hint_used: showHint,
+      boost_active: Object.keys(currentBoostEffects).find(key => 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
+        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
+      ) || null,
+      confidence_level: isCorrect ? (timeSpent < 10 ? 5 : timeSpent < 30 ? 4 : 3) : 2
+    })
     
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
@@ -602,6 +707,32 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   }
 
   const handleFinishQuiz = async () => {
+    // Calculate quiz metrics
+    const totalQuestions = randomizedQuestions.length
+    const correctAnswers = userAnswers.filter(a => a.isCorrect).length
+    const totalTimeSeconds = userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0)
+    const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100)
+    const activeBoosts = Object.entries(currentBoostEffects)
+      .filter(([key, value]) => value && value !== 0 && value !== false)
+      .map(([key]) => key)
+
+    // Track quiz completion
+    trackQuiz.quizCompleted({
+      quiz_id: topicId,
+      quiz_category: mapCategoryToAnalytics(currentQuestion?.category || 'General'),
+      score_percentage: scorePercentage,
+      total_questions: totalQuestions,
+      correct_answers: correctAnswers,
+      total_time_seconds: totalTimeSeconds,
+      user_level: currentLevel,
+      active_boosts: activeBoosts,
+      streak_count: currentStreak,
+      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier, // Estimated XP
+      streak_maintained: correctAnswers > 0,
+      new_level_reached: false, // Will be updated from gamification results
+      boosts_used: activeBoosts
+    })
+
     // Update enhanced gamification progress before showing results
     if (user) {
       try {
@@ -630,6 +761,25 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           levelUp: results.levelUp || false,
           skillUpdates: results.skillUpdates?.length || 0
         })
+
+        // Track achievements and level ups
+        if (results.newAchievements && results.newAchievements.length > 0) {
+          results.newAchievements.forEach(achievement => {
+            trackGameification.achievementUnlocked({
+              achievement_type: achievement.type || 'quiz_completion',
+              achievement_category: 'quiz',
+              total_achievements: results.newAchievements?.length || 0
+            })
+          })
+        }
+
+        if (results.levelUp) {
+          trackGameification.levelUp({
+            new_level: currentLevel + 1,
+            xp_total: 0, // Could calculate from user data
+            primary_activity: 'quiz'
+          })
+        }
       } catch (error) {
         console.error('❌ Failed to update gamification progress:', error)
         // Continue to show results even if gamification update fails
@@ -713,7 +863,10 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-12">
+      <div className={cn(
+        "max-w-4xl mx-auto space-y-8",
+        isMobile ? "px-3 py-4 pb-24" : "px-6 py-8 space-y-12"
+      )}>
         {/* Question section - Apple style */}
         <div className="text-center space-y-8">
           {/* Question text - made smaller */}
@@ -775,8 +928,8 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           )}
         </div>
 
-        {/* Action buttons - only show when answer not submitted */}
-        {!isAnswerSubmitted && (
+        {/* Action buttons - only show when answer not submitted (desktop only) */}
+        {!isAnswerSubmitted && !isMobile && (
           <div className="space-y-6">
             {/* Boost Action Buttons */}
             {(currentBoostEffects.timeFreezeAvailable || 
@@ -861,8 +1014,8 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
 
-        {/* Gamification display - show streak and level */}
-        {user && (
+        {/* Gamification display - show streak and level (desktop only) */}
+        {user && !isMobile && (
           <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50">
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-1">
@@ -879,8 +1032,8 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
 
-        {/* Debug panel - show current state for troubleshooting */}
-        {process.env.NODE_ENV === 'development' && (
+        {/* Debug panel - show current state for troubleshooting (desktop only) */}
+        {process.env.NODE_ENV === 'development' && !isMobile && (
           <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-50 max-w-sm">
             <div className="text-xs font-bold mb-2">Debug Info:</div>
             <div>Selected: {selectedAnswer || 'None'}</div>
@@ -910,6 +1063,56 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
       </div>
+
+      {/* Fixed Bottom Bar for Mobile */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-slate-200 dark:border-slate-800 p-4 z-50">
+          {!isAnswerSubmitted ? (
+            <div className="flex items-center justify-center gap-4">
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleSkipQuestion()
+                }}
+                variant="ghost"
+                size="sm"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light flex-1"
+              >
+                Skip
+              </Button>
+              
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleSubmitAnswer()
+                }}
+                disabled={!selectedAnswer || timeLeft === 0} 
+                size="sm"
+                className={cn(
+                  "rounded-full px-6 py-2 font-light transition-all duration-200 flex-2",
+                  selectedAnswer 
+                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                )}
+              >
+                Submit Answer
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <Button 
+                onClick={handleNextQuestion}
+                size="sm"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-full px-6 py-2 font-light w-full"
+              >
+                {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Boost Command Bar - Floating */}
       {user && (

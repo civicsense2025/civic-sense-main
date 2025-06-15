@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { GoogleOAuthButton } from "./google-oauth-button"
 import { useToast } from "@/hooks/use-toast"
+import { useAnalytics } from "@/utils/analytics"
 
 interface SignUpFormProps {
   onSuccess: () => void
@@ -22,6 +23,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const { trackAuth } = useAnalytics()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +39,12 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       if (error) {
         setError(error.message)
       } else {
+        // Track successful registration
+        trackAuth.userRegistered({
+          registration_method: 'email',
+          source: 'direct'
+        })
+        
         toast({
           title: "Welcome to CivicSense! 🎉",
           description: "Your account has been created successfully. Check your email to verify your account.",
@@ -52,6 +60,12 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
   }
 
   const handleGoogleSuccess = () => {
+    // Track successful Google registration
+    trackAuth.userRegistered({
+      registration_method: 'google',
+      source: 'direct'
+    })
+    
     toast({
       title: "Welcome to CivicSense! 🎉",
       description: "Your account has been created successfully with Google.",

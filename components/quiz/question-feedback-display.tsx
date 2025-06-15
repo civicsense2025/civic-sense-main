@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
@@ -20,6 +21,19 @@ export function QuestionFeedbackDisplay({
   onNextQuestion,
   className
 }: QuestionFeedbackDisplayProps) {
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile() // Initial check
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Determine if answer is correct using same logic as quiz engine
   const isCorrectAnswer = (() => {
     if (!selectedAnswer) return false
@@ -89,15 +103,17 @@ export function QuestionFeedbackDisplay({
           {/* Explanation and sources */}
           <QuestionExplanation question={question} />
           
-          {/* Next question button */}
-          <div className="flex justify-center pt-4">
-            <Button 
-              onClick={onNextQuestion} 
-              className="rounded-full px-8 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-light"
-            >
-              {isLastQuestion ? "See Results" : "Next Question"} →
-            </Button>
-          </div>
+          {/* Next question button (desktop only) */}
+          {!isMobile && (
+            <div className="flex justify-center pt-4">
+              <Button 
+                onClick={onNextQuestion} 
+                className="rounded-full px-8 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-light"
+              >
+                {isLastQuestion ? "See Results" : "Next Question"} →
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

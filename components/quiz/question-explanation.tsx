@@ -1,3 +1,6 @@
+import { useState } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
 
@@ -7,6 +10,8 @@ interface QuestionExplanationProps {
 }
 
 export function QuestionExplanation({ question, className }: QuestionExplanationProps) {
+  const [showSources, setShowSources] = useState(false)
+
   return (
     <div className={className}>
       {/* Explanation text */}
@@ -15,12 +20,24 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
           {question.explanation}
         </p>
         
-        {/* Sources using the existing SourceMetadataCard component */}
+        {/* Collapsible Sources Section */}
         {question.sources && question.sources.length > 0 && (
           <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Sources</p>
-              <div className="grid gap-3">
+            <Button
+              onClick={() => setShowSources(!showSources)}
+              variant="ghost"
+              className="w-full flex items-center justify-between p-3 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg"
+            >
+              <span>View Sources ({question.sources.length})</span>
+              {showSources ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+            
+            {showSources && (
+              <div className="mt-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
                 {question.sources.map((source, index) => (
                   <SourceMetadataCard
                     key={index}
@@ -30,7 +47,7 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
                   />
                 ))}
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

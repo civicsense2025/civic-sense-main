@@ -39,22 +39,68 @@ export function SocialShare({ title, score, totalQuestions, url }: SocialSharePr
   }
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(`${shareText} ${shareUrl}`).then(
-      () => {
+    const textToCopy = `${shareText} ${shareUrl}`
+    
+    // Modern browser support
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(
+        () => {
+          toast({
+            title: "Link copied!",
+            description: "Share link has been copied to clipboard",
+          })
+        },
+        (err) => {
+          console.error("Could not copy text: ", err)
+          fallbackCopyToClipboard(textToCopy)
+        },
+      )
+    } else {
+      // Fallback for older browsers or unsupported contexts
+      fallbackCopyToClipboard(textToCopy)
+    }
+  }
+
+  const fallbackCopyToClipboard = (text: string) => {
+    try {
+      // Create a temporary textarea element
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      // Try to copy using execCommand
+      const successful = document.execCommand('copy')
+      document.body.removeChild(textArea)
+      
+      if (successful) {
         toast({
           title: "Link copied!",
           description: "Share link has been copied to clipboard",
         })
-      },
-      (err) => {
-        console.error("Could not copy text: ", err)
+      } else {
+        throw new Error('execCommand failed')
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err)
+      // Final fallback - show the text in a prompt
+      const userAgent = navigator.userAgent.toLowerCase()
+      if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
+        // On mobile, try to select the text for manual copy
         toast({
-          title: "Copy failed",
-          description: "Could not copy to clipboard",
+          title: "Copy not supported",
+          description: "Please manually copy this link: " + text.substring(0, 50) + "...",
           variant: "destructive",
         })
-      },
-    )
+      } else {
+        // On desktop, show prompt as last resort
+        prompt('Please copy this link manually:', text)
+      }
+    }
   }
 
   return (

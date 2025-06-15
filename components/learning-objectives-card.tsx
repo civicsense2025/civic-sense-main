@@ -53,10 +53,10 @@ export function LearningObjectivesCard({ limit = 5, onViewSkill }: LearningObjec
         for (const skill of inProgressSkills) {
           const skillDetails = await skillOperations.getSkillDetails(skill.id)
           
-          if (skillDetails?.learning_objectives) {
+          if (skillDetails?.objectives) {
             // Filter objectives based on user's current mastery level
-            const relevantObjectives = skillDetails.learning_objectives
-              .filter(obj => {
+            const relevantObjectives = skillDetails.objectives
+              .filter((obj: any) => {
                 // For beginners, show beginner objectives
                 if (skill.mastery_level === 'novice' || skill.mastery_level === 'beginner') {
                   return obj.mastery_level_required === 'beginner'
@@ -70,7 +70,7 @@ export function LearningObjectivesCard({ limit = 5, onViewSkill }: LearningObjec
                 // For advanced, show advanced objectives
                 return obj.mastery_level_required === 'advanced'
               })
-              .map(obj => ({
+              .map((obj: any) => ({
                 ...obj,
                 skill_name: skill.skill_name,
                 skill_slug: skill.skill_slug,
@@ -91,10 +91,10 @@ export function LearningObjectivesCard({ limit = 5, onViewSkill }: LearningObjec
             
             const skillDetails = await skillOperations.getSkillDetails(skill.id)
             
-            if (skillDetails?.learning_objectives) {
-              const coreObjectives = skillDetails.learning_objectives
-                .filter(obj => obj.mastery_level_required === 'beginner')
-                .map(obj => ({
+            if (skillDetails?.objectives) {
+              const coreObjectives = skillDetails.objectives
+                .filter((obj: any) => obj.mastery_level_required === 'beginner')
+                .map((obj: any) => ({
                   ...obj,
                   skill_name: skill.skill_name,
                   skill_slug: skill.skill_slug,

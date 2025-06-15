@@ -353,5 +353,28 @@ export const skillOperations = {
       console.error(`Error fetching learning objectives for user ${userId}:`, error)
       return []
     }
+  },
+
+  // Get user's skill progress - this function was missing
+  async getUserSkillProgress(userId: string, skillId: string): Promise<{
+    mastery_level: string
+    skill_level: number
+    questions_attempted: number
+    questions_correct: number
+    last_practiced_at: string | null
+  } | null> {
+    try {
+      // For now, return mock data until the actual tables are created
+      return {
+        mastery_level: 'beginner',
+        skill_level: 65,
+        questions_attempted: 12,
+        questions_correct: 8,
+        last_practiced_at: new Date().toISOString()
+      }
+    } catch (error) {
+      console.error(`Error fetching skill progress for user ${userId}, skill ${skillId}:`, error)
+      return null
+    }
   }
 } 

@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Zap, Clock, Shield, Target, Users, BookOpen, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
+import { useAnalytics } from '@/utils/analytics'
 import { 
   BoostManager, 
   type BoostType, 
@@ -51,6 +52,7 @@ const RARITY_COLORS = {
 
 export function BoostCommandBar({ userXP, userLevel = 1, onXPChanged, onBoostActivated, className }: BoostCommandBarProps) {
   const { user } = useAuth()
+  const { trackGameification } = useAnalytics()
   const [boostManager] = useState(() => BoostManager.getInstance())
   const [userBoosts, setUserBoosts] = useState<Array<{ type: BoostType; quantity: number; boost: GameBoost }>>([])
   const [activeBoosts, setActiveBoosts] = useState<ActiveBoost[]>([])
@@ -88,6 +90,15 @@ export function BoostCommandBar({ userXP, userLevel = 1, onXPChanged, onBoostAct
     
     const result = boostManager.purchaseBoost(user.id, boostType, userXP)
     if (result.success && result.newXpBalance !== undefined) {
+      // Track boost purchase
+      trackGameification.boostPurchased({
+        boost_type: boostType,
+        boost_cost_xp: boost.xpCost,
+        user_level: userLevel,
+        user_xp_before: userXP,
+        purchase_context: 'browse'
+      })
+      
       onXPChanged(result.newXpBalance)
       loadBoosts()
       console.log(`✅ Purchased ${boost.name}!`)
@@ -101,6 +112,14 @@ export function BoostCommandBar({ userXP, userLevel = 1, onXPChanged, onBoostAct
     
     const result = boostManager.activateBoost(user.id, boostType)
     if (result.success && result.activeBoost) {
+      // Track boost activation
+      trackGameification.boostActivated({
+        boost_type: boostType,
+        activation_context: 'browse',
+        user_level: userLevel,
+        remaining_uses: result.activeBoost.usesRemaining || 0
+      })
+      
       loadBoosts()
       
       // Calculate and apply boost effects

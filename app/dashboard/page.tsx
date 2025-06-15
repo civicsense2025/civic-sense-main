@@ -30,6 +30,7 @@ import { dataService } from "@/lib/data-service"
 import { enhancedProgressOperations, type EnhancedUserProgress, type Achievement } from "@/lib/enhanced-gamification"
 import { quizDatabase } from "@/lib/quiz-database"
 import Link from "next/link"
+import { useAnalytics } from "@/utils/analytics"
 
 interface DashboardData {
   totalQuizzes: number
@@ -96,6 +97,7 @@ const CIVIC_CATEGORIES = [
 export default function DashboardPage() {
   const { user } = useAuth()
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
+  const { trackEngagement } = useAnalytics()
   const [activeTab, setActiveTab] = useState("overview")
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
@@ -107,6 +109,13 @@ export default function DashboardPage() {
   // Add state for skill detail modal
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null)
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false)
+
+  // Track dashboard page view
+  useEffect(() => {
+    if (user) {
+      trackEngagement.pageView('dashboard')
+    }
+  }, [user, trackEngagement])
 
   // Debug subscription status
   useEffect(() => {

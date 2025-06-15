@@ -89,6 +89,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/stripe": "^8.0.416",
+    "canvas": "^3.1.0",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.2",

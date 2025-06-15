@@ -399,6 +399,28 @@ class GlobalAudioManager {
       }
 
       utterance.onerror = (event) => {
+        // Don't log "canceled" as an error - it's normal user behavior
+        if (event.error === 'canceled') {
+          console.log('Speech synthesis canceled by user')
+          this.isPlaying = false
+          this.isPaused = false
+          this.currentText = ""
+          this.cleanupHighlighting()
+          this.notifyListeners()
+          return
+        }
+        
+        // Don't log "not-allowed" as an error - it's normal browser autoplay behavior
+        if ((event.error as string) === 'not-allowed') {
+          console.log('Speech synthesis not allowed - user interaction required for auto-play')
+          this.isPlaying = false
+          this.isPaused = false
+          this.currentText = ""
+          this.cleanupHighlighting()
+          this.notifyListeners()
+          return
+        }
+        
         console.error('Speech error:', event.error || event)
         
         // Try to recover from certain errors

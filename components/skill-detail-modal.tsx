@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from 'react'
 import { useAuth } from "@/components/auth/auth-provider"
 import { 
   Dialog,
@@ -23,8 +23,40 @@ import {
   ArrowUpRight,
   Brain
 } from "lucide-react"
-import { skillOperations, type SkillWithDetails } from "@/lib/skill-operations"
+import { skillOperations } from "@/lib/skill-operations"
 import Link from "next/link"
+
+// Extended skill interface for detailed view
+interface SkillWithDetails {
+  id: string
+  skill_name: string
+  skill_slug: string
+  category_name: string
+  description: string
+  difficulty_level: number
+  is_core_skill: boolean
+  learning_objectives: Array<{
+    id: string
+    skill_id: string
+    objective_text: string
+    objective_type: string
+    mastery_level_required: string
+    display_order: number
+  }>
+  prerequisites: Array<{
+    id: string
+    skill_id: string
+    prerequisite_skill_id: string
+    prerequisite_skill_name?: string
+    prerequisite_skill_slug?: string
+    required_mastery_level: string
+    is_strict_requirement: boolean
+  }>
+  dependent_skills: Array<{
+    skill_id: string
+    skill_name: string
+  }>
+}
 
 interface SkillDetailModalProps {
   isOpen: boolean
@@ -52,26 +84,29 @@ export function SkillDetailModal({
       try {
         setIsLoading(true)
         
-        // Load skill details
-        let skillDetails: SkillWithDetails | null = null
+        const identifier = skillSlug || skillId!
         
-        if (skillSlug) {
-          skillDetails = await skillOperations.getSkillBySlug(skillSlug)
-        } else if (skillId) {
-          skillDetails = await skillOperations.getSkillDetails(skillId)
-        }
+        // Get detailed skill information
+        const skillData = await skillOperations.getSkillDetails(identifier)
         
-        if (!skillDetails) {
-          console.error('Skill not found')
-          return
-        }
-        
-        setSkill(skillDetails)
-        
-        // Load user progress if user is logged in
-        if (user && skillDetails) {
-          const progress = await skillOperations.getUserSkillProgress(user.id, skillDetails.id)
-          setUserProgress(progress)
+        if (skillData.skill) {
+          // Transform the data into our expected format
+          const skillWithDetails: SkillWithDetails = {
+            ...skillData.skill,
+            learning_objectives: skillData.objectives,
+            prerequisites: skillData.prerequisites,
+            dependent_skills: skillData.dependentSkills.map(dep => ({
+              skill_id: dep.skill_id,
+              skill_name: dep.prerequisite_skill_name || 'Unknown Skill'
+            }))
+          }
+          setSkill(skillWithDetails)
+          
+          // Load user progress if user is logged in
+          if (user) {
+            const progress = await skillOperations.getUserSkillProgress(user.id, skillData.skill.id)
+            setUserProgress(progress)
+          }
         }
       } catch (error) {
         console.error('Error loading skill details:', error)
@@ -84,7 +119,7 @@ export function SkillDetailModal({
   }, [isOpen, skillSlug, skillId, user])
 
   // Group learning objectives by mastery level
-  const objectivesByLevel = skill?.learning_objectives.reduce<Record<string, typeof skill.learning_objectives>>((acc, obj) => {
+  const objectivesByLevel = skill?.learning_objectives?.reduce<Record<string, SkillWithDetails['learning_objectives']>>((acc, obj) => {
     if (!acc[obj.mastery_level_required]) {
       acc[obj.mastery_level_required] = []
     }
@@ -129,6 +164,9 @@ export function SkillDetailModal({
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Loading Skill Details...</DialogTitle>
+          </DialogHeader>
           <div className="py-12 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-slate-50"></div>
           </div>
