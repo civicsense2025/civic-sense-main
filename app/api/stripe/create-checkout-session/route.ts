@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
-})
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,15 +15,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user details from Supabase
-    const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId)
-    
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
+    console.log('Received priceId:', priceId)
+    console.log('Environment yearly price ID:', process.env.NEXT_PUBLIC_STRIPE_PREMIUM_YEARLY_PRICE_ID)
+    console.log('Environment lifetime price ID:', process.env.NEXT_PUBLIC_STRIPE_PREMIUM_LIFETIME_PRICE_ID)
+
+    // Get user details from Supabase (simplified for testing)
+    const userEmail = `user-${userId}@example.com` // Fallback for testing
 
     // Check if user already has a Stripe customer ID
     const { data: subscription } = await supabase
@@ -49,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Create or retrieve Stripe customer
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user.user.email,
+        email: userEmail,
         metadata: {
           supabase_user_id: userId,
         },
@@ -57,34 +52,83 @@ export async function POST(request: NextRequest) {
       customerId = customer.id
     }
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Determine pricing model and session configuration
+    let sessionConfig: any = {
       customer: customerId,
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         user_id: userId,
       },
-      subscription_data: {
-        metadata: {
-          user_id: userId,
+    }
+
+    // Handle different pricing models
+    if (priceId === 'premium_lifetime' || priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_LIFETIME_PRICE_ID) {
+      // Lifetime access - one-time payment
+      sessionConfig.mode = 'payment'
+      sessionConfig.metadata.product_type = 'premium_lifetime'
+      
+      if (priceId === 'premium_lifetime') {
+        // Use inline pricing for testing
+        sessionConfig.line_items = [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'CivicSense Premium - Lifetime Access',
+                description: 'One-time payment for lifetime access to all premium features',
+              },
+              unit_amount: 2500, // $25.00 in cents
+            },
+            quantity: 1,
+          },
+        ]
+      } else {
+        // Use actual Stripe price ID
+        sessionConfig.line_items = [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ]
+      }
+    } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_YEARLY_PRICE_ID) {
+      // Yearly subscription - recurring payment
+      sessionConfig.mode = 'subscription'
+      sessionConfig.metadata.product_type = 'premium_yearly'
+      sessionConfig.line_items = [
+        {
+          price: priceId,
+          quantity: 1,
         },
-      },
-    })
+      ]
+    } else {
+      // Fallback to inline pricing for unknown price IDs
+      sessionConfig.mode = 'payment'
+      sessionConfig.metadata.product_type = 'premium_lifetime'
+      sessionConfig.line_items = [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'CivicSense Premium - Lifetime Access',
+              description: 'One-time payment for lifetime access to all premium features',
+            },
+            unit_amount: 2500, // $25.00 in cents
+          },
+          quantity: 1,
+        },
+      ]
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig)
 
     return NextResponse.json({ sessionId: session.id })
   } catch (error) {
     console.error('Error creating checkout session:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

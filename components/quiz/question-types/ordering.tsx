@@ -142,7 +142,7 @@ export function OrderingQuestion({
                   </div>
                   
                   {/* Drag Handle */}
-                  <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-600 dark:text-slate-300 flex-shrink-0" />
                   
                   {/* Content */}
                   <div className="flex-1 text-sm">

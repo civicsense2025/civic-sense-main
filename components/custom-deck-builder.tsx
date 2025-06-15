@@ -13,11 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PremiumGate } from "@/components/premium-gate"
+import { aiDeckBuilder, type AIEnhancedDeck } from "@/lib/ai-deck-builder"
 import { 
   BookOpen, Plus, Search, Filter, Tag, 
   Calendar, Users, Settings, Save, 
   Trash2, Edit, Copy, Share2,
-  Crown, Sparkles, Target, Brain, TrendingUp
+  Crown, Sparkles, Target, Brain, TrendingUp,
+  Wand2, Lightbulb, Clock, CheckCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -39,7 +41,7 @@ interface CustomDeck {
   id?: string
   name: string
   description: string
-  type: 'mixed' | 'category_specific' | 'difficulty_focused' | 'topic_based'
+  type: 'mixed' | 'category_specific' | 'difficulty_focused' | 'topic_based' | 'ai_generated'
   categories: string[]
   difficultyRange: [number, number]
   tags: string[]
@@ -48,9 +50,19 @@ interface CustomDeck {
   isPublic: boolean
   createdAt?: string
   updatedAt?: string
+  aiGenerated?: boolean
+  learningPath?: string[]
+  aiRecommendations?: string[]
 }
 
 const DECK_TYPES = [
+  {
+    id: 'ai_generated' as const,
+    name: 'AI-Powered Deck',
+    description: 'Let AI create the perfect deck for you',
+    icon: <Wand2 className="h-4 w-4" />,
+    premium: true
+  },
   {
     id: 'mixed' as const,
     name: 'Mixed Topics',
@@ -85,6 +97,17 @@ const CATEGORIES = [
 
 const DIFFICULTY_LABELS = ['', 'Recall', 'Comprehension', 'Analysis', 'Evaluation']
 
+const LEARNING_OBJECTIVES = [
+  'General improvement',
+  'Prepare for citizenship test',
+  'Strengthen weak areas',
+  'Challenge myself with harder questions',
+  'Review recent topics',
+  'Focus on specific categories',
+  'Quick review session',
+  'Deep learning session'
+]
+
 export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps) {
   const { user } = useAuth()
   const { hasFeatureAccess, trackFeatureUsage, limits } = usePremium()
@@ -92,19 +115,27 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
   const [activeTab, setActiveTab] = useState("create")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   
   // Deck creation state
   const [deck, setDeck] = useState<CustomDeck>({
     name: '',
     description: '',
-    type: 'mixed',
+    type: 'ai_generated',
     categories: [],
     difficultyRange: [1, 4],
     tags: [],
     questionCount: 20,
     questions: [],
-    isPublic: false
+    isPublic: false,
+    aiGenerated: false
   })
+  
+  // AI-specific state
+  const [learningObjective, setLearningObjective] = useState('General improvement')
+  const [timeConstraint, setTimeConstraint] = useState(30)
+  const [focusAreas, setFocusAreas] = useState<string[]>([])
+  const [aiGeneratedDeck, setAiGeneratedDeck] = useState<AIEnhancedDeck | null>(null)
   
   // Available questions and filtering
   const [availableQuestions, setAvailableQuestions] = useState<DeckQuestion[]>([])
@@ -127,8 +158,10 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
   }, [hasFeatureAccess])
 
   useEffect(() => {
-    filterQuestions()
-  }, [availableQuestions, searchQuery, filterCategory, filterDifficulty, deck.categories, deck.difficultyRange])
+    if (deck.type !== 'ai_generated') {
+      filterQuestions()
+    }
+  }, [availableQuestions, searchQuery, filterCategory, filterDifficulty, deck.categories, deck.difficultyRange, deck.type])
 
   const loadAvailableQuestions = async () => {
     setIsLoading(true)
@@ -197,64 +230,79 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
     }
   }
 
+  const handleGenerateAIDeck = async () => {
+    if (!user) return
+
+    setIsGeneratingAI(true)
+    try {
+      const deckRequest = {
+        name: deck.name || 'AI-Generated Deck',
+        description: deck.description,
+        targetQuestionCount: deck.questionCount,
+        categories: deck.categories.length > 0 ? deck.categories : undefined,
+        difficultyRange: deck.difficultyRange,
+        learningObjective,
+        timeConstraint,
+        focusAreas
+      }
+
+      const aiDeck = await aiDeckBuilder.generateAIEnhancedDeck(user.id, deckRequest)
+      setAiGeneratedDeck(aiDeck)
+      
+      // Update the deck with AI-generated content
+      setDeck(prev => ({
+        ...prev,
+        name: aiDeck.name,
+        description: aiDeck.description,
+        questions: aiDeck.questions.map(q => ({ ...q, selected: true })),
+        aiGenerated: true,
+        learningPath: aiDeck.learningPath,
+        aiRecommendations: aiDeck.aiRecommendations
+      }))
+
+      // Track feature usage
+      trackFeatureUsage('ai_deck_generation')
+    } catch (error) {
+      console.error('Error generating AI deck:', error)
+    } finally {
+      setIsGeneratingAI(false)
+    }
+  }
+
   const filterQuestions = () => {
-    let filtered = [...availableQuestions]
-    
-    // Search filter
+    let filtered = availableQuestions
+
+    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(q => 
         q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         q.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
-    
-    // Category filter
+
+    // Apply category filter
     if (filterCategory !== "all") {
       filtered = filtered.filter(q => q.category === filterCategory)
     }
-    
-    // Difficulty filter
+
+    // Apply difficulty filter
     if (filterDifficulty !== "all") {
       filtered = filtered.filter(q => q.difficulty === parseInt(filterDifficulty))
     }
-    
-    // Deck-specific filters
+
+    // Apply deck category filter
     if (deck.categories.length > 0) {
       filtered = filtered.filter(q => deck.categories.includes(q.category))
     }
-    
-    if (deck.difficultyRange) {
-      filtered = filtered.filter(q => 
-        q.difficulty >= deck.difficultyRange[0] && q.difficulty <= deck.difficultyRange[1]
-      )
-    }
-    
-    setFilteredQuestions(filtered)
-  }
 
-  const handleQuestionToggle = (questionId: string) => {
-    setAvailableQuestions(prev => 
-      prev.map(q => 
-        q.id === questionId ? { ...q, selected: !q.selected } : q
-      )
+    // Apply difficulty range filter
+    filtered = filtered.filter(q => 
+      q.difficulty >= deck.difficultyRange[0] && 
+      q.difficulty <= deck.difficultyRange[1]
     )
-    
-    const question = availableQuestions.find(q => q.id === questionId)
-    if (question) {
-      if (question.selected) {
-        // Remove from deck
-        setDeck(prev => ({
-          ...prev,
-          questions: prev.questions.filter(q => q.id !== questionId)
-        }))
-      } else {
-        // Add to deck
-        setDeck(prev => ({
-          ...prev,
-          questions: [...prev.questions, { ...question, selected: true }]
-        }))
-      }
-    }
+
+    setFilteredQuestions(filtered)
   }
 
   const handleSaveDeck = async () => {

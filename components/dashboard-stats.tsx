@@ -143,7 +143,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
   if (!statsData) {
     return (
       <div className={cn("text-center p-8", className)}>
-        <p className="text-slate-600 dark:text-slate-400">Unable to load stats</p>
+        <p className="text-slate-700 dark:text-slate-200">Unable to load stats</p>
       </div>
     )
   }
@@ -164,7 +164,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
     if (statsData.currentLevel >= 15) return "text-yellow-600 dark:text-yellow-400"
     if (statsData.currentLevel >= 10) return "text-blue-600 dark:text-blue-400"
     if (statsData.currentLevel >= 5) return "text-green-600 dark:text-green-400"
-    return "text-slate-600 dark:text-slate-400"
+          return "text-slate-700 dark:text-slate-200"
   }
 
   const getLevelBadgeColor = () => {

@@ -114,7 +114,7 @@ export function usePremium(): UsePremiumReturn {
 
   // Subscription utilities
   const isActive = premiumUtils.isSubscriptionActive(subscription)
-  const isPremium = subscription?.subscription_tier === 'premium' && isActive
+  const isPremium = (subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro') && isActive
   const isPro = subscription?.subscription_tier === 'pro' && isActive
   const daysUntilExpiry = premiumUtils.getDaysUntilExpiry(subscription)
 

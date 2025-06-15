@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { UserMenu } from "@/components/auth/user-menu"
 import { dataService } from "@/lib/data-service"
 import Link from "next/link"
+import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 
 
 type ViewMode = 'cards' | 'calendar'
@@ -67,6 +68,13 @@ export default function HomePage() {
                   />
             </div>
           </div>
+        </div>
+
+        {/* Data Teaser - Show value proposition to all users */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6">
+          <PremiumDataTeaser 
+            variant="banner"
+          />
         </div>
 
         {/* Main content with tons of whitespace */}

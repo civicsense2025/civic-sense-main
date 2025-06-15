@@ -1,12 +1,13 @@
 "use client"
 
+import { Suspense } from "react"
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Home, RefreshCw } from "lucide-react"
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState("")
@@ -50,7 +51,7 @@ export default function AuthErrorPage() {
               Authentication Error
             </h1>
             
-            <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm mx-auto font-light">
+            <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-sm mx-auto font-light">
               There was a problem signing you in
             </p>
           </div>
@@ -89,7 +90,7 @@ export default function AuthErrorPage() {
             <Button 
               variant="ghost"
               onClick={handleGoHome}
-              className="w-full h-12 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-medium rounded-full transition-all duration-200"
+              className="w-full h-12 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium rounded-full transition-all duration-200"
             >
               <Home className="h-4 w-4 mr-2" />
               Go to Home
@@ -98,5 +99,29 @@ export default function AuthErrorPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function AuthErrorFallback() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-md text-center space-y-8 py-16">
+        <div className="text-6xl">⚠️</div>
+        <h1 className="text-2xl font-light text-slate-900 dark:text-slate-50">
+          Authentication Error
+        </h1>
+        <p className="text-lg text-slate-600 dark:text-slate-300">
+          Loading error details...
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<AuthErrorFallback />}>
+      <AuthErrorContent />
+    </Suspense>
   )
 } 

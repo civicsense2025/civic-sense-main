@@ -1,16 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
+import { supabase } from './supabase'
 import type { Database } from './database.types'
-import type {
-  DbUserLearningGoal, DbUserLearningGoalInsert, DbUserLearningGoalUpdate,
-  DbUserCustomDeck, DbUserCustomDeckInsert, DbUserCustomDeckUpdate,
-  DbUserDeckContent, DbUserDeckContentInsert,
-  DbUserCategorySkill, DbUserCategorySkillInsert, DbUserCategorySkillUpdate,
-  DbUserAchievement, DbUserAchievementInsert,
-  DbUserStreakHistory, DbUserStreakHistoryInsert,
-  DbUserQuestionMemory, DbUserQuestionMemoryInsert, DbUserQuestionMemoryUpdate
-} from './database.types'
+import { 
+  type DbUserProgress, type DbUserProgressInsert, type DbUserProgressUpdate,
+  type DbUserLearningGoal, type DbUserLearningGoalInsert, type DbUserLearningGoalUpdate,
+  type DbUserCustomDeck, type DbUserCustomDeckInsert, type DbUserCustomDeckUpdate,
+  type DbUserDeckContent, type DbUserDeckContentInsert,
+  type DbUserCategorySkill, type DbUserCategorySkillInsert, type DbUserCategorySkillUpdate,
+  type DbUserAchievement, type DbUserAchievementInsert,
+  type DbUserStreakHistory, type DbUserStreakHistoryInsert,
+  type DbUserQuestionMemory, type DbUserQuestionMemoryInsert, type DbUserQuestionMemoryUpdate
+} from './database'
 
-const supabase = createClient<Database>(
+const supabaseClient = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
@@ -438,7 +440,7 @@ const ACHIEVEMENT_DEFINITIONS = {
 
 export const learningGoalOperations = {
   async create(userId: string, goal: Omit<LearningGoal, 'id'>): Promise<DbUserLearningGoal> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_learning_goals')
       .insert({
         user_id: userId,
@@ -457,7 +459,7 @@ export const learningGoalOperations = {
   },
 
   async getByUser(userId: string): Promise<LearningGoal[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_learning_goals')
       .select('*')
       .eq('user_id', userId)
@@ -483,7 +485,7 @@ export const learningGoalOperations = {
   },
 
   async complete(goalId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_learning_goals')
       .update({ is_active: false })
       .eq('id', goalId)
@@ -498,7 +500,7 @@ export const learningGoalOperations = {
 
 export const customDeckOperations = {
   async create(userId: string, deck: Omit<CustomDeck, 'id' | 'contentCount' | 'lastUsed'>): Promise<DbUserCustomDeck> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_custom_decks')
       .insert({
         user_id: userId,
@@ -515,7 +517,7 @@ export const customDeckOperations = {
   },
 
   async getByUser(userId: string): Promise<CustomDeck[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_custom_decks')
       .select(`
         *,
@@ -539,7 +541,7 @@ export const customDeckOperations = {
   },
 
   async addContent(deckId: string, content: { topicId?: string; questionId?: string; priorityScore?: number }): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_deck_content')
       .insert({
         deck_id: deckId,
@@ -552,7 +554,7 @@ export const customDeckOperations = {
   },
 
   async removeContent(deckId: string, contentId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_deck_content')
       .delete()
       .eq('deck_id', deckId)
@@ -563,12 +565,12 @@ export const customDeckOperations = {
 
   async generateAdaptiveDeck(userId: string, preferences: CustomDeck['preferences']): Promise<any[]> {
     // Get user's skill levels and performance history
-    const { data: skills } = await supabase
+    const { data: skills } = await supabaseClient
       .from('user_category_skills')
       .select('*')
       .eq('user_id', userId)
 
-    const { data: questionMemory } = await supabase
+    const { data: questionMemory } = await supabaseClient
       .from('user_question_memory')
       .select('*')
       .eq('user_id', userId)
@@ -581,7 +583,7 @@ export const customDeckOperations = {
     // 4. Difficulty progression
     
     // This is a simplified version - real implementation would be more sophisticated
-    const { data: questions, error } = await supabase
+    const { data: questions, error } = await supabaseClient
       .from('questions')
       .select(`
         *,
@@ -608,7 +610,7 @@ export const skillTrackingOperations = {
     timeSpent?: number
   ): Promise<CategorySkill> {
     // Get or create skill record
-    let { data: skill, error } = await supabase
+    let { data: skill, error } = await supabaseClient
       .from('user_category_skills')
       .select('*')
       .eq('user_id', userId)
@@ -617,7 +619,7 @@ export const skillTrackingOperations = {
 
     if (error && error.code === 'PGRST116') {
       // Create new skill record
-      const { data: newSkill, error: createError } = await supabase
+      const { data: newSkill, error: createError } = await supabaseClient
         .from('user_category_skills')
         .insert({
           user_id: userId,
@@ -655,7 +657,7 @@ export const skillTrackingOperations = {
       else if (newSkillLevel >= 50) masteryLevel = 'intermediate'
       else if (newSkillLevel >= 25) masteryLevel = 'beginner'
 
-      const { data: updatedSkill, error: updateError } = await supabase
+      const { data: updatedSkill, error: updateError } = await supabaseClient
         .from('user_category_skills')
         .update({
           questions_attempted: questionsAttempted,
@@ -705,7 +707,7 @@ export const skillTrackingOperations = {
   },
 
   async getCategorySkills(userId: string): Promise<CategorySkill[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_category_skills')
       .select('*')
       .eq('user_id', userId)
@@ -733,7 +735,7 @@ export const skillTrackingOperations = {
 export const achievementOperations = {
   async checkAndAward(userId: string, achievementType: string, data: Record<string, any> = {}): Promise<Achievement | null> {
     // Check if achievement already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
       .from('user_achievements')
       .select('*')
       .eq('user_id', userId)
@@ -746,13 +748,13 @@ export const achievementOperations = {
     if (!definition) return null
 
     // Award the achievement
-    const { data: achievement, error } = await supabase
+    const { data: achievement, error } = await supabaseClient
       .from('user_achievements')
       .insert({
         user_id: userId,
         achievement_type: achievementType,
         achievement_data: data,
-        is_milestone: definition.isMilestone || false
+        is_milestone: definition.category === 'milestone' || false
       })
       .select()
       .single()
@@ -774,7 +776,7 @@ export const achievementOperations = {
   },
 
   async awardXP(userId: string, xpAmount: number): Promise<void> {
-    const { data: progress, error: getError } = await supabase
+    const { data: progress, error: getError } = await supabaseClient
       .from('user_progress')
       .select('total_xp, current_level, xp_to_next_level')
       .eq('user_id', userId)
@@ -792,7 +794,7 @@ export const achievementOperations = {
       xpToNext = this.calculateXPForLevel(newLevel + 1) - newTotalXp
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseClient
       .from('user_progress')
       .update({
         total_xp: newTotalXp,
@@ -810,7 +812,7 @@ export const achievementOperations = {
   },
 
   async getUserAchievements(userId: string): Promise<Achievement[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_achievements')
       .select('*')
       .eq('user_id', userId)
@@ -844,7 +846,7 @@ export const spacedRepetitionOperations = {
     isCorrect: boolean,
     responseTime?: number
   ): Promise<void> {
-    let { data: memory, error } = await supabase
+    let { data: memory, error } = await supabaseClient
       .from('user_question_memory')
       .select('*')
       .eq('user_id', userId)
@@ -858,7 +860,7 @@ export const spacedRepetitionOperations = {
       const nextReview = new Date()
       nextReview.setDate(nextReview.getDate() + interval)
 
-      const { error: createError } = await supabase
+      const { error: createError } = await supabaseClient
         .from('user_question_memory')
         .insert({
           user_id: userId,
@@ -887,7 +889,7 @@ export const spacedRepetitionOperations = {
       const nextReview = new Date()
       nextReview.setDate(nextReview.getDate() + newInterval)
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseClient
         .from('user_question_memory')
         .update({
           easiness_factor: newEasiness,
@@ -945,7 +947,7 @@ export const spacedRepetitionOperations = {
   async getQuestionsForReview(userId: string, limit: number = 20): Promise<any[]> {
     const today = new Date().toISOString().split('T')[0]
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_question_memory')
       .select(`
         *,
@@ -967,7 +969,7 @@ export const spacedRepetitionOperations = {
 
 export const enhancedProgressOperations = {
   async getComprehensiveStats(userId: string): Promise<EnhancedUserProgress> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_comprehensive_stats')
       .select('*')
       .eq('user_id', userId)
@@ -975,7 +977,7 @@ export const enhancedProgressOperations = {
 
     if (error) {
       // Fallback to basic progress if view doesn't exist or user not found
-      const { data: basicProgress } = await supabase
+      const { data: basicProgress } = await supabaseClient
         .from('user_progress')
         .select('*')
         .eq('user_id', userId)
@@ -1034,7 +1036,7 @@ export const enhancedProgressOperations = {
     const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()))
     startOfWeek.setHours(0, 0, 0, 0)
 
-    const { data: progress } = await supabase
+    const { data: progress } = await supabaseClient
       .from('user_progress')
       .select('week_start_date, weekly_completed, weekly_goal')
       .eq('user_id', userId)
@@ -1045,7 +1047,7 @@ export const enhancedProgressOperations = {
 
     if (isNewWeek) {
       // Reset weekly progress
-      await supabase
+      await supabaseClient
         .from('user_progress')
         .update({
           week_start_date: startOfWeek.toISOString().split('T')[0],
@@ -1054,7 +1056,7 @@ export const enhancedProgressOperations = {
         .eq('user_id', userId)
     } else {
       // Increment weekly progress
-      await supabase
+      await supabaseClient
         .from('user_progress')
         .update({
           weekly_completed: (progress?.weekly_completed || 0) + 1
@@ -1101,18 +1103,27 @@ export async function updateEnhancedProgress(
   }
 
   try {
+    // IMPORTANT: We now track EVERYTHING for EVERYONE, regardless of subscription tier
+    // This creates better marketing opportunities and prevents data loss
+    
     // 1. Update basic progress (existing system)
     const { userProgressOperations } = await import('./database')
     await userProgressOperations.updateAfterQuiz(userId, quizData.correctAnswers, quizData.totalQuestions)
 
-    // 2. Update weekly progress
+    // 2. Update weekly progress - TRACK FOR EVERYONE
     await enhancedProgressOperations.updateWeeklyProgress(userId)
 
-    // 3. Get comprehensive stats for achievement checking
+    // 3. ALWAYS save detailed analytics to user_quiz_analytics table
+    await saveDetailedQuizAnalytics(userId, quizData)
+
+    // 4. ALWAYS save progress history snapshot
+    await saveProgressHistorySnapshot(userId, 'daily')
+
+    // 5. Get comprehensive stats for achievement checking
     const beforeStats = await enhancedProgressOperations.getComprehensiveStats(userId)
     const afterStats = await enhancedProgressOperations.getComprehensiveStats(userId)
     
-    // 4. Check for achievements based on quiz completion
+    // 6. Check for achievements based on quiz completion
     const isFirstQuiz = beforeStats.totalQuizzesCompleted === 0
     const isPerfectScore = quizData.correctAnswers === quizData.totalQuestions
     const isFastCompletion = quizData.timeSpentSeconds < 180 // 3 minutes
@@ -1221,14 +1232,14 @@ export async function updateEnhancedProgress(
       }
     }
 
-    // 5. Update category skills and check for mastery achievements
+    // 7. ALWAYS update category skills and spaced repetition - track for everyone
     const categoryUpdates = new Map<string, { correct: number; total: number }>()
     const categoriesInQuiz = new Set<string>()
     
     for (const response of quizData.questionResponses) {
       categoriesInQuiz.add(response.category)
       
-      // Update spaced repetition
+      // ALWAYS update spaced repetition for everyone
       await spacedRepetitionOperations.updateQuestionMemory(
         userId,
         response.questionId,
@@ -1244,7 +1255,7 @@ export async function updateEnhancedProgress(
       })
     }
 
-    // Update skills for each category and check for mastery achievements
+    // ALWAYS update skills for each category - track for everyone
     for (const [category, stats] of categoryUpdates) {
       const isCorrect = stats.correct > stats.total / 2 // Majority correct
       const skillUpdate = await skillTrackingOperations.updateCategorySkill(
@@ -1269,6 +1280,9 @@ export async function updateEnhancedProgress(
       }
     }
 
+    // 8. ALWAYS generate learning insights for everyone
+    await generateLearningInsights(userId, quizData, afterStats)
+
     // Check for exploration achievements
     const allSkills = await skillTrackingOperations.getCategorySkills(userId)
     const categoriesAttempted = allSkills.length
@@ -1284,21 +1298,9 @@ export async function updateEnhancedProgress(
       if (achievement) results.newAchievements.push(achievement)
     }
 
-    // Check for high accuracy achievement
-    if (afterStats.totalQuizzesCompleted >= 20 && afterStats.accuracyPercentage >= 90) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'high_accuracy')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-
-    // 6. Check for level up
-    results.levelUp = afterStats.currentLevel > beforeStats.currentLevel
-
-    // Award XP for achievements
-    for (const achievement of results.newAchievements) {
-      const definition = ACHIEVEMENT_DEFINITIONS[achievement.type as keyof typeof ACHIEVEMENT_DEFINITIONS]
-      if (definition?.xpReward) {
-        await achievementOperations.awardXP(userId, definition.xpReward)
-      }
+    // Check if user leveled up
+    if (afterStats.currentLevel > beforeStats.currentLevel) {
+      results.levelUp = true
     }
 
     return results
@@ -1307,4 +1309,299 @@ export async function updateEnhancedProgress(
     console.error('Error updating enhanced progress:', error)
     return results
   }
+}
+
+// =============================================================================
+// HELPER FUNCTIONS FOR UNIVERSAL TRACKING
+// =============================================================================
+
+/**
+ * Save detailed quiz analytics for ALL users (not just premium)
+ * This data will be gated by visibility, not collection
+ */
+async function saveDetailedQuizAnalytics(
+  userId: string,
+  quizData: {
+    topicId: string
+    totalQuestions: number
+    correctAnswers: number
+    timeSpentSeconds: number
+    questionResponses: Array<{
+      questionId: string
+      category: string
+      isCorrect: boolean
+      timeSpent: number
+    }>
+  }
+): Promise<void> {
+  try {
+    // Calculate detailed analytics
+    const timeDistribution = quizData.questionResponses.map(q => q.timeSpent)
+    const averageTime = timeDistribution.reduce((a, b) => a + b, 0) / timeDistribution.length
+    const fastestTime = Math.min(...timeDistribution)
+    const slowestTime = Math.max(...timeDistribution)
+    
+    // Category performance breakdown
+    const categoryPerformance: Record<string, { correct: number; total: number; avgTime: number }> = {}
+    quizData.questionResponses.forEach(response => {
+      if (!categoryPerformance[response.category]) {
+        categoryPerformance[response.category] = { correct: 0, total: 0, avgTime: 0 }
+      }
+      categoryPerformance[response.category].total++
+      if (response.isCorrect) {
+        categoryPerformance[response.category].correct++
+      }
+      categoryPerformance[response.category].avgTime += response.timeSpent
+    })
+    
+    // Calculate averages
+    Object.keys(categoryPerformance).forEach(category => {
+      const perf = categoryPerformance[category]
+      perf.avgTime = perf.avgTime / perf.total
+    })
+
+    // Determine optimal study time based on current hour
+    const hour = new Date().getHours()
+    let optimalStudyTime = 'afternoon'
+    if (hour < 12) optimalStudyTime = 'morning'
+    else if (hour < 17) optimalStudyTime = 'afternoon'
+    else if (hour < 21) optimalStudyTime = 'evening'
+    else optimalStudyTime = 'night'
+
+    // Save to database
+    const { error } = await supabaseClient
+      .from('user_quiz_analytics')
+      .insert({
+        user_id: userId,
+        topic_id: quizData.topicId,
+        total_time_seconds: quizData.timeSpentSeconds,
+        average_time_per_question: averageTime,
+        fastest_question_time: fastestTime,
+        slowest_question_time: slowestTime,
+        time_distribution: timeDistribution,
+        category_performance: categoryPerformance,
+        optimal_study_time: optimalStudyTime,
+        completion_rate: 1.0, // They completed the quiz
+        consistency_score: calculateConsistencyScore(timeDistribution),
+        improvement_trend: 0.0 // Would need historical data to calculate
+      })
+
+    if (error) {
+      console.error('Error saving quiz analytics:', error)
+    }
+  } catch (error) {
+    console.error('Error in saveDetailedQuizAnalytics:', error)
+  }
+}
+
+/**
+ * Save progress history snapshot for ALL users
+ */
+async function saveProgressHistorySnapshot(userId: string, snapshotType: 'daily' | 'weekly' | 'monthly'): Promise<void> {
+  try {
+    const stats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    const today = new Date().toISOString().split('T')[0]
+
+    // Check if we already have a snapshot for today
+    const { data: existing } = await supabaseClient
+      .from('user_progress_history')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('snapshot_date', today)
+      .eq('snapshot_type', snapshotType)
+      .single()
+
+    if (existing) {
+      // Update existing snapshot
+      const { error } = await supabaseClient
+        .from('user_progress_history')
+        .update({
+          total_quizzes_completed: stats.totalQuizzesCompleted,
+          total_questions_answered: stats.totalQuestionsAnswered,
+          total_correct_answers: stats.totalCorrectAnswers,
+          current_streak: stats.currentStreak,
+          longest_streak: stats.longestStreak,
+          total_xp: stats.totalXp,
+          current_level: stats.currentLevel,
+          accuracy_percentage: stats.accuracyPercentage
+        })
+        .eq('id', existing.id)
+
+      if (error) {
+        console.error('Error updating progress history:', error)
+      }
+    } else {
+      // Create new snapshot
+      const { error } = await supabaseClient
+        .from('user_progress_history')
+        .insert({
+          user_id: userId,
+          snapshot_date: today,
+          snapshot_type: snapshotType,
+          total_quizzes_completed: stats.totalQuizzesCompleted,
+          total_questions_answered: stats.totalQuestionsAnswered,
+          total_correct_answers: stats.totalCorrectAnswers,
+          current_streak: stats.currentStreak,
+          longest_streak: stats.longestStreak,
+          total_xp: stats.totalXp,
+          current_level: stats.currentLevel,
+          accuracy_percentage: stats.accuracyPercentage
+        })
+
+      if (error) {
+        console.error('Error creating progress history:', error)
+      }
+    }
+  } catch (error) {
+    console.error('Error in saveProgressHistorySnapshot:', error)
+  }
+}
+
+/**
+ * Generate learning insights for ALL users
+ */
+async function generateLearningInsights(
+  userId: string,
+  quizData: {
+    topicId: string
+    totalQuestions: number
+    correctAnswers: number
+    timeSpentSeconds: number
+    questionResponses: Array<{
+      questionId: string
+      category: string
+      isCorrect: boolean
+      timeSpent: number
+    }>
+  },
+  userStats: EnhancedUserProgress
+): Promise<void> {
+  try {
+    const insights: Array<{
+      type: string
+      category?: string
+      title: string
+      description: string
+      actionItems: string[]
+      confidence: number
+      priority: number
+    }> = []
+
+    // Performance insights
+    const accuracy = (quizData.correctAnswers / quizData.totalQuestions) * 100
+    if (accuracy >= 90) {
+      insights.push({
+        type: 'strength',
+        title: 'Excellent Performance!',
+        description: `You scored ${accuracy.toFixed(0)}% on this quiz, showing strong understanding of the material.`,
+        actionItems: ['Try a more challenging topic', 'Help others by sharing your knowledge'],
+        confidence: 0.9,
+        priority: 2
+      })
+    } else if (accuracy < 60) {
+      insights.push({
+        type: 'weakness',
+        title: 'Room for Improvement',
+        description: `Your ${accuracy.toFixed(0)}% score suggests this topic needs more practice.`,
+        actionItems: ['Review the explanations for missed questions', 'Try this topic again tomorrow', 'Focus on understanding concepts rather than memorizing'],
+        confidence: 0.8,
+        priority: 4
+      })
+    }
+
+    // Speed insights
+    const avgTimePerQuestion = quizData.timeSpentSeconds / quizData.totalQuestions
+    if (avgTimePerQuestion < 30) {
+      insights.push({
+        type: 'recommendation',
+        title: 'Speed Reader',
+        description: 'You complete questions quickly. Consider slowing down to improve accuracy.',
+        actionItems: ['Take time to read questions carefully', 'Double-check your answers'],
+        confidence: 0.7,
+        priority: 3
+      })
+    } else if (avgTimePerQuestion > 90) {
+      insights.push({
+        type: 'recommendation',
+        title: 'Thoughtful Approach',
+        description: 'You take time to consider each question carefully, which often leads to better accuracy.',
+        actionItems: ['Continue your thoughtful approach', 'Practice with timed quizzes occasionally'],
+        confidence: 0.8,
+        priority: 2
+      })
+    }
+
+    // Category-specific insights
+    const categoryPerformance = new Map<string, { correct: number; total: number }>()
+    quizData.questionResponses.forEach(response => {
+      const current = categoryPerformance.get(response.category) || { correct: 0, total: 0 }
+      categoryPerformance.set(response.category, {
+        correct: current.correct + (response.isCorrect ? 1 : 0),
+        total: current.total + 1
+      })
+    })
+
+    categoryPerformance.forEach((performance, category) => {
+      const categoryAccuracy = (performance.correct / performance.total) * 100
+      if (categoryAccuracy >= 80) {
+        insights.push({
+          type: 'strength',
+          category,
+          title: `Strong in ${category}`,
+          description: `You excel in ${category} with ${categoryAccuracy.toFixed(0)}% accuracy.`,
+          actionItems: [`Explore advanced ${category} topics`, 'Consider teaching others this subject'],
+          confidence: 0.85,
+          priority: 2
+        })
+      } else if (categoryAccuracy < 50) {
+        insights.push({
+          type: 'weakness',
+          category,
+          title: `Focus on ${category}`,
+          description: `${category} appears to be challenging for you (${categoryAccuracy.toFixed(0)}% accuracy).`,
+          actionItems: [`Study ${category} fundamentals`, `Practice more ${category} questions`, 'Seek additional resources'],
+          confidence: 0.9,
+          priority: 5
+        })
+      }
+    })
+
+    // Save insights to database
+    for (const insight of insights) {
+      const { error } = await supabaseClient
+        .from('user_learning_insights')
+        .insert({
+          user_id: userId,
+          insight_type: insight.type,
+          insight_category: insight.category,
+          title: insight.title,
+          description: insight.description,
+          action_items: insight.actionItems,
+          confidence_score: insight.confidence,
+          priority_level: insight.priority,
+          valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days
+        })
+
+      if (error) {
+        console.error('Error saving learning insight:', error)
+      }
+    }
+  } catch (error) {
+    console.error('Error in generateLearningInsights:', error)
+  }
+}
+
+/**
+ * Calculate consistency score based on time distribution
+ */
+function calculateConsistencyScore(timeDistribution: number[]): number {
+  if (timeDistribution.length < 2) return 1.0
+  
+  const mean = timeDistribution.reduce((a, b) => a + b, 0) / timeDistribution.length
+  const variance = timeDistribution.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / timeDistribution.length
+  const standardDeviation = Math.sqrt(variance)
+  
+  // Lower standard deviation = higher consistency
+  // Normalize to 0-1 scale (assuming max reasonable std dev of 60 seconds)
+  return Math.max(0, 1 - (standardDeviation / 60))
 } 

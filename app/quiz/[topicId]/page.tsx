@@ -11,6 +11,7 @@ import { AuthDialog } from "@/components/auth/auth-dialog"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { QuizProgressIndicator } from "@/components/quiz-progress-indicator"
+import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { dataService } from "@/lib/data-service"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 
@@ -35,6 +36,7 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [quizAttempts, setQuizAttempts] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
   const [streak, setStreak] = useState(0)
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
 
   const FREE_QUIZ_LIMIT = 3
   const PREMIUM_QUIZ_LIMIT = 20 // Premium users get more quizzes per day
@@ -116,7 +118,8 @@ export default function QuizPage({ params }: QuizPageProps) {
     setQuizAttempts(newAttempts)
     localStorage.setItem("civicAppQuizAttempts", newAttempts.toString())
 
-    setShowTopicInfo(false)
+    // Show loading screen first
+    setShowLoadingScreen(true)
   }
 
   const handleQuizComplete = () => {
@@ -149,6 +152,11 @@ export default function QuizPage({ params }: QuizPageProps) {
     setShowTopicInfo(false) // Start quiz after successful auth
   }
 
+  const handleLoadingComplete = () => {
+    setShowLoadingScreen(false)
+    setShowTopicInfo(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -179,8 +187,9 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
-      {/* Minimal navigation */}
-      <div className="flex items-center justify-between mb-6 sm:mb-8">
+      {/* Minimal navigation - hide during loading */}
+      {!showLoadingScreen && (
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
         <button
           onClick={handleBackToHome}
           className="text-xs sm:text-sm font-medium tracking-wide transition-opacity opacity-70 hover:opacity-100"
@@ -202,9 +211,12 @@ export default function QuizPage({ params }: QuizPageProps) {
         </div>
         
         <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
-      </div>
+        </div>
+      )}
 
-      {showTopicInfo ? (
+      {showLoadingScreen ? (
+        <QuizLoadingScreen onComplete={handleLoadingComplete} />
+      ) : showTopicInfo ? (
         <TopicInfo
           topicData={topic}
           onStartQuiz={handleStartQuiz}

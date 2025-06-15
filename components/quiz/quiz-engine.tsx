@@ -1,19 +1,25 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import type { QuizQuestion } from "@/lib/quiz-data"
+import { useState, useEffect, useMemo, useRef } from "react"
+import { useAuth } from "@/components/auth/auth-provider"
+import { QuizResults } from "./quiz-results"
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice"
 import { TrueFalseQuestion } from "./question-types/true-false"
 import { ShortAnswerQuestion } from "./question-types/short-answer"
-import { MatchingQuestion } from "./question-types/matching"
 import { FillInBlankQuestion } from "./question-types/fill-in-blank"
+import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
-import { QuizResults } from "./quiz-results"
+import { QuestionFeedbackDisplay } from "./question-feedback-display"
+import { QuestionTimer, useQuestionTimer } from "./question-timer"
+
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { ArrowRight, HelpCircle, ExternalLink, Clock, Zap } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn, shuffleArray } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Clock, Lightbulb, SkipForward, ArrowRight, Flame } from "lucide-react"
+import { cn } from "@/lib/utils"
+import type { QuizQuestion } from "@/lib/quiz-data"
+import { quizDatabase } from "@/lib/quiz-database"
+import { useGlobalAudio } from "@/components/global-audio-controls"
 
 interface QuizEngineProps {
   questions: QuizQuestion[]
@@ -28,9 +34,109 @@ interface UserAnswer {
   timeSpent: number
 }
 
+// Utility function to shuffle an array using Fisher-Yates algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+// Utility function to ensure questions are unique and valid
+function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestion[] {
+  const seen = new Set<string>()
+  const uniqueQuestions: QuizQuestion[] = []
+  
+  for (const question of questions) {
+    // Create a unique key based on question content and number
+    const questionKey = `${question.topic_id}-${question.question_number}-${question.question.slice(0, 50)}`
+    
+    if (!seen.has(questionKey)) {
+      seen.add(questionKey)
+      uniqueQuestions.push(question)
+    } else {
+      console.warn(`Duplicate question detected and removed:`, {
+        topic_id: question.topic_id,
+        question_number: question.question_number,
+        question_preview: question.question.slice(0, 50) + '...'
+      })
+    }
+  }
+  
+  console.log(`Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
+  return uniqueQuestions
+}
+
 export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) {
-  // Randomize questions once when component mounts
-  const randomizedQuestions = useMemo(() => shuffleArray(questions), [questions])
+  const { user } = useAuth()
+  
+  // Global audio integration
+  const { autoPlayEnabled, playText } = useGlobalAudio()
+  
+  // Validate, deduplicate, and randomize questions once when component mounts
+  const randomizedQuestions = useMemo(() => {
+    console.log(`=== QUIZ ENGINE QUESTION PROCESSING ===`)
+    console.log(`Input questions for topic ${topicId}:`, questions.length)
+    
+    // Handle edge case of no questions
+    if (!questions || questions.length === 0) {
+      console.error(`No questions provided for topic ${topicId}`)
+      return []
+    }
+    
+    // First, validate and deduplicate questions
+    const validatedQuestions = validateAndDeduplicateQuestions(questions)
+    
+    // Handle edge case where all questions were duplicates
+    if (validatedQuestions.length === 0) {
+      console.error(`All questions were duplicates or invalid for topic ${topicId}`)
+      return []
+    }
+    
+    // Then shuffle them
+    const shuffled = shuffleArray(validatedQuestions)
+    
+    console.log(`Final randomized questions:`, shuffled.length)
+    console.log(`Question numbers:`, shuffled.map(q => q.question_number))
+    console.log(`Question types:`, shuffled.map(q => q.question_type))
+    
+    // Validate that each question has required fields
+    const validQuestions = shuffled.filter(q => {
+      const isValid = q.question && q.question_type && q.correct_answer
+      if (!isValid) {
+        console.warn(`Invalid question filtered out:`, {
+          topic_id: q.topic_id,
+          question_number: q.question_number,
+          has_question: !!q.question,
+          has_type: !!q.question_type,
+          has_answer: !!q.correct_answer
+        })
+      }
+      return isValid
+    })
+    
+    console.log(`Valid questions after filtering: ${validQuestions.length}`)
+    return validQuestions
+  }, [questions, topicId])
+
+  // Handle case where no valid questions are available
+  if (randomizedQuestions.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md mx-auto p-8">
+          <h1 className="text-2xl font-bold mb-4">No Questions Available</h1>
+          <p className="text-muted-foreground mb-6">
+            This quiz doesn't have any valid questions yet. Please try another topic.
+          </p>
+          <Button onClick={onComplete} className="rounded-xl">
+            Back to Topics
+          </Button>
+        </div>
+      </div>
+    )
+  }
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
@@ -39,252 +145,351 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false)
   const [questionStartTime, setQuestionStartTime] = useState(Date.now())
-  const [timeLeft, setTimeLeft] = useState(60) // 60 seconds per question
-  const [isTimerActive, setIsTimerActive] = useState(true)
   const [showFeedback, setShowFeedback] = useState(false)
   const [streak, setStreak] = useState(0)
   const [animateProgress, setAnimateProgress] = useState(false)
+  const [quizStartTime] = useState(Date.now())
+
+  // Use the timer hook
+  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(60)
 
   const currentQuestion = randomizedQuestions[currentQuestionIndex]
   const isLastQuestion = currentQuestionIndex === randomizedQuestions.length - 1
   const progress = ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100
 
-  // Timer effect
+  // Log current question for debugging
   useEffect(() => {
-    if (!isTimerActive || isAnswerSubmitted) return
+    if (currentQuestion) {
+      console.log(`=== RENDERING QUESTION ${currentQuestionIndex + 1}/${randomizedQuestions.length} ===`)
+      console.log(`Question ID: ${currentQuestion.topic_id}-${currentQuestion.question_number}`)
+      console.log(`Question Type: ${currentQuestion.question_type}`)
+      console.log(`Question Preview: ${currentQuestion.question.slice(0, 100)}...`)
+      console.log(`Correct Answer: ${currentQuestion.correct_answer}`)
+    }
+  }, [currentQuestion, currentQuestionIndex, randomizedQuestions.length])
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Auto-submit when time runs out
-          handleTimeUp()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isTimerActive, isAnswerSubmitted])
-
-  // Reset timer when question changes
+  // Load partial quiz state on mount
   useEffect(() => {
-    setTimeLeft(60)
-    setIsTimerActive(true)
-    setQuestionStartTime(Date.now())
-    setShowFeedback(false)
-    setAnimateProgress(true)
-    
-    // Reset animation after a short delay
-    setTimeout(() => setAnimateProgress(false), 300)
-  }, [currentQuestionIndex])
+    if (!user) return
 
-  // Keyboard shortcuts for quiz interaction
+    const partialState = quizDatabase.loadPartialQuizState(user.id, topicId)
+    if (partialState) {
+      setCurrentQuestionIndex(partialState.currentQuestionIndex)
+      setUserAnswers(partialState.userAnswers)
+      // Note: We don't restore the exact start time to avoid confusion
+    }
+  }, [user, topicId])
+
+  // Save partial state whenever answers change
+  useEffect(() => {
+    if (!user || userAnswers.length === 0) return
+
+    const partialState = {
+      currentQuestionIndex,
+      userAnswers,
+      startTime: quizStartTime
+    }
+
+    quizDatabase.savePartialQuizState(user.id, topicId, partialState)
+  }, [user, topicId, currentQuestionIndex, userAnswers, quizStartTime])
+
+  // Keyboard shortcuts - FIXED: Simplified dependencies and improved responsiveness
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't interfere with form inputs or if modifiers are pressed
-      if (event.target instanceof HTMLInputElement || 
-          event.target instanceof HTMLTextAreaElement ||
-          event.ctrlKey || event.metaKey || event.altKey) {
+      // Don't handle shortcuts if user is typing in an input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return
       }
 
-      // If answer is already submitted, only allow next question navigation
-      if (isAnswerSubmitted) {
-        switch (event.key) {
-          case 'Enter':
-          case ' ': // Spacebar
-          case 'ArrowRight':
-          case 'n': // Next
-            event.preventDefault()
-            handleNextQuestion()
-            break
-          case '?':
-            event.preventDefault()
-            alert(`Quiz Keyboard Shortcuts:
-Enter / Space / → / n: Next question (after answering)
-?: Show this help`)
-            break
-        }
-        return
-      }
+      // Don't handle shortcuts after answer is submitted
+      if (isAnswerSubmitted) return
 
-      // Before submitting answer
+      // Add debug logging to track key events
+      console.log('Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
+
       switch (event.key) {
+        case 'Enter':
+          event.preventDefault()
+          event.stopPropagation()
+          if (selectedAnswer && !isAnswerSubmitted) {
+            console.log('Submitting answer via Enter key:', selectedAnswer)
+            handleSubmitAnswer()
+          }
+          break
+        case ' ':
+          event.preventDefault()
+          event.stopPropagation()
+          setShowHint(prev => !prev)
+          break
         case '1':
         case '2':
         case '3':
         case '4':
-          if (currentQuestion.question_type === 'multiple_choice') {
+          if (currentQuestion?.question_type === 'multiple_choice') {
             event.preventDefault()
-            const options = ['A', 'B', 'C', 'D']
-            const selectedOption = options[parseInt(event.key) - 1]
-            if (selectedOption && currentQuestion[`option_${selectedOption.toLowerCase()}` as keyof QuizQuestion]) {
-              handleAnswerSelect(selectedOption)
+            event.stopPropagation()
+            const optionIndex = parseInt(event.key) - 1
+            const options = [
+              currentQuestion.option_a,
+              currentQuestion.option_b,
+              currentQuestion.option_c,
+              currentQuestion.option_d
+            ].filter(Boolean)
+            
+            if (optionIndex < options.length) {
+              const optionId = String.fromCharCode(65 + optionIndex) // A, B, C, D
+              console.log('Selecting option via keyboard:', optionId)
+              handleAnswerSelect(optionId)
             }
           }
           break
         case 't':
         case 'T':
-          if (currentQuestion.question_type === 'true_false') {
+          if (currentQuestion?.question_type === 'true_false') {
             event.preventDefault()
+            event.stopPropagation()
+            console.log('Selecting True via keyboard')
             handleAnswerSelect('True')
           }
           break
         case 'f':
         case 'F':
-          if (currentQuestion.question_type === 'true_false') {
+          if (currentQuestion?.question_type === 'true_false') {
             event.preventDefault()
+            event.stopPropagation()
+            console.log('Selecting False via keyboard')
             handleAnswerSelect('False')
           }
           break
-        case 'Enter':
-          if (selectedAnswer) {
-            event.preventDefault()
-            handleSubmitAnswer()
-          }
-          break
-        case ' ': // Spacebar for hint
+        case 's':
+        case 'S':
+          if (event.ctrlKey || event.metaKey) return // Don't interfere with save shortcuts
           event.preventDefault()
-          setShowHint(!showHint)
-          break
-        case 'h':
-          event.preventDefault()
-          setShowHint(!showHint)
-          break
-        case '?':
-          event.preventDefault()
-          const helpText = currentQuestion.question_type === 'multiple_choice' 
-            ? `Quiz Keyboard Shortcuts:
-1-4: Select answer options A-D
-Enter: Submit answer
-Space / h: Toggle hint
-?: Show this help`
-            : currentQuestion.question_type === 'true_false'
-            ? `Quiz Keyboard Shortcuts:
-t: Select True
-f: Select False
-Enter: Submit answer
-Space / h: Toggle hint
-?: Show this help`
-            : `Quiz Keyboard Shortcuts:
-Enter: Submit answer
-Space / h: Toggle hint
-?: Show this help`
-          alert(helpText)
+          event.stopPropagation()
+          console.log('Skipping question via keyboard')
+          handleSkipQuestion()
           break
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentQuestion, selectedAnswer, isAnswerSubmitted, showHint])
+  }, [selectedAnswer, isAnswerSubmitted, currentQuestion?.question_type, currentQuestion?.option_a, currentQuestion?.option_b, currentQuestion?.option_c, currentQuestion?.option_d])
+
+  // Reset question state when moving to next question - FIXED: Reduced dependencies
+  useEffect(() => {
+    console.log('Resetting question state for question index:', currentQuestionIndex)
+    setSelectedAnswer(null)
+    setIsAnswerSubmitted(false)
+    setShowHint(false)
+    setShowFeedback(false)
+    setQuestionStartTime(Date.now())
+    resetTimer()
+    
+    // Auto-play question if global autoplay is enabled - with better timing
+    if (autoPlayEnabled && currentQuestion?.question) {
+      // Shorter delay and better error handling
+      const timer = setTimeout(() => {
+        try {
+          playText(currentQuestion.question, { autoPlay: true })
+        } catch (error) {
+          console.warn('Auto-play failed:', error)
+        }
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentQuestionIndex]) // FIXED: Only depend on question index, not audio dependencies
+
+  // Separate effect for audio auto-play to prevent conflicts
+  useEffect(() => {
+    if (autoPlayEnabled && currentQuestion?.question && currentQuestionIndex >= 0) {
+      const timer = setTimeout(() => {
+        try {
+          playText(currentQuestion.question, { autoPlay: true })
+        } catch (error) {
+          console.warn('Auto-play failed:', error)
+        }
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentQuestionIndex, autoPlayEnabled, playText])
 
   const handleTimeUp = () => {
     if (isAnswerSubmitted) return
     
+    console.log('Time up for question:', currentQuestion?.question_number)
+    stopTimer()
+    
+    // Auto-submit with no answer
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
     const newAnswer: UserAnswer = {
       questionId: currentQuestion.question_number,
-      answer: selectedAnswer || "",
-      isCorrect: false, // Time's up = incorrect
-      timeSpent,
+      answer: "timeout",
+      isCorrect: false,
+      timeSpent
     }
-
-    setUserAnswers([...userAnswers, newAnswer])
+    
+    setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
-    setIsTimerActive(false)
     setShowFeedback(true)
-    setStreak(0) // Reset streak on timeout
   }
 
-  const handleAnswerSelect = (answer: string) => {
-    if (!isAnswerSubmitted) {
-      setSelectedAnswer(answer)
+  const handleSkipQuestion = () => {
+    if (isAnswerSubmitted) {
+      console.log('Skip blocked: answer already submitted')
+      return
     }
-  }
-
-  const handleInteractiveAnswer = (answer: string, isCorrect: boolean) => {
-    if (isAnswerSubmitted) return
-
+    
+    console.log('Skipping question:', currentQuestion?.question_number)
+    stopTimer()
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
     
     const newAnswer: UserAnswer = {
       questionId: currentQuestion.question_number,
+      answer: "skipped",
+      isCorrect: false,
+      timeSpent
+    }
+    
+    setUserAnswers(prev => [...prev, newAnswer])
+    setSelectedAnswer("skipped")
+    setIsAnswerSubmitted(true)
+    setShowFeedback(true)
+  }
+
+  const handleAnswerSelect = (answer: string) => {
+    if (isAnswerSubmitted) {
+      console.log('Answer selection blocked: already submitted')
+      return
+    }
+    console.log('Selecting answer:', answer)
+    setSelectedAnswer(answer)
+  }
+
+  const handleInteractiveAnswer = (answer: string, isCorrect: boolean) => {
+    if (isAnswerSubmitted) {
+      console.log('Interactive answer blocked: already submitted')
+      return
+    }
+    
+    console.log('Interactive answer:', answer, 'Correct:', isCorrect)
+    setSelectedAnswer(answer)
+    stopTimer()
+    
+    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
+    const newAnswer: UserAnswer = {
+      questionId: currentQuestion.question_number,
       answer,
       isCorrect,
-      timeSpent,
+      timeSpent
     }
-
-    setUserAnswers([...userAnswers, newAnswer])
+    
+    setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
-    setIsTimerActive(false)
     setShowFeedback(true)
-    setSelectedAnswer(answer)
-
+    
     // Update streak
     if (isCorrect) {
       setStreak(prev => prev + 1)
     } else {
       setStreak(0)
+    }
+    
+    // Animate progress bar
+    setAnimateProgress(true)
+    setTimeout(() => setAnimateProgress(false), 1000)
+    
+    // Auto-play explanation if global autoplay is enabled
+    if (autoPlayEnabled && currentQuestion?.explanation) {
+      // Delay to let the feedback UI render first
+      setTimeout(() => {
+        try {
+          playText(currentQuestion.explanation, { autoPlay: true })
+        } catch (error) {
+          console.warn('Auto-play explanation failed:', error)
+        }
+      }, 1000)
     }
   }
 
   const handleSubmitAnswer = () => {
-    if (!selectedAnswer) return
-
+    if (!selectedAnswer || isAnswerSubmitted) {
+      console.log('Submit blocked:', { selectedAnswer, isAnswerSubmitted })
+      return
+    }
+    
+    console.log('Submitting answer:', selectedAnswer)
+    stopTimer()
+    
+    // Determine if answer is correct based on question type
+    let isCorrect = false
+    if (currentQuestion.question_type === 'short_answer') {
+      isCorrect = selectedAnswer.toLowerCase().trim() === currentQuestion.correct_answer.toLowerCase().trim()
+    } else if (currentQuestion.question_type === 'true_false') {
+      isCorrect = selectedAnswer.toLowerCase() === currentQuestion.correct_answer.toLowerCase()
+    } else {
+      isCorrect = selectedAnswer === currentQuestion.correct_answer
+    }
+    
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
-    const isCorrect = selectedAnswer === currentQuestion.correct_answer
-
     const newAnswer: UserAnswer = {
       questionId: currentQuestion.question_number,
       answer: selectedAnswer,
       isCorrect,
-      timeSpent,
+      timeSpent
     }
-
-    setUserAnswers([...userAnswers, newAnswer])
+    
+    setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
-    setIsTimerActive(false)
     setShowFeedback(true)
-
+    
     // Update streak
     if (isCorrect) {
       setStreak(prev => prev + 1)
     } else {
       setStreak(0)
+    }
+    
+    // Animate progress bar
+    setAnimateProgress(true)
+    setTimeout(() => setAnimateProgress(false), 1000)
+    
+    // Auto-play explanation if global autoplay is enabled
+    if (autoPlayEnabled && currentQuestion?.explanation) {
+      // Delay to let the feedback UI render first
+      setTimeout(() => {
+        try {
+          playText(currentQuestion.explanation, { autoPlay: true })
+        } catch (error) {
+          console.warn('Auto-play explanation failed:', error)
+        }
+      }, 1000)
     }
   }
 
   const handleNextQuestion = () => {
     if (isLastQuestion) {
-      setShowResults(true)
+      handleFinishQuiz()
     } else {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
-      setSelectedAnswer(null)
-      setIsAnswerSubmitted(false)
-      setShowHint(false)
+      setCurrentQuestionIndex(prev => prev + 1)
     }
   }
 
   const handleFinishQuiz = () => {
-    onComplete()
-  }
-
-  const getTimerColor = () => {
-    if (timeLeft > 30) return "text-green-600"
-    if (timeLeft > 10) return "text-yellow-600"
-    return "text-red-600"
-  }
-
-  const getTimerBgColor = () => {
-    if (timeLeft > 30) return "bg-green-100 dark:bg-green-900/20"
-    if (timeLeft > 10) return "bg-yellow-100 dark:bg-yellow-900/20"
-    return "bg-red-100 dark:bg-red-900/20"
+    setShowResults(true)
   }
 
   if (showResults) {
-    return <QuizResults userAnswers={userAnswers} questions={randomizedQuestions} onFinish={handleFinishQuiz} topicId={topicId} />
+    return (
+      <QuizResults
+        questions={randomizedQuestions}
+        userAnswers={userAnswers}
+        onFinish={onComplete}
+        topicId={topicId}
+      />
+    )
   }
 
   const renderQuestion = () => {
@@ -316,18 +521,18 @@ Space / h: Toggle hint
             onSelectAnswer={handleAnswerSelect}
           />
         )
-      case "matching":
+      case "fill_in_blank":
         return (
-          <MatchingQuestion
+          <FillInBlankQuestion
             question={currentQuestion}
             onAnswer={handleInteractiveAnswer}
             showHint={showHint}
             disabled={isAnswerSubmitted}
           />
         )
-      case "fill_in_blank":
+      case "matching":
         return (
-          <FillInBlankQuestion
+          <MatchingQuestion
             question={currentQuestion}
             onAnswer={handleInteractiveAnswer}
             showHint={showHint}
@@ -349,176 +554,132 @@ Space / h: Toggle hint
   }
 
   return (
-    <div className="flex flex-col h-full px-4 sm:px-8 py-4 sm:py-6">
-      {/* Compact header with progress and timer */}
-      <div className="mb-4 sm:mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-medium">
-            Question {currentQuestionIndex + 1} of {randomizedQuestions.length}
-          </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Streak indicator */}
-            {streak > 0 && (
-              <div className="flex items-center space-x-1 text-xs sm:text-sm font-medium text-orange-600 dark:text-orange-400">
-                <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>{streak}</span>
+    <div className="min-h-screen bg-white dark:bg-black">
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-12">
+        {/* Question section - Apple style */}
+        <div className="text-center space-y-8">
+          {/* Question text - made smaller */}
+          <div className="space-y-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto">
+              {currentQuestion.question}
+            </h1>
+            
+            {/* Timer and hint button */}
+            <div className="flex items-center justify-center space-x-6">
+              {/* Timer */}
+              <QuestionTimer
+                initialTime={60}
+                isActive={isTimerActive}
+                onTimeUp={handleTimeUp}
+              />
+              
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowHint(!showHint)} 
+                className={cn(
+                  "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light text-sm h-auto p-2",
+                  showHint && "text-blue-600 dark:text-blue-400"
+                )}
+              >
+                {showHint ? "Hide hint" : "Show hint"}
+              </Button>
+            </div>
+            
+            {/* Hint - clean and minimal */}
+            {showHint && (
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 border border-slate-100 dark:border-slate-800">
+                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                    💡 {currentQuestion.hint}
+                  </p>
+                </div>
               </div>
             )}
+          </div>
+
+          {/* Question content - only show if answer not submitted */}
+          {!isAnswerSubmitted && (
+            <div className="max-w-2xl mx-auto">
+              {renderQuestion()}
+            </div>
+          )}
+
+          {/* Feedback section using new component */}
+          {isAnswerSubmitted && (
+            <QuestionFeedbackDisplay
+              question={currentQuestion}
+              selectedAnswer={selectedAnswer}
+              timeLeft={timeLeft}
+              isLastQuestion={isLastQuestion}
+              onNextQuestion={handleNextQuestion}
+            />
+          )}
+        </div>
+
+        {/* Action buttons - only show when answer not submitted */}
+        {!isAnswerSubmitted && (
+          <div className="flex items-center justify-center gap-6">
+            <Button 
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Skip button clicked')
+                handleSkipQuestion()
+              }}
+              variant="ghost"
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light"
+            >
+              Skip
+            </Button>
             
-            {/* Timer */}
-            <div className={cn(
-              "flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-full transition-all duration-300",
-              getTimerBgColor(),
-              timeLeft <= 10 && "animate-pulse-glow"
-            )}>
-              <Clock className={cn("h-3 w-3 sm:h-4 sm:w-4", getTimerColor())} />
-              <span className={cn("text-xs sm:text-sm font-mono font-bold", getTimerColor())}>
-                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Animated progress bar */}
-        <div className="relative">
-          <Progress 
-            value={progress} 
-            className={cn(
-              "h-2 sm:h-3 transition-all duration-500 ease-out",
-              animateProgress && "scale-105"
-            )} 
-          />
-          {/* Progress glow effect */}
-          <div 
-            className="absolute top-0 left-0 h-2 sm:h-3 bg-gradient-to-r from-blue-500/50 to-transparent rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="flex-grow">
-        <div className="mb-4 sm:mb-8">
-          <div className="flex items-start justify-between">
-            <h3 className={cn(
-              "text-xl sm:text-3xl font-bold mb-4 transition-all duration-300 leading-tight pr-2",
-              showFeedback && "scale-105"
-            )}>
-              {currentQuestion.question}
-            </h3>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setShowHint(!showHint)} 
-                    className={cn(
-                      "ml-2 transition-all duration-200 hover:scale-110 flex-shrink-0",
-                      showHint && "bg-blue-100 dark:bg-blue-900/20"
-                    )}
-                  >
-                    <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="sr-only">Show hint</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{currentQuestion.hint}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          
-          {/* Animated hint */}
-          {showHint && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mt-2 text-sm border-l-4 border-blue-400 animate-in slide-in-from-top-2 duration-300">
-              <strong>💡 Hint:</strong> {currentQuestion.hint}
-            </div>
-          )}
-        </div>
-
-        {/* Question content with animation */}
-        <div className={cn(
-          "transition-all duration-300",
-          showFeedback && "transform scale-[0.98]"
-        )}>
-          {renderQuestion()}
-        </div>
-
-        {/* Consolidated feedback - no redundant messaging */}
-        {isAnswerSubmitted && (
-          <div className="mt-4 sm:mt-6 animate-in slide-in-from-bottom-4 duration-500">
-            <div className={cn(
-              "p-4 rounded-xl border-l-4 transition-all duration-300",
-              selectedAnswer === currentQuestion.correct_answer 
-                ? "bg-green-50 dark:bg-green-900/20 border-green-500" 
-                : "bg-red-50 dark:bg-red-900/20 border-red-500"
-            )}>
-              <p className="font-semibold mb-2 flex items-center text-sm sm:text-base">
-                {selectedAnswer === currentQuestion.correct_answer ? (
-                  <>
-                    <span className="text-xl sm:text-2xl mr-2">🎉</span>
-                    <span className="text-green-700 dark:text-green-300">Correct!</span>
-                    {timeLeft > 45 && <span className="ml-2 text-xs sm:text-sm text-green-600">⚡ Fast!</span>}
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xl sm:text-2xl mr-2">😔</span>
-                    <span className="text-red-700 dark:text-red-300">
-                      {timeLeft === 0 ? "Time's up!" : "Not quite right"}
-                    </span>
-                  </>
-                )}
-              </p>
-              <p className="text-sm mb-3 leading-relaxed">{currentQuestion.explanation}</p>
-            </div>
+            <Button 
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Submit button clicked', { selectedAnswer, isAnswerSubmitted, timeLeft })
+                handleSubmitAnswer()
+              }}
+              disabled={!selectedAnswer || timeLeft === 0} 
+              className={cn(
+                "rounded-full px-8 py-3 font-light transition-all duration-200",
+                selectedAnswer 
+                  ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
+                  : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+              )}
+            >
+              Submit Answer
+            </Button>
           </div>
         )}
-      </div>
 
-      {/* Action buttons with animations */}
-      <div className="mt-4 sm:mt-6 flex justify-end">
-        {!isAnswerSubmitted ? (
-          <Button 
-            onClick={handleSubmitAnswer} 
-            disabled={!selectedAnswer || timeLeft === 0} 
-            className={cn(
-              "rounded-full px-6 sm:px-8 py-2 sm:py-3 transition-all duration-200 hover:scale-105",
-              selectedAnswer && "bg-blue-600 hover:bg-blue-700 shadow-lg"
-            )}
-          >
-            Submit Answer
-          </Button>
-        ) : (
-          <Button 
-            onClick={handleNextQuestion} 
-            className="rounded-full px-6 sm:px-8 py-2 sm:py-3 transition-all duration-200 hover:scale-105 animate-in slide-in-from-right duration-300"
-          >
-            {isLastQuestion ? "See Results" : "Next Question"}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+        {/* Debug panel - show current state for troubleshooting */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-50 max-w-sm">
+            <div className="text-xs font-bold mb-2">Debug Info:</div>
+            <div>Selected: {selectedAnswer || 'None'}</div>
+            <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
+            <div>Timer: {timeLeft}s</div>
+            <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
+            <div>Type: {currentQuestion?.question_type}</div>
+            <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
+          </div>
         )}
-      </div>
 
-      {/* Keyboard shortcuts hint */}
-      <div className="mt-4 text-center">
-        <p className="text-xs text-slate-300 dark:text-slate-600">
-          {currentQuestion.question_type === 'multiple_choice' && !isAnswerSubmitted && (
-            <>Use <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">1-4</kbd> to select, </>
-          )}
-          {currentQuestion.question_type === 'true_false' && !isAnswerSubmitted && (
-            <>Use <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">T</kbd>/<kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">F</kbd> to select, </>
-          )}
-          {!isAnswerSubmitted ? (
-            <>
-              <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Enter</kbd> to submit, <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Space</kbd> for hint
-            </>
-          ) : (
-            <>
-              <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Enter</kbd> for next question
-            </>
-          )}
-          , <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">?</kbd> for help
-        </p>
+        {/* Keyboard shortcuts - minimal - only show when answer not submitted */}
+        {!isAnswerSubmitted && (
+          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-8 hidden md:block">
+            <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+              {currentQuestion.question_type === 'multiple_choice' && (
+                <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">1-4</span> to select • </>
+              )}
+              {currentQuestion.question_type === 'true_false' && (
+                <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">T</span>/<span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">F</span> to select • </>
+              )}
+              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Enter</span> to submit • 
+              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Space</span> for hint
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

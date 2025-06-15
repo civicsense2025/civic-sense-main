@@ -36,6 +36,9 @@ export function QuizProgressIndicator({
   // Only show streak if it's meaningful (> 1 and user has completed at least one quiz)
   const shouldShowStreak = showStreak && streak > 1 && current > 0
 
+  // For non-premium users, only show dots if they have a limit (not unlimited)
+  const shouldShowDots = !isPremium && limit <= 10 // Only show dots for reasonable limits
+
   // Compact progress bar version
   if (variant === 'compact') {
     return (
@@ -44,21 +47,23 @@ export function QuizProgressIndicator({
           <TooltipTrigger asChild>
             <div className={cn("flex items-center space-x-3", className)}>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Quizzes: {current}/{limit}
+                Quizzes: {current}/{isPremium ? '∞' : limit}
               </span>
-              <div className="flex space-x-1">
-                {Array.from({ length: limit }, (_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "w-2.5 h-2.5 rounded-full transition-all duration-200",
-                      i < current 
-                        ? "bg-blue-500 dark:bg-blue-400 ring-2 ring-blue-200 dark:ring-blue-600" 
-                        : "bg-slate-200 dark:bg-slate-700"
-                    )}
-                  />
-                ))}
-              </div>
+              {shouldShowDots && (
+                <div className="flex space-x-1">
+                  {Array.from({ length: limit }, (_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-2.5 h-2.5 rounded-full transition-all duration-200",
+                        i < current 
+                          ? "bg-blue-500 dark:bg-blue-400 ring-2 ring-blue-200 dark:ring-blue-600" 
+                          : "bg-slate-200 dark:bg-slate-700"
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
               {shouldShowStreak && (
                 <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1">
                   <Flame className="h-3 w-3 mr-1" />
@@ -71,7 +76,7 @@ export function QuizProgressIndicator({
             <div className="text-center">
               <p className="font-medium text-slate-900 dark:text-slate-100">Daily Progress</p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                {current} of {limit} quizzes completed
+                {current} of {isPremium ? 'unlimited' : limit} quizzes completed
               </p>
               {shouldShowStreak && (
                 <p className="text-sm text-orange-600 dark:text-orange-400">
@@ -104,16 +109,20 @@ export function QuizProgressIndicator({
             <div className="text-sm text-slate-700 dark:text-slate-200">Completed</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-slate-600 dark:text-slate-300">{remaining}</div>
+            <div className="text-2xl font-bold text-slate-600 dark:text-slate-300">{isPremium ? '∞' : remaining}</div>
             <div className="text-sm text-slate-700 dark:text-slate-200">Remaining</div>
           </div>
         </div>
         
-        <Progress value={percentage} className="mb-2" />
-        <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
-          <span>{percentage}% complete</span>
-          <span>{remaining} left</span>
-        </div>
+        {!isPremium && (
+          <>
+            <Progress value={percentage} className="mb-2" />
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+              <span>{percentage}% complete</span>
+              <span>{remaining} left</span>
+            </div>
+          </>
+        )}
         
         {shouldShowStreak && (
           <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
@@ -133,7 +142,7 @@ export function QuizProgressIndicator({
   if (variant === 'circular') {
     const circumference = 2 * Math.PI * 45
     const strokeDasharray = circumference
-    const strokeDashoffset = circumference - (percentage / 100) * circumference
+    const strokeDashoffset = isPremium ? 0 : circumference - (percentage / 100) * circumference
 
     return (
       <TooltipProvider>
@@ -150,23 +159,25 @@ export function QuizProgressIndicator({
                   fill="transparent"
                   className="text-slate-200 dark:text-slate-700"
                 />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  className="text-blue-600 dark:text-blue-400 transition-all duration-300"
-                  strokeLinecap="round"
-                />
+                {!isPremium && (
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    className="text-blue-600 dark:text-blue-400 transition-all duration-300"
+                    strokeLinecap="round"
+                  />
+                )}
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{current}</div>
-                  <div className="text-xs text-slate-600 dark:text-slate-300">of {limit}</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-300">of {isPremium ? '∞' : limit}</div>
                 </div>
               </div>
               {shouldShowStreak && (
@@ -182,7 +193,7 @@ export function QuizProgressIndicator({
             <div className="text-center">
               <p className="font-medium text-slate-900 dark:text-slate-100">Quiz Progress</p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                {percentage}% complete ({current}/{limit})
+                {isPremium ? `${current} completed` : `${percentage}% complete (${current}/${limit})`}
               </p>
               {shouldShowStreak && (
                 <p className="text-sm text-orange-600 dark:text-orange-400">
@@ -196,30 +207,34 @@ export function QuizProgressIndicator({
     )
   }
 
-  // Streak-focused version - much clearer
+  // Streak-focused version - much cleaner
   if (variant === 'streak') {
     return (
       <div className={cn("flex items-center space-x-4", className)}>
-        <div className="flex items-center space-x-2">
-          <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            {current}/{limit}
-          </span>
-        </div>
+        {!isPremium && (
+          <div className="flex items-center space-x-2">
+            <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {current}/{limit}
+            </span>
+          </div>
+        )}
         
-        <div className="flex space-x-1">
-          {Array.from({ length: limit }, (_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "w-2.5 h-2.5 rounded-full transition-all duration-200",
-                i < current 
-                  ? "bg-blue-500 dark:bg-blue-400 ring-2 ring-blue-200 dark:ring-blue-600" 
-                  : "bg-slate-200 dark:bg-slate-700"
-              )}
-            />
-          ))}
-        </div>
+        {shouldShowDots && (
+          <div className="flex space-x-1">
+            {Array.from({ length: limit }, (_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full transition-all duration-200",
+                  i < current 
+                    ? "bg-blue-500 dark:bg-blue-400 ring-2 ring-blue-200 dark:ring-blue-600" 
+                    : "bg-slate-200 dark:bg-slate-700"
+                )}
+              />
+            ))}
+          </div>
+        )}
         
         {shouldShowStreak && (
           <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
@@ -235,7 +250,7 @@ export function QuizProgressIndicator({
   if (variant === 'minimal') {
     return (
       <div className={cn("text-sm text-slate-700 dark:text-slate-200", className)}>
-        {current}/{limit} today
+        {isPremium ? `${current} today` : `${current}/${limit} today`}
         {shouldShowStreak && (
           <span className="ml-2 text-orange-600 dark:text-orange-400">
             🔥 {streak}
@@ -248,7 +263,7 @@ export function QuizProgressIndicator({
   // Default fallback
   return (
     <div className={cn("text-xs text-slate-600 dark:text-slate-400", className)}>
-      {current}/{limit}
+      {isPremium ? current : `${current}/${limit}`}
     </div>
   )
 }

@@ -13,6 +13,10 @@ import { QuestionFeedback } from "./question-feedback"
 import { AchievementNotification } from "@/components/achievement-notification"
 import { useAuth } from "@/components/auth/auth-provider"
 import { updateEnhancedProgress, type Achievement } from "@/lib/enhanced-gamification"
+import { quizDatabase, type QuizAttemptData } from "@/lib/quiz-database"
+import { PremiumDataTeaser } from "@/components/premium-data-teaser"
+import { SourceMetadataCard } from "@/components/source-metadata-card"
+
 
 interface UserAnswer {
   questionId: number
@@ -80,12 +84,64 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
     loadTopicTitle()
   }, [topicId])
 
-  // Update gamification progress
+  // Save quiz results and update progress
   useEffect(() => {
-    const updateProgress = async () => {
+    const saveQuizAndUpdateProgress = async () => {
       if (!user || progressUpdated) return
 
       try {
+        // Prepare quiz attempt data for database
+        const quizAttemptData: QuizAttemptData = {
+          userId: user.id,
+          topicId,
+          topicTitle,
+          totalQuestions,
+          correctAnswers,
+          score,
+          timeSpentSeconds: totalTime,
+          userAnswers: userAnswers.map(answer => ({
+            questionId: answer.questionId,
+            answer: answer.answer,
+            isCorrect: answer.isCorrect,
+            timeSpent: answer.timeSpent
+          }))
+        }
+
+        // Save to database (this also updates user progress)
+        const savedAttempt = await quizDatabase.saveQuizAttempt(quizAttemptData)
+        console.log('Quiz attempt saved to database:', savedAttempt.id)
+
+        // Also save to localStorage as backup/cache for dashboard
+        const quizResult = {
+          topicId,
+          topicTitle,
+          totalQuestions,
+          correctAnswers,
+          score,
+          timeSpent: totalTime,
+          completedAt: new Date().toISOString(),
+          userAnswers: userAnswers.map(answer => ({
+            questionId: answer.questionId,
+            isCorrect: answer.isCorrect,
+            timeSpent: answer.timeSpent
+          }))
+        }
+
+        const resultsKey = `civicAppQuizResults_${user.id}_v1`
+        const existingResults = localStorage.getItem(resultsKey)
+        const savedResults = existingResults ? JSON.parse(existingResults) : []
+        savedResults.push(quizResult)
+        
+        // Keep only the last 50 results to prevent localStorage bloat
+        if (savedResults.length > 50) {
+          savedResults.splice(0, savedResults.length - 50)
+        }
+        
+        localStorage.setItem(resultsKey, JSON.stringify(savedResults))
+
+        // Clear any partial quiz state since we completed it
+        quizDatabase.clearPartialQuizState(user.id, topicId)
+
         // Prepare question responses for gamification system
         const questionResponses = userAnswers.map(answer => {
           const question = questions.find(q => q.question_number === answer.questionId)
@@ -127,13 +183,18 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         }, 3000)
 
       } catch (error) {
-        console.error('Error updating gamification progress:', error)
+        console.error('Error updating enhanced progress:', {
+          error: error instanceof Error ? error.message : error,
+          stack: error instanceof Error ? error.stack : undefined,
+          userId: user.id,
+          topicId
+        })
         setProgressUpdated(true) // Don't retry on error
       }
     }
 
-    updateProgress()
-  }, [user, topicId, correctAnswers, totalQuestions, totalTime, isPerfectScore, userAnswers, questions, progressUpdated])
+    saveQuizAndUpdateProgress()
+  }, [user, topicId, topicTitle, correctAnswers, totalQuestions, totalTime, isPerfectScore, userAnswers, questions, progressUpdated])
 
   // Animate score counter
   useEffect(() => {
@@ -148,6 +209,17 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         setAnimatedScore(score)
         clearInterval(timer)
         setShowStats(true)
+        
+        // Trigger confetti for good scores
+        if (score >= 80) {
+          setTimeout(() => {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            })
+          }, 500)
+        }
       } else {
         setAnimatedScore(Math.round(current))
       }
@@ -156,93 +228,80 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
     return () => clearInterval(timer)
   }, [score])
 
+  // Confetti effect for perfect scores
   useEffect(() => {
-    // Enhanced confetti based on performance
-    if (score >= 70) {
-      const duration = isPerfectScore ? 5000 : 3000
-      const animationEnd = Date.now() + duration
-      const defaults = { 
-        startVelocity: isPerfectScore ? 45 : 30, 
-        spread: 360, 
-        ticks: isPerfectScore ? 100 : 60, 
-        zIndex: 0 
-      }
+    if (isPerfectScore && animatedScore === score) {
+      const duration = 3000
+      const end = Date.now() + duration
 
       function randomInRange(min: number, max: number) {
         return Math.random() * (max - min) + min
       }
 
-      const interval: any = setInterval(() => {
-        const timeLeft = animationEnd - Date.now()
+      const interval = setInterval(() => {
+        const timeLeft = end - Date.now()
 
         if (timeLeft <= 0) {
-          return clearInterval(interval)
+          clearInterval(interval)
+          return
         }
 
-        const particleCount = (isPerfectScore ? 100 : 50) * (timeLeft / duration)
+        const particleCount = 50 * (timeLeft / duration)
 
-        // Multiple confetti bursts for perfect score
-        if (isPerfectScore) {
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: randomInRange(0, 0.2) },
-            colors: ['#FFD700', '#FFA500', '#FF6347']
-          })
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0, 0.2) },
-            colors: ['#32CD32', '#00FF00', '#ADFF2F']
-          })
-        } else {
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 },
-            colors: ['#3B82F6', '#10B981', '#F59E0B']
-          })
-        }
+        confetti({
+          particleCount,
+          startVelocity: 30,
+          spread: 360,
+          origin: {
+            x: randomInRange(0.1, 0.3),
+            y: Math.random() - 0.2
+          }
+        })
+        confetti({
+          particleCount,
+          startVelocity: 30,
+          spread: 360,
+          origin: {
+            x: randomInRange(0.7, 0.9),
+            y: Math.random() - 0.2
+          }
+        })
       }, 250)
 
       return () => clearInterval(interval)
     }
-  }, [score, isPerfectScore])
+  }, [isPerfectScore, animatedScore, score])
 
   const getSelectedAnswerText = (question: QuizQuestion, answerKey: string): string => {
-    const options = [
-      { key: 'option_a', value: question.option_a },
-      { key: 'option_b', value: question.option_b },
-      { key: 'option_c', value: question.option_c },
-      { key: 'option_d', value: question.option_d },
-    ]
-    
-    const selectedOption = options.find(opt => opt.key === answerKey)
-    return selectedOption?.value || answerKey
+    const optionMap: Record<string, string> = {
+      option_a: question.option_a || "",
+      option_b: question.option_b || "",
+      option_c: question.option_c || "",
+      option_d: question.option_d || "",
+    }
+    return optionMap[answerKey] || answerKey
   }
 
   const getScoreColor = () => {
-    if (score >= 80) return "text-green-600"
-    if (score >= 60) return "text-blue-600"
-    if (score >= 40) return "text-yellow-600"
-    return "text-red-600"
+    if (score >= 90) return "text-green-600 dark:text-green-400"
+    if (score >= 80) return "text-blue-600 dark:text-blue-400"
+    if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
   }
 
   const getScoreBadge = () => {
-    if (isPerfectScore) return { emoji: '🏆', text: 'Perfect!', color: 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700' }
-    if (score >= 80) return { emoji: '🎯', text: 'Excellent', color: 'border-green-400 bg-green-50 dark:bg-green-900/20 text-green-700' }
-    if (score >= 60) return { emoji: '📈', text: 'Good Job', color: 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700' }
-    if (score >= 40) return { emoji: '📚', text: 'Keep Learning', color: 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700' }
-    return { emoji: '💪', text: 'Try Again', color: 'border-red-400 bg-red-50 dark:bg-red-900/20 text-red-700' }
+    if (score >= 90) return { text: "Excellent!", emoji: "🏆", color: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" }
+    if (score >= 80) return { text: "Great Job!", emoji: "🎉", color: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" }
+    if (score >= 70) return { text: "Good Work!", emoji: "👍", color: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300" }
+    return { text: "Keep Trying!", emoji: "💪", color: "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" }
   }
 
   const badge = getScoreBadge()
 
   const getPerformanceMessage = () => {
-    if (isPerfectScore) return "Outstanding! You've mastered this topic completely! 🌟"
-    if (score >= 80) return "Excellent work! You have a strong understanding! 👏"
-    if (score >= 60) return "Good job! You're on the right track! 📈"
-    if (score >= 40) return "Not bad! Review the material and try again! 📚"
+    if (score >= 90) return "Outstanding performance! You've mastered this topic! 🌟"
+    if (score >= 80) return "Excellent work! You have a strong understanding! 🎯"
+    if (score >= 70) return "Good job! You're on the right track! 📈"
     return "Keep studying! Practice makes perfect! 💪"
   }
 
@@ -260,209 +319,218 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
   }
 
   return (
-    <div className="flex flex-col max-h-screen overflow-hidden animate-in fade-in duration-1000">
-      {/* Compact Header */}
-      <div className="text-center py-4 border-b bg-white dark:bg-slate-900 z-10">
-        <h2 className="text-xl font-bold animate-in slide-in-from-top duration-500">Quiz Complete! 🎉</h2>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-light text-slate-900 dark:text-slate-50">
+            Quiz Complete! 🎉
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            {topicTitle}
+          </p>
+        </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-4 max-w-6xl">
-          {/* Compact Score Section */}
-          <div className="mb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Score Display */}
-              <div className="text-center">
-                <div className="relative inline-flex items-center justify-center w-24 h-24 mb-3">
-                  <div className="absolute inset-0">
-                    <Progress 
-                      value={animatedScore} 
-                      className="w-full h-full rounded-full transform rotate-90"
-                    />
-                  </div>
-                  <div className={cn(
-                    "text-2xl font-bold transition-all duration-500",
-                    getScoreColor(),
-                    animatedScore === score && "scale-110"
-                  )}>
-                    {animatedScore}%
-                  </div>
-                </div>
-
-                <div className={cn(
-                  "inline-flex items-center px-3 py-2 rounded-full border-2 font-medium animate-in zoom-in duration-500 delay-500 text-sm",
-                  badge.color
-                )}>
-                  <span className="text-lg mr-2">{badge.emoji}</span>
-                  {badge.text}
-                </div>
-
-                <p className="text-sm text-muted-foreground mt-2 animate-in slide-in-from-bottom duration-700 delay-300">
-                  {getPerformanceMessage()}
-                </p>
-              </div>
-
-              {/* Compact Stats */}
-              {showStats && (
-                <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-bottom duration-500 delay-1000">
-                  <div className="bg-card p-3 rounded-lg border text-center">
-                    <div className="text-lg mb-1">⏱️</div>
-                    <div className="text-xs text-muted-foreground">Avg Time</div>
-                    <div className="text-sm font-bold text-blue-600">{formatTime(averageTime)}</div>
-                  </div>
-                  
-                  <div className="bg-card p-3 rounded-lg border text-center">
-                    <div className="text-lg mb-1">⚡</div>
-                    <div className="text-xs text-muted-foreground">Fastest</div>
-                    <div className="text-sm font-bold text-orange-600">{formatTime(fastestAnswer)}</div>
-                  </div>
-                  
-                  <div className="bg-card p-3 rounded-lg border text-center">
-                    <div className="text-lg mb-1">🎯</div>
-                    <div className="text-xs text-muted-foreground">Best Streak</div>
-                    <div className="text-sm font-bold text-green-600">{streak}</div>
-                  </div>
-                  
-                  <div className="bg-card p-3 rounded-lg border text-center">
-                    <div className="text-lg mb-1">🏆</div>
-                    <div className="text-xs text-muted-foreground">Total Time</div>
-                    <div className="text-sm font-bold text-purple-600">{formatTime(totalTime)}</div>
-                  </div>
-                </div>
-              )}
+        {/* Score Display - Clean Design */}
+        <div className="text-center space-y-6">
+          <div className="relative inline-flex items-center justify-center w-32 h-32">
+            <div className="absolute inset-0">
+              <Progress 
+                value={animatedScore} 
+                className="w-full h-full rounded-full"
+              />
+            </div>
+            <div className={cn(
+              "text-4xl font-light transition-all duration-500",
+              getScoreColor(),
+              animatedScore === score && "scale-110"
+            )}>
+              {animatedScore}%
             </div>
           </div>
 
-          {/* Question Summary with Explanation Toggle */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold animate-in slide-in-from-left duration-500 delay-500">
-                Question Review ({correctAnswers}/{totalQuestions} correct)
-              </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowExplanations(!showExplanations)}
-                className="flex items-center space-x-2"
-              >
-                {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                <span className="text-xs">
-                  {showExplanations ? 'Hide' : 'Show'} Explanations
-                </span>
-              </Button>
+          <div className={cn(
+            "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg",
+            badge.color
+          )}>
+            <span className="text-2xl mr-3">{badge.emoji}</span>
+            {badge.text}
+          </div>
+
+          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            {getPerformanceMessage()}
+          </p>
+        </div>
+
+        {/* Stats Cards - Fixed visibility */}
+        {showStats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-2xl mb-2">⏱️</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Avg Time</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(averageTime)}</div>
             </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-2xl mb-2">⚡</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fastest</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(fastestAnswer)}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-2xl mb-2">🎯</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Best Streak</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{streak}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-2xl mb-2">🏆</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Total Time</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(totalTime)}</div>
+            </div>
+          </div>
+        )}
 
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-              {questions.map((question, index) => {
-                const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
-                const isCorrect = userAnswer?.isCorrect || false
-                const selectedAnswer = userAnswer?.answer || ""
-                const timeSpent = userAnswer?.timeSpent || 0
+        {/* Question Review */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-medium text-slate-900 dark:text-slate-50">
+              Question Review ({correctAnswers}/{totalQuestions} correct)
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExplanations(!showExplanations)}
+              className="flex items-center space-x-2"
+            >
+              {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="text-sm">
+                {showExplanations ? 'Hide' : 'Show'} Explanations
+              </span>
+            </Button>
+          </div>
 
-                return (
-                  <div 
-                    key={question.question_number} 
-                    className="border rounded-lg overflow-hidden animate-in slide-in-from-right duration-300"
-                    style={{ animationDelay: `${index * 50 + 800}ms` }}
-                  >
-                    <div className="p-3 bg-card">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex-shrink-0 text-lg">
-                          {isCorrect ? '✅' : '❌'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-2">
-                            <p className="font-medium text-sm leading-relaxed">{question.question}</p>
-                            <div className="flex items-center text-xs text-muted-foreground ml-4 flex-shrink-0">
-                              <span className="mr-1">⏱️</span>
-                              {formatTime(timeSpent)}
-                            </div>
-                          </div>
+          <div className="space-y-4">
+            {questions.map((question, index) => {
+              const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
+              const isCorrect = userAnswer?.isCorrect || false
+              const selectedAnswer = userAnswer?.answer || ""
+              const timeSpent = userAnswer?.timeSpent || 0
 
-                          {/* Show user's answer and correct/incorrect status */}
-                          <div className="text-sm mb-2">
-                            {isCorrect ? (
-                              <p className="text-green-600 dark:text-green-400">
-                                <span className="font-medium">Your answer:</span>{" "}
-                                {question.question_type === "multiple_choice"
-                                  ? getSelectedAnswerText(question, selectedAnswer)
-                                  : selectedAnswer}
-                              </p>
-                            ) : (
-                              <>
-                                <p className="text-red-600 dark:text-red-400 mb-1">
-                                  <span className="font-medium">Your answer:</span>{" "}
-                                  {question.question_type === "multiple_choice"
-                                    ? getSelectedAnswerText(question, selectedAnswer)
-                                    : selectedAnswer || "(no answer)"}
-                                </p>
-                                <p className="text-green-600 dark:text-green-400">
-                                  <span className="font-medium">Correct answer:</span>{" "}
-                                  {question.question_type === "multiple_choice"
-                                    ? getSelectedAnswerText(question, question.correct_answer)
-                                    : question.correct_answer}
-                                </p>
-                              </>
-                            )}
-                          </div>
+              return (
+                <div 
+                  key={question.question_number} 
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Question number with keyboard shortcut styling */}
+                    <div className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold",
+                      isCorrect 
+                        ? "bg-green-500 border-green-500 text-white" 
+                        : "bg-red-500 border-red-500 text-white"
+                    )}>
+                      {index + 1}
+                    </div>
 
-                          {/* Conditional Explanation */}
-                          {showExplanations && (
-                            <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-md text-sm mb-3">
-                              <p className="leading-relaxed">{question.explanation}</p>
-                            </div>
-                          )}
-
-                          {/* Sources */}
-                          {showExplanations && question.sources.length > 0 && (
-                            <div className="mb-3">
-                              <p className="text-xs text-muted-foreground mb-2">📚 Learn more:</p>
-                              <div className="space-y-1">
-                                {question.sources.map((source, idx) => (
-                                  <a
-                                    key={idx}
-                                    href={source.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center text-xs text-primary hover:underline transition-all duration-200 hover:scale-105"
-                                  >
-                                    <span className="truncate">{source.name}</span>
-                                    <ExternalLink className="h-3 w-3 ml-1 flex-shrink-0" />
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Question Feedback Component */}
-                          <div>
-                            <QuestionFeedback 
-                              questionId={question.question_number?.toString() || `${question.question_number}`}
-                              questionText={question.question}
-                            />
-                          </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-3">
+                        <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
+                          {question.question}
+                        </p>
+                        <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {formatTime(timeSpent)}
                         </div>
                       </div>
+
+                      {/* Answer feedback */}
+                      <div className="space-y-2 mb-4">
+                        {isCorrect ? (
+                          <p className="text-green-600 dark:text-green-400 text-sm">
+                            <span className="font-medium">Your answer:</span>{" "}
+                            {question.question_type === "multiple_choice"
+                              ? getSelectedAnswerText(question, selectedAnswer)
+                              : selectedAnswer}
+                          </p>
+                        ) : (
+                          <>
+                            <p className="text-red-600 dark:text-red-400 text-sm">
+                              <span className="font-medium">Your answer:</span>{" "}
+                              {question.question_type === "multiple_choice"
+                                ? getSelectedAnswerText(question, selectedAnswer)
+                                : selectedAnswer || "(no answer)"}
+                            </p>
+                            <p className="text-green-600 dark:text-green-400 text-sm">
+                              <span className="font-medium">Correct answer:</span>{" "}
+                              {question.question_type === "multiple_choice"
+                                ? getSelectedAnswerText(question, question.correct_answer)
+                                : question.correct_answer}
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Explanation */}
+                      {showExplanations && (
+                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
+                          <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                            {question.explanation}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Sources using SourceMetadataCard */}
+                      {showExplanations && question.sources.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
+                            📚 Learn more:
+                          </p>
+                          <div className="space-y-3">
+                            {question.sources.map((source, idx) => (
+                              <SourceMetadataCard
+                                key={idx}
+                                source={source}
+                                showThumbnail={true}
+                                compact={false}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Question Feedback */}
+                      <QuestionFeedback 
+                        questionId={question.question_number?.toString() || `${question.question_number}`}
+                        questionText={question.question}
+                        topicId={topicId}
+                      />
                     </div>
                   </div>
-                )
-              })}
-            </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Premium Data Teaser */}
+        <PremiumDataTeaser 
+          variant="banner"
+          className="mb-6"
+        />
+
+        {/* Actions */}
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <SocialShare title={topicTitle} score={score} totalQuestions={totalQuestions} />
           </div>
 
-          {/* Bottom Actions */}
-          <div className="mt-6 space-y-4">
-            <div className="flex justify-center animate-in slide-in-from-bottom duration-500 delay-1200">
-              <SocialShare title={topicTitle} score={score} totalQuestions={totalQuestions} />
-            </div>
-
-            <div className="animate-in slide-in-from-bottom duration-500 delay-1500">
-              <Button onClick={onFinish} className="w-full rounded-xl transition-all duration-200 hover:scale-105">
-                Complete Quiz 🎉
-              </Button>
-            </div>
-          </div>
+          <Button 
+            onClick={onFinish} 
+            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white h-12 text-lg"
+          >
+            Complete Quiz 🎉
+          </Button>
         </div>
       </div>
 

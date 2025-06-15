@@ -3,7 +3,8 @@
 import type { TopicMetadata } from "@/lib/quiz-data"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, useEffect } from "react"
+import { useGlobalAudio } from "@/components/global-audio-controls"
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -19,6 +20,9 @@ interface ParsedBlurb {
 }
 
 export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthRequired }: TopicInfoProps) {
+  // Global audio integration
+  const { autoPlayEnabled, playText } = useGlobalAudio()
+  
   // Parse the HTML content into structured blurbs
   const blurbs = useMemo(() => {
     const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
@@ -117,6 +121,29 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
     return parsed
   }, [topicData.why_this_matters])
 
+  // Auto-play the topic title and first blurb when autoplay is enabled
+  useEffect(() => {
+    if (autoPlayEnabled && topicData.topic_title) {
+      // Build text to read: title + first couple of blurbs
+      let textToRead = `${topicData.topic_title}. Why this matters: `
+      
+      if (blurbs.length > 0) {
+        // Add first 2 blurbs
+        const firstBlurbs = blurbs.slice(0, 2)
+        textToRead += firstBlurbs.map(blurb => `${blurb.title}. ${blurb.content}`).join('. ')
+      } else if (topicData.why_this_matters) {
+        // Fallback to raw content if no blurbs parsed
+        const plainText = topicData.why_this_matters.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        textToRead += plainText.slice(0, 300) // Limit length
+      }
+      
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        playText(textToRead, { autoPlay: true })
+      }, 1000)
+    }
+  }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
+
   return (
     <div className="flex flex-col h-full px-4 sm:px-8 py-8">
       <div className="mb-8">
@@ -125,7 +152,7 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
           <div className="text-6xl sm:text-8xl mb-4">
             {topicData.emoji}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-2">
+          <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-8">
             {topicData.topic_title}
           </h1>
           <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
@@ -168,12 +195,12 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
 
       <div className="mt-auto">
         {requireAuth ? (
-          <Button onClick={onAuthRequired} className="w-full py-3 sm:py-4 text-base font-medium rounded-full animate-breathe-glow">
-            Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
+          <Button onClick={onAuthRequired} className="w-full py-6 sm:py-8 text-lg sm:text-xl font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow">
+            Sign Up to Start Quiz <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         ) : (
-          <Button onClick={onStartQuiz} className="w-full py-3 sm:py-4 text-base font-medium rounded-full animate-breathe-glow">
-            Start Quiz <ArrowRight className="ml-2 h-4 w-4" />
+          <Button onClick={onStartQuiz} className="w-full py-6 sm:py-8 text-lg sm:text-xl font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow">
+            Start Quiz <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         )}
       </div>

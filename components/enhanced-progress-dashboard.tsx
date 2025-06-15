@@ -632,7 +632,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                               "px-3 py-1",
                               goal.isActive 
                                 ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white" 
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             )}
                           >
                             {goal.isActive ? "Active" : "Completed"}

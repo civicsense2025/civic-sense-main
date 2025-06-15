@@ -21,24 +21,68 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 // Helper to get today's date in user's local timezone
+// For demo purposes, we'll use June 14, 2025 as "today" to match the mock data
 const getTodayAtMidnight = () => {
-  const today = new Date()
-  // Use local timezone, not UTC
-  const localToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  return localToday
+  // Use mock date for demo (June 14, 2025)
+  const mockToday = new Date(2025, 5, 14) // Month is 0-indexed, so 5 = June
+  return mockToday
+  
+  // Uncomment below for production use with real current date:
+  // const today = new Date()
+  // const localToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  // return localToday
+}
+
+// More lenient date parsing
+const parseTopicDate = (dateString: string | Date | null | undefined) => {
+  if (!dateString) return null
+  
+  try {
+    if (dateString instanceof Date) {
+      if (isNaN(dateString.getTime())) return null
+      return new Date(dateString.getFullYear(), dateString.getMonth(), dateString.getDate())
+    }
+    
+    if (typeof dateString === 'string') {
+      if (dateString.trim() === '' || dateString === 'null' || dateString === 'undefined') {
+        return null
+      }
+      
+      let parsed: Date
+      if (dateString.includes('-')) {
+        const [year, month, day] = dateString.split('-').map(Number)
+        if (isNaN(year) || isNaN(month) || isNaN(day)) return null
+        parsed = new Date(year, month - 1, day)
+      } else {
+        parsed = new Date(dateString)
+        if (isNaN(parsed.getTime())) return null
+        parsed = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+      }
+      
+      console.log(`🔍 parseTopicDate: "${dateString}" -> ${parsed ? parsed.toISOString() : 'null'}`)
+      return isNaN(parsed.getTime()) ? null : parsed
+    }
+    
+    return null
+  } catch (error) {
+    console.warn(`parseTopicDate error parsing "${dateString}":`, error)
+    return null
+  }
 }
 
 // Helper to format date for display
-const formatDateForDisplay = (date: Date) => {
+const formatDateForDisplay = (date: string | Date) => {
   const today = getTodayAtMidnight()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
 
-  // Parse the topic date properly in local timezone
-  const topicDate = new Date(date)
-  const localTopicDate = new Date(topicDate.getFullYear(), topicDate.getMonth(), topicDate.getDate())
+  const localTopicDate = parseTopicDate(date)
+  
+  if (!localTopicDate) {
+    return "Invalid Date"
+  }
 
   if (localTopicDate.getTime() === today.getTime()) {
     return "Today"
@@ -56,10 +100,13 @@ const formatDateForDisplay = (date: Date) => {
 }
 
 // Helper to get relative date category
-const getDateCategory = (date: Date, currentDate: Date) => {
-  // Parse dates in local timezone for proper comparison
-  const topicDate = new Date(date)
-  const localTopicDate = new Date(topicDate.getFullYear(), topicDate.getMonth(), topicDate.getDate())
+const getDateCategory = (date: string | Date, currentDate: Date) => {
+  const localTopicDate = parseTopicDate(date)
+  
+  if (!localTopicDate) {
+    return null
+  }
+  
   const localCurrentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
   
   const diffTime = localTopicDate.getTime() - localCurrentDate.getTime()
@@ -83,7 +130,7 @@ interface OrganizedTopics {
   past: TopicMetadata[]
 }
 
-const FREE_QUIZ_LIMIT = 2 // Number of quizzes allowed without authentication
+const FREE_QUIZ_LIMIT = 2
 
 export function DailyCardStack({
   selectedCategory,
@@ -104,15 +151,64 @@ export function DailyCardStack({
   const [isLoadingTopics, setIsLoadingTopics] = useState(true)
   const [showPremiumGate, setShowPremiumGate] = useState(false)
   const [currentStackIndex, setCurrentStackIndex] = useState(0)
+  const [topicsWithoutQuestions, setTopicsWithoutQuestions] = useState<Set<string>>(new Set())
 
-
-  // Load topics from data service
+  // Load topics from data service with enhanced debugging
   useEffect(() => {
     const loadTopics = async () => {
       try {
         setIsLoadingTopics(true)
         const topicsData = await dataService.getAllTopics()
-        setTopicsList(Object.values(topicsData))
+        const topicsArray = Object.values(topicsData)
+        
+        console.log(`=== LOADING TOPICS DEBUG ===`)
+        console.log(`Total topics loaded: ${topicsArray.length}`)
+        
+        // Log first few topics for debugging
+        topicsArray.slice(0, 5).forEach((topic, index) => {
+          console.log(`🔍 Sample Topic ${index + 1}:`, {
+            id: topic.topic_id,
+            title: topic.topic_title,
+            date: topic.date,
+            dateType: typeof topic.date,
+            categories: topic.categories
+          })
+        })
+        
+        setTopicsList(topicsArray)
+        
+        // Check which topics have questions - with better error handling
+        const topicsWithoutQuestionsSet = new Set<string>()
+        
+        console.log(`Checking questions for topics...`)
+        const questionCheckResults = await Promise.allSettled(
+          topicsArray.map(async (topic) => {
+            try {
+              const questions = await dataService.getQuestionsByTopic(topic.topic_id)
+              const hasQuestions = questions.length > 0
+              console.log(`Topic "${topic.topic_title}": ${questions.length} questions`)
+              
+              if (!hasQuestions) {
+                topicsWithoutQuestionsSet.add(topic.topic_id)
+              }
+              
+              return { topicId: topic.topic_id, hasQuestions, questionCount: questions.length }
+            } catch (error) {
+              console.warn(`Error checking questions for topic "${topic.topic_title}":`, error)
+              // If we can't check, assume it has questions (don't mark as coming soon)
+              return { topicId: topic.topic_id, hasQuestions: true, questionCount: -1, error: true }
+            }
+          })
+        )
+        
+        console.log(`Question check results:`, questionCheckResults.map(result => 
+          result.status === 'fulfilled' ? result.value : { error: result.reason }
+        ))
+        
+        setTopicsWithoutQuestions(topicsWithoutQuestionsSet)
+        console.log(`${topicsWithoutQuestionsSet.size} topics marked as coming soon (no questions)`)
+        console.log(`Topics available: ${topicsArray.length - topicsWithoutQuestionsSet.size}`)
+        
       } catch (error) {
         console.error('Error loading topics:', error)
         setTopicsList([])
@@ -124,64 +220,152 @@ export function DailyCardStack({
     loadTopics()
   }, [])
 
-  // Filter and organize topics by date
+  // Enhanced filtering with debugging
   const organizedTopics: OrganizedTopics = topicsList
     .filter((topic) => {
-      const matchesCategory = selectedCategory === null || topic.categories.includes(selectedCategory)
+      console.log(`🔍 FILTERING TOPIC: "${topic.topic_title}"`)
+      console.log(`  Topic date: "${topic.date}"`)
+      
+      // More lenient date validation
+      if (!topic.date) {
+        console.warn(`❌ Topic "${topic.topic_title}" has no date, excluding`)
+        return false
+      }
+      
+      const parsedDate = parseTopicDate(topic.date)
+      console.log(`  Parsed date:`, parsedDate)
+      
+      if (!parsedDate) {
+        console.warn(`❌ Topic "${topic.topic_title}" has unparseable date "${topic.date}", excluding`)
+        return false
+      }
+      
+      // Category filtering - more flexible approach
+      let matchesCategory = true
+      if (selectedCategory !== null) {
+        // Check if the topic's categories array includes the selected category
+        // Handle both string arrays and potential other formats
+        const topicCategories = Array.isArray(topic.categories) ? topic.categories : []
+        matchesCategory = topicCategories.some(cat => 
+          cat === selectedCategory || 
+          cat.toLowerCase() === selectedCategory.toLowerCase()
+        )
+        
+        if (!matchesCategory) {
+          console.log(`❌ Category filter excluding "${topic.topic_title}": selected="${selectedCategory}", topic categories=${JSON.stringify(topicCategories)}`)
+        }
+      }
+      
+      // Search filtering
       const matchesSearch =
         searchQuery === "" ||
         topic.topic_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         topic.description.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesCategory && matchesSearch
+      
+      const passes = matchesCategory && matchesSearch
+      console.log(`  ✅ Topic "${topic.topic_title}" passes filters: ${passes} (category: ${matchesCategory}, search: ${matchesSearch})`)
+      
+      return passes
     })
     .reduce((acc, topic) => {
-      const topicDate = new Date(topic.date)
+      console.log(`🔍 CATEGORIZING TOPIC: "${topic.topic_title}"`)
+      const topicDate = parseTopicDate(topic.date)
+      console.log(`  Topic date:`, topicDate)
+      console.log(`  Current date:`, currentDate)
+      
+      if (!topicDate) return acc
+      
       const category = getDateCategory(topicDate, currentDate)
-      acc[category].push(topic)
+      console.log(`  Date category:`, category)
+      
+      if (category) {
+        acc[category].push(topic)
+        console.log(`  ✅ Added to ${category} category`)
+      }
       return acc
     }, { today: [], future: [], past: [] } as OrganizedTopics)
 
-  // Sort each category
-  organizedTopics.today.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  organizedTopics.future.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  organizedTopics.past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Most recent first
+  // Log final results
+  console.log(`=== FINAL FILTERING RESULTS ===`)
+  console.log(`Total after filtering: ${organizedTopics.today.length + organizedTopics.future.length + organizedTopics.past.length}`)
+  console.log(`Today: ${organizedTopics.today.length}, Future: ${organizedTopics.future.length}, Past: ${organizedTopics.past.length}`)
+  console.log(`Selected category: ${selectedCategory}`)
+  console.log(`Search query: "${searchQuery}"`)
 
-  // Combine all topics and sort chronologically
+  // Sort each category - most recent first
+  organizedTopics.today.sort((a, b) => {
+    const dateA = parseTopicDate(a.date)
+    const dateB = parseTopicDate(b.date)
+    if (!dateA || !dateB) return 0
+    return dateB.getTime() - dateA.getTime() // Most recent first
+  })
+  organizedTopics.future.sort((a, b) => {
+    const dateA = parseTopicDate(a.date)
+    const dateB = parseTopicDate(b.date)
+    if (!dateA || !dateB) return 0
+    return dateB.getTime() - dateA.getTime() // Most recent first
+  })
+  organizedTopics.past.sort((a, b) => {
+    const dateA = parseTopicDate(a.date)
+    const dateB = parseTopicDate(b.date)
+    if (!dateA || !dateB) return 0
+    return dateB.getTime() - dateA.getTime() // Most recent first
+  })
+
+  // Combine all topics and sort chronologically - most recent first
   const allFilteredTopics = [
     ...organizedTopics.today,
     ...organizedTopics.future,
     ...organizedTopics.past
   ].sort((a, b) => {
-    // Sort all topics chronologically: past dates in descending order, then today, then future dates in ascending order
-    const dateA = new Date(a.date).getTime()
-    const dateB = new Date(b.date).getTime()
+    const dateA = parseTopicDate(a.date)
+    const dateB = parseTopicDate(b.date)
+    if (!dateA || !dateB) return 0
+    
+    const dateATime = dateA.getTime()
+    const dateBTime = dateB.getTime()
     const todayTime = currentDate.getTime()
     
-    // If both are past dates, sort in descending order (most recent first)
-    if (dateA < todayTime && dateB < todayTime) {
-      return dateB - dateA
+    // For past dates: most recent first (descending order)
+    if (dateATime < todayTime && dateBTime < todayTime) {
+      return dateBTime - dateATime
     }
     
-    // If both are future dates, sort in ascending order (earliest first)
-    if (dateA > todayTime && dateB > todayTime) {
-      return dateA - dateB
+    // For future dates: most recent first (descending order)
+    if (dateATime > todayTime && dateBTime > todayTime) {
+      return dateBTime - dateATime
     }
     
-    // Mixed case: past dates come first, then today, then future
-    return dateA - dateB
+    // Mixed past/future: future dates come first, then past dates
+    if (dateATime >= todayTime && dateBTime < todayTime) {
+      return -1 // A (future) comes before B (past)
+    }
+    if (dateATime < todayTime && dateBTime >= todayTime) {
+      return 1 // B (future) comes before A (past)
+    }
+    
+    return dateBTime - dateATime // Default: most recent first
   })
 
-  // Helper function to get navigation display text (always dates)
+  // Helper function to get navigation display text
   const getNavigationText = (topic: TopicMetadata) => {
-    return new Date(topic.date).toLocaleDateString('en-US', { 
+    const parsedDate = parseTopicDate(topic.date)
+    if (!parsedDate) {
+      return 'Invalid'
+    }
+    return parsedDate.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric' 
     })
   }
 
-  // Helper function to get center display text (with weekday for current item)
+  // Helper function to get center display text
   const getCenterDisplayText = (topic: TopicMetadata) => {
-    return new Date(topic.date).toLocaleDateString('en-US', { 
+    const parsedDate = parseTopicDate(topic.date)
+    if (!parsedDate) {
+      return 'Invalid Date'
+    }
+    return parsedDate.toLocaleDateString('en-US', { 
       weekday: 'short',
       month: 'short', 
       day: 'numeric' 
@@ -192,7 +376,7 @@ export function DailyCardStack({
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentDate(getTodayAtMidnight())
-    }, 60000) // Check every minute
+    }, 60000)
     return () => clearInterval(interval)
   }, [])
 
@@ -236,7 +420,6 @@ export function DailyCardStack({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't interfere with form inputs or if modifiers are pressed
       if (event.target instanceof HTMLInputElement || 
           event.target instanceof HTMLTextAreaElement ||
           event.ctrlKey || event.metaKey || event.altKey) {
@@ -245,16 +428,16 @@ export function DailyCardStack({
 
       switch (event.key) {
         case 'ArrowLeft':
-        case 'h': // Vim-style navigation
+        case 'h':
           event.preventDefault()
           handlePrevious()
           break
         case 'ArrowRight':
-        case 'l': // Vim-style navigation
+        case 'l':
           event.preventDefault()
           handleNext()
           break
-        case ' ': // Spacebar
+        case ' ':
         case 'Enter':
           event.preventDefault()
           if (allFilteredTopics[currentStackIndex]) {
@@ -271,14 +454,7 @@ export function DailyCardStack({
           break
         case '?':
           event.preventDefault()
-          // Show keyboard shortcuts help
-          alert(`Keyboard Shortcuts:
-← / h: Previous card
-→ / l: Next card
-Space / Enter: Start quiz
-Home: First card
-End: Last card
-?: Show this help`)
+          // Keyboard shortcuts help removed for daily card stack
           break
       }
     }
@@ -291,34 +467,51 @@ End: Last card
     const topic = topicsList.find(t => t.topic_id === topicId)
     if (!topic) return
 
-    const topicDate = new Date(topic.date)
-    const localTopicDate = new Date(topicDate.getFullYear(), topicDate.getMonth(), topicDate.getDate())
-
-    if (localTopicDate > currentDate && !completedTopics.has(topicId)) {
-      console.log(`Topic "${topic.topic_title}" is locked. Available on: ${topic.date}`)
+    // Check if topic has no questions
+    if (topicsWithoutQuestions.has(topicId)) {
+      console.log(`Topic "${topic.topic_title}" has no questions yet. Coming soon!`)
       return
     }
 
-    // Check if user needs to authenticate or upgrade
+    try {
+      const localTopicDate = parseTopicDate(topic.date)
+      if (localTopicDate && localTopicDate > currentDate && !completedTopics.has(topicId)) {
+        console.log(`Topic "${topic.topic_title}" is locked. Available on: ${topic.date}`)
+        return
+      }
+    } catch (error) {
+      console.error(`Error parsing date for topic "${topic.topic_title}":`, error)
+    }
+
+    // Check authentication and premium limits
     if (!user && quizAttempts >= FREE_QUIZ_LIMIT) {
       onAuthRequired?.()
       return
     }
 
-    // Check premium limits for authenticated users
     if (user && !isPremium && !isPro && quizAttempts >= FREE_QUIZ_LIMIT) {
       setShowPremiumGate(true)
       return
     }
 
-    // Navigate to quiz page
     router.push(`/quiz/${topicId}`)
   }
 
   const isTopicLocked = (topic: TopicMetadata) => {
-    const topicDate = new Date(topic.date)
-    const localTopicDate = new Date(topicDate.getFullYear(), topicDate.getMonth(), topicDate.getDate())
+    if (topicsWithoutQuestions.has(topic.topic_id)) {
+      return true
+    }
+    
+    const localTopicDate = parseTopicDate(topic.date)
+    if (!localTopicDate) {
+      return false
+    }
+    
     return localTopicDate > currentDate && !completedTopics.has(topic.topic_id)
+  }
+
+  const isTopicComingSoon = (topicId: string) => {
+    return topicsWithoutQuestions.has(topicId)
   }
 
   const isTopicCompleted = (topicId: string) => {
@@ -357,6 +550,16 @@ End: Last card
               ? "Try adjusting your filters to see more content."
               : "Check back soon for new civic education content."}
           </p>
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-left text-xs text-slate-500 mt-4 p-4 bg-slate-100 rounded">
+              <p><strong>Debug Info:</strong></p>
+              <p>Total topics loaded: {topicsList.length}</p>
+              <p>Topics without questions: {topicsWithoutQuestions.size}</p>
+              <p>Selected category: {selectedCategory || 'None'}</p>
+              <p>Search query: "{searchQuery}"</p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -364,13 +567,11 @@ End: Last card
 
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col justify-center">
-      {/* Clean navigation - single row on mobile */}
+      {/* Navigation */}
       {allFilteredTopics.length > 1 && (
         <div className="mb-8 sm:mb-16">
-          {/* Mobile & Desktop: improved spacing navigation */}
           <div className="flex items-center justify-between px-2 sm:px-8">
             <TooltipProvider>
-              {/* Previous button - far left */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -398,7 +599,6 @@ End: Last card
                 )}
               </Tooltip>
               
-              {/* Current date with dropdown - center with breathing room */}
               <div className="flex items-center justify-center flex-grow mx-4 sm:mx-8">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -412,6 +612,7 @@ End: Last card
                       const isLocked = isTopicLocked(topic)
                       const isCompleted = isTopicCompleted(topic.topic_id)
                       const isCurrent = index === currentStackIndex
+                      const isComingSoon = isTopicComingSoon(topic.topic_id)
                       
                       return (
                         <DropdownMenuItem
@@ -432,19 +633,26 @@ End: Last card
                                 {topic.topic_title}
                               </div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {new Date(topic.date).toLocaleDateString('en-US', { 
-                                  weekday: 'short',
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}
-              </div>
-            </div>
-          </div>
+                                {(() => {
+                                  const parsedDate = parseTopicDate(topic.date)
+                                  if (!parsedDate) {
+                                    return 'Invalid Date'
+                                  }
+                                  return parsedDate.toLocaleDateString('en-US', { 
+                                    weekday: 'short',
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                  })
+                                })()}
+                              </div>
+                            </div>
+                          </div>
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {isLocked && <Lock className="h-3 w-3 text-slate-400" />}
+                            {isComingSoon && <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Coming Soon</span>}
+                            {isLocked && !isComingSoon && <Lock className="h-3 w-3 text-slate-400" />}
                             {isCompleted && <span className="text-xs text-green-600 dark:text-green-400">✓</span>}
                             {isCurrent && <span className="text-xs text-primary">●</span>}
-        </div>
+                          </div>
                         </DropdownMenuItem>
                       )
                     })}
@@ -452,7 +660,6 @@ End: Last card
                 </DropdownMenu>
               </div>
 
-              {/* Next button - far right */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -493,6 +700,8 @@ End: Last card
             onExploreGame={handleExploreGame}
             isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
             isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
+            isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
+            showFloatingKeyboard={false}
           />
         )}
       </div>
@@ -504,13 +713,6 @@ End: Last card
         title="Unlock Unlimited Daily Quizzes"
         description="Continue your civic education journey with unlimited access to all our quizzes and premium features."
       />
-
-      {/* Keyboard shortcuts hint */}
-      <div className="mt-8 text-center">
-        <p className="text-xs text-slate-300 dark:text-slate-600">
-          Use <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">←</kbd> <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">→</kbd> to navigate, <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">Space</kbd> to start quiz, <kbd className="px-1 py-0.5 text-xs bg-slate-100 dark:bg-slate-800 rounded">?</kbd> for help
-        </p>
-      </div>
     </div>
   )
 }

@@ -140,8 +140,7 @@ CREATE TABLE subscription_tier_limits (
 -- Insert default subscription tiers
 INSERT INTO subscription_tier_limits (tier, custom_decks_limit, historical_months_limit, advanced_analytics, spaced_repetition, learning_insights, priority_support, offline_mode, export_data) VALUES
 ('free', 0, 1, false, false, false, false, false, false),
-('premium', 10, 12, true, true, true, false, true, true),
-('pro', NULL, NULL, true, true, true, true, true, true);
+('premium', NULL, NULL, true, true, true, true, true, true);
 
 -- 7. PREMIUM FEATURE GATES FUNCTIONS
 CREATE OR REPLACE FUNCTION check_premium_feature_access(

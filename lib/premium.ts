@@ -60,10 +60,11 @@ export interface PremiumFeatureAccess {
 export const STRIPE_CONFIG = {
   publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
   priceIds: {
-    premium_monthly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID!,
-    premium_yearly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_YEARLY_PRICE_ID!,
-    pro_monthly: process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID!,
-    pro_yearly: process.env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID!,
+    premium_monthly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID || 'price_premium_monthly',
+    premium_yearly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_YEARLY_PRICE_ID || 'price_1RZyUtG3ITPlpsLgGmypkdW4',
+    premium_lifetime: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_LIFETIME_PRICE_ID || 'price_1RZxDbG3ITPlpsLgh94UsB0J',
+    pro_monthly: process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID || 'price_pro_monthly',
+    pro_yearly: process.env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID || 'price_pro_yearly',
   },
   plans: {
     free: {
@@ -82,13 +83,13 @@ export const STRIPE_CONFIG = {
     },
     premium: {
       name: 'Premium',
-      monthlyPrice: 9.99,
-      yearlyPrice: 99.99,
+      yearlyPrice: 25.00,
+      lifetimePrice: 50.00,
       features: [
         'Unlimited quiz access',
-        'Up to 10 custom decks',
-        '12 months progress history',
+        'Custom learning decks',
         'Advanced analytics',
+        'Progress tracking',
         'Spaced repetition',
         'Learning insights',
         'Offline mode',
@@ -96,26 +97,8 @@ export const STRIPE_CONFIG = {
         'Priority support'
       ],
       limits: {
-        custom_decks: 10,
-        historical_months: 12
-      }
-    },
-    pro: {
-      name: 'Pro',
-      monthlyPrice: 19.99,
-      yearlyPrice: 199.99,
-      features: [
-        'Everything in Premium',
-        'Unlimited custom decks',
-        'Unlimited progress history',
-        'Advanced AI insights',
-        'Priority support',
-        'Early access to features',
-        'Custom learning paths'
-      ],
-      limits: {
-        custom_decks: null, // unlimited
-        historical_months: null // unlimited
+        custom_decks: null,
+        historical_months: null
       }
     }
   }
@@ -327,8 +310,9 @@ export const stripeOperations = {
     userId: string,
     priceId: string,
     successUrl: string,
-    cancelUrl: string
-  ): Promise<{ sessionId: string | null; error: string | null }> {
+    cancelUrl: string,
+    isUpgrade: boolean = false
+  ): Promise<{ sessionId?: string; error?: string }> {
     try {
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
@@ -339,20 +323,21 @@ export const stripeOperations = {
           userId,
           priceId,
           successUrl,
-          cancelUrl
-        })
+          cancelUrl,
+          isUpgrade
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        return { sessionId: null, error: data.error || 'Failed to create checkout session' }
+        return { error: data.error || 'Failed to create checkout session' }
       }
 
-      return { sessionId: data.sessionId, error: null }
+      return { sessionId: data.sessionId }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      return { sessionId: null, error: 'Network error' }
+      return { error: 'Network error' }
     }
   },
 
@@ -386,6 +371,41 @@ export const stripeOperations = {
       console.error('Error creating portal session:', error)
       return { url: null, error: 'Network error' }
     }
+  },
+
+  async createUpgradeSession(
+    userId: string,
+    fromTier: 'premium' | 'pro',
+    toTier: 'lifetime',
+    successUrl: string,
+    cancelUrl: string
+  ): Promise<{ sessionId?: string; error?: string }> {
+    try {
+      const response = await fetch('/api/stripe/create-upgrade-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          fromTier,
+          toTier,
+          successUrl,
+          cancelUrl
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { error: data.error || 'Failed to create upgrade session' }
+      }
+
+      return { sessionId: data.sessionId }
+    } catch (error) {
+      console.error('Error creating upgrade session:', error)
+      return { error: 'Network error' }
+    }
   }
 }
 
@@ -411,7 +431,7 @@ export const premiumUtils = {
    */
   getTierColor(tier: SubscriptionTier): string {
     const colors = {
-      free: 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400',
+      free: 'text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-200',
       premium: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
       pro: 'text-indigo-700 bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400'
     }

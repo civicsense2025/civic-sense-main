@@ -81,11 +81,20 @@ export const dataService = {
           const topicsRecord: Record<string, TopicMetadata> = {}
           
           dbTopics.forEach(dbTopic => {
+            // Strict date filtering - only include topics with valid dates
+            if (!dbTopic.date || 
+                dbTopic.date === null || 
+                dbTopic.date === undefined ||
+                (typeof dbTopic.date === 'string' && dbTopic.date.trim() === '')) {
+              console.warn(`Excluding topic "${dbTopic.topic_title}" - invalid or missing date: ${dbTopic.date}`)
+              return
+            }
+            
             const appTopic = dbTopicToAppFormat(dbTopic)
             topicsRecord[appTopic.topic_id] = appTopic
           })
           
-          console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics from database`)
+          console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics from database (excluded topics with invalid dates)`)
           return topicsRecord
         } catch (error) {
           console.error('Error fetching topics from database:', error)
@@ -95,9 +104,22 @@ export const dataService = {
       console.error('Database availability check failed:', error)
     }
     
-    // Fallback to mock data (also clean it)
-    console.log(`📋 Using mock data: ${Object.keys(mockTopicsData).length} topics`)
-    return cleanObjectContent(mockTopicsData)
+    // Fallback to mock data (also filter strictly)
+    const filteredMockData: Record<string, TopicMetadata> = {}
+    Object.entries(mockTopicsData).forEach(([topicId, topic]) => {
+      // Strict filtering for mock data too
+      if (topic.date && 
+          topic.date !== null && 
+          topic.date !== undefined && 
+          !(typeof topic.date === 'string' && topic.date.trim() === '')) {
+        filteredMockData[topicId] = topic
+      } else {
+        console.warn(`Excluding mock topic "${topic.topic_title}" - invalid or missing date: ${topic.date}`)
+      }
+    })
+    
+    console.log(`📋 Using mock data: ${Object.keys(filteredMockData).length} topics (excluded topics with invalid dates)`)
+    return cleanObjectContent(filteredMockData)
   },
 
   /**
@@ -124,21 +146,38 @@ export const dataService = {
    * Get questions for a topic
    */
   async getQuestionsByTopic(topicId: string): Promise<QuizQuestion[]> {
+    console.log(`=== FETCHING QUESTIONS FOR TOPIC: ${topicId} ===`)
     const isDbAvailable = await checkDatabaseAvailability()
     
     if (isDbAvailable) {
       try {
+        console.log(`Fetching questions from database for topic: ${topicId}`)
         const dbQuestions = await questionOperations.getByTopic(topicId)
+        console.log(`Database returned ${dbQuestions.length} questions for topic ${topicId}`)
+        
         const questions = dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        
+        // Log question details for debugging
+        console.log(`Converted questions:`, questions.map(q => ({
+          topic_id: q.topic_id,
+          question_number: q.question_number,
+          question_type: q.question_type,
+          question_preview: q.question.slice(0, 50) + '...'
+        })))
+        
         // Clean citation strings from questions
-        return cleanObjectContent(questions)
+        const cleanedQuestions = cleanObjectContent(questions)
+        console.log(`Final cleaned questions count: ${cleanedQuestions.length}`)
+        return cleanedQuestions
       } catch (error) {
         console.error('Error fetching questions from database:', error)
       }
     }
     
     // Fallback to mock data (also clean it)
+    console.log(`Using mock data for topic: ${topicId}`)
     const questions = mockQuestionsData[topicId] || []
+    console.log(`Mock data returned ${questions.length} questions for topic ${topicId}`)
     return cleanObjectContent(questions)
   },
 

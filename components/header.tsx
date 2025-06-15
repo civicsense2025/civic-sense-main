@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ThemeToggle } from "./theme-toggle"
 import { UserMenu } from "./auth/user-menu"
+import { AccessibilitySettings } from "./accessibility-settings"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 
@@ -49,6 +50,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
 
             {/* Right side - Utility controls */}
             <div className="flex items-center space-x-3">
+              <AccessibilitySettings />
               <ThemeToggle />
               <UserMenu onSignInClick={onSignInClick} searchQuery="" onSearchChange={() => {}} />
             </div>

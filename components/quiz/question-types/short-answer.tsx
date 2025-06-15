@@ -109,7 +109,7 @@ export function ShortAnswerQuestion({
         
         {/* Character count */}
         {!isSubmitted && inputValue && (
-          <div className="absolute right-3 bottom-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="absolute right-3 bottom-2 text-xs text-slate-600 dark:text-slate-300">
             {inputValue.length} characters
           </div>
         )}

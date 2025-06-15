@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { supabase, authHelpers } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 interface AuthContextType {
   user: User | null
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -99,10 +101,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await authHelpers.signOut()
       if (error) {
         console.error('Error signing out:', error)
+        toast({
+          title: "Sign out failed",
+          description: "There was an error signing you out. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Signed out successfully! 👋",
+          description: "You've been signed out of CivicSense. Come back soon!",
+          variant: "default",
+        })
       }
       setUser(null)
     } catch (error) {
       console.error('Error in signOut:', error)
+      toast({
+        title: "Sign out failed",
+        description: "There was an unexpected error signing you out.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }

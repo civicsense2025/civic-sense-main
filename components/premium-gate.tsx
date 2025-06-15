@@ -15,8 +15,7 @@ import { cn } from "@/lib/utils"
 import { 
   stripeOperations, 
   STRIPE_CONFIG,
-  type PremiumFeature,
-  premiumUtils
+  type PremiumFeature
 } from "@/lib/premium"
 
 interface PremiumGateProps {
@@ -129,24 +128,22 @@ export function PremiumGate({
 }: PremiumGateProps) {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'premium' | 'pro'>('premium')
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   const featureDetail = FEATURE_DETAILS[feature]
   const FeatureIcon = featureDetail.icon
 
-  const handleUpgrade = async (tier: 'premium' | 'pro', cycle: 'monthly' | 'yearly') => {
+  const handleUpgrade = async () => {
     if (!user) return
 
     setIsLoading(true)
     try {
-      const priceId = STRIPE_CONFIG.priceIds[`${tier}_${cycle}` as keyof typeof STRIPE_CONFIG.priceIds]
+      // For one-time payments, we don't need a price ID since we create the price inline
       const successUrl = `${window.location.origin}/premium/success`
       const cancelUrl = window.location.href
 
       const { sessionId, error } = await stripeOperations.createCheckoutSession(
         user.id,
-        priceId,
+        'premium_lifetime', // This will be handled as a special case
         successUrl,
         cancelUrl
       )
@@ -158,9 +155,8 @@ export function PremiumGate({
 
       if (sessionId) {
         // Redirect to Stripe Checkout
-        const stripe = await import('@stripe/stripe-js').then(m => 
-          m.loadStripe(STRIPE_CONFIG.publishableKey)
-        )
+        const { loadStripe } = await import('@stripe/stripe-js') as any
+        const stripe = await loadStripe(STRIPE_CONFIG.publishableKey)
         
         if (stripe) {
           await stripe.redirectToCheckout({ sessionId })
@@ -173,21 +169,9 @@ export function PremiumGate({
     }
   }
 
-  const getPlanPrice = (tier: 'premium' | 'pro', cycle: 'monthly' | 'yearly') => {
-    const plan = STRIPE_CONFIG.plans[tier]
-    return cycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
-  }
-
-  const getYearlySavings = (tier: 'premium' | 'pro') => {
-    const plan = STRIPE_CONFIG.plans[tier]
-    const monthlyCost = plan.monthlyPrice * 12
-    const yearlyCost = plan.yearlyPrice
-    return monthlyCost - yearlyCost
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden p-0 gap-0">
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden p-0 gap-0">
         <DialogHeader className="px-8 pt-8 pb-6 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
           <DialogTitle className="flex items-center space-x-3 text-3xl font-bold">
             <div className="relative">
@@ -228,158 +212,52 @@ export function PremiumGate({
               </CardContent>
             </Card>
 
-            {/* Billing Toggle */}
-            <div className="flex justify-center">
-              <div className="bg-muted/50 p-1 rounded-lg inline-flex">
-                <button
-                  onClick={() => setBillingCycle('monthly')}
-                  className={cn(
-                    "px-4 py-2 rounded-md text-sm font-medium transition-all",
-                    billingCycle === 'monthly'
-                      ? "bg-white dark:bg-slate-800 shadow-sm text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setBillingCycle('yearly')}
-                  className={cn(
-                    "px-4 py-2 rounded-md text-sm font-medium transition-all relative",
-                    billingCycle === 'yearly'
-                      ? "bg-white dark:bg-slate-800 shadow-sm text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Yearly
-                  <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1.5 py-0.5">
-                    Save 17%
-                  </Badge>
-                </button>
-              </div>
-            </div>
-
-            {/* Pricing Plans */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Premium Plan */}
-              <Card className={cn(
-                "relative overflow-hidden transition-all duration-300 cursor-pointer border-2",
-                selectedPlan === 'premium'
-                  ? "border-blue-500 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 scale-105"
-                  : "border-muted hover:border-blue-300 hover:shadow-lg"
-              )}
-              onClick={() => setSelectedPlan('premium')}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl font-bold text-blue-600">Premium</CardTitle>
-                    {selectedPlan === 'premium' && (
-                      <Badge className="bg-blue-500 text-white">Selected</Badge>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-3xl font-black">
-                      ${getPlanPrice('premium', billingCycle)}
-                      <span className="text-lg font-normal text-muted-foreground">
-                        /{billingCycle === 'monthly' ? 'month' : 'year'}
-                      </span>
-                    </div>
-                    {billingCycle === 'yearly' && (
-                      <div className="text-sm text-green-600 font-medium">
-                        Save ${getYearlySavings('premium')} per year
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {STRIPE_CONFIG.plans.premium.features.map((feature, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pro Plan */}
-              <Card className={cn(
-                "relative overflow-hidden transition-all duration-300 cursor-pointer border-2",
-                selectedPlan === 'pro'
-                  ? "border-purple-500 shadow-xl shadow-purple-100 dark:shadow-purple-900/20 scale-105"
-                  : "border-muted hover:border-purple-300 hover:shadow-lg"
-              )}
-              onClick={() => setSelectedPlan('pro')}>
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-indigo-500 to-blue-500 text-white px-3 py-1 text-xs font-bold">
-                  MOST POPULAR
+            {/* Premium Plan Card */}
+            <Card className="border-2 border-blue-500 shadow-xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl font-bold text-blue-600">CivicSense Premium</CardTitle>
+                  <Badge className="bg-blue-500 text-white">Best Value</Badge>
                 </div>
-                <CardHeader className="pb-4 pt-8">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl font-bold text-indigo-700">Pro</CardTitle>
-                    {selectedPlan === 'pro' && (
-                                              <Badge className="bg-indigo-600 text-white">Selected</Badge>
-                    )}
+                <div className="space-y-1">
+                  <div className="text-4xl font-black">
+                    ${STRIPE_CONFIG.plans.premium.lifetimePrice}
+                    <span className="text-lg font-normal text-muted-foreground"> lifetime</span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-3xl font-black">
-                      ${getPlanPrice('pro', billingCycle)}
-                      <span className="text-lg font-normal text-muted-foreground">
-                        /{billingCycle === 'monthly' ? 'month' : 'year'}
-                      </span>
+                  <div className="text-sm text-green-600 font-medium">
+                    Pay once, use forever • No recurring charges
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-4">
+                <div className="space-y-3">
+                  {STRIPE_CONFIG.plans.premium.features.map((feature, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
                     </div>
-                    {billingCycle === 'yearly' && (
-                      <div className="text-sm text-green-600 font-medium">
-                        Save ${getYearlySavings('pro')} per year
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {STRIPE_CONFIG.plans.pro.features.map((feature, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  ))}
+                </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col space-y-4 pt-4">
-              <Button
-                onClick={() => handleUpgrade(selectedPlan, billingCycle)}
-                disabled={isLoading}
-                className={cn(
-                  "w-full h-12 text-lg font-bold shadow-lg transition-all duration-300",
-                  selectedPlan === 'premium'
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                    : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                )}
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Zap className="h-5 w-5" />
-                    <span>Upgrade to {premiumUtils.getTierDisplayName(selectedPlan)}</span>
-                  </div>
-                )}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                onClick={onClose}
-                className="w-full"
-              >
-                Maybe Later
-              </Button>
-            </div>
+                <Button
+                  onClick={handleUpgrade}
+                  disabled={isLoading}
+                  className="w-full h-12 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg transition-all duration-300"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Zap className="h-5 w-5" />
+                      <span>Upgrade to Premium</span>
+                    </div>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Trust Indicators */}
             <div className="text-center space-y-2 pt-4 border-t">

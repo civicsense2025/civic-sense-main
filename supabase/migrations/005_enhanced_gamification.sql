@@ -128,38 +128,7 @@ CREATE TRIGGER update_user_category_skills_updated_at
 
 -- Enhanced user_progress table with new columns
 -- Note: These columns are added in migration 006_fix_user_progress_columns.sql
--- due to SQL syntax limitations with multiple ADD COLUMN statements
-
--- Create view for comprehensive user stats
-CREATE OR REPLACE VIEW user_comprehensive_stats AS
-SELECT 
-    up.user_id,
-    up.current_streak,
-    up.longest_streak,
-    up.total_quizzes_completed,
-    up.total_questions_answered,
-    up.total_correct_answers,
-    up.total_xp,
-    up.current_level,
-    up.weekly_goal,
-    up.weekly_completed,
-    up.preferred_categories,
-    ROUND(CAST(up.total_correct_answers AS DECIMAL) / NULLIF(up.total_questions_answered, 0) * 100, 2) as accuracy_percentage,
-    
-    -- Category mastery stats
-    (SELECT COUNT(*) FROM user_category_skills ucs WHERE ucs.user_id = up.user_id AND ucs.mastery_level IN ('advanced', 'expert')) as categories_mastered,
-    (SELECT COUNT(DISTINCT category) FROM user_category_skills ucs WHERE ucs.user_id = up.user_id) as categories_attempted,
-    
-    -- Active goals
-    (SELECT COUNT(*) FROM user_learning_goals ulg WHERE ulg.user_id = up.user_id AND ulg.is_active = true) as active_goals,
-    
-    -- Custom decks
-    (SELECT COUNT(*) FROM user_custom_decks ucd WHERE ucd.user_id = up.user_id AND ucd.is_active = true) as custom_decks_count,
-    
-    -- Recent achievements
-    (SELECT COUNT(*) FROM user_achievements ua WHERE ua.user_id = up.user_id AND ua.earned_at > NOW() - INTERVAL '7 days') as achievements_this_week
-
-FROM user_progress up;
+-- Note: The comprehensive stats view is also created in migration 006 after columns are added
 
 -- Insert default learning goals for existing users
 -- This will be handled by the application logic when users first access the new features 

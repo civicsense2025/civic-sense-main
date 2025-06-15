@@ -1,25 +1,56 @@
 import { supabase } from "./supabase"
 import type { TopicMetadata, QuizQuestion, QuestionType } from "./quiz-data"
 import type { 
-  DbQuestionTopic, 
-  DbQuestion, 
-  DbUserQuizAttempt, 
-  DbUserProgress,
-  DbQuestionFeedback,
-  DbQuestionTopicInsert,
-  DbQuestionInsert,
-  DbUserQuizAttemptInsert,
-  DbUserProgressInsert,
-  DbQuestionFeedbackInsert,
-  DbQuestionTopicUpdate,
-  DbQuestionUpdate,
-  DbUserQuizAttemptUpdate,
-  DbUserProgressUpdate,
-  DbQuestionFeedbackUpdate
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate
 } from "./database.types"
 
-// Database types that match our tables
-// Database types that match our tables are now imported above
+// Database types using the correct structure
+export type DbQuestionTopic = Tables<'question_topics'>
+export type DbQuestion = Tables<'questions'>
+export type DbUserQuizAttempt = Tables<'user_quiz_attempts'>
+export type DbUserProgress = Tables<'user_progress'>
+export type DbQuestionFeedback = Tables<'question_feedback'>
+
+export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
+export type DbQuestionInsert = TablesInsert<'questions'>
+export type DbUserQuizAttemptInsert = TablesInsert<'user_quiz_attempts'>
+export type DbUserProgressInsert = TablesInsert<'user_progress'>
+export type DbQuestionFeedbackInsert = TablesInsert<'question_feedback'>
+
+export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
+export type DbQuestionUpdate = TablesUpdate<'questions'>
+export type DbUserQuizAttemptUpdate = TablesUpdate<'user_quiz_attempts'>
+export type DbUserProgressUpdate = TablesUpdate<'user_progress'>
+export type DbQuestionFeedbackUpdate = TablesUpdate<'question_feedback'>
+
+// Additional types for enhanced gamification
+export type DbUserCategorySkill = Tables<'user_category_skills'>
+export type DbUserCategorySkillInsert = TablesInsert<'user_category_skills'>
+export type DbUserCategorySkillUpdate = TablesUpdate<'user_category_skills'>
+
+export type DbUserAchievement = Tables<'user_achievements'>
+export type DbUserAchievementInsert = TablesInsert<'user_achievements'>
+
+export type DbUserCustomDeck = Tables<'user_custom_decks'>
+export type DbUserCustomDeckInsert = TablesInsert<'user_custom_decks'>
+export type DbUserCustomDeckUpdate = TablesUpdate<'user_custom_decks'>
+
+export type DbUserDeckContent = Tables<'user_deck_content'>
+export type DbUserDeckContentInsert = TablesInsert<'user_deck_content'>
+
+export type DbUserQuestionMemory = Tables<'user_question_memory'>
+export type DbUserQuestionMemoryInsert = TablesInsert<'user_question_memory'>
+export type DbUserQuestionMemoryUpdate = TablesUpdate<'user_question_memory'>
+
+export type DbUserStreakHistory = Tables<'user_streak_history'>
+export type DbUserStreakHistoryInsert = TablesInsert<'user_streak_history'>
+
+export type DbUserLearningGoal = Tables<'user_learning_goals'>
+export type DbUserLearningGoalInsert = TablesInsert<'user_learning_goals'>
+export type DbUserLearningGoalUpdate = TablesUpdate<'user_learning_goals'>
 
 // Topic operations
 export const topicOperations = {
@@ -118,6 +149,8 @@ export const topicOperations = {
 export const questionOperations = {
   // Get questions by topic
   async getByTopic(topicId: string) {
+    console.log(`Database query: fetching questions for topic ${topicId}`)
+    
     const { data, error } = await supabase
       .from('questions')
       .select('*')
@@ -125,7 +158,29 @@ export const questionOperations = {
       .eq('is_active', true)
       .order('question_number', { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error(`Database error fetching questions for topic ${topicId}:`, error)
+      throw error
+    }
+    
+    console.log(`Database returned ${data?.length || 0} questions for topic ${topicId}`)
+    
+    // Check for potential duplicates at database level
+    if (data && data.length > 0) {
+      const questionNumbers = data.map(q => q.question_number)
+      const uniqueNumbers = new Set(questionNumbers)
+      
+      if (questionNumbers.length !== uniqueNumbers.size) {
+        console.warn(`Potential duplicate question numbers detected for topic ${topicId}:`, {
+          total: questionNumbers.length,
+          unique: uniqueNumbers.size,
+          numbers: questionNumbers
+        })
+      }
+      
+      console.log(`Question numbers for topic ${topicId}:`, questionNumbers)
+    }
+    
     return data as DbQuestion[]
   },
 
@@ -543,19 +598,122 @@ export const questionFeedbackOperations = {
 
       if (error) {
         console.log('Question stats error:', error)
-        if (error.code !== 'PGRST116') {
-          console.error('Unexpected error fetching question stats:', error)
-          throw error
+        if (error.code === 'PGRST116') {
+          // PGRST116 means no rows found, which is expected for new questions
+          console.log('No stats found for question (expected for new questions)')
+          return null
         }
-        // PGRST116 means no rows found, which is expected for new questions
-        console.log('No stats found for question (expected for new questions)')
-        return null
+        console.error('Unexpected error fetching question stats:', error)
+        throw error
       }
       
       console.log('Question stats fetched successfully:', data)
       return data
     } catch (err) {
       console.error('Exception in getQuestionStats:', err)
+      throw err
+    }
+  },
+
+  // Helper function to get question ID by topic and question number
+  async getQuestionIdByNumber(topicId: string, questionNumber: number): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('id')
+        .eq('topic_id', topicId)
+        .eq('question_number', questionNumber)
+        .eq('is_active', true)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn(`No question found for topic ${topicId}, question number ${questionNumber}`)
+          return null
+        }
+        console.error('Error fetching question ID:', error)
+        throw error
+      }
+
+      return data.id
+    } catch (err) {
+      console.error('Exception in getQuestionIdByNumber:', err)
+      throw err
+    }
+  },
+
+  // Get feedback statistics for a question by topic and question number
+  async getQuestionStatsByNumber(topicId: string, questionNumber: number) {
+    try {
+      const questionId = await this.getQuestionIdByNumber(topicId, questionNumber)
+      if (!questionId) {
+        return null
+      }
+      return await this.getQuestionStats(questionId)
+    } catch (err) {
+      console.error('Exception in getQuestionStatsByNumber:', err)
+      throw err
+    }
+  },
+
+  // Submit a rating by topic and question number
+  async submitRatingByNumber(topicId: string, questionNumber: number, userId: string, rating: 'up' | 'down') {
+    try {
+      const questionId = await this.getQuestionIdByNumber(topicId, questionNumber)
+      if (!questionId) {
+        throw new Error(`Question not found: topic ${topicId}, question ${questionNumber}`)
+      }
+      return await this.submitRating(questionId, userId, rating)
+    } catch (err) {
+      console.error('Exception in submitRatingByNumber:', err)
+      throw err
+    }
+  },
+
+  // Submit a report by topic and question number
+  async submitReportByNumber(
+    topicId: string, 
+    questionNumber: number, 
+    userId: string, 
+    reason: string, 
+    details?: string
+  ) {
+    try {
+      const questionId = await this.getQuestionIdByNumber(topicId, questionNumber)
+      if (!questionId) {
+        throw new Error(`Question not found: topic ${topicId}, question ${questionNumber}`)
+      }
+      return await this.submitReport(questionId, userId, reason, details)
+    } catch (err) {
+      console.error('Exception in submitReportByNumber:', err)
+      throw err
+    }
+  },
+
+  // Get user's feedback for a question by topic and question number
+  async getUserFeedbackByNumber(topicId: string, questionNumber: number, userId: string) {
+    try {
+      const questionId = await this.getQuestionIdByNumber(topicId, questionNumber)
+      if (!questionId) {
+        return []
+      }
+      return await this.getUserFeedback(questionId, userId)
+    } catch (err) {
+      console.error('Exception in getUserFeedbackByNumber:', err)
+      throw err
+    }
+  },
+
+  // Delete user's feedback by topic and question number
+  async deleteFeedbackByNumber(topicId: string, questionNumber: number, userId: string, feedbackType: 'rating' | 'report') {
+    try {
+      const questionId = await this.getQuestionIdByNumber(topicId, questionNumber)
+      if (!questionId) {
+        throw new Error(`Question not found: topic ${topicId}, question ${questionNumber}`)
+      }
+      return await this.deleteFeedback(questionId, userId, feedbackType)
+    } catch (err) {
+      console.error('Exception in deleteFeedbackByNumber:', err)
       throw err
     }
   },
@@ -673,4 +831,199 @@ export const categoryOperations = {
     if (error && error.code !== 'PGRST116') throw error
     return data
   }
-} 
+}
+
+// Skills operations
+export const skillOperations = {
+  // Get all active skills by categories
+  async getAll() {
+    const { data, error } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name,
+        emoji,
+        description,
+        display_order
+      `)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    if (error) throw error
+    return data
+  },
+
+  // Get skills by category
+  async getByCategory(categoryId: string) {
+    const { data, error } = await supabase
+      .from('user_category_skills')
+      .select(`
+        id,
+        category,
+        skill_level,
+        mastery_level
+      `)
+      .eq('category', categoryId)
+      .order('id')
+
+    if (error) throw error
+    return data
+  },
+
+  // Get core skills only
+  async getCoreSkills() {
+    const { data, error } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name,
+        emoji,
+        description,
+        display_order
+      `)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .limit(5) // Get top 5 core categories
+
+    if (error) throw error
+    return data
+  },
+
+  // Get user's skill progress
+  async getUserSkillProgress(userId: string) {
+    const { data, error } = await supabase
+      .from('user_category_skills')
+      .select(`
+        id,
+        category,
+        skill_level,
+        mastery_level,
+        questions_attempted,
+        questions_correct,
+        last_practiced_at
+      `)
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return data
+  },
+
+  // Get user's skills with progress for dashboard
+  async getUserSkillsForDashboard(userId: string) {
+    // First get all categories
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name,
+        emoji,
+        description
+      `)
+      .eq('is_active', true)
+      .order('display_order')
+
+    if (categoriesError) throw categoriesError
+
+    // Then get user progress for these categories
+    const { data: userProgress, error: progressError } = await supabase
+      .from('user_category_skills')
+      .select(`
+        id,
+        category,
+        skill_level,
+        mastery_level,
+        questions_attempted,
+        questions_correct,
+        last_practiced_at
+      `)
+      .eq('user_id', userId)
+
+    if (progressError) throw progressError
+
+    // Create a map for quick lookup
+    const progressMap = new Map()
+    userProgress?.forEach(progress => {
+      progressMap.set(progress.category, progress)
+    })
+
+    // Combine category info with user progress
+    return categories?.map(category => {
+      const progress = progressMap.get(category.name) || {}
+      const progressPercentage = progress.skill_level || 0
+      
+      return {
+        id: category.id,
+        skill_name: category.name,
+        skill_slug: category.name.toLowerCase().replace(/\s+/g, '-'),
+        category_name: category.name,
+        description: category.description,
+        difficulty_level: 1,
+        is_core_skill: true,
+        mastery_level: progress.mastery_level || 'novice',
+        progress_percentage: Math.round(progressPercentage),
+        questions_attempted: progress.questions_attempted || 0,
+        questions_correct: progress.questions_correct || 0,
+        last_practiced_at: progress.last_practiced_at,
+        needs_practice: progress.last_practiced_at ? 
+          (new Date().getTime() - new Date(progress.last_practiced_at).getTime()) > (7 * 24 * 60 * 60 * 1000) : true
+      }
+    }) || []
+  },
+
+  // Update user skill progress
+  async updateUserSkillProgress(userId: string, skillId: string, isCorrect: boolean, timeSpent?: number) {
+    // Find the category for this skill
+    const { data: category } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('id', skillId)
+      .single()
+      
+    if (!category) throw new Error('Category not found')
+    
+    // Update the user's progress for this category
+    const { data, error } = await supabase
+      .from('user_category_skills')
+      .upsert({
+        user_id: userId,
+        category: category.name,
+        questions_attempted: 1,
+        questions_correct: isCorrect ? 1 : 0,
+        last_practiced_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,category',
+        ignoreDuplicates: false
+      })
+
+    if (error) throw error
+    return data
+  },
+
+  // Get recommended skills for user
+  async getRecommendedSkills(userId: string, limit: number = 5) {
+    // Get categories user hasn't practiced much
+    const { data: userSkills, error: skillsError } = await supabase
+      .from('user_category_skills')
+      .select('*')
+      .eq('user_id', userId)
+      .order('questions_attempted', { ascending: true })
+      .limit(limit)
+
+    if (skillsError) throw skillsError
+    
+    // If user has no skills yet, recommend some core ones
+    if (!userSkills || userSkills.length < limit) {
+      const { data: categories, error: catError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order')
+        .limit(limit)
+        
+      if (catError) throw catError
+      return categories
+    }
+    
+    return userSkills
+  }
+}

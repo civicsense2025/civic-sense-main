@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
-})
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
@@ -28,21 +26,20 @@ export async function POST(request: NextRequest) {
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
         break
       
+      case 'payment_intent.succeeded':
+        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent)
+        break
+
       case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object as Stripe.Subscription)
+        break
+
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
         break
-      
+
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
-        break
-      
-      case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
-        break
-      
-      case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object as Stripe.Invoice)
         break
       
       default:
@@ -61,48 +58,120 @@ export async function POST(request: NextRequest) {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
+  const productType = session.metadata?.product_type
+  
   if (!userId) {
     console.error('No user_id in checkout session metadata')
     return
   }
 
-  // The subscription will be handled by the subscription.created event
-  console.log(`Checkout completed for user ${userId}`)
+  if (session.payment_status === 'paid') {
+    if (productType === 'premium_lifetime') {
+      // Create lifetime premium subscription record
+      const subscriptionData = {
+        user_id: userId,
+        subscription_tier: 'premium',
+        subscription_status: 'active',
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: null, // null = lifetime
+        payment_provider: 'stripe',
+        external_subscription_id: session.id, // Use session ID for one-time payments
+        last_payment_date: new Date().toISOString(),
+        next_billing_date: null, // No recurring billing
+        billing_cycle: 'lifetime',
+        amount_cents: session.amount_total || 5000, // Updated to $50
+        currency: session.currency || 'usd',
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .upsert(subscriptionData, { onConflict: 'user_id' })
+
+      if (error) {
+        console.error('Error creating premium lifetime subscription:', error)
+      } else {
+        console.log(`Premium lifetime access granted to user ${userId}`)
+      }
+    } else if (productType === 'premium_lifetime_upgrade') {
+      // Handle upgrade from existing subscription to lifetime
+      const originalSubscriptionId = session.metadata?.original_subscription_id
+      
+      // Cancel the original subscription if it exists
+      if (originalSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(originalSubscriptionId)
+          console.log(`Cancelled original subscription ${originalSubscriptionId} for upgrade`)
+        } catch (error) {
+          console.warn('Could not cancel original subscription:', error)
+        }
+      }
+
+      // Create lifetime subscription record
+      const subscriptionData = {
+        user_id: userId,
+        subscription_tier: 'premium',
+        subscription_status: 'active',
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: null, // null = lifetime
+        payment_provider: 'stripe',
+        external_subscription_id: session.id,
+        last_payment_date: new Date().toISOString(),
+        next_billing_date: null,
+        billing_cycle: 'lifetime',
+        amount_cents: session.amount_total || 5000,
+        currency: session.currency || 'usd',
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .upsert(subscriptionData, { onConflict: 'user_id' })
+
+      if (error) {
+        console.error('Error upgrading to lifetime subscription:', error)
+      } else {
+        console.log(`User ${userId} upgraded to lifetime access`)
+      }
+    } else if (productType === 'premium_yearly') {
+      // For yearly subscriptions, the actual subscription will be handled in subscription.created
+      console.log(`Yearly subscription checkout completed for user ${userId}, waiting for subscription.created event`)
+    }
+  }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.user_id
+async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  // For one-time payments, the main logic is handled in checkout.session.completed
+  // This is just for logging
+  console.log(`Payment succeeded: ${paymentIntent.id}`)
+}
+
+async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string
+  
+  // Get user ID from customer metadata
+  const customer = await stripe.customers.retrieve(customerId)
+  const userId = (customer as Stripe.Customer).metadata?.supabase_user_id
+  
   if (!userId) {
-    console.error('No user_id in subscription metadata')
+    console.error('No user_id found in customer metadata for subscription:', subscription.id)
     return
   }
 
-  // Determine subscription tier based on price ID
-  const priceId = subscription.items.data[0]?.price.id
-  let tier: 'premium' | 'pro' = 'premium'
-  
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID || 
-      priceId === process.env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID) {
-    tier = 'pro'
-  }
-
-  // Determine billing cycle
-  const billingCycle = subscription.items.data[0]?.price.recurring?.interval === 'year' ? 'yearly' : 'monthly'
-
-  // Update or create subscription record
+  // Create yearly subscription record
   const subscriptionData = {
     user_id: userId,
-    subscription_tier: tier,
+    subscription_tier: 'premium',
     subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
-    subscription_start_date: new Date(subscription.created * 1000).toISOString(),
-    subscription_end_date: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
+    subscription_start_date: new Date((subscription as any).current_period_start * 1000).toISOString(),
+    subscription_end_date: new Date((subscription as any).current_period_end * 1000).toISOString(),
     payment_provider: 'stripe',
     external_subscription_id: subscription.id,
-    last_payment_date: subscription.latest_invoice ? new Date().toISOString() : null,
-    next_billing_date: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
-    billing_cycle: billingCycle,
-    amount_cents: subscription.items.data[0]?.price.unit_amount || 0,
-    currency: subscription.items.data[0]?.price.currency || 'usd',
+    last_payment_date: new Date().toISOString(),
+    next_billing_date: new Date((subscription as any).current_period_end * 1000).toISOString(),
+    billing_cycle: 'yearly',
+    amount_cents: subscription.items.data[0]?.price.unit_amount || 5000, // $50 default
+    currency: subscription.currency || 'usd',
     updated_at: new Date().toISOString()
   }
 
@@ -111,25 +180,62 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     .upsert(subscriptionData, { onConflict: 'user_id' })
 
   if (error) {
+    console.error('Error creating yearly subscription:', error)
+  } else {
+    console.log(`Yearly premium subscription created for user ${userId}`)
+  }
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string
+  
+  // Get user ID from customer metadata
+  const customer = await stripe.customers.retrieve(customerId)
+  const userId = (customer as Stripe.Customer).metadata?.supabase_user_id
+  
+  if (!userId) {
+    console.error('No user_id found in customer metadata for subscription:', subscription.id)
+    return
+  }
+
+  // Update subscription record
+  const subscriptionData = {
+    subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
+    subscription_end_date: new Date((subscription as any).current_period_end * 1000).toISOString(),
+    next_billing_date: subscription.status === 'active' ? new Date((subscription as any).current_period_end * 1000).toISOString() : null,
+    updated_at: new Date().toISOString()
+  }
+
+  const { error } = await supabase
+    .from('user_subscriptions')
+    .update(subscriptionData)
+    .eq('user_id', userId)
+    .eq('external_subscription_id', subscription.id)
+
+  if (error) {
     console.error('Error updating subscription:', error)
   } else {
-    console.log(`Subscription updated for user ${userId}: ${tier}`)
+    console.log(`Subscription updated for user ${userId}: ${subscription.status}`)
   }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.user_id
+  const customerId = subscription.customer as string
+  
+  // Get user ID from customer metadata
+  const customer = await stripe.customers.retrieve(customerId)
+  const userId = (customer as Stripe.Customer).metadata?.supabase_user_id
+  
   if (!userId) {
-    console.error('No user_id in subscription metadata')
+    console.error('No user_id found in customer metadata for subscription:', subscription.id)
     return
   }
 
-  // Update subscription status to cancelled
+  // Mark subscription as cancelled
   const { error } = await supabase
     .from('user_subscriptions')
-    .update({
+    .update({ 
       subscription_status: 'cancelled',
-      subscription_end_date: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
     .eq('user_id', userId)
@@ -140,52 +246,4 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   } else {
     console.log(`Subscription cancelled for user ${userId}`)
   }
-}
-
-async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  const subscriptionId = (invoice as any).subscription as string
-  if (!subscriptionId) return
-
-  // Get subscription to find user
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-  const userId = subscription.metadata?.user_id
-  
-  if (!userId) {
-    console.error('No user_id in subscription metadata')
-    return
-  }
-
-  // Update last payment date
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .update({
-      last_payment_date: new Date().toISOString(),
-      subscription_status: 'active',
-      updated_at: new Date().toISOString()
-    })
-    .eq('user_id', userId)
-    .eq('external_subscription_id', subscriptionId)
-
-  if (error) {
-    console.error('Error updating payment success:', error)
-  } else {
-    console.log(`Payment succeeded for user ${userId}`)
-  }
-}
-
-async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = (invoice as any).subscription as string
-  if (!subscriptionId) return
-
-  // Get subscription to find user
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-  const userId = subscription.metadata?.user_id
-  
-  if (!userId) {
-    console.error('No user_id in subscription metadata')
-    return
-  }
-
-  // Note: Don't immediately cancel on payment failure - Stripe will retry
-  console.log(`Payment failed for user ${userId}`)
 } 

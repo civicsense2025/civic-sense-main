@@ -4,6 +4,8 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { Footer } from "@/components/ui/footer"
+import { GlobalAudioControls } from '@/components/global-audio-controls'
 
 export const metadata: Metadata = {
   title: "CivicSense",
@@ -21,8 +23,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <div className="min-h-screen flex flex-col">
+              <main className="flex-1">
+                {children}
+              </main>
+              <div className="mt-8">
+                <Footer />
+              </div>
+            </div>
             <Toaster />
+            <GlobalAudioControls />
           </AuthProvider>
         </ThemeProvider>
       </body>
