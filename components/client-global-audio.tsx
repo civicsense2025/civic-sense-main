@@ -1,6 +1,11 @@
 "use client"
 
-import { GlobalAudioControls } from "./global-audio-controls"
+import dynamic from 'next/dynamic'
+
+const GlobalAudioControls = dynamic(
+  () => import('./global-audio-controls').then(mod => mod.GlobalAudioControls),
+  { ssr: false }
+)
 
 export function ClientGlobalAudio() {
   return <GlobalAudioControls />
