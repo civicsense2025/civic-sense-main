@@ -694,15 +694,15 @@ export function DailyCardStack({
       {/* Single Card Display */}
       <div className="relative">
         {allFilteredTopics.length > 0 && (
-          <CivicCard
-            topic={allFilteredTopics[currentStackIndex]}
-            baseHeight={cardBaseHeight}
-            onExploreGame={handleExploreGame}
-            isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
-            isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
-            isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
-            showFloatingKeyboard={false}
-          />
+            <CivicCard
+              topic={allFilteredTopics[currentStackIndex]}
+              baseHeight={cardBaseHeight}
+              onExploreGame={handleExploreGame}
+              isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
+              isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
+              isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
+              showFloatingKeyboard={false}
+            />
         )}
       </div>
 

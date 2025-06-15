@@ -9,7 +9,7 @@ interface TTSRequest {
   text: string
   targetLanguage?: string
   voiceGender?: 'MALE' | 'FEMALE' | 'NEUTRAL'
-  voiceType?: 'STANDARD' | 'WAVENET' | 'NEURAL2'
+  voiceType?: 'STANDARD' | 'WAVENET' | 'NEURAL2' | 'CHIRP3_HD'
   autoDetectLanguage?: boolean
   speakingRate?: number
   pitch?: number
@@ -163,8 +163,8 @@ export async function POST(request: NextRequest) {
     const { 
       text, 
       targetLanguage = 'en-US', 
-      voiceGender = 'NEUTRAL',
-      voiceType = 'NEURAL2',
+      voiceGender = 'FEMALE', // Default to female for better quality
+      voiceType = 'CHIRP3_HD', // Default to highest quality Chirp 3: HD voices
       autoDetectLanguage = true,
       speakingRate = 1.0,
       pitch = 0.0,
@@ -310,12 +310,13 @@ export async function POST(request: NextRequest) {
 function calculateEstimatedCost(characters: number, voiceType: string): string {
   // Google Cloud TTS pricing (as of 2024)
   const rates = {
-    'STANDARD': 4.00, // $4.00 per 1M characters
-    'WAVENET': 16.00, // $16.00 per 1M characters  
-    'NEURAL2': 16.00  // $16.00 per 1M characters
+    'STANDARD': 4.00,    // $4.00 per 1M characters
+    'WAVENET': 16.00,    // $16.00 per 1M characters  
+    'NEURAL2': 16.00,    // $16.00 per 1M characters
+    'CHIRP3_HD': 32.00   // $32.00 per 1M characters (premium LLM-powered voices)
   }
   
-  const ratePerMillion = rates[voiceType as keyof typeof rates] || rates.STANDARD
+  const ratePerMillion = rates[voiceType as keyof typeof rates] || rates.CHIRP3_HD // Default to premium
   const cost = (characters / 1000000) * ratePerMillion
   
   if (cost < 0.01) {
@@ -326,8 +327,159 @@ function calculateEstimatedCost(characters: number, voiceType: string): string {
 }
 
 function getVoiceName(languageCode: string, gender: string, voiceType: string): string {
-  // Map to specific Google Cloud voice names for better quality
-  const voiceMap: Record<string, Record<string, Record<string, string>>> = {
+  // Chirp 3: HD voices - highest quality available (powered by LLMs)
+  const chirp3HDVoices: Record<string, Record<string, string[]>> = {
+    'en-US': {
+      'FEMALE': [
+        'en-US-Chirp3-HD-Aoede',      // Elegant, clear
+        'en-US-Chirp3-HD-Kore',       // Warm, engaging  
+        'en-US-Chirp3-HD-Leda',       // Professional, articulate
+        'en-US-Chirp3-HD-Zephyr',     // Gentle, soothing
+        'en-US-Chirp3-HD-Autonoe',    // Confident, authoritative
+        'en-US-Chirp3-HD-Callirrhoe', // Expressive, dynamic
+        'en-US-Chirp3-HD-Despina',    // Friendly, approachable
+        'en-US-Chirp3-HD-Erinome',    // Sophisticated, refined
+        'en-US-Chirp3-HD-Gacrux',     // Strong, clear
+        'en-US-Chirp3-HD-Laomedeia',  // Melodic, pleasant
+        'en-US-Chirp3-HD-Pulcherrima',// Beautiful, resonant
+        'en-US-Chirp3-HD-Sulafat',    // Bright, energetic
+        'en-US-Chirp3-HD-Vindemiatrix', // Rich, full-bodied
+        'en-US-Chirp3-HD-Achernar'    // Deep, compelling
+      ],
+      'MALE': [
+        'en-US-Chirp3-HD-Puck',         // Versatile, natural
+        'en-US-Chirp3-HD-Charon',       // Deep, authoritative
+        'en-US-Chirp3-HD-Fenrir',       // Strong, commanding
+        'en-US-Chirp3-HD-Orus',         // Smooth, professional
+        'en-US-Chirp3-HD-Achird',       // Clear, articulate
+        'en-US-Chirp3-HD-Algenib',      // Warm, friendly
+        'en-US-Chirp3-HD-Algieba',      // Rich, resonant
+        'en-US-Chirp3-HD-Alnilam',      // Confident, engaging
+        'en-US-Chirp3-HD-Enceladus',    // Gentle, approachable
+        'en-US-Chirp3-HD-Iapetus',      // Sophisticated, refined
+        'en-US-Chirp3-HD-Rasalgethi',   // Dynamic, expressive
+        'en-US-Chirp3-HD-Sadachbia',    // Calm, steady
+        'en-US-Chirp3-HD-Sadaltager',   // Bright, energetic
+        'en-US-Chirp3-HD-Schedar',      // Powerful, compelling
+        'en-US-Chirp3-HD-Umbriel',      // Thoughtful, measured
+        'en-US-Chirp3-HD-Zubenelgenubi' // Distinctive, memorable
+      ],
+      'NEUTRAL': ['en-US-Chirp3-HD-Aoede', 'en-US-Chirp3-HD-Puck'] // Best voices for neutral
+    },
+    'en-GB': {
+      'FEMALE': ['en-GB-Chirp3-HD-Aoede', 'en-GB-Chirp3-HD-Kore', 'en-GB-Chirp3-HD-Leda'],
+      'MALE': ['en-GB-Chirp3-HD-Puck', 'en-GB-Chirp3-HD-Charon', 'en-GB-Chirp3-HD-Orus'],
+      'NEUTRAL': ['en-GB-Chirp3-HD-Aoede']
+    },
+    'en-AU': {
+      'FEMALE': ['en-AU-Chirp3-HD-Aoede', 'en-AU-Chirp3-HD-Kore', 'en-AU-Chirp3-HD-Zephyr'],
+      'MALE': ['en-AU-Chirp3-HD-Puck', 'en-AU-Chirp3-HD-Charon', 'en-AU-Chirp3-HD-Fenrir'],
+      'NEUTRAL': ['en-AU-Chirp3-HD-Aoede']
+    },
+    'en-IN': {
+      'FEMALE': ['en-IN-Chirp3-HD-Aoede', 'en-IN-Chirp3-HD-Kore'],
+      'MALE': ['en-IN-Chirp3-HD-Puck', 'en-IN-Chirp3-HD-Charon'],
+      'NEUTRAL': ['en-IN-Chirp3-HD-Aoede']
+    },
+    'es-US': {
+      'FEMALE': ['es-US-Chirp3-HD-Aoede', 'es-US-Chirp3-HD-Kore', 'es-US-Chirp3-HD-Leda'],
+      'MALE': ['es-US-Chirp3-HD-Puck', 'es-US-Chirp3-HD-Charon', 'es-US-Chirp3-HD-Orus'],
+      'NEUTRAL': ['es-US-Chirp3-HD-Aoede']
+    },
+    'es-ES': {
+      'FEMALE': ['es-ES-Chirp3-HD-Aoede', 'es-ES-Chirp3-HD-Kore', 'es-ES-Chirp3-HD-Zephyr'],
+      'MALE': ['es-ES-Chirp3-HD-Puck', 'es-ES-Chirp3-HD-Charon', 'es-ES-Chirp3-HD-Fenrir'],
+      'NEUTRAL': ['es-ES-Chirp3-HD-Aoede']
+    },
+    'fr-FR': {
+      'FEMALE': ['fr-FR-Chirp3-HD-Aoede', 'fr-FR-Chirp3-HD-Kore', 'fr-FR-Chirp3-HD-Leda'],
+      'MALE': ['fr-FR-Chirp3-HD-Puck', 'fr-FR-Chirp3-HD-Charon', 'fr-FR-Chirp3-HD-Orus'],
+      'NEUTRAL': ['fr-FR-Chirp3-HD-Aoede']
+    },
+    'fr-CA': {
+      'FEMALE': ['fr-CA-Chirp3-HD-Aoede', 'fr-CA-Chirp3-HD-Kore'],
+      'MALE': ['fr-CA-Chirp3-HD-Puck', 'fr-CA-Chirp3-HD-Charon'],
+      'NEUTRAL': ['fr-CA-Chirp3-HD-Aoede']
+    },
+    'de-DE': {
+      'FEMALE': ['de-DE-Chirp3-HD-Aoede', 'de-DE-Chirp3-HD-Kore', 'de-DE-Chirp3-HD-Leda'],
+      'MALE': ['de-DE-Chirp3-HD-Puck', 'de-DE-Chirp3-HD-Charon', 'de-DE-Chirp3-HD-Orus'],
+      'NEUTRAL': ['de-DE-Chirp3-HD-Aoede']
+    },
+    'pt-BR': {
+      'FEMALE': ['pt-BR-Chirp3-HD-Aoede', 'pt-BR-Chirp3-HD-Kore'],
+      'MALE': ['pt-BR-Chirp3-HD-Puck', 'pt-BR-Chirp3-HD-Charon'],
+      'NEUTRAL': ['pt-BR-Chirp3-HD-Aoede']
+    },
+    'it-IT': {
+      'FEMALE': ['it-IT-Chirp3-HD-Aoede', 'it-IT-Chirp3-HD-Kore'],
+      'MALE': ['it-IT-Chirp3-HD-Puck', 'it-IT-Chirp3-HD-Charon'],
+      'NEUTRAL': ['it-IT-Chirp3-HD-Aoede']
+    },
+    'ja-JP': {
+      'FEMALE': ['ja-JP-Chirp3-HD-Aoede', 'ja-JP-Chirp3-HD-Kore'],
+      'MALE': ['ja-JP-Chirp3-HD-Puck', 'ja-JP-Chirp3-HD-Charon'],
+      'NEUTRAL': ['ja-JP-Chirp3-HD-Aoede']
+    },
+    'ko-KR': {
+      'FEMALE': ['ko-KR-Chirp3-HD-Aoede', 'ko-KR-Chirp3-HD-Kore'],
+      'MALE': ['ko-KR-Chirp3-HD-Puck', 'ko-KR-Chirp3-HD-Charon'],
+      'NEUTRAL': ['ko-KR-Chirp3-HD-Aoede']
+    },
+    'cmn-CN': {
+      'FEMALE': ['cmn-CN-Chirp3-HD-Aoede', 'cmn-CN-Chirp3-HD-Kore'],
+      'MALE': ['cmn-CN-Chirp3-HD-Puck', 'cmn-CN-Chirp3-HD-Charon'],
+      'NEUTRAL': ['cmn-CN-Chirp3-HD-Aoede']
+    },
+    'hi-IN': {
+      'FEMALE': ['hi-IN-Chirp3-HD-Aoede', 'hi-IN-Chirp3-HD-Kore'],
+      'MALE': ['hi-IN-Chirp3-HD-Puck', 'hi-IN-Chirp3-HD-Charon'],
+      'NEUTRAL': ['hi-IN-Chirp3-HD-Aoede']
+    },
+    'ar-XA': {
+      'FEMALE': ['ar-XA-Chirp3-HD-Aoede', 'ar-XA-Chirp3-HD-Kore'],
+      'MALE': ['ar-XA-Chirp3-HD-Puck', 'ar-XA-Chirp3-HD-Charon'],
+      'NEUTRAL': ['ar-XA-Chirp3-HD-Aoede']
+    },
+    'nl-NL': {
+      'FEMALE': ['nl-NL-Chirp3-HD-Aoede', 'nl-NL-Chirp3-HD-Kore'],
+      'MALE': ['nl-NL-Chirp3-HD-Puck', 'nl-NL-Chirp3-HD-Charon'],
+      'NEUTRAL': ['nl-NL-Chirp3-HD-Aoede']
+    },
+    'pl-PL': {
+      'FEMALE': ['pl-PL-Chirp3-HD-Aoede', 'pl-PL-Chirp3-HD-Kore'],
+      'MALE': ['pl-PL-Chirp3-HD-Puck', 'pl-PL-Chirp3-HD-Charon'],
+      'NEUTRAL': ['pl-PL-Chirp3-HD-Aoede']
+    },
+    'ru-RU': {
+      'FEMALE': ['ru-RU-Chirp3-HD-Aoede', 'ru-RU-Chirp3-HD-Kore'],
+      'MALE': ['ru-RU-Chirp3-HD-Puck', 'ru-RU-Chirp3-HD-Charon'],
+      'NEUTRAL': ['ru-RU-Chirp3-HD-Aoede']
+    },
+    'th-TH': {
+      'FEMALE': ['th-TH-Chirp3-HD-Aoede', 'th-TH-Chirp3-HD-Kore'],
+      'MALE': ['th-TH-Chirp3-HD-Puck', 'th-TH-Chirp3-HD-Charon'],
+      'NEUTRAL': ['th-TH-Chirp3-HD-Aoede']
+    },
+    'tr-TR': {
+      'FEMALE': ['tr-TR-Chirp3-HD-Aoede', 'tr-TR-Chirp3-HD-Kore'],
+      'MALE': ['tr-TR-Chirp3-HD-Puck', 'tr-TR-Chirp3-HD-Charon'],
+      'NEUTRAL': ['tr-TR-Chirp3-HD-Aoede']
+    },
+    'vi-VN': {
+      'FEMALE': ['vi-VN-Chirp3-HD-Aoede', 'vi-VN-Chirp3-HD-Kore'],
+      'MALE': ['vi-VN-Chirp3-HD-Puck', 'vi-VN-Chirp3-HD-Charon'],
+      'NEUTRAL': ['vi-VN-Chirp3-HD-Aoede']
+    },
+    'uk-UA': {
+      'FEMALE': ['uk-UA-Chirp3-HD-Aoede', 'uk-UA-Chirp3-HD-Kore'],
+      'MALE': ['uk-UA-Chirp3-HD-Puck', 'uk-UA-Chirp3-HD-Charon'],
+      'NEUTRAL': ['uk-UA-Chirp3-HD-Aoede']
+    }
+  }
+
+  // Legacy high-quality voices as fallback
+  const legacyVoices: Record<string, Record<string, Record<string, string>>> = {
     'en-US': {
       'FEMALE': {
         'NEURAL2': 'en-US-Neural2-F',
@@ -370,8 +522,26 @@ function getVoiceName(languageCode: string, gender: string, voiceType: string): 
       }
     }
   }
+
+  // Try Chirp 3: HD voices first (highest quality - LLM powered)
+  const chirpVoices = chirp3HDVoices[languageCode]?.[gender] || []
+  if (chirpVoices.length > 0) {
+    // Use the first (best) Chirp 3: HD voice for the gender
+    console.log(`🎯 Using Chirp 3: HD voice: ${chirpVoices[0]}`)
+    return chirpVoices[0]
+  }
   
-  return voiceMap[languageCode]?.[gender]?.[voiceType] || `${languageCode}-${voiceType}-A`
+  // Fallback to legacy high-quality voices
+  const fallbackVoice = legacyVoices[languageCode]?.[gender]?.[voiceType]
+  if (fallbackVoice) {
+    console.log(`⚡ Using legacy voice: ${fallbackVoice}`)
+    return fallbackVoice
+  }
+  
+  // Final fallback to best available Chirp 3: HD voice
+  const defaultVoice = 'en-US-Chirp3-HD-Aoede' // Premium female voice as ultimate fallback
+  console.log(`🔄 Using default Chirp 3: HD voice: ${defaultVoice}`)
+  return defaultVoice
 }
 
 // GET endpoint to list available voices

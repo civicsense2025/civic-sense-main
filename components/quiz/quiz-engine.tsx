@@ -276,7 +276,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedAnswer, isAnswerSubmitted, currentQuestion?.question_type, currentQuestion?.option_a, currentQuestion?.option_b, currentQuestion?.option_c, currentQuestion?.option_d])
 
-  // Reset question state when moving to next question - FIXED: Reduced dependencies
+  // Reset question state when moving to next question
   useEffect(() => {
     console.log('Resetting question state for question index:', currentQuestionIndex)
     setSelectedAnswer(null)
@@ -299,7 +299,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       
       return () => clearTimeout(timer)
     }
-  }, [currentQuestionIndex]) // FIXED: Only depend on question index, not audio dependencies
+  }, [currentQuestionIndex, resetTimer]) // Added resetTimer to dependencies
 
   // Separate effect for audio auto-play to prevent conflicts
   useEffect(() => {
@@ -566,10 +566,11 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
             
             {/* Timer and hint button */}
             <div className="flex items-center justify-center space-x-6">
-              {/* Timer */}
+              {/* Timer - use key to force reset when question changes */}
               <QuestionTimer
+                key={`timer-${currentQuestionIndex}`}
                 initialTime={60}
-                isActive={isTimerActive}
+                isActive={isTimerActive && !isAnswerSubmitted}
                 onTimeUp={handleTimeUp}
               />
               

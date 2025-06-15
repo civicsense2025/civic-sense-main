@@ -1,7 +1,5 @@
+// app/api/fetch-meta/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import * as cheerio from 'cheerio'
-import { URL } from 'url'
 
 interface MetaData {
   title: string
@@ -20,16 +18,92 @@ interface MetaData {
   language?: string | null
 }
 
-interface SourceData {
-  name: string
-  url: string
+// Simple HTML entity decoder without external dependencies
+function decodeHtmlEntities(text: string): string {
+  if (!text) return ''
+  
+  const entities: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+    '&nbsp;': ' ',
+    '&mdash;': '—',
+    '&ndash;': '–',
+    '&hellip;': '…',
+    '&rsquo;': "'",
+    '&lsquo;': "'",
+    '&rdquo;': '"',
+    '&ldquo;': '"'
+  }
+  
+  let decoded = text
+  
+  // Handle numeric entities
+  decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+    try {
+      return String.fromCharCode(parseInt(hex, 16))
+    } catch {
+      return match
+    }
+  })
+  
+  decoded = decoded.replace(/&#(\d+);/g, (match, num) => {
+    try {
+      const charCode = parseInt(num, 10)
+      if (charCode >= 32 && charCode <= 126 || charCode >= 160) {
+        return String.fromCharCode(charCode)
+      }
+      return match
+    } catch {
+      return match
+    }
+  })
+  
+  // Handle named entities
+  for (const [entity, replacement] of Object.entries(entities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), replacement)
+  }
+  
+  return decoded
 }
 
-// Cache for storing processed metadata
-const metadataCache = new Map<string, { data: MetaData; timestamp: number }>()
-const CACHE_DURATION = 1000 * 60 * 60 // 1 hour
+// Extract meta content from HTML with multiple patterns
+function extractMetaContent(html: string, property: string, attribute: 'property' | 'name' | 'itemprop' = 'property'): string | null {
+  // Try multiple patterns to catch different formatting
+  const patterns = [
+    // Standard meta tags
+    new RegExp(`<meta[^>]*${attribute}=["']${property}["'][^>]*content=["']([^"']+)["'][^>]*>`, 'i'),
+    new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*${attribute}=["']${property}["'][^>]*>`, 'i'),
+    new RegExp(`<meta[^>]*${attribute}=['"]${property}['"][^>]*content=['"]([^'"]+)['"][^>]*>`, 'i'),
+    new RegExp(`<meta[^>]*content=['"]([^'"]+)['"][^>]*${attribute}=['"]${property}['"][^>]*>`, 'i'),
+    // Handle spaces and different quote styles
+    new RegExp(`<meta\\s+${attribute}\\s*=\\s*["']${property}["']\\s+content\\s*=\\s*["']([^"']+)["'][^>]*>`, 'i'),
+    new RegExp(`<meta\\s+content\\s*=\\s*["']([^"']+)["']\\s+${attribute}\\s*=\\s*["']${property}["'][^>]*>`, 'i')
+  ]
+  
+  for (const pattern of patterns) {
+    const match = html.match(pattern)
+    if (match && match[1]) {
+      return decodeHtmlEntities(match[1].trim())
+    }
+  }
+  
+  return null
+}
 
-// Helper function to resolve relative URLs
+// Extract title from HTML
+function extractTitle(html: string): string | null {
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+  if (titleMatch && titleMatch[1]) {
+    return decodeHtmlEntities(titleMatch[1].trim())
+  }
+  return null
+}
+
+// Resolve relative URLs to absolute
 function resolveUrl(base: string, relative: string): string {
   try {
     return new URL(relative, base).href
@@ -38,314 +112,245 @@ function resolveUrl(base: string, relative: string): string {
   }
 }
 
-// Helper function to extract domain info
-function extractDomainInfo(url: string): { domain: string; hasHttps: boolean } {
-  try {
-    const urlObj = new URL(url)
-    const domain = urlObj.hostname.replace('www.', '')
-    const hasHttps = urlObj.protocol === 'https:'
-    return { domain, hasHttps }
-  } catch {
-    throw new Error('Invalid URL')
-  }
-}
-
-// Enhanced HTML entity decoder
-function decodeHtmlEntities(text: string): string {
-  if (!text) return ''
+// Extract favicon URL
+function extractFavicon(html: string, baseUrl: string): string | null {
+  // Try various favicon patterns
+  const patterns = [
+    /<link[^>]*rel=["']icon["'][^>]*href=["']([^"']+)["'][^>]*>/i,
+    /<link[^>]*href=["']([^"']+)["'][^>]*rel=["']icon["'][^>]*>/i,
+    /<link[^>]*rel=["']shortcut icon["'][^>]*href=["']([^"']+)["'][^>]*>/i,
+    /<link[^>]*href=["']([^"']+)["'][^>]*rel=["']shortcut icon["'][^>]*>/i,
+    /<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["'][^>]*>/i
+  ]
   
-  // Use cheerio's built-in decoding
-  const $ = cheerio.load(`<div>${text}</div>`)
-  return $('div').text().trim()
-}
-
-// Extract metadata using cheerio (more reliable than regex)
-function extractMetadata(html: string, url: string): MetaData {
-  const $ = cheerio.load(html)
-  const { domain } = extractDomainInfo(url)
-
-  // Extract various meta tags
-  const getMetaContent = (names: string[]): string | undefined => {
-    for (const name of names) {
-      const content = $(`meta[property="${name}"]`).attr('content') ||
-                     $(`meta[name="${name}"]`).attr('content') ||
-                     $(`meta[property="${name.toLowerCase()}"]`).attr('content') ||
-                     $(`meta[name="${name.toLowerCase()}"]`).attr('content')
-      if (content) return decodeHtmlEntities(content)
-    }
-    return undefined
-  }
-
-  // Title extraction priority
-  const title = getMetaContent(['og:title', 'twitter:title']) || 
-                $('title').text().trim() || 
-                $('h1').first().text().trim() ||
-                domain.charAt(0).toUpperCase() + domain.slice(1)
-
-  // Description extraction priority
-  const description = getMetaContent(['og:description', 'twitter:description', 'description']) || 
-                      $('meta[name="description"]').attr('content') ||
-                      $('p').first().text().trim().substring(0, 200) ||
-                      `Visit ${domain} for more information`
-
-  // Image extraction with URL resolution
-  let image = getMetaContent(['og:image', 'twitter:image', 'og:image:url'])
-  if (image) {
-    image = resolveUrl(url, image)
-  }
-
-  // Favicon extraction
-  let favicon = $('link[rel="icon"]').attr('href') ||
-                $('link[rel="shortcut icon"]').attr('href') ||
-                $('link[rel="apple-touch-icon"]').attr('href')
-  if (favicon) {
-    favicon = resolveUrl(url, favicon)
-  } else {
-    favicon = `${new URL(url).origin}/favicon.ico`
-  }
-
-  // Extract additional metadata
-  const siteName = getMetaContent(['og:site_name', 'application-name']) || domain
-  const type = getMetaContent(['og:type']) || 'website'
-  const canonicalUrl = $('link[rel="canonical"]').attr('href') || url
-  const author = getMetaContent(['author', 'article:author', 'twitter:creator'])
-  const publishedTime = getMetaContent(['article:published_time', 'datePublished'])
-  const modifiedTime = getMetaContent(['article:modified_time', 'dateModified'])
-  const keywords = $('meta[name="keywords"]').attr('content')?.split(',').map(k => k.trim())
-  const language = $('html').attr('lang') || getMetaContent(['og:locale']) || 'en'
-
-  // Extract JSON-LD structured data if available
-  const jsonLdScripts = $('script[type="application/ld+json"]')
-  let structuredData: any = null
-  jsonLdScripts.each((_, script) => {
-    try {
-      const data = JSON.parse($(script).html() || '{}')
-      if (data['@type'] === 'Article' || data['@type'] === 'NewsArticle') {
-        structuredData = data
-      }
-    } catch {}
-  })
-
-  // Use structured data as fallback
-  if (structuredData) {
-    return {
-      title: structuredData.headline || title,
-      description: structuredData.description || description,
-      domain,
-      url,
-      image: structuredData.image?.url || structuredData.image || image || null,
-      siteName: structuredData.publisher?.name || siteName || null,
-      type: structuredData['@type'] || type || null,
-      favicon: favicon || null,
-      canonicalUrl: canonicalUrl || null,
-      author: structuredData.author?.name || author || null,
-      publishedTime: structuredData.datePublished || publishedTime || null,
-      modifiedTime: structuredData.dateModified || modifiedTime || null,
-      keywords,
-      language: language || null
+  for (const pattern of patterns) {
+    const match = html.match(pattern)
+    if (match && match[1]) {
+      return resolveUrl(baseUrl, match[1])
     }
   }
-
-  // Truncate if too long
-  const truncatedTitle = title.length > 200 ? title.substring(0, 197) + '...' : title
-  const truncatedDescription = description.length > 500 ? description.substring(0, 497) + '...' : description
-
-  return {
-    title: truncatedTitle,
-    description: truncatedDescription,
-    domain,
-    url,
-    image: image || null,
-    siteName: siteName || null,
-    type: type || null,
-    favicon: favicon || null,
-    canonicalUrl: canonicalUrl || null,
-    author: author || null,
-    publishedTime: publishedTime || null,
-    modifiedTime: modifiedTime || null,
-    keywords,
-    language: language || null
-  }
-}
-
-// Batch save metadata to database
-async function saveMetadataToDatabase(url: string, metadata: MetaData, responseTime: number, fetchStatus: string = 'success', fetchError?: string) {
+  
+  // Default favicon path
   try {
-    const { domain, hasHttps } = extractDomainInfo(url)
-
-    const { data, error } = await supabase
-      .from('source_metadata')
-      .upsert({
-        url,
-        title: metadata.title,
-        description: metadata.description,
-        domain,
-        og_title: metadata.title,
-        og_description: metadata.description,
-        og_image: metadata.image,
-        og_site_name: metadata.siteName,
-        og_type: metadata.type,
-        favicon_url: metadata.favicon,
-        canonical_url: metadata.canonicalUrl,
-        language: metadata.language,
-        has_https: hasHttps,
-        is_accessible: fetchStatus === 'success',
-        fetch_status: fetchStatus,
-        fetch_error: fetchError,
-        response_time_ms: responseTime,
-        last_fetched_at: new Date().toISOString()
-      }, {
-        onConflict: 'url'
-      })
-      .select('id')
-      .single()
-
-    if (error) {
-      console.error('Error saving metadata to database:', error)
-      return null
-    }
-
-    // Remove from fetch queue
-    await supabase
-      .from('source_fetch_queue')
-      .delete()
-      .eq('url', url)
-
-    console.log(`✅ Saved metadata to database for ${url}`)
-    return data
-  } catch (error) {
-    console.error('Error in saveMetadataToDatabase:', error)
+    const url = new URL(baseUrl)
+    return `${url.origin}/favicon.ico`
+  } catch {
     return null
   }
 }
 
-// Process sources from question explanations
-async function extractAndSaveSourcesFromQuestionInternal(questionId: string, explanation: string, sources: SourceData[]) {
-  const uniqueUrls = new Set<string>()
-  
-  // Extract URLs from explanation
-  const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi
-  const matches = explanation.match(urlRegex) || []
-  matches.forEach(url => uniqueUrls.add(url.trim()))
-  
-  // Add explicitly provided sources
-  sources.forEach(source => {
-    if (source.url) uniqueUrls.add(source.url.trim())
-  })
-
-  // Process each unique URL
-  const promises = Array.from(uniqueUrls).map(async (url) => {
-    try {
-      // Check cache first
-      const cached = metadataCache.get(url)
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        await linkQuestionToSource(questionId, url, cached.data)
-        return
-      }
-
-      // Fetch metadata
-      const response = await fetch('/api/fetch-meta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      })
-
-      if (response.ok) {
-        const metadata = await response.json()
-        metadataCache.set(url, { data: metadata, timestamp: Date.now() })
-        await linkQuestionToSource(questionId, url, metadata)
-      }
-    } catch (error) {
-      console.error(`Error processing source ${url}:`, error)
-    }
-  })
-
-  await Promise.all(promises)
-}
-
-// Link question to source
-async function linkQuestionToSource(questionId: string, url: string, metadata: MetaData) {
-  try {
-    // First ensure source metadata exists
-    const { data: sourceData } = await supabase
-      .from('source_metadata')
-      .select('id')
-      .eq('url', url)
-      .single()
-
-    if (!sourceData) {
-      const savedData = await saveMetadataToDatabase(url, metadata, 0)
-      if (!savedData) return
-    }
-
-    // Get the source metadata ID again to ensure we have it
-    const { data: finalSourceData } = await supabase
-      .from('source_metadata')
-      .select('id')
-      .eq('url', url)
-      .single()
-
-    if (!finalSourceData) {
-      console.error('Could not find or create source metadata')
-      return
-    }
-
-    // Create the link
-    await supabase
-      .from('question_source_links')
-      .upsert({
-        question_id: questionId,
-        source_metadata_id: finalSourceData.id,
-        source_name: metadata.title,
-        source_type: 'reference',
-        is_primary_source: false,
-        display_order: 0
-      }, {
-        onConflict: 'question_id,source_metadata_id'
-      })
-  } catch (error) {
-    console.error('Error linking question to source:', error)
-  }
-}
-
-// Main API handler
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
-
+  
   try {
     const body = await request.json()
-    const { url, urls } = body // Support both single URL and batch processing
-
-    // Batch processing
-    if (urls && Array.isArray(urls)) {
-      const results = await Promise.all(
-        urls.map(async (url: string) => {
-          try {
-            return await fetchSingleUrl(url)
-          } catch (error) {
-            return {
-              url,
-              error: error instanceof Error ? error.message : 'Unknown error'
-            }
-          }
-        })
-      )
-      return NextResponse.json({ results })
-    }
-
-    // Single URL processing
+    const { url } = body
+    
+    console.log('[fetch-meta] Processing request for:', url)
+    
     if (!url || typeof url !== 'string') {
+      console.error('[fetch-meta] Invalid URL provided:', url)
       return NextResponse.json(
         { error: 'URL is required' },
         { status: 400 }
       )
     }
-
-    const result = await fetchSingleUrl(url)
-    return NextResponse.json(result)
-
+    
+    // Parse URL to get domain
+    let domain: string
+    let urlObj: URL
+    try {
+      urlObj = new URL(url)
+      domain = urlObj.hostname.replace('www.', '')
+    } catch (error) {
+      console.error('[fetch-meta] Invalid URL format:', url, error)
+      return NextResponse.json(
+        { error: 'Invalid URL format' },
+        { status: 400 }
+      )
+    }
+    
+    try {
+      console.log('[fetch-meta] Fetching content from:', url)
+      
+      // Fetch the webpage with comprehensive headers
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0'
+        },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(20000) // 20 seconds timeout
+      })
+      
+      console.log('[fetch-meta] Response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const contentType = response.headers.get('content-type') || ''
+      console.log('[fetch-meta] Content-Type:', contentType)
+      
+      if (!contentType.includes('text/html') && !contentType.includes('application/xhtml')) {
+        console.warn('[fetch-meta] Non-HTML content type:', contentType)
+      }
+      
+      const html = await response.text()
+      console.log('[fetch-meta] HTML length:', html.length)
+      
+      // Extract all metadata
+      const ogTitle = extractMetaContent(html, 'og:title')
+      const ogDescription = extractMetaContent(html, 'og:description')
+      const ogImage = extractMetaContent(html, 'og:image')
+      const ogSiteName = extractMetaContent(html, 'og:site_name')
+      const ogType = extractMetaContent(html, 'og:type')
+      
+      // Twitter Card fallbacks
+      const twitterTitle = extractMetaContent(html, 'twitter:title', 'name')
+      const twitterDescription = extractMetaContent(html, 'twitter:description', 'name')
+      const twitterImage = extractMetaContent(html, 'twitter:image', 'name')
+      
+      // Standard meta tags
+      const metaDescription = extractMetaContent(html, 'description', 'name')
+      const metaAuthor = extractMetaContent(html, 'author', 'name')
+      const metaKeywords = extractMetaContent(html, 'keywords', 'name')
+      
+      // Article metadata - Enhanced date extraction
+      const articlePublished = extractMetaContent(html, 'article:published_time') || 
+                              extractMetaContent(html, 'datePublished', 'name') ||
+                              extractMetaContent(html, 'publishdate', 'name') ||
+                              extractMetaContent(html, 'publish_date', 'name') ||
+                              extractMetaContent(html, 'date', 'name') ||
+                              extractMetaContent(html, 'pubdate', 'name') ||
+                              extractMetaContent(html, 'publication_date', 'name') ||
+                              extractMetaContent(html, 'created_time', 'name') ||
+                              extractMetaContent(html, 'timestamp', 'name') ||
+                              // Schema.org structured data
+                              extractMetaContent(html, 'datePublished', 'itemprop') ||
+                              extractMetaContent(html, 'publishDate', 'itemprop') ||
+                              // Additional OpenGraph patterns
+                              extractMetaContent(html, 'article:published') ||
+                              extractMetaContent(html, 'og:article:published_time') ||
+                              // News-specific patterns
+                              extractMetaContent(html, 'sailthru.date', 'name') ||
+                              extractMetaContent(html, 'parsely-pub-date', 'name') ||
+                              extractMetaContent(html, 'DC.date.issued', 'name') ||
+                              extractMetaContent(html, 'DC.Date', 'name')
+                              
+      const articleModified = extractMetaContent(html, 'article:modified_time') || 
+                             extractMetaContent(html, 'dateModified', 'name') ||
+                             extractMetaContent(html, 'lastmod', 'name') ||
+                             extractMetaContent(html, 'last_modified', 'name') ||
+                             extractMetaContent(html, 'updated_time', 'name') ||
+                             extractMetaContent(html, 'modified_time', 'name') ||
+                             // Schema.org structured data
+                             extractMetaContent(html, 'dateModified', 'itemprop') ||
+                             extractMetaContent(html, 'modifiedDate', 'itemprop') ||
+                             // Additional OpenGraph patterns
+                             extractMetaContent(html, 'article:modified') ||
+                             extractMetaContent(html, 'og:article:modified_time') ||
+                             // Additional patterns
+                             extractMetaContent(html, 'DC.date.modified', 'name')
+                             
+      const articleAuthor = extractMetaContent(html, 'article:author') ||
+                           extractMetaContent(html, 'author', 'name') ||
+                           extractMetaContent(html, 'article:author:name') ||
+                           extractMetaContent(html, 'sailthru.author', 'name') ||
+                           extractMetaContent(html, 'parsely-author', 'name') ||
+                           extractMetaContent(html, 'DC.creator', 'name') ||
+                           extractMetaContent(html, 'twitter:creator', 'name') ||
+                           // Schema.org structured data
+                           extractMetaContent(html, 'author', 'itemprop') ||
+                           extractMetaContent(html, 'creator', 'itemprop')
+      
+      // Extract title
+      const htmlTitle = extractTitle(html)
+      
+      // Extract favicon
+      const favicon = extractFavicon(html, url)
+      
+      // Extract canonical URL
+      const canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i)
+      const canonicalUrl = canonicalMatch ? resolveUrl(url, canonicalMatch[1]) : url
+      
+      // Extract language
+      const langMatch = html.match(/<html[^>]*lang=["']([^"']+)["'][^>]*>/i)
+      const language = langMatch ? langMatch[1] : extractMetaContent(html, 'og:locale') || 'en'
+      
+      // Resolve image URLs to absolute
+      let image = ogImage || twitterImage
+      if (image) {
+        image = resolveUrl(url, image)
+      }
+      
+      // Determine the best values
+      const title = ogTitle || twitterTitle || htmlTitle || domain.charAt(0).toUpperCase() + domain.slice(1)
+      const description = ogDescription || twitterDescription || metaDescription || `Visit ${domain} for more information`
+      const siteName = ogSiteName || domain.charAt(0).toUpperCase() + domain.slice(1)
+      const author = articleAuthor || metaAuthor || null
+      const keywords = metaKeywords ? metaKeywords.split(',').map(k => k.trim()).filter(Boolean) : []
+      
+      // Truncate if too long
+      const truncatedTitle = title.length > 200 ? title.substring(0, 197) + '...' : title
+      const truncatedDescription = description.length > 500 ? description.substring(0, 497) + '...' : description
+      
+      const responseTime = Date.now() - startTime
+      
+      const metadata: MetaData = {
+        title: truncatedTitle,
+        description: truncatedDescription,
+        domain,
+        url,
+        image: image || null,
+        siteName,
+        type: ogType || 'website',
+        favicon,
+        canonicalUrl,
+        author,
+        publishedTime: articlePublished || null,
+        modifiedTime: articleModified || null,
+        keywords: keywords.length > 0 ? keywords : undefined,
+        language
+      }
+      
+      console.log('[fetch-meta] Successfully extracted metadata:', {
+        ...metadata,
+        description: metadata.description.substring(0, 100) + '...'
+      })
+      console.log(`[fetch-meta] Completed in ${responseTime}ms`)
+      
+      return NextResponse.json(metadata)
+      
+    } catch (fetchError) {
+      const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error'
+      console.error('[fetch-meta] Error fetching URL:', url, fetchError)
+      
+      // Return fallback data even on error
+      const fallbackMetadata: MetaData = {
+        title: domain.charAt(0).toUpperCase() + domain.slice(1),
+        description: `Visit ${domain} for more information`,
+        domain,
+        url,
+        favicon: `${urlObj.origin}/favicon.ico`
+      }
+      
+      console.log('[fetch-meta] Returning fallback metadata')
+      return NextResponse.json(fallbackMetadata)
+    }
+    
   } catch (error) {
-    console.error('Error in fetch-meta API:', error)
+    console.error('[fetch-meta] Unexpected error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -353,99 +358,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Fetch metadata for a single URL
-async function fetchSingleUrl(url: string): Promise<MetaData> {
-  const startTime = Date.now()
+// Also support GET for testing
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const url = searchParams.get('url')
   
-  // Check cache first
-  const cached = metadataCache.get(url)
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(`📋 Using cached metadata for ${url}`)
-    return cached.data
-  }
-
-  // Check database for recent metadata
-  const { data: existingMetadata } = await supabase
-    .from('source_metadata')
-    .select('*')
-    .eq('url', url)
-    .single()
-
-  if (existingMetadata?.fetch_status === 'success' && existingMetadata.last_fetched_at) {
-    const lastFetched = new Date(existingMetadata.last_fetched_at)
-    const daysSinceLastFetch = (Date.now() - lastFetched.getTime()) / (1000 * 60 * 60 * 24)
-    
-    if (daysSinceLastFetch < 7) {
-      const metadata: MetaData = {
-        title: existingMetadata.title,
-        description: existingMetadata.description || '',
-        domain: existingMetadata.domain,
-        url,
-        image: existingMetadata.og_image || null,
-        siteName: existingMetadata.og_site_name || null,
-        type: existingMetadata.og_type || null,
-        favicon: existingMetadata.favicon_url || null,
-        canonicalUrl: existingMetadata.canonical_url || null,
-        language: existingMetadata.language || null
+  if (!url) {
+    return NextResponse.json({
+      message: 'Meta fetching API is working! Send a POST request with { url: "https://example.com" }',
+      endpoint: '/api/fetch-meta',
+      method: 'POST',
+      example: {
+        url: 'https://example.com/article'
       }
-      
-      metadataCache.set(url, { data: metadata, timestamp: Date.now() })
-      return metadata
-    }
-  }
-
-  // Fetch fresh metadata
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; CivicSense/1.0; +https://civicsense.app)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
-      },
-      signal: AbortSignal.timeout(15000),
-      redirect: 'follow'
     })
-
-    const responseTime = Date.now() - startTime
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const html = await response.text()
-    const metadata = extractMetadata(html, url)
-
-    // Save to database in background
-    saveMetadataToDatabase(url, metadata, responseTime).catch(error => {
-      console.error('Background save failed:', error)
-    })
-
-    // Update cache
-    metadataCache.set(url, { data: metadata, timestamp: Date.now() })
-
-    return metadata
-
-  } catch (error) {
-    const responseTime = Date.now() - startTime
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    
-    console.error(`❌ Error fetching URL ${url}:`, error)
-
-    // Save failed fetch
-    const { domain } = extractDomainInfo(url)
-    const fallbackMetadata: MetaData = {
-      title: domain.charAt(0).toUpperCase() + domain.slice(1),
-      description: `Visit ${domain} for more information`,
-      domain,
-      url
-    }
-
-    await saveMetadataToDatabase(url, fallbackMetadata, responseTime, 'failed', errorMessage)
-
-    return fallbackMetadata
   }
+  
+  // Allow GET requests for testing
+  return POST(new NextRequest(request.url, {
+    method: 'POST',
+    body: JSON.stringify({ url })
+  }))
 }

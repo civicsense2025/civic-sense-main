@@ -25,7 +25,7 @@ COMMENT ON COLUMN user_progress.adaptive_difficulty IS 'Whether to adapt questio
 COMMENT ON COLUMN user_progress.learning_style IS 'User preferred learning style: visual, reading, mixed, challenge';
 COMMENT ON COLUMN user_progress.total_xp IS 'Total experience points earned';
 COMMENT ON COLUMN user_progress.current_level IS 'Current user level based on XP';
-COMMENT ON COLUMN user_progress.xp_to_next_level IS 'XP needed to reach next level';
+COMMENT ON COLUMN user_progress.xp_to_next_level IS 'XP needed to reach next level'; 
 
 -- Create view for comprehensive user stats (moved from migration 005)
 CREATE OR REPLACE VIEW user_comprehensive_stats AS

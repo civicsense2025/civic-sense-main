@@ -17,6 +17,7 @@
     "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/post-generate-types.js"
   },
   "dependencies": {
+    "@flags-sdk/statsig": "^0.2.2",
     "@google-cloud/text-to-speech": "^6.1.0",
     "@google-cloud/translate": "^9.1.0",
     "@hookform/resolvers": "^3.9.1",
@@ -59,6 +60,7 @@
     "date-fns": "4.1.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "8.5.1",
+    "flags": "^4.0.1",
     "framer-motion": "^12.18.1",
     "google-auth-library": "^10.1.0",
     "input-otp": "1.4.1",

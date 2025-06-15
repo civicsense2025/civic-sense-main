@@ -43,12 +43,12 @@ export function TopicSearch({ searchQuery, onSearchChange, variant = 'modal' }: 
   if (variant === 'dropdown') {
     return (
       <>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="w-full flex items-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg px-3 py-2 font-light transition-colors"
-        >
-          <Search className="mr-3 h-4 w-4" />
-          <span>Search Topics</span>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="w-full flex items-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg px-3 py-2 font-light transition-colors"
+      >
+        <Search className="mr-3 h-4 w-4" />
+        <span>Search Topics</span>
         </button>
         
         {/* Search Modal for dropdown variant - rendered outside button */}

@@ -22,6 +22,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Switch } from "@/components/ui/switch"
+import { Crown } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth/auth-provider"
+import { usePremium } from "@/hooks/usePremium"
 
 interface VoiceOption {
   voice: SpeechSynthesisVoice
@@ -681,7 +686,10 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     setHighlighting
   } = useGlobalAudio()
 
+  const { user } = useAuth()
+  const { isPremium, isPro } = usePremium()
   const [isSupported, setIsSupported] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const [voices, setVoices] = useState<VoiceOption[]>([])
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
   const [rate, setRate] = useState([1.0])
@@ -698,17 +706,15 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     paused: boolean
     lastUpdate: string
   } | null>(null)
-  const [useCloudTTS, setUseCloudTTS] = useState(true) // Default to Cloud TTS for better quality
+  const [useCloudTTS, setUseCloudTTS] = useState(true) // Default to premium
   const [targetLanguage, setTargetLanguage] = useState('en-US')
-  const [cloudVoiceType, setCloudVoiceType] = useState<'STANDARD' | 'WAVENET' | 'NEURAL2'>('NEURAL2')
-  const [cloudVoiceGender, setCloudVoiceGender] = useState<'MALE' | 'FEMALE' | 'NEUTRAL'>('NEUTRAL')
-  const [autoTranslate, setAutoTranslate] = useState(true)
-  const [usageStats, setUsageStats] = useState<{
-    charactersUsed: number
-    estimatedCost: string
-  } | null>(null)
-
+  const [voiceType, setVoiceType] = useState<'CHIRP3_HD'>('CHIRP3_HD')
+  const [voiceGender, setVoiceGender] = useState<'MALE' | 'FEMALE' | 'NEUTRAL'>('FEMALE')
+  const [autoDetectLanguage, setAutoDetectLanguage] = useState(false)
+  const [isCloudTTSLoading, setIsCloudTTSLoading] = useState(false)
+  const [usageStats, setUsageStats] = useState<{ charactersUsed: number; estimatedCost: string } | null>(null)
   const previousVolumeRef = useRef(0.8)
+  const router = useRouter()
 
   // Check for speech synthesis support and load voices
   useEffect(() => {
@@ -845,45 +851,31 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   }, [isSupported])
 
   const getVoiceQuality = (voice: SpeechSynthesisVoice): 'high' | 'medium' | 'low' => {
-    const name = voice.name.toLowerCase()
+    // Simplified quality detection - just basic categorization
+    const voiceName = voice.name.toLowerCase()
+    const voiceLang = voice.lang.toLowerCase()
     
-    // High quality voices (natural sounding)
-    const highQualityPatterns = [
-      'neural', 'premium', 'enhanced', 'natural', 'wavenet',
-      'siri', 'alex', 'samantha', 'karen', 'daniel', 'fiona',
-      'moira', 'tessa', 'ava', 'allison', 'susan', 'vicki',
-      'victoria', 'bruce', 'fred', 'junior', 'kathy', 'princess',
-      'ralph', 'trinoids', 'cellos', 'good news', 'bad news',
-      'bahh', 'bells', 'boing', 'bubbles', 'deranged', 'hysterical',
-      'pipe organ', 'whisper', 'zarvox', 'google', 'chrome'
-    ]
-    
-    if (highQualityPatterns.some(pattern => name.includes(pattern))) {
+    // High quality indicators (natural-sounding voices)
+    if (voiceName.includes('neural') || 
+        voiceName.includes('premium') || 
+        voiceName.includes('enhanced') ||
+        voiceName.includes('natural') ||
+        voiceName.includes('eloquence') ||
+        voiceName.includes('vocalizer') ||
+        voiceName.includes('nuance')) {
       return 'high'
     }
     
-    // Medium quality voices
-    const mediumQualityPatterns = [
-      'compact', 'eloquence', 'system', 'default'
-    ]
-    
-    if (mediumQualityPatterns.some(pattern => name.includes(pattern)) || voice.localService) {
+    // Medium quality (standard system voices)
+    if (voiceName.includes('microsoft') || 
+        voiceName.includes('apple') ||
+        voiceName.includes('google') ||
+        voiceName.includes('system')) {
       return 'medium'
     }
     
-    // Low quality (robotic/synthetic) voices
-    const lowQualityPatterns = [
-      'microsoft', 'espeak', 'festival', 'flite', 'pico',
-      'robot', 'synthetic', 'computer', 'artificial',
-      'speech synthesis', 'tts', 'text-to-speech'
-    ]
-    
-    if (lowQualityPatterns.some(pattern => name.includes(pattern))) {
-      return 'low'
-    }
-    
-    // Default to medium for unknown voices
-    return 'medium'
+    // Default to low for basic/robotic voices
+    return 'low'
   }
 
   const toggleMute = () => {
@@ -940,9 +932,9 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         body: JSON.stringify({
           text,
           targetLanguage,
-          voiceGender: cloudVoiceGender,
-          voiceType: cloudVoiceType,
-          autoDetectLanguage: autoTranslate,
+          voiceGender: voiceGender,
+          voiceType: voiceType,
+          autoDetectLanguage: autoDetectLanguage,
           speakingRate: rate[0],
           pitch: pitch[0],
           volumeGainDb: (volume[0] - 0.5) * 20 // Convert 0-1 to -10 to +10 dB
@@ -1336,251 +1328,185 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       </div>
                     </div>
 
-                    {/* Voice Selection */}
-                    <div className="p-2 space-y-2">
+                    {/* Voice Selection - Simplified to Basic vs Premium */}
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                          Browser Voice ({voices.length} quality filtered)
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Voice Options
                         </label>
-                        {voices.length === 0 && (
-                          <span className="text-xs text-red-500">Loading...</span>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {useCloudTTS ? 'Premium' : 'Basic'}
+                          </span>
+                          <Switch
+                            checked={useCloudTTS}
+                            onCheckedChange={setUseCloudTTS}
+                          />
+                        </div>
                       </div>
-                      <select
-                        value={selectedVoice?.name || ''}
-                        onChange={(e) => {
-                          const voice = voices.find(v => v.voice.name === e.target.value)?.voice
-                          if (voice) setSelectedVoice(voice)
-                        }}
-                        className="w-full text-xs p-2 border rounded bg-background max-h-32 overflow-y-auto"
-                        disabled={voices.length === 0}
-                      >
-                        {voices.length === 0 ? (
-                          <option>Loading voices...</option>
-                        ) : (
-                          voices.map((voiceOption, index) => (
-                            <option key={`${voiceOption.voice.name}-${voiceOption.voice.lang}-${index}`} value={voiceOption.voice.name}>
-                              {voiceOption.name} ({voiceOption.lang}) [{voiceOption.quality}]
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      
-                      {/* Voice info */}
-                      {selectedVoice && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded">
-                          <div>Language: {selectedVoice.lang}</div>
-                          <div>Local: {selectedVoice.localService ? 'Yes' : 'No'}</div>
-                          <div>Default: {selectedVoice.default ? 'Yes' : 'No'}</div>
+
+                      {/* Basic Browser Voices (Free) */}
+                      {!useCloudTTS && (
+                        <div className="space-y-3">
+                          <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                Browser Voices (Free)
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                              Standard system voices available on your device
+                            </p>
+                            
+                            {/* Voice Selection Dropdown */}
+                            <select
+                              value={selectedVoice?.name || ''}
+                              onChange={(e) => {
+                                const voice = voices.find(v => v.voice.name === e.target.value)?.voice
+                                setSelectedVoice(voice || null)
+                              }}
+                              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="">Auto-select best voice</option>
+                              {voices
+                                .filter(voiceOption => {
+                                  // Only show decent quality browser voices
+                                  const quality = getVoiceQuality(voiceOption.voice)
+                                  return quality === 'high' || quality === 'medium'
+                                })
+                                .slice(0, 10) // Limit to top 10 voices
+                                .map((voiceOption) => (
+                                  <option key={voiceOption.voice.name} value={voiceOption.voice.name}>
+                                    {voiceOption.name} ({voiceOption.voice.lang})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
                         </div>
                       )}
-                      
-                      {/* Help text */}
-                      <div className="text-xs text-slate-500 dark:text-slate-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-2">
-                        <div className="font-medium text-amber-700 dark:text-amber-300 mb-1">💡 Better Voice Options:</div>
-                        <div>• <strong>Best:</strong> Enable Google Cloud TTS above</div>
-                        <div>• <strong>Good:</strong> Install system voices (macOS: System Preferences → Accessibility → Spoken Content)</div>
-                        <div>• <strong>Current:</strong> {voices.length} filtered browser voices (from 200+ total)</div>
-                      </div>
-                      
-                      {/* Refresh voices button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const availableVoices = speechSynthesis.getVoices()
-                          console.log('Manual refresh - voices found:', availableVoices.length)
-                          // Trigger voice reload
-                          window.speechSynthesis.cancel()
-                          setTimeout(() => {
-                            window.dispatchEvent(new Event('voiceschanged'))
-                          }, 100)
-                        }}
-                        className="w-full text-xs h-6"
-                      >
-                        🔄 Refresh Voices
-                      </Button>
-                    </div>
 
-                    <div className="p-2 space-y-2">
-                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                        Speed: {rate[0].toFixed(1)}x
-                      </label>
-                      <Slider
-                        value={rate}
-                        onValueChange={setRate}
-                        min={0.5}
-                        max={2.0}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div className="p-2 space-y-2">
-                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                        Pitch: {pitch[0].toFixed(1)}
-                      </label>
-                      <Slider
-                        value={pitch}
-                        onValueChange={setPitch}
-                        min={0.5}
-                        max={2.0}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    {/* Diagnostics */}
-                    {diagnostics && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <div className="p-2">
-                          <label className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">
-                            Status
-                          </label>
-                          <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                            <div>Voices: {diagnostics.voiceCount}</div>
-                            <div>Speaking: {diagnostics.speaking ? '✅' : '❌'}</div>
-                            <div>Pending: {diagnostics.pending ? '⏳' : '✅'}</div>
-                            <div>Updated: {diagnostics.lastUpdate}</div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Translation Settings */}
-                    <DropdownMenuSeparator />
-                    <div className="p-2 space-y-2">
-                      <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-2">
-                        <label className="flex items-center space-x-2 text-sm font-medium text-green-800 dark:text-green-200">
-                          <input
-                            type="checkbox"
-                            checked={useCloudTTS}
-                            onChange={(e) => setUseCloudTTS(e.target.checked)}
-                            className="rounded"
-                          />
-                          <span>🌍 Google Cloud TTS (Premium Quality)</span>
-                        </label>
-                        <div className="text-xs text-green-700 dark:text-green-300 mt-1 ml-6">
-                          ✨ Natural-sounding AI voices • 25+ languages • Regional accents
-                        </div>
-                      </div>
-                      
+                      {/* Premium Chirp 3: HD Voices (Members Only) */}
                       {useCloudTTS && (
-                        <div className="space-y-3 border-l-2 border-blue-200 dark:border-blue-800 pl-3">
-                          {/* Language Selection */}
-                          <div>
-                            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">
-                              Target Language
-                            </label>
-                            <select
-                              value={targetLanguage}
-                              onChange={(e) => setTargetLanguage(e.target.value)}
-                              className="w-full text-xs p-2 border rounded bg-background"
-                            >
-                              <option value="en-US">English (US)</option>
-                              <option value="en-GB">English (UK)</option>
-                              <option value="es-ES">Spanish (Spain)</option>
-                              <option value="es-MX">Spanish (Mexico)</option>
-                              <option value="fr-FR">French (France)</option>
-                              <option value="fr-CA">French (Canada)</option>
-                              <option value="de-DE">German</option>
-                              <option value="it-IT">Italian</option>
-                              <option value="pt-BR">Portuguese (Brazil)</option>
-                              <option value="pt-PT">Portuguese (Portugal)</option>
-                              <option value="ja-JP">Japanese</option>
-                              <option value="ko-KR">Korean</option>
-                              <option value="zh-CN">Chinese (Mandarin)</option>
-                              <option value="zh-TW">Chinese (Taiwan)</option>
-                              <option value="hi-IN">Hindi</option>
-                              <option value="ar-XA">Arabic</option>
-                              <option value="ru-RU">Russian</option>
-                              <option value="nl-NL">Dutch</option>
-                              <option value="sv-SE">Swedish</option>
-                              <option value="da-DK">Danish</option>
-                              <option value="no-NO">Norwegian</option>
-                              <option value="fi-FI">Finnish</option>
-                              <option value="pl-PL">Polish</option>
-                              <option value="tr-TR">Turkish</option>
-                              <option value="th-TH">Thai</option>
-                              <option value="vi-VN">Vietnamese</option>
-                            </select>
-                          </div>
+                        <div className="space-y-3">
+                          {(user && (isPremium || isPro)) ? (
+                            <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                                  ✨ Google Chirp 3: HD Voices (Ultra Premium)
+                                </span>
+                              </div>
+                              <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
+                                🎯 LLM-powered voices with unparalleled realism and emotional resonance
+                              </p>
+                              <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">
+                                Features: Aoede, Puck, Kore, Charon + 26 more premium voices
+                              </p>
+                              
+                              {/* Language Selection */}
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                                  Target Language
+                                </label>
+                                <select
+                                  value={targetLanguage}
+                                  onChange={(e) => setTargetLanguage(e.target.value)}
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                  <option value="en-US">English (US)</option>
+                                  <option value="en-GB">English (UK)</option>
+                                  <option value="en-AU">English (Australia)</option>
+                                  <option value="es-US">Spanish (US)</option>
+                                  <option value="es-ES">Spanish (Spain)</option>
+                                  <option value="fr-FR">French (France)</option>
+                                  <option value="de-DE">German</option>
+                                  <option value="it-IT">Italian</option>
+                                  <option value="pt-BR">Portuguese (Brazil)</option>
+                                  <option value="ja-JP">Japanese</option>
+                                  <option value="ko-KR">Korean</option>
+                                  <option value="zh-CN">Chinese (Mandarin)</option>
+                                </select>
+                              </div>
 
-                          {/* Voice Type */}
-                          <div>
-                            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">
-                              Voice Quality
-                            </label>
-                            <select
-                              value={cloudVoiceType}
-                              onChange={(e) => setCloudVoiceType(e.target.value as 'STANDARD' | 'WAVENET' | 'NEURAL2')}
-                              className="w-full text-xs p-2 border rounded bg-background"
-                            >
-                              <option value="NEURAL2">Neural2 (Best Quality - $16/1M chars)</option>
-                              <option value="WAVENET">WaveNet (High Quality - $16/1M chars)</option>
-                              <option value="STANDARD">Standard (Good Quality - $4/1M chars)</option>
-                            </select>
-                          </div>
+                              {/* Voice Quality Selection */}
+                              <div className="space-y-2 mt-3">
+                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                                  Voice Quality
+                                </label>
+                                <select
+                                  value={voiceType}
+                                  onChange={(e) => setVoiceType(e.target.value as 'CHIRP3_HD')}
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                  <option value="CHIRP3_HD">✨ Chirp 3: HD (Ultra Premium - $32/1M chars)</option>
+                                </select>
+                              </div>
 
-                          {/* Voice Gender */}
-                          <div>
-                            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">
-                              Voice Gender
-                            </label>
-                            <select
-                              value={cloudVoiceGender}
-                              onChange={(e) => setCloudVoiceGender(e.target.value as 'MALE' | 'FEMALE' | 'NEUTRAL')}
-                              className="w-full text-xs p-2 border rounded bg-background"
-                            >
-                              <option value="NEUTRAL">Neutral</option>
-                              <option value="FEMALE">Female</option>
-                              <option value="MALE">Male</option>
-                            </select>
-                          </div>
+                              {/* Voice Gender */}
+                              <div className="space-y-2 mt-3">
+                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                                  Voice Gender
+                                </label>
+                                <select
+                                  value={voiceGender}
+                                  onChange={(e) => setVoiceGender(e.target.value as 'MALE' | 'FEMALE' | 'NEUTRAL')}
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                                  <option value="FEMALE">Female</option>
+                                  <option value="MALE">Male</option>
+                                  <option value="NEUTRAL">Neutral</option>
+                                </select>
+                              </div>
 
-                          {/* Auto-translate toggle */}
-                          <div>
-                            <label className="flex items-center space-x-2 text-xs">
-                              <input
-                                type="checkbox"
-                                checked={autoTranslate}
-                                onChange={(e) => setAutoTranslate(e.target.checked)}
-                                className="rounded"
-                              />
-                              <span>Auto-detect and translate</span>
-                            </label>
-                          </div>
+                              {/* Auto-detect and translate */}
+                              <div className="flex items-center space-x-2 mt-3">
+                                <input
+                                  type="checkbox"
+                                  id="autoDetect"
+                                  checked={autoDetectLanguage}
+                                  onChange={(e) => setAutoDetectLanguage(e.target.checked)}
+                                  className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                                />
+                                <label htmlFor="autoDetect" className="text-xs text-purple-700 dark:text-purple-300">
+                                  Auto-detect and translate
+                                </label>
+                              </div>
 
-                          {/* Usage Stats */}
-                          {usageStats && (
-                            <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded">
-                              <div>Characters used: {usageStats.charactersUsed.toLocaleString()}</div>
-                              <div>Estimated cost: {usageStats.estimatedCost}</div>
+                              {/* Test Button */}
+                              <Button
+                                onClick={() => handleCloudTTSPlay("Welcome to Chirp 3 HD voices! Experience the future of text-to-speech with unparalleled realism and emotional depth.")}
+                                className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white text-sm py-2"
+                              >
+                                {isCloudTTSLoading ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Testing...
+                                  </>
+                                ) : (
+                                  <>✨ Test Chirp 3: HD</>
+                                )}
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Crown className="h-4 w-4 text-amber-600" />
+                                <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                  Premium Voices Available
+                                </span>
+                              </div>
+                              <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                                Upgrade to access Google Chirp 3: HD voices with LLM-powered realism
+                              </p>
+                              <Button
+                                onClick={() => router.push('/upgrade-to-lifetime')}
+                                className="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm py-2"
+                              >
+                                Upgrade for Premium Voices
+                              </Button>
                             </div>
                           )}
-
-                          {/* Test Cloud TTS */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCloudTTSPlay("Hello! This is a test of Google Cloud Text-to-Speech with high quality neural voices.")}
-                            className="w-full text-xs h-6"
-                          >
-                            🎵 Test Cloud TTS
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {!useCloudTTS && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                          <div>• Auto-detect source language</div>
-                          <div>• Translate to 25+ languages</div>
-                          <div>• High-quality Neural voices</div>
-                          <div>• Regional accents</div>
-                          <div className="text-blue-600 dark:text-blue-400 mt-2">
-                            💡 Enable Google Cloud TTS for premium features
-                          </div>
                         </div>
                       )}
                     </div>

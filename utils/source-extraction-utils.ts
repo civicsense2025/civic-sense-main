@@ -55,6 +55,11 @@ async function extractAndSaveSourcesFromQuestion(questionId: string, explanation
       if (response.ok) {
         const metadata = await response.json()
         metadataCache.set(url, { data: metadata, timestamp: Date.now() })
+        
+        // Save the enhanced metadata to the database
+        await saveOrUpdateSourceMetadata(url, metadata)
+        
+        // Link the question to the source
         await linkQuestionToSource(questionId, url, metadata)
       }
     } catch (error) {
@@ -258,6 +263,9 @@ export async function processQuestionSources(question: QuestionData) {
 
           if (response.ok) {
             const metadata = await response.json()
+            
+            // Save the enhanced metadata to the database
+            await saveOrUpdateSourceMetadata(url, metadata)
             
             // Create source link
             await createQuestionSourceLink(question.id, url, metadata)
@@ -494,6 +502,41 @@ export async function monitorFetchQueue() {
   }
 }
 
+// Fetch and save metadata for a single URL
+export async function fetchAndSaveSourceMetadata(url: string) {
+  try {
+    console.log(`🔍 Fetching metadata for: ${url}`)
+
+    const response = await fetch('/api/fetch-meta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    })
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`)
+    }
+
+    const metadata = await response.json()
+    
+    // Save the enhanced metadata to the database
+    await saveOrUpdateSourceMetadata(url, metadata)
+    
+    console.log(`✅ Successfully fetched and saved metadata for ${url}:`, {
+      title: metadata.title,
+      author: metadata.author,
+      publishedTime: metadata.publishedTime,
+      domain: metadata.domain
+    })
+    
+    return metadata
+
+  } catch (error) {
+    console.error(`❌ Error fetching metadata for ${url}:`, error)
+    throw error
+  }
+}
+
 // Clean up old or failed metadata
 export async function cleanupOldMetadata(daysOld: number = 30) {
   try {
@@ -517,5 +560,118 @@ export async function cleanupOldMetadata(daysOld: number = 30) {
   } catch (error) {
     console.error('Error cleaning up metadata:', error)
     throw error
+  }
+}
+
+// Save or update source metadata in the database
+async function saveOrUpdateSourceMetadata(url: string, metadata: any) {
+  try {
+    console.log(`💾 Saving metadata for ${url}:`, {
+      title: metadata.title,
+      author: metadata.author,
+      publishedTime: metadata.publishedTime,
+      modifiedTime: metadata.modifiedTime
+    })
+
+    // Parse dates if they exist
+    let publishedTime = null
+    let modifiedTime = null
+    
+    if (metadata.publishedTime) {
+      try {
+        publishedTime = new Date(metadata.publishedTime).toISOString()
+      } catch (error) {
+        console.warn(`Invalid published date for ${url}:`, metadata.publishedTime)
+      }
+    }
+    
+    if (metadata.modifiedTime) {
+      try {
+        modifiedTime = new Date(metadata.modifiedTime).toISOString()
+      } catch (error) {
+        console.warn(`Invalid modified date for ${url}:`, metadata.modifiedTime)
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('source_metadata')
+      .upsert({
+        url: url,
+        title: metadata.title || metadata.siteName || 'Unknown Source',
+        description: metadata.description || null,
+        domain: metadata.domain || new URL(url).hostname,
+        
+        // Enhanced metadata fields
+        author: metadata.author || null,
+        published_time: publishedTime,
+        modified_time: modifiedTime,
+        
+        // OpenGraph metadata
+        og_title: metadata.title || null,
+        og_description: metadata.description || null,
+        og_image: metadata.image || null,
+        og_site_name: metadata.siteName || null,
+        og_type: metadata.type || null,
+        
+        // Twitter metadata
+        twitter_title: metadata.title || null,
+        twitter_description: metadata.description || null,
+        twitter_image: metadata.image || null,
+        
+        // Additional metadata
+        favicon_url: metadata.favicon || null,
+        canonical_url: metadata.canonicalUrl || url,
+        language: metadata.language || null,
+        
+        // Technical metadata
+        last_fetched_at: new Date().toISOString(),
+        fetch_status: 'success',
+        has_https: url.startsWith('https://'),
+        is_accessible: true,
+        
+        // Update timestamp
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'url'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    console.log(`✅ Saved metadata for ${url} with ID: ${data.id}`)
+    return data
+
+  } catch (error) {
+    console.error('Error saving source metadata:', error)
+    
+    // Try to save with minimal data as fallback
+    try {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('source_metadata')
+        .upsert({
+          url: url,
+          title: metadata.title || 'Unknown Source',
+          domain: new URL(url).hostname,
+          fetch_status: 'partial',
+          last_fetched_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'url'
+        })
+        .select()
+        .single()
+
+      if (fallbackError) throw fallbackError
+      
+      console.log(`⚠️ Saved fallback metadata for ${url}`)
+      return fallbackData
+      
+    } catch (fallbackError) {
+      console.error('Error saving fallback metadata:', fallbackError)
+      throw error // Throw original error
+    }
   }
 }
