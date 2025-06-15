@@ -14,6 +14,8 @@ import { AchievementNotification } from "@/components/achievement-notification"
 import { useAuth } from "@/components/auth/auth-provider"
 import { updateEnhancedProgress, type Achievement } from "@/lib/enhanced-gamification"
 import { quizDatabase, type QuizAttemptData } from "@/lib/quiz-database"
+import { useGamification } from "@/hooks/useGamification"
+import { progressiveXpOperations } from "@/lib/enhanced-gamification"
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
 
@@ -34,6 +36,7 @@ interface QuizResultsProps {
 
 export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizResultsProps) {
   const { user } = useAuth()
+  const { progress, refreshProgress } = useGamification()
   const correctAnswers = userAnswers.filter((answer) => answer.isCorrect).length
   const totalQuestions = questions.length
   const score = Math.round((correctAnswers / totalQuestions) * 100)
@@ -142,43 +145,23 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         // Clear any partial quiz state since we completed it
         quizDatabase.clearPartialQuizState(user.id, topicId)
 
-        // Prepare question responses for gamification system
-        const questionResponses = userAnswers.map(answer => {
-          const question = questions.find(q => q.question_number === answer.questionId)
-          return {
-            questionId: answer.questionId.toString(),
-            category: question?.category || 'General',
-            isCorrect: answer.isCorrect,
-            timeSpent: answer.timeSpent
-          }
-        })
+        // Note: Enhanced gamification progress is now handled in the QuizEngine component
+        // to avoid double-processing. The quiz engine calls updateProgress before showing results.
+        console.log('💾 Quiz results saved to database and localStorage')
 
-        const quizData = {
-          topicId,
-          totalQuestions,
-          correctAnswers,
-          timeSpentSeconds: totalTime,
-          questionResponses
-        }
-
-        const results = await updateEnhancedProgress(user.id, quizData)
-        
-        if (results.newAchievements.length > 0) {
-          setNewAchievements(results.newAchievements)
-        }
-
-        if (results.levelUp) {
-          // Calculate XP gained (this would come from the actual system)
-          const xpGained = correctAnswers * 10 + (isPerfectScore ? 50 : 0) + (totalTime < 300 ? 25 : 0)
-          setLevelUpInfo({ newLevel: results.levelUp ? 1 : 1, xpGained }) // This would be actual new level
+        // Refresh gamification progress to get updated stats
+        if (refreshProgress) {
+          await refreshProgress()
         }
 
         setProgressUpdated(true)
 
         // Show achievements after a delay to let the score animation finish
         setTimeout(() => {
-          if (results.newAchievements.length > 0 || results.levelUp) {
-            setShowAchievements(true)
+          // Check if we have any new achievements from the progress data
+          if (progress?.currentStreak && progress.currentStreak > 0) {
+            // This could trigger achievement notifications based on updated progress
+            console.log('🎮 Updated gamification stats available')
           }
         }, 3000)
 
@@ -362,7 +345,7 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
           </p>
         </div>
 
-        {/* Stats Cards - Fixed visibility */}
+        {/* Stats Cards - Enhanced with gamification data */}
         {showStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
@@ -378,15 +361,15 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
             </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">🎯</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Best Streak</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{streak}</div>
+              <div className="text-2xl mb-2">🔥</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Global Streak</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{progress?.currentStreak || 0}</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-2xl mb-2">🏆</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Total Time</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(totalTime)}</div>
+              <div className="text-2xl mb-2">🎚️</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Level</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{progress?.currentLevel || 1}</div>
             </div>
           </div>
         )}

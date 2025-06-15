@@ -9,18 +9,18 @@ interface AutoReadPageProps {
 }
 
 export function AutoReadPage({ delay = 2000, minContentLength = 100 }: AutoReadPageProps) {
-  const { autoPlayEnabled, autoReadPageContent } = useGlobalAudio()
+  const { autoPlayEnabled, readCurrentPage } = useGlobalAudio()
 
   useEffect(() => {
     if (autoPlayEnabled) {
       // Auto-read page content when component mounts and autoplay is enabled
       const timer = setTimeout(() => {
-        autoReadPageContent()
+        readCurrentPage()
       }, delay)
 
       return () => clearTimeout(timer)
     }
-  }, [autoPlayEnabled, autoReadPageContent, delay])
+  }, [autoPlayEnabled, readCurrentPage, delay])
 
   // This component doesn't render anything visible
   return null

@@ -98,7 +98,10 @@ export function LearningProgressModal({ isOpen, onClose }: LearningProgressModal
         categoriesAttempted: 0,
         activeGoals: 0,
         customDecksCount: 0,
-        achievementsThisWeek: 0
+        achievementsThisWeek: 0,
+        availableXpForBoosts: 0,
+        totalBoostsPurchased: 0,
+        activeBoosts: []
       })
       setCategorySkills([])
       setAchievements([])

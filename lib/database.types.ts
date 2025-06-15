@@ -2077,6 +2077,72 @@ export type Database = {
         }
         Relationships: []
       }
+      user_boost_inventory: {
+        Row: {
+          id: string
+          user_id: string
+          boost_type: string
+          quantity: number
+          total_purchased: number
+          last_purchased: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          boost_type: string
+          quantity?: number
+          total_purchased?: number
+          last_purchased?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          boost_type?: string
+          quantity?: number
+          total_purchased?: number
+          last_purchased?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_active_boosts: {
+        Row: {
+          id: string
+          user_id: string
+          boost_type: string
+          started_at: string
+          expires_at: string | null
+          uses_remaining: number | null
+          boost_data: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          boost_type: string
+          started_at?: string
+          expires_at?: string | null
+          uses_remaining?: number | null
+          boost_data?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          boost_type?: string
+          started_at?: string
+          expires_at?: string | null
+          uses_remaining?: number | null
+          boost_data?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       question_feedback_stats: {
@@ -2476,3 +2542,101 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// Enhanced boost types with all new powerups
+export type BoostType = 
+  // Time Management Boosts
+  | 'extra_time'          // +30 seconds per question
+  | 'time_freeze'         // Pause timer for 10 seconds
+  | 'speed_boost'         // +50% XP for completing under time limit
+  | 'time_bank'           // Save unused time for later questions
+  | 'rush_mode'           // Double XP but half time (risk/reward)
+  
+  // Scoring & XP Boosts  
+  | 'double_xp'           // 2x XP for this quiz
+  | 'triple_xp'           // 3x XP for this quiz (rare)
+  | 'perfect_bonus'       // +100% XP if you get 100% score
+  | 'comeback_king'       // Extra XP for each correct answer after wrong one
+  | 'first_try_bonus'     // +25% XP for first-attempt correct answers
+  
+  // Learning Assistance Boosts
+  | 'auto_hint'           // Automatically show hints on wrong answers
+  | 'smart_hint'          // AI-powered contextual hints
+  | 'answer_reveal'       // Eliminate one wrong answer in multiple choice
+  | 'category_insight'    // Show which civic category each question tests
+  | 'explanation_preview' // See explanation before answering (no XP penalty)
+  | 'concept_map'         // Visual connections between questions and concepts
+  
+  // Protection & Safety Boosts
+  | 'second_chance'       // Get one retry on wrong answers
+  | 'streak_shield'       // Protect your streak from one wrong answer
+  | 'mistake_forgiveness' // First wrong answer doesn't count
+  | 'confidence_boost'    // Wrong answers don't reduce confidence score
+  | 'safety_net'          // Minimum 50% score guaranteed
+  
+  // Strategic & Advanced Boosts
+  | 'lucky_guess'         // 50% chance to get correct answer on timeout/skip
+  | 'question_preview'    // See next 3 questions before starting
+  | 'difficulty_scout'    // See difficulty level of each question
+  | 'skip_token'          // Skip one question without penalty (3 uses)
+  | 'topic_mastery'       // +200% XP if you master the topic (90%+ score)
+  | 'civic_scholar'       // Unlock bonus questions for extra XP
+  
+  // Social & Engagement Boosts
+  | 'mentor_mode'         // Get encouraging messages during quiz
+  | 'achievement_hunter'  // 2x progress toward achievements
+  | 'daily_streak'        // Bonus XP for maintaining daily quiz streak
+  | 'weekend_warrior'     // Extra XP on weekends
+  | 'night_owl'           // Bonus XP for late-night quizzing (after 9 PM)
+  
+  // Specialized Learning Boosts
+  | 'constitution_focus'  // Extra hints for constitutional questions
+  | 'current_events'      // Bonus context for recent political developments
+  | 'historical_context'  // Additional historical background for questions
+  | 'local_connection'    // Connect federal topics to local implications
+  | 'debate_prep'         // Practice articulating positions on civic issues
+
+// Enhanced boost inventory table with cooldown tracking
+export interface DbUserBoostInventory {
+  id: string
+  user_id: string
+  boost_type: BoostType
+  quantity: number
+  total_purchased: number
+  last_purchased?: string
+  last_cooldown_used?: string // Track cooldown usage
+  created_at: string
+  updated_at: string
+}
+
+// Enhanced active boosts table
+export interface DbUserActiveBoosts {
+  id: string
+  user_id: string
+  boost_type: BoostType
+  started_at: string
+  expires_at?: string
+  uses_remaining?: number
+  boost_data?: Record<string, any>
+  created_at: string
+}
+
+// New boost definitions table with emoji support
+export interface DbBoostDefinitions {
+  boost_type: BoostType
+  name: string
+  description: string
+  emoji: string // Primary emoji for the boost
+  icon: string // Secondary icon for backwards compatibility
+  xp_cost: number
+  category: 'time' | 'scoring' | 'assistance' | 'protection' | 'strategic' | 'social' | 'learning'
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'
+  duration?: number // Duration in quizzes
+  max_uses?: number // Maximum uses per activation
+  cooldown_hours?: number // Cooldown period in hours
+  level_requirement: number // Minimum user level
+  tags: string[] // Tags for filtering
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}

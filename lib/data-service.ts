@@ -72,10 +72,14 @@ export const dataService = {
    * Get all topics
    */
   async getAllTopics(): Promise<Record<string, TopicMetadata>> {
+    console.log(`🔄 getAllTopics called`)
     try {
+      console.log(`🔍 Checking database availability...`)
       const isDbAvailable = await checkDatabaseAvailability()
+      console.log(`📊 Database available: ${isDbAvailable}`)
       
       if (isDbAvailable) {
+        console.log(`🔄 Attempting to fetch from database...`)
         try {
           const dbTopics = await topicOperations.getAll()
           const topicsRecord: Record<string, TopicMetadata> = {}
@@ -105,20 +109,33 @@ export const dataService = {
     }
     
     // Fallback to mock data (also filter strictly)
+    console.log(`🔄 Falling back to mock data...`)
+    console.log(`📦 Mock data keys:`, Object.keys(mockTopicsData))
+    console.log(`📦 Mock data sample:`, Object.values(mockTopicsData).slice(0, 2))
+    
     const filteredMockData: Record<string, TopicMetadata> = {}
     Object.entries(mockTopicsData).forEach(([topicId, topic]) => {
+      console.log(`🔍 Checking mock topic "${topic.topic_title}":`, {
+        date: topic.date,
+        dateType: typeof topic.date,
+        hasDate: !!topic.date,
+        isValidString: typeof topic.date === 'string' && topic.date.trim() !== ''
+      })
+      
       // Strict filtering for mock data too
       if (topic.date && 
           topic.date !== null && 
           topic.date !== undefined && 
           !(typeof topic.date === 'string' && topic.date.trim() === '')) {
         filteredMockData[topicId] = topic
+        console.log(`✅ Including mock topic "${topic.topic_title}"`)
       } else {
-        console.warn(`Excluding mock topic "${topic.topic_title}" - invalid or missing date: ${topic.date}`)
+        console.warn(`❌ Excluding mock topic "${topic.topic_title}" - invalid or missing date: ${topic.date}`)
       }
     })
     
     console.log(`📋 Using mock data: ${Object.keys(filteredMockData).length} topics (excluded topics with invalid dates)`)
+    console.log(`📋 Final filtered mock data:`, filteredMockData)
     return cleanObjectContent(filteredMockData)
   },
 

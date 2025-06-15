@@ -95,7 +95,10 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
         categoriesAttempted: 0,
         activeGoals: 0,
         customDecksCount: 0,
-        achievementsThisWeek: 0
+        achievementsThisWeek: 0,
+        availableXpForBoosts: 0,
+        totalBoostsPurchased: 0,
+        activeBoosts: []
       }
 
       setProgress(mockProgress)

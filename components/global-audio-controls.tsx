@@ -112,6 +112,8 @@ class GlobalAudioManager {
   private cleanupTimeouts: NodeJS.Timeout[] = []
   private lastPlayAttempt = 0
   private retryCount = 0
+  private cloudTTSHandler: ((text: string) => Promise<boolean>) | null = null
+  private lastUserInteraction = 0
 
   static getInstance(): GlobalAudioManager {
     if (!GlobalAudioManager.instance) {
@@ -140,6 +142,17 @@ class GlobalAudioManager {
     } catch (e) {
       console.warn('Error notifying listeners:', e)
     }
+  }
+
+  private hasRecentUserInteraction(): boolean {
+    const now = Date.now()
+    const timeSinceInteraction = now - this.lastUserInteraction
+    // Allow auto-play within 5 seconds of user interaction
+    return timeSinceInteraction < 5000
+  }
+
+  recordUserInteraction() {
+    this.lastUserInteraction = Date.now()
   }
 
   private checkSpeechSynthesis(): boolean {
@@ -268,6 +281,12 @@ class GlobalAudioManager {
       return
     }
 
+    // Check if this is an auto-play attempt without recent user interaction
+    if (options?.autoPlay && !this.hasRecentUserInteraction()) {
+      console.log('Auto-play blocked: no recent user interaction')
+      return
+    }
+
     // Check if speech synthesis is available
     if (!this.checkSpeechSynthesis()) {
       console.error('Speech synthesis not available')
@@ -380,7 +399,7 @@ class GlobalAudioManager {
       }
 
       utterance.onerror = (event) => {
-        console.error('Speech error:', event)
+        console.error('Speech error:', event.error || event)
         
         // Try to recover from certain errors
         if (event.error === 'interrupted' && this.retryCount < 2) {
@@ -393,6 +412,25 @@ class GlobalAudioManager {
             }, 200)
           }, 100)
           return
+        }
+        
+        // Handle specific error types
+        if (event.error === 'network') {
+          console.warn('Network error during speech synthesis')
+        } else if (event.error === 'synthesis-failed') {
+          console.error('Speech synthesis failed - voice may not be available')
+        } else if (event.error === 'not-allowed') {
+          console.log('Speech synthesis not allowed - user interaction required for auto-play')
+          // Don't treat this as a critical error for auto-play
+          if (options?.autoPlay) {
+            console.log('Auto-play blocked by browser - this is normal behavior')
+          } else {
+            console.error('Speech synthesis not allowed - check permissions')
+          }
+        } else if (event.error === 'voice-unavailable') {
+          console.error('Selected voice is not available')
+        } else {
+          console.error('Speech error:', event.error)
         }
         
         this.isPlaying = false
@@ -534,8 +572,37 @@ class GlobalAudioManager {
   readCurrentPage() {
     const pageContent = this.extractPageContent()
     if (pageContent) {
-      this.playText(pageContent)
+      this.playText(pageContent, { autoPlay: true })
     }
+  }
+
+  // Method to read specific text content with global settings
+  async readContentWithSettings(text: string) {
+    if (!text) return
+    
+    const cleanText = this.cleanTextForSpeech(text)
+    if (cleanText.trim().length === 0) return
+    
+    // Try Cloud TTS first if handler is registered
+    if (this.cloudTTSHandler) {
+      try {
+        const success = await this.cloudTTSHandler(cleanText)
+        if (success) {
+          console.log('Used Cloud TTS for auto-reading')
+          return
+        }
+      } catch (error) {
+        console.warn('Cloud TTS failed, falling back to browser TTS:', error)
+      }
+    }
+    
+    // Fall back to browser TTS
+    this.playText(cleanText, { 
+      autoPlay: true,
+      onStart: () => {
+        console.log('Auto-reading content with browser TTS')
+      }
+    })
   }
 
   // Simplified and safe page content extraction
@@ -595,6 +662,22 @@ class GlobalAudioManager {
     }
   }
 
+  // Public methods for external audio control (Cloud TTS integration)
+  setPlayingState(playing: boolean, paused: boolean = false) {
+    this.isPlaying = playing
+    this.isPaused = paused
+    this.notifyListeners()
+  }
+
+  getCurrentText(): string {
+    return this.currentText
+  }
+
+  // Register Cloud TTS handler from UI controls
+  setCloudTTSHandler(handler: ((text: string) => Promise<boolean>) | null) {
+    this.cloudTTSHandler = handler
+  }
+
   // Simplified text cleaning
   private cleanTextForSpeech(text: string): string {
     try {
@@ -652,18 +735,56 @@ export function useGlobalAudio() {
     return () => manager.removeListener(updateState)
   }, [manager])
 
+  // Create a version of readContentWithSettings that uses UI settings
+  const readContentWithUISettings = useCallback(async (text: string) => {
+    if (!text) return
+    
+    // If auto-play is disabled, don't read
+    if (!state.autoPlayEnabled) return
+    
+    // Use the manager's method which will try Cloud TTS if configured
+    await manager.readContentWithSettings(text)
+  }, [manager, state.autoPlayEnabled])
+
   return {
     ...state,
-    playText: useCallback((text: string, options?: Parameters<typeof manager.playText>[1]) => 
-      manager.playText(text, options), [manager]),
-    readCurrentPage: useCallback(() => manager.readCurrentPage(), [manager]),
-    pause: useCallback(() => manager.pause(), [manager]),
-    resume: useCallback(() => manager.resume(), [manager]),
-    stop: useCallback(() => manager.stop(), [manager]),
-    restart: useCallback(() => manager.restart(), [manager]),
-    setAutoPlay: useCallback((enabled: boolean) => manager.setAutoPlay(enabled), [manager]),
-    setLoop: useCallback((enabled: boolean) => manager.setLoop(enabled), [manager]),
-    setHighlighting: useCallback((enabled: boolean) => manager.setHighlighting(enabled), [manager])
+    playText: useCallback((text: string, options?: Parameters<typeof manager.playText>[1]) => {
+      manager.recordUserInteraction()
+      return manager.playText(text, options)
+    }, [manager]),
+    readCurrentPage: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.readCurrentPage()
+    }, [manager]),
+    readContentWithSettings: readContentWithUISettings,
+    pause: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.pause()
+    }, [manager]),
+    resume: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.resume()
+    }, [manager]),
+    stop: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.stop()
+    }, [manager]),
+    restart: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.restart()
+    }, [manager]),
+    setAutoPlay: useCallback((enabled: boolean) => {
+      manager.recordUserInteraction()
+      return manager.setAutoPlay(enabled)
+    }, [manager]),
+    setLoop: useCallback((enabled: boolean) => {
+      manager.recordUserInteraction()
+      return manager.setLoop(enabled)
+    }, [manager]),
+    setHighlighting: useCallback((enabled: boolean) => {
+      manager.recordUserInteraction()
+      return manager.setHighlighting(enabled)
+    }, [manager])
   }
 }
 
@@ -689,6 +810,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const { user } = useAuth()
   const { isPremium, isPro } = usePremium()
   const [isSupported, setIsSupported] = useState(false)
+  const manager = GlobalAudioManager.getInstance()
   const [isOpen, setIsOpen] = useState(false)
   const [voices, setVoices] = useState<VoiceOption[]>([])
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
@@ -715,6 +837,60 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const [usageStats, setUsageStats] = useState<{ charactersUsed: number; estimatedCost: string } | null>(null)
   const previousVolumeRef = useRef(0.8)
   const router = useRouter()
+
+  // Register Cloud TTS handler with the global manager
+  useEffect(() => {
+    const cloudTTSHandler = async (text: string): Promise<boolean> => {
+      // Only use Cloud TTS if it's enabled and user has access
+      if (!useCloudTTS || !user || !(isPremium || isPro)) {
+        return false
+      }
+
+      try {
+        setIsCloudTTSLoading(true)
+        
+        const requestBody: any = {
+          text,
+          targetLanguage,
+          voiceGender: voiceGender,
+          voiceType: voiceType,
+          autoDetectLanguage: autoDetectLanguage,
+          speakingRate: rate[0],
+          volumeGainDb: (volume[0] - 0.5) * 20
+        }
+        
+        if (voiceType !== 'CHIRP3_HD') {
+          requestBody.pitch = pitch[0]
+        }
+        
+        const response = await fetch('/api/text-to-speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        })
+
+        const result = await response.json()
+        
+        if (result.success && result.audioContent) {
+          await playCloudAudio(result.audioContent, result)
+          return true
+        }
+        
+        return false
+      } catch (error) {
+        console.warn('Cloud TTS auto-play failed:', error)
+        return false
+      } finally {
+        setIsCloudTTSLoading(false)
+      }
+    }
+
+    manager.setCloudTTSHandler(cloudTTSHandler)
+    
+    return () => {
+      manager.setCloudTTSHandler(null)
+    }
+  }, [useCloudTTS, user, isPremium, isPro, targetLanguage, voiceGender, voiceType, autoDetectLanguage, rate, pitch, volume, manager])
 
   // Check for speech synthesis support and load voices
   useEffect(() => {
@@ -923,22 +1099,30 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const handleCloudTTSPlay = async (text: string) => {
     try {
       setLastError(null)
+      setIsCloudTTSLoading(true)
+      
+      // Chirp 3 HD voices don't support pitch adjustments, so we exclude pitch for premium voices
+      const requestBody: any = {
+        text,
+        targetLanguage,
+        voiceGender: voiceGender,
+        voiceType: voiceType,
+        autoDetectLanguage: autoDetectLanguage,
+        speakingRate: rate[0],
+        volumeGainDb: (volume[0] - 0.5) * 20 // Convert 0-1 to -10 to +10 dB
+      }
+      
+      // Only include pitch for non-Chirp3 voices (if we add other voice types later)
+      if (voiceType !== 'CHIRP3_HD') {
+        requestBody.pitch = pitch[0]
+      }
       
       const response = await fetch('/api/text-to-speech', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text,
-          targetLanguage,
-          voiceGender: voiceGender,
-          voiceType: voiceType,
-          autoDetectLanguage: autoDetectLanguage,
-          speakingRate: rate[0],
-          pitch: pitch[0],
-          volumeGainDb: (volume[0] - 0.5) * 20 // Convert 0-1 to -10 to +10 dB
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const result = await response.json()
@@ -955,6 +1139,28 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
           })
           return
         }
+        
+        // Handle specific error cases
+        if (result.error && result.error.includes('pitch parameters')) {
+          setLastError('Chirp 3 HD voices don\'t support pitch adjustment. Using default pitch.')
+          // Retry without pitch
+          const retryResponse = await fetch('/api/text-to-speech', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...requestBody,
+              pitch: undefined
+            })
+          })
+          const retryResult = await retryResponse.json()
+          if (retryResult.success && retryResult.audioContent) {
+            await playCloudAudio(retryResult.audioContent, retryResult)
+            return
+          }
+        }
+        
         throw new Error(result.error || 'Cloud TTS failed')
       }
 
@@ -968,41 +1174,16 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
 
       // Play the audio
       if (result.audioContent) {
-        const audioBlob = new Blob([
-          Uint8Array.from(atob(result.audioContent), c => c.charCodeAt(0))
-        ], { type: 'audio/mpeg' })
-        
-        const audioUrl = URL.createObjectURL(audioBlob)
-        const audio = new Audio(audioUrl)
-        
-        audio.onplay = () => {
-          console.log('Cloud TTS audio started')
-        }
-        
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl)
-          console.log('Cloud TTS audio ended')
-        }
-        
-        audio.onerror = (error) => {
-          console.error('Cloud TTS audio playback error:', error)
-          setLastError('Audio playback failed')
-          URL.revokeObjectURL(audioUrl)
-        }
-        
-        await audio.play()
-        
-        // Show translation info if available
-        if (result.translatedText && result.detectedLanguage) {
-          console.log(`Translated from ${result.detectedLanguage}: "${result.translatedText}"`)
-        }
+        await playCloudAudio(result.audioContent, result)
       }
 
     } catch (error) {
       console.error('Cloud TTS error:', error)
-      setLastError(`Cloud TTS failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setLastError(`Cloud TTS failed: ${errorMessage}`)
       
       // Fallback to browser TTS
+      console.log('Falling back to browser TTS')
       setUseCloudTTS(false)
       playText(text, {
         voice: selectedVoice || undefined,
@@ -1010,6 +1191,84 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         pitch: pitch[0],
         volume: volume[0]
       })
+    } finally {
+      setIsCloudTTSLoading(false)
+    }
+  }
+
+  const playCloudAudio = async (audioContent: string, result: any) => {
+    try {
+      const audioBlob = new Blob([
+        Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))
+      ], { type: 'audio/mpeg' })
+      
+      const audioUrl = URL.createObjectURL(audioBlob)
+      const audio = new Audio(audioUrl)
+      
+      audio.onloadstart = () => {
+        console.log('Cloud TTS audio loading...')
+      }
+      
+      audio.oncanplay = () => {
+        console.log('Cloud TTS audio ready to play')
+      }
+      
+      audio.onplay = () => {
+        console.log('Cloud TTS audio started')
+        // Update global state to reflect playing
+        GlobalAudioManager.getInstance().setPlayingState(true, false)
+      }
+      
+      audio.onended = () => {
+        console.log('Cloud TTS audio ended')
+        URL.revokeObjectURL(audioUrl)
+        // Update global state
+        GlobalAudioManager.getInstance().setPlayingState(false, false)
+      }
+      
+      audio.onerror = (error) => {
+        console.error('Cloud TTS audio playback error:', error)
+        setLastError('Audio playback failed - trying browser fallback')
+        URL.revokeObjectURL(audioUrl)
+        
+        // Fallback to browser TTS
+        setUseCloudTTS(false)
+        const manager = GlobalAudioManager.getInstance()
+        playText(manager.getCurrentText() || 'Audio playback failed', {
+          voice: selectedVoice || undefined,
+          rate: rate[0],
+          pitch: pitch[0],
+          volume: volume[0]
+        })
+      }
+      
+      audio.onpause = () => {
+        console.log('Cloud TTS audio paused')
+        GlobalAudioManager.getInstance().setPlayingState(true, true)
+      }
+      
+      // Set volume
+      audio.volume = volume[0]
+      
+      await audio.play()
+      
+      // Show translation info if available
+      if (result.translatedText && result.detectedLanguage) {
+        console.log(`Translated from ${result.detectedLanguage}: "${result.translatedText}"`)
+      }
+      
+    } catch (playError) {
+      console.error('Error playing cloud audio:', playError)
+      setLastError('Failed to play audio - using browser fallback')
+      
+             // Fallback to browser TTS
+       setUseCloudTTS(false)
+       playText(GlobalAudioManager.getInstance().getCurrentText() || 'Audio error', {
+         voice: selectedVoice || undefined,
+         rate: rate[0],
+         pitch: pitch[0],
+         volume: volume[0]
+       })
     }
   }
 
@@ -1036,31 +1295,31 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     <TooltipProvider>
       <div className={cn(
         "fixed bottom-6 right-6 z-50 transition-all duration-300 ease-out",
-        isMinimized ? "w-14 h-14" : "min-w-72",
+        isMinimized ? "w-14 h-14" : "w-80",
         className
       )}>
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xl">
+        <div className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border border-slate-100 dark:border-slate-900 rounded-2xl shadow-xl">
           {isMinimized ? (
-            // Minimized state - just the main control button
-            <div className="p-3">
+            // Minimized state - clean single button
+            <div className="p-4">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={currentText ? (isPlaying ? (isPaused ? resume : pause) : restart) : readCurrentPage}
-                    className="w-8 h-8 p-0 rounded-full"
+                    className="w-6 h-6 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
                     {isPlaying ? (
-                      isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />
+                      isPaused ? <Play className="h-3 w-3 text-slate-900 dark:text-white" /> : <Pause className="h-3 w-3 text-slate-900 dark:text-white" />
                     ) : currentText ? (
-                      <Play className="h-4 w-4" />
+                      <Play className="h-3 w-3 text-slate-900 dark:text-white" />
                     ) : (
-                      <Headphones className="h-4 w-4" />
+                      <Headphones className="h-3 w-3 text-slate-900 dark:text-white" />
                     )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
                   {currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
                 </TooltipContent>
               </Tooltip>
@@ -1071,71 +1330,41 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsMinimized(false)}
-                    className="absolute -top-1 -right-1 w-5 h-5 p-0 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600"
+                    className="absolute -top-1 -right-1 w-4 h-4 p-0 rounded-full bg-white dark:bg-black border border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
-                    <Maximize2 className="h-2 w-2" />
+                    <Maximize2 className="h-2 w-2 text-slate-900 dark:text-white" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Expand controls</TooltipContent>
+                <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                  Expand controls
+                </TooltipContent>
               </Tooltip>
             </div>
           ) : (
-            // Full state - more minimal design
-            <div className="p-3 space-y-3">
-              {/* Minimal Header */}
+            // Full state - clean, minimal design matching dashboard
+            <div className="p-6 space-y-6">
+              {/* Clean Header */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Headphones className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-                  <div className="flex space-x-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setAutoPlay(!autoPlayEnabled)}
-                          className={cn(
-                            "h-6 w-6 p-0 text-xs",
-                            autoPlayEnabled && "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                          )}
-                        >
-                          <Zap className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Auto-play: {autoPlayEnabled ? 'ON' : 'OFF'}</TooltipContent>
-                    </Tooltip>
-                    
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setLoop(!loopEnabled)}
-                          className={cn(
-                            "h-6 w-6 p-0 text-xs",
-                            loopEnabled && "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                          )}
-                        >
-                          <Repeat className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Loop: {loopEnabled ? 'ON' : 'OFF'}</TooltipContent>
-                    </Tooltip>
-                  </div>
+                <div className="flex items-center space-x-3">
+                  <Headphones className="h-5 w-5 text-slate-900 dark:text-white" />
+                  <h3 className="text-lg font-light text-slate-900 dark:text-white tracking-tight">Audio Controls</h3>
                 </div>
                 
-                <div className="flex space-x-1">
+                <div className="flex space-x-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsMinimized(true)}
-                        className="h-6 w-6 p-0"
+                        className="h-8 w-8 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                       >
-                        <Minimize2 className="h-2 w-2" />
+                        <Minimize2 className="h-3 w-3 text-slate-600 dark:text-slate-400" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Minimize</TooltipContent>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Minimize
+                    </TooltipContent>
                   </Tooltip>
                   
                   <Tooltip>
@@ -1144,183 +1373,278 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsVisible(false)}
-                        className="h-6 w-6 p-0"
+                        className="h-8 w-8 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                       >
-                        <X className="h-2 w-2" />
+                        <X className="h-3 w-3 text-slate-600 dark:text-slate-400" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Hide controls</TooltipContent>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Hide controls
+                    </TooltipContent>
                   </Tooltip>
                 </div>
               </div>
 
-              {/* Error display */}
+              {/* Error display - clean design */}
               {lastError && (
-                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-2">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-red-600 dark:text-red-400">{lastError}</p>
+                    <p className="text-sm text-red-700 dark:text-red-400 font-light">{lastError}</p>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setLastError(null)}
-                      className="h-4 w-4 p-0 text-red-500"
+                      className="h-6 w-6 p-0 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full"
                     >
-                      <X className="h-2 w-2" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRecovery}
-                    className="mt-2 h-6 text-xs w-full"
+                    className="mt-3 h-8 text-sm w-full border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                   >
-                    🔧 Fix Audio
+                    Fix Audio System
                   </Button>
                 </div>
               )}
 
-              {/* Current status - smaller and minimal */}
+              {/* Current status - minimal design */}
               {currentText && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 truncate">
-                  {isPlaying ? (isPaused ? '⏸' : '▶') : '⏹'} {currentText.slice(0, 40)}...
+                <div className="text-center space-y-2">
+                  <div className="text-sm text-slate-600 dark:text-slate-400 font-light bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2">
+                    {isPlaying ? (isPaused ? 'Paused' : 'Playing') : 'Ready'}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-500 font-light truncate">
+                    {currentText.slice(0, 50)}...
+                  </p>
                 </div>
               )}
 
-              {/* Main Controls - more compact */}
-              <div className="flex items-center space-x-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={currentText ? (isPlaying ? (isPaused ? resume : pause) : restart) : readCurrentPage}
-                      className="flex-shrink-0 h-8"
-                    >
-                      {isPlaying ? (
-                        isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />
-                      ) : currentText ? (
-                        <Play className="h-3 w-3" />
-                      ) : (
-                        <Headphones className="h-3 w-3" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
-                  </TooltipContent>
-                </Tooltip>
+              {/* Main Controls - clean Apple-style */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-4">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={restart}
+                        disabled={!currentText}
+                        className="h-10 w-10 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 transition-colors"
+                      >
+                        <RotateCcw className="h-4 w-4 text-slate-900 dark:text-white" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Restart
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={readCurrentPage}
-                      className="flex-shrink-0 h-8"
-                    >
-                      📄
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Read current page</TooltipContent>
-                </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={() => {
+                          manager.recordUserInteraction()
+                          if (currentText) {
+                            if (isPlaying) {
+                              if (isPaused) {
+                                resume()
+                              } else {
+                                pause()
+                              }
+                            } else {
+                              restart()
+                            }
+                          } else {
+                            readCurrentPage()
+                          }
+                        }}
+                        className="h-14 w-14 p-0 rounded-full bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+                      >
+                        {isPlaying ? (
+                          isPaused ? <Play className="h-6 w-6 text-white dark:text-black" /> : <Pause className="h-6 w-6 text-white dark:text-black" />
+                        ) : currentText ? (
+                          <Play className="h-6 w-6 text-white dark:text-black" />
+                        ) : (
+                          <Headphones className="h-6 w-6 text-white dark:text-black" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      {currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={restart}
-                      disabled={!currentText}
-                      className="flex-shrink-0 h-8 w-8 p-0"
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Restart</TooltipContent>
-                </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={readCurrentPage}
+                        className="h-10 w-10 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                      >
+                        <span className="text-lg">📄</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Read current page
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
 
-                {/* Volume Control - more compact */}
-                <div className="flex items-center space-x-1 flex-grow">
+                {/* Clean toggle controls */}
+                <div className="flex items-center justify-center space-x-6">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAutoPlay(!autoPlayEnabled)}
+                        className={cn(
+                          "h-8 w-8 p-0 rounded-full transition-colors",
+                          autoPlayEnabled 
+                            ? "bg-slate-900 dark:bg-white text-white dark:text-black" 
+                            : "hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        )}
+                      >
+                        <Zap className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Auto-play: {autoPlayEnabled ? 'ON' : 'OFF'}
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLoop(!loopEnabled)}
+                        className={cn(
+                          "h-8 w-8 p-0 rounded-full transition-colors",
+                          loopEnabled 
+                            ? "bg-slate-900 dark:bg-white text-white dark:text-black" 
+                            : "hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        )}
+                      >
+                        <Repeat className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Loop: {loopEnabled ? 'ON' : 'OFF'}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+
+              {/* Volume Control - clean design */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={toggleMute}
-                        className="h-8 w-8 p-0 flex-shrink-0"
+                        className="h-8 w-8 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                       >
                         {isMuted || volume[0] === 0 ? (
-                          <VolumeX className="h-3 w-3" />
+                          <VolumeX className="h-4 w-4 text-slate-900 dark:text-white" />
                         ) : (
-                          <Volume2 className="h-3 w-3" />
+                          <Volume2 className="h-4 w-4 text-slate-900 dark:text-white" />
                         )}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{isMuted ? "Unmute" : "Mute"}</TooltipContent>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      {isMuted ? "Unmute" : "Mute"}
+                    </TooltipContent>
                   </Tooltip>
                   
-                  <Slider
-                    value={volume}
-                    onValueChange={(value: number[]) => {
-                      setVolume(value)
-                      setIsMuted(value[0] === 0)
-                    }}
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    className="flex-grow"
-                  />
+                  <div className="flex-1">
+                    <Slider
+                      value={volume}
+                      onValueChange={(value: number[]) => {
+                        setVolume(value)
+                        setIsMuted(value[0] === 0)
+                      }}
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light w-8 text-right">
+                    {Math.round(volume[0] * 100)}
+                  </span>
                 </div>
+              </div>
 
-                {/* Settings */}
+              {/* Settings */}
+              <div className="border-t border-slate-100 dark:border-slate-900 pt-4">
                 <DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Settings className="h-3 w-3" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full justify-center h-8 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                        >
+                          <Settings className="h-4 w-4 text-slate-600 dark:text-slate-400 mr-2" />
+                          <span className="text-sm text-slate-600 dark:text-slate-400 font-light">Settings</span>
                         </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>Settings</TooltipContent>
+                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
+                      Audio settings
+                    </TooltipContent>
                   </Tooltip>
                   
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuLabel>Settings</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-80 bg-white dark:bg-black border border-slate-100 dark:border-slate-900 rounded-lg shadow-xl"
+                  >
+                    <DropdownMenuLabel className="text-slate-900 dark:text-white font-light">Audio Settings</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
                     
                     {/* Test button */}
-                    <div className="p-2">
+                    <div className="p-3">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handlePlayWithCurrentSettings}
-                        className="w-full text-xs h-7"
+                        className="w-full text-sm h-8 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                       >
                         🎵 Test Audio
                       </Button>
                     </div>
                     
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
                     
-                    {/* Highlighting Toggle */}
-                    <div className="p-2">
-                      <label className="flex items-center space-x-2 text-sm">
+                    {/* Word highlighting toggle */}
+                    <div className="p-3">
+                      <label className="flex items-center space-x-3 text-sm font-light">
                         <input
                           type="checkbox"
                           checked={highlightingEnabled}
                           onChange={(e) => setHighlighting(e.target.checked)}
-                          className="rounded"
+                          className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-500"
                         />
-                        <span>Word highlighting</span>
+                        <span className="text-slate-900 dark:text-white">Word highlighting</span>
                       </label>
                     </div>
                     
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
                     
-                    {/* Voice Quality Notice */}
-                    <div className="p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    {/* Voice quality notice - clean design */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg mx-3 my-2">
+                      <div className="text-sm text-slate-700 dark:text-slate-300 font-light space-y-2">
                         <div className="font-medium">🎯 For Best Quality:</div>
                         <div>• Enable Google Cloud TTS below (premium voices)</div>
                         <div>• Or install better system voices in your OS</div>
@@ -1328,54 +1652,53 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       </div>
                     </div>
 
-                    {/* Voice Selection - Simplified to Basic vs Premium */}
-                    <div className="space-y-4">
+                    {/* Voice Options - Clean Toggle */}
+                    <div className="p-3 space-y-4">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <label className="text-sm font-light text-slate-900 dark:text-white">
                           Voice Options
                         </label>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-light">
                             {useCloudTTS ? 'Premium' : 'Basic'}
                           </span>
                           <Switch
                             checked={useCloudTTS}
                             onCheckedChange={setUseCloudTTS}
+                            className="data-[state=checked]:bg-slate-900 dark:data-[state=checked]:bg-white"
                           />
                         </div>
                       </div>
 
-                      {/* Basic Browser Voices (Free) */}
+                      {/* Basic Browser Voices */}
                       {!useCloudTTS && (
                         <div className="space-y-3">
-                          <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div>
+                              <span className="text-sm font-light text-slate-900 dark:text-white">
                                 Browser Voices (Free)
                               </span>
                             </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-3">
                               Standard system voices available on your device
                             </p>
                             
-                            {/* Voice Selection Dropdown */}
                             <select
                               value={selectedVoice?.name || ''}
                               onChange={(e) => {
                                 const voice = voices.find(v => v.voice.name === e.target.value)?.voice
                                 setSelectedVoice(voice || null)
                               }}
-                              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
                             >
                               <option value="">Auto-select best voice</option>
                               {voices
                                 .filter(voiceOption => {
-                                  // Only show decent quality browser voices
                                   const quality = getVoiceQuality(voiceOption.voice)
                                   return quality === 'high' || quality === 'medium'
                                 })
-                                .slice(0, 10) // Limit to top 10 voices
+                                .slice(0, 10)
                                 .map((voiceOption) => (
                                   <option key={voiceOption.voice.name} value={voiceOption.voice.name}>
                                     {voiceOption.name} ({voiceOption.voice.lang})
@@ -1386,33 +1709,36 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                         </div>
                       )}
 
-                      {/* Premium Chirp 3: HD Voices (Members Only) */}
+                      {/* Premium Chirp 3: HD Voices */}
                       {useCloudTTS && (
                         <div className="space-y-3">
                           {(user && (isPremium || isPro)) ? (
-                            <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center space-x-2 mb-3">
+                                <div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div>
+                                <span className="text-sm font-light text-slate-900 dark:text-white">
                                   ✨ Google Chirp 3: HD Voices (Ultra Premium)
                                 </span>
                               </div>
-                              <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-3">
                                 🎯 LLM-powered voices with unparalleled realism and emotional resonance
                               </p>
-                              <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">
+                              <p className="text-xs text-slate-500 dark:text-slate-500 font-light mb-3">
                                 Features: Aoede, Puck, Kore, Charon + 26 more premium voices
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-500 font-light mb-4 italic">
+                                Note: Chirp 3 HD voices use optimized pitch settings for best quality
                               </p>
                               
                               {/* Language Selection */}
-                              <div className="space-y-2">
-                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                              <div className="space-y-3">
+                                <label className="text-xs font-light text-slate-900 dark:text-white">
                                   Target Language
                                 </label>
                                 <select
                                   value={targetLanguage}
                                   onChange={(e) => setTargetLanguage(e.target.value)}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
                                 >
                                   <option value="en-US">English (US)</option>
                                   <option value="en-GB">English (UK)</option>
@@ -1429,29 +1755,29 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                                 </select>
                               </div>
 
-                              {/* Voice Quality Selection */}
-                              <div className="space-y-2 mt-3">
-                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                              {/* Voice Quality */}
+                              <div className="space-y-3 mt-4">
+                                <label className="text-xs font-light text-slate-900 dark:text-white">
                                   Voice Quality
                                 </label>
                                 <select
                                   value={voiceType}
                                   onChange={(e) => setVoiceType(e.target.value as 'CHIRP3_HD')}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
                                 >
-                                  <option value="CHIRP3_HD">✨ Chirp 3: HD (Ultra Premium - $32/1M chars)</option>
+                                  <option value="CHIRP3_HD">✨ Chirp 3: HD (Ultra Premium)</option>
                                 </select>
                               </div>
 
                               {/* Voice Gender */}
-                              <div className="space-y-2 mt-3">
-                                <label className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                              <div className="space-y-3 mt-4">
+                                <label className="text-xs font-light text-slate-900 dark:text-white">
                                   Voice Gender
                                 </label>
                                 <select
                                   value={voiceGender}
                                   onChange={(e) => setVoiceGender(e.target.value as 'MALE' | 'FEMALE' | 'NEUTRAL')}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-600 rounded-md text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
                                 >
                                   <option value="FEMALE">Female</option>
                                   <option value="MALE">Male</option>
@@ -1459,16 +1785,16 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                                 </select>
                               </div>
 
-                              {/* Auto-detect and translate */}
-                              <div className="flex items-center space-x-2 mt-3">
+                              {/* Auto-detect toggle */}
+                              <div className="flex items-center space-x-3 mt-4">
                                 <input
                                   type="checkbox"
                                   id="autoDetect"
                                   checked={autoDetectLanguage}
                                   onChange={(e) => setAutoDetectLanguage(e.target.checked)}
-                                  className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                                  className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-500"
                                 />
-                                <label htmlFor="autoDetect" className="text-xs text-purple-700 dark:text-purple-300">
+                                <label htmlFor="autoDetect" className="text-xs text-slate-700 dark:text-slate-300 font-light">
                                   Auto-detect and translate
                                 </label>
                               </div>
@@ -1476,11 +1802,11 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                               {/* Test Button */}
                               <Button
                                 onClick={() => handleCloudTTSPlay("Welcome to Chirp 3 HD voices! Experience the future of text-to-speech with unparalleled realism and emotional depth.")}
-                                className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white text-sm py-2"
+                                className="w-full mt-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black text-sm py-2 font-light transition-colors"
                               >
                                 {isCloudTTSLoading ? (
                                   <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-black mr-2"></div>
                                     Testing...
                                   </>
                                 ) : (
@@ -1489,19 +1815,19 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                               </Button>
                             </div>
                           ) : (
-                            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <Crown className="h-4 w-4 text-amber-600" />
-                                <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center space-x-2 mb-3">
+                                <Crown className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                <span className="text-sm font-light text-slate-900 dark:text-white">
                                   Premium Voices Available
                                 </span>
                               </div>
-                              <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-4">
                                 Upgrade to access Google Chirp 3: HD voices with LLM-powered realism
                               </p>
                               <Button
                                 onClick={() => router.push('/upgrade-to-lifetime')}
-                                className="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm py-2"
+                                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black text-sm py-2 font-light transition-colors"
                               >
                                 Upgrade for Premium Voices
                               </Button>

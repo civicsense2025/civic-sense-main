@@ -15,6 +15,7 @@ import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { TopicSearch } from "@/components/topic-search"
 import { usePremium } from "@/hooks/usePremium"
+import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import Link from "next/link"
 
 interface UserMenuProps {
@@ -28,31 +29,58 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
   const { theme, setTheme } = useTheme()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
   const [mounted, setMounted] = useState(false)
-
-  const [userStats, setUserStats] = useState({
-    level: 1,
-    xp: 0,
-    streak: 0,
-    completedQuizzes: 0
-  })
+  const [userStats, setUserStats] = useState<EnhancedUserProgress | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    
-    // Load user stats from localStorage
-    if (user) {
-      const level = localStorage.getItem("civicAppLevel")
-      const xp = localStorage.getItem("civicAppXP")
-      const streak = localStorage.getItem("civicAppStreak")
-      const completedTopics = localStorage.getItem("civicAppCompletedTopics_v1")
-      
-      setUserStats({
-        level: level ? parseInt(level, 10) : 1,
-        xp: xp ? parseInt(xp, 10) : 0,
-        streak: streak ? parseInt(streak, 10) : 0,
-        completedQuizzes: completedTopics ? JSON.parse(completedTopics).length : 0
-      })
+  }, [])
+
+  // Load user stats from enhanced gamification system
+  useEffect(() => {
+    const loadUserStats = async () => {
+      if (!user) {
+        setUserStats(null)
+        return
+      }
+
+      setStatsLoading(true)
+      try {
+        const stats = await enhancedProgressOperations.getComprehensiveStats(user.id)
+        setUserStats(stats)
+      } catch (error) {
+        console.error('Failed to load user stats:', error)
+        // Fallback to default stats
+        setUserStats({
+          currentStreak: 0,
+          longestStreak: 0,
+          totalQuizzesCompleted: 0,
+          totalQuestionsAnswered: 0,
+          totalCorrectAnswers: 0,
+          totalXp: 0,
+          currentLevel: 1,
+          xpToNextLevel: 100,
+          weeklyGoal: 3,
+          weeklyCompleted: 0,
+          preferredCategories: [],
+          adaptiveDifficulty: true,
+          learningStyle: 'mixed',
+          accuracyPercentage: 0,
+          categoriesMastered: 0,
+          categoriesAttempted: 0,
+          activeGoals: 0,
+          customDecksCount: 0,
+          achievementsThisWeek: 0,
+          availableXpForBoosts: 0,
+          totalBoostsPurchased: 0,
+          activeBoosts: []
+        })
+      } finally {
+        setStatsLoading(false)
+      }
     }
+
+    loadUserStats()
   }, [user])
 
   if (isLoading) {
@@ -129,10 +157,12 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
   }
 
   const getUserTitle = () => {
-    if (userStats.level >= 10) return "Civic Expert"
-    if (userStats.level >= 7) return "Democracy Champion"
-    if (userStats.level >= 5) return "Active Citizen"
-    if (userStats.level >= 3) return "Civic Learner"
+    if (!userStats) return "New Citizen"
+    
+    if (userStats.currentLevel >= 10) return "Civic Expert"
+    if (userStats.currentLevel >= 7) return "Democracy Champion"
+    if (userStats.currentLevel >= 5) return "Active Citizen"
+    if (userStats.currentLevel >= 3) return "Civic Learner"
     return "New Citizen"
   }
 
@@ -184,23 +214,51 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
         {/* User Stats - Clean and minimal */}
         <div className="px-3 py-4 bg-slate-50 dark:bg-slate-900 mx-3 rounded-xl mb-3">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-slate-900 dark:text-slate-50">Level {userStats.level}</span>
-            <span className="text-xs font-light text-slate-500 dark:text-slate-400">{getUserTitle()}</span>
+            <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+              Level {userStats?.currentLevel || 1}
+            </span>
+            <span className="text-xs font-light text-slate-500 dark:text-slate-400">
+              {getUserTitle()}
+            </span>
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="space-y-1">
-              <div className="text-lg font-light text-blue-600 dark:text-blue-400">{userStats.xp.toLocaleString()}</div>
-              <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+          
+          {statsLoading ? (
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="space-y-1">
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="text-lg font-light text-green-600 dark:text-green-400">{userStats.streak}</div>
-              <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="space-y-1">
+                <div className="text-lg font-light text-blue-600 dark:text-blue-400">
+                  {userStats?.totalXp?.toLocaleString() || 0}
+                </div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-lg font-light text-green-600 dark:text-green-400">
+                  {userStats?.currentStreak || 0}
+                </div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-lg font-light text-slate-900 dark:text-slate-100">
+                  {userStats?.totalQuizzesCompleted || 0}
+                </div>
+                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="text-lg font-light text-slate-900 dark:text-slate-100">{userStats.completedQuizzes}</div>
-              <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
-            </div>
-          </div>
+          )}
         </div>
         
         <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />

@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
+import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioControls } from '@/components/global-audio-controls'
@@ -23,16 +24,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              <main className="flex-1">
-                {children}
-              </main>
-              <div className="mt-8">
-                <Footer />
+            <StatsigProvider>
+              <div className="min-h-screen flex flex-col">
+                <main className="flex-1">
+                  {children}
+                </main>
+                <div className="mt-8">
+                  <Footer />
+                </div>
               </div>
-            </div>
-            <Toaster />
-            <GlobalAudioControls />
+              <Toaster />
+              <GlobalAudioControls />
+            </StatsigProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

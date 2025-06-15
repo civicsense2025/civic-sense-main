@@ -138,8 +138,8 @@ export const topicOperations = {
       description: dbTopic.description,
       why_this_matters: dbTopic.why_this_matters,
       emoji: dbTopic.emoji,
-      date: dbTopic.date,
-      dayOfWeek: dbTopic.day_of_week,
+      date: dbTopic.date || '',
+      dayOfWeek: dbTopic.day_of_week || '',
       categories: Array.isArray(dbTopic.categories) ? dbTopic.categories as string[] : [],
     }
   }

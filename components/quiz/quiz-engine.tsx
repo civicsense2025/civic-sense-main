@@ -11,15 +11,20 @@ import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
+import { BoostCommandBar } from "./boost-command-bar"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Lightbulb, SkipForward, ArrowRight, Flame } from "lucide-react"
+import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { quizDatabase } from "@/lib/quiz-database"
 import { useGlobalAudio } from "@/components/global-audio-controls"
+import { useGamification } from "@/hooks/useGamification"
+import type { BoostEffects } from "@/lib/game-boosts"
+import { BoostManager } from "@/lib/game-boosts"
+import { enhancedProgressOperations } from "@/lib/enhanced-gamification"
 
 interface QuizEngineProps {
   questions: QuizQuestion[]
@@ -74,6 +79,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   
   // Global audio integration
   const { autoPlayEnabled, playText } = useGlobalAudio()
+  
+  // Enhanced gamification integration
+  const { updateProgress, currentStreak, currentLevel } = useGamification()
   
   // Validate, deduplicate, and randomize questions once when component mounts
   const randomizedQuestions = useMemo(() => {
@@ -149,9 +157,27 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const [streak, setStreak] = useState(0)
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
+  
+  // Boost system state
+  const [boostManager] = useState(() => BoostManager.getInstance())
+  const [userXP, setUserXP] = useState(0)
+  const [currentBoostEffects, setCurrentBoostEffects] = useState<BoostEffects>({
+    extraTimeSeconds: 0,
+    xpMultiplier: 1,
+    autoHintEnabled: false,
+    secondChanceAvailable: false,
+    streakProtected: false,
+    answerRevealAvailable: false,
+    timeFreezeAvailable: false,
+    luckyGuessChance: 0
+  })
+  const [hasUsedSecondChance, setHasUsedSecondChance] = useState(false)
+  const [answerRevealUsed, setAnswerRevealUsed] = useState(false)
+  const [timeFrozen, setTimeFrozen] = useState(false)
 
-  // Use the timer hook
-  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(60)
+  // Use the timer hook with boost extra time
+  const initialTime = 60 + currentBoostEffects.extraTimeSeconds
+  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(initialTime)
 
   const currentQuestion = randomizedQuestions[currentQuestionIndex]
   const isLastQuestion = currentQuestionIndex === randomizedQuestions.length - 1
@@ -178,7 +204,85 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       setUserAnswers(partialState.userAnswers)
       // Note: We don't restore the exact start time to avoid confusion
     }
-  }, [user, topicId])
+    
+    // Initialize boost system and load user XP
+    boostManager.initialize(user.id)
+    loadUserXP()
+  }, [user, topicId, boostManager])
+
+  // Load user XP from gamification system
+  const loadUserXP = async () => {
+    if (!user) return
+    
+    try {
+      const stats = await enhancedProgressOperations.getComprehensiveStats(user.id)
+      setUserXP(stats.totalXp || 0)
+    } catch (error) {
+      console.error('Error loading user XP:', error)
+      setUserXP(0)
+    }
+  }
+
+  // Boost handlers
+  const handleBoostActivated = (effects: BoostEffects) => {
+    setCurrentBoostEffects(effects)
+    
+    // Apply automatic effects
+    if (effects.autoHintEnabled && !showHint) {
+      setShowHint(true)
+    }
+    
+    console.log('🚀 Boost effects activated:', effects)
+  }
+
+  const handleUseTimeFreeze = () => {
+    if (!user || !currentBoostEffects.timeFreezeAvailable) return
+    
+    setTimeFrozen(true)
+    stopTimer()
+    
+    // Unfreeze after 10 seconds
+    setTimeout(() => {
+      setTimeFrozen(false)
+      // Resume timer if question not submitted
+      if (!isAnswerSubmitted) {
+        resetTimer()
+      }
+    }, 10000)
+    
+    // Consume the boost use
+    boostManager.useBoost(user.id, 'time_freeze')
+    
+    console.log('❄️ Time frozen for 10 seconds')
+  }
+
+  const handleUseAnswerReveal = () => {
+    if (!user || !currentBoostEffects.answerRevealAvailable || answerRevealUsed) return
+    
+    setAnswerRevealUsed(true)
+    boostManager.useBoost(user.id, 'answer_reveal')
+    
+    console.log('🔍 Answer reveal used')
+  }
+
+  const handleUseSecondChance = () => {
+    if (!user || !currentBoostEffects.secondChanceAvailable || hasUsedSecondChance) return
+    
+    // Reset the question state for a retry
+    setSelectedAnswer(null)
+    setIsAnswerSubmitted(false)
+    setShowFeedback(false)
+    setAnswerRevealUsed(false)
+    setHasUsedSecondChance(true)
+    
+    // Reset timer
+    resetTimer()
+    
+    // Consume the boost
+    boostManager.useBoost(user.id, 'second_chance')
+    
+    console.log('🔄 Second chance activated')
+  }
 
   // Save partial state whenever answers change
   useEffect(() => {
@@ -401,6 +505,16 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
     
+    // Log question response for enhanced gamification tracking
+    console.log('🎮 Question response:', {
+      questionId: currentQuestion.question_number,
+      category: currentQuestion.category,
+      isCorrect,
+      timeSpent,
+      difficulty: currentQuestion.tags?.includes('advanced') ? 3 : 
+                  currentQuestion.tags?.includes('intermediate') ? 2 : 1
+    })
+    
     // Auto-play explanation if global autoplay is enabled
     if (autoPlayEnabled && currentQuestion?.explanation) {
       // Delay to let the feedback UI render first
@@ -456,6 +570,16 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
     
+    // Log question response for enhanced gamification tracking
+    console.log('🎮 Question response:', {
+      questionId: currentQuestion.question_number,
+      category: currentQuestion.category,
+      isCorrect,
+      timeSpent,
+      difficulty: currentQuestion.tags?.includes('advanced') ? 3 : 
+                  currentQuestion.tags?.includes('intermediate') ? 2 : 1
+    })
+    
     // Auto-play explanation if global autoplay is enabled
     if (autoPlayEnabled && currentQuestion?.explanation) {
       // Delay to let the feedback UI render first
@@ -477,7 +601,41 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     }
   }
 
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
+    // Update enhanced gamification progress before showing results
+    if (user) {
+      try {
+        const questionResponses = userAnswers.map(answer => {
+          const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
+          return {
+            questionId: answer.questionId.toString(),
+            category: question?.category || 'General',
+            isCorrect: answer.isCorrect,
+            timeSpent: answer.timeSpent
+          }
+        })
+
+        const quizData = {
+          topicId,
+          totalQuestions: randomizedQuestions.length,
+          correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+          timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
+          questionResponses
+        }
+
+        console.log('🎮 Updating gamification progress:', quizData)
+        const results = await updateProgress(quizData)
+        console.log('✅ Gamification progress updated successfully:', {
+          achievements: results.newAchievements?.length || 0,
+          levelUp: results.levelUp || false,
+          skillUpdates: results.skillUpdates?.length || 0
+        })
+      } catch (error) {
+        console.error('❌ Failed to update gamification progress:', error)
+        // Continue to show results even if gamification update fails
+      }
+    }
+    
     setShowResults(true)
   }
 
@@ -619,37 +777,105 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
 
         {/* Action buttons - only show when answer not submitted */}
         {!isAnswerSubmitted && (
-          <div className="flex items-center justify-center gap-6">
-            <Button 
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('Skip button clicked')
-                handleSkipQuestion()
-              }}
-              variant="ghost"
-              className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light"
-            >
-              Skip
-            </Button>
+          <div className="space-y-6">
+            {/* Boost Action Buttons */}
+            {(currentBoostEffects.timeFreezeAvailable || 
+              currentBoostEffects.answerRevealAvailable || 
+              currentBoostEffects.secondChanceAvailable) && (
+              <div className="flex items-center justify-center gap-3">
+                {currentBoostEffects.timeFreezeAvailable && !timeFrozen && (
+                  <Button 
+                    onClick={handleUseTimeFreeze}
+                    variant="outline"
+                    size="sm"
+                    className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                  >
+                    <Snowflake className="h-4 w-4 mr-1" />
+                    Freeze Time
+                  </Button>
+                )}
+                
+                {currentBoostEffects.answerRevealAvailable && 
+                 !answerRevealUsed && 
+                 currentQuestion.question_type === 'multiple_choice' && (
+                  <Button 
+                    onClick={handleUseAnswerReveal}
+                    variant="outline"
+                    size="sm"
+                    className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Reveal Answer
+                  </Button>
+                )}
+                
+                {currentBoostEffects.secondChanceAvailable && 
+                 !hasUsedSecondChance && 
+                 isAnswerSubmitted && (
+                  <Button 
+                    onClick={handleUseSecondChance}
+                    variant="outline"
+                    size="sm"
+                    className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Second Chance
+                  </Button>
+                )}
+              </div>
+            )}
             
-            <Button 
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('Submit button clicked', { selectedAnswer, isAnswerSubmitted, timeLeft })
-                handleSubmitAnswer()
-              }}
-              disabled={!selectedAnswer || timeLeft === 0} 
-              className={cn(
-                "rounded-full px-8 py-3 font-light transition-all duration-200",
-                selectedAnswer 
-                  ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
-              )}
-            >
-              Submit Answer
-            </Button>
+            {/* Main Action Buttons */}
+            <div className="flex items-center justify-center gap-6">
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Skip button clicked')
+                  handleSkipQuestion()
+                }}
+                variant="ghost"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light"
+              >
+                Skip
+              </Button>
+              
+              <Button 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Submit button clicked', { selectedAnswer, isAnswerSubmitted, timeLeft })
+                  handleSubmitAnswer()
+                }}
+                disabled={!selectedAnswer || timeLeft === 0} 
+                className={cn(
+                  "rounded-full px-8 py-3 font-light transition-all duration-200",
+                  selectedAnswer 
+                    ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white" 
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                )}
+              >
+                Submit Answer
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Gamification display - show streak and level */}
+        {user && (
+          <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50">
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-1">
+                <Flame className="h-4 w-4 text-orange-500" />
+                <span className="font-medium text-slate-900 dark:text-slate-100">{currentStreak}</span>
+                <span className="text-slate-500 dark:text-slate-400">streak</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Badge variant="outline" className="text-xs">
+                  Level {currentLevel}
+                </Badge>
+              </div>
+            </div>
           </div>
         )}
 
@@ -663,6 +889,8 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
             <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
             <div>Type: {currentQuestion?.question_type}</div>
             <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
+            <div>Streak: {currentStreak}</div>
+            <div>Level: {currentLevel}</div>
           </div>
         )}
 
@@ -682,6 +910,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
           </div>
         )}
       </div>
+
+      {/* Boost Command Bar - Floating */}
+      {user && (
+        <BoostCommandBar
+          userXP={userXP}
+          onXPChanged={setUserXP}
+          onBoostActivated={handleBoostActivated}
+        />
+      )}
     </div>
   )
 }

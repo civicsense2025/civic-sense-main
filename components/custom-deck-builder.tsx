@@ -261,7 +261,7 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
       }))
 
       // Track feature usage
-      trackFeatureUsage('ai_deck_generation')
+      trackFeatureUsage('custom_decks')
     } catch (error) {
       console.error('Error generating AI deck:', error)
     } finally {
@@ -312,7 +312,7 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
     }
 
     // Check limits
-    if (limits && limits.custom_decks_limit !== -1 && existingDecks.length >= limits.custom_decks_limit) {
+    if (limits && limits.custom_decks_limit !== null && limits.custom_decks_limit !== -1 && existingDecks.length >= limits.custom_decks_limit) {
       // Show upgrade prompt
       setShowPremiumGate(true)
       return
@@ -359,6 +359,38 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
     } catch (error) {
       console.error('Error deleting deck:', error)
     }
+  }
+
+  const handleQuestionToggle = (questionId: string) => {
+    setAvailableQuestions(prev => 
+      prev.map(q => 
+        q.id === questionId 
+          ? { ...q, selected: !q.selected }
+          : q
+      )
+    )
+    
+    // Update deck questions
+    setDeck(prev => {
+      const question = availableQuestions.find(q => q.id === questionId)
+      if (!question) return prev
+      
+      const isCurrentlySelected = prev.questions.some(q => q.id === questionId)
+      
+      if (isCurrentlySelected) {
+        // Remove question
+        return {
+          ...prev,
+          questions: prev.questions.filter(q => q.id !== questionId)
+        }
+      } else {
+        // Add question
+        return {
+          ...prev,
+          questions: [...prev.questions, { ...question, selected: true }]
+        }
+      }
+    })
   }
 
   if (!hasFeatureAccess('custom_decks')) {
@@ -412,7 +444,7 @@ export function CustomDeckBuilder({ className, onClose }: CustomDeckBuilderProps
         {limits && (
           <div className="text-right">
             <p className="text-sm text-muted-foreground">
-              Decks: {existingDecks.length} / {limits.custom_decks_limit === -1 ? '∞' : limits.custom_decks_limit}
+              Decks: {existingDecks.length} / {(limits?.custom_decks_limit === -1 || limits?.custom_decks_limit === null) ? '∞' : limits?.custom_decks_limit || 0}
             </p>
           </div>
         )}

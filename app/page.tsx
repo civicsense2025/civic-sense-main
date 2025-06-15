@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { DailyCardStack } from "@/components/daily-card-stack"
 import { Calendar } from "@/components/calendar"
 import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
@@ -80,12 +80,14 @@ export default function HomePage() {
         {/* Main content with tons of whitespace */}
         <div className="max-w-4xl mx-auto px-4 sm:px-8">
                 {viewMode === 'cards' ? (
-                  <DailyCardStack 
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    requireAuth={false}
-                    onAuthRequired={handleAuthSuccess}
-                  />
+                  <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
+                    <DailyCardStack 
+                      selectedCategory={selectedCategory}
+                      searchQuery={searchQuery}
+                      requireAuth={false}
+                      onAuthRequired={handleAuthSuccess}
+                    />
+                  </Suspense>
                 ) : (
             <div className="py-8 sm:py-16">
                   <Calendar 
