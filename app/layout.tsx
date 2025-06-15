@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
@@ -7,8 +9,14 @@ import { AuthProvider } from "@/components/auth/auth-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
-import { GlobalAudioControls } from '@/components/global-audio-controls'
+import dynamic from 'next/dynamic'
 import { PWAPrompt, PWAStatus } from "@/components/pwa-prompt"
+
+// Import GlobalAudioControls dynamically with SSR disabled to prevent hydration issues
+const GlobalAudioControls = dynamic(
+  () => import('@/components/global-audio-controls').then(mod => mod.GlobalAudioControls),
+  { ssr: false }
+)
 
 const inter = Inter({ subsets: ["latin"] })
 

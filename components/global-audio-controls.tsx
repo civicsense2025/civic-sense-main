@@ -633,7 +633,30 @@ class GlobalAudioManager {
     if (typeof window === 'undefined') return ''
     
     try {
-      // Simple content extraction without complex DOM traversal
+      // First try to find quiz-specific content with more targeted selectors
+      const quizContentSelectors = [
+        // Specific quiz content selectors
+        '.QuestionFeedbackDisplay',
+        '[data-audio-content="true"]',
+        '[data-question-content="true"]',
+        '.quiz-content',
+        '.question-text',
+        '.question-explanation',
+        '.question-feedback'
+      ]
+      
+      for (const selector of quizContentSelectors) {
+        const element = document.querySelector(selector)
+        if (element) {
+          const text = element.textContent || ''
+          if (text.trim().length > 50) {
+            return this.cleanTextForSpeech(text.slice(0, 3000))
+          }
+        }
+      }
+      
+      // If no quiz-specific content found, try general content areas
+      // but exclude navigation, header, footer elements
       const contentSelectors = [
         'main',
         '[role="main"]',
@@ -644,30 +667,56 @@ class GlobalAudioManager {
       
       for (const selector of contentSelectors) {
         const element = document.querySelector(selector)
-        if (element) {
-          const text = element.textContent || ''
-          if (text.trim().length > 50) {
-            return this.cleanTextForSpeech(text.slice(0, 2000)) // Limit length
+        // Skip if no element found
+        if (!element) continue
+        
+        // Create a clone to manipulate without affecting the actual DOM
+        const clone = element.cloneNode(true) as HTMLElement
+        
+        // Remove navigation, header, footer, and other UI elements from clone
+        const elementsToRemove = clone.querySelectorAll(
+          'nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, ' +
+          '.logo, .branding, .site-header, .site-footer, .nav-links, .user-menu, ' + 
+          '[role="navigation"], [role="banner"], [role="contentinfo"], ' +
+          '.skip-link, .back-link, .auth-buttons, .theme-toggle'
+        )
+        
+        elementsToRemove.forEach(el => {
+          try {
+            el.parentNode?.removeChild(el)
+          } catch (e) {
+            // Ignore errors if element can't be removed
           }
+        })
+        
+        const text = clone.textContent || ''
+        if (text.trim().length > 50) {
+          return this.cleanTextForSpeech(text.slice(0, 3000))
         }
       }
       
       // Fallback to headings and paragraphs (limited)
+      // but exclude those in navigation, header, footer
       const elements = document.querySelectorAll('h1, h2, h3, p')
       let text = ''
       let count = 0
       
       for (const element of elements) {
-        if (count >= 10) break // Limit to prevent memory issues
+        if (count >= 15) break // Increased limit slightly
+        
+        // Skip elements in navigation, header, footer, etc.
+        if (element.closest('nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, .logo, .branding, .site-header, .site-footer')) {
+          continue
+        }
         
         const elementText = element.textContent?.trim() || ''
-        if (elementText.length > 10 && !element.closest('nav, header, footer, .menu, .controls')) {
+        if (elementText.length > 10) {
           text += elementText + '. '
           count++
         }
       }
       
-      return text.length > 50 ? this.cleanTextForSpeech(text.slice(0, 2000)) : ''
+      return text.length > 50 ? this.cleanTextForSpeech(text.slice(0, 3000)) : ''
     } catch (e) {
       console.warn('Error extracting page content:', e)
       return ''
