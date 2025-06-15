@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGlobalAudio } from "@/components/global-audio-controls"
+import { quizDatabase, type QuizAttempt } from "@/lib/quiz-database"
 
 // Helper to get today's date in user's local timezone
 // For demo purposes, we'll use June 14, 2025 as "today" to match the mock data
@@ -158,7 +159,7 @@ interface OrganizedTopics {
   past: TopicMetadata[]
 }
 
-const FREE_QUIZ_LIMIT = 2
+const FREE_QUIZ_LIMIT = 3
 
 export function DailyCardStack({
   selectedCategory,
@@ -358,7 +359,8 @@ export function DailyCardStack({
       return localTopicDate > oneWeekFromNow && !completedTopics.has(topic.topic_id)
     }
     
-    // Production behavior: lock if no questions or future date
+    // Production behavior
+    // Check if topic has no questions
     if (topicsWithoutQuestions.has(topic.topic_id)) {
       return true
     }
@@ -368,8 +370,21 @@ export function DailyCardStack({
       return false
     }
     
+    // For guests: 
+    // - Lock future quizzes
+    // - Allow only today's quizzes, lock past quizzes
+    if (!user) {
+      const today = getTodayAtMidnight()
+      const isFuture = localTopicDate > today
+      const isPast = localTopicDate < today
+      
+      // Lock future or past quizzes for guests
+      return isFuture || isPast
+    }
+    
+    // For logged-in users, lock future quizzes but allow past quizzes
     return localTopicDate > currentDate && !completedTopics.has(topic.topic_id)
-  }, [currentDate, completedTopics, topicsWithoutQuestions])
+  }, [currentDate, completedTopics, topicsWithoutQuestions, user])
 
   const isTopicComingSoon = useCallback((topicId: string) => {
     // In development, never mark topics as coming soon
@@ -590,20 +605,41 @@ export function DailyCardStack({
 
     try {
       const localTopicDate = parseTopicDate(topic.date)
-      if (localTopicDate && localTopicDate > currentDate && !completedTopics.has(topicId)) {
+      // For authenticated users - allow access to future topics they've completed
+      if (user && localTopicDate && localTopicDate > currentDate && !completedTopics.has(topicId)) {
         console.log(`Topic "${topic.topic_title}" is locked. Available on: ${topic.date}`)
         return
+      }
+      
+      // For guests - limit to today's quizzes only
+      if (!user) {
+        const today = getTodayAtMidnight()
+        
+        // Check if topic is not from today
+        if (localTopicDate && localTopicDate.getTime() !== today.getTime()) {
+          console.log(`Topic "${topic.topic_title}" is locked for guests. Only today's quizzes are available.`)
+          onAuthRequired?.()
+          return
+        }
+        
+        // Count today's quizzes attempted by guest
+        const todayAttemptedCount = quizAttempts
+        
+        // Limit guests to FREE_QUIZ_LIMIT quizzes per day
+        if (todayAttemptedCount >= FREE_QUIZ_LIMIT) {
+          console.log(`Guest has reached the limit of ${FREE_QUIZ_LIMIT} quizzes per day`)
+          onAuthRequired?.()
+          return
+        }
+        
+        // Increment quiz attempts for guest
+        setQuizAttempts(todayAttemptedCount + 1)
       }
     } catch (error) {
       console.error(`Error parsing date for topic "${topic.topic_title}":`, error)
     }
 
-    // Check authentication and premium limits
-    if (!user && quizAttempts >= FREE_QUIZ_LIMIT) {
-      onAuthRequired?.()
-      return
-    }
-
+    // Check premium limits for authenticated users
     if (user && !isPremium && !isPro && quizAttempts >= FREE_QUIZ_LIMIT) {
       setShowPremiumGate(true)
       return
@@ -637,6 +673,54 @@ export function DailyCardStack({
     setCurrentStackIndex(index)
     updateUrlWithTopic(index)
   }
+
+  // Add a new useEffect to load user's completed quizzes from the database
+  useEffect(() => {
+    // Only fetch user data if user is logged in
+    if (user) {
+      const fetchCompletedQuizzes = async () => {
+        try {
+          console.log('Fetching completed quizzes for user:', user.id)
+          const userAttempts = await quizDatabase.getUserQuizAttempts(user.id)
+          
+          // Get distinct topic IDs from attempts
+          const completedTopicsSet = new Set<string>()
+          userAttempts.forEach((attempt: QuizAttempt) => {
+            if (attempt.topicId && attempt.isCompleted) {
+              completedTopicsSet.add(attempt.topicId)
+            }
+          })
+          
+          console.log(`Found ${completedTopicsSet.size} completed topics for user`)
+          
+          // Merge with any locally stored completed topics
+          const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+          if (savedCompleted) {
+            const savedTopics = JSON.parse(savedCompleted) as string[]
+            savedTopics.forEach(topicId => completedTopicsSet.add(topicId))
+          }
+          
+          setCompletedTopics(completedTopicsSet)
+        } catch (error) {
+          console.error('Error fetching user quiz attempts:', error)
+          
+          // Fall back to localStorage if database query fails
+          const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+          if (savedCompleted) {
+            setCompletedTopics(new Set(JSON.parse(savedCompleted)))
+          }
+        }
+      }
+      
+      fetchCompletedQuizzes()
+    } else {
+      // For guests, just use localStorage
+      const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+      if (savedCompleted) {
+        setCompletedTopics(new Set(JSON.parse(savedCompleted)))
+      }
+    }
+  }, [user])
 
   if (isLoadingTopics) {
     return (
@@ -679,6 +763,18 @@ export function DailyCardStack({
 
   return (
     <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
+      {/* Add free quizzes counter for guests */}
+      {!user && (
+        <div className="mb-4 text-center">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 px-4 py-2 rounded-lg border border-yellow-200 dark:border-yellow-800 animate-in fade-in duration-300">
+            <p className="text-sm font-medium">
+              Guest Access: {FREE_QUIZ_LIMIT - quizAttempts} of {FREE_QUIZ_LIMIT} free daily quizzes remaining
+            </p>
+            <p className="text-xs mt-1">Sign in to access all quizzes and track your progress</p>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       {allFilteredTopics.length > 1 && (
         <div className="mb-8 sm:mb-16">
@@ -698,9 +794,20 @@ export function DailyCardStack({
                     `}
                   >
                     {currentStackIndex > 0 && (
-                      <>
-                        ← {getNavigationText(allFilteredTopics[currentStackIndex - 1])}
-                      </>
+                      <div className="flex flex-col items-start">
+                        <div className="flex items-center">
+                          <span className="mr-1">←</span>
+                          <span>{getNavigationText(allFilteredTopics[currentStackIndex - 1])}</span>
+                        </div>
+                        <div className="flex items-center mt-1 text-xs text-slate-500">
+                          <span className="mr-1 opacity-70">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                          <span className="truncate max-w-[100px] sm:max-w-[150px]">
+                            {allFilteredTopics[currentStackIndex - 1].topic_title.length > 15 
+                              ? `${allFilteredTopics[currentStackIndex - 1].topic_title.substring(0, 15)}...` 
+                              : allFilteredTopics[currentStackIndex - 1].topic_title}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </button>
                 </TooltipTrigger>
@@ -790,9 +897,20 @@ export function DailyCardStack({
                     `}
                   >
                     {currentStackIndex < allFilteredTopics.length - 1 && (
-                      <>
-                        {getNavigationText(allFilteredTopics[currentStackIndex + 1])} →
-                      </>
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center">
+                          <span>{getNavigationText(allFilteredTopics[currentStackIndex + 1])}</span>
+                          <span className="ml-1">→</span>
+                        </div>
+                        <div className="flex items-center mt-1 text-xs text-slate-500">
+                          <span className="truncate max-w-[100px] sm:max-w-[150px]">
+                            {allFilteredTopics[currentStackIndex + 1].topic_title.length > 15 
+                              ? `${allFilteredTopics[currentStackIndex + 1].topic_title.substring(0, 15)}...` 
+                              : allFilteredTopics[currentStackIndex + 1].topic_title}
+                          </span>
+                          <span className="ml-1 opacity-70">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
+                        </div>
+                      </div>
                     )}
                   </button>
                 </TooltipTrigger>
@@ -810,15 +928,16 @@ export function DailyCardStack({
       {/* Single Card Display */}
       <div className="relative">
         {allFilteredTopics.length > 0 && (
-            <CivicCard
-              topic={allFilteredTopics[currentStackIndex]}
-              baseHeight={cardBaseHeight}
-              onExploreGame={handleExploreGame}
-              isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
-              isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
-              isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
-              showFloatingKeyboard={false}
-            />
+          <CivicCard
+            topic={allFilteredTopics[currentStackIndex]}
+            baseHeight={cardBaseHeight}
+            onExploreGame={handleExploreGame}
+            isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
+            isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
+            isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
+            showFloatingKeyboard={false}
+            guestLocked={!user && getDateCategory(allFilteredTopics[currentStackIndex].date, getTodayAtMidnight()) !== 'today'}
+          />
         )}
       </div>
 

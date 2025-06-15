@@ -16,6 +16,7 @@ interface CivicCardProps {
   isLocked: boolean
   isComingSoon?: boolean
   showFloatingKeyboard?: boolean
+  guestLocked?: boolean
 }
 
 interface CountdownProps {
@@ -284,7 +285,16 @@ function FloatingKeyboardBar({ isVisible, isComingSoon }: { isVisible: boolean; 
   )
 }
 
-export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLocked, isComingSoon, showFloatingKeyboard }: CivicCardProps) {
+export function CivicCard({ 
+  topic, 
+  baseHeight, 
+  onExploreGame, 
+  isCompleted, 
+  isLocked, 
+  isComingSoon, 
+  showFloatingKeyboard = false,
+  guestLocked = false 
+}: CivicCardProps) {
   const router = useRouter()
   
   // Global audio integration
@@ -323,22 +333,30 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
     }
   }, [autoPlayEnabled, topic, isLocked, isCompleted, isComingSoon, playText])
   
+  // Determine if the topic is locked due to date (future content)
+  const isDateLocked = isLocked && !isComingSoon
+  
+  // Determine if the content is currently available
+  const isAvailable = !isLocked && !isComingSoon
+
   const handleClick = () => {
-    // Don't allow clicks if coming soon (no questions available)
-    if (isComingSoon) {
+    if (isLocked || isComingSoon) {
+      // If the content is locked due to guest access, we don't navigate but onExploreGame will handle auth
+      if (guestLocked) {
+        onExploreGame(topic.topic_id)
+      }
       return
     }
     
-    if (!isLocked) {
-      router.push(`/quiz/${topic.topic_id}`)
-    }
+    onExploreGame(topic.topic_id)
   }
 
   const getUnlockDate = () => {
-    const topicDate = new Date(topic.date)
-    // Set to 6 AM on the topic date
-    topicDate.setHours(6, 0, 0, 0)
-    return topicDate
+    try {
+      return new Date(topic.date)
+    } catch (e) {
+      return new Date()
+    }
   }
 
   // Keyboard event handling for the floating bar
@@ -367,10 +385,6 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [topic.topic_id, isLocked, isComingSoon, router])
 
-  // Determine the actual display state
-  const isDateLocked = isLocked && !isComingSoon
-  const isAvailable = !isLocked && !isComingSoon
-
   return (
     <div 
       className={`relative w-full ${baseHeight} cursor-pointer ${
@@ -389,10 +403,16 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
       <div className="h-full flex flex-col justify-center text-center space-y-8 px-4">
         {/* Status indicators */}
         <div className="flex justify-center">
-          {isLocked && !isComingSoon && (
+          {isLocked && !isComingSoon && !guestLocked && (
             <div className="flex items-center space-x-2 px-4 py-2 rounded-full border bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200 dark:border-blue-700">
               <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Unlocks Soon</span>
+            </div>
+          )}
+          {guestLocked && (
+            <div className="flex items-center space-x-2 px-4 py-2 rounded-full border bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-700">
+              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Sign In to Access</span>
             </div>
           )}
           {isCompleted && (
@@ -441,6 +461,21 @@ export function CivicCard({ topic, baseHeight, onExploreGame, isCompleted, isLoc
                 <p className="text-amber-700 dark:text-amber-300 font-medium text-lg">
                   Questions still in committee
                 </p>
+              </div>
+            </div>
+          ) : guestLocked ? (
+            /* Guest locked message */
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-8 border border-amber-200 dark:border-amber-700 shadow-lg">
+                <div className="text-center">
+                  <div className="mb-4"><Lock className="h-16 w-16 text-amber-500 dark:text-amber-400 mx-auto" /></div>
+                  <p className="text-amber-700 dark:text-amber-300 font-medium text-xl mb-2">
+                    Sign In to Access
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-400 text-sm">
+                    Create a free account to access all quizzes
+                  </p>
+                </div>
               </div>
             </div>
           ) : isDateLocked ? (

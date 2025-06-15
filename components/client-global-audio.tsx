@@ -1,12 +1,25 @@
 "use client"
 
+import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 
-const GlobalAudioControls = dynamic(
-  () => import('./global-audio-controls').then(mod => mod.GlobalAudioControls),
-  { ssr: false }
+// Improved dynamic import with error handling and suspense
+const GlobalAudioControlsComponent = dynamic(
+  () => import('./global-audio-controls').then(mod => ({ default: mod.GlobalAudioControls }))
+    .catch(err => {
+      console.error('Error loading GlobalAudioControls:', err);
+      return { default: () => null };
+    }),
+  { 
+    ssr: false,
+    loading: () => null
+  }
 )
 
 export function ClientGlobalAudio() {
-  return <GlobalAudioControls />
+  return (
+    <Suspense fallback={null}>
+      <GlobalAudioControlsComponent />
+    </Suspense>
+  )
 } 

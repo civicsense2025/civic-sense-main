@@ -7,7 +7,7 @@ import { AuthProvider } from "@/components/auth/auth-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
-import { ClientGlobalAudio } from "@/components/client-global-audio"
+import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -83,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
               <Toaster />
-              <ClientGlobalAudio />
+              <GlobalAudioWrapper />
               <Analytics />
             </StatsigProvider>
           </AuthProvider>

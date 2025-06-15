@@ -38,6 +38,20 @@ export interface RecentActivity {
   timeSpent?: number
 }
 
+// Add QuizAttempt interface after SavedQuizAttempt
+export interface QuizAttempt {
+  id: string
+  userId: string
+  topicId: string
+  score: number
+  correctAnswers: number
+  totalQuestions: number
+  timeSpentSeconds: number
+  completedAt: string
+  startedAt: string
+  isCompleted: boolean
+}
+
 // Quiz database operations
 export const quizDatabase = {
   /**
@@ -346,7 +360,41 @@ export const quizDatabase = {
     } catch (error) {
       console.error('Error clearing partial quiz state:', error)
     }
-  }
+  },
+
+  /**
+   * Get all quiz attempts for a user
+   */
+  async getUserQuizAttempts(userId: string): Promise<QuizAttempt[]> {
+    try {
+      const { data, error } = await supabase
+        .from('user_quiz_attempts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching user quiz attempts:', error)
+        return []
+      }
+
+      return data.map(attempt => ({
+        id: attempt.id,
+        userId: attempt.user_id,
+        topicId: attempt.topic_id,
+        score: attempt.score || 0,
+        correctAnswers: attempt.correct_answers || 0,
+        totalQuestions: attempt.total_questions || 0,
+        timeSpentSeconds: attempt.time_spent_seconds || 0,
+        completedAt: attempt.completed_at || new Date().toISOString(),
+        startedAt: attempt.started_at || new Date().toISOString(),
+        isCompleted: attempt.is_completed || false
+      }))
+    } catch (error) {
+      console.error('Failed to get user quiz attempts:', error)
+      return []
+    }
+  },
 
   // TODO: Add skill progress tracking functions here once database types are updated
   // These would include:

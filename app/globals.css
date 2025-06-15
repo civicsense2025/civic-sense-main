@@ -795,13 +795,9 @@ button, .card, .quiz-option {
 
 /* Fix for Radix UI Dialog/Popover positioning */
 [data-radix-popper-content-wrapper] {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  position: absolute !important;
   max-width: calc(100vw - 2rem) !important;
   max-height: calc(100vh - 2rem) !important;
-  width: var(--radix-popper-anchor-width, auto) !important;
   z-index: 50 !important;
 }
 
