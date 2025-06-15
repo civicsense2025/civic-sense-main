@@ -196,11 +196,11 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
       <div className="fixed inset-x-0 bottom-0 flex items-center justify-center pointer-events-none z-50">
         <div className="fixed-bottom-button pointer-events-auto">
           {requireAuth ? (
-            <Button onClick={onAuthRequired} className="py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
+            <Button onClick={onAuthRequired} className="rounded-xl bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
               Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           ) : (
-            <Button onClick={onStartQuiz} className="py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-medium rounded-full bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
+            <Button onClick={onStartQuiz} className="rounded-xl bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
               Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           )}

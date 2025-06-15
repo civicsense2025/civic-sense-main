@@ -76,6 +76,7 @@ export default function QuizLayout({
         isOpen={isAuthDialogOpen}
         onClose={() => setIsAuthDialogOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+        initialMode='sign-in'
       />
     </div>
   )

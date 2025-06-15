@@ -778,6 +778,7 @@ button, .card, .quiz-option {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  z-index: 50;
 }
 
 .dialog-content {
@@ -785,6 +786,50 @@ button, .card, .quiz-option {
   width: 100%;
   max-width: 28rem; /* max-w-md */
   max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  z-index: 51;
+  margin: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Fix for Radix UI Dialog/Popover positioning */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: calc(100vw - 2rem) !important;
+  max-height: calc(100vh - 2rem) !important;
+  width: var(--radix-popper-anchor-width, auto) !important;
+  z-index: 50 !important;
+}
+
+/* Ensure dialog content is properly centered */
+[role="dialog"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fix for portal positioning */
+[data-radix-portal] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* Ensure dialog content doesn't overflow viewport */
+.dialog-content,
+[role="dialog"] > div {
+  max-height: calc(100vh - 2rem);
+  max-width: calc(100vw - 2rem);
   overflow-y: auto;
 }
 
@@ -822,13 +867,16 @@ button, .card, .quiz-option {
 /* Fixed button positioning for consistent UI across the app */
 .fixed-bottom-button {
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 32px);
+  bottom: calc(env(safe-area-inset-bottom, 32px) + 48px); /* Increased from 16px to 48px to move higher */
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
   will-change: transform;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  padding: 1rem 2.5rem; /* Added padding to make button larger */
+  min-width: 240px; /* Added min-width to make button wider */
+  font-size: 1.125rem; /* Slightly larger font */
 }
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {

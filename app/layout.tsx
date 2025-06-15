@@ -8,6 +8,7 @@ import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { ClientGlobalAudio } from "@/components/client-global-audio"
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
               <Toaster />
               <ClientGlobalAudio />
+              <Analytics />
             </StatsigProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -1460,8 +1460,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         "fixed right-6 z-50 transition-all duration-300 ease-out",
         // Position higher when in mobile quiz to avoid footer
         isInQuiz && isMinimized 
-          ? "bottom-20" // Higher position to avoid mobile footer in quiz
-          : "bottom-6", // Normal position
+          ? "bottom-24" // Higher position to avoid mobile footer in quiz (increased from 20 to 24)
+          : "bottom-16", // Normal position (increased from 6 to 16)
         isMinimized ? "w-14 h-14" : "w-80",
         className
       )}>
@@ -2027,7 +2027,7 @@ export function GlobalAudioToggle() {
               // This could be used to show the controls if they're hidden
               // For now, it's just a placeholder
             }}
-            className="fixed bottom-6 right-6 z-40 h-12 w-12 p-0 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border shadow-lg"
+            className="fixed bottom-16 right-6 z-40 h-12 w-12 p-0 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border shadow-lg"
           >
             <Headphones className="h-5 w-5" />
           </Button>

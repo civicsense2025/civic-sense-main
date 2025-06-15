@@ -143,7 +143,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0 gap-0">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0 gap-0 fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
         <DialogHeader className="px-8 pt-8 pb-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
           <DialogTitle className="flex items-center space-x-3 text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
             <div className="relative">

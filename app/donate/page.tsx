@@ -3,6 +3,7 @@ import Script from 'next/script'
 import Link from 'next/link'
 import { DonateForm } from '@/components/donate-form'
 import { AutoReadPage } from '@/components/auto-read-page'
+import { FeedbackButton } from '@/components/feedback'
 
 export const metadata: Metadata = {
   title: 'Support CivicSense | Donate',
@@ -63,14 +64,20 @@ export default function DonatePage() {
                       📢
                     </div>
                     <h4 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-2">Spread the Word</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Share CivicSense with friends and family</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Share CivicSense with friends and family</p>
                   </div>
                   <div className="text-center">
                     <div className="text-4xl mb-4">
                       ⭐
                     </div>
                     <h4 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-2">Leave Feedback</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Help us improve with your suggestions</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Help us improve with your suggestions</p>
+                    <FeedbackButton 
+                      label="Share Your Feedback" 
+                      contextType="general" 
+                      contextId="donate_page" 
+                      variant="outline"
+                    />
                   </div>
                 </div>
               </div>

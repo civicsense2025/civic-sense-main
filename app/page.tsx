@@ -104,6 +104,7 @@ export default function HomePage() {
           isOpen={isAuthDialogOpen}
           onClose={() => setIsAuthDialogOpen(false)}
           onAuthSuccess={handleAuthSuccess}
+          initialMode='sign-in'
         />
       </main>
     </>

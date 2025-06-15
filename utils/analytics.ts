@@ -145,6 +145,15 @@ const AuthEventSchema = z.object({
   days_since_last_login: z.number().min(0).optional()
 })
 
+const FeedbackEventSchema = z.object({
+  feedback_type: z.string(),
+  context_type: z.string(),
+  context_id: z.string(),
+  rating: z.number().min(1).max(5).nullable(),
+  has_contact_info: z.boolean(),
+  feedback_length: z.number().min(0)
+})
+
 // Session management
 let sessionId: string | null = null
 let sessionStartTime: number = Date.now()
@@ -532,6 +541,24 @@ export const useAnalytics = () => {
         session_id: getSessionId(),
         session_duration_seconds: getSessionDuration()
       })
+    },
+
+    feedbackSubmitted: (data: z.infer<typeof FeedbackEventSchema>) => {
+      try {
+        const validData = FeedbackEventSchema.parse(data)
+        trackEvent('feedback_submitted', 1, {
+          ...validData,
+          session_id: getSessionId(),
+          session_duration: getSessionDuration(),
+          time_of_day: getTimeOfDay(),
+          day_of_week: getDayOfWeek(),
+          user_id: user?.id || null,
+          user_level: user?.user_metadata?.level || null,
+          is_premium: user?.user_metadata?.isPremium || false
+        })
+      } catch (error) {
+        console.error('Invalid feedback data:', error)
+      }
     }
   }
 

@@ -241,6 +241,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         isOpen={isAuthDialogOpen}
         onClose={() => setIsAuthDialogOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+        initialMode='sign-up'
       />
 
       {/* Premium Gate */}

@@ -822,18 +822,21 @@ export function DailyCardStack({
         )}
       </div>
 
-      {/* Fixed Start Quiz Button - Safari optimized */}
-      {allFilteredTopics.length > 0 && 
-       !isTopicLocked(allFilteredTopics[currentStackIndex]) && 
-       !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) && (
-        <Button 
-          size="lg"
-          className="fixed-bottom-button bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium px-8 sm:px-12 py-3 sm:py-4 rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
-          onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
-        >
-          {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}
-        </Button>
-      )}
+      {/* Fixed button container with consistent height to prevent layout shift */}
+      <div className="h-24 w-full relative">
+        {/* Fixed Start Quiz Button - Safari optimized */}
+        {allFilteredTopics.length > 0 && 
+         !isTopicLocked(allFilteredTopics[currentStackIndex]) && 
+         !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) && (
+          <Button 
+            size="lg"
+            className="fixed-bottom-button bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
+            onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
+          >
+            {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}
+          </Button>
+        )}
+      </div>
 
       <PremiumGate
         isOpen={showPremiumGate}
