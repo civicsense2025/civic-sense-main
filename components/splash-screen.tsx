@@ -6,35 +6,39 @@ import { useEffect, useState } from "react"
  * SplashScreen
  *
  * Displays an animated wordmark while the app is first mounting.
- * The splash automatically fades out after a short delay (1.5-2s) or once the
- * page has finished loading, whichever comes first.
+ * The splash automatically fades out once the page has loaded enough content
+ * to be interactive, or after a short minimum display time.
  */
 export function SplashScreen() {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    // Hide splash screen after the page has loaded or after timeout
-    const handleReady = () => setVisible(false)
-
-    // In case the load event has already fired
-    if (document.readyState === "complete") {
-      handleReady()
+    // Hide splash screen once content is ready
+    const hideScreen = () => setVisible(false)
+    
+    // Check if the page is already loaded
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      hideScreen()
     } else {
-      window.addEventListener("load", handleReady)
+      // Listen for both DOMContentLoaded (HTML parsed) and load (all resources loaded)
+      window.addEventListener("DOMContentLoaded", hideScreen)
+      window.addEventListener("load", hideScreen)
     }
 
-    const timeout = setTimeout(() => setVisible(false), 2000)
+    // Set a minimum display time (much shorter than before)
+    const minDisplayTimeout = setTimeout(hideScreen, 500)
 
     return () => {
-      window.removeEventListener("load", handleReady)
-      clearTimeout(timeout)
+      window.removeEventListener("DOMContentLoaded", hideScreen)
+      window.removeEventListener("load", hideScreen)
+      clearTimeout(minDisplayTimeout)
     }
   }, [])
 
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-black transition-opacity duration-700 animate-fadeOut">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-black transition-opacity duration-300 animate-fadeOut">
       <AnimatedWordmark />
     </div>
   )

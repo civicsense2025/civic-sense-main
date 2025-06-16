@@ -11,69 +11,79 @@ export function PWARegister() {
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState(false)
 
-  // Register service worker
+  // Register service worker with low priority
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      console.log('PWA: Service Worker is supported')
-      
-      window.addEventListener('load', () => {
-        console.log('PWA: Window loaded, registering service worker')
-        
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then(registration => {
-            console.log('PWA: Service Worker registered with scope:', registration.scope)
-            setServiceWorkerRegistration(registration)
-            
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              console.log('PWA: Update found for service worker')
-              const newWorker = registration.installing
-              if (newWorker) {
-                newWorker.addEventListener('statechange', () => {
-                  console.log('PWA: Service worker state changed to:', newWorker.state)
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('PWA: New content is available')
-                    setUpdateAvailable(true)
-                    toast({
-                      title: "Update available!",
-                      description: "A new version is available. Click to update.",
-                      action: (
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            newWorker.postMessage({ type: 'SKIP_WAITING' })
-                            window.location.reload()
-                          }}
-                        >
-                          Update
-                        </Button>
-                      ),
-                      duration: 10000,
-                    })
-                  }
-                })
-              }
-            })
-          })
-          .catch(error => {
-            console.error('PWA: Service Worker registration failed:', error)
-          })
-      })
-
-      // Handle service worker updates
-      let refreshing = false
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('PWA: Service worker controller changed')
-        if (!refreshing) {
-          refreshing = true
-          console.log('PWA: Reloading page to apply updates')
-          window.location.reload()
-        }
-      })
-    } else {
-      console.log('PWA: Service Worker is not supported in this browser')
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return
     }
+    
+    console.log('PWA: Service Worker is supported')
+    
+    // Use requestIdleCallback or setTimeout to defer registration
+    const registerServiceWorker = () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(registration => {
+          console.log('PWA: Service Worker registered with scope:', registration.scope)
+          setServiceWorkerRegistration(registration)
+          
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            console.log('PWA: Update found for service worker')
+            const newWorker = registration.installing
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                console.log('PWA: Service worker state changed to:', newWorker.state)
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('PWA: New content is available')
+                  setUpdateAvailable(true)
+                  toast({
+                    title: "Update available!",
+                    description: "A new version is available. Click to update.",
+                    action: (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          newWorker.postMessage({ type: 'SKIP_WAITING' })
+                          window.location.reload()
+                        }}
+                      >
+                        Update
+                      </Button>
+                    ),
+                    duration: 10000,
+                  })
+                }
+              })
+            }
+          })
+        })
+        .catch(error => {
+          console.error('PWA: Service Worker registration failed:', error)
+        })
+    }
+
+    // Register after the page is fully loaded and idle
+    if ('requestIdleCallback' in window) {
+      // Use requestIdleCallback when available (low priority)
+      window.requestIdleCallback(() => {
+        registerServiceWorker()
+      }, { timeout: 5000 })
+    } else {
+      // Fallback to setTimeout
+      setTimeout(registerServiceWorker, 3000)
+    }
+
+    // Handle service worker updates
+    let refreshing = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('PWA: Service worker controller changed')
+      if (!refreshing) {
+        refreshing = true
+        console.log('PWA: Reloading page to apply updates')
+        window.location.reload()
+      }
+    })
   }, [])
 
   // Handle install prompt
