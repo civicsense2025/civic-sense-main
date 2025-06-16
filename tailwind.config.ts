@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 const config: Config = {
     darkMode: ["class"],
@@ -19,7 +20,7 @@ const config: Config = {
   	},
   	extend: {
   		fontFamily: {
-  			sans: ['Helvetica', 'Arial', 'system-ui', 'sans-serif'],
+  			sans: ["var(--font-sans)", ...fontFamily.sans],
   			mono: ['Monaco', 'Menlo', 'Courier New', 'monospace'],
   		},
   		colors: {
@@ -71,10 +72,25 @@ const config: Config = {
   				from: { height: "var(--radix-accordion-content-height)" },
   				to: { height: "0" },
   			},
+  			"pulse-glow": {
+  				"0%": {
+  					opacity: "0.6",
+  					boxShadow: "0 0 0 0 rgba(59, 130, 246, 0.4)",
+  				},
+  				"70%": {
+  					opacity: "0",
+  					boxShadow: "0 0 0 10px rgba(59, 130, 246, 0)",
+  				},
+  				"100%": {
+  					opacity: "0",
+  					boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)",
+  				},
+  			},
   		},
   		animation: {
   			"accordion-down": "accordion-down 0.2s ease-out",
   			"accordion-up": "accordion-up 0.2s ease-out",
+  			"pulse-glow": "pulse-glow 2s ease-in-out infinite",
   		},
   	}
   },

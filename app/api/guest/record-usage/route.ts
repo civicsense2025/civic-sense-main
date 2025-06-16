@@ -1,11 +1,10 @@
-
 // app/api/guest/record-usage/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { recordGuestUsage, getGuestUsage } from '@/lib/guest-tracking'
 
 export async function POST(request: NextRequest) {
   try {
-    const { ip, guestToken, timestamp } = await request.json()
+    const { ip, guestToken, timestamp, topicId } = await request.json()
     
     if (!ip || ip === 'unknown') {
       return NextResponse.json(
@@ -16,8 +15,8 @@ export async function POST(request: NextRequest) {
     
     const today = new Date().toISOString().split('T')[0]
     
-    // Record the usage
-    await recordGuestUsage(ip, guestToken, timestamp)
+    // Record the usage with topic ID if provided
+    await recordGuestUsage(ip, guestToken, timestamp, topicId)
     
     // Get updated usage count
     const usage = await getGuestUsage(ip, today)
@@ -26,6 +25,7 @@ export async function POST(request: NextRequest) {
       ip,
       attemptsToday: usage.attempts,
       limitReached: usage.attempts >= 3, // GUEST_DAILY_QUIZ_LIMIT
+      completedTopics: usage.completedTopics || [],
       success: true
     })
   } catch (error) {

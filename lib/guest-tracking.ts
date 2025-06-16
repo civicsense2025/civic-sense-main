@@ -8,6 +8,7 @@ interface GuestUsageRecord {
   tokens: string[]
   firstSeen: string
   lastSeen: string
+  completedTopics: string[] // Track completed topic IDs
 }
 
 interface GuestAnalyticsRecord {
@@ -16,6 +17,7 @@ interface GuestAnalyticsRecord {
   timestamp: string
   guest_token: string
   attempts: number
+  topic_id?: string // Track which topic was completed
 }
 
 // Initialize Supabase client
@@ -47,11 +49,15 @@ export async function getGuestUsage(ip: string, date: string): Promise<GuestUsag
         attempts: 0,
         tokens: [],
         firstSeen: new Date().toISOString(),
-        lastSeen: new Date().toISOString()
+        lastSeen: new Date().toISOString(),
+        completedTopics: [] // Initialize empty array
       }
     }
     
-    return data as GuestUsageRecord
+    return {
+      ...data,
+      completedTopics: data.completedTopics || [] // Ensure completedTopics exists
+    } as GuestUsageRecord
   } catch (error) {
     console.error('Error getting guest usage:', error)
     // Return safe default
@@ -61,17 +67,23 @@ export async function getGuestUsage(ip: string, date: string): Promise<GuestUsag
       attempts: 0,
       tokens: [],
       firstSeen: new Date().toISOString(),
-      lastSeen: new Date().toISOString()
+      lastSeen: new Date().toISOString(),
+      completedTopics: [] // Initialize empty array
     }
   }
 }
 
-export async function recordGuestUsage(ip: string, guestToken: string, timestamp: string): Promise<void> {
+export async function recordGuestUsage(ip: string, guestToken: string, timestamp: string, topicId?: string): Promise<void> {
   const date = timestamp.split('T')[0]
   
   try {
     // Get existing record
     const existing = await getGuestUsage(ip, date)
+    
+    // Update record with completed topic if provided
+    const updatedTopics = topicId && !existing.completedTopics.includes(topicId)
+      ? [...existing.completedTopics, topicId]
+      : existing.completedTopics
     
     // Update record
     const updated: GuestUsageRecord = {
@@ -80,7 +92,8 @@ export async function recordGuestUsage(ip: string, guestToken: string, timestamp
       tokens: existing.tokens.includes(guestToken) 
         ? existing.tokens 
         : [...existing.tokens, guestToken],
-      lastSeen: timestamp
+      lastSeen: timestamp,
+      completedTopics: updatedTopics
     }
     
     // Upsert to Supabase
@@ -92,7 +105,8 @@ export async function recordGuestUsage(ip: string, guestToken: string, timestamp
         attempts: updated.attempts,
         tokens: updated.tokens,
         firstSeen: existing.attempts === 0 ? timestamp : existing.firstSeen,
-        lastSeen: timestamp
+        lastSeen: timestamp,
+        completedTopics: updatedTopics
       })
     
     if (error) {
@@ -107,7 +121,8 @@ export async function recordGuestUsage(ip: string, guestToken: string, timestamp
         date,
         timestamp,
         guest_token: guestToken,
-        attempts: updated.attempts
+        attempts: updated.attempts,
+        topic_id: topicId
       })
     
   } catch (error) {
@@ -134,6 +149,18 @@ export async function resetGuestUsage(ip: string, guestToken: string): Promise<v
   } catch (error) {
     console.error('Error resetting guest usage:', error)
     throw error
+  }
+}
+
+// Get completed topics for a guest user
+export async function getCompletedTopics(ip: string): Promise<string[]> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const usage = await getGuestUsage(ip, today)
+    return usage.completedTopics || []
+  } catch (error) {
+    console.error('Error getting completed topics:', error)
+    return []
   }
 }
 

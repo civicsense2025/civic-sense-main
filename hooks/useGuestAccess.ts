@@ -14,21 +14,25 @@ interface GuestAccessState {
   guestToken: string | null
   userIP: string | null
   serverLimitReached: boolean
+  completedTopics: string[] // Track completed topics
 }
 
 interface IPTrackingResponse {
   ip: string
   attemptsToday: number
   limitReached: boolean
+  completedTopics?: string[]
   success: boolean
 }
 
 interface GuestAccessActions {
-  recordQuizAttempt: () => Promise<number>
+  recordQuizAttempt: (topicId?: string) => Promise<number>
   hasReachedDailyLimit: () => boolean
   getRemainingAttempts: () => number
   resetGuestState: () => void
   canAccessQuiz: (isToday: boolean) => boolean
+  hasCompletedTopic: (topicId: string) => boolean
+  getCompletedTopics: () => string[]
 }
 
 // Safe localStorage access helper
@@ -60,7 +64,8 @@ export function useGuestAccess() {
     lastResetDate: null,
     guestToken: null,
     userIP: null,
-    serverLimitReached: false
+    serverLimitReached: false,
+    completedTopics: [] // Initialize empty array
   })
   
   const [isInitialized, setIsInitialized] = useState(false)
@@ -122,7 +127,7 @@ export function useGuestAccess() {
   }, [serverAvailable])
   
   // Record usage on server
-  const recordServerUsage = useCallback(async (ip: string): Promise<IPTrackingResponse | null> => {
+  const recordServerUsage = useCallback(async (ip: string, topicId?: string): Promise<IPTrackingResponse | null> => {
     if (!IP_TRACKING_ENABLED || !ip || !serverAvailable) return null
     
     try {
@@ -134,7 +139,8 @@ export function useGuestAccess() {
         body: JSON.stringify({ 
           ip,
           guestToken: guestState.guestToken,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          topicId
         }),
       })
       
@@ -184,10 +190,30 @@ export function useGuestAccess() {
           serverUsage = await checkServerUsage(userIP)
         }
         
+        // Load completed topics from localStorage
+        let completedTopics: string[] = []
+        const savedTopics = safeLocalStorage.getItem(`${STORAGE_KEY_PREFIX}completedTopics`)
+        if (savedTopics) {
+          try {
+            completedTopics = JSON.parse(savedTopics)
+          } catch (error) {
+            console.warn('Error parsing completed topics from localStorage:', error)
+            completedTopics = []
+          }
+        }
+        
+        // Use server-side completed topics if available (overrides local)
+        if (serverUsage?.completedTopics && serverUsage.completedTopics.length > 0) {
+          completedTopics = serverUsage.completedTopics
+          // Update localStorage with server data
+          safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}completedTopics`, JSON.stringify(completedTopics))
+        }
+        
         // Reset counter if it's a new day
         if (!savedLastReset || savedLastReset !== today) {
           safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}quizAttemptsToday`, '0')
           safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}lastResetDate`, today)
+          // Don't reset completed topics - we want to remember those
           
           if (isMounted) {
             setGuestState({
@@ -195,7 +221,8 @@ export function useGuestAccess() {
               lastResetDate: today,
               guestToken,
               userIP,
-              serverLimitReached: serverUsage?.limitReached || false
+              serverLimitReached: serverUsage?.limitReached || false,
+              completedTopics
             })
           }
           
@@ -220,7 +247,8 @@ export function useGuestAccess() {
             lastResetDate: savedLastReset,
             guestToken,
             userIP,
-            serverLimitReached: serverUsage?.limitReached || false
+            serverLimitReached: serverUsage?.limitReached || false,
+            completedTopics
           })
         }
       } catch (error) {
@@ -232,7 +260,8 @@ export function useGuestAccess() {
             lastResetDate: null,
             guestToken: null,
             userIP: null,
-            serverLimitReached: false
+            serverLimitReached: false,
+            completedTopics: []
           })
         }
       } finally {
@@ -248,8 +277,18 @@ export function useGuestAccess() {
     }
   }, [])
   
+  // Check if a topic has been completed
+  const hasCompletedTopic = useCallback((topicId: string): boolean => {
+    return guestState.completedTopics.includes(topicId)
+  }, [guestState.completedTopics])
+  
+  // Get all completed topics
+  const getCompletedTopics = useCallback((): string[] => {
+    return guestState.completedTopics
+  }, [guestState.completedTopics])
+  
   // Record a quiz attempt (both locally and on server)
-  const recordQuizAttempt = useCallback(async (): Promise<number> => {
+  const recordQuizAttempt = useCallback(async (topicId?: string): Promise<number> => {
     try {
       // Skip if we're not in a browser environment
       if (typeof window === 'undefined') {
@@ -261,11 +300,22 @@ export function useGuestAccess() {
       // Update localStorage immediately for responsive UI
       safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}quizAttemptsToday`, newAttempts.toString())
       
+      // Update completed topics if topicId is provided
+      let updatedCompletedTopics = [...guestState.completedTopics]
+      if (topicId && !updatedCompletedTopics.includes(topicId)) {
+        updatedCompletedTopics.push(topicId)
+        safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}completedTopics`, JSON.stringify(updatedCompletedTopics))
+      }
+      
       // Record on server if IP tracking is enabled and server is available
       let serverResponse: IPTrackingResponse | null = null
       if (guestState.userIP && serverAvailable) {
         try {
-          serverResponse = await recordServerUsage(guestState.userIP)
+          serverResponse = await recordServerUsage(guestState.userIP, topicId)
+          if (serverResponse?.completedTopics) {
+            updatedCompletedTopics = serverResponse.completedTopics
+            safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}completedTopics`, JSON.stringify(updatedCompletedTopics))
+          }
         } catch (error) {
           console.warn('Failed to record server usage, using local tracking only:', error)
         }
@@ -276,7 +326,8 @@ export function useGuestAccess() {
         setGuestState(prev => ({
           ...prev,
           quizAttemptsToday: serverResponse?.attemptsToday || newAttempts,
-          serverLimitReached: serverResponse?.limitReached || newAttempts >= GUEST_DAILY_QUIZ_LIMIT
+          serverLimitReached: serverResponse?.limitReached || newAttempts >= GUEST_DAILY_QUIZ_LIMIT,
+          completedTopics: updatedCompletedTopics
         }))
       }
       
@@ -297,7 +348,7 @@ export function useGuestAccess() {
       
       return newAttempts
     }
-  }, [guestState.quizAttemptsToday, guestState.userIP, recordServerUsage, serverAvailable])
+  }, [guestState.quizAttemptsToday, guestState.userIP, guestState.completedTopics, recordServerUsage, serverAvailable])
   
   // Check if guest has reached their limit (considers both local and server limits)
   const hasReachedDailyLimit = useCallback(() => {
@@ -336,6 +387,8 @@ export function useGuestAccess() {
       safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}quizAttemptsToday`, '0')
       safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}lastResetDate`, today)
       
+      // Don't reset completed topics - we want to preserve this data
+      
       // Reset server-side tracking if available
       if (guestState.userIP && IP_TRACKING_ENABLED) {
         try {
@@ -360,6 +413,7 @@ export function useGuestAccess() {
           quizAttemptsToday: 0,
           lastResetDate: today,
           serverLimitReached: false
+          // Keep completedTopics unchanged
         }))
       }
     } catch (error) {
@@ -389,13 +443,14 @@ export function useGuestAccess() {
       limitSource,
       ipTrackingEnabled: IP_TRACKING_ENABLED,
       userIP: guestState.userIP,
+      completedTopics: guestState.completedTopics,
       message: hasReached 
         ? 'Daily limit reached! Sign in for unlimited quizzes'
         : `${remaining} of ${GUEST_DAILY_QUIZ_LIMIT} free daily quizzes remaining`,
       canAccessTodayQuiz: !hasReached,
       serverLimitReached: guestState.serverLimitReached
     }
-  }, [getRemainingAttempts, hasReachedDailyLimit, guestState.serverLimitReached, guestState.userIP])
+  }, [getRemainingAttempts, hasReachedDailyLimit, guestState.serverLimitReached, guestState.userIP, guestState.completedTopics])
   
   // Check if we should warn about potential circumvention
   const getSuspiciousActivity = useCallback(async () => {
@@ -429,6 +484,7 @@ export function useGuestAccess() {
     lastResetDate: guestState.lastResetDate,
     userIP: guestState.userIP,
     serverLimitReached: guestState.serverLimitReached,
+    completedTopics: guestState.completedTopics,
     isInitialized,
     serverAvailable,
     
@@ -438,6 +494,8 @@ export function useGuestAccess() {
     getRemainingAttempts,
     canAccessQuiz,
     resetGuestState,
+    hasCompletedTopic,
+    getCompletedTopics,
     getGuestAccessSummary,
     getSuspiciousActivity,
     

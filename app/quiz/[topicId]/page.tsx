@@ -19,13 +19,12 @@ import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { cn } from "@/lib/utils"
 
 interface QuizPageProps {
-  params: Promise<{
+  params: {
     topicId: string
-  }>
+  }
 }
 
 export default function QuizPage({ params }: QuizPageProps) {
-  const resolvedParams = use(params)
   const router = useRouter()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
@@ -73,7 +72,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         setError(null)
 
         // Load topic metadata
-        const topicData = await dataService.getTopicById(resolvedParams.topicId)
+        const topicData = await dataService.getTopicById(params.topicId)
         if (!topicData) {
           setError("Quiz not found")
           return
@@ -90,7 +89,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
 
     loadQuizData()
-  }, [resolvedParams.topicId])
+  }, [params.topicId])
 
   const handleStartQuiz = async () => {
     // Check quiz limits based on user tier
@@ -120,7 +119,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     
     // Load questions now that the user has started the quiz
     try {
-      const questionsData = await dataService.getQuestionsByTopic(resolvedParams.topicId)
+      const questionsData = await dataService.getQuestionsByTopic(params.topicId)
       if (!questionsData || questionsData.length === 0) {
         setError("No questions found for this quiz")
         setShowLoadingScreen(false)
@@ -142,8 +141,8 @@ export default function QuizPage({ params }: QuizPageProps) {
     // Mark topic as completed
     const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
     const completedTopics = savedCompleted ? JSON.parse(savedCompleted) : []
-    if (!completedTopics.includes(resolvedParams.topicId)) {
-      completedTopics.push(resolvedParams.topicId)
+    if (!completedTopics.includes(params.topicId)) {
+      completedTopics.push(params.topicId)
       localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(completedTopics))
       setCompletedToday(completedTopics.length)
     }
@@ -288,7 +287,7 @@ export default function QuizPage({ params }: QuizPageProps) {
           <QuizErrorBoundary>
             <QuizEngine
               questions={questions}
-              topicId={resolvedParams.topicId}
+              topicId={params.topicId}
               currentTopic={{
                 id: topic?.topic_id || "",
                 title: topic?.topic_title || "",

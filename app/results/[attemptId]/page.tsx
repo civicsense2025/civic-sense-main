@@ -2,14 +2,19 @@
 
 import { quizDatabase } from "@/lib/quiz-database"
 import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { QuizResults } from "@/components/quiz/quiz-results"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 
-export default function PastResultsPage() {
-  const params = useParams<{ attemptId: string }>()
-  const attemptId = params?.attemptId
+interface ResultsPageProps {
+  params: {
+    attemptId: string
+  }
+}
+
+export default function PastResultsPage({ params }: ResultsPageProps) {
+  const attemptId = params.attemptId
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

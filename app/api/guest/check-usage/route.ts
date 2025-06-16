@@ -1,4 +1,3 @@
-
 // app/api/guest/check-usage/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getGuestUsage } from '@/lib/guest-tracking' // Your storage implementation
@@ -22,6 +21,7 @@ export async function POST(request: NextRequest) {
       ip,
       attemptsToday: usage.attempts,
       limitReached: usage.attempts >= 3, // GUEST_DAILY_QUIZ_LIMIT
+      completedTopics: usage.completedTopics || [],
       success: true
     })
   } catch (error) {
