@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { QuizQuestion } from '@/lib/quiz-data'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { CheckCircle, XCircle, RotateCcw, HelpCircle } from 'lucide-react'
+import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
 interface CrosswordQuestionProps {
   question: QuizQuestion
@@ -21,7 +20,7 @@ interface CellState {
   isHighlighted: boolean
   isActive: boolean
   wordNumber?: number
-  wordDirection?: 'across' | 'down'
+  isBlocked?: boolean
 }
 
 export function CrosswordQuestion({
@@ -44,8 +43,20 @@ export function CrosswordQuestion({
     )
   }
   
-  const { size, words } = crosswordData
+  const { size, words, layout } = crosswordData
   const { rows, cols } = size
+  
+  // Utility to determine if a cell is blocked based on layout
+  const isBlockedCell = useCallback(
+    (r: number, c: number): boolean => {
+      if (!layout || layout.length === 0) return false
+      if (r >= layout.length) return false
+      const rowString = layout[r]
+      if (!rowString || c >= rowString.length) return false
+      return rowString[c] === '#'
+    },
+    [layout]
+  )
   
   // Initialize the grid state
   const [grid, setGrid] = useState<CellState[][]>(() => {
@@ -54,9 +65,22 @@ export function CrosswordQuestion({
       Array(cols).fill(null).map(() => ({
         letter: '',
         isHighlighted: false,
-        isActive: false
+        isActive: false,
+        isBlocked: false
       }))
     )
+    
+    // Mark blocked cells first (from layout)
+    if (layout && layout.length === rows) {
+      for (let r = 0; r < rows; r++) {
+        const rowString = layout[r]
+        for (let c = 0; c < cols && c < rowString.length; c++) {
+          if (rowString[c] === '#') {
+            initialGrid[r][c].isBlocked = true
+          }
+        }
+      }
+    }
     
     // Mark cells with word numbers
     words.forEach(word => {
@@ -430,6 +454,7 @@ export function CrosswordQuestion({
   
   // Determine if a cell is part of a word
   const isCellInWord = useCallback((row: number, col: number) => {
+    if (isBlockedCell(row, col)) return false
     return words.some(word => {
       const { position, direction, word: wordText } = word
       const { row: wordRow, col: wordCol } = position
@@ -440,7 +465,7 @@ export function CrosswordQuestion({
         return col === wordCol && row >= wordRow && row < wordRow + wordText.length
       }
     })
-  }, [words])
+  }, [words, isBlockedCell])
   
   return (
     <div className="space-y-6">
@@ -460,33 +485,37 @@ export function CrosswordQuestion({
             {Array.from({ length: rows }).map((_, rowIndex) => (
               Array.from({ length: cols }).map((_, colIndex) => {
                 const cell = grid[rowIndex][colIndex]
-                const isInWord = isCellInWord(rowIndex, colIndex)
+                const isBlocked = cell.isBlocked
+                const isInWord = !isBlocked && isCellInWord(rowIndex, colIndex)
                 
                 return (
                   <div
                     key={`${rowIndex}-${colIndex}`}
                     className={cn(
-                      "relative w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center bg-white dark:bg-slate-900 transition-all",
-                      !isInWord && "bg-slate-200 dark:bg-slate-800",
+                      "relative w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center transition-all",
+                      isBlocked && "bg-slate-700 dark:bg-slate-800",
+                      !isBlocked && "bg-white dark:bg-slate-900",
+                      !isBlocked && !isInWord && "bg-slate-200 dark:bg-slate-800",
                       cell.isHighlighted && "bg-blue-50 dark:bg-blue-900/30",
                       cell.isActive && "bg-blue-100 dark:bg-blue-800/40 ring-2 ring-blue-500",
                       isSubmitted && cell.isCorrect === true && "bg-green-50 dark:bg-green-900/30",
                       isSubmitted && cell.isCorrect === false && "bg-red-50 dark:bg-red-900/30",
-                      disabled && "opacity-70"
+                      disabled && "opacity-70",
+                      isBlocked && "cursor-default"
                     )}
-                    onClick={() => isInWord && handleCellClick(rowIndex, colIndex)}
-                    tabIndex={isInWord ? 0 : -1}
-                    onKeyDown={(e) => handleKeyPress(e, rowIndex, colIndex)}
+                    onClick={() => !isBlocked && isInWord && handleCellClick(rowIndex, colIndex)}
+                    tabIndex={!isBlocked && isInWord ? 0 : -1}
+                    onKeyDown={(e) => !isBlocked && handleKeyPress(e, rowIndex, colIndex)}
                   >
                     {/* Word number */}
-                    {cell.wordNumber && (
+                    {cell.wordNumber && !isBlocked && (
                       <span className="absolute top-0.5 left-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                         {cell.wordNumber}
                       </span>
                     )}
                     
                     {/* Cell content */}
-                    {isInWord ? (
+                    {!isBlocked && isInWord ? (
                       <span className={cn(
                         "text-lg sm:text-xl font-semibold",
                         isSubmitted && cell.isCorrect === true && "text-green-600 dark:text-green-400",
@@ -495,7 +524,7 @@ export function CrosswordQuestion({
                         {cell.letter}
                       </span>
                     ) : (
-                      <span className="bg-slate-300 dark:bg-slate-700 w-full h-full"></span>
+                      <span className={cn("w-full h-full", isBlocked ? "bg-slate-700 dark:bg-slate-700" : "bg-slate-300 dark:bg-slate-700")}></span>
                     )}
                   </div>
                 )

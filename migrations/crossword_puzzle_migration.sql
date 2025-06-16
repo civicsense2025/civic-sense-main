@@ -52,7 +52,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Check if this is a crossword question
     IF NEW.question_type = 'crossword' THEN
-        -- Validate that crossword_data is present and has the required structure
+        -- Validate presence of main JSON structure
         IF NEW.crossword_data IS NULL OR 
            NOT (NEW.crossword_data ? 'size') OR 
            NOT (NEW.crossword_data ? 'words') THEN
@@ -66,8 +66,29 @@ BEGIN
         END IF;
         
         -- Validate that words is an array and not empty
-        IF jsonb_array_length(NEW.crossword_data->'words') = 0 THEN
-            RAISE EXCEPTION 'Crossword must include at least one word';
+        IF jsonb_typeof(NEW.crossword_data->'words') <> 'array' OR 
+           jsonb_array_length(NEW.crossword_data->'words') = 0 THEN
+            RAISE EXCEPTION 'Crossword must include a non-empty array of words';
+        END IF;
+
+        -- Optional: validate layout if provided
+        IF (NEW.crossword_data ? 'layout') THEN
+            -- layout must be an array with length = rows
+            IF jsonb_typeof(NEW.crossword_data->'layout') <> 'array' THEN
+                RAISE EXCEPTION 'Crossword layout must be an array of strings';
+            END IF;
+
+            IF jsonb_array_length(NEW.crossword_data->'layout') <> (NEW.crossword_data->'size'->>'rows')::INT THEN
+                RAISE EXCEPTION 'Crossword layout row count must equal size.rows';
+            END IF;
+
+            -- Ensure each row string length equals cols
+            PERFORM 1 FROM jsonb_array_elements_text(NEW.crossword_data->'layout') AS row_str
+            WHERE length(row_str) <> (NEW.crossword_data->'size'->>'cols')::INT;
+
+            IF FOUND THEN
+                RAISE EXCEPTION 'Each layout row string must have exactly size.cols characters';
+            END IF;
         END IF;
     END IF;
     

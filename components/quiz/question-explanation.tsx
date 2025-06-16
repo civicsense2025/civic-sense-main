@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
 import { cn } from "@/lib/utils"
+import { GlossaryLinkText } from '@/components/glossary/glossary-link-text'
 
 interface QuestionExplanationProps {
   question: QuizQuestion
@@ -20,7 +21,7 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
         className="prose prose-slate dark:prose-invert prose-sm max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"
         data-audio-content="true"
       >
-        {question.explanation}
+        <GlossaryLinkText text={question.explanation} />
       </div>
       
       {/* Collapsible Sources Section */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { dataService } from "@/lib/data-service"
 import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
@@ -22,12 +22,19 @@ import {
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { quizDatabase, type QuizAttempt } from "@/lib/quiz-database"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
+import { createClient as createSupabaseClient } from "@/utils/supabase/client"
+import { StartQuizButton } from "@/components/start-quiz-button"
 
-// Helper to get today's date in user's local timezone
+// Helper to get today's date at midnight in the user's local timezone
+// If you need to mock a date for testing, set NEXT_PUBLIC_MOCK_DATE="YYYY-MM-DD"
 const getTodayAtMidnight = () => {
-  // Use mock date for demo (June 14, 2025)
-  const mockToday = new Date(2025, 5, 14) // Month is 0-indexed, so 5 = June
-  return mockToday
+  const mock = process.env.NEXT_PUBLIC_MOCK_DATE
+  if (mock) {
+    const [y, m, d] = mock.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
 // Optimized date parsing with caching
@@ -132,17 +139,13 @@ const useTopicAccess = () => {
       return { accessible: false, reason: 'coming_soon' }
     }
 
-    // In development, be more permissive
-    if (process.env.NODE_ENV === 'development') {
-      const oneWeekFromNow = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000)
-      if (localTopicDate > oneWeekFromNow && !completedTopics.has(topic.topic_id)) {
-        return { accessible: false, reason: 'future_locked' }
-      }
-      return { accessible: true, reason: 'available' }
+    // If topic date is in the future, lock it for everyone until that day
+    if (localTopicDate > currentDate) {
+      return { accessible: false, reason: 'future_locked' }
     }
 
-    const today = getTodayAtMidnight()
-    const isToday = localTopicDate.getTime() === today.getTime()
+    // Pre-compute commonly used flags
+    const isToday = localTopicDate.getTime() === currentDate.getTime()
     const isCompleted = completedTopics.has(topic.topic_id)
 
     // Guest access logic
@@ -150,7 +153,7 @@ const useTopicAccess = () => {
       if (!isToday) {
         return { accessible: false, reason: 'guest_wants_more' }
       }
-      if (hasReachedDailyLimit() && !isCompleted) {
+      if (hasReachedDailyLimit() && !completedTopics.has(topic.topic_id)) {
         return { accessible: false, reason: 'guest_loving_content' }
       }
       return { accessible: true, reason: 'guest_exploring_today' }
@@ -188,6 +191,7 @@ interface DailyCardStackProps {
   searchQuery: string
   requireAuth?: boolean
   onAuthRequired?: () => void
+  showGuestBanner?: boolean
 }
 
 interface OrganizedTopics {
@@ -248,7 +252,7 @@ function GuestAccessBanner({
           <p className="text-sm font-medium">
             {summary.hasReachedLimit 
               ? `Thanks for trying CivicSense! Support our mission to unlock unlimited quizzes`
-              : `Free Access: ${summary.remaining} of ${GUEST_DAILY_QUIZ_LIMIT} daily quizzes remaining today`
+              : `Complete today's civic quizzes and stay informed`
             }
           </p>
           {!summary.hasReachedLimit && (
@@ -368,6 +372,7 @@ export function DailyCardStack({
   searchQuery,
   requireAuth = false,
   onAuthRequired,
+  showGuestBanner = true,
 }: DailyCardStackProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -397,10 +402,15 @@ export function DailyCardStack({
   const [currentDate, setCurrentDate] = useState(getTodayAtMidnight())
   const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
   const [isLoadingTopics, setIsLoadingTopics] = useState(true)
+  const [isLoadingMoreTopics, setIsLoadingMoreTopics] = useState(false)
   const [showInlinePremiumPrompt, setShowInlinePremiumPrompt] = useState(false)
   const [currentStackIndex, setCurrentStackIndex] = useState(0)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [visibleTopicsCount, setVisibleTopicsCount] = useState(20)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownSearch, setDropdownSearch] = useState("")
+  const supabaseClientRef = useRef<any>(null)
+  const [trendingQueries, setTrendingQueries] = useState<string[]>([])
 
   // Move all useMemo hooks here BEFORE useCallback hooks
   const organizedTopics = useMemo(() => {
@@ -494,7 +504,6 @@ export function DailyCardStack({
         case 'coming_soon':
           console.log(`Great news! "${topic.topic_title}" is coming soon to CivicSense!`)
           return
-        case 'guest_wants_more':
         case 'guest_loving_content':
           console.log('Thanks for trying CivicSense! Create a free account or consider supporting us for unlimited access.')
           onAuthRequired?.()
@@ -540,18 +549,14 @@ export function DailyCardStack({
     setTopicsWithoutQuestions(topicsWithoutQuestionsSet)
   }, [])
 
-  // All useEffect hooks last
+  // Enhance loadInitialTopics to load more data
   useEffect(() => {
     const loadInitialTopics = async () => {
       try {
         setIsLoadingTopics(true)
-        const today = getTodayAtMidnight()
-        const startDate = new Date(today)
-        startDate.setDate(today.getDate() - 3)
-        const endDate = new Date(today)
-        endDate.setDate(today.getDate() + 3)
-        
-        const topicsData = await dataService.getTopicsInRange(startDate, endDate)
+        // Fetch all topics instead of limiting to a date range to ensure we include
+        // the full catalog (400+ topics). We'll filter and categorize them later.
+        const topicsData = await dataService.getAllTopics()
         const topicsArray = Object.values(topicsData)
         setTopicsList(topicsArray)
         
@@ -622,8 +627,81 @@ export function DailyCardStack({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentStackIndex, allFilteredTopics, getTopicAccessStatus, handlePrevious, handleNext, handleExploreGame])
 
+  // Add scroll handler for dropdown
+  const handleDropdownScroll = useCallback(() => {
+    if (dropdownSearch) return // no progressive loading while searching
+    if (!dropdownRef.current) return
+    
+    const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current
+    const scrollPosition = scrollTop + clientHeight
+    
+    // If scrolled to 80% of the way down, load more topics
+    if (scrollPosition > scrollHeight * 0.8 && visibleTopicsCount < allFilteredTopics.length) {
+      setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
+    }
+  }, [visibleTopicsCount, allFilteredTopics.length])
+
+  // Reset visible topics & search when dropdown opens and scroll to current item
+  useEffect(() => {
+    if (dropdownOpen) {
+      setVisibleTopicsCount(20)
+      setDropdownSearch("")
+      // Ensure current topic is visible & centered
+      setVisibleTopicsCount((prev) => Math.max(prev, currentStackIndex + 1))
+      // Scroll after DOM paint
+      requestAnimationFrame(() => {
+        const container = dropdownRef.current
+        if (!container) return
+        const currentEl = container.querySelector(`[data-topic-index="${currentStackIndex}"]`) as HTMLElement | null
+        if (currentEl) {
+          container.scrollTop = currentEl.offsetTop - container.clientHeight / 2
+        }
+      })
+    }
+  }, [dropdownOpen, currentStackIndex])
+
+  // Fetch trending queries when dropdown opens
+  useEffect(() => {
+    const fetchTrending = async () => {
+      if (!dropdownOpen || !supabaseClientRef.current) return
+      try {
+        const { data, error } = await supabaseClientRef.current
+          .from("trending_searches")
+          .select("query")
+          .order("count", { ascending: false })
+          .limit(5)
+        if (error) throw error
+        setTrendingQueries((data || []).map((d: any) => d.query))
+      } catch (err) {
+        console.warn("Failed to load trending searches", err)
+      }
+    }
+    fetchTrending()
+  }, [dropdownOpen])
+
+  // Helper to record the search query (fire and forget)
+  const recordSearchQuery = useCallback(async (query: string) => {
+    if (!query || !supabaseClientRef.current) return
+    try {
+      await supabaseClientRef.current.rpc("increment_trending_query", { search_query: query })
+    } catch (err) {
+      // Silently ignore
+    }
+  }, [])
+
   // Add missing cardBaseHeight constant
   const cardBaseHeight = "h-[500px]"
+
+  // Ensure we land on the first accessible (non future-locked) topic when no explicit topic param
+  useEffect(() => {
+    const topicParam = searchParams.get('topic')
+    if (topicParam) return // user explicitly navigated
+    if (allFilteredTopics.length === 0) return
+    const firstAccessibleIdx = allFilteredTopics.findIndex(t => getTopicAccessStatus(t).accessible)
+    if (firstAccessibleIdx !== -1 && firstAccessibleIdx !== currentStackIndex) {
+      setCurrentStackIndex(firstAccessibleIdx)
+    }
+  }, [allFilteredTopics, searchParams, getTopicAccessStatus, currentStackIndex])
 
   // Loading state
   if (isLoadingTopics) {
@@ -675,14 +753,15 @@ export function DailyCardStack({
 
   return (
     <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
-      {/* Enhanced Guest Access Banner */}
-      <GuestAccessBanner 
-        user={user}
-        IP_TRACKING_ENABLED={IP_TRACKING_ENABLED}
-        getSuspiciousActivity={getSuspiciousActivity}
-        getGuestAccessSummary={getGuestAccessSummary}
-        GUEST_DAILY_QUIZ_LIMIT={GUEST_DAILY_QUIZ_LIMIT}
-      />
+      {showGuestBanner && (
+        <GuestAccessBanner 
+          user={user}
+          IP_TRACKING_ENABLED={IP_TRACKING_ENABLED}
+          getSuspiciousActivity={getSuspiciousActivity}
+          getGuestAccessSummary={getGuestAccessSummary}
+          GUEST_DAILY_QUIZ_LIMIT={GUEST_DAILY_QUIZ_LIMIT}
+        />
+      )}
 
       {/* Inline Premium Prompt */}
       <InlinePremiumPrompt 
@@ -705,62 +784,125 @@ export function DailyCardStack({
                 currentStackIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
               )}
             >
-              {currentStackIndex > 0 && `← ${parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+              {currentStackIndex > 0 && (
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                    ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                  <div className="flex items-center gap-1 font-medium text-sm">
+                    <span>{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                    <span className="text-left max-w-[120px] truncate">
+                      {allFilteredTopics[currentStackIndex - 1].topic_title}
+                    </span>
+                  </div>
+                </div>
+              )}
             </button>
 
             {/* Current date dropdown */}
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity">
-                  <span>
-                    {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
-                      weekday: 'short', month: 'short', day: 'numeric' 
-                    })}
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{currentTopic.emoji}</span>
+                    <span>
+                      {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
+                        weekday: 'short', month: 'short', day: 'numeric' 
+                      })}
+                    </span>
                   </span>
                   <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-[90vw] max-w-md max-h-96 overflow-y-auto">
-                {allFilteredTopics.slice(0, visibleTopicsCount).map((topic, idx) => {
-                  const accessStatus = getTopicAccessStatus(topic)
-                  const isCurrent = idx === currentStackIndex
-                              
-                  return (
-                    <DropdownMenuItem
-                      key={topic.topic_id}
-                      onClick={() => {
-                        if (accessStatus.accessible) {
-                          handleIndexChange(idx)
-                          setDropdownOpen(false)
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between p-3",
-                        isCurrent && "bg-primary/10 font-medium",
-                        !accessStatus.accessible && "opacity-50 cursor-not-allowed"
-                      )}
-                      disabled={!accessStatus.accessible}
-                    >
-                      <div className="flex items-center space-x-3 flex-grow min-w-0">
-                        <span className="text-lg flex-shrink-0">{topic.emoji}</span>
-                        <div className="flex-grow min-w-0">
-                          <div className="text-sm font-medium truncate">{topic.topic_title}</div>
-                          <div className="text-xs text-slate-500">
-                            {parseTopicDate(topic.date)?.toLocaleDateString('en-US', { 
-                              weekday: 'short', month: 'short', day: 'numeric' 
-                            })}
+              <DropdownMenuContent 
+                align="center" 
+                className="w-[90vw] max-w-md max-h-[80vh] overflow-y-auto"
+                ref={dropdownRef}
+                onScroll={handleDropdownScroll}
+              >
+                <div className="p-2">
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      value={dropdownSearch}
+                      onChange={(e) => setDropdownSearch(e.target.value)}
+                      placeholder={`Search ${allFilteredTopics.length} topics...`}
+                      className="w-full bg-slate-100 dark:bg-slate-800 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400"
+                    />
+                  </div>
+                  {/* Trending searches */}
+                  {dropdownSearch === "" && trendingQueries.length > 0 && (
+                    <div className="mb-2 px-1">
+                      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Trending searches</div>
+                      <div className="flex flex-wrap gap-2">
+                        {trendingQueries.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => setDropdownSearch(q)}
+                            className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full px-3 py-1 transition-colors"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Filter topics by search */}
+                  {(() => {
+                    const filtered = allFilteredTopics.filter(t =>
+                      t.topic_title.toLowerCase().includes(dropdownSearch.toLowerCase()) ||
+                      (t.description?.toLowerCase() || "").includes(dropdownSearch.toLowerCase())
+                    )
+                    const topicsToRender = dropdownSearch ? filtered : filtered.slice(0, visibleTopicsCount)
+                    return topicsToRender.map((topic, idx) => {
+                      const indexInAll = allFilteredTopics.findIndex(tt => tt.topic_id === topic.topic_id)
+                      const accessStatus = getTopicAccessStatus(topic)
+                      const isCurrent = indexInAll === currentStackIndex
+                      const topicDate = parseTopicDate(topic.date)
+                      return (
+                        <DropdownMenuItem
+                          data-topic-index={indexInAll}
+                          key={topic.topic_id}
+                          onClick={() => {
+                            if (accessStatus.accessible) {
+                              handleIndexChange(indexInAll)
+                              recordSearchQuery(dropdownSearch || topic.topic_title)
+                              setDropdownOpen(false)
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center justify-between p-3",
+                            isCurrent && "bg-primary/10 font-medium",
+                            !accessStatus.accessible && "opacity-50 cursor-not-allowed"
+                          )}
+                          disabled={!accessStatus.accessible}
+                        >
+                          <div className="flex items-center space-x-3 flex-grow min-w-0">
+                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
+                            <div className="flex-grow min-w-0">
+                              <div className="text-sm font-medium truncate">{topic.topic_title}</div>
+                              <div className="text-xs text-slate-500 truncate">{topic.description}</div>
+                              <div className="text-xs text-slate-500 mt-0.5">
+                                {topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
-                        {accessStatus.reason === 'coming_soon' && <span className="text-xs text-amber-600">Coming Soon</span>}
-                        {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
-                        {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
-                        {isCurrent && <span className="text-xs text-primary">●</span>}
-                      </div>
-                    </DropdownMenuItem>
-                  )
-                })}
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-amber-600">Coming Soon</span>}
+                            {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
+                            {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
+                            {isCurrent && <span className="text-xs text-primary">●</span>}
+                          </div>
+                        </DropdownMenuItem>
+                      )
+                    })
+                  })()}
+                  {!dropdownSearch && visibleTopicsCount < allFilteredTopics.length && (
+                    <div className="text-center py-2 text-xs text-slate-500">
+                      Scroll to load more topics ({visibleTopicsCount} of {allFilteredTopics.length})...
+                    </div>
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -773,7 +915,19 @@ export function DailyCardStack({
                 currentStackIndex === allFilteredTopics.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
               )}
             >
-              {currentStackIndex < allFilteredTopics.length - 1 && `${parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →`}
+              {currentStackIndex < allFilteredTopics.length - 1 && (
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                    {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
+                  </div>
+                  <div className="flex items-center gap-1 font-medium text-sm">
+                    <span className="text-right max-w-[120px] truncate">
+                      {allFilteredTopics[currentStackIndex + 1].topic_title}
+                    </span>
+                    <span>{allFilteredTopics[currentStackIndex + 1].emoji}</span>
+                  </div>
+                </div>
+              )}
             </button>
           </div>
         </div>
@@ -793,31 +947,47 @@ export function DailyCardStack({
         />
       </div>
 
-      {/* Fixed Start Quiz Button */}
-      <div className="h-24 w-full relative">
-        <div className="fixed-bottom-button max-w-lg w-full flex items-center justify-center">
-          {currentAccessStatus.accessible ? (
-            <Button 
-              size="lg"
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-full shadow-lg px-8 py-4 min-w-[240px]"
-              onClick={() => handleExploreGame(currentTopic.topic_id)}
-            >
-              {isTopicCompleted(currentTopic.topic_id) ? 'Review Quiz' : 'Start Quiz'}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full shadow-lg px-8 py-4 min-w-[240px] cursor-not-allowed opacity-50"
-              disabled
-            >
-              {currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon! 🚀' : 
-               currentAccessStatus.reason?.startsWith('guest') ? 'Support CivicSense to Continue' :
-               currentAccessStatus.reason === 'premium_required' ? 'Unlock with Donation' : 
-               'Available Soon'}
-            </Button>
-          )}
-        </div>
+      {/* Start Quiz Button - larger and inline */}
+      <div className="flex justify-center mt-10">
+        {currentAccessStatus.accessible ? (
+          <StartQuizButton
+            label={isTopicCompleted(currentTopic.topic_id) ? 'Review Quiz' : 'Play Quiz'}
+            onClick={() => handleExploreGame(currentTopic.topic_id)}
+          />
+        ) : (
+          <div className="flex flex-col items-center space-y-2">
+            {currentAccessStatus.reason === 'future_locked' ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <StartQuizButton
+                        label="Available Soon"
+                        disabled
+                        variant="outline"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    This quiz will unlock at 12:00&nbsp;AM&nbsp;ET on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <StartQuizButton
+                label={currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon! 🚀' : 
+                       currentAccessStatus.reason?.startsWith('guest') ? 'Support CivicSense to Continue' :
+                       currentAccessStatus.reason === 'premium_required' ? 'Unlock with Donation' : 
+                       'Available Soon'}
+                disabled
+                variant="outline"
+              />
+            )}
+            {currentAccessStatus.reason === 'future_locked' && (
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

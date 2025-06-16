@@ -54,7 +54,7 @@ export function PWAStatus() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-black/80 text-white text-xs p-2 rounded font-mono">
+    <div className="fixed bottom-4 left-4 z-50 bg-black/80 text-white text-xs p-2 rounded font-mono">
       <div>PWA Status:</div>
       <div>Service Worker: {status.serviceWorker}</div>
       <div>Installable: {status.installable}</div>

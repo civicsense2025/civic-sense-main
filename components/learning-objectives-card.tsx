@@ -188,9 +188,9 @@ export function LearningObjectivesCard({ limit = 5, onViewSkill }: LearningObjec
         <CardDescription>Your current learning goals</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {objectives.map((objective) => (
+        {objectives.map((objective, index) => (
           <div 
-            key={objective.id}
+            key={`${objective.id}-${objective.skill_id}-${index}`}
             className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
               objective.completed 
                 ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400' 

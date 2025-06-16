@@ -181,7 +181,7 @@ export default function QuizPage({ params }: QuizPageProps) {
             <p className="text-sm font-medium">
               {summary.hasReachedLimit 
                 ? `Thanks for trying CivicSense! Support our mission to unlock unlimited quizzes`
-                : `Free Access: ${summary.remaining} of ${GUEST_DAILY_QUIZ_LIMIT} daily quizzes remaining today`
+                : `Complete today's civic quizzes and stay informed`
               }
             </p>
             {!summary.hasReachedLimit && (
@@ -281,6 +281,13 @@ export default function QuizPage({ params }: QuizPageProps) {
             <QuizEngine
               questions={questions}
               topicId={resolvedParams.topicId}
+              currentTopic={{
+                id: topic?.topic_id || "",
+                title: topic?.topic_title || "",
+                emoji: topic?.emoji || "",
+                date: topic?.date || "",
+                dayOfWeek: topic?.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
+              }}
               onComplete={handleQuizComplete}
             />
           </QuizErrorBoundary>

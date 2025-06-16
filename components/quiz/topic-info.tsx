@@ -1,10 +1,9 @@
 "use client"
 
 import type { TopicMetadata } from "@/lib/quiz-data"
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
 import { useMemo, useEffect } from "react"
 import { useGlobalAudio } from "@/components/global-audio-controls"
+import { StartQuizButton } from "@/components/start-quiz-button"
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -151,16 +150,26 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
           <div className="text-6xl sm:text-8xl mb-4">
             {topicData.emoji}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-8">
+          <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6">
             {topicData.topic_title}
           </h1>
+
+          {/* Begin button placed above Why This Matters for better mobile UX */}
+          <div className="flex justify-center mb-6">
+            {requireAuth ? (
+              <StartQuizButton label="Sign Up to Begin" onClick={onAuthRequired} />
+            ) : (
+              <StartQuizButton label="Begin" onClick={onStartQuiz} />
+            )}
+          </div>
+
           <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
             Why This Matters
           </h2>
         </div>
 
-        {/* Blurbs in 2-column grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* Blurbs as a single-column list */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6">
           {blurbs.map((blurb, index) => (
             <div 
               key={index}
@@ -191,24 +200,6 @@ export function TopicInfo({ topicData, onStartQuiz, requireAuth = false, onAuthR
         </div>
         )}
       </div>
-
-      {/* Floating action button - now fully centered in viewport */}
-      <div className="fixed inset-x-0 bottom-0 flex items-center justify-center pointer-events-none z-50">
-        <div className="fixed-bottom-button pointer-events-auto">
-          {requireAuth ? (
-            <Button onClick={onAuthRequired} className="rounded-xl bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
-              Sign Up to Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          ) : (
-            <Button onClick={onStartQuiz} className="rounded-xl bg-black dark:bg-black text-white dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 animate-breathe-glow shadow-2xl backdrop-blur-sm">
-              Start Quiz <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {/* Spacer to ensure content doesn't overlap with fixed button */}
-      <div className="h-32"></div>
     </div>
   )
 }

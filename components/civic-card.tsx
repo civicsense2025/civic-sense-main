@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Lock, Calendar, Clock, CheckCircle } from "lucide-react"
+import { Lock, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { TopicMetadata } from "@/lib/quiz-data"
@@ -54,54 +54,29 @@ function Countdown({ targetDate, isComingSoon = false }: CountdownProps) {
     return () => clearInterval(timer)
   }, [targetDate])
 
-  const { days, hours, minutes, seconds } = timeLeft
+  const { days, hours, minutes } = timeLeft
   
-  // Simplified time display in Apple style
-  if (days > 0) {
-    return (
-      <div className="text-center">
-        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
-        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
-          {days}d {hours}h
-        </div>
+  const Box = ({ value, label }: { value: number; label: string }) => (
+    <div className="flex flex-col items-center">
+      <div className="px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xl font-semibold min-w-[56px] text-center">
+        {String(value).padStart(2, '0')}
       </div>
-    )
-  } else if (hours > 0) {
-    return (
-      <div className="text-center">
-        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
-        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
-          {hours}h {minutes}m
-        </div>
+      <div className="text-[10px] uppercase tracking-wider mt-1 text-neutral-500 dark:text-neutral-400">
+        {label}
       </div>
-    )
-  } else if (minutes > 0 || seconds > 0) {
-    return (
-      <div className="text-center">
-        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
-        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
-          {minutes}m {seconds}s
-        </div>
-        <div className="w-32 h-1 bg-gray-100 dark:bg-gray-800 rounded-full mt-3 mx-auto">
-          <div 
-            className="h-full bg-blue-500 rounded-full" 
-            style={{ 
-              width: `${(1 - (minutes * 60 + seconds) / 3600) * 100}%`,
-              transition: "width 1s linear"
-            }}
-          ></div>
-        </div>
+    </div>
+  )
+
+  return (
+    <div className="text-center space-y-2">
+      <div className="text-xs text-neutral-500 dark:text-neutral-400">Unlocks in</div>
+      <div className="flex items-end justify-center gap-3">
+        {days > 0 && <Box value={days} label="days" />}
+        <Box value={hours} label="hours" />
+        <Box value={minutes} label="mins" />
       </div>
-    )
-  } else {
-    return (
-      <div className="text-center">
-        <div className="text-sm text-green-500 animate-pulse">
-          Ready now
-        </div>
-      </div>
-    )
-  }
+    </div>
+  )
 }
 
 // Floating Keyboard Command Bar Component
@@ -219,11 +194,22 @@ export function CivicCard({
   }
 
   const getUnlockDate = () => {
-    try {
-      return new Date(topic.date)
-    } catch (e) {
-      return new Date()
-    }
+    const origin = new Date(topic.date as string)
+    // Start with UTC midnight of that calendar date
+    const utcMidnight = new Date(Date.UTC(origin.getUTCFullYear(), origin.getUTCMonth(), origin.getUTCDate(), 0, 0, 0))
+
+    // Determine what hour that UTC time is in New York
+    const nyFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hourCycle: 'h23',
+      hour: 'numeric'
+    })
+    const nyHourAtUtcMidnight = Number(nyFormatter.format(utcMidnight))
+
+    // Calculate shift needed so that the New York hour becomes 0 (midnight)
+    const shiftHours = (24 - nyHourAtUtcMidnight) % 24
+    const unlockUtc = new Date(utcMidnight.getTime() + shiftHours * 60 * 60 * 1000)
+    return unlockUtc
   }
 
   // Keyboard event handling for the floating bar
@@ -255,7 +241,7 @@ export function CivicCard({
   return (
     <div 
       className={`relative w-full ${baseHeight} cursor-pointer ${
-        isLocked ? 'opacity-90' : ''
+        isDateLocked ? 'opacity-60' : ''
       }`}
       onClick={handleClick}
       tabIndex={0}
@@ -270,22 +256,10 @@ export function CivicCard({
       <div className="h-full flex flex-col justify-center text-center space-y-8 px-4">
         {/* Status indicators - Smaller, cleaner badges */}
         <div className="flex justify-center">
-          {isLocked && !isComingSoon && !guestLocked && (
-            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-              <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Unlocking soon</span>
-            </div>
-          )}
           {isCompleted && (
             <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
               <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
               <span className="text-xs font-medium text-green-700 dark:text-green-300">Completed</span>
-            </div>
-          )}
-          {!isLocked && !isComingSoon && !isCompleted && !guestLocked && (
-            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-xs font-medium text-green-700 dark:text-green-300">Available now</span>
             </div>
           )}
         </div>
@@ -320,23 +294,7 @@ export function CivicCard({
               : topic.description}
           </p>
           
-          {/* Unlock info as plain text if locked by date */}
-          {isDateLocked && (
-            <div className="space-y-1 text-center mt-4">
-              <div className="text-base text-neutral-600 dark:text-neutral-300">
-                This quiz will unlock at <span className="font-semibold text-neutral-800 dark:text-neutral-200">6:00 AM</span> on{' '}
-                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                  {new Date(topic.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
-              <div className="text-sm text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
-            </div>
-          )}
+          {/* Removed verbose unlock info; tip moved elsewhere */}
         </div>
 
         {/* Countdown or Actions - Simplified with cleaner styling */}
@@ -351,32 +309,11 @@ export function CivicCard({
                 </span>
               </div>
             </div>
-          ) : guestLocked ? (
-            // Show a prominent sign-in button instead of a badge
-            <Button
-              size="lg"
-              className="bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-full shadow-lg px-8 py-4 min-w-[220px] text-base"
-              onClick={(e) => {
-                e.stopPropagation()
-                onExploreGame(topic.topic_id)
-              }}
-            >
-              <Lock className="h-5 w-5 mr-2" /> Sign in to access
-            </Button>
-          ) : isDateLocked ? (
+          ) : guestLocked ? null : isDateLocked ? (
             /* Clean countdown for date-locked topics */
             <div className="space-y-3">
               <div className="inline-block px-5 py-3 rounded-full bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
                 <Countdown targetDate={getUnlockDate()} isComingSoon={isComingSoon} />
-              </div>
-              {/* Simple unlock time */}
-              <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                {new Date(topic.date).toLocaleDateString('en-US', { 
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
               </div>
             </div>
           ) : null}

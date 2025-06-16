@@ -35,14 +35,34 @@ export interface QuizQuestion {
   drag_items?: Array<{ id: string; content: string; category?: string }>
   ordering_items?: Array<{ id: string; content: string; correct_order: number }>
   crossword_data?: {
-    size: { rows: number; cols: number };
+    metadata?: {
+      title?: string
+      author?: string
+      description?: string
+      difficulty?: 'easy' | 'medium' | 'hard' | 'expert'
+      created_at?: string
+    }
+    size: { rows: number; cols: number }
+    /**
+     * String array representing the crossword grid layout. Each string corresponds to a row and must be exactly `cols` characters long.
+     * Use "." (dot) for open cells and "#" for blocked cells. Example for a 5×5 grid:
+     * [
+     *   ".....",
+     *   "..#..",
+     *   "#...#",
+     *   "..#..",
+     *   "....."
+     * ]
+     */
+    layout?: string[]
     words: Array<{
-      word: string;
-      clue: string;
-      position: { row: number; col: number };
-      direction: 'across' | 'down';
-      number: number;
-    }>;
+      number: number
+      word: string
+      clue: string
+      position: { row: number; col: number } // 0-indexed top-left position of the first letter
+      direction: 'across' | 'down'
+      length?: number // optional helper (derived if omitted)
+    }>
   }
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,6 +39,9 @@ export function QuizDateNavigation({
   className
 }: QuizDateNavigationProps) {
   const [isMobile, setIsMobile] = useState(false)
+  const [visibleTopics, setVisibleTopics] = useState(20)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Mobile detection
   useEffect(() => {
@@ -52,12 +55,33 @@ export function QuizDateNavigation({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Handle scroll in dropdown to load more topics
+  const handleDropdownScroll = useCallback(() => {
+    if (!dropdownRef.current) return
+    
+    const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current
+    const scrollPosition = scrollTop + clientHeight
+    
+    // If scrolled to 80% of the way down, load more topics
+    if (scrollPosition > scrollHeight * 0.8 && visibleTopics < availableDates.length) {
+      setVisibleTopics(prev => Math.min(prev + 20, availableDates.length))
+    }
+  }, [visibleTopics, availableDates.length])
+
+  // Reset visible topics when dropdown opens
+  useEffect(() => {
+    if (isDropdownOpen) {
+      setVisibleTopics(20)
+    }
+  }, [isDropdownOpen])
+
   // Format date for display
   const formatDate = (dateString: string, dayOfWeek: string) => {
     const date = new Date(dateString)
     const month = date.toLocaleDateString('en-US', { month: 'short' })
     const day = date.getDate()
-    return { month, day, dayOfWeek }
+    const year = date.getFullYear()
+    return { month, day, year, dayOfWeek }
   }
 
   // Truncate title for mobile
@@ -90,7 +114,7 @@ export function QuizDateNavigation({
           {previousTopic ? (
             <>
               <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                {formatDate(previousTopic.date, previousTopic.dayOfWeek).month} {formatDate(previousTopic.date, previousTopic.dayOfWeek).day}
+                {formatDate(previousTopic.date, previousTopic.dayOfWeek).month} {formatDate(previousTopic.date, previousTopic.dayOfWeek).day}, {formatDate(previousTopic.date, previousTopic.dayOfWeek).year}
               </div>
               <div className="flex items-center gap-1 font-medium text-sm">
                 <span>{previousTopic.emoji}</span>
@@ -111,7 +135,7 @@ export function QuizDateNavigation({
       </Button>
 
       {/* Current Date Dropdown */}
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -127,7 +151,7 @@ export function QuizDateNavigation({
                   "text-lg font-bold",
                   isMobile ? "text-base" : "text-xl"
                 )}>
-                  {currentDate.dayOfWeek}, {currentDate.month} {currentDate.day}
+                  {currentDate.dayOfWeek}, {currentDate.month} {currentDate.day}, {currentDate.year}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-500" />
               </div>
@@ -143,12 +167,14 @@ export function QuizDateNavigation({
         <DropdownMenuContent 
           align="center" 
           className="w-80 max-h-96 overflow-y-auto"
+          ref={dropdownRef}
+          onScroll={handleDropdownScroll}
         >
           <div className="p-2">
             <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2 py-1 mb-2">
               Available Quiz Topics
             </div>
-            {availableDates.map((topic) => {
+            {availableDates.slice(0, visibleTopics).map((topic) => {
               const topicDate = formatDate(topic.date, topic.dayOfWeek)
               const isCurrentTopic = topic.id === currentTopic.id
               
@@ -173,7 +199,7 @@ export function QuizDateNavigation({
                           {topic.title}
                         </span>
                         <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 flex-shrink-0">
-                          {topicDate.month} {topicDate.day}
+                          {topicDate.month} {topicDate.day}, {topicDate.year}
                         </span>
                       </div>
                       <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -187,6 +213,11 @@ export function QuizDateNavigation({
                 </DropdownMenuItem>
               )
             })}
+            {visibleTopics < availableDates.length && (
+              <div className="text-center py-2 text-xs text-slate-500">
+                Scroll to load more topics...
+              </div>
+            )}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -206,7 +237,7 @@ export function QuizDateNavigation({
           {nextTopic ? (
             <>
               <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}
+                {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}, {formatDate(nextTopic.date, nextTopic.dayOfWeek).year}
               </div>
               <div className="flex items-center gap-1 font-medium text-sm">
                 <span className={cn(

@@ -9,10 +9,12 @@ import { ShortAnswerQuestion, checkAnswerIntelligently, checkAnswerDetailed } fr
 import { FillInBlankQuestion } from "./question-types/fill-in-blank"
 import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
+import { CrosswordQuestion } from "./question-types/crossword"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
 import { QuizDateNavigation, useQuizNavigation } from "./quiz_date_navigation"
+import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -133,7 +135,7 @@ const MemoizedQuestionDisplay = memo(({
 }) => (
   <>
     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {question.question}
+      <GlossaryLinkText text={question.question} />
     </h1>
     
     {/* Hint - clean and minimal with animation */}
@@ -141,7 +143,7 @@ const MemoizedQuestionDisplay = memo(({
       <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
           <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-            💡 {question.hint}
+            💡 <GlossaryLinkText text={question.hint} />
           </p>
         </div>
       </div>
@@ -1125,6 +1127,15 @@ export function QuizEngine({
       case "ordering":
         return (
           <OrderingQuestion
+            question={currentQuestion}
+            onAnswer={handleInteractiveAnswer}
+            showHint={showHint}
+            disabled={isAnswerSubmitted}
+          />
+        )
+      case "crossword":
+        return (
+          <CrosswordQuestion
             question={currentQuestion}
             onAnswer={handleInteractiveAnswer}
             showHint={showHint}

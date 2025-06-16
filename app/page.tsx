@@ -86,6 +86,7 @@ export default function HomePage() {
                       searchQuery={searchQuery}
                       requireAuth={false}
                       onAuthRequired={handleAuthSuccess}
+                      showGuestBanner={false}
                     />
                   </Suspense>
                 ) : (
