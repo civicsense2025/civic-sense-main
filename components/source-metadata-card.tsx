@@ -164,7 +164,7 @@ export function SourceMetadataCard({
   if (isLoading) {
     return (
       <div className={`flex items-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse ${className}`}>
-        <div className="flex-1">
+        <div className="flex-1 text-left">
           <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
           <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
         </div>
@@ -176,8 +176,8 @@ export function SourceMetadataCard({
   if (error && !metadata) {
     return (
       <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg ${className}`}>
-        <p className="text-sm text-red-600 dark:text-red-400">Failed to load metadata: {error}</p>
-        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
+        <p className="text-sm text-red-600 dark:text-red-400 text-left">Failed to load metadata: {error}</p>
+        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm text-left">
           {source.url}
         </a>
       </div>
@@ -191,7 +191,7 @@ export function SourceMetadataCard({
         href={source.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline ${className}`}
+        className={`inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline text-left ${className}`}
       >
         <span>{metadata?.title || source.name}</span>
         <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,20 +240,20 @@ export function SourceMetadataCard({
         )}
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
+        <div className="flex-1 min-w-0 text-left">
+          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2 text-left">
             {metadata?.title || source.name}
           </h4>
           
           {metadata?.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2 text-left">
               {metadata.description}
             </p>
           )}
           
           {/* Author and Date Information */}
           {(metadata?.author || metadata?.publishedTime) && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 space-y-1">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 space-y-1 text-left">
               {metadata.author && (
                 <div className="flex items-center">
                   <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +276,7 @@ export function SourceMetadataCard({
           )}
           
           {/* Site and Type Information */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 text-left">
             <span>{metadata?.siteName || metadata?.domain}</span>
             {metadata?.type && metadata.type !== 'website' && (
               <>

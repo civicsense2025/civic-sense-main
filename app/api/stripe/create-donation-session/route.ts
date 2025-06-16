@@ -5,7 +5,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, successUrl, cancelUrl } = await request.json()
+    const { 
+      amount, 
+      successUrl, 
+      cancelUrl, 
+      userId,
+      accessTier 
+    } = await request.json()
 
     if (!amount || !successUrl || !cancelUrl) {
       return NextResponse.json(
@@ -23,7 +29,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Creating donation session for amount:', donationAmount / 100)
+    // Determine if this donation qualifies for premium access
+    const qualifiesForAnnual = donationAmount >= 2500 // $25+
+    const qualifiesForLifetime = donationAmount >= 5000 // $50+
+    
+    // Determine access tier based on donation amount if not explicitly provided
+    let effectiveAccessTier = accessTier
+    if (!effectiveAccessTier) {
+      if (qualifiesForLifetime) {
+        effectiveAccessTier = 'lifetime'
+      } else if (qualifiesForAnnual) {
+        effectiveAccessTier = 'annual'
+      } else {
+        effectiveAccessTier = 'none'
+      }
+    }
+
+    console.log(`Creating donation session for amount: $${donationAmount / 100} with access tier: ${effectiveAccessTier}`)
+
+    // Determine product name based on access tier
+    let productName = 'CivicSense Donation'
+    let productDescription = 'Supporting civic education and democracy awareness'
+    
+    if (effectiveAccessTier === 'lifetime') {
+      productName = 'CivicSense Donation + Lifetime Access'
+      productDescription = 'Supporting civic education with lifetime access to all quizzes and premium features'
+    } else if (effectiveAccessTier === 'annual') {
+      productName = 'CivicSense Donation + Annual Access'
+      productDescription = 'Supporting civic education with 1 year access to all quizzes'
+    }
 
     // Create Stripe checkout session for donation
     const session = await stripe.checkout.sessions.create({
@@ -34,8 +68,8 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'CivicSense Donation',
-              description: 'Supporting civic education and democracy awareness',
+              name: productName,
+              description: productDescription,
               images: ['https://civicsense.app/logo.png'], // Add your logo URL
             },
             unit_amount: donationAmount,
@@ -46,8 +80,10 @@ export async function POST(request: NextRequest) {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
-        type: 'donation',
+        product_type: 'donation',
         amount: donationAmount.toString(),
+        access_tier: effectiveAccessTier,
+        user_id: userId || '',
       },
       custom_text: {
         submit: {

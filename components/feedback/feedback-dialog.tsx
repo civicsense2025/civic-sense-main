@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useAnalytics } from "@/utils/analytics"
 import { useAuth } from "@/components/auth/auth-provider"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { cn } from "@/lib/utils"
 
 interface FeedbackDialogProps {
   trigger?: React.ReactNode
@@ -120,16 +121,20 @@ export function FeedbackDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
+        {/* Visually hidden DialogTitle for accessibility */}
+        <span className="sr-only">
+          <DialogTitle>Feedback</DialogTitle>
+        </span>
         <DialogHeader>
-          <DialogTitle>Share your feedback</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-slate-900 dark:text-slate-50">Share your feedback</DialogTitle>
+          <DialogDescription className="text-slate-600 dark:text-slate-400">
             Help us improve CivicSense by sharing your thoughts and suggestions.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="feedback-type">Feedback type</Label>
+            <Label htmlFor="feedback-type" className="text-slate-900 dark:text-slate-50">Feedback type</Label>
             <RadioGroup 
               value={feedbackType} 
               onValueChange={setFeedbackType}
@@ -137,26 +142,26 @@ export function FeedbackDialog({
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="suggestion" id="suggestion" />
-                <Label htmlFor="suggestion">Suggestion</Label>
+                <Label htmlFor="suggestion" className="text-slate-800 dark:text-slate-200">Suggestion</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="issue" id="issue" />
-                <Label htmlFor="issue">Issue</Label>
+                <Label htmlFor="issue" className="text-slate-800 dark:text-slate-200">Issue</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="content" id="content" />
-                <Label htmlFor="content">Content</Label>
+                <Label htmlFor="content" className="text-slate-800 dark:text-slate-200">Content</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="praise" id="praise" />
-                <Label htmlFor="praise">Praise</Label>
+                <Label htmlFor="praise" className="text-slate-800 dark:text-slate-200">Praise</Label>
               </div>
             </RadioGroup>
           </div>
 
           {(contextType === "quiz" || contextType === "content") && (
             <div className="space-y-2">
-              <Label htmlFor="rating">How would you rate this {contextType}?</Label>
+              <Label htmlFor="rating" className="text-slate-900 dark:text-slate-50">How would you rate this {contextType}?</Label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <Button
@@ -165,7 +170,10 @@ export function FeedbackDialog({
                     variant={rating === value ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRating(value)}
-                    className="w-10 h-10"
+                    className={cn(
+                      "w-10 h-10",
+                      rating === value ? "bg-blue-600 text-white" : "text-slate-800 dark:text-slate-200"
+                    )}
                   >
                     {value}
                   </Button>
@@ -175,20 +183,20 @@ export function FeedbackDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="feedback">Your feedback</Label>
+            <Label htmlFor="feedback" className="text-slate-900 dark:text-slate-50">Your feedback</Label>
             <Textarea
               id="feedback"
               placeholder="Tell us what you think..."
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              className="min-h-[100px]"
+              className="min-h-[100px] text-slate-900 dark:text-slate-50 placeholder:text-slate-500 dark:placeholder:text-slate-400"
             />
           </div>
 
           {!user && (
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-1">
-                Email <span className="text-xs text-slate-500">(optional)</span>
+              <Label htmlFor="email" className="flex items-center gap-1 text-slate-900 dark:text-slate-50">
+                Email <span className="text-xs text-slate-500 dark:text-slate-400">(optional)</span>
               </Label>
               <Input
                 id="email"
@@ -196,15 +204,26 @@ export function FeedbackDialog({
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="text-slate-900 dark:text-slate-50 placeholder:text-slate-500 dark:placeholder:text-slate-400"
               />
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)} 
+            className="bg-white text-slate-900 dark:bg-white dark:text-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-200 font-medium"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button 
+            onClick={async () => {
+              await handleSubmit()
+            }} 
+            disabled={isSubmitting}
+            className="bg-slate-900 text-white dark:bg-slate-900 dark:text-white hover:bg-slate-800 dark:hover:bg-slate-800 font-semibold"
+          >
             {isSubmitting ? "Submitting..." : "Submit feedback"}
           </Button>
         </DialogFooter>

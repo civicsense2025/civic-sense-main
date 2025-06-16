@@ -12,6 +12,7 @@ import { OrderingQuestion } from "./question-types/ordering"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
+import { QuizDateNavigation, useQuizNavigation } from "./quiz_date_navigation"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -27,10 +28,21 @@ import { BoostManager } from "@/lib/game-boosts"
 import { enhancedProgressOperations } from "@/lib/enhanced-gamification"
 import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
 
+interface QuizTopic {
+  id: string
+  title: string
+  emoji: string
+  date: string
+  dayOfWeek: string
+}
+
 interface QuizEngineProps {
   questions: QuizQuestion[]
   topicId: string
+  currentTopic: QuizTopic
+  availableTopics?: QuizTopic[]
   onComplete: () => void
+  onTopicChange?: (topicId: string) => void
 }
 
 interface UserAnswer {
@@ -40,24 +52,45 @@ interface UserAnswer {
   timeSpent: number
 }
 
-// Utility function to shuffle an array using Fisher-Yates algorithm
+// Enhanced Fisher-Yates shuffle with crypto randomness for better uniqueness
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
+  
+  // Use crypto.getRandomValues for better randomness if available
+  const getRandomValue = () => {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const randomArray = new Uint32Array(1)
+      crypto.getRandomValues(randomArray)
+      return randomArray[0] / (0xFFFFFFFF + 1)
+    }
+    return Math.random()
+  }
+  
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(getRandomValue() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
+  
   return shuffled
 }
 
-// Utility function to ensure questions are unique and valid
+// Enhanced validation and deduplication with better unique key generation
 function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestion[] {
   const seen = new Set<string>()
   const uniqueQuestions: QuizQuestion[] = []
   
   for (const question of questions) {
-    // Create a unique key based on question content and number
-    const questionKey = `${question.topic_id}-${question.question_number}-${question.question.slice(0, 50)}`
+    // Create a more robust unique key using multiple question properties
+    const questionContent = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
+    const questionKey = [
+      question.topic_id,
+      question.question_number,
+      question.question_type,
+      questionContent.slice(0, 100), // Use more characters for uniqueness
+      question.correct_answer,
+      question.option_a || '',
+      question.option_b || ''
+    ].join('|')
     
     if (!seen.has(questionKey)) {
       seen.add(questionKey)
@@ -66,13 +99,28 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
       console.warn(`Duplicate question detected and removed:`, {
         topic_id: question.topic_id,
         question_number: question.question_number,
-        question_preview: question.question.slice(0, 50) + '...'
+        question_preview: question.question.slice(0, 50) + '...',
+        question_type: question.question_type
       })
     }
   }
   
   console.log(`Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
-  return uniqueQuestions
+  
+  // Additional validation to ensure we have truly unique content
+  const contentSeen = new Set<string>()
+  const finalQuestions = uniqueQuestions.filter(question => {
+    const contentKey = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
+    if (contentSeen.has(contentKey)) {
+      console.warn(`Duplicate question content detected:`, question.question.slice(0, 50))
+      return false
+    }
+    contentSeen.add(contentKey)
+    return true
+  })
+  
+  console.log(`Final unique questions after content deduplication: ${finalQuestions.length}`)
+  return finalQuestions
 }
 
 // Memoized components to prevent unnecessary re-renders
@@ -91,7 +139,7 @@ const MemoizedQuestionDisplay = memo(({
     {/* Hint - clean and minimal with animation */}
     {showHint && (
       <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 border border-slate-100 dark:border-slate-800">
+        <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
           <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
             💡 {question.hint}
           </p>
@@ -178,7 +226,14 @@ const MemoizedBoostButtons = memo(({
 
 MemoizedBoostButtons.displayName = 'MemoizedBoostButtons'
 
-export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) {
+export function QuizEngine({ 
+  questions, 
+  topicId, 
+  currentTopic,
+  availableTopics = [],
+  onComplete,
+  onTopicChange 
+}: QuizEngineProps) {
   const { user } = useAuth()
   
   // Analytics integration
@@ -190,7 +245,24 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   // Enhanced gamification integration
   const { updateProgress, currentStreak, currentLevel } = useGamification()
   
-  // Validate, deduplicate, and randomize questions once when component mounts
+  // Topic navigation integration
+  const topicNavigation = useQuizNavigation(availableTopics, topicId)
+  
+  // Navigation handlers
+  const handleTopicSelect = useCallback((selectedTopicId: string) => {
+    if (onTopicChange && selectedTopicId !== topicId) {
+      onTopicChange(selectedTopicId)
+    }
+  }, [onTopicChange, topicId])
+  
+  const handleTopicNavigate = useCallback((direction: 'prev' | 'next') => {
+    const newTopicId = topicNavigation.navigateToTopic(direction)
+    if (newTopicId && onTopicChange) {
+      onTopicChange(newTopicId)
+    }
+  }, [topicNavigation, onTopicChange])
+  
+  // Enhanced question randomization with session uniqueness
   const randomizedQuestions = useMemo(() => {
     console.log(`=== QUIZ ENGINE QUESTION PROCESSING ===`)
     console.log(`Input questions for topic ${topicId}:`, questions.length)
@@ -201,7 +273,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       return []
     }
     
-    // First, validate and deduplicate questions
+    // First, validate and deduplicate questions with enhanced logic
     const validatedQuestions = validateAndDeduplicateQuestions(questions)
     
     // Handle edge case where all questions were duplicates
@@ -210,12 +282,20 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
       return []
     }
     
-    // Then shuffle them
-    const shuffled = shuffleArray(validatedQuestions)
+    // Add session uniqueness by incorporating timestamp and user ID
+    const sessionSeed = `${Date.now()}-${user?.id || 'anonymous'}-${topicId}`
+    console.log(`Session seed for randomization: ${sessionSeed}`)
+    
+    // Multiple shuffle passes for better randomization
+    let shuffled = validatedQuestions
+    for (let i = 0; i < 3; i++) {
+      shuffled = shuffleArray(shuffled)
+    }
     
     console.log(`Final randomized questions:`, shuffled.length)
     console.log(`Question numbers:`, shuffled.map(q => q.question_number))
     console.log(`Question types:`, shuffled.map(q => q.question_type))
+    console.log(`Question previews:`, shuffled.map(q => q.question.slice(0, 30) + '...'))
     
     // Validate that each question has required fields
     const validQuestions = shuffled.filter(q => {
@@ -234,7 +314,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     
     console.log(`Valid questions after filtering: ${validQuestions.length}`)
     return validQuestions
-  }, [questions, topicId])
+  }, [questions, topicId, user?.id]) // Added user.id to dependencies for session uniqueness
 
   // Handle case where no valid questions are available
   if (randomizedQuestions.length === 0) {
@@ -283,6 +363,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   const [timeFrozen, setTimeFrozen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [showSources, setShowSources] = useState(false)
+
+  // Keyboard interaction state
+  const [keyboardEnabled, setKeyboardEnabled] = useState(true)
 
   // Use the timer hook with boost extra time
   const initialTime = 60 + currentBoostEffects.extraTimeSeconds
@@ -474,103 +557,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     quizDatabase.savePartialQuizState(user.id, topicId, partialState)
   }, [user, topicId, currentQuestionIndex, userAnswers, quizStartTime])
 
-  // Optimized keyboard event handler
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Don't handle shortcuts if user is typing in an input
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-      return
-    }
-
-    // Don't handle shortcuts after answer is submitted
-    if (isAnswerSubmitted) return
-
-    console.log('Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
-
-    switch (event.key) {
-      case 'Enter':
-        event.preventDefault()
-        event.stopPropagation()
-        if (selectedAnswer && !isAnswerSubmitted) {
-          console.log('Submitting answer via Enter key:', selectedAnswer)
-          handleSubmitAnswer()
-        }
-        break
-      case ' ':
-        event.preventDefault()
-        event.stopPropagation()
-        setShowHint(prev => {
-          const newShowHint = !prev
-          if (newShowHint && currentQuestion) {
-            // Track hint usage
-            trackQuiz.hintUsed(
-              `${topicId}-${currentQuestion.question_number}`,
-              'manual',
-              true
-            )
-          }
-          return newShowHint
-        })
-        break
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-        if (currentQuestion?.question_type === 'multiple_choice') {
-          event.preventDefault()
-          event.stopPropagation()
-          const optionIndex = parseInt(event.key) - 1
-          const options = [
-            currentQuestion.option_a,
-            currentQuestion.option_b,
-            currentQuestion.option_c,
-            currentQuestion.option_d
-          ].filter(Boolean)
-          
-          if (optionIndex < options.length) {
-            const optionId = String.fromCharCode(65 + optionIndex) // A, B, C, D
-            console.log('Selecting option via keyboard:', optionId)
-            handleAnswerSelect(optionId)
-          }
-        }
-        break
-      case 't':
-      case 'T':
-        if (currentQuestion?.question_type === 'true_false') {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('Selecting True via keyboard')
-          handleAnswerSelect('True')
-        }
-        break
-      case 'f':
-      case 'F':
-        if (currentQuestion?.question_type === 'true_false') {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('Selecting False via keyboard')
-          handleAnswerSelect('False')
-        }
-        break
-      case 's':
-      case 'S':
-        if (event.ctrlKey || event.metaKey) return // Don't interfere with save shortcuts
-        event.preventDefault()
-        event.stopPropagation()
-        console.log('Skipping question via keyboard')
-        handleSkipQuestion()
-        break
-    }
-  }, [selectedAnswer, isAnswerSubmitted, currentQuestion, topicId, trackQuiz])
-
-  // Register keyboard handler
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown, { passive: false })
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
-
   // Reset question state when moving to next question
   useEffect(() => {
-    console.log('Resetting question state for question index:', currentQuestionIndex)
+    console.log('🔄 Resetting question state for question index:', currentQuestionIndex)
     setSelectedAnswer(null)
     setIsAnswerSubmitted(false)
     setShowHint(false)
@@ -600,10 +589,12 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     return () => clearTimeout(timer)
   }, [currentQuestionIndex, autoPlayEnabled, currentQuestion?.question, playText])
 
-  const handleTimeUp = useCallback(() => {
+  // Define all handler functions as regular functions instead of useCallback
+  // to avoid circular dependencies
+  function handleTimeUp() {
     if (isAnswerSubmitted) return
     
-    console.log('Time up for question:', currentQuestion?.question_number)
+    console.log('⏰ Time up for question:', currentQuestion?.question_number)
     stopTimer()
     
     // Auto-submit with no answer
@@ -633,15 +624,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
-  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, showHint, currentBoostEffects])
+  }
 
-  const handleSkipQuestion = useCallback(() => {
+  function handleSkipQuestion() {
     if (isAnswerSubmitted) {
-      console.log('Skip blocked: answer already submitted')
+      console.log('⏭️ Skip blocked: answer already submitted')
       return
     }
     
-    console.log('Skipping question:', currentQuestion?.question_number)
+    console.log('⏭️ Skipping question:', currentQuestion?.question_number)
     stopTimer()
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
     
@@ -656,14 +647,14 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     setSelectedAnswer("skipped")
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
-  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime])
+  }
 
-  const handleAnswerSelect = useCallback((answer: string) => {
+  function handleAnswerSelect(answer: string) {
     if (isAnswerSubmitted) {
-      console.log('Answer selection blocked: already submitted')
+      console.log('🚫 Answer selection blocked: already submitted')
       return
     }
-    console.log('Selecting answer:', answer)
+    console.log('✅ Selecting answer:', answer)
     setSelectedAnswer(answer)
     
     // Micro-animation: gentle scale effect on the submit button
@@ -676,15 +667,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         }, 500)
       }
     }
-  }, [isAnswerSubmitted, isMobile])
+  }
 
-  const handleInteractiveAnswer = useCallback((answer: string, isCorrect: boolean) => {
+  function handleInteractiveAnswer(answer: string, isCorrect: boolean) {
     if (isAnswerSubmitted) {
-      console.log('Interactive answer blocked: already submitted')
+      console.log('🚫 Interactive answer blocked: already submitted')
       return
     }
     
-    console.log('Interactive answer:', answer, 'Correct:', isCorrect)
+    console.log('🎯 Interactive answer:', answer, 'Correct:', isCorrect)
     setSelectedAnswer(answer)
     stopTimer()
     
@@ -745,15 +736,15 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         }
       }, 800)
     }
-  }, [isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, showHint, currentBoostEffects, autoPlayEnabled, playText])
+  }
 
-  const handleSubmitAnswer = useCallback(() => {
+  function handleSubmitAnswer() {
     if (!selectedAnswer || isAnswerSubmitted) {
-      console.log('Submit blocked:', { selectedAnswer, isAnswerSubmitted })
+      console.log('🚫 Submit blocked:', { selectedAnswer, isAnswerSubmitted })
       return
     }
     
-    console.log('Submitting answer:', selectedAnswer)
+    console.log('📤 Submitting answer:', selectedAnswer)
     stopTimer()
     
     // Determine if answer is correct based on question type
@@ -825,19 +816,9 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
         }
       }, 800)
     }
-  }, [selectedAnswer, isAnswerSubmitted, currentQuestion, stopTimer, questionStartTime, trackQuiz, topicId, hasUsedSecondChance, showHint, currentBoostEffects, autoPlayEnabled, playText])
+  }
 
-  const handleNextQuestion = useCallback(() => {
-    if (isLastQuestion) {
-      handleFinishQuiz()
-    } else {
-      // Scroll to top when moving to next question
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      setCurrentQuestionIndex(prev => prev + 1)
-    }
-  }, [isLastQuestion])
-
-  const handleFinishQuiz = useCallback(async () => {
+  async function handleFinishQuiz() {
     // Calculate quiz metrics
     const totalQuestions = randomizedQuestions.length
     const correctAnswers = userAnswers.filter(a => a.isCorrect).length
@@ -917,7 +898,185 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
     }
     
     setShowResults(true)
-  }, [randomizedQuestions, userAnswers, topicId, currentQuestion, trackQuiz, currentLevel, currentStreak, currentBoostEffects, user, updateProgress, trackGameification])
+  }
+
+  function handleNextQuestion() {
+    if (isLastQuestion) {
+      handleFinishQuiz()
+    } else {
+      // Scroll to top when moving to next question
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setCurrentQuestionIndex(prev => prev + 1)
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent) {
+    // Skip if keyboard is disabled
+    if (!keyboardEnabled) return
+    
+    // Don't handle shortcuts if user is typing in an input or textarea
+    const target = event.target as HTMLElement
+    if (target && (
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.isContentEditable ||
+      target.closest('[contenteditable]')
+    )) {
+      return
+    }
+
+    // Don't handle shortcuts after answer is submitted (except for spacebar for hints)
+    if (isAnswerSubmitted && event.key !== ' ') return
+
+    console.log('🎹 Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
+
+    // Handle different key combinations
+    switch (event.key.toLowerCase()) {
+      case 'enter':
+        if (!isAnswerSubmitted && selectedAnswer) {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('⏎ Submitting answer via Enter key:', selectedAnswer)
+          handleSubmitAnswer()
+        }
+        break
+        
+      case ' ':
+        event.preventDefault()
+        event.stopPropagation()
+        setShowHint(prev => {
+          const newShowHint = !prev
+          if (newShowHint && currentQuestion) {
+            // Track hint usage
+            trackQuiz.hintUsed(
+              `${topicId}-${currentQuestion.question_number}`,
+              'manual',
+              true
+            )
+          }
+          console.log('💡 Hint toggled via Space:', newShowHint ? 'shown' : 'hidden')
+          return newShowHint
+        })
+        break
+        
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+        if (currentQuestion?.question_type === 'multiple_choice' && !isAnswerSubmitted) {
+          event.preventDefault()
+          event.stopPropagation()
+          const optionIndex = parseInt(event.key) - 1
+          const options = [
+            currentQuestion.option_a,
+            currentQuestion.option_b,
+            currentQuestion.option_c,
+            currentQuestion.option_d
+          ].filter(Boolean)
+          
+          if (optionIndex < options.length) {
+            const optionId = `option_${String.fromCharCode(97 + optionIndex)}` // option_a, option_b, etc.
+            console.log('🔢 Selecting option via keyboard:', optionId)
+            handleAnswerSelect(optionId)
+          }
+        }
+        break
+        
+      case 't':
+        if (currentQuestion?.question_type === 'true_false' && !isAnswerSubmitted) {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('✅ Selecting True via keyboard')
+          handleAnswerSelect('true')
+        }
+        break
+        
+      case 'f':
+        if (currentQuestion?.question_type === 'true_false' && !isAnswerSubmitted) {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('❌ Selecting False via keyboard')
+          handleAnswerSelect('false')
+        }
+        break
+        
+      case 's':
+        if (!event.ctrlKey && !event.metaKey && !isAnswerSubmitted) {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('⏭️ Skipping question via keyboard')
+          handleSkipQuestion()
+        }
+        break
+        
+      case 'n':
+        if (isAnswerSubmitted) {
+          event.preventDefault()
+          event.stopPropagation()
+          console.log('➡️ Next question via keyboard')
+          handleNextQuestion()
+        }
+        break
+    }
+  }
+
+  // Enhanced keyboard event registration
+  useEffect(() => {
+    // Enable keyboard shortcuts when component mounts
+    setKeyboardEnabled(true)
+    
+    // Add event listener with better options
+    const handleKeyDownWrapper = (event: KeyboardEvent) => {
+      try {
+        handleKeyDown(event)
+      } catch (error) {
+        console.error('Keyboard handler error:', error)
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDownWrapper, {
+      passive: false,
+      capture: true // Use capture phase for better event handling
+    })
+    
+    console.log('🎹 Keyboard shortcuts enabled')
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDownWrapper, { capture: true })
+      console.log('🎹 Keyboard shortcuts disabled')
+    }
+  }, [])
+
+  // Disable keyboard shortcuts when inputs are focused
+  useEffect(() => {
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target as HTMLElement
+      if (target && (
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.isContentEditable
+      )) {
+        setKeyboardEnabled(false)
+        console.log('🎹 Keyboard shortcuts disabled (input focused)')
+      }
+    }
+    
+    const handleFocusOut = (event: FocusEvent) => {
+      // Re-enable after a short delay to prevent race conditions
+      setTimeout(() => {
+        setKeyboardEnabled(true)
+        console.log('🎹 Keyboard shortcuts re-enabled (input unfocused)')
+      }, 100)
+    }
+    
+    document.addEventListener('focusin', handleFocusIn)
+    document.addEventListener('focusout', handleFocusOut)
+    
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn)
+      document.removeEventListener('focusout', handleFocusOut)
+    }
+  }, [])
 
   if (showResults) {
     return (
@@ -978,7 +1137,20 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen">
+      {/* Topic Navigation - always visible */}
+      {availableTopics.length > 0 && (
+        <QuizDateNavigation
+          currentTopic={currentTopic}
+          previousTopic={topicNavigation.previousTopic}
+          nextTopic={topicNavigation.nextTopic}
+          availableDates={availableTopics}
+          onDateSelect={handleTopicSelect}
+          onNavigate={handleTopicNavigate}
+          className="sticky top-0 z-40 shadow-sm"
+        />
+      )}
+      
       <div className={cn(
         "max-w-4xl mx-auto space-y-6",
         isMobile ? "px-3 py-4 pb-20" : "px-6 py-8 space-y-12"
@@ -1122,11 +1294,12 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
               <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
               <div>Streak: {currentStreak}</div>
               <div>Level: {currentLevel}</div>
+              <div>Keyboard: {keyboardEnabled ? 'Enabled' : 'Disabled'}</div>
             </div>
           </div>
         )}
 
-        {/* Keyboard shortcuts - minimal - only show when answer not submitted */}
+        {/* Enhanced keyboard shortcuts - only show when answer not submitted */}
         {!isAnswerSubmitted && !isMobile && (
           <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
             <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
@@ -1137,7 +1310,17 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
                 <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">T</span>/<span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">F</span> to select • </>
               )}
               <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Enter</span> to submit • 
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Space</span> for hint
+              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Space</span> for hint •
+              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">S</span> to skip
+            </p>
+          </div>
+        )}
+
+        {/* Show next question shortcut when answer is submitted */}
+        {isAnswerSubmitted && !isMobile && (
+          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
+            <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+              Press <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">N</span> for next question
             </p>
           </div>
         )}
@@ -1186,7 +1369,7 @@ export function QuizEngine({ questions, topicId, onComplete }: QuizEngineProps) 
                 <span className="flex items-center justify-center gap-2">
                   {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
                   <span className="animate-pulse">→</span>
-                                </span>
+                </span>
               </Button>
             </div>
           )}

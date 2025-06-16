@@ -14,7 +14,9 @@ import { QuizProgressIndicator } from "@/components/quiz-progress-indicator"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
+import { useGuestAccess } from "@/hooks/useGuestAccess"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
+import { cn } from "@/lib/utils"
 
 interface QuizPageProps {
   params: Promise<{
@@ -34,21 +36,22 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [showTopicInfo, setShowTopicInfo] = useState(true)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [showPremiumGate, setShowPremiumGate] = useState(false)
-  const [quizAttempts, setQuizAttempts] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
   const [streak, setStreak] = useState(0)
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
+  
+  // Use our new guest access hook
+  const { 
+    quizAttemptsToday, 
+    recordQuizAttempt, 
+    hasReachedDailyLimit, 
+    getRemainingAttempts,
+    GUEST_DAILY_QUIZ_LIMIT 
+  } = useGuestAccess()
 
-  const FREE_QUIZ_LIMIT = 3
   const PREMIUM_QUIZ_LIMIT = 20 // Premium users get more quizzes per day
 
   useEffect(() => {
-    // Load quiz attempts from localStorage
-    const savedAttempts = localStorage.getItem("civicAppQuizAttempts")
-    if (savedAttempts) {
-      setQuizAttempts(Number.parseInt(savedAttempts, 10))
-    }
-
     // Load completed quizzes today
     const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
     if (savedCompleted) {
@@ -98,26 +101,26 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   const handleStartQuiz = () => {
     // Check quiz limits based on user tier
-    if (!user && quizAttempts >= FREE_QUIZ_LIMIT) {
+    if (!user && hasReachedDailyLimit()) {
       setIsAuthDialogOpen(true)
       return
     }
     
-    if (user && !isPremium && !isPro && quizAttempts >= FREE_QUIZ_LIMIT) {
+    if (user && !isPremium && !isPro && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT) {
       setShowPremiumGate(true)
       return
     }
     
-    if (user && (isPremium || isPro) && quizAttempts >= PREMIUM_QUIZ_LIMIT) {
+    if (user && (isPremium || isPro) && quizAttemptsToday >= PREMIUM_QUIZ_LIMIT) {
       // Even premium users have some limits to prevent abuse
       alert("You've reached your daily quiz limit. Please try again tomorrow!")
       return
     }
 
-    // Increment quiz attempts
-    const newAttempts = quizAttempts + 1
-    setQuizAttempts(newAttempts)
-    localStorage.setItem("civicAppQuizAttempts", newAttempts.toString())
+    // Increment quiz attempts for guest users
+    if (!user) {
+      recordQuizAttempt()
+    }
 
     // Show loading screen first
     setShowLoadingScreen(true)
@@ -158,6 +161,47 @@ export default function QuizPage({ params }: QuizPageProps) {
     setShowTopicInfo(false)
   }
 
+  // Guest Access Banner Component
+  const GuestAccessBanner = () => {
+    if (!user) {
+      const summary = {
+        hasReachedLimit: hasReachedDailyLimit(),
+        remaining: getRemainingAttempts(),
+        total: GUEST_DAILY_QUIZ_LIMIT
+      }
+      
+      return (
+        <div className="mb-6 text-center">
+          <div className={cn(
+            "px-4 py-3 rounded-lg border animate-in fade-in duration-300",
+            summary.hasReachedLimit 
+              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+              : "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800"
+          )}>
+            <p className="text-sm font-medium">
+              {summary.hasReachedLimit 
+                ? `Thanks for trying CivicSense! Support our mission to unlock unlimited quizzes`
+                : `Free Access: ${summary.remaining} of ${GUEST_DAILY_QUIZ_LIMIT} daily quizzes remaining today`
+              }
+            </p>
+            {!summary.hasReachedLimit && (
+              <p className="text-xs mt-1">Love what we're doing? Consider a small donation to keep civic education free for everyone</p>
+            )}
+            
+            {/* Show progress indicator for transparency */}
+            <div className="mt-2 w-full bg-green-100 dark:bg-green-900/30 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${(summary.total - summary.remaining) / summary.total * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -184,36 +228,43 @@ export default function QuizPage({ params }: QuizPageProps) {
     )
   }
 
-  const currentLimit = user && (isPremium || isPro) ? PREMIUM_QUIZ_LIMIT : FREE_QUIZ_LIMIT
+  // Update the guest access display
+  const currentLimit = user && (isPremium || isPro) ? PREMIUM_QUIZ_LIMIT : GUEST_DAILY_QUIZ_LIMIT
+  const remainingQuizzes = user && (isPremium || isPro) 
+    ? PREMIUM_QUIZ_LIMIT - quizAttemptsToday 
+    : getRemainingAttempts()
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
       {/* Minimal navigation - hide during loading */}
       {!showLoadingScreen && (
         <div className="flex items-center justify-between mb-6 sm:mb-8">
-        <button
-          onClick={handleBackToHome}
-          className="text-xs sm:text-sm font-medium tracking-wide transition-opacity opacity-70 hover:opacity-100"
-        >
-          ← Back to Home
-        </button>
-        
-        {/* Enhanced progress indicator */}
-        <div className="flex items-center space-x-4">
-          <QuizProgressIndicator
-            current={quizAttempts}
-            limit={currentLimit}
-            variant="streak"
-            showStreak={streak > 0}
-            streak={streak}
-            completedToday={completedToday}
-            isPremium={isPremium || isPro}
-          />
-        </div>
-        
-        <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
+          <button
+            onClick={handleBackToHome}
+            className="text-xs sm:text-sm font-medium tracking-wide transition-opacity opacity-70 hover:opacity-100"
+          >
+            ← Back to Home
+          </button>
+          
+          {/* Enhanced progress indicator */}
+          <div className="flex items-center space-x-4">
+            <QuizProgressIndicator
+              current={quizAttemptsToday}
+              limit={currentLimit}
+              variant="streak"
+              showStreak={streak > 0}
+              streak={streak}
+              completedToday={completedToday}
+              isPremium={isPremium || isPro}
+            />
+          </div>
+          
+          <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
         </div>
       )}
+
+      {/* Show guest access banner when viewing topic info */}
+      {showTopicInfo && !showLoadingScreen && <GuestAccessBanner />}
 
       {showLoadingScreen ? (
         <QuizLoadingScreen onComplete={handleLoadingComplete} />
@@ -221,7 +272,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         <TopicInfo
           topicData={topic}
           onStartQuiz={handleStartQuiz}
-          requireAuth={!user && quizAttempts >= FREE_QUIZ_LIMIT}
+          requireAuth={!user && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT}
           onAuthRequired={() => setIsAuthDialogOpen(true)}
         />
       ) : (

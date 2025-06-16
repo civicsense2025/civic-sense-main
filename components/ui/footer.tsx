@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { PWAInstallButton } from "@/components/pwa-install-button"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -30,6 +33,11 @@ export function Footer() {
             >
               Donate
             </Link>
+            <PWAInstallButton 
+              variant="outline" 
+              size="sm" 
+              className="ml-2 hidden sm:flex" 
+            />
           </div>
         </div>
       </div>

@@ -1,18 +1,38 @@
-import { Metadata } from 'next'
+"use client"
+
 import Script from 'next/script'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { DonateForm } from '@/components/donate-form'
 import { AutoReadPage } from '@/components/auto-read-page'
 import { FeedbackButton } from '@/components/feedback'
-
-export const metadata: Metadata = {
-  title: 'Support CivicSense | Donate',
-  description: 'Help us build a more informed society by supporting CivicSense.',
-}
+import { useAuth } from '@/components/auth/auth-provider'
+import { useGuestAccess } from '@/hooks/useGuestAccess'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { Info } from 'lucide-react'
 
 export default function DonatePage() {
   // Get the Stripe donation price/product ID from env
   const donationPriceId = process.env.NEXT_PUBLIC_STRIPE_DONATION
+  const searchParams = useSearchParams()
+  const source = searchParams.get('source')
+  const { user } = useAuth()
+  const { resetGuestState } = useGuestAccess()
+  const [showPremiumMessage, setShowPremiumMessage] = useState(false)
+  
+  // Check if user came from premium gate
+  useEffect(() => {
+    if (source === 'premium_gate') {
+      setShowPremiumMessage(true)
+    }
+  }, [source])
+  
+  // Reset guest access limits when user donates
+  const handleDonationSuccess = () => {
+    resetGuestState()
+    // Additional logic for tracking donation-based access could go here
+  }
 
   return (
     <>
@@ -39,6 +59,19 @@ export default function DonatePage() {
 
         <div className="apple-container py-16">
           <div className="max-w-3xl mx-auto">
+            {/* Premium Access Message */}
+            {showPremiumMessage && (
+              <Alert className="mb-8 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <AlertTitle className="text-blue-700 dark:text-blue-300 font-medium">
+                  Unlock Premium Access with Your Donation
+                </AlertTitle>
+                <AlertDescription className="text-blue-600 dark:text-blue-400">
+                  Donate $25+ for annual access or $50+ for lifetime access to all quizzes and premium features.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {/* Hero Section */}
             <div className="text-center mb-16 apple-animate-in">
               <div className="text-6xl mb-6">🏛️</div>
@@ -54,7 +87,9 @@ export default function DonatePage() {
             </div>
 
             {/* Donation Form Component - Front and Center */}
-            <DonateForm donationPriceId={donationPriceId} />
+            <DonateForm 
+              donationPriceId={donationPriceId}
+            />
 
             {/* Other Ways to Help */}
             <div className="relative mb-12">

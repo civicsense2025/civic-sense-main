@@ -59,13 +59,20 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
   const productType = session.metadata?.product_type
+  const accessTier = session.metadata?.access_tier
   
-  if (!userId) {
+  if (!userId && productType !== 'donation') {
     console.error('No user_id in checkout session metadata')
     return
   }
 
   if (session.payment_status === 'paid') {
+    // Handle donation with premium access
+    if (productType === 'donation' && accessTier) {
+      await handleDonationWithAccess(session, userId, accessTier)
+      return
+    }
+    
     if (productType === 'premium_lifetime') {
       // Create lifetime premium subscription record
       const subscriptionData = {
@@ -137,6 +144,68 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       // For yearly subscriptions, the actual subscription will be handled in subscription.created
       console.log(`Yearly subscription checkout completed for user ${userId}, waiting for subscription.created event`)
     }
+  }
+}
+
+// New function to handle donations with premium access
+async function handleDonationWithAccess(
+  session: Stripe.Checkout.Session, 
+  userId: string | undefined, 
+  accessTier: string
+) {
+  // Skip if no access tier or not a valid tier
+  if (!accessTier || !['annual', 'lifetime'].includes(accessTier)) {
+    console.log('No valid access tier for donation')
+    return
+  }
+
+  // Skip if no user ID and we can't identify the user
+  if (!userId) {
+    console.log('No user ID for donation with access')
+    return
+  }
+
+  // Calculate subscription end date for annual access
+  let subscriptionEndDate = null
+  if (accessTier === 'annual') {
+    const endDate = new Date()
+    endDate.setFullYear(endDate.getFullYear() + 1)
+    subscriptionEndDate = endDate.toISOString()
+  }
+
+  // Create subscription record based on donation
+  try {
+    // Create subscription record based on donation
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .upsert({
+        user_id: userId, // Now guaranteed to be a string
+        subscription_tier: 'premium',
+        subscription_status: 'active',
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: subscriptionEndDate, // null for lifetime, date for annual
+        payment_provider: 'stripe',
+        external_subscription_id: `donation_${session.id}`, // Mark as donation-based
+        last_payment_date: new Date().toISOString(),
+        next_billing_date: null, // No recurring billing for donations
+        billing_cycle: accessTier, // 'annual' or 'lifetime'
+        amount_cents: session.amount_total || 0,
+        currency: session.currency || 'usd',
+        updated_at: new Date().toISOString(),
+        is_donation: true
+      }, { onConflict: 'user_id' })
+
+    if (error) {
+      console.error(`Error creating ${accessTier} access from donation:`, error)
+    } else {
+      console.log(`${accessTier.charAt(0).toUpperCase() + accessTier.slice(1)} access granted to user ${userId} from donation`)
+    }
+    
+    // Log donation in a more generic way without requiring a specific table
+    console.log(`Donation recorded: User ${userId}, Amount: ${session.amount_total || 0} ${session.currency || 'usd'}, Access: ${accessTier}`)
+    
+  } catch (error) {
+    console.error('Error processing donation with access:', error)
   }
 }
 

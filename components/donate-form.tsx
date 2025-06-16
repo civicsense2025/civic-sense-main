@@ -2,21 +2,33 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const DONATION_IMPACTS = [
   { amount: 5, description: "Covers server costs for 1 day" },
   { amount: 10, description: "Funds fact-checking for 5 questions" },
-  { amount: 25, description: "Supports 1 week of content creation" },
-  { amount: 50, description: "Powers AI features for 100 users" },
-  { amount: 100, description: "Funds a full topic with 20 questions" },
-  { amount: 250, description: "Supports platform development for 1 month" },
-  { amount: 500, description: "Enables major feature development" },
+  { amount: 25, description: "Supports 1 week of content creation + Annual Access" },
+  { amount: 50, description: "Powers AI features for 100 users + Lifetime Access" },
+  { amount: 100, description: "Funds a full topic with 20 questions + Lifetime Access" },
+  { amount: 250, description: "Supports platform development for 1 month + Lifetime Access" },
+  { amount: 500, description: "Enables major feature development + Lifetime Access" },
 ]
 
-export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
+interface DonateFormProps {
+  donationPriceId?: string;
+  onDonationSuccess?: () => void;
+  isPremiumAccess?: boolean;
+}
+
+export function DonateForm({ 
+  donationPriceId,
+  onDonationSuccess,
+  isPremiumAccess = false
+}: DonateFormProps) {
   const [donationAmount, setDonationAmount] = useState(25)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { user } = useAuth()
 
   // Find the current impact description
   const getCurrentImpact = () => {
@@ -27,9 +39,20 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
     return closest.description
   }
 
+  // Determine access tier based on donation amount
+  const getAccessTier = (amount: number) => {
+    if (amount >= 50) {
+      return 'lifetime'
+    } else if (amount >= 25) {
+      return 'annual'
+    }
+    return null
+  }
+
   const handleDonation = async () => {
     setIsLoading(true)
     try {
+      const accessTier = getAccessTier(donationAmount)
       const response = await fetch('/api/stripe/create-donation-session', {
         method: 'POST',
         headers: {
@@ -37,9 +60,11 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
         },
         body: JSON.stringify({
           amount: donationAmount * 100, // Convert to cents
-          successUrl: `${window.location.origin}/success?type=donation&amount=${donationAmount}`,
+          successUrl: `${window.location.origin}/success?type=donation&amount=${donationAmount}&access=${accessTier || 'none'}`,
           cancelUrl: `${window.location.origin}/donate`,
           donationPriceId: donationPriceId || undefined,
+          userId: user?.id,
+          accessTier: accessTier,
         }),
       })
 
@@ -50,6 +75,11 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
         return
       }
 
+      // Call onDonationSuccess if provided
+      if (onDonationSuccess) {
+        onDonationSuccess()
+      }
+
       // Redirect to Stripe Checkout
       const stripe = (window as any).Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
       await stripe.redirectToCheckout({ sessionId })
@@ -58,6 +88,26 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show premium access information if enabled
+  const renderPremiumInfo = () => {
+    if (!isPremiumAccess) return null
+    
+    return (
+      <div className="mb-6 p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900">
+        <div className="flex items-start">
+          <div className="mr-3 text-blue-600 dark:text-blue-400 text-xl">✨</div>
+          <div>
+            <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Premium Access Included</h4>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              <span className="font-medium">$25+</span>: Annual access to all quizzes<br />
+              <span className="font-medium">$50+</span>: Lifetime access to all quizzes and premium features
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -74,6 +124,9 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
             <p className="text-base text-slate-600 dark:text-slate-400 mb-6">
               Every contribution helps us build a more informed society
             </p>
+            
+            {/* Premium Access Info */}
+            {renderPremiumInfo()}
           </div>
 
           {/* Amount Display */}
@@ -87,6 +140,17 @@ export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   {getCurrentImpact()}
                 </p>
+                {isPremiumAccess && (
+                  <div className="mt-2 text-xs font-medium">
+                    {donationAmount >= 50 ? (
+                      <span className="text-green-600 dark:text-green-400">✓ Lifetime Access</span>
+                    ) : donationAmount >= 25 ? (
+                      <span className="text-blue-600 dark:text-blue-400">✓ Annual Access</span>
+                    ) : (
+                      <span className="text-slate-500 dark:text-slate-400">Donate $25+ for premium access</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

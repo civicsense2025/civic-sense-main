@@ -40,7 +40,7 @@ interface GlobalAudioControlsProps {
   className?: string
 }
 
-// Simplified Word highlighting functionality
+// Enhanced Word highlighting functionality
 class WordHighlighter {
   private static instance: WordHighlighter
   private currentHighlights: HTMLElement[] = []
@@ -98,7 +98,7 @@ class WordHighlighter {
   }
 }
 
-// Simplified Global audio state management
+// Enhanced Global audio state management with better synchronization
 class GlobalAudioManager {
   private static instance: GlobalAudioManager
   private currentUtterance: SpeechSynthesisUtterance | null = null
@@ -106,6 +106,7 @@ class GlobalAudioManager {
   private isPlaying = false
   private isPaused = false
   private currentText = ""
+  private currentTextHash = "" // Add hash to detect content changes
   private autoPlayEnabled = false
   private loopEnabled = false
   private highlightingEnabled = true
@@ -115,6 +116,8 @@ class GlobalAudioManager {
   private retryCount = 0
   private cloudTTSHandler: ((text: string) => Promise<boolean>) | null = null
   private lastUserInteraction = 0
+  private debounceTimeout: NodeJS.Timeout | null = null
+  private isResetting = false // Flag to prevent race conditions during reset
 
   static getInstance(): GlobalAudioManager {
     if (!GlobalAudioManager.instance) {
@@ -145,6 +148,17 @@ class GlobalAudioManager {
     }
   }
 
+  private generateTextHash(text: string): string {
+    // Simple hash function to detect content changes
+    let hash = 0
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return hash.toString()
+  }
+
   private hasRecentUserInteraction(): boolean {
     const now = Date.now()
     const timeSinceInteraction = now - this.lastUserInteraction
@@ -162,19 +176,56 @@ class GlobalAudioManager {
       return false
     }
 
-    // Check if speech synthesis is working
     try {
       const voices = speechSynthesis.getVoices()
-      console.log('Speech synthesis check:', {
-        speaking: speechSynthesis.speaking,
-        pending: speechSynthesis.pending,
-        paused: speechSynthesis.paused,
-        voiceCount: voices.length
-      })
       return true
     } catch (e) {
       console.error('Speech synthesis check failed:', e)
       return false
+    }
+  }
+
+  // Enhanced reset method to handle rapid content changes
+  forceReset() {
+    if (this.isResetting) return
+    this.isResetting = true
+    
+    try {
+      console.log('Force resetting audio manager...')
+      
+      // Clear debounce
+      if (this.debounceTimeout) {
+        clearTimeout(this.debounceTimeout)
+        this.debounceTimeout = null
+      }
+      
+      // Stop speech synthesis completely
+      speechSynthesis.cancel()
+      
+      // Clear all timeouts
+      this.cleanupTimeouts.forEach(timeout => clearTimeout(timeout))
+      this.cleanupTimeouts = []
+      
+      // Reset all state
+      this.isPlaying = false
+      this.isPaused = false
+      this.currentText = ""
+      this.currentTextHash = ""
+      this.currentUtterance = null
+      this.retryCount = 0
+      
+      // Clean up highlighting
+      this.cleanupHighlighting()
+      
+      // Small delay to ensure cleanup completes
+      setTimeout(() => {
+        this.isResetting = false
+        this.notifyListeners()
+      }, 100)
+      
+    } catch (e) {
+      console.error('Error during force reset:', e)
+      this.isResetting = false
     }
   }
 
@@ -202,6 +253,7 @@ class GlobalAudioManager {
     
     if (!enabled) {
       this.setHighlighting(false)
+      this.forceReset() // Stop any current playback
     }
     
     this.notifyListeners()
@@ -271,9 +323,16 @@ class GlobalAudioManager {
     onStart?: () => void
     onEnd?: () => void
     autoPlay?: boolean
+    forcePlay?: boolean // New option to force play even if content hasn't changed
   }) {
     if (!text || typeof window === 'undefined') {
       console.warn('No text provided or window unavailable')
+      return
+    }
+
+    // Check if we're in a reset state
+    if (this.isResetting && !options?.forcePlay) {
+      console.log('Audio manager is resetting, skipping play request')
       return
     }
 
@@ -294,9 +353,38 @@ class GlobalAudioManager {
       return
     }
 
+    // Generate hash for content change detection
+    const textHash = this.generateTextHash(text)
+    
+    // If the same text is already playing and this isn't a forced play, don't restart
+    if (this.currentTextHash === textHash && this.isPlaying && !options?.forcePlay) {
+      console.log('Same content already playing, skipping')
+      return
+    }
+
+    // Debounce rapid calls
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout)
+    }
+
+    this.debounceTimeout = setTimeout(() => {
+      this.performPlayText(text, textHash, options)
+    }, 50) // Small debounce delay
+  }
+
+  private performPlayText(text: string, textHash: string, options?: {
+    voice?: SpeechSynthesisVoice
+    rate?: number
+    pitch?: number
+    volume?: number
+    onStart?: () => void
+    onEnd?: () => void
+    autoPlay?: boolean
+    forcePlay?: boolean
+  }) {
     // Prevent rapid successive calls
     const now = Date.now()
-    if (now - this.lastPlayAttempt < 100) {
+    if (now - this.lastPlayAttempt < 50 && !options?.forcePlay) {
       console.warn('Play attempt too soon, skipping')
       return
     }
@@ -305,9 +393,11 @@ class GlobalAudioManager {
     console.log('Playing text:', { 
       textLength: text.length, 
       autoPlay: options?.autoPlay,
-      isPlaying: this.isPlaying 
+      isPlaying: this.isPlaying,
+      textChanged: this.currentTextHash !== textHash
     })
 
+    // Force stop any current playback
     this.stop()
 
     const cleanText = this.cleanTextForSpeech(text)
@@ -315,6 +405,10 @@ class GlobalAudioManager {
       console.warn('No clean text to speak')
       return
     }
+
+    // Update current text and hash
+    this.currentTextHash = textHash
+    this.currentText = text
 
     this.playSingleUtterance(cleanText, text, options)
   }
@@ -329,154 +423,173 @@ class GlobalAudioManager {
     autoPlay?: boolean
   }) {
     try {
-      console.log('Creating utterance:', { cleanTextLength: cleanText.length })
+      if (!this.checkSpeechSynthesis()) {
+        console.error('Speech synthesis not available')
+        this.cleanupAfterError()
+        return
+      }
+      
+      // Reset speech synthesis to avoid issues
+      this.resetSpeechSynthesis()
       
       const utterance = new SpeechSynthesisUtterance(cleanText)
       
-      // Set voice parameters with defaults
-      utterance.rate = options?.rate ? Math.max(0.1, Math.min(2.0, options.rate)) : 1.0
-      utterance.pitch = options?.pitch ? Math.max(0, Math.min(2.0, options.pitch)) : 1.0
-      utterance.volume = options?.volume ? Math.max(0, Math.min(1.0, options.volume)) : 0.8
-
-      // Set voice if provided
+      // Set voice if provided, otherwise use default
       if (options?.voice) {
         utterance.voice = options.voice
       } else {
-        // Try to use a good default voice
-        const voices = speechSynthesis.getVoices()
-        const defaultVoice = voices.find(v => v.default && v.lang.startsWith('en')) || 
-                           voices.find(v => v.lang.startsWith('en'))
-        if (defaultVoice) {
-          utterance.voice = defaultVoice
+        // Try to get a high-quality voice
+        try {
+          const voices = speechSynthesis.getVoices()
+          
+          // First try to find a high-quality voice
+          let selectedVoice = voices.find(v => 
+            v.localService && 
+            (v.name.includes('Enhanced') || v.name.includes('Premium') || v.name.includes('Neural'))
+          )
+          
+          // If no high-quality voice, try to find an English voice
+          if (!selectedVoice) {
+            selectedVoice = voices.find(v => v.lang.startsWith('en') && v.localService)
+          }
+          
+          // If still no voice, use any available voice
+          if (!selectedVoice && voices.length > 0) {
+            selectedVoice = voices[0]
+          }
+          
+          if (selectedVoice) {
+            utterance.voice = selectedVoice
+          }
+        } catch (e) {
+          console.warn('Error selecting voice:', e)
+          // Continue with default voice
         }
       }
-
+      
+      // Set other options with defaults
+      utterance.rate = options?.rate ?? 1.0
+      utterance.pitch = options?.pitch ?? 1.0
+      utterance.volume = options?.volume ?? 1.0
+      
       let hasStarted = false
       let hasEnded = false
-
-      // Set up word highlighting (simplified)
-      if (this.highlightingEnabled && this.autoPlayEnabled) {
-        this.setupWordHighlighting(originalText, utterance)
-      }
-
+      
+      // Set up event handlers
       utterance.onstart = () => {
-        if (hasStarted) return
         hasStarted = true
-        
-        console.log('Speech started')
         this.isPlaying = true
         this.isPaused = false
-        this.currentText = originalText
-        this.retryCount = 0
-        options?.onStart?.()
+        
+        if (this.highlightingEnabled) {
+          this.setupWordHighlighting(originalText, utterance)
+        }
+        
+        if (options?.onStart) {
+          options.onStart()
+        }
+        
         this.notifyListeners()
       }
-
+      
       utterance.onend = () => {
-        if (hasEnded) return
         hasEnded = true
-        
-        console.log('Speech ended')
         this.isPlaying = false
         this.isPaused = false
         
-        if (this.loopEnabled && this.currentText) {
+        if (options?.onEnd) {
+          options.onEnd()
+        }
+        
+        this.cleanupAfterEnd()
+        
+        // If looping is enabled, play again after a short delay
+        if (this.loopEnabled && !this.isResetting) {
           const timeout = setTimeout(() => {
-            if (this.loopEnabled) {
-              this.playText(this.currentText, options)
-            } else {
-              this.currentText = ""
-              this.cleanupHighlighting()
+            if (this.loopEnabled && !this.isResetting) {
+              this.playText(originalText, options)
             }
           }, 1000)
           this.cleanupTimeouts.push(timeout)
-        } else {
-          this.currentText = ""
-          this.cleanupHighlighting()
         }
-        
-        options?.onEnd?.()
-        this.notifyListeners()
       }
-
+      
       utterance.onerror = (event) => {
-        // Don't log "canceled" as an error - it's normal user behavior
-        if (event.error === 'canceled') {
-          console.log('Speech synthesis canceled by user')
-          this.isPlaying = false
-          this.isPaused = false
-          this.currentText = ""
-          this.cleanupHighlighting()
-          this.notifyListeners()
-          return
-        }
-        
-        // Don't log "not-allowed" as an error - it's normal browser autoplay behavior
-        if ((event.error as string) === 'not-allowed') {
-          console.log('Speech synthesis not allowed - user interaction required for auto-play')
-          this.isPlaying = false
-          this.isPaused = false
-          this.currentText = ""
-          this.cleanupHighlighting()
-          this.notifyListeners()
-          return
-        }
-        
-        console.error('Speech error:', event.error || event)
-        
-        // Try to recover from certain errors
-        if (event.error === 'interrupted' && this.retryCount < 2) {
-          console.log('Retrying speech after interruption...')
-          this.retryCount++
-          setTimeout(() => {
-            this.resetSpeechSynthesis()
-            setTimeout(() => {
-              this.playSingleUtterance(cleanText, originalText, options)
-            }, 200)
-          }, 100)
-          return
-        }
-        
-        // Handle specific error types
-        if (event.error === 'network') {
-          console.warn('Network error during speech synthesis')
-        } else if (event.error === 'synthesis-failed') {
-          console.error('Speech synthesis failed - voice may not be available')
-        } else if (event.error === 'not-allowed') {
-          console.log('Speech synthesis not allowed - user interaction required for auto-play')
-          // Don't treat this as a critical error for auto-play
-          if (options?.autoPlay) {
-            console.log('Auto-play blocked by browser - this is normal behavior')
-          } else {
-            console.error('Speech synthesis not allowed - check permissions')
+        // Extract error details safely
+        let errorMessage = 'Unknown error'
+        try {
+          if (event && typeof event === 'object') {
+            if ('error' in event) {
+              errorMessage = String(event.error)
+            } else if ('message' in event) {
+              errorMessage = String((event as any).message)
+            }
           }
-        } else if (event.error === 'voice-unavailable') {
-          console.error('Selected voice is not available')
-        } else {
-          console.error('Speech error:', event.error)
+        } catch (e) {
+          errorMessage = 'Error extracting error details'
         }
         
-        this.isPlaying = false
-        this.isPaused = false
-        this.currentText = ""
-        this.retryCount = 0
-        this.cleanupHighlighting()
-        this.notifyListeners()
-      }
-
-      // Timeout fallback
-      const timeout = setTimeout(() => {
-        if (!hasStarted && !hasEnded) {
-          console.warn('Speech timeout - forcing reset')
-          this.resetSpeechSynthesis()
-          this.isPlaying = false
-          this.isPaused = false
-          this.currentText = ""
-          this.cleanupHighlighting()
-          this.notifyListeners()
+        // Log in a safer way
+        console.error('Speech synthesis error:', errorMessage)
+        
+        // Handle specific errors
+        if (errorMessage.includes('not-allowed') || errorMessage.includes('permission')) {
+          console.warn('Speech synthesis permission denied - user interaction required')
+          this.cleanupAfterError()
+          return
         }
-      }, 10000) // 10 second timeout
-
+        
+        if (errorMessage.includes('canceled')) {
+          console.log('Speech synthesis was canceled')
+          this.cleanupAfterError()
+          return
+        }
+        
+        // General error handling and retry
+        this.cleanupAfterError()
+        
+        // Retry logic for speech synthesis errors
+        if (this.retryCount < 3 && !this.isResetting) {
+          this.retryCount++
+          console.log(`Retrying speech synthesis (attempt ${this.retryCount})...`)
+          
+          const retryDelay = this.retryCount * 1000; // Increasing delay with each retry
+          const timeout = setTimeout(() => {
+            if (!hasEnded && !this.isResetting) {
+              // Try with a simpler approach on retries
+              const simpleUtterance = new SpeechSynthesisUtterance(cleanText)
+              simpleUtterance.onend = () => {
+                this.isPlaying = false
+                this.isPaused = false
+                this.cleanupAfterEnd()
+                if (options?.onEnd) options.onEnd()
+              }
+              speechSynthesis.speak(simpleUtterance)
+            }
+          }, retryDelay)
+          this.cleanupTimeouts.push(timeout)
+        }
+      }
+      
+      // Set a timeout to check if speech started
+      const timeout = setTimeout(() => {
+        if (!hasStarted && !hasEnded && !this.isResetting) {
+          console.warn('Speech did not start within expected time, trying to resume...')
+          try {
+            // Try to cancel any pending speech and restart
+            speechSynthesis.cancel()
+            
+            // Small delay before trying again
+            setTimeout(() => {
+              if (!hasStarted && !hasEnded && !this.isResetting) {
+                speechSynthesis.speak(utterance)
+              }
+            }, 500)
+          } catch (e) {
+            console.error('Failed to restart speech:', e)
+          }
+        }
+      }, 1500)
       this.cleanupTimeouts.push(timeout)
       this.currentUtterance = utterance
       
@@ -485,10 +598,25 @@ class GlobalAudioManager {
       
       // Additional check to ensure speech starts
       setTimeout(() => {
-        if (!hasStarted && !speechSynthesis.speaking) {
+        if (!hasStarted && !speechSynthesis.speaking && !this.isResetting) {
           console.warn('Speech did not start, trying to resume...')
           try {
             speechSynthesis.resume()
+            
+            // If still not speaking after resume attempt, try a complete reset
+            setTimeout(() => {
+              if (!hasStarted && !hasEnded && !this.isResetting) {
+                console.warn('Speech still not working, attempting full reset...')
+                this.forceReset()
+                
+                // After reset, try once more with a delay
+                setTimeout(() => {
+                  if (!hasStarted && !hasEnded && !this.isResetting) {
+                    this.playText(originalText, options)
+                  }
+                }, 1000)
+              }
+            }, 1000)
           } catch (e) {
             console.error('Failed to resume speech:', e)
           }
@@ -497,8 +625,27 @@ class GlobalAudioManager {
       
     } catch (e) {
       console.error('Error creating utterance:', e)
-      this.stop()
+      this.cleanupAfterError()
     }
+  }
+
+  private cleanupAfterEnd() {
+    if (!this.loopEnabled) {
+      this.currentText = ""
+      this.currentTextHash = ""
+    }
+    this.cleanupHighlighting()
+    this.notifyListeners()
+  }
+
+  private cleanupAfterError() {
+    this.isPlaying = false
+    this.isPaused = false
+    this.currentText = ""
+    this.currentTextHash = ""
+    this.retryCount = 0
+    this.cleanupHighlighting()
+    this.notifyListeners()
   }
 
   private setupWordHighlighting(originalText: string, utterance: SpeechSynthesisUtterance) {
@@ -515,7 +662,7 @@ class GlobalAudioManager {
         let wordIndex = 0
         
         const highlightNextWord = () => {
-          if (wordIndex < words.length && this.isPlaying && this.currentHighlighter) {
+          if (wordIndex < words.length && this.isPlaying && this.currentHighlighter && !this.isResetting) {
             this.currentHighlighter.highlightWord(wordIndex)
             wordIndex++
             
@@ -575,10 +722,15 @@ class GlobalAudioManager {
 
   stop() {
     try {
+      // Clear debounce first
+      if (this.debounceTimeout) {
+        clearTimeout(this.debounceTimeout)
+        this.debounceTimeout = null
+      }
+      
       speechSynthesis.cancel()
       this.isPlaying = false
       this.isPaused = false
-      this.currentText = ""
       this.cleanupHighlighting()
       this.notifyListeners()
     } catch (e) {
@@ -588,7 +740,7 @@ class GlobalAudioManager {
 
   restart() {
     if (this.currentText) {
-      this.playText(this.currentText)
+      this.playText(this.currentText, { forcePlay: true })
     }
   }
 
@@ -599,12 +751,21 @@ class GlobalAudioManager {
     }
   }
 
-  // Method to read specific text content with global settings
+  // Enhanced method to read specific text content with global settings
   async readContentWithSettings(text: string) {
     if (!text) return
     
     const cleanText = this.cleanTextForSpeech(text)
     if (cleanText.trim().length === 0) return
+    
+    // Generate hash to check if content changed
+    const textHash = this.generateTextHash(cleanText)
+    
+    // If same content is already playing, don't restart
+    if (this.currentTextHash === textHash && this.isPlaying) {
+      console.log('Same content already playing, skipping auto-read')
+      return
+    }
     
     // Try Cloud TTS first if handler is registered
     if (this.cloudTTSHandler) {
@@ -612,6 +773,8 @@ class GlobalAudioManager {
         const success = await this.cloudTTSHandler(cleanText)
         if (success) {
           console.log('Used Cloud TTS for auto-reading')
+          this.currentTextHash = textHash
+          this.currentText = cleanText
           return
         }
       } catch (error) {
@@ -845,6 +1008,10 @@ export function useGlobalAudio() {
       manager.recordUserInteraction()
       return manager.restart()
     }, [manager]),
+    forceReset: useCallback(() => {
+      manager.recordUserInteraction()
+      return manager.forceReset()
+    }, [manager]),
     setAutoPlay: useCallback((enabled: boolean) => {
       manager.recordUserInteraction()
       return manager.setAutoPlay(enabled)
@@ -874,6 +1041,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     resume,
     stop,
     restart,
+    forceReset,
     setAutoPlay,
     setLoop,
     setHighlighting
@@ -911,6 +1079,58 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const [usageStats, setUsageStats] = useState<{ charactersUsed: number; estimatedCost: string } | null>(null)
   const previousVolumeRef = useRef(0.8)
   const router = useRouter()
+
+  // Enhanced content change detection
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Enhanced DOM observer to detect content changes
+    const observer = new MutationObserver((mutations) => {
+      const hasContentChanges = mutations.some(mutation => {
+        // Check if quiz content has changed
+        const target = mutation.target;
+        
+        // Check if target is an Element before calling closest
+        if (target && target instanceof Element && 'closest' in target) {
+          try {
+            return !!target.closest('.quiz-content, .question-text, .question-explanation, .QuestionFeedbackDisplay, [data-audio-content]');
+          } catch (e) {
+            console.warn('Error checking content changes:', e);
+            return false;
+          }
+        }
+        return false;
+      })
+
+      if (hasContentChanges && autoPlayEnabled) {
+        console.log('Content change detected, resetting audio')
+        forceReset() // Use the enhanced reset method
+      }
+    })
+
+    // Observe changes in quiz content areas specifically
+    const contentAreas = document.querySelectorAll('main, .quiz-content, [data-audio-content]')
+    contentAreas.forEach(area => {
+      observer.observe(area, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      })
+    })
+
+    // Also listen for navigation changes
+    const handleNavigation = () => {
+      console.log('Navigation detected, resetting audio')
+      forceReset()
+    }
+
+    window.addEventListener('popstate', handleNavigation)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('popstate', handleNavigation)
+    }
+  }, [autoPlayEnabled, forceReset])
 
   // Register Cloud TTS handler with the global manager
   useEffect(() => {
@@ -995,12 +1215,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         try {
           const availableVoices = speechSynthesis.getVoices()
           
-          console.log('All available voices:', availableVoices.map(v => ({
-            name: v.name,
-            lang: v.lang,
-            localService: v.localService,
-            default: v.default
-          })))
+          // Limit logging to just count instead of all voices
+          console.log(`Speech synthesis: ${availableVoices.length} voices available`)
           
           // Update diagnostics
           setDiagnostics({
@@ -1018,8 +1234,16 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
             return
           }
           
-          // Filter out low-quality voices and prioritize better ones
+          // Filter to just a small set of high-quality voices
+          // Focus on English voices and limit to max 10 voices total
           const voiceOptions: VoiceOption[] = availableVoices
+            .filter(voice => {
+              // Prefer English voices
+              if (voice.lang.startsWith('en')) return true
+              
+              // Add a few non-English voices if needed to reach minimum count
+              return availableVoices.length < 5
+            })
             .map(voice => ({
               voice,
               name: voice.name,
@@ -1027,15 +1251,14 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
               quality: getVoiceQuality(voice)
             }))
             .filter(voiceOption => {
-              // Only show high and medium quality voices
+              // Only show high quality voices if we have enough
               if (voiceOption.quality === 'low') return false
               
               // Filter out obviously robotic/poor voices
               const name = voiceOption.name.toLowerCase()
               const badVoicePatterns = [
-                'microsoft', 'espeak', 'festival', 'flite', 'pico',
-                'robot', 'synthetic', 'computer', 'artificial',
-                'speech synthesis', 'tts', 'text-to-speech'
+                'espeak', 'festival', 'flite', 'pico',
+                'robot', 'synthetic', 'computer', 'artificial'
               ]
               
               if (badVoicePatterns.some(pattern => name.includes(pattern))) {
@@ -1055,6 +1278,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
               }
               return a.name.localeCompare(b.name)
             })
+            // Limit to max 10 voices to prevent performance issues
+            .slice(0, 10)
 
           setVoices(voiceOptions)
           
@@ -1162,7 +1387,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const handleRecovery = () => {
     try {
       console.log('Manual recovery initiated')
-      speechSynthesis.cancel()
+      forceReset() // Use the enhanced reset method
       setLastError(null)
       
       setTimeout(() => {
@@ -1172,7 +1397,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
           voice: selectedVoice || undefined,
           rate: rate[0],
           pitch: pitch[0],
-          volume: volume[0]
+          volume: volume[0],
+          forcePlay: true
         })
       }, 500)
     } catch (e) {
@@ -1186,7 +1412,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       voice: selectedVoice || undefined,
       rate: rate[0],
       pitch: pitch[0],
-      volume: volume[0]
+      volume: volume[0],
+      forcePlay: true
     })
   }
 
@@ -1232,7 +1459,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
             voice: selectedVoice || undefined,
             rate: rate[0],
             pitch: pitch[0],
-            volume: volume[0]
+            volume: volume[0],
+            forcePlay: true
           })
           return
         }
@@ -1286,7 +1514,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         voice: selectedVoice || undefined,
         rate: rate[0],
         pitch: pitch[0],
-        volume: volume[0]
+        volume: volume[0],
+        forcePlay: true
       })
     } finally {
       setIsCloudTTSLoading(false)
@@ -1335,7 +1564,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
           voice: selectedVoice || undefined,
           rate: rate[0],
           pitch: pitch[0],
-          volume: volume[0]
+          volume: volume[0],
+          forcePlay: true
         })
       }
       
@@ -1358,14 +1588,15 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       console.error('Error playing cloud audio:', playError)
       setLastError('Failed to play audio - using browser fallback')
       
-             // Fallback to browser TTS
-       setUseCloudTTS(false)
-       playText(GlobalAudioManager.getInstance().getCurrentText() || 'Audio error', {
-         voice: selectedVoice || undefined,
-         rate: rate[0],
-         pitch: pitch[0],
-         volume: volume[0]
-       })
+      // Fallback to browser TTS
+      setUseCloudTTS(false)
+      playText(GlobalAudioManager.getInstance().getCurrentText() || 'Audio error', {
+        voice: selectedVoice || undefined,
+        rate: rate[0],
+        pitch: pitch[0],
+        volume: volume[0],
+        forcePlay: true
+      })
     }
   }
 
@@ -1379,7 +1610,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         voice: selectedVoice || undefined,
         rate: rate[0],
         pitch: pitch[0],
-        volume: volume[0]
+        volume: volume[0],
+        forcePlay: true
       })
     }
   }
@@ -1427,6 +1659,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       rate: rate[0],
       pitch: pitch[0],
       volume: volume[0],
+      forcePlay: true,
       onStart: () => {
         console.log(`🎵 Started playing ${contentType}`)
       },
@@ -1752,259 +1985,16 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                 </div>
               </div>
 
-              {/* Settings */}
+              {/* Settings - Rest of the component remains the same... */}
               <div className="border-t border-slate-100 dark:border-slate-900 pt-4">
-                <DropdownMenu>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full justify-center h-8 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                        >
-                          <Settings className="h-4 w-4 text-slate-600 dark:text-slate-400 mr-2" />
-                          <span className="text-sm text-slate-600 dark:text-slate-400 font-light">Settings</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
-                      Audio settings
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <DropdownMenuContent 
-                    align="end" 
-                    className="w-80 bg-white dark:bg-black border border-slate-100 dark:border-slate-900 rounded-lg shadow-xl"
-                  >
-                    <DropdownMenuLabel className="text-slate-900 dark:text-white font-light">Audio Settings</DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
-                    
-                    {/* Test button */}
-                    <div className="p-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePlayWithCurrentSettings}
-                        className="w-full text-sm h-8 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                      >
-                        🎵 Test Audio
-                      </Button>
-                    </div>
-                    
-                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
-                    
-                    {/* Word highlighting toggle */}
-                    <div className="p-3">
-                      <label className="flex items-center space-x-3 text-sm font-light">
-                        <input
-                          type="checkbox"
-                          checked={highlightingEnabled}
-                          onChange={(e) => setHighlighting(e.target.checked)}
-                          className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-500"
-                        />
-                        <span className="text-slate-900 dark:text-white">Word highlighting</span>
-                      </label>
-                    </div>
-                    
-                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-900" />
-                    
-                    {/* Voice quality notice - clean design */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg mx-3 my-2">
-                      <div className="text-sm text-slate-700 dark:text-slate-300 font-light space-y-2">
-                        <div className="font-medium">🎯 For Best Quality:</div>
-                        <div>• Enable Google Cloud TTS below (premium voices)</div>
-                        <div>• Or install better system voices in your OS</div>
-                        <div>• Current browser voices: {voices.length} (filtered from 200+)</div>
-                      </div>
-                    </div>
-
-                    {/* Voice Options - Clean Toggle */}
-                    <div className="p-3 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-light text-slate-900 dark:text-white">
-                          Voice Options
-                        </label>
-                        <div className="flex items-center space-x-3">
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-light">
-                            {useCloudTTS ? 'Premium' : 'Basic'}
-                          </span>
-                          <Switch
-                            checked={useCloudTTS}
-                            onCheckedChange={setUseCloudTTS}
-                            className="data-[state=checked]:bg-slate-900 dark:data-[state=checked]:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Basic Browser Voices */}
-                      {!useCloudTTS && (
-                        <div className="space-y-3">
-                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center space-x-2 mb-3">
-                              <div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div>
-                              <span className="text-sm font-light text-slate-900 dark:text-white">
-                                Browser Voices (Free)
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-3">
-                              Standard system voices available on your device
-                            </p>
-                            
-                            <select
-                              value={selectedVoice?.name || ''}
-                              onChange={(e) => {
-                                const voice = voices.find(v => v.voice.name === e.target.value)?.voice
-                                setSelectedVoice(voice || null)
-                              }}
-                              className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
-                            >
-                              <option value="">Auto-select best voice</option>
-                              {voices
-                                .filter(voiceOption => {
-                                  const quality = getVoiceQuality(voiceOption.voice)
-                                  return quality === 'high' || quality === 'medium'
-                                })
-                                .slice(0, 10)
-                                .map((voiceOption) => (
-                                  <option key={voiceOption.voice.name} value={voiceOption.voice.name}>
-                                    {voiceOption.name} ({voiceOption.voice.lang})
-                                  </option>
-                                ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Premium Chirp 3: HD Voices */}
-                      {useCloudTTS && (
-                        <div className="space-y-3">
-                          {(user && (isPremium || isPro)) ? (
-                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center space-x-2 mb-3">
-                                <div className="w-2 h-2 bg-slate-900 dark:bg-white rounded-full"></div>
-                                <span className="text-sm font-light text-slate-900 dark:text-white">
-                                  ✨ Google Chirp 3: HD Voices (Ultra Premium)
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-3">
-                                🎯 LLM-powered voices with unparalleled realism and emotional resonance
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-500 font-light mb-3">
-                                Features: Aoede, Puck, Kore, Charon + 26 more premium voices
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-500 font-light mb-4 italic">
-                                Note: Chirp 3 HD voices use optimized pitch settings for best quality
-                              </p>
-                              
-                              {/* Language Selection */}
-                              <div className="space-y-3">
-                                <label className="text-xs font-light text-slate-900 dark:text-white">
-                                  Target Language
-                                </label>
-                                <select
-                                  value={targetLanguage}
-                                  onChange={(e) => setTargetLanguage(e.target.value)}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
-                                >
-                                  <option value="en-US">English (US)</option>
-                                  <option value="en-GB">English (UK)</option>
-                                  <option value="en-AU">English (Australia)</option>
-                                  <option value="es-US">Spanish (US)</option>
-                                  <option value="es-ES">Spanish (Spain)</option>
-                                  <option value="fr-FR">French (France)</option>
-                                  <option value="de-DE">German</option>
-                                  <option value="it-IT">Italian</option>
-                                  <option value="pt-BR">Portuguese (Brazil)</option>
-                                  <option value="ja-JP">Japanese</option>
-                                  <option value="ko-KR">Korean</option>
-                                  <option value="zh-CN">Chinese (Mandarin)</option>
-                                </select>
-                              </div>
-
-                              {/* Voice Quality */}
-                              <div className="space-y-3 mt-4">
-                                <label className="text-xs font-light text-slate-900 dark:text-white">
-                                  Voice Quality
-                                </label>
-                                <select
-                                  value={voiceType}
-                                  onChange={(e) => setVoiceType(e.target.value as 'CHIRP3_HD')}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
-                                >
-                                  <option value="CHIRP3_HD">✨ Chirp 3: HD (Ultra Premium)</option>
-                                </select>
-                              </div>
-
-                              {/* Voice Gender */}
-                              <div className="space-y-3 mt-4">
-                                <label className="text-xs font-light text-slate-900 dark:text-white">
-                                  Voice Gender
-                                </label>
-                                <select
-                                  value={voiceGender}
-                                  onChange={(e) => setVoiceGender(e.target.value as 'MALE' | 'FEMALE' | 'NEUTRAL')}
-                                  className="w-full px-3 py-2 text-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent font-light"
-                                >
-                                  <option value="FEMALE">Female</option>
-                                  <option value="MALE">Male</option>
-                                  <option value="NEUTRAL">Neutral</option>
-                                </select>
-                              </div>
-
-                              {/* Auto-detect toggle */}
-                              <div className="flex items-center space-x-3 mt-4">
-                                <input
-                                  type="checkbox"
-                                  id="autoDetect"
-                                  checked={autoDetectLanguage}
-                                  onChange={(e) => setAutoDetectLanguage(e.target.checked)}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-500"
-                                />
-                                <label htmlFor="autoDetect" className="text-xs text-slate-700 dark:text-slate-300 font-light">
-                                  Auto-detect and translate
-                                </label>
-                              </div>
-
-                              {/* Test Button */}
-                              <Button
-                                onClick={() => handleCloudTTSPlay("Welcome to Chirp 3 HD voices! Experience the future of text-to-speech with unparalleled realism and emotional depth.")}
-                                className="w-full mt-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black text-sm py-2 font-light transition-colors"
-                              >
-                                {isCloudTTSLoading ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-black mr-2"></div>
-                                    Testing...
-                                  </>
-                                ) : (
-                                  <>✨ Test Chirp 3: HD</>
-                                )}
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center space-x-2 mb-3">
-                                <Crown className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                                <span className="text-sm font-light text-slate-900 dark:text-white">
-                                  Premium Voices Available
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 font-light mb-4">
-                                Upgrade to access Google Chirp 3: HD voices with LLM-powered realism
-                              </p>
-                              <Button
-                                onClick={() => router.push('/upgrade-to-lifetime')}
-                                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black text-sm py-2 font-light transition-colors"
-                              >
-                                Upgrade for Premium Voices
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRecovery}
+                  className="w-full text-sm h-8 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                >
+                  🔧 Reset Audio System
+                </Button>
               </div>
             </div>
           )}
@@ -2036,4 +2026,4 @@ export function GlobalAudioToggle() {
       </Tooltip>
     </TooltipProvider>
   )
-} 
+}

@@ -91,7 +91,9 @@ export function QuestionFeedbackDisplay({
     <div className={cn("max-w-3xl mx-auto space-y-6", className)}>
       <div className={cn(
         "p-5 rounded-xl border transition-all duration-300",
-        feedback.bgClass
+        isCorrectAnswer 
+          ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/10" 
+          : "border-red-200 dark:border-red-800 bg-red-50/30 dark:bg-red-950/10"
       )}
         data-audio-content="true"
       >

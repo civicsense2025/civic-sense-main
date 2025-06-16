@@ -11,7 +11,7 @@ export interface TopicMetadata {
 }
 
 // Question types
-export type QuestionType = "multiple_choice" | "true_false" | "short_answer" | "matching" | "fill_in_blank" | "drag_and_drop" | "ordering"
+export type QuestionType = "multiple_choice" | "true_false" | "short_answer" | "matching" | "fill_in_blank" | "drag_and_drop" | "ordering" | "crossword"
 
 // Question structure
 export interface QuizQuestion {
@@ -34,6 +34,16 @@ export interface QuizQuestion {
   fill_in_blanks?: Array<{ text: string; answer: string }>
   drag_items?: Array<{ id: string; content: string; category?: string }>
   ordering_items?: Array<{ id: string; content: string; correct_order: number }>
+  crossword_data?: {
+    size: { rows: number; cols: number };
+    words: Array<{
+      word: string;
+      clue: string;
+      position: { row: number; col: number };
+      direction: 'across' | 'down';
+      number: number;
+    }>;
+  }
 }
 
 export interface Source {

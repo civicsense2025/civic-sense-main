@@ -22,10 +22,8 @@ import { BOOST_DEFINITIONS } from './game-boosts'
 export type { BoostType, GameBoost, UserBoostInventory, ActiveBoost }
 export { BOOST_DEFINITIONS }
 
-const supabaseClient = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Use the existing supabase instance instead of creating a new one
+const supabaseClient = supabase
 
 // Types for the enhanced gamification system
 export interface LearningGoal {

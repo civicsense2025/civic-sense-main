@@ -100,22 +100,21 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
         <Link href="/donate" passHref legacyBehavior>
           <Button 
             variant="ghost" 
-            size="lg"
-            className="rounded-full h-12 px-7 py-0 text-base font-normal tracking-tight bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            size="sm"
+            className="rounded-full h-12 px-7 py-0 text-base font-semibold tracking-tight bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-700/30 hover:text-amber-800 dark:hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-all duration-150"
           >
-            <span className="text-amber-600 dark:text-amber-400 font-medium mr-2">★</span>
+            <span className="text-amber-600 dark:text-amber-400 font-bold mr-2">★</span>
             <span>Support Our Work</span>
           </Button>
         </Link>
         {/* Unlock All Quizzes Button - Apple style strong ghost button with lighter font */}
         <Button 
           variant="ghost" 
-          size="lg" 
+          size="sm" 
           onClick={onSignInClick}
-          className="rounded-full h-12 px-7 py-0 text-base font-normal tracking-tight bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          className="rounded-full h-12 px-7 py-0 text-base font-semibold tracking-tight bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-all duration-150"
         >
-          <User className="h-5 w-5 mr-2" />
-          <span>Unlock All Quizzes</span>
+          <span>Login</span>
         </Button>
       </div>
     )

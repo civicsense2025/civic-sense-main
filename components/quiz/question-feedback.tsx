@@ -355,30 +355,30 @@ export function QuestionFeedback({ questionId, questionText, topicId, className 
             </span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
+            <DialogTitle className="flex items-center space-x-2 text-slate-900 dark:text-slate-50">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               <span>Report Question Issue</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
               Help us improve question quality by reporting issues. Your feedback is anonymous and helps other learners.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="reason">What's wrong with this question?</Label>
+              <Label htmlFor="reason" className="text-slate-900 dark:text-slate-50">What's wrong with this question?</Label>
               <Select value={reportReason} onValueChange={setReportReason}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 text-slate-900 dark:text-slate-50 border-slate-200 dark:border-slate-700">
                   <SelectValue placeholder="Select a reason..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50">
                   {REPORT_REASONS.map((reason) => (
-                    <SelectItem key={reason.value} value={reason.value}>
+                    <SelectItem key={reason.value} value={reason.value} className="text-slate-900 dark:text-slate-50">
                       <div>
                         <div className="font-medium">{reason.label}</div>
-                        <div className="text-xs text-muted-foreground">{reason.description}</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">{reason.description}</div>
                       </div>
                     </SelectItem>
                   ))}
@@ -388,16 +388,16 @@ export function QuestionFeedback({ questionId, questionText, topicId, className 
 
             {selectedReportReason && (
               <div>
-                <Label htmlFor="details">Additional details (optional)</Label>
-                                 <Textarea
-                   id="details"
-                   value={reportDetails}
-                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReportDetails(e.target.value)}
-                   placeholder={`Please provide more details about the ${selectedReportReason.label.toLowerCase()}...`}
-                   className="mt-1 min-h-[80px]"
-                   maxLength={500}
-                 />
-                <div className="text-xs text-muted-foreground mt-1">
+                <Label htmlFor="details" className="text-slate-900 dark:text-slate-50">Additional details (optional)</Label>
+                <Textarea
+                  id="details"
+                  value={reportDetails}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReportDetails(e.target.value)}
+                  placeholder={`Please provide more details about the ${selectedReportReason.label.toLowerCase()}...`}
+                  className="mt-1 min-h-[80px] text-slate-900 dark:text-slate-50 placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-200 dark:border-slate-700"
+                  maxLength={500}
+                />
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   {reportDetails.length}/500 characters
                 </div>
               </div>
@@ -409,13 +409,14 @@ export function QuestionFeedback({ questionId, questionText, topicId, className 
               variant="outline"
               onClick={() => setIsReportDialogOpen(false)}
               disabled={isSubmitting}
+              className="text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
             >
               Cancel
             </Button>
             <Button
               onClick={handleReport}
               disabled={!reportReason || isSubmitting}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
             >
               {isSubmitting ? "Submitting..." : "Submit Report"}
             </Button>

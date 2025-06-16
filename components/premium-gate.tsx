@@ -17,6 +17,7 @@ import {
   STRIPE_CONFIG,
   type PremiumFeature
 } from "@/lib/premium"
+import { useRouter } from "next/navigation"
 
 interface PremiumGateProps {
   feature: PremiumFeature
@@ -128,6 +129,8 @@ export function PremiumGate({
 }: PremiumGateProps) {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [isDonationLoading, setIsDonationLoading] = useState(false)
+  const router = useRouter()
 
   const featureDetail = FEATURE_DETAILS[feature]
   const FeatureIcon = featureDetail.icon
@@ -166,6 +169,19 @@ export function PremiumGate({
       console.error('Error during upgrade:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Add donation handler for instant access
+  const handleDonate = async () => {
+    setIsDonationLoading(true)
+    try {
+      // Redirect to donation page
+      router.push('/donate?source=premium_gate')
+    } catch (error) {
+      console.error('Error navigating to donation page:', error)
+    } finally {
+      setIsDonationLoading(false)
     }
   }
 
@@ -250,38 +266,36 @@ export function PremiumGate({
                       <span>Processing...</span>
                     </div>
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <Zap className="h-5 w-5" />
-                      <span>Upgrade to Premium</span>
-                    </div>
+                    <>Unlock Premium</>
                   )}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Trust Indicators */}
-            <div className="text-center space-y-2 pt-4 border-t">
-              <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-1">
-                  <Shield className="h-4 w-4" />
-                  <span>Secure Payment</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <X className="h-4 w-4" />
-                  <span>Cancel Anytime</span>
-                </div>
+            {/* Donation Option */}
+            <div className="text-center space-y-4 pt-4">
+              <div className="text-lg font-medium text-slate-700 dark:text-slate-300">
+                Or support our mission with a donation
               </div>
-              <p className="text-xs text-muted-foreground">
-                Powered by Stripe • 30-day money-back guarantee
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Donate $25+ for annual access or $50+ for lifetime access
               </p>
+              <Button
+                variant="outline"
+                onClick={handleDonate}
+                disabled={isDonationLoading}
+                className="px-8 py-2 h-auto border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
+              >
+                {isDonationLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-amber-500 border-t-transparent"></div>
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  <>Donate & Unlock Access</>
+                )}
+              </Button>
             </div>
-
-            {/* Custom Content */}
-            {children && (
-              <div className="pt-4 border-t">
-                {children}
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
