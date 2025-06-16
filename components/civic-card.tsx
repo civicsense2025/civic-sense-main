@@ -50,187 +50,54 @@ function Countdown({ targetDate, isComingSoon = false }: CountdownProps) {
     }
 
     calculateTimeLeft()
-    // Update more frequently - every second for better UX
     const timer = setInterval(calculateTimeLeft, 1000)
-
     return () => clearInterval(timer)
   }, [targetDate])
 
-  const formatTimeUnit = (value: number, unit: string) => {
-    if (value === 0) return null
-    return (
-      <span className="inline-flex items-center">
-        <span className="font-bold text-2xl text-neutral-900 dark:text-neutral-100">{value}</span>
-        <span className="ml-1 text-neutral-600 dark:text-neutral-300 text-sm font-medium">{unit}{value !== 1 ? 's' : ''}</span>
-      </span>
-    )
-  }
-
-  const formatTimeUnitCompact = (value: number, unit: string) => {
-    if (value === 0) return null
-    return (
-      <div className="flex flex-col items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg px-3 py-2 min-w-[60px]">
-        <span className="font-bold text-xl text-neutral-900 dark:text-neutral-100">{value}</span>
-        <span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">{unit}{value !== 1 ? 's' : ''}</span>
-      </div>
-    )
-  }
-
   const { days, hours, minutes, seconds } = timeLeft
-
-  // Check if we're very close (less than 1 hour)
-  const isVeryClose = days === 0 && hours === 0
   
-  // Check if we're close (less than 24 hours)
-  const isClose = days === 0
-
+  // Simplified time display in Apple style
   if (days > 0) {
-    // Show days + hours for >24h away - compact card style
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-2 text-lg">
-          <Clock className="h-6 w-6 text-blue-500 animate-pulse" />
-          <span className="text-neutral-700 dark:text-neutral-300 font-medium">Unlocks in</span>
-        </div>
-        <div className="flex items-center justify-center space-x-3">
-          {formatTimeUnitCompact(days, 'day')}
-          {hours > 0 && formatTimeUnitCompact(hours, 'hour')}
+      <div className="text-center">
+        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
+        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
+          {days}d {hours}h
         </div>
       </div>
     )
   } else if (hours > 0) {
-    // Show hours + minutes for <24h - more prominent
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-2 text-lg">
-          <Clock className="h-6 w-6 text-orange-500 animate-pulse" />
-          <span className="text-neutral-700 dark:text-neutral-300 font-medium">Unlocks in</span>
-        </div>
-        <div className="flex items-center justify-center space-x-3">
-          {formatTimeUnitCompact(hours, 'hour')}
-          {minutes > 0 && formatTimeUnitCompact(minutes, 'min')}
+      <div className="text-center">
+        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
+        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
+          {hours}h {minutes}m
         </div>
       </div>
     )
-  } else if (minutes > 0) {
-    // Show minutes + seconds for <1h - very prominent with animation
+  } else if (minutes > 0 || seconds > 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-2 text-lg">
-          <Clock className="h-6 w-6 text-red-500 animate-bounce" />
-          <span className="text-neutral-700 dark:text-neutral-300 font-medium">Almost ready!</span>
+      <div className="text-center">
+        <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Unlocks in</div>
+        <div className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
+          {minutes}m {seconds}s
         </div>
-        
-        {/* Circular progress for final countdown */}
-        <div className="relative flex items-center justify-center">
-          <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="currentColor"
-              strokeWidth="2"
-              fill="transparent"
-              className="text-neutral-200 dark:text-neutral-700"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="currentColor"
-              strokeWidth="3"
-              fill="transparent"
-              strokeDasharray={`${2 * Math.PI * 45}`}
-              strokeDashoffset={`${2 * Math.PI * 45 * (1 - (minutes * 60 + seconds) / 3600)}`}
-              className="text-red-500 transition-all duration-1000 ease-out"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{minutes}</div>
-            <div className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">min</div>
-            <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{seconds}</div>
-            <div className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">sec</div>
-          </div>
-        </div>
-      </div>
-    )
-  } else if (seconds > 0) {
-    // Show only seconds for <1min - maximum prominence with circular progress
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-2 text-lg">
-          <Clock className="h-6 w-6 text-green-500 animate-spin" />
-          <span className="text-neutral-700 dark:text-neutral-300 font-medium animate-pulse">Unlocking now!</span>
-        </div>
-        
-        {/* Circular progress for final seconds */}
-        <div className="relative flex items-center justify-center">
-          <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="currentColor"
-              strokeWidth="2"
-              fill="transparent"
-              className="text-neutral-200 dark:text-neutral-700"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="url(#gradient)"
-              strokeWidth="4"
-              fill="transparent"
-              strokeDasharray={`${2 * Math.PI * 45}`}
-              strokeDashoffset={`${2 * Math.PI * 45 * (1 - seconds / 60)}`}
-              className="transition-all duration-1000 ease-out animate-pulse"
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#3b82f6" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-4xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent animate-pulse">
-              {seconds}
-            </div>
-            <div className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">seconds</div>
-          </div>
+        <div className="w-32 h-1 bg-gray-100 dark:bg-gray-800 rounded-full mt-3 mx-auto">
+          <div 
+            className="h-full bg-blue-500 rounded-full" 
+            style={{ 
+              width: `${(1 - (minutes * 60 + seconds) / 3600) * 100}%`,
+              transition: "width 1s linear"
+            }}
+          ></div>
         </div>
       </div>
     )
   } else {
-    // Time is up - only show "Quiz Available!" for topics that actually have questions
-    // Don't show this for "coming soon" topics
-    if (isComingSoon) {
-      return (
-        <div className="space-y-4">
-          <div className="flex items-center justify-center space-x-2 text-lg">
-            <span className="text-2xl">🚧</span>
-            <span className="text-amber-700 dark:text-amber-300 font-medium">Still Coming Soon</span>
-          </div>
-          <div className="text-center">
-            <span className="text-sm text-amber-600 dark:text-amber-400">Questions are still being prepared</span>
-          </div>
-        </div>
-      )
-    }
-    
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center space-x-2 text-lg">
-          <div className="h-6 w-6 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
-            <span className="text-white text-sm">✓</span>
-          </div>
-          <span className="text-green-600 dark:text-green-400 font-bold animate-pulse">Quiz Available!</span>
-        </div>
-        <div className="text-center">
-          <span className="text-sm text-neutral-600 dark:text-neutral-400">Refresh the page to start</span>
+      <div className="text-center">
+        <div className="text-sm text-green-500 animate-pulse">
+          Ready now
         </div>
       </div>
     )
@@ -401,24 +268,24 @@ export function CivicCard({
       }}
     >
       <div className="h-full flex flex-col justify-center text-center space-y-8 px-4">
-        {/* Status indicators */}
+        {/* Status indicators - Smaller, cleaner badges */}
         <div className="flex justify-center">
           {isLocked && !isComingSoon && !guestLocked && (
-            <div className="flex items-center space-x-2 px-4 py-2 rounded-full border bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200 dark:border-blue-700">
-              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Unlocks Soon</span>
-            </div>
-          )}
-          {guestLocked && (
-            <div className="flex items-center space-x-2 px-4 py-2 rounded-full border bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-700">
-              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Sign In to Access</span>
+            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+              <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Unlocking soon</span>
             </div>
           )}
           {isCompleted && (
-            <div className="flex items-center space-x-2 px-4 py-2 rounded-full border bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-700">
-              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">Completed</span>
+            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+              <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <span className="text-xs font-medium text-green-700 dark:text-green-300">Completed</span>
+            </div>
+          )}
+          {!isLocked && !isComingSoon && !isCompleted && !guestLocked && (
+            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="text-xs font-medium text-green-700 dark:text-green-300">Available now</span>
             </div>
           )}
         </div>
@@ -438,7 +305,7 @@ export function CivicCard({
               <Badge 
                 key={index}
                 variant="outline" 
-                className="font-mono text-xs px-3 py-1 rounded-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900"
+                className="font-mono font-light text-xs px-3 py-1 rounded-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900"
                 style={{ fontFamily: 'Space Mono, monospace' }}
               >
                 {category}
@@ -446,78 +313,70 @@ export function CivicCard({
             ))}
           </div>
           
-          <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-200 leading-relaxed max-w-4xl mx-auto">
-            {topic.description}
+          {/* Description capped at 250 chars */}
+          <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-200 leading-relaxed max-w-4xl mx-auto font-light">
+            {topic.description && topic.description.length > 250
+              ? topic.description.slice(0, 247) + '...'
+              : topic.description}
           </p>
+          
+          {/* Unlock info as plain text if locked by date */}
+          {isDateLocked && (
+            <div className="space-y-1 text-center mt-4">
+              <div className="text-base text-neutral-600 dark:text-neutral-300">
+                This quiz will unlock at <span className="font-semibold text-neutral-800 dark:text-neutral-200">6:00 AM</span> on{' '}
+                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                  {new Date(topic.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
+            </div>
+          )}
         </div>
 
-        {/* Countdown or Actions */}
+        {/* Countdown or Actions - Simplified with cleaner styling */}
         <div className="space-y-6">
           {isComingSoon ? (
-            /* Coming Soon message for topics without questions */
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-8 border border-amber-200 dark:border-amber-700 shadow-lg">
-              <div className="text-center">
-                <div className="text-2xl mb-3">🚧</div>
-                <p className="text-amber-700 dark:text-amber-300 font-medium text-lg">
-                  Questions still in committee
-                </p>
+            /* Coming Soon message for topics without questions - Simplified */
+            <div className="inline-block px-5 py-3 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+              <div className="flex items-center space-x-2">
+                <div>🚧</div>
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  Coming soon
+                </span>
               </div>
             </div>
           ) : guestLocked ? (
-            /* Guest locked message */
-            <div className="space-y-4">
-              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-8 border border-amber-200 dark:border-amber-700 shadow-lg">
-                <div className="text-center">
-                  <div className="mb-4"><Lock className="h-16 w-16 text-amber-500 dark:text-amber-400 mx-auto" /></div>
-                  <p className="text-amber-700 dark:text-amber-300 font-medium text-xl mb-2">
-                    Sign In to Access
-                  </p>
-                  <p className="text-amber-600 dark:text-amber-400 text-sm">
-                    Create a free account to access all quizzes
-                  </p>
-                </div>
-              </div>
-            </div>
+            // Show a prominent sign-in button instead of a badge
+            <Button
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-full shadow-lg px-8 py-4 min-w-[220px] text-base"
+              onClick={(e) => {
+                e.stopPropagation()
+                onExploreGame(topic.topic_id)
+              }}
+            >
+              <Lock className="h-5 w-5 mr-2" /> Sign in to access
+            </Button>
           ) : isDateLocked ? (
-            /* Regular countdown for date-locked topics */
-            <div className="space-y-8">
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-lg">
+            /* Clean countdown for date-locked topics */
+            <div className="space-y-3">
+              <div className="inline-block px-5 py-3 rounded-full bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
                 <Countdown targetDate={getUnlockDate()} isComingSoon={isComingSoon} />
               </div>
-              
-              {/* Unlock information with better formatting */}
-              <div className="space-y-4">
-                <p className="text-base text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto">
-                  This quiz will unlock at <span className="font-semibold text-neutral-800 dark:text-neutral-200">6:00 AM</span> on{' '}
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    {new Date(topic.date).toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                </p>
-                
-                {/* Add notification option and refresh button */}
-                <div className="space-y-3">
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    💡 Tip: Bookmark this page to return when it's ready!
-                  </div>
-                  
-                  {/* Manual refresh button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      window.location.reload()
-                    }}
-                    className="text-xs px-4 py-2 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    🔄 Check if Available
-                  </Button>
-                </div>
+              {/* Simple unlock time */}
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                {new Date(topic.date).toLocaleDateString('en-US', { 
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
               </div>
             </div>
           ) : null}

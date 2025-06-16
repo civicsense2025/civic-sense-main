@@ -11,6 +11,9 @@ export const metadata: Metadata = {
 }
 
 export default function DonatePage() {
+  // Get the Stripe donation price/product ID from env
+  const donationPriceId = process.env.NEXT_PUBLIC_STRIPE_DONATION
+
   return (
     <>
       <Script
@@ -51,7 +54,7 @@ export default function DonatePage() {
             </div>
 
             {/* Donation Form Component - Front and Center */}
-            <DonateForm />
+            <DonateForm donationPriceId={donationPriceId} />
 
             {/* Other Ways to Help */}
             <div className="relative mb-12">

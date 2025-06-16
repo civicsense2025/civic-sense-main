@@ -7,7 +7,7 @@ import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
 import { CivicCard } from "./civic-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ChevronDown, Lock } from "lucide-react"
+import { Calendar, ChevronDown, Lock, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
@@ -159,7 +159,7 @@ interface OrganizedTopics {
   past: TopicMetadata[]
 }
 
-const FREE_QUIZ_LIMIT = 3
+const FREE_QUIZ_LIMIT = 1
 
 export function DailyCardStack({
   selectedCategory,
@@ -371,20 +371,37 @@ export function DailyCardStack({
     }
     
     // For guests: 
-    // - Lock future quizzes
-    // - Allow only today's quizzes, lock past quizzes
+    // - Allow only today's FIRST quiz
+    // - Lock future quizzes and past quizzes
     if (!user) {
       const today = getTodayAtMidnight()
-      const isFuture = localTopicDate > today
-      const isPast = localTopicDate < today
       
-      // Lock future or past quizzes for guests
-      return isFuture || isPast
+      // Allow access to first quiz of today only
+      if (localTopicDate.getTime() === today.getTime()) {
+        // Find all today's topics
+        const todaysTopics = organizedTopics.today || []
+        if (todaysTopics.length > 0) {
+          // Allow access to the first topic from today only
+          return topic.topic_id !== todaysTopics[0].topic_id
+        }
+      }
+      
+      // Lock all non-today quizzes for guests
+      return localTopicDate.getTime() !== today.getTime()
     }
     
-    // For logged-in users, lock future quizzes but allow past quizzes
-    return localTopicDate > currentDate && !completedTopics.has(topic.topic_id)
-  }, [currentDate, completedTopics, topicsWithoutQuestions, user])
+    // For logged-in users - allow access to quizzes within a 1-week window and completed quizzes
+    const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+    
+    // Allow if:
+    // 1. Quiz is within 1-week window
+    // 2. Quiz has been completed by the user
+    // 3. Quiz is from today or future
+    return (
+      (localTopicDate < oneWeekAgo && localTopicDate < currentDate && !completedTopics.has(topic.topic_id)) || 
+      (localTopicDate > currentDate && !completedTopics.has(topic.topic_id))
+    )
+  }, [currentDate, completedTopics, topicsWithoutQuestions, user, organizedTopics.today])
 
   const isTopicComingSoon = useCallback((topicId: string) => {
     // In development, never mark topics as coming soon
@@ -611,38 +628,41 @@ export function DailyCardStack({
         return
       }
       
-      // For guests - limit to today's quizzes only
+      // For guests - simpler logic - either allow access or prompt auth
       if (!user) {
+        // Is this not the first quiz of today?
         const today = getTodayAtMidnight()
+        const isToday = localTopicDate && localTopicDate.getTime() === today.getTime()
         
-        // Check if topic is not from today
-        if (localTopicDate && localTopicDate.getTime() !== today.getTime()) {
-          console.log(`Topic "${topic.topic_title}" is locked for guests. Only today's quizzes are available.`)
+        // If it's today's first quiz and not completed yet, allow access
+        const todaysTopics = organizedTopics.today || []
+        const isFirstQuizOfToday = isToday && todaysTopics.length > 0 && topic.topic_id === todaysTopics[0].topic_id
+        const guestQuizAttempted = quizAttempts >= FREE_QUIZ_LIMIT
+        
+        if (!isFirstQuizOfToday || guestQuizAttempted) {
+          // If not today's first quiz or guest already used their free quiz, prompt auth
+          console.log(`Guests can only access today's first quiz. Please sign in for more.`)
           onAuthRequired?.()
           return
         }
         
-        // Count today's quizzes attempted by guest
-        const todayAttemptedCount = quizAttempts
-        
-        // Limit guests to FREE_QUIZ_LIMIT quizzes per day
-        if (todayAttemptedCount >= FREE_QUIZ_LIMIT) {
-          console.log(`Guest has reached the limit of ${FREE_QUIZ_LIMIT} quizzes per day`)
-          onAuthRequired?.()
-          return
-        }
-        
-        // Increment quiz attempts for guest
-        setQuizAttempts(todayAttemptedCount + 1)
+        // Increment quiz attempts for guest (for the free quiz)
+        setQuizAttempts(quizAttempts + 1)
       }
     } catch (error) {
       console.error(`Error parsing date for topic "${topic.topic_title}":`, error)
     }
 
-    // Check premium limits for authenticated users
-    if (user && !isPremium && !isPro && quizAttempts >= FREE_QUIZ_LIMIT) {
-      setShowPremiumGate(true)
-      return
+    // Check premium limits for authenticated users - if they've used quizzes older than 1 week
+    if (user && !isPremium && !isPro) {
+      const localTopicDate = parseTopicDate(topic.date)
+      if (localTopicDate) {
+        const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+        if (localTopicDate < oneWeekAgo && !completedTopics.has(topicId)) {
+          setShowPremiumGate(true)
+          return
+        }
+      }
     }
 
     router.push(`/quiz/${topicId}`)
@@ -763,19 +783,51 @@ export function DailyCardStack({
 
   return (
     <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
-      {/* Add free quizzes counter for guests */}
-      {!user && (
-        <div className="mb-4 text-center">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 px-4 py-2 rounded-lg border border-yellow-200 dark:border-yellow-800 animate-in fade-in duration-300">
-            <p className="text-sm font-medium">
-              Guest Access: {FREE_QUIZ_LIMIT - quizAttempts} of {FREE_QUIZ_LIMIT} free daily quizzes remaining
-            </p>
-            <p className="text-xs mt-1">Sign in to access all quizzes and track your progress</p>
-          </div>
-        </div>
-      )}
+      {/* Single Card Display */}
+      <div className="relative">
+        {allFilteredTopics.length > 0 && (
+          <CivicCard
+            topic={allFilteredTopics[currentStackIndex]}
+            baseHeight={cardBaseHeight}
+            onExploreGame={handleExploreGame}
+            isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
+            isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
+            isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
+            showFloatingKeyboard={false}
+            guestLocked={!user && getDateCategory(allFilteredTopics[currentStackIndex].date, getTodayAtMidnight()) !== 'today'}
+          />
+        )}
+      </div>
 
-      {/* Navigation */}
+      {/* Fixed button container with consistent height to prevent layout shift */}
+      <div className="h-24 w-full relative">
+        {/* Fixed Start Quiz Button - Apple styled */}
+        {allFilteredTopics.length > 0 && (
+          <div className="fixed-bottom-button max-w-lg w-full flex items-center justify-center">
+            {!isTopicLocked(allFilteredTopics[currentStackIndex]) && 
+             !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) ? (
+              <Button 
+                size="lg"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-full shadow-lg px-8 py-4 min-w-[240px]"
+                onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
+              >
+                {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}
+              </Button>
+            ) : (
+              <></>
+            )}
+          </div>
+        )}
+      </div>
+
+      <PremiumGate
+        isOpen={showPremiumGate}
+        onClose={() => setShowPremiumGate(false)}
+        feature="advanced_analytics"
+        title="Unlock Unlimited Daily Quizzes"
+        description="Continue your civic education journey with unlimited access to all our quizzes and premium features."
+      />
+
       {allFilteredTopics.length > 1 && (
         <div className="mb-8 sm:mb-16">
           <div className="flex items-center justify-between px-2 sm:px-8">
@@ -799,11 +851,12 @@ export function DailyCardStack({
                           <span className="mr-1">←</span>
                           <span>{getNavigationText(allFilteredTopics[currentStackIndex - 1])}</span>
                         </div>
+                        {/* Date preview: emoji and title */}
                         <div className="flex items-center mt-1 text-xs text-slate-500">
                           <span className="mr-1 opacity-70">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
                           <span className="truncate max-w-[100px] sm:max-w-[150px]">
-                            {allFilteredTopics[currentStackIndex - 1].topic_title.length > 15 
-                              ? `${allFilteredTopics[currentStackIndex - 1].topic_title.substring(0, 15)}...` 
+                            {allFilteredTopics[currentStackIndex - 1].topic_title.length > 18
+                              ? `${allFilteredTopics[currentStackIndex - 1].topic_title.slice(0, 18)}...`
                               : allFilteredTopics[currentStackIndex - 1].topic_title}
                           </span>
                         </div>
@@ -817,72 +870,9 @@ export function DailyCardStack({
                   </TooltipContent>
                 )}
               </Tooltip>
-              
               <div className="flex items-center justify-center flex-grow mx-4 sm:mx-8">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity">
-                      <span>{getCenterDisplayText(allFilteredTopics[currentStackIndex])}</span>
-                      <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-slate-900 dark:text-slate-50" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="center" 
-                    className="w-[90vw] max-w-md max-h-96 overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-slate-200 dark:border-slate-700 shadow-xl"
-                    sideOffset={8}
-                  >
-                    {allFilteredTopics.map((topic, index) => {
-                      const isLocked = isTopicLocked(topic)
-                      const isCompleted = isTopicCompleted(topic.topic_id)
-                      const isCurrent = index === currentStackIndex
-                      const isComingSoon = isTopicComingSoon(topic.topic_id)
-                      
-                      return (
-                        <DropdownMenuItem
-                          key={topic.topic_id}
-                          onClick={() => !isLocked && handleIndexChange(index)}
-                          className={cn(
-                            "flex items-center justify-between p-3 cursor-pointer text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 focus:text-slate-900 dark:focus:text-slate-100",
-                            isCurrent && "bg-primary/10 font-medium",
-                            isLocked && "opacity-50 cursor-not-allowed",
-                            isCompleted && "text-green-600 dark:text-green-400"
-                          )}
-                          disabled={isLocked}
-                        >
-                          <div className="flex items-center space-x-3 flex-grow min-w-0">
-                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
-                            <div className="flex-grow min-w-0">
-                              <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">
-                                {topic.topic_title}
-                              </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {(() => {
-                                  const parsedDate = parseTopicDate(topic.date)
-                                  if (!parsedDate) {
-                                    return 'Invalid Date'
-                                  }
-                                  return parsedDate.toLocaleDateString('en-US', { 
-                                    weekday: 'short',
-                                    month: 'short', 
-                                    day: 'numeric' 
-                                  })
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1 flex-shrink-0">
-                            {isComingSoon && <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Coming Soon</span>}
-                            {isLocked && !isComingSoon && <Lock className="h-3 w-3 text-slate-400" />}
-                            {isCompleted && <span className="text-xs text-green-600 dark:text-green-400">✓</span>}
-                            {isCurrent && <span className="text-xs text-primary">●</span>}
-                          </div>
-                        </DropdownMenuItem>
-                      )
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* ... existing center date dropdown ... */}
               </div>
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -902,10 +892,11 @@ export function DailyCardStack({
                           <span>{getNavigationText(allFilteredTopics[currentStackIndex + 1])}</span>
                           <span className="ml-1">→</span>
                         </div>
+                        {/* Date preview: emoji and title */}
                         <div className="flex items-center mt-1 text-xs text-slate-500">
                           <span className="truncate max-w-[100px] sm:max-w-[150px]">
-                            {allFilteredTopics[currentStackIndex + 1].topic_title.length > 15 
-                              ? `${allFilteredTopics[currentStackIndex + 1].topic_title.substring(0, 15)}...` 
+                            {allFilteredTopics[currentStackIndex + 1].topic_title.length > 18
+                              ? `${allFilteredTopics[currentStackIndex + 1].topic_title.slice(0, 18)}...`
                               : allFilteredTopics[currentStackIndex + 1].topic_title}
                           </span>
                           <span className="ml-1 opacity-70">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
@@ -924,46 +915,6 @@ export function DailyCardStack({
           </div>
         </div>
       )}
-
-      {/* Single Card Display */}
-      <div className="relative">
-        {allFilteredTopics.length > 0 && (
-          <CivicCard
-            topic={allFilteredTopics[currentStackIndex]}
-            baseHeight={cardBaseHeight}
-            onExploreGame={handleExploreGame}
-            isCompleted={isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id)}
-            isLocked={isTopicLocked(allFilteredTopics[currentStackIndex])}
-            isComingSoon={isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id)}
-            showFloatingKeyboard={false}
-            guestLocked={!user && getDateCategory(allFilteredTopics[currentStackIndex].date, getTodayAtMidnight()) !== 'today'}
-          />
-        )}
-      </div>
-
-      {/* Fixed button container with consistent height to prevent layout shift */}
-      <div className="h-24 w-full relative">
-        {/* Fixed Start Quiz Button - Safari optimized */}
-        {allFilteredTopics.length > 0 && 
-         !isTopicLocked(allFilteredTopics[currentStackIndex]) && 
-         !isTopicComingSoon(allFilteredTopics[currentStackIndex].topic_id) && (
-          <Button 
-            size="lg"
-            className="fixed-bottom-button bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black font-medium rounded-xl shadow-2xl backdrop-blur-sm safari-fixed-button"
-            onClick={() => handleExploreGame(allFilteredTopics[currentStackIndex].topic_id)}
-          >
-            {isTopicCompleted(allFilteredTopics[currentStackIndex].topic_id) ? 'Review Quiz' : 'Start Quiz'}
-          </Button>
-        )}
-      </div>
-
-      <PremiumGate
-        isOpen={showPremiumGate}
-        onClose={() => setShowPremiumGate(false)}
-        feature="advanced_analytics"
-        title="Unlock Unlimited Daily Quizzes"
-        description="Continue your civic education journey with unlimited access to all our quizzes and premium features."
-      />
     </div>
   )
 }

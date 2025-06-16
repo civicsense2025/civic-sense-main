@@ -770,42 +770,12 @@ button, .card, .quiz-option {
   transform: scale(1);
 }
 
-/* Dialog positioning utilities */
-.dialog-centered {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 50;
-}
-
-.dialog-content {
-  position: relative;
-  width: 100%;
-  max-width: 28rem; /* max-w-md */
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
-  z-index: 51;
-  margin: auto;
-  border-radius: 0.75rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
 /* Fix for Radix UI Dialog/Popover positioning */
 [data-radix-popper-content-wrapper] {
   position: absolute !important;
   max-width: calc(100vw - 2rem) !important;
   max-height: calc(100vh - 2rem) !important;
   z-index: 50 !important;
-}
-
-/* Ensure dialog content is properly centered */
-[role="dialog"] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Fix for portal positioning */
@@ -819,14 +789,6 @@ button, .card, .quiz-option {
   align-items: center;
   justify-content: center;
   z-index: 50;
-}
-
-/* Ensure dialog content doesn't overflow viewport */
-.dialog-content,
-[role="dialog"] > div {
-  max-height: calc(100vh - 2rem);
-  max-width: calc(100vw - 2rem);
-  overflow-y: auto;
 }
 
 /* Add these new animations for quiz enhancements */

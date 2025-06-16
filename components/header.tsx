@@ -23,9 +23,9 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
       {/* Unified header with integrated utility bar */}
       {showTopBar && showMainHeader && (
         <div className="w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50">
-          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-8 py-5">
             {/* Left side - Site branding */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <Link 
                 href="/" 
                 className="group flex items-center space-x-3 hover:opacity-80 transition-opacity"
@@ -33,23 +33,23 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   CivicSense
                 </div>
-                                    <div className="hidden sm:block text-sm text-slate-700 dark:text-slate-200 font-medium">
-                      Your daily dose of civic engagement
-                    </div>
+                <div className="hidden sm:block text-base text-slate-700 dark:text-slate-200 font-light">
+                  Your daily dose of civic engagement
+                </div>
               </Link>
             </div>
 
             {/* Center - Navigation (if needed) */}
             <div className="flex-1 flex justify-center">
               {pathname !== '/' && (
-                              <div className="text-sm text-slate-700 dark:text-slate-200">
-                {pathname.includes('/quiz/') ? 'Quiz' : 'Home'}
-              </div>
+                <div className="text-base text-slate-700 dark:text-slate-200 font-light">
+                  {pathname.includes('/quiz/') ? 'Quiz' : 'Home'}
+                </div>
               )}
             </div>
 
             {/* Right side - Utility controls */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-6">
               <AccessibilitySettings />
               <ThemeToggle />
               <UserMenu onSignInClick={onSignInClick} searchQuery="" onSearchChange={() => {}} />
@@ -80,9 +80,9 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                 CivicSense
               </div>
-                              <div className="text-sm text-slate-700 dark:text-slate-200 font-medium">
-                  Your daily dose of news vs. noise
-                </div>
+              <div className="text-sm text-slate-700 dark:text-slate-200 font-medium">
+                Your daily dose of news vs. noise
+              </div>
             </Link>
           </div>
         </div>

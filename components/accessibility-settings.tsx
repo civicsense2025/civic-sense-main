@@ -125,7 +125,7 @@ export function AccessibilitySettings({ className, trigger }: AccessibilitySetti
       <DialogTrigger asChild>
         {trigger || defaultTrigger}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Accessibility className="h-5 w-5" />

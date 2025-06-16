@@ -95,36 +95,27 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
 
   if (!user) {
     return (
-      <div className="flex items-center space-x-3">
-        {/* Search Button */}
-        <TopicSearch 
-          searchQuery={searchQuery} 
-          onSearchChange={onSearchChange}
-        />
-        
-        {/* Theme Toggle - Outside dropdown when logged out */}
+      <div className="flex items-center space-x-4">
+        {/* Support Our Work Button - Apple style strong ghost button with lighter font */}
+        <Link href="/donate" passHref legacyBehavior>
+          <Button 
+            variant="ghost" 
+            size="lg"
+            className="rounded-full h-12 px-7 py-0 text-base font-normal tracking-tight bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-300"
+          >
+            <span className="text-amber-600 dark:text-amber-400 font-medium mr-2">★</span>
+            <span>Support Our Work</span>
+          </Button>
+        </Link>
+        {/* Unlock All Quizzes Button - Apple style strong ghost button with lighter font */}
         <Button 
           variant="ghost" 
-          size="sm"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="h-9 w-9 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200"
-        >
-          {mounted && theme === 'dark' ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </Button>
-        
-        {/* Sign In Button - Outside dropdown when logged out */}
-        <Button 
-          variant="outline" 
-          size="sm" 
+          size="lg" 
           onClick={onSignInClick}
-          className="rounded-full flex items-center space-x-2 px-4 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200 font-light"
+          className="rounded-full h-12 px-7 py-0 text-base font-normal tracking-tight bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
-          <User className="h-4 w-4 mr-2" />
-          <span>Sign In</span>
+          <User className="h-5 w-5 mr-2" />
+          <span>Unlock All Quizzes</span>
         </Button>
       </div>
     )
@@ -161,7 +152,7 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="relative h-9 w-9 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200 bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+          className="relative h-12 w-auto rounded-full px-6 font-normal text-base bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center"
         >
           <User className="h-5 w-5" />
           {(isPremium || isPro) && (
@@ -252,6 +243,17 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
           >
             <BarChart3 className="mr-3 h-4 w-4" />
             <span>Dashboard</span>
+          </Link>
+        </DropdownMenuItem>
+        
+        {/* Donate */}
+        <DropdownMenuItem asChild>
+          <Link 
+            href="/donate" 
+            className="text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:bg-amber-50 dark:focus:bg-amber-900/30 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+          >
+            <span className="mr-3 text-lg">★</span>
+            <span>Donate</span>
           </Link>
         </DropdownMenuItem>
         

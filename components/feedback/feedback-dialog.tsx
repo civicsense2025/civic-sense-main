@@ -120,7 +120,7 @@ export function FeedbackDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px] fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Share your feedback</DialogTitle>
           <DialogDescription>

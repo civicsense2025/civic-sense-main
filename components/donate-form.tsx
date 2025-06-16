@@ -13,7 +13,7 @@ const DONATION_IMPACTS = [
   { amount: 500, description: "Enables major feature development" },
 ]
 
-export function DonateForm() {
+export function DonateForm({ donationPriceId }: { donationPriceId?: string }) {
   const [donationAmount, setDonationAmount] = useState(25)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -39,6 +39,7 @@ export function DonateForm() {
           amount: donationAmount * 100, // Convert to cents
           successUrl: `${window.location.origin}/success?type=donation&amount=${donationAmount}`,
           cancelUrl: `${window.location.origin}/donate`,
+          donationPriceId: donationPriceId || undefined,
         }),
       })
 

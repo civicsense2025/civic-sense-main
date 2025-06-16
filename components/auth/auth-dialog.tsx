@@ -33,10 +33,8 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="sm:max-w-md p-0 gap-0 border border-slate-200 dark:border-slate-800 shadow-2xl 
-                   bg-white dark:bg-slate-950 overflow-hidden max-h-[90vh] w-[95%] sm:w-full rounded-xl"
-      >        
+      <DialogContent className="sm:max-w-md p-0 gap-0 border border-slate-200 dark:border-slate-800 shadow-2xl 
+                   bg-white dark:bg-slate-950 overflow-hidden max-h-[90vh] w-[95%] sm:w-full rounded-xl">        
         <div className="px-8 py-12">
           {/* Header */}
           <div className="text-center mb-8">
