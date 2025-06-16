@@ -79,19 +79,12 @@ export default function QuizPage({ params }: QuizPageProps) {
           return
         }
         setTopic(topicData)
-
-        // Load questions
-        const questionsData = await dataService.getQuestionsByTopic(resolvedParams.topicId)
-        if (!questionsData || questionsData.length === 0) {
-          setError("No questions found for this quiz")
-          return
-        }
-        setQuestions(questionsData)
-
+        
+        // Don't load questions yet - wait until user starts quiz
+        setIsLoading(false)
       } catch (err) {
         console.error("Error loading quiz data:", err)
         setError("Failed to load quiz data")
-      } finally {
         setIsLoading(false)
       }
     }
@@ -99,7 +92,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     loadQuizData()
   }, [resolvedParams.topicId])
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = async () => {
     // Check quiz limits based on user tier
     if (!user && hasReachedDailyLimit()) {
       setIsAuthDialogOpen(true)
@@ -124,6 +117,21 @@ export default function QuizPage({ params }: QuizPageProps) {
 
     // Show loading screen first
     setShowLoadingScreen(true)
+    
+    // Load questions now that the user has started the quiz
+    try {
+      const questionsData = await dataService.getQuestionsByTopic(resolvedParams.topicId)
+      if (!questionsData || questionsData.length === 0) {
+        setError("No questions found for this quiz")
+        setShowLoadingScreen(false)
+        return
+      }
+      setQuestions(questionsData)
+    } catch (err) {
+      console.error("Error loading questions:", err)
+      setError("Failed to load quiz questions")
+      setShowLoadingScreen(false)
+    }
   }
 
   const handleQuizComplete = () => {

@@ -184,6 +184,22 @@ export const questionOperations = {
     return data as DbQuestion[]
   },
 
+  // Check if topic has questions without loading all question data
+  async checkTopicHasQuestions(topicId: string): Promise<boolean> {
+    const { count, error } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('topic_id', topicId)
+      .eq('is_active', true)
+
+    if (error) {
+      console.error(`Error checking questions for topic ${topicId}:`, error)
+      throw error
+    }
+
+    return count !== null && count > 0
+  },
+
   // Get question by ID
   async getById(questionId: string) {
     const { data, error } = await supabase

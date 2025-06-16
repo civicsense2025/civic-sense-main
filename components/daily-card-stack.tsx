@@ -537,8 +537,9 @@ export function DailyCardStack({
     
     for (const topic of topics) {
       try {
-        const questions = await dataService.getQuestionsByTopic(topic.topic_id)
-        if (!questions || Object.keys(questions).length === 0) {
+        // Don't load all questions, just check if they exist
+        const hasQuestions = await dataService.checkTopicHasQuestions(topic.topic_id)
+        if (!hasQuestions) {
           topicsWithoutQuestionsSet.add(topic.topic_id)
         }
       } catch (error) {

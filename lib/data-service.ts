@@ -253,59 +253,65 @@ async function getAllTopicsWithValidDates() {
  */
 export const dataService = {
   /**
-   * Get topics within a date range (optimized for lazy loading)
+   * Get topics in a date range
    */
   async getTopicsInRange(startDate: Date, endDate: Date): Promise<Record<string, TopicMetadata>> {
+    // Check database availability
     const isDbAvailable = await checkDatabaseAvailability()
     
     if (isDbAvailable) {
       try {
-        // Use database-level filtering for better performance
-        const dbTopics = await getTopicsInDateRange(startDate, endDate);
-        const topicsRecord: Record<string, TopicMetadata> = {}
+        const validTopics: Record<string, TopicMetadata> = {}
+        let dbTopics: any[] = []
         
-        dbTopics.forEach((dbTopic: any) => {
-          const appTopic = dbTopicToAppFormat(dbTopic)
-          topicsRecord[appTopic.topic_id] = appTopic
+        if (supabase) {
+          // Use database-level filtering with enhanced approach
+          dbTopics = await getTopicsInDateRange(startDate, endDate)
+        } else {
+          dbTopics = await topicOperations.getAll()
+          // Filter in memory if needed
+          dbTopics = dbTopics.filter((topic) => {
+            if (!topic.date) return false
+            try {
+              const topicDate = new Date(topic.date)
+              return !isNaN(topicDate.getTime()) && topicDate >= startDate && topicDate <= endDate
+            } catch (e) {
+              return false
+            }
+          })
+        }
+        
+        // Convert to app format
+        dbTopics.forEach((dbTopic) => {
+          const topic = dbTopicToAppFormat(dbTopic)
+          validTopics[topic.topic_id] = topic
         })
         
-        console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics from database in date range`)
-        return topicsRecord
+        console.log(`📊 Loaded ${Object.keys(validTopics).length} topics in date range from database`)
+        return validTopics
       } catch (error) {
-        console.error('Error fetching topics in range from database:', error)
+        console.error('Error loading topics from database:', error)
       }
     }
     
-    // Fallback: filter mock data by date range
-    const validMockTopics = getValidMockTopics()
+    // Fallback to mock data
+    const validTopics = getValidMockTopics()
     const filteredTopics: Record<string, TopicMetadata> = {}
     
-    Object.entries(validMockTopics).forEach(([topicId, topic]) => {
+    Object.entries(validTopics).forEach(([topicId, topic]) => {
       try {
-        let topicDate: Date | null = null
-        
-        if (typeof topic.date === 'string') {
-          if (topic.date.includes('-') && topic.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = topic.date.split('-').map(Number)
-            topicDate = new Date(year, month - 1, day)
-          } else {
-            topicDate = new Date(topic.date)
+        if (topic.date) {
+          const topicDate = new Date(topic.date)
+          if (!isNaN(topicDate.getTime()) && topicDate >= startDate && topicDate <= endDate) {
+            filteredTopics[topicId] = topic
           }
         }
-        
-        if (topicDate && 
-            !isNaN(topicDate.getTime()) && 
-            topicDate >= startDate && 
-            topicDate <= endDate) {
-          filteredTopics[topicId] = topic
-        }
-      } catch (error) {
-        console.warn(`Error parsing date for topic ${topic.topic_title}:`, error)
+      } catch (e) {
+        // Skip invalid dates
       }
     })
     
-    console.log(`📋 Using mock data: ${Object.keys(filteredTopics).length} topics in date range`)
-    return filteredTopics
+    return cleanObjectContent(filteredTopics)
   },
 
   /**
@@ -442,6 +448,25 @@ export const dataService = {
    */
   async isUsingDatabase(): Promise<boolean> {
     return await checkDatabaseAvailability()
+  },
+
+  /**
+   * Check if a topic has questions without loading all question data
+   */
+  async checkTopicHasQuestions(topicId: string): Promise<boolean> {
+    const isDbAvailable = await checkDatabaseAvailability()
+    
+    if (isDbAvailable) {
+      try {
+        return await questionOperations.checkTopicHasQuestions(topicId)
+      } catch (error) {
+        console.error('Error checking if topic has questions:', error)
+      }
+    }
+    
+    // Fallback to mock data
+    const questions = mockQuestionsData[topicId] || []
+    return questions.length > 0
   }
 }
 
