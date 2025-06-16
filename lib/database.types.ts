@@ -44,6 +44,63 @@ export type Database = {
           },
         ]
       }
+      boost_definitions: {
+        Row: {
+          boost_type: string
+          category: string
+          cooldown_hours: number | null
+          created_at: string | null
+          description: string
+          duration: number | null
+          emoji: string
+          icon: string
+          is_active: boolean | null
+          level_requirement: number | null
+          max_uses: number | null
+          name: string
+          rarity: string
+          tags: string[] | null
+          updated_at: string | null
+          xp_cost: number
+        }
+        Insert: {
+          boost_type: string
+          category: string
+          cooldown_hours?: number | null
+          created_at?: string | null
+          description: string
+          duration?: number | null
+          emoji: string
+          icon: string
+          is_active?: boolean | null
+          level_requirement?: number | null
+          max_uses?: number | null
+          name: string
+          rarity: string
+          tags?: string[] | null
+          updated_at?: string | null
+          xp_cost: number
+        }
+        Update: {
+          boost_type?: string
+          category?: string
+          cooldown_hours?: number | null
+          created_at?: string | null
+          description?: string
+          duration?: number | null
+          emoji?: string
+          icon?: string
+          is_active?: boolean | null
+          level_requirement?: number | null
+          max_uses?: number | null
+          name?: string
+          rarity?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          xp_cost?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -177,10 +234,119 @@ export type Database = {
             foreignKeyName: "fact_check_logs_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "fact_check_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
         ]
+      }
+      glossary_terms: {
+        Row: {
+          category: string | null
+          created_at: string
+          definition: string
+          examples: Json | null
+          id: string
+          part_of_speech: string | null
+          synonyms: string[] | null
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          definition: string
+          examples?: Json | null
+          id?: string
+          part_of_speech?: string | null
+          synonyms?: string[] | null
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          definition?: string
+          examples?: Json | null
+          id?: string
+          part_of_speech?: string | null
+          synonyms?: string[] | null
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      guest_usage_analytics: {
+        Row: {
+          attempts: number
+          created_at: string | null
+          date: string
+          guest_token: string
+          id: string
+          ip: string
+          timestamp: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string | null
+          date: string
+          guest_token: string
+          id?: string
+          ip: string
+          timestamp?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string | null
+          date?: string
+          guest_token?: string
+          id?: string
+          ip?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      guest_usage_tracking: {
+        Row: {
+          attempts: number
+          created_at: string | null
+          date: string
+          firstSeen: string
+          id: string
+          ip: string
+          lastSeen: string
+          tokens: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string | null
+          date: string
+          firstSeen?: string
+          id?: string
+          ip: string
+          lastSeen?: string
+          tokens?: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string | null
+          date?: string
+          firstSeen?: string
+          id?: string
+          ip?: string
+          lastSeen?: string
+          tokens?: string[]
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       pathway_skills: {
         Row: {
@@ -307,6 +473,13 @@ export type Database = {
             foreignKeyName: "question_feedback_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -350,6 +523,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_skills_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -418,6 +598,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_source_links_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -569,6 +756,20 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
         ]
       }
       questions_test: {
@@ -641,6 +842,20 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -1018,6 +1233,7 @@ export type Database = {
       }
       source_metadata: {
         Row: {
+          author: string | null
           bias_rating: string | null
           canonical_url: string | null
           content_type: string | null
@@ -1034,11 +1250,13 @@ export type Database = {
           is_accessible: boolean | null
           language: string | null
           last_fetched_at: string | null
+          modified_time: string | null
           og_description: string | null
           og_image: string | null
           og_site_name: string | null
           og_title: string | null
           og_type: string | null
+          published_time: string | null
           response_time_ms: number | null
           title: string
           twitter_description: string | null
@@ -1048,6 +1266,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          author?: string | null
           bias_rating?: string | null
           canonical_url?: string | null
           content_type?: string | null
@@ -1064,11 +1283,13 @@ export type Database = {
           is_accessible?: boolean | null
           language?: string | null
           last_fetched_at?: string | null
+          modified_time?: string | null
           og_description?: string | null
           og_image?: string | null
           og_site_name?: string | null
           og_title?: string | null
           og_type?: string | null
+          published_time?: string | null
           response_time_ms?: number | null
           title: string
           twitter_description?: string | null
@@ -1078,6 +1299,7 @@ export type Database = {
           url: string
         }
         Update: {
+          author?: string | null
           bias_rating?: string | null
           canonical_url?: string | null
           content_type?: string | null
@@ -1094,11 +1316,13 @@ export type Database = {
           is_accessible?: boolean | null
           language?: string | null
           last_fetched_at?: string | null
+          modified_time?: string | null
           og_description?: string | null
           og_image?: string | null
           og_site_name?: string | null
           og_title?: string | null
           og_type?: string | null
+          published_time?: string | null
           response_time_ms?: number | null
           title?: string
           twitter_description?: string | null
@@ -1175,6 +1399,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_active_boosts: {
+        Row: {
+          boost_data: Json | null
+          boost_type: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          started_at: string
+          user_id: string
+          uses_remaining: number | null
+        }
+        Insert: {
+          boost_data?: Json | null
+          boost_type: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          user_id: string
+          uses_remaining?: number | null
+        }
+        Update: {
+          boost_data?: Json | null
+          boost_type?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          user_id?: string
+          uses_remaining?: number | null
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string | null
@@ -1206,6 +1463,86 @@ export type Database = {
             columns: ["badge_id"]
             isOneToOne: false
             referencedRelation: "skill_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_boost_inventory: {
+        Row: {
+          boost_type: string
+          created_at: string | null
+          id: string
+          last_cooldown_used: string | null
+          last_purchased: string | null
+          quantity: number
+          total_purchased: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          boost_type: string
+          created_at?: string | null
+          id?: string
+          last_cooldown_used?: string | null
+          last_purchased?: string | null
+          quantity?: number
+          total_purchased?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          boost_type?: string
+          created_at?: string | null
+          id?: string
+          last_cooldown_used?: string | null
+          last_purchased?: string | null
+          quantity?: number
+          total_purchased?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_category_preferences: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          id: string
+          interest_level: number
+          learning_goal: string | null
+          priority_rank: number | null
+          selected_during_onboarding: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          id?: string
+          interest_level?: number
+          learning_goal?: string | null
+          priority_rank?: number | null
+          selected_during_onboarding?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          interest_level?: number
+          learning_goal?: string | null
+          priority_rank?: number | null
+          selected_during_onboarding?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_category_preferences_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1336,6 +1673,13 @@ export type Database = {
             foreignKeyName: "user_deck_content_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -1344,6 +1688,20 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -1381,6 +1739,57 @@ export type Database = {
           updated_at?: string | null
           usage_count?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          context_id: string | null
+          context_type: string
+          created_at: string
+          feedback_text: string
+          feedback_type: string
+          id: string
+          path: string | null
+          rating: number | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context_id?: string | null
+          context_type: string
+          created_at?: string
+          feedback_text: string
+          feedback_type: string
+          id?: string
+          path?: string | null
+          rating?: number | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context_id?: string | null
+          context_type?: string
+          created_at?: string
+          feedback_text?: string
+          feedback_type?: string
+          id?: string
+          path?: string | null
+          rating?: number | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1471,6 +1880,162 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      user_onboarding_assessment: {
+        Row: {
+          assessment_data: Json
+          assessment_type: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          results: Json
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          assessment_data?: Json
+          assessment_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          results?: Json
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          assessment_data?: Json
+          assessment_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          results?: Json
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_onboarding_state: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          current_step: string
+          id: string
+          is_completed: boolean | null
+          onboarding_data: Json | null
+          skip_reason: string | null
+          started_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          is_completed?: boolean | null
+          onboarding_data?: Json | null
+          skip_reason?: string | null
+          started_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          is_completed?: boolean | null
+          onboarding_data?: Json | null
+          skip_reason?: string | null
+          started_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_platform_preferences: {
+        Row: {
+          achievement_notifications: boolean | null
+          competitive_mode: boolean | null
+          created_at: string | null
+          daily_reminder: boolean | null
+          email_notifications: boolean | null
+          font_size: string | null
+          high_contrast: boolean | null
+          id: string
+          learning_pace: string | null
+          preferred_content_types: string[] | null
+          preferred_difficulty: string | null
+          preferred_quiz_length: number | null
+          push_notifications: boolean | null
+          reduced_motion: boolean | null
+          screen_reader_mode: boolean | null
+          show_achievements: boolean | null
+          show_difficulty_indicators: boolean | null
+          show_explanations: boolean | null
+          show_leaderboards: boolean | null
+          show_sources: boolean | null
+          show_streaks: boolean | null
+          study_time_preference: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_summary: boolean | null
+        }
+        Insert: {
+          achievement_notifications?: boolean | null
+          competitive_mode?: boolean | null
+          created_at?: string | null
+          daily_reminder?: boolean | null
+          email_notifications?: boolean | null
+          font_size?: string | null
+          high_contrast?: boolean | null
+          id?: string
+          learning_pace?: string | null
+          preferred_content_types?: string[] | null
+          preferred_difficulty?: string | null
+          preferred_quiz_length?: number | null
+          push_notifications?: boolean | null
+          reduced_motion?: boolean | null
+          screen_reader_mode?: boolean | null
+          show_achievements?: boolean | null
+          show_difficulty_indicators?: boolean | null
+          show_explanations?: boolean | null
+          show_leaderboards?: boolean | null
+          show_sources?: boolean | null
+          show_streaks?: boolean | null
+          study_time_preference?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_summary?: boolean | null
+        }
+        Update: {
+          achievement_notifications?: boolean | null
+          competitive_mode?: boolean | null
+          created_at?: string | null
+          daily_reminder?: boolean | null
+          email_notifications?: boolean | null
+          font_size?: string | null
+          high_contrast?: boolean | null
+          id?: string
+          learning_pace?: string | null
+          preferred_content_types?: string[] | null
+          preferred_difficulty?: string | null
+          preferred_quiz_length?: number | null
+          push_notifications?: boolean | null
+          reduced_motion?: boolean | null
+          screen_reader_mode?: boolean | null
+          show_achievements?: boolean | null
+          show_difficulty_indicators?: boolean | null
+          show_explanations?: boolean | null
+          show_leaderboards?: boolean | null
+          show_sources?: boolean | null
+          show_streaks?: boolean | null
+          study_time_preference?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_summary?: boolean | null
         }
         Relationships: []
       }
@@ -1670,6 +2235,13 @@ export type Database = {
             foreignKeyName: "user_question_memory_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_question_memory_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -1726,6 +2298,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -1816,6 +2395,20 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
         ]
       }
       user_quiz_attempts: {
@@ -1866,6 +2459,20 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "user_quiz_attempts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "user_quiz_attempts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
         ]
       }
       user_roles: {
@@ -1912,6 +2519,53 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_skill_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          interest_level: number
+          learning_timeline: string | null
+          priority_rank: number | null
+          selected_during_onboarding: boolean | null
+          skill_id: string
+          target_mastery_level: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interest_level?: number
+          learning_timeline?: string | null
+          priority_rank?: number | null
+          selected_during_onboarding?: boolean | null
+          skill_id: string
+          target_mastery_level?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interest_level?: number
+          learning_timeline?: string | null
+          priority_rank?: number | null
+          selected_during_onboarding?: boolean | null
+          skill_id?: string
+          target_mastery_level?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skill_preferences_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
@@ -2077,72 +2731,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_boost_inventory: {
-        Row: {
-          id: string
-          user_id: string
-          boost_type: string
-          quantity: number
-          total_purchased: number
-          last_purchased: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          boost_type: string
-          quantity?: number
-          total_purchased?: number
-          last_purchased?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          boost_type?: string
-          quantity?: number
-          total_purchased?: number
-          last_purchased?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      user_active_boosts: {
-        Row: {
-          id: string
-          user_id: string
-          boost_type: string
-          started_at: string
-          expires_at: string | null
-          uses_remaining: number | null
-          boost_data: Json
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          boost_type: string
-          started_at?: string
-          expires_at?: string | null
-          uses_remaining?: number | null
-          boost_data?: Json
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          boost_type?: string
-          started_at?: string
-          expires_at?: string | null
-          uses_remaining?: number | null
-          boost_data?: Json
-          created_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       question_feedback_stats: {
@@ -2168,19 +2756,36 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
         ]
       }
       question_sources_enhanced: {
         Row: {
+          author: string | null
           credibility_score: number | null
           description: string | null
           display_order: number | null
           domain: string | null
           is_primary_source: boolean | null
+          modified_time: string | null
           og_description: string | null
           og_image: string | null
           og_site_name: string | null
           og_title: string | null
+          published_time: string | null
           question: string | null
           question_id: string | null
           source_id: string | null
@@ -2198,7 +2803,69 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
         ]
+      }
+      question_topics_with_questions: {
+        Row: {
+          categories: Json | null
+          correct_answer: string | null
+          date: string | null
+          day_of_week: string | null
+          description: string | null
+          difficulty_level: number | null
+          emoji: string | null
+          explanation: string | null
+          hint: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question_active: boolean | null
+          question_category: string | null
+          question_id: string | null
+          question_number: number | null
+          question_sources: Json | null
+          question_tags: Json | null
+          question_text: string | null
+          question_type: string | null
+          topic_active: boolean | null
+          topic_id: string | null
+          topic_identifier: string | null
+          topic_title: string | null
+          why_this_matters: string | null
+        }
+        Relationships: []
+      }
+      question_topics_without_questions: {
+        Row: {
+          categories: Json | null
+          created_at: string | null
+          date: string | null
+          day_of_week: string | null
+          description: string | null
+          emoji: string | null
+          id: string | null
+          is_active: boolean | null
+          topic_id: string | null
+          topic_title: string | null
+          updated_at: string | null
+          why_this_matters: string | null
+        }
+        Relationships: []
       }
       user_comprehensive_stats: {
         Row: {
@@ -2330,17 +2997,77 @@ export type Database = {
       }
     }
     Functions: {
+      check_boost_cooldown: {
+        Args: { target_user_id: string; target_boost_type: string }
+        Returns: boolean
+      }
       check_premium_feature_access: {
         Args: { p_user_id: string; p_feature_name: string }
         Returns: boolean
       }
+      cleanup_expired_boosts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      complete_onboarding_step: {
+        Args: { target_user_id: string; step_name: string; step_data?: Json }
+        Returns: boolean
+      }
+      get_available_boosts_for_user: {
+        Args: { target_user_id: string; user_level?: number }
+        Returns: {
+          boost_type: string
+          name: string
+          description: string
+          emoji: string
+          xp_cost: number
+          category: string
+          rarity: string
+          level_requirement: number
+          tags: string[]
+        }[]
+      }
+      get_onboarding_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          emoji: string
+          description: string
+          display_order: number
+          question_count: number
+        }[]
+      }
+      get_onboarding_skills: {
+        Args: { category_ids?: string[] }
+        Returns: {
+          id: string
+          skill_name: string
+          skill_slug: string
+          category_id: string
+          category_name: string
+          description: string
+          difficulty_level: number
+          is_core_skill: boolean
+        }[]
+      }
       get_or_create_source_metadata: {
-        Args: {
-          p_url: string
-          p_title?: string
-          p_description?: string
-          p_domain?: string
-        }
+        Args:
+          | {
+              p_url: string
+              p_title?: string
+              p_description?: string
+              p_domain?: string
+            }
+          | {
+              p_url: string
+              p_title?: string
+              p_description?: string
+              p_domain?: string
+              p_author?: string
+              p_published_time?: string
+              p_modified_time?: string
+            }
         Returns: string
       }
       get_recommended_skills_for_user: {
@@ -2351,6 +3078,22 @@ export type Database = {
           category_name: string
           recommendation_reason: string
           priority_score: number
+        }[]
+      }
+      get_user_boost_summary: {
+        Args: { target_user_id: string }
+        Returns: {
+          boost_type: string
+          name: string
+          emoji: string
+          quantity: number
+          is_active: boolean
+          uses_remaining: number
+          expires_at: string
+          cooldown_ready: boolean
+          level_requirement: number
+          category: string
+          rarity: string
         }[]
       }
       get_user_feature_limits: {
@@ -2365,6 +3108,17 @@ export type Database = {
           priority_support: boolean
           offline_mode: boolean
           export_data: boolean
+        }[]
+      }
+      get_user_onboarding_progress: {
+        Args: { target_user_id: string }
+        Returns: {
+          onboarding_step: string
+          is_completed: boolean
+          selected_categories: Json
+          selected_skills: Json
+          platform_preferences: Json
+          assessment_results: Json
         }[]
       }
       gtrgm_compress: {
@@ -2543,100 +3297,35 @@ export const Constants = {
   },
 } as const
 
-// Enhanced boost types with all new powerups
-export type BoostType = 
-  // Time Management Boosts
-  | 'extra_time'          // +30 seconds per question
-  | 'time_freeze'         // Pause timer for 10 seconds
-  | 'speed_boost'         // +50% XP for completing under time limit
-  | 'time_bank'           // Save unused time for later questions
-  | 'rush_mode'           // Double XP but half time (risk/reward)
-  
-  // Scoring & XP Boosts  
-  | 'double_xp'           // 2x XP for this quiz
-  | 'triple_xp'           // 3x XP for this quiz (rare)
-  | 'perfect_bonus'       // +100% XP if you get 100% score
-  | 'comeback_king'       // Extra XP for each correct answer after wrong one
-  | 'first_try_bonus'     // +25% XP for first-attempt correct answers
-  
-  // Learning Assistance Boosts
-  | 'auto_hint'           // Automatically show hints on wrong answers
-  | 'smart_hint'          // AI-powered contextual hints
-  | 'answer_reveal'       // Eliminate one wrong answer in multiple choice
-  | 'category_insight'    // Show which civic category each question tests
-  | 'explanation_preview' // See explanation before answering (no XP penalty)
-  | 'concept_map'         // Visual connections between questions and concepts
-  
-  // Protection & Safety Boosts
-  | 'second_chance'       // Get one retry on wrong answers
-  | 'streak_shield'       // Protect your streak from one wrong answer
-  | 'mistake_forgiveness' // First wrong answer doesn't count
-  | 'confidence_boost'    // Wrong answers don't reduce confidence score
-  | 'safety_net'          // Minimum 50% score guaranteed
-  
-  // Strategic & Advanced Boosts
-  | 'lucky_guess'         // 50% chance to get correct answer on timeout/skip
-  | 'question_preview'    // See next 3 questions before starting
-  | 'difficulty_scout'    // See difficulty level of each question
-  | 'skip_token'          // Skip one question without penalty (3 uses)
-  | 'topic_mastery'       // +200% XP if you master the topic (90%+ score)
-  | 'civic_scholar'       // Unlock bonus questions for extra XP
-  
-  // Social & Engagement Boosts
-  | 'mentor_mode'         // Get encouraging messages during quiz
-  | 'achievement_hunter'  // 2x progress toward achievements
-  | 'daily_streak'        // Bonus XP for maintaining daily quiz streak
-  | 'weekend_warrior'     // Extra XP on weekends
-  | 'night_owl'           // Bonus XP for late-night quizzing (after 9 PM)
-  
-  // Specialized Learning Boosts
-  | 'constitution_focus'  // Extra hints for constitutional questions
-  | 'current_events'      // Bonus context for recent political developments
-  | 'historical_context'  // Additional historical background for questions
-  | 'local_connection'    // Connect federal topics to local implications
-  | 'debate_prep'         // Practice articulating positions on civic issues
+// Convenient type exports for easier usage
+export type DbQuestionTopic = Tables<'question_topics'>
+export type DbQuestion = Tables<'questions'>
+export type DbQuestionFeedback = Tables<'question_feedback'>
+export type DbUserQuizAttempt = Tables<'user_quiz_attempts'>
+export type DbUserProgress = Tables<'user_progress'>
+export type DbUserQuestionResponse = Tables<'user_question_responses'>
+export type DbProfile = Tables<'profiles'>
+export type DbCategory = Tables<'categories'>
+export type DbEvent = Tables<'events'>
 
-// Enhanced boost inventory table with cooldown tracking
-export interface DbUserBoostInventory {
-  id: string
-  user_id: string
-  boost_type: BoostType
-  quantity: number
-  total_purchased: number
-  last_purchased?: string
-  last_cooldown_used?: string // Track cooldown usage
-  created_at: string
-  updated_at: string
-}
+// Insert types
+export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
+export type DbQuestionInsert = TablesInsert<'questions'>
+export type DbQuestionFeedbackInsert = TablesInsert<'question_feedback'>
+export type DbUserQuizAttemptInsert = TablesInsert<'user_quiz_attempts'>
+export type DbUserProgressInsert = TablesInsert<'user_progress'>
+export type DbUserQuestionResponseInsert = TablesInsert<'user_question_responses'>
+export type DbProfileInsert = TablesInsert<'profiles'>
+export type DbCategoryInsert = TablesInsert<'categories'>
+export type DbEventInsert = TablesInsert<'events'>
 
-// Enhanced active boosts table
-export interface DbUserActiveBoosts {
-  id: string
-  user_id: string
-  boost_type: BoostType
-  started_at: string
-  expires_at?: string
-  uses_remaining?: number
-  boost_data?: Record<string, any>
-  created_at: string
-}
-
-// New boost definitions table with emoji support
-export interface DbBoostDefinitions {
-  boost_type: BoostType
-  name: string
-  description: string
-  emoji: string // Primary emoji for the boost
-  icon: string // Secondary icon for backwards compatibility
-  xp_cost: number
-  category: 'time' | 'scoring' | 'assistance' | 'protection' | 'strategic' | 'social' | 'learning'
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'
-  duration?: number // Duration in quizzes
-  max_uses?: number // Maximum uses per activation
-  cooldown_hours?: number // Cooldown period in hours
-  level_requirement: number // Minimum user level
-  tags: string[] // Tags for filtering
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
+// Update types
+export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
+export type DbQuestionUpdate = TablesUpdate<'questions'>
+export type DbQuestionFeedbackUpdate = TablesUpdate<'question_feedback'>
+export type DbUserQuizAttemptUpdate = TablesUpdate<'user_quiz_attempts'>
+export type DbUserProgressUpdate = TablesUpdate<'user_progress'>
+export type DbUserQuestionResponseUpdate = TablesUpdate<'user_question_responses'>
+export type DbProfileUpdate = TablesUpdate<'profiles'>
+export type DbCategoryUpdate = TablesUpdate<'categories'>
+export type DbEventUpdate = TablesUpdate<'events'>

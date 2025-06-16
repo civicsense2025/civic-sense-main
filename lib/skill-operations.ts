@@ -40,29 +40,32 @@ export const skillOperations = {
   // Get user's skills with progress information
   async getUserSkills(userId: string): Promise<Skill[]> {
     try {
-      // Add timeout protection
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Database query timeout')), 8000) // 8 second timeout
-      )
-      
-      // For now, we'll use the existing function from database.ts
-      // This will be replaced with actual skill data once the tables are created
-      const skillPromise = (async () => {
-        const { skillOperations: existingSkillOps } = await import('@/lib/database')
-        return await existingSkillOps.getUserSkillsForDashboard(userId)
-      })()
-      
-      const skills = await Promise.race([skillPromise, timeoutPromise])
-      
-      // Ensure description is never null to match our interface
-      return skills.map(skill => ({
-        ...skill,
-        description: skill.description || '' // Convert null to empty string
+      const { data, error } = await supabase
+        .from('user_skill_analytics')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(500)
+
+      if (error) throw error
+
+      const skills: Skill[] = (data || []).map((row: any) => ({
+        id: row.skill_id,
+        skill_name: row.skill_name,
+        skill_slug: row.skill_slug,
+        category_name: row.category_name,
+        description: '', // description not in view; can be fetched separately if needed
+        difficulty_level: row.skill_difficulty || 1,
+        is_core_skill: row.is_core_skill || false,
+        mastery_level: row.mastery_level,
+        progress_percentage: Math.round(row.skill_level ?? 0),
+        questions_attempted: row.questions_attempted,
+        questions_correct: row.questions_correct,
+        last_practiced_at: row.last_practiced_at
       }))
+
+      return skills
     } catch (error) {
       console.error(`Error fetching skills for user ${userId}:`, error)
-      
-      // Return empty array instead of throwing to let the calling code handle fallbacks
       return []
     }
   },

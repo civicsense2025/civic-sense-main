@@ -52,7 +52,7 @@ function StatsigContent({ children }: StatsigWrapperProps) {
   }, [client])
 
   return (
-    <BaseStatsigProvider client={client} loadingComponent={<div>Loading...</div>}>
+    <BaseStatsigProvider client={client}>
       {children}
     </BaseStatsigProvider>
   )

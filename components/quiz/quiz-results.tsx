@@ -556,34 +556,34 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Header with animation */}
-        <div className="text-center space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
-          <h1 className="text-3xl font-light text-slate-900 dark:text-slate-50">
+    <div className="min-h-screen bg-white dark:bg-black">
+      <div className="max-w-4xl mx-auto px-4 py-12 space-y-16">
+        {/* Clean header with lots of whitespace */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
             Quiz Complete! 🎉
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
             {topicTitle}
           </p>
         </div>
 
         {/* Score Display - Clean Design */}
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-8">
           <MemoizedScoreDisplay 
             animatedScore={animatedScore} 
             score={score} 
             badge={badge} 
           />
 
-          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light">
             {getPerformanceMessage()}
           </p>
         </div>
 
         {/* Stats Cards - Enhanced with staggered animations */}
         {showStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <MemoizedStatCard 
               icon="⏱️" 
               label="Avg Time" 
@@ -612,25 +612,26 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         )}
 
         {/* Question Review */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between animate-in fade-in duration-500">
-            <h3 className="text-xl font-medium text-slate-900 dark:text-slate-50">
-              Question Review ({correctAnswers}/{totalQuestions} correct)
+        <div className="space-y-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-light text-slate-900 dark:text-slate-50">
+              Question Review
+              <span className="ml-2 text-lg text-slate-500 dark:text-slate-400">
+                ({correctAnswers}/{totalQuestions} correct)
+              </span>
             </h3>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setShowExplanations(!showExplanations)}
-              className="flex items-center space-x-2 transition-all hover:scale-105"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
             >
               {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span className="text-sm">
-                {showExplanations ? 'Hide' : 'Show'} Explanations
-              </span>
+              <span>{showExplanations ? 'Hide' : 'Show'} Explanations</span>
             </Button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {questions.map((question, index) => {
               const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
               
@@ -659,16 +660,16 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
         </div>
 
         {/* Actions */}
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6">
           <div className="flex justify-center">
             <SocialShare title={topicTitle} score={score} totalQuestions={totalQuestions} />
           </div>
 
           <Button 
             onClick={onFinish} 
-            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white h-12 text-lg transition-all hover:scale-[1.02] hover:shadow-lg"
+            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white h-12 text-lg font-light transition-all hover:scale-[1.02]"
           >
-            Complete Quiz 🎉
+            Return to Dashboard
           </Button>
         </div>
       </div>

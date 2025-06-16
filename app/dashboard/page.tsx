@@ -41,6 +41,7 @@ interface DashboardData {
   totalXP: number
   currentLevel: number
   recentActivity: Array<{
+    attemptId?: string
     topicId: string
     topicTitle: string
     score: number
@@ -343,11 +344,15 @@ export default function DashboardPage() {
           setTimeout(() => reject(new Error('Skills loading timeout')), 8000) // 8 second timeout
         )
         
-        // Load skills from our new skill operations with timeout
-        const skillPromise = (async () => {
-          const { skillOperations } = await import('@/lib/skill-operations')
-          return await skillOperations.getUserSkills(user.id)
-        })()
+        // Load skills from API endpoint
+        const skillPromise = fetch('/api/skills/user-skills')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`API returned ${response.status}: ${response.statusText}`)
+            }
+            return response.json()
+          })
+          .then(data => data.data)
         
         const skills = await Promise.race([skillPromise, timeoutPromise])
         
@@ -596,7 +601,12 @@ export default function DashboardPage() {
               
               <div className="space-y-4">
                 {dashboardData.recentActivity.slice(0, 5).map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 px-3 -mx-3 rounded-md transition-all">
+                  <Link
+                    href={activity.attemptId ? `/results/${activity.attemptId}` : '#'}
+                    key={index}
+                    className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/50 px-3 -mx-3 rounded-md transition-all"
+                    aria-disabled={!activity.attemptId}
+                  >
                     <div className="flex-1">
                       <h3 className="font-medium text-slate-900 dark:text-white truncate">
                         {activity.topicTitle}
@@ -623,7 +633,7 @@ export default function DashboardPage() {
                         {activity.score}%
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 
                 {dashboardData.recentActivity.length > 5 && (

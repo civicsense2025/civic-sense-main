@@ -411,6 +411,7 @@ export function DailyCardStack({
   const [dropdownSearch, setDropdownSearch] = useState("")
   const supabaseClientRef = useRef<any>(null)
   const [trendingQueries, setTrendingQueries] = useState<string[]>([])
+  const prevIndexRef = useRef(0)
 
   // Move all useMemo hooks here BEFORE useCallback hooks
   const organizedTopics = useMemo(() => {
@@ -703,6 +704,11 @@ export function DailyCardStack({
     }
   }, [allFilteredTopics, searchParams, getTopicAccessStatus, currentStackIndex])
 
+  // Track previous index to determine animation direction
+  useEffect(() => {
+    prevIndexRef.current = currentStackIndex
+  }, [currentStackIndex])
+
   // Loading state
   if (isLoadingTopics) {
     return (
@@ -933,18 +939,26 @@ export function DailyCardStack({
         </div>
       )}
 
-      {/* Single Card Display */}
-      <div className="relative">
-        <CivicCard
-          topic={currentTopic}
-          baseHeight={cardBaseHeight}
-          onExploreGame={handleExploreGame}
-          isCompleted={isTopicCompleted(currentTopic.topic_id)}
-          isLocked={!currentAccessStatus.accessible}
-          isComingSoon={currentAccessStatus.reason === 'coming_soon'}
-          showFloatingKeyboard={false}
-          guestLocked={!user && currentAccessStatus.reason?.startsWith('guest')}
-        />
+      {/* Single Card Display with slide-in animation */}
+      <div className="relative overflow-hidden">
+        <div
+          key={currentTopic.topic_id}
+          className={cn(
+            "animate-in fade-in duration-500",
+            currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4"
+          )}
+        >
+          <CivicCard
+            topic={currentTopic}
+            baseHeight={cardBaseHeight}
+            onExploreGame={handleExploreGame}
+            isCompleted={isTopicCompleted(currentTopic.topic_id)}
+            isLocked={!currentAccessStatus.accessible}
+            isComingSoon={currentAccessStatus.reason === 'coming_soon'}
+            showFloatingKeyboard={false}
+            guestLocked={!user && currentAccessStatus.reason?.startsWith('guest')}
+          />
+        </div>
       </div>
 
       {/* Start Quiz Button - larger and inline */}

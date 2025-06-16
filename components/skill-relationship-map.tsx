@@ -54,64 +54,39 @@ export function SkillRelationshipMap({ userId, selectedCategory }: SkillMapProps
       try {
         setIsLoading(true)
         
-        // Import skill operations
-        const { skillOperations } = await import('@/lib/skill-operations')
+        // Build the API URL with category filter if provided
+        const apiUrl = selectedCategory 
+          ? `/api/skills/relationships?category=${encodeURIComponent(selectedCategory)}`
+          : '/api/skills/relationships';
         
-        // Get all skills with user progress
-        const userSkills = await skillOperations.getUserSkills(userId)
+        // Fetch skill relationships from API
+        const response = await fetch(apiUrl);
         
-        // Filter by category if needed
-        const filteredSkills = selectedCategory 
-          ? userSkills.filter(s => s.category_name === selectedCategory)
-          : userSkills
-          
-        // Transform to nodes
-        const nodes: SkillNode[] = filteredSkills.map(skill => ({
-          id: skill.id,
-          name: skill.skill_name,
-          slug: skill.skill_slug,
-          category: skill.category_name,
-          mastery: skill.mastery_level || 'novice',
-          progress: skill.progress_percentage || 0
-        }))
-        
-        // Get relationships between these skills
-        const skillEdges: SkillEdge[] = []
-        
-        // For each skill, get its prerequisites
-        for (const skill of filteredSkills) {
-          const details = await skillOperations.getSkillDetails(skill.id)
-          
-          if (details?.prerequisites) {
-            for (const prereq of details.prerequisites) {
-              // Only add edge if both skills are in our filtered set
-              if (filteredSkills.some(s => s.id === prereq.prerequisite_skill_id)) {
-                skillEdges.push({
-                  source: prereq.prerequisite_skill_id,
-                  target: skill.id,
-                  required_level: prereq.required_mastery_level,
-                  is_strict: prereq.is_strict_requirement
-                })
-              }
-            }
-          }
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
         
-        // Position nodes using a simple force-directed layout
-        const positionedNodes = positionNodes(nodes, skillEdges)
+        const data = await response.json();
         
-        setSkills(positionedNodes)
-        setEdges(skillEdges)
+        if (data && data.nodes && data.links) {
+          // Position nodes using a simple force-directed layout
+          const positionedNodes = positionNodes(data.nodes, data.links);
+          
+          setSkills(positionedNodes);
+          setEdges(data.links);
+        } else {
+          throw new Error('Invalid relationship data returned');
+        }
       } catch (error) {
-        console.error('Error loading skill map:', error)
-        setError('Failed to load skill relationships')
+        console.error('Error loading skill map:', error);
+        setError('Failed to load skill relationships');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
     
-    loadSkillMap()
-  }, [userId, selectedCategory])
+    loadSkillMap();
+  }, [userId, selectedCategory]);
   
   // Simple force-directed layout algorithm
   const positionNodes = (nodes: SkillNode[], edges: SkillEdge[]): SkillNode[] => {

@@ -86,8 +86,14 @@ export function SkillDetailModal({
         
         const identifier = skillSlug || skillId!
         
-        // Get detailed skill information
-        const skillData = await skillOperations.getSkillDetails(identifier)
+        // Get detailed skill information from API
+        const response = await fetch(`/api/skills/skill-details?${skillSlug ? `slug=${skillSlug}` : `id=${skillId}`}`)
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        }
+        
+        const skillData = await response.json()
         
         if (skillData.skill) {
           // Transform the data into our expected format
@@ -95,7 +101,7 @@ export function SkillDetailModal({
             ...skillData.skill,
             learning_objectives: skillData.objectives,
             prerequisites: skillData.prerequisites,
-            dependent_skills: skillData.dependentSkills.map(dep => ({
+            dependent_skills: skillData.dependentSkills.map((dep: { skill_id: string; prerequisite_skill_name?: string }) => ({
               skill_id: dep.skill_id,
               skill_name: dep.prerequisite_skill_name || 'Unknown Skill'
             }))

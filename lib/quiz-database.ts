@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 import type { Database } from "./database.types"
+import type { QuizQuestion } from "./quiz-data"
 
 // Types for quiz database operations
 export interface QuizAttemptData {
@@ -31,6 +32,7 @@ export interface SavedQuizAttempt {
 }
 
 export interface RecentActivity {
+  attemptId: string
   topicId: string
   topicTitle: string
   score: number
@@ -228,32 +230,50 @@ export const quizDatabase = {
   },
 
   /**
-   * Get recent quiz activity for a user
+   * Get recent quiz activity for a user (deduplicated by topic_id, most recent attempt only)
    */
   async getRecentActivity(userId: string, limit: number = 10): Promise<RecentActivity[]> {
     try {
       const { data, error } = await supabase
         .from('user_quiz_attempts')
         .select(`
+          id,
           topic_id,
           score,
           completed_at,
           time_spent_seconds,
-          question_topics (
-            topic_title
-          )
+          question_topics ( topic_title )
         `)
         .eq('user_id', userId)
         .eq('is_completed', true)
         .order('completed_at', { ascending: false })
-        .limit(limit)
 
       if (error) {
         console.error('Error fetching recent activity:', error)
         return []
       }
 
-      return data.map(attempt => ({
+      if (!data) return []
+
+      // Deduplicate by topic_id keeping the most recent attempt
+      const uniqueAttemptsMap = new Map<string, typeof data[number]>()
+      for (const attempt of data) {
+        if (!uniqueAttemptsMap.has(attempt.topic_id)) {
+          uniqueAttemptsMap.set(attempt.topic_id, attempt)
+        }
+        if (uniqueAttemptsMap.size >= limit) break
+      }
+
+      const uniqueAttempts = Array.from(uniqueAttemptsMap.values())
+        .sort((a, b) => {
+          const dateB = b.completed_at ? new Date(b.completed_at).getTime() : 0
+          const dateA = a.completed_at ? new Date(a.completed_at).getTime() : 0
+          return dateB - dateA
+        })
+        .slice(0, limit)
+
+      return uniqueAttempts.map(attempt => ({
+        attemptId: attempt.id,
         topicId: attempt.topic_id,
         topicTitle: (attempt.question_topics as any)?.topic_title || 'Unknown Topic',
         score: attempt.score || 0,
@@ -393,6 +413,133 @@ export const quizDatabase = {
     } catch (error) {
       console.error('Failed to get user quiz attempts:', error)
       return []
+    }
+  },
+
+  /**
+   * Fetch a quiz attempt with its question responses and full question details
+   */
+  async getQuizAttemptDetails(attemptId: string): Promise<{
+    attempt: QuizAttempt | null,
+    userAnswers: Array<{
+      questionNumber: number
+      answer: string
+      isCorrect: boolean
+      timeSpent: number
+    }>,
+    questions: QuizQuestion[]
+  }> {
+    try {
+      // Fetch the attempt record first
+      const { data: attemptData, error: attemptError } = await supabase
+        .from('user_quiz_attempts')
+        .select('*')
+        .eq('id', attemptId)
+        .single()
+
+      if (attemptError) {
+        console.error('Error fetching attempt details:', attemptError)
+        return { attempt: null, userAnswers: [], questions: [] }
+      }
+
+      // Fetch question responses first
+      const { data: responsesData, error: responsesError } = await supabase
+        .from('user_question_responses')
+        .select('*')
+        .eq('attempt_id', attemptId)
+
+      if (responsesError) {
+        console.error('Error fetching attempt responses:', responsesError)
+        return { attempt: null, userAnswers: [], questions: [] }
+      }
+
+      const responsesArray: any[] = (responsesData as any[]) || []
+      if (responsesError || responsesArray.length === 0) {
+        console.warn('No question responses found for attempt', attemptId)
+        const attemptFallback: QuizAttempt = {
+          id: attemptData.id,
+          userId: attemptData.user_id,
+          topicId: attemptData.topic_id,
+          score: attemptData.score || 0,
+          correctAnswers: attemptData.correct_answers || 0,
+          totalQuestions: attemptData.total_questions || 0,
+          timeSpentSeconds: attemptData.time_spent_seconds || 0,
+          completedAt: attemptData.completed_at || new Date().toISOString(),
+          startedAt: attemptData.started_at || new Date().toISOString(),
+          isCompleted: attemptData.is_completed || false
+        }
+        return { attempt: attemptFallback, userAnswers: [], questions: [] }
+      }
+
+      // Batch fetch related questions by ID
+      const questionIds = responsesArray.map(r => r.question_id)
+      let questionsMap: Record<string, any> = {}
+
+      if (questionIds.length > 0) {
+        const { data: qsData, error: qsError } = await supabase
+          .from('questions')
+          .select('*')
+          .in('id', questionIds)
+
+        if (qsError) {
+          console.error('Error fetching questions for attempt:', qsError)
+        } else {
+          questionsMap = Object.fromEntries((qsData || []).map(q => [q.id, q]))
+        }
+      }
+
+      const userAnswers: Array<{
+        questionNumber: number
+        answer: string
+        isCorrect: boolean
+        timeSpent: number
+      }> = []
+      const questions: QuizQuestion[] = []
+
+      responsesArray.forEach(resp => {
+        const q = questionsMap[resp.question_id]
+        if (!q) return
+        questions.push({
+          topic_id: q.topic_id,
+          question_number: q.question_number,
+          question_type: q.question_type as any,
+          category: q.category,
+          question: q.question,
+          option_a: q.option_a ?? undefined,
+          option_b: q.option_b ?? undefined,
+          option_c: q.option_c ?? undefined,
+          option_d: q.option_d ?? undefined,
+          correct_answer: q.correct_answer,
+          hint: q.hint,
+          explanation: q.explanation,
+          tags: Array.isArray(q.tags) ? q.tags : [],
+          sources: Array.isArray(q.sources) ? q.sources : []
+        })
+        userAnswers.push({
+          questionNumber: q.question_number,
+          answer: resp.user_answer,
+          isCorrect: resp.is_correct,
+          timeSpent: resp.time_spent_seconds || 0
+        })
+      })
+
+      const attempt: QuizAttempt = {
+        id: attemptData.id,
+        userId: attemptData.user_id,
+        topicId: attemptData.topic_id,
+        score: attemptData.score || 0,
+        correctAnswers: attemptData.correct_answers || 0,
+        totalQuestions: attemptData.total_questions || questions.length,
+        timeSpentSeconds: attemptData.time_spent_seconds || 0,
+        completedAt: attemptData.completed_at || new Date().toISOString(),
+        startedAt: attemptData.started_at || new Date().toISOString(),
+        isCompleted: attemptData.is_completed || false
+      }
+
+      return { attempt, userAnswers, questions }
+    } catch (error) {
+      console.error('Failed to fetch quiz attempt details:', error)
+      return { attempt: null, userAnswers: [], questions: [] }
     }
   },
 

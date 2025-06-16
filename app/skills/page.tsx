@@ -89,11 +89,15 @@ export default function SkillsPage() {
           setTimeout(() => reject(new Error('Timeout')), 10000) // 10 second timeout
         )
         
-        // Import skill operations with timeout
-        const skillPromise = (async () => {
-          const { skillOperations } = await import('@/lib/skill-operations')
-          return await skillOperations.getUserSkills(user.id)
-        })()
+        // Load skills from API endpoint
+        const skillPromise = fetch('/api/skills/user-skills')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`API returned ${response.status}: ${response.statusText}`)
+            }
+            return response.json()
+          })
+          .then(data => data.data)
         
         const userSkills = await Promise.race([skillPromise, timeoutPromise]) as Skill[]
         
