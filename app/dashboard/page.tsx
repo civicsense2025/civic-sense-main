@@ -5,6 +5,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
 import { DashboardStats } from "@/components/dashboard-stats"
 import { UserMenu } from "@/components/auth/user-menu"
+import { useRouter } from "next/navigation"
 
 import { PremiumAnalytics } from "@/components/premium-analytics"
 import { PremiumSubscriptionCard } from "@/components/premium-subscription-card"
@@ -98,6 +99,7 @@ const CIVIC_CATEGORIES = [
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
   const { trackEngagement } = useAnalytics()
   const [activeTab, setActiveTab] = useState("overview")
@@ -111,6 +113,13 @@ export default function DashboardPage() {
   // Add state for skill detail modal
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null)
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false)
+
+  // Redirect unauthenticated users to login page
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, isLoading, router])
 
   // Track dashboard page view
   useEffect(() => {

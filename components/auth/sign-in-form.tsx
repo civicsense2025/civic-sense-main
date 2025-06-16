@@ -15,9 +15,10 @@ import { useAnalytics } from "@/utils/analytics"
 
 interface SignInFormProps {
   onSuccess: () => void
+  onResetPassword: () => void
 }
 
-export function SignInForm({ onSuccess }: SignInFormProps) {
+export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -146,9 +147,13 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 
       {/* Forgot password link */}
       <div className="text-center">
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-light">
-          Forgot your password? We'll add password reset soon.
-        </p>
+        <button
+          type="button"
+          onClick={onResetPassword}
+          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+        >
+          Forgot your password?
+        </button>
       </div>
     </div>
   )

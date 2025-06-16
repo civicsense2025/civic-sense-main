@@ -5,6 +5,7 @@ import type { Database } from './database.types';
 // Create a server-side Supabase client for auth operations
 export async function getServerSession() {
   const cookieStore = cookies();
+  const cookieString = await cookieStore.toString();
   
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +18,7 @@ export async function getServerSession() {
       },
       global: {
         headers: {
-          cookie: cookieStore.toString(),
+          cookie: cookieString,
         },
       },
     }

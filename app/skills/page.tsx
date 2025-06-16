@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
+import { useRouter } from "next/navigation"
 import { SkillDetailModal } from "@/components/skill-detail-modal"
 import { SkillRelationshipMap } from "@/components/skill-relationship-map"
 import { Card, CardContent } from "@/components/ui/card"
@@ -63,6 +64,7 @@ interface Skill {
 
 export default function SkillsPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const { isPremium } = usePremium()
   const [skills, setSkills] = useState<Skill[]>([])
   const [filteredSkills, setFilteredSkills] = useState<Skill[]>([])
@@ -72,6 +74,13 @@ export default function SkillsPage() {
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  
+  // Redirect unauthenticated users to login page
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, isLoading, router])
   
   // Load skills data
   useEffect(() => {

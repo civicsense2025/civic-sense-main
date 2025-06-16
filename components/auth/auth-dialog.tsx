@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { ConsolidatedAuthForm } from "./consolidated-auth-form"
 import { DonationForm } from "./donation-form"
+import { PasswordResetForm } from "./password-reset-form"
 
 interface AuthDialogProps {
   isOpen: boolean
@@ -12,7 +13,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign-in' }: AuthDialogProps) {
-  const [activeTab, setActiveTab] = useState<"auth" | "donate">("auth")
+  const [activeTab, setActiveTab] = useState<"auth" | "donate" | "reset-password">("auth")
 
   const handleAuthSuccess = () => {
     // Skip donation for now, proceed to completion
@@ -27,6 +28,14 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
 
   const handleDonationSkip = () => {
     onAuthSuccess()
+  }
+  
+  const handleResetPasswordRequest = () => {
+    setActiveTab("reset-password")
+  }
+  
+  const handleBackToSignIn = () => {
+    setActiveTab("auth")
   }
 
   return (
@@ -49,18 +58,22 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
         {/* Visually hidden DialogTitle for accessibility */}
         <span className="sr-only">
           <DialogTitle>
-            {activeTab === "donate" ? "Support CivicSense" : "Join CivicSense"}
+            {activeTab === "donate" ? "Support CivicSense" : 
+             activeTab === "reset-password" ? "Reset Your Password" : "Join CivicSense"}
           </DialogTitle>
         </span>
         <div className="px-8 py-12">
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 tracking-tight mb-3">
-              {activeTab === "donate" ? "Support CivicSense" : "Join CivicSense"}
+              {activeTab === "donate" ? "Support CivicSense" : 
+               activeTab === "reset-password" ? "Reset Your Password" : "Join CivicSense"}
             </h2>
             <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
               {activeTab === "donate"
                 ? "Your support helps us provide quality civic education for all."
+                : activeTab === "reset-password"
+                ? "Enter your email and we'll send you a link to reset your password."
                 : "Start your civic education journey with unlimited access to quizzes and progress tracking."}
             </p>
           </div>
@@ -70,6 +83,7 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
             <ConsolidatedAuthForm
               onSuccess={handleAuthSuccess}
               initialMode={initialMode}
+              onResetPassword={handleResetPasswordRequest}
             />
           )}
 
@@ -77,6 +91,12 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
             <DonationForm
               onSuccess={handleDonationSuccess}
               onSkip={handleDonationSkip}
+            />
+          )}
+          
+          {activeTab === "reset-password" && (
+            <PasswordResetForm
+              onBack={handleBackToSignIn}
             />
           )}
         </div>

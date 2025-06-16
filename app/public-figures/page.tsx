@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2 } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
+import { UserMenu } from "@/components/auth/user-menu"
 
 // Define types for public figures data
 interface PublicFigure {
@@ -102,134 +103,192 @@ export default function PublicFiguresPage() {
   })
 
   return (
-    <div className="container py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-2">Public Figures</h1>
-      <p className="text-slate-600 dark:text-slate-400 mb-8">
-        Explore key political figures and their connections in American politics.
-      </p>
-
-      {/* Filters and search */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <Input 
-          placeholder="Search by name or position..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="md:w-1/3"
-        />
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="md:w-1/3">
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            {roleCategories.map(role => (
-              <SelectItem key={role} value={role}>{role}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={partyFilter} onValueChange={setPartyFilter}>
-          <SelectTrigger className="md:w-1/3">
-            <SelectValue placeholder="Filter by party" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Parties</SelectItem>
-            {partyAffiliations.map(party => (
-              <SelectItem key={party} value={party}>{party}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      {/* Minimal header - matching homepage */}
+      <div className="border-b border-slate-100 dark:border-slate-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
+          <div className="flex items-center justify-between">
+            {/* Clean branding */}
+            <Link 
+              href="/" 
+              className="group hover:opacity-70 transition-opacity"
+            >
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
+                CivicSense
+              </h1>
+            </Link>
+            
+            {/* Minimal user menu */}
+            <UserMenu 
+              onSignInClick={() => {}} 
+              searchQuery=""
+              onSearchChange={() => {}}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* View tabs */}
-      <Tabs defaultValue="grid" className="mb-6">
-        <TabsList>
-          <TabsTrigger value="grid">Grid View</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-        </TabsList>
-        
-        {/* Grid View */}
-        <TabsContent value="grid">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-12 text-red-500">{error}</div>
-          ) : filteredFigures.length === 0 ? (
-            <div className="text-center py-12">No public figures match your filters.</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredFigures.map(figure => (
-                <Link href={`/public-figures/${figure.slug}`} key={figure.id}>
-                  <Card className="h-full hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle>{figure.display_name || figure.full_name}</CardTitle>
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
+        {/* Clean header with lots of whitespace */}
+        <div className="text-center space-y-4 mb-12">
+          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+            Public Figures
+          </h1>
+          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+            Explore key political figures and their connections in American politics
+          </p>
+        </div>
+
+        {/* Filters and search - cleaner layout */}
+        <div className="space-y-6 mb-12">
+          <Input 
+            placeholder="Search by name or position..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md mx-auto"
+          />
+          
+          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {roleCategories.map(role => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={partyFilter} onValueChange={setPartyFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by party" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Parties</SelectItem>
+                {partyAffiliations.map(party => (
+                  <SelectItem key={party} value={party}>{party}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* View tabs - cleaner style */}
+        <Tabs defaultValue="grid" className="space-y-8">
+          <TabsList className="grid w-full max-w-xs mx-auto grid-cols-2 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
+            <TabsTrigger 
+              value="grid" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Grid View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="list" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              List View
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Grid View - cleaner cards */}
+          <TabsContent value="grid">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 text-red-500">{error}</div>
+            ) : filteredFigures.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">
+                No public figures match your filters.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredFigures.map(figure => (
+                  <Link href={`/public-figures/${figure.slug}`} key={figure.id} className="group">
+                    <div className="h-full p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                          <h2 className="text-xl font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {figure.display_name || figure.full_name}
+                          </h2>
+                          {figure.influence_level && (
+                            <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"} className="font-light">
+                              Level {figure.influence_level}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <p className="text-slate-600 dark:text-slate-400 font-light">
+                          {figure.primary_role_category}
+                        </p>
+                        
+                        {figure.current_positions && figure.current_positions.length > 0 && (
+                          <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+                            {figure.current_positions[0]}
+                          </p>
+                        )}
+                        
+                        <div className="pt-4 flex justify-between items-center">
+                          <Badge variant="secondary" className="font-light">
+                            {figure.party_affiliation || "Unknown"}
+                          </Badge>
+                          <span className="text-sm text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            View profile →
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          {/* List View - cleaner list */}
+          <TabsContent value="list">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 text-red-500">{error}</div>
+            ) : filteredFigures.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">
+                No public figures match your filters.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredFigures.map(figure => (
+                  <Link href={`/public-figures/${figure.slug}`} key={figure.id}>
+                    <div className="flex justify-between items-center p-4 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all">
+                      <div>
+                        <h3 className="font-medium text-slate-900 dark:text-white">{figure.display_name || figure.full_name}</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                          {figure.primary_role_category}
+                          {figure.current_positions && figure.current_positions.length > 0 && (
+                            <> • {figure.current_positions[0]}</>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="font-light">{figure.party_affiliation || "Unknown"}</Badge>
                         {figure.influence_level && (
-                          <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"}>
+                          <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"} className="font-light">
                             Level {figure.influence_level}
                           </Badge>
                         )}
                       </div>
-                      <CardDescription>{figure.primary_role_category}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {figure.current_positions && figure.current_positions.length > 0 && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          {figure.current_positions[0]}
-                        </p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Badge variant="secondary">{figure.party_affiliation || "Unknown"}</Badge>
-                      <span className="text-sm text-slate-500">View profile →</span>
-                    </CardFooter>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        {/* List View */}
-        <TabsContent value="list">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-12 text-red-500">{error}</div>
-          ) : filteredFigures.length === 0 ? (
-            <div className="text-center py-12">No public figures match your filters.</div>
-          ) : (
-            <div className="space-y-2">
-              {filteredFigures.map(figure => (
-                <Link href={`/public-figures/${figure.slug}`} key={figure.id}>
-                  <div className="flex justify-between items-center p-4 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                    <div>
-                      <h3 className="font-medium">{figure.display_name || figure.full_name}</h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {figure.primary_role_category}
-                        {figure.current_positions && figure.current_positions.length > 0 && (
-                          <> • {figure.current_positions[0]}</>
-                        )}
-                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{figure.party_affiliation || "Unknown"}</Badge>
-                      {figure.influence_level && (
-                        <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"}>
-                          Level {figure.influence_level}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 } 

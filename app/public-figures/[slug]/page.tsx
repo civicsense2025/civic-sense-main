@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Loader2, ArrowLeft, Calendar, Info, Link as LinkIcon, ExternalLink, Briefcase, Award, MessageSquare, AlertTriangle, FileText, Users } from "lucide-react"
+import { UserMenu } from "@/components/auth/user-menu"
 
 // Define types for public figures data
 interface PublicFigure {
@@ -217,19 +217,19 @@ export default function PublicFigureDetailPage() {
 
   if (loading) {
     return (
-      <div className="container py-12 flex justify-center items-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
       </div>
     )
   }
 
   if (error || !figure) {
     return (
-      <div className="container py-12">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
-          <p>{error || 'Figure not found'}</p>
-          <Button asChild>
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex justify-center items-center">
+        <div className="text-center space-y-6 max-w-md px-4">
+          <h1 className="text-2xl font-light text-red-500">Error</h1>
+          <p className="text-slate-600 dark:text-slate-400">{error || 'Figure not found'}</p>
+          <Button asChild variant="outline" className="rounded-full">
             <Link href="/public-figures">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Public Figures
@@ -241,447 +241,484 @@ export default function PublicFigureDetailPage() {
   }
 
   return (
-    <div className="container py-8 max-w-7xl">
-      {/* Back button */}
-      <div className="mb-6">
-        <Button variant="outline" asChild>
-          <Link href="/public-figures">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Public Figures
-          </Link>
-        </Button>
-      </div>
-      
-      {/* Header section */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">{figure.display_name || figure.full_name}</h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 mt-1">{figure.primary_role_category}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {figure.party_affiliation && (
-              <Badge variant="secondary" className="text-sm">
-                {figure.party_affiliation}
-              </Badge>
-            )}
-            {figure.influence_level && (
-              <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"} className="text-sm">
-                Influence Level {figure.influence_level}
-              </Badge>
-            )}
-            {figure.trump_relationship_type && (
-              <Badge variant="outline" className="text-sm">
-                {figure.trump_relationship_type}
-              </Badge>
-            )}
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      {/* Minimal header - matching homepage */}
+      <div className="border-b border-slate-100 dark:border-slate-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
+          <div className="flex items-center justify-between">
+            {/* Clean branding */}
+            <Link 
+              href="/" 
+              className="group hover:opacity-70 transition-opacity"
+            >
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
+                CivicSense
+              </h1>
+            </Link>
+            
+            {/* Minimal user menu */}
+            <UserMenu 
+              onSignInClick={() => {}} 
+              searchQuery=""
+              onSearchChange={() => {}}
+            />
           </div>
         </div>
-        
-        {/* Current positions */}
-        {figure.current_positions && figure.current_positions.length > 0 && (
-          <div className="mt-4 space-y-1">
-            {figure.current_positions.map((position, index) => (
-              <p key={index} className="text-slate-800 dark:text-slate-200 font-medium">
-                {position}
-              </p>
-            ))}
-          </div>
-        )}
       </div>
-      
-      {/* Main content tabs */}
-      <Tabs defaultValue="overview" className="space-y-8">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="events">Timeline</TabsTrigger>
-          <TabsTrigger value="relationships">Relationships</TabsTrigger>
-          <TabsTrigger value="policies">Policy Positions</TabsTrigger>
-          <TabsTrigger value="sources">Sources</TabsTrigger>
-        </TabsList>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
+        {/* Back button */}
+        <div className="mb-8">
+          <Button variant="ghost" asChild className="pl-0 hover:pl-0 hover:bg-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200">
+            <Link href="/public-figures">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Public Figures
+            </Link>
+          </Button>
+        </div>
         
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-8">
-          {/* Biographical info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Info className="h-5 w-5 mr-2" />
-                Biographical Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                {figure.birth_year && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Age</h3>
-                    <p>{figure.birth_year} ({getAge(figure.birth_year)} years old)</p>
-                  </div>
-                )}
-                
-                {figure.birth_state && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Birth State</h3>
-                    <p>{figure.birth_state}</p>
-                  </div>
-                )}
-                
-                {figure.current_residence_state && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Residence</h3>
-                    <p>{figure.current_residence_state}</p>
-                  </div>
-                )}
-                
-                {figure.education_background && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Education</h3>
-                    <p>{figure.education_background}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                {figure.net_worth_estimate && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Estimated Net Worth</h3>
-                    <p>{formatNetWorth(figure.net_worth_estimate)}</p>
-                  </div>
-                )}
-                
-                {figure.career_highlights && figure.career_highlights.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Career Highlights</h3>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {figure.career_highlights.map((highlight, index) => (
-                        <li key={index}>{highlight}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Header section */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            <div>
+              <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+                {figure.display_name || figure.full_name}
+              </h1>
+              <p className="text-xl text-slate-600 dark:text-slate-400 mt-2 font-light">
+                {figure.primary_role_category}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {figure.party_affiliation && (
+                <Badge variant="secondary" className="text-sm font-light">
+                  {figure.party_affiliation}
+                </Badge>
+              )}
+              {figure.influence_level && (
+                <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"} className="text-sm font-light">
+                  Influence Level {figure.influence_level}
+                </Badge>
+              )}
+              {figure.trump_relationship_type && (
+                <Badge variant="outline" className="text-sm font-light">
+                  {figure.trump_relationship_type}
+                </Badge>
+              )}
+            </div>
+          </div>
           
-          {/* Key positions */}
-          {figure.key_positions && figure.key_positions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Briefcase className="h-5 w-5 mr-2" />
+          {/* Current positions */}
+          {figure.current_positions && figure.current_positions.length > 0 && (
+            <div className="mt-4 space-y-1">
+              {figure.current_positions.map((position, index) => (
+                <p key={index} className="text-slate-800 dark:text-slate-200 font-light">
+                  {position}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Main content tabs */}
+        <Tabs defaultValue="overview" className="space-y-10">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-2 sm:grid-cols-3 md:grid-cols-5 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
+            <TabsTrigger 
+              value="overview" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="events" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Timeline
+            </TabsTrigger>
+            <TabsTrigger 
+              value="relationships" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Relationships
+            </TabsTrigger>
+            <TabsTrigger 
+              value="policies" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Policies
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sources" 
+              className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
+            >
+              Sources
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-12">
+            {/* Biographical info */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                <Info className="h-5 w-5 mr-2 text-slate-500" />
+                Biographical Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  {figure.birth_year && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Age</h3>
+                      <p className="font-light">{figure.birth_year} ({getAge(figure.birth_year)} years old)</p>
+                    </div>
+                  )}
+                  
+                  {figure.birth_state && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Birth State</h3>
+                      <p className="font-light">{figure.birth_state}</p>
+                    </div>
+                  )}
+                  
+                  {figure.current_residence_state && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Residence</h3>
+                      <p className="font-light">{figure.current_residence_state}</p>
+                    </div>
+                  )}
+                  
+                  {figure.education_background && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Education</h3>
+                      <p className="font-light">{figure.education_background}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-6">
+                  {figure.net_worth_estimate && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Estimated Net Worth</h3>
+                      <p className="font-light">{formatNetWorth(figure.net_worth_estimate)}</p>
+                    </div>
+                  )}
+                  
+                  {figure.career_highlights && figure.career_highlights.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Career Highlights</h3>
+                      <ul className="list-disc pl-5 space-y-1 font-light">
+                        {figure.career_highlights.map((highlight, index) => (
+                          <li key={index}>{highlight}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Key positions */}
+            {figure.key_positions && figure.key_positions.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <Briefcase className="h-5 w-5 mr-2 text-slate-500" />
                   Key Positions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+                </h2>
+                <ul className="space-y-3 font-light">
                   {figure.key_positions.map((position, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="mr-2">•</span>
+                      <span className="mr-2 text-slate-400">•</span>
                       <span>{position}</span>
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Controversies */}
-          {figure.notable_controversies && figure.notable_controversies.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2" />
+              </div>
+            )}
+            
+            {/* Controversies */}
+            {figure.notable_controversies && figure.notable_controversies.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <AlertTriangle className="h-5 w-5 mr-2 text-slate-500" />
                   Notable Controversies
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+                </h2>
+                <ul className="space-y-3 font-light">
                   {figure.notable_controversies.map((controversy, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="mr-2">•</span>
+                      <span className="mr-2 text-slate-400">•</span>
                       <span>{controversy}</span>
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Quotable statements */}
-          {figure.quotable_statements && figure.quotable_statements.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2" />
+              </div>
+            )}
+            
+            {/* Quotable statements */}
+            {figure.quotable_statements && figure.quotable_statements.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2 text-slate-500" />
                   Quotable Statements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-4">
+                </h2>
+                <ul className="space-y-6">
                   {figure.quotable_statements.map((quote, index) => (
-                    <li key={index} className="pl-4 border-l-4 border-slate-200 dark:border-slate-700">
-                      <blockquote className="italic text-slate-700 dark:text-slate-300">
+                    <li key={index} className="pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                      <blockquote className="italic text-slate-700 dark:text-slate-300 font-light">
                         "{quote}"
                       </blockquote>
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Policy flip-flops */}
-          {figure.policy_flip_flops && Array.isArray(figure.policy_flip_flops) && figure.policy_flip_flops.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <LinkIcon className="h-5 w-5 mr-2" />
+              </div>
+            )}
+            
+            {/* Policy flip-flops */}
+            {figure.policy_flip_flops && Array.isArray(figure.policy_flip_flops) && figure.policy_flip_flops.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <LinkIcon className="h-5 w-5 mr-2 text-slate-500" />
                   Policy Position Changes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
+                </h2>
+                <div className="space-y-8">
                   {figure.policy_flip_flops.map((flip: any, index: number) => (
-                    <div key={index} className="space-y-2">
+                    <div key={index} className="space-y-4">
                       <h3 className="font-medium">{flip.policy}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-md">
-                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">Before</h4>
-                          <p>{flip.before}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Before</h4>
+                          <p className="font-light">{flip.before}</p>
                         </div>
-                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-md">
-                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">After</h4>
-                          <p>{flip.after}</p>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">After</h4>
+                          <p className="font-light">{flip.after}</p>
                         </div>
                       </div>
                       {flip.context && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 italic">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 italic font-light">
                           Context: {flip.context}
                         </p>
                       )}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Financial interests */}
-          {figure.financial_interests && figure.financial_interests.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="h-5 w-5 mr-2" />
+              </div>
+            )}
+            
+            {/* Financial interests */}
+            {figure.financial_interests && figure.financial_interests.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <Award className="h-5 w-5 mr-2 text-slate-500" />
                   Financial Interests
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
+                </h2>
+                <ul className="space-y-3 font-light">
                   {figure.financial_interests.map((interest, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="mr-2">•</span>
+                      <span className="mr-2 text-slate-400">•</span>
                       <span>{interest}</span>
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-        
-        {/* Events Timeline Tab */}
-        <TabsContent value="events" className="space-y-6">
-          {events.length === 0 ? (
-            <p className="text-center py-8 text-slate-500">No timeline events available for this figure.</p>
-          ) : (
-            <div className="relative border-l-2 border-slate-200 dark:border-slate-700 pl-6 ml-6 space-y-10">
-              {events.map((event, index) => (
-                <div key={event.id} className="relative">
-                  {/* Date marker */}
-                  <div className="absolute -left-[30px] p-1 bg-white dark:bg-slate-950 rounded-full border-2 border-slate-200 dark:border-slate-700">
-                    <Calendar className="h-4 w-4 text-slate-500" />
-                  </div>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
+              </div>
+            )}
+          </TabsContent>
+          
+          {/* Events Timeline Tab */}
+          <TabsContent value="events" className="space-y-6">
+            {events.length === 0 ? (
+              <p className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">No timeline events available for this figure.</p>
+            ) : (
+              <div className="relative border-l border-slate-200 dark:border-slate-800 pl-6 ml-6 space-y-12">
+                {events.map((event, index) => (
+                  <div key={event.id} className="relative">
+                    {/* Date marker */}
+                    <div className="absolute -left-[28px] p-1 bg-white dark:bg-slate-950 rounded-full border border-slate-200 dark:border-slate-800">
+                      <Calendar className="h-4 w-4 text-slate-500" />
+                    </div>
+                    
+                    <div className="space-y-3">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{event.event_title}</CardTitle>
+                        <h3 className="text-xl font-medium text-slate-900 dark:text-white">{event.event_title}</h3>
                         {event.significance_level && (
-                          <Badge variant={event.significance_level >= 4 ? "destructive" : "outline"}>
+                          <Badge variant={event.significance_level >= 4 ? "destructive" : "outline"} className="font-light">
                             Significance {event.significance_level}
                           </Badge>
                         )}
                       </div>
-                      <CardDescription>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
                         {new Date(event.event_date).toLocaleDateString()} • {event.event_type}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {event.event_description && <p>{event.event_description}</p>}
+                      </p>
+                      
+                      {event.event_description && (
+                        <p className="font-light text-slate-700 dark:text-slate-300">{event.event_description}</p>
+                      )}
                       
                       {event.policy_areas && event.policy_areas.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 pt-2">
                           {event.policy_areas.map((area, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{area}</Badge>
+                            <Badge key={i} variant="secondary" className="text-xs font-light">{area}</Badge>
                           ))}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        {/* Relationships Tab */}
-        <TabsContent value="relationships" className="space-y-6">
-          {relationships.length === 0 ? (
-            <p className="text-center py-8 text-slate-500">No relationships available for this figure.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {relationships.map((relationship) => (
-                <Card key={relationship.id} className="h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center">
-                          <Users className="h-4 w-4 mr-2" />
-                          {relationship.related_figure_name || 'Unknown Figure'}
-                        </CardTitle>
-                        <CardDescription>{relationship.relationship_type}</CardDescription>
-                      </div>
-                      {relationship.relationship_strength && (
-                        <Badge variant={relationship.relationship_strength >= 4 ? "default" : "outline"}>
-                          Strength {relationship.relationship_strength}
-                        </Badge>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {relationship.description && <p>{relationship.description}</p>}
-                    
-                    {relationship.relationship_start_date && (
-                      <div className="text-sm">
-                        <span className="font-medium text-slate-500 dark:text-slate-400">Since: </span>
-                        {new Date(relationship.relationship_start_date).toLocaleDateString()}
-                      </div>
-                    )}
-                    
-                    {relationship.policy_alignments && relationship.policy_alignments.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Policy Alignments</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {relationship.policy_alignments.map((policy, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{policy}</Badge>
-                          ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          {/* Relationships Tab */}
+          <TabsContent value="relationships" className="space-y-6">
+            {relationships.length === 0 ? (
+              <p className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">No relationships available for this figure.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {relationships.map((relationship) => (
+                  <div key={relationship.id} className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm">
+                    <div className="space-y-5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-medium text-slate-900 dark:text-white flex items-center">
+                            <Users className="h-4 w-4 mr-2 text-slate-500" />
+                            {relationship.related_figure_name || 'Unknown Figure'}
+                          </h3>
+                          <p className="text-slate-600 dark:text-slate-400 font-light">
+                            {relationship.relationship_type}
+                          </p>
                         </div>
+                        {relationship.relationship_strength && (
+                          <Badge variant={relationship.relationship_strength >= 4 ? "default" : "outline"} className="font-light">
+                            Strength {relationship.relationship_strength}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                    
-                    {relationship.related_figure_slug && (
-                      <div className="pt-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/public-figures/${relationship.related_figure_slug}`}>
-                            View Profile
-                          </Link>
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        {/* Policy Positions Tab */}
-        <TabsContent value="policies" className="space-y-6">
-          {policies.length === 0 && !figure.key_policies_supported ? (
-            <p className="text-center py-8 text-slate-500">No policy positions available for this figure.</p>
-          ) : (
-            <>
-              {/* Key policies supported from main figure data */}
-              {figure.key_policies_supported && figure.key_policies_supported.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Key Policies Supported</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
+                      
+                      {relationship.description && (
+                        <p className="font-light text-slate-700 dark:text-slate-300">{relationship.description}</p>
+                      )}
+                      
+                      {relationship.relationship_start_date && (
+                        <div className="text-sm">
+                          <span className="font-medium text-slate-500 dark:text-slate-400">Since: </span>
+                          <span className="font-light">{new Date(relationship.relationship_start_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      
+                      {relationship.policy_alignments && relationship.policy_alignments.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Policy Alignments</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {relationship.policy_alignments.map((policy, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs font-light">{policy}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {relationship.related_figure_slug && (
+                        <div className="pt-2">
+                          <Button variant="outline" size="sm" asChild className="rounded-full font-light">
+                            <Link href={`/public-figures/${relationship.related_figure_slug}`}>
+                              View Profile
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          {/* Policy Positions Tab */}
+          <TabsContent value="policies" className="space-y-10">
+            {policies.length === 0 && !figure.key_policies_supported ? (
+              <p className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">No policy positions available for this figure.</p>
+            ) : (
+              <>
+                {/* Key policies supported from main figure data */}
+                {figure.key_policies_supported && figure.key_policies_supported.length > 0 && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+                      Key Policies Supported
+                    </h2>
+                    <ul className="space-y-3 font-light">
                       {figure.key_policies_supported.map((policy, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="mr-2">•</span>
+                          <span className="mr-2 text-slate-400">•</span>
                           <span>{policy}</span>
                         </li>
                       ))}
                     </ul>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {/* Detailed policy positions */}
-              {policies.length > 0 && (
-                <div className="space-y-6">
-                  {policies.map((policy) => (
-                    <Card key={policy.id}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle>{policy.policy_area}</CardTitle>
-                            {policy.specific_policy && (
-                              <CardDescription>{policy.specific_policy}</CardDescription>
-                            )}
+                  </div>
+                )}
+                
+                {/* Detailed policy positions */}
+                {policies.length > 0 && (
+                  <div className="space-y-10">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+                      Detailed Policy Positions
+                    </h2>
+                    
+                    <div className="space-y-8">
+                      {policies.map((policy) => (
+                        <div key={policy.id} className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-xl font-medium text-slate-900 dark:text-white">{policy.policy_area}</h3>
+                                {policy.specific_policy && (
+                                  <p className="text-slate-600 dark:text-slate-400 font-light">{policy.specific_policy}</p>
+                                )}
+                              </div>
+                              {policy.consistency_score && (
+                                <Badge variant={policy.consistency_score >= 4 ? "default" : "secondary"} className="font-light">
+                                  Consistency {policy.consistency_score}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <p className="font-light text-slate-700 dark:text-slate-300">{policy.position_description}</p>
+                            
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                              {policy.position_date && (
+                                <div>
+                                  <span className="font-medium text-slate-500 dark:text-slate-400">Date: </span>
+                                  <span className="font-light">{new Date(policy.position_date).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              
+                              {policy.certainty_level && (
+                                <div>
+                                  <span className="font-medium text-slate-500 dark:text-slate-400">Certainty: </span>
+                                  <span className="font-light">{policy.certainty_level}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          {policy.consistency_score && (
-                            <Badge variant={policy.consistency_score >= 4 ? "default" : "secondary"}>
-                              Consistency {policy.consistency_score}
-                            </Badge>
-                          )}
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <p>{policy.position_description}</p>
-                        
-                        {policy.position_date && (
-                          <div className="text-sm">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Date: </span>
-                            {new Date(policy.position_date).toLocaleDateString()}
-                          </div>
-                        )}
-                        
-                        {policy.certainty_level && (
-                          <div className="text-sm">
-                            <span className="font-medium text-slate-500 dark:text-slate-400">Certainty: </span>
-                            {policy.certainty_level}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </TabsContent>
-        
-        {/* Sources Tab */}
-        <TabsContent value="sources" className="space-y-6">
-          {!figure.sources ? (
-            <p className="text-center py-8 text-slate-500">No sources available for this figure.</p>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+          
+          {/* Sources Tab */}
+          <TabsContent value="sources" className="space-y-6">
+            {!figure.sources ? (
+              <p className="text-center py-12 text-slate-500 dark:text-slate-400 font-light">No sources available for this figure.</p>
+            ) : (
+              <div className="space-y-8">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white flex items-center">
+                  <FileText className="h-5 w-5 mr-2 text-slate-500" />
                   Sources
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+                </h2>
+                
+                <div className="space-y-6">
                   {Array.isArray(figure.sources) && figure.sources.map((source: any, index: number) => (
                     <div key={index} className="flex items-start">
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-1 mr-3">
+                      <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-1.5 mr-4">
                         <ExternalLink className="h-4 w-4 text-slate-500" />
                       </div>
                       <div>
@@ -693,7 +730,7 @@ export default function PublicFigureDetailPage() {
                         >
                           {source.title}
                         </a>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-slate-500 font-light">
                           {source.organization}
                           {source.type && <> • {source.type}</>}
                           {source.date && <> • {source.date}</>}
@@ -702,11 +739,11 @@ export default function PublicFigureDetailPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 } 
