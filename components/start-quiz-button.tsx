@@ -11,7 +11,7 @@ interface StartQuizButtonProps {
 }
 
 // A large call-to-action button used for starting quizzes throughout the app.
-// Consistent styling in both light & dark themes.
+// Modern Apple-esque design with clean aesthetics.
 export function StartQuizButton({
   label,
   disabled = false,
@@ -20,13 +20,13 @@ export function StartQuizButton({
   className,
 }: StartQuizButtonProps) {
   const baseClasses =
-    "rounded-full shadow-xl px-12 py-6 text-2xl sm:text-3xl min-w-[260px] sm:min-w-[320px] font-bold transition-colors flex items-center justify-center gap-3" // gap for icon
+    "rounded-xl shadow-sm px-8 py-4 text-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
 
   const primaryStyles =
-    "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+    "bg-white text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
   const outlineStyles =
-    "border-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-transparent hover:bg-blue-50 dark:hover:bg-blue-950"
-  const disabledStyles = "opacity-50 cursor-not-allowed"
+    "border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800"
+  const disabledStyles = "opacity-40 cursor-not-allowed"
 
   const combined = cn(
     baseClasses,
@@ -44,7 +44,7 @@ export function StartQuizButton({
       size="lg"
     >
       <span>{label}</span>
-      <ArrowRight className="h-6 w-6" />
+      <ArrowRight className="h-5 w-5 ml-1 transition-transform group-hover:translate-x-0.5" />
     </Button>
   )
 } 
