@@ -6,11 +6,12 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { PWAProvider } from "@/components/providers/pwa-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster" 
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/next"
 import { PWAStatus } from "@/components/pwa-status"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <StatsigProvider>
               <PWAProvider>
+            <SpeedInsights />
                 <div className="min-h-screen flex flex-col">
                   <main className="flex-1">
                     {children}

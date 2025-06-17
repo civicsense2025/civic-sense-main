@@ -55,6 +55,7 @@
     "@supabase/supabase-js": "latest",
     "@types/dotenv": "^6.1.1",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
     "autoprefixer": "^10.4.20",
     "canvas-confetti": "latest",
     "cheerio": "^1.1.0",

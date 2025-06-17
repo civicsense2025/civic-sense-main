@@ -178,7 +178,7 @@ export default function CivicsTestLanding() {
     
     // Record guest attempt if not logged in
     if (!user) {
-      await recordQuizAttempt('civics-test')
+      await recordQuizAttempt()
     }
     
     // Track test start
