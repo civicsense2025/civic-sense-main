@@ -24,16 +24,20 @@ import {
   Sparkles, Star, Shield, Zap, Trophy,
   Clock, CheckCircle, XCircle, ArrowRight,
   Brain, Award, Flame, Activity, Plus,
-  Filter, Search, Shuffle, Play, Info
+  Filter, Search, Shuffle, Play, Info, X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { dataService } from "@/lib/data-service"
 import { enhancedProgressOperations, type EnhancedUserProgress, type Achievement } from "@/lib/enhanced-gamification"
-import { quizDatabase } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import Link from "next/link"
 import { useAnalytics } from "@/utils/analytics"
 import { EnhancedProgressDashboard } from "@/components/enhanced-progress-dashboard"
 import { StartQuizButton } from "@/components/start-quiz-button"
+import { supabase } from '@/lib/supabase'
+import { DailyCardStack } from '@/components/daily-card-stack'
+import { PremiumUpgradeCard } from '@/components/premium-upgrade-card'
+import { Header } from "@/components/header"
 
 interface DashboardData {
   totalQuizzes: number
@@ -117,6 +121,10 @@ export default function DashboardPage() {
   // Add state for skill detail modal
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null)
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false)
+
+  // Add state for onboarding status
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false)
 
   // Redirect unauthenticated users to login page
   useEffect(() => {
@@ -202,13 +210,13 @@ export default function DashboardPage() {
               setTimeout(() => reject(new Error('Activity timeout')), 5000) // Increased timeout
             )
             // Increase limit from 10 to 25 to fetch more recent activities
-            const activityPromise = quizDatabase.getRecentActivity(user.id, 25)
+            const activityPromise = enhancedQuizDatabase.getRecentActivity(user.id, 25)
             const dbRecentActivity = await Promise.race([activityPromise, activityTimeoutPromise])
             recentActivity = dbRecentActivity as DashboardData['recentActivity']
             
             // Also fetch all attempts without deduplication
             try {
-              const allAttemptsPromise = quizDatabase.getUserQuizAttempts(user.id)
+              const allAttemptsPromise = enhancedQuizDatabase.getUserQuizAttempts(user.id)
               const allAttemptsData = await Promise.race([allAttemptsPromise, new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('All attempts timeout')), 5000)
               )])
@@ -285,7 +293,7 @@ export default function DashboardPage() {
             const completedTimeoutPromise = new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Completed topics timeout')), 3000)
             )
-            const completedPromise = quizDatabase.getCompletedTopics(user.id)
+            const completedPromise = enhancedQuizDatabase.getCompletedTopics(user.id)
             completedTopicIds = await Promise.race([completedPromise, completedTimeoutPromise]) as string[]
           } catch (error) {
             console.error('Error loading completed topics from database (using localStorage fallback):', error)
@@ -448,6 +456,47 @@ export default function DashboardPage() {
     loadUserSkills()
   }, [user])
 
+  // Add useEffect to check onboarding status
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_onboarding_state')
+          .select('is_completed, current_step, skip_reason')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        
+        if (error) {
+          console.error('Error fetching onboarding status:', error)
+          return
+        }
+        
+        // If no onboarding record exists, or it exists but is not completed
+        if (!data || !data.is_completed) {
+          setOnboardingComplete(false)
+          setShowOnboardingBanner(true)
+        } else {
+          setOnboardingComplete(true)
+          setShowOnboardingBanner(false)
+        }
+      } catch (err) {
+        console.error('Error checking onboarding status:', err)
+      }
+    }
+    
+    checkOnboardingStatus()
+  }, [user])
+
+  const handleResumeOnboarding = () => {
+    router.push('/onboarding')
+  }
+
+  const dismissOnboardingBanner = () => {
+    setShowOnboardingBanner(false)
+  }
+
   if (isLoading || !dashboardData) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
@@ -480,32 +529,44 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-        {/* Clean header */}
-        <div className="border-b border-slate-100 dark:border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-            <div className="flex items-center justify-between">
-              {/* Clean branding */}
-              <Link 
-                href="/" 
-                className="group hover:opacity-70 transition-opacity"
-              >
-                <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                  CivicSense
-                </h1>
-              </Link>
+      <Header onSignInClick={() => {}} />
+      <div className="min-h-screen bg-white dark:bg-black">
+        <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+          {/* Onboarding banner - only show if not complete */}
+          {showOnboardingBanner && (
+            <div className="relative rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900/40 p-6 overflow-hidden mb-4">
+              <div className="absolute top-4 right-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 rounded-full" 
+                  onClick={dismissOnboardingBanner}
+                >
+                  <X className="h-4 w-4 text-slate-500" />
+                </Button>
+              </div>
               
-              {/* Minimal user menu */}
-              <UserMenu 
-                onSignInClick={() => {}} 
-                searchQuery=""
-                onSearchChange={() => {}}
-              />
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                <div className="flex-shrink-0 bg-white dark:bg-slate-800 h-12 w-12 flex items-center justify-center rounded-full shadow-sm">
+                  <Sparkles className="h-6 w-6 text-blue-500" />
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="font-medium text-slate-900 dark:text-white mb-1">Complete your personalized setup</h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-light mb-4">
+                    We noticed you haven't finished onboarding. Take a few minutes to personalize your learning experience.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-4 py-1 h-9"
+                    onClick={handleResumeOnboarding}
+                  >
+                    Continue setup
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div className="min-h-screen bg-white dark:bg-black">
-          <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+          )}
+          
           {/* Clean header with lots of whitespace */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">

@@ -1,6 +1,6 @@
 "use client"
 
-import { quizDatabase } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { QuizResults } from "@/components/quiz/quiz-results"
@@ -34,7 +34,7 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
     const load = async () => {
       try {
         setLoading(true)
-        const details = await quizDatabase.getQuizAttemptDetails(attemptId)
+        const details = await enhancedQuizDatabase.getQuizAttemptDetails(attemptId)
         if (!details.attempt) {
           setError("Attempt not found")
           return

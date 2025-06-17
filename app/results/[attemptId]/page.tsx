@@ -7,11 +7,6 @@ interface ResultsPageProps {
   }
 }
 
-export default function ResultsPage({ params }: ResultsPageProps) {
-  // Resolve the params on the server before rendering the client component
-  const resolvedParams = {
-    attemptId: params.attemptId
-  }
-  
-  return <ResultsPageClient params={resolvedParams} />
+export default async function ResultsPage({ params }: ResultsPageProps) {
+  return <ResultsPageClient params={params} />
 } 

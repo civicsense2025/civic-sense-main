@@ -4,10 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, ArrowLeft, CheckCircle } from "lucide-react"
+import { AlertCircle, ArrowLeft, Mail } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { authHelpers } from "@/lib/supabase"
 
 interface PasswordResetFormProps {
   onBack: () => void
@@ -24,24 +24,23 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setIsSuccess(false)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-
+      const { error } = await authHelpers.resetPassword(email)
+      
       if (error) {
         setError(error.message)
       } else {
         setIsSuccess(true)
         toast({
-          title: "Password reset email sent",
-          description: "Check your inbox for a password reset link",
+          title: "Reset link sent!",
+          description: "Check your email for instructions to reset your password.",
           variant: "default",
         })
       }
-    } catch (err) {
-      setError("An unexpected error occurred")
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }
@@ -49,73 +48,75 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        className="flex items-center text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to sign in
-      </button>
-      
+      {error && (
+        <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">{error}</AlertDescription>
+        </Alert>
+      )}
+
       {isSuccess ? (
-        <div className="text-center space-y-4 py-6">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-3">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
+        <div className="space-y-6 text-center">
+          <div className="text-4xl">✉️</div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
+              Check your inbox
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              We've sent a password reset link to <strong>{email}</strong>. 
+              Click the link in the email to reset your password.
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
-            Check your email
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400">
-            We've sent a password reset link to <strong>{email}</strong>
-          </p>
+          
           <div className="pt-4">
-            <Button
-              onClick={onBack}
-              className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200"
+            <Button 
+              onClick={onBack} 
+              variant="ghost"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-light"
             >
-              Return to sign in
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to sign in
             </Button>
           </div>
         </div>
       ) : (
-        <>
-          {/* Error Alert */}
-          {error && (
-            <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{error}</AlertDescription>
-            </Alert>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Email address
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+            />
+          </div>
 
-          {/* Email Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Email
-              </Label>
-              <Input
-                id="reset-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200"
+          <Button
+            type="submit"
+            disabled={isLoading || !email}
+            className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200"
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            {isLoading ? "Sending..." : "Send reset link"}
+          </Button>
+          
+          <div className="text-center">
+            <Button 
+              type="button" 
+              onClick={onBack}
+              variant="ghost"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-light"
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to sign in
             </Button>
-          </form>
-        </>
+          </div>
+        </form>
       )}
     </div>
   )

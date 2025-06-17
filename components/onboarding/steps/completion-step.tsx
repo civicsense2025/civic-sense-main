@@ -2,10 +2,11 @@
 
 import React, { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PartyPopper, Sparkles, ArrowRight, BookOpen, Target, Bell } from 'lucide-react'
-import confetti from 'canvas-confetti'
+import { ArrowRight, Sparkles, Check, Rocket } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 
 interface CompletionStepProps {
   onComplete: (data: any) => void
@@ -14,243 +15,194 @@ interface CompletionStepProps {
 }
 
 export function CompletionStep({ onComplete, onboardingState }: CompletionStepProps) {
+  const router = useRouter()
+  const { toast } = useToast()
+
   useEffect(() => {
-    // Trigger celebration confetti
-    const duration = 3000
-    const animationEnd = Date.now() + duration
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
-
-    function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min
-    }
-
-    const interval: NodeJS.Timeout = setInterval(function() {
-      const timeLeft = animationEnd - Date.now()
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval)
+    // Subtle celebration - less overwhelming
+    const sparkle = () => {
+      const colors = ['#1E3A8A', '#DC2626', '#059669']
+      const randomColor = colors[Math.floor(Math.random() * colors.length)]
+      
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const sparkleEl = document.createElement('div')
+          sparkleEl.innerHTML = '✨'
+          sparkleEl.style.position = 'fixed'
+          sparkleEl.style.left = Math.random() * window.innerWidth + 'px'
+          sparkleEl.style.top = Math.random() * window.innerHeight + 'px'
+          sparkleEl.style.fontSize = '24px'
+          sparkleEl.style.pointerEvents = 'none'
+          sparkleEl.style.zIndex = '9999'
+          sparkleEl.style.animation = 'fadeInOut 2s ease-out forwards'
+          
+          document.body.appendChild(sparkleEl)
+          
+          setTimeout(() => {
+            if (sparkleEl.parentNode) {
+              sparkleEl.parentNode.removeChild(sparkleEl)
+            }
+          }, 2000)
+        }, i * 200)
       }
-
-      const particleCount = 50 * (timeLeft / duration)
-      // since particles fall down, start a bit higher than random
-      confetti(Object.assign({}, defaults, { 
-        particleCount, 
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } 
-      }))
-      confetti(Object.assign({}, defaults, { 
-        particleCount, 
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } 
-      }))
-    }, 250)
-
+    }
+    
+    sparkle()
+    const interval = setInterval(sparkle, 3000)
+    
     return () => clearInterval(interval)
   }, [])
 
   const handleGetStarted = () => {
+    // Complete onboarding
     onComplete({
       onboardingCompleted: true,
       completedAt: Date.now(),
       readyToStart: true
     })
+    
+    // Show success toast when redirected to dashboard
+    toast({
+      title: "Onboarding complete!",
+      description: "Your CivicSense experience has been personalized.",
+      variant: "default",
+    })
+    
+    // Navigate to dashboard
+    router.push('/dashboard')
   }
 
-  // Extract data from onboarding state for summary
+  // Extract data for personalization
   const selectedCategories = onboardingState?.categories?.categories || []
-  const selectedSkills = onboardingState?.skills?.skills || []
-  const preferences = onboardingState?.preferences?.preferences || {}
   const assessmentScore = onboardingState?.assessment?.assessmentResults?.score || 0
+  const learningStyle = onboardingState?.preferences?.preferences?.learningStyle || 'mixed'
+
+  const getPersonalizedMessage = () => {
+    if (assessmentScore >= 80) {
+      return "You clearly know your stuff! We've got challenging content that will keep you engaged."
+    } else if (assessmentScore >= 60) {
+      return "Nice foundation! We'll build on what you know and introduce new concepts."
+    } else {
+      return "Perfect starting point! We'll begin with the basics and gradually introduce more complex topics."
+    }
+  }
+
+  const getLearningStyleMessage = () => {
+    switch (learningStyle) {
+      case 'bite_sized':
+        return "We'll keep things quick and digestible - perfect for learning on the go."
+      case 'deep_dive':
+        return "We'll provide detailed explanations and context to really dig into topics."
+      case 'mixed':
+        return "We'll mix short questions with deeper dives based on your mood and time."
+      default:
+        return "We'll adapt to how you like to learn as we go."
+    }
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-12">
-      {/* Celebration Header */}
-      <div className="text-center space-y-6">
-        <div className="relative">
-          <PartyPopper className="w-20 h-20 text-slate-900 dark:text-white mx-auto mb-4" />
-          <Sparkles className="w-6 h-6 absolute top-0 right-1/3 text-yellow-500 animate-pulse" />
-          <Sparkles className="w-4 h-4 absolute top-4 left-1/3 text-blue-500 animate-pulse delay-150" />
-          <Sparkles className="w-5 h-5 absolute bottom-2 right-1/4 text-purple-500 animate-pulse delay-300" />
-        </div>
-        
-        <div className="space-y-4">
-          <h2 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            You're All Set! 🎉
+    <div className="max-w-2xl mx-auto space-y-16">
+      {/* Minimal, clean header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="text-center">
+          <div className="text-7xl mb-8">🎉</div>
+          <h2 className="text-4xl font-light text-slate-900 dark:text-white mb-4">
+            You're all set
           </h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
-            Welcome to your personalized civic learning journey. We've customized everything based on your preferences.
+          <p className="text-xl text-slate-600 dark:text-slate-400 font-light max-w-md mx-auto">
+            We've personalized your experience based on your preferences
           </p>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Categories */}
-        <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <CardHeader className="pb-4">
-            <div className="flex items-center space-x-3">
-              <BookOpen className="w-5 h-5 text-slate-900 dark:text-white" />
-              <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
-                Your Interests
-              </CardTitle>
-            </div>
-            <CardDescription className="text-slate-600 dark:text-slate-400 font-light">
-              {selectedCategories.length} categories selected
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {selectedCategories.slice(0, 3).map((category: any, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  Category {index + 1}
-                </Badge>
-              ))}
-              {selectedCategories.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{selectedCategories.length - 3} more
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Skills */}
-        <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <CardHeader className="pb-4">
-            <div className="flex items-center space-x-3">
-              <Target className="w-5 h-5 text-slate-900 dark:text-white" />
-              <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
-                Learning Goals
-              </CardTitle>
-            </div>
-            <CardDescription className="text-slate-600 dark:text-slate-400 font-light">
-              {selectedSkills.length} skills to develop
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {selectedSkills.slice(0, 2).map((skill: any, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  Skill {index + 1}
-                </Badge>
-              ))}
-              {selectedSkills.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{selectedSkills.length - 2} more
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Assessment */}
-        <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <CardHeader className="pb-4">
-            <div className="flex items-center space-x-3">
-              <Sparkles className="w-5 h-5 text-slate-900 dark:text-white" />
-              <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
-                Knowledge Level
-              </CardTitle>
-            </div>
-            <CardDescription className="text-slate-600 dark:text-slate-400 font-light">
-              Assessment completed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-2xl font-light text-slate-900 dark:text-white mb-2">
-                {assessmentScore}%
-              </div>
-              <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900">
-                {assessmentScore >= 80 ? 'Advanced' : assessmentScore >= 60 ? 'Intermediate' : 'Beginner'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Personalization Summary */}
-      <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-xl font-medium text-slate-900 dark:text-white text-center">
-            Your Personalized Experience
-          </CardTitle>
-          <CardDescription className="text-slate-600 dark:text-slate-400 font-light text-center">
-            We've configured CivicSense to match your preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-medium text-slate-900 dark:text-white">Learning Setup</h4>
-              <div className="space-y-2">
-                {preferences.dailyReminders && (
-                  <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Bell className="w-4 h-4" />
-                    <span className="font-light">Daily learning reminders enabled</span>
-                  </div>
-                )}
-                {preferences.adaptiveDifficulty && (
-                  <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Target className="w-4 h-4" />
-                    <span className="font-light">Adaptive difficulty matching your level</span>
-                  </div>
-                )}
-                {preferences.weeklyDigest && (
-                  <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                    <BookOpen className="w-4 h-4" />
-                    <span className="font-light">Weekly progress summaries</span>
-                  </div>
-                )}
-              </div>
+      {/* Clean, minimalist learning plan */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="space-y-12">
+          {/* Your plan */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-2 text-slate-900 dark:text-white">
+              <Check className="h-5 w-5 text-green-500" />
+              <h3 className="text-xl font-light">Your Learning Plan</h3>
             </div>
             
-            <div className="space-y-4">
-              <h4 className="font-medium text-slate-900 dark:text-white">Content Focus</h4>
-              <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 font-light">
-                <div>• Questions matched to your interests</div>
-                <div>• Difficulty adjusted to your assessment results</div>
-                <div>• Skills practice for your selected goals</div>
-                <div>• Progress tracking across all areas</div>
-              </div>
-            </div>
+            <p className="text-slate-600 dark:text-slate-400 font-light text-center max-w-lg mx-auto">
+              {getPersonalizedMessage()}
+            </p>
           </div>
           
-          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800">
-            <h4 className="font-medium text-slate-900 dark:text-white mb-3">What's Next?</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600 dark:text-slate-400 font-light">
-              <div className="text-center">
-                <div className="text-2xl mb-2">📚</div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">Start Learning</div>
-                <div>Begin with personalized quizzes</div>
+          {/* Category highlights */}
+          {selectedCategories.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-2 text-slate-900 dark:text-white">
+                <Rocket className="h-5 w-5 text-blue-500" />
+                <h3 className="text-xl font-light">Focus Areas</h3>
               </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">🎯</div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">Track Progress</div>
-                <div>Monitor your civic knowledge growth</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">🏆</div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">Earn Rewards</div>
-                <div>Unlock achievements and boosts</div>
+              
+              <div className="flex flex-wrap gap-2 justify-center">
+                {selectedCategories.slice(0, 5).map((cat: any, index: number) => (
+                  <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                    {cat.id}
+                  </Badge>
+                ))}
+                {selectedCategories.length > 5 && (
+                  <Badge variant="outline" className="text-sm px-3 py-1">
+                    +{selectedCategories.length - 5} more
+                  </Badge>
+                )}
               </div>
             </div>
+          )}
+          
+          {/* Learning style */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-2 text-slate-900 dark:text-white">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              <h3 className="text-xl font-light">Your Learning Style</h3>
+            </div>
+            
+            <p className="text-slate-600 dark:text-slate-400 font-light text-center max-w-lg mx-auto">
+              {getLearningStyleMessage()}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </motion.div>
 
-      {/* Action Buttons */}
-      <div className="text-center space-y-4">
-        <Button 
-          onClick={handleGetStarted}
-          className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white text-lg px-16 py-4 rounded-full font-light"
-        >
-          Start My Civic Journey
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </Button>
-        
-        <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
-          You can always adjust your preferences in settings later
-        </p>
-      </div>
+      {/* Simple, encouraging action */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <div className="text-center space-y-6 pt-4">
+          <Button 
+            onClick={handleGetStarted}
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white text-lg px-10 py-6 h-auto rounded-full font-light group"
+          >
+            Go to dashboard
+            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+          
+          <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
+            You can adjust your preferences anytime in settings
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Add CSS for sparkle animation */}
+      <style jsx global>{`
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+          50% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+          100% { opacity: 0; transform: translateY(-30px) scale(0.8); }
+        }
+      `}</style>
     </div>
   )
-} 
+}

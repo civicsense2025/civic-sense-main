@@ -55,5 +55,13 @@ export const authHelpers = {
       return { error }
     }
     return { data, error: null }
+  },
+
+  // Password reset functionality
+  async resetPassword(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+    return { error }
   }
 }

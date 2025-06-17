@@ -190,11 +190,11 @@ export function QuizDateNavigation({
                   )}
                 >
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="text-lg">{topic.emoji}</span>
+                    <span className="text-base sm:text-lg" style={{ fontSize: '1.25rem', lineHeight: '1.25rem' }}>{topic.emoji}</span>
                     <div className="flex flex-col flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className={cn(
-                          "font-medium text-sm truncate",
+                          "font-medium text-sm truncate text-black dark:text-white",
                           isCurrentTopic && "text-blue-600 dark:text-blue-400"
                         )}>
                           {topic.title}

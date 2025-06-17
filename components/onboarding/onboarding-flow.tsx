@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/components/auth/auth-provider'
-import { useAnalytics } from '@/utils/analytics'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
 
 // Import step components
 import { WelcomeStep } from './steps/welcome-step'
@@ -22,6 +22,38 @@ interface OnboardingState {
   [key: string]: any
 }
 
+interface OnboardingFlowProps {
+  userId: string
+  onComplete?: () => void
+  onSkip?: (reason: string) => void
+}
+
+// Define interfaces for database tables
+interface UserPlatformPreferences {
+  id: string
+  user_id: string
+  preferred_quiz_length?: number
+  preferred_difficulty?: string
+  learning_pace?: string
+  learning_style?: string
+  study_time_preference?: string
+  email_notifications?: boolean
+  push_notifications?: boolean
+  daily_reminder?: boolean
+  weekly_summary?: boolean
+  achievement_notifications?: boolean
+  [key: string]: any
+}
+
+interface AssessmentData {
+  assessment_data?: {
+    questions?: any[]
+    answers?: any[]
+  }
+  results?: any
+  [key: string]: any
+}
+
 const STEPS = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },
   { id: 'categories', title: 'Choose Interests', component: CategorySelectionStep },
@@ -31,51 +63,274 @@ const STEPS = [
   { id: 'completion', title: 'Complete', component: CompletionStep }
 ]
 
-export function OnboardingFlow() {
+export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
-  const [onboardingState, setOnboardingState] = useState<OnboardingState>({})
+  const [onboardingState, setOnboardingState] = useState<OnboardingState>({ userId })
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { user } = useAuth()
-  const { trackAuth, trackCustomEvent } = useAnalytics()
+  const { toast } = useToast()
 
   const currentStep = STEPS[currentStepIndex]
   const progress = ((currentStepIndex + 1) / STEPS.length) * 100
   const StepComponent = currentStep.component
 
+  // Check if user has existing onboarding data
   useEffect(() => {
-    // Track onboarding start
-    trackAuth.onboardingStarted('new', 'onboarding_flow')
-  }, [])
+    const fetchOnboardingState = async () => {
+      if (!userId) return
+
+      try {
+        // Call the get_user_onboarding_progress function
+        const { data, error } = await supabase
+          .from('user_onboarding_state')
+          .select('current_step, is_completed')
+          .eq('user_id', userId)
+          .single()
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching onboarding state:', error)
+          return
+        }
+
+        // If we found onboarding data
+        if (data) {
+          // Find the step index based on the current_step from the database
+          const savedStepIndex = STEPS.findIndex(step => step.id === data.current_step)
+          
+          if (savedStepIndex >= 0) {
+            setCurrentStepIndex(savedStepIndex)
+          }
+
+          // Now fetch additional data for each step
+          await fetchStepData(userId)
+        }
+      } catch (err) {
+        console.error('Error in fetching onboarding state:', err)
+      }
+    }
+
+    fetchOnboardingState()
+  }, [userId])
+
+  // Fetch data for each onboarding step
+  const fetchStepData = async (userId: string) => {
+    const reconstructedState: OnboardingState = {}
+
+    try {
+      // Fetch category preferences
+      const { data: categoryData } = await supabase
+        .from('user_category_preferences')
+        .select('*, categories:category_id(id, name, emoji)')
+        .eq('user_id', userId)
+      
+      if (categoryData && categoryData.length > 0) {
+        reconstructedState.categories = { 
+          categories: categoryData.map(item => ({
+            id: item.category_id,
+            name: item.categories?.name,
+            emoji: item.categories?.emoji,
+            interest_level: item.interest_level,
+            priority_rank: item.priority_rank
+          }))
+        }
+      }
+
+      // Fetch skill preferences
+      const { data: skillData } = await supabase
+        .from('user_skill_preferences')
+        .select('*, skills:skill_id(id, skill_name, category_id)')
+        .eq('user_id', userId)
+      
+      if (skillData && skillData.length > 0) {
+        reconstructedState.skills = { 
+          skills: skillData.map(item => ({
+            id: item.skill_id,
+            skill_name: item.skills?.skill_name,
+            interest_level: item.interest_level,
+            target_mastery_level: item.target_mastery_level,
+            learning_timeline: item.learning_timeline
+          }))
+        }
+      }
+
+      // Fetch platform preferences
+      const { data: preferencesData } = await supabase
+        .from('user_platform_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+      
+      if (preferencesData) {
+        const prefs = preferencesData as UserPlatformPreferences
+        reconstructedState.preferences = {
+          learningStyle: prefs.learning_style || 'mixed',
+          difficulty: prefs.preferred_difficulty || 'adaptive',
+          reminders: prefs.push_notifications || false
+        }
+      }
+
+      // Fetch assessment data
+      const { data: assessmentData } = await supabase
+        .from('user_onboarding_assessment')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('assessment_type', 'initial_skills')
+        .single()
+      
+      if (assessmentData) {
+        const assessment = assessmentData as AssessmentData
+        reconstructedState.assessment = { 
+          results: assessment.results || {},
+          questions: assessment.assessment_data?.questions || [],
+          answers: assessment.assessment_data?.answers || []
+        }
+      }
+
+      // Update the state with all fetched data
+      setOnboardingState({ ...reconstructedState, userId })
+    } catch (err) {
+      console.error('Error fetching step data:', err)
+    }
+  }
 
   const handleStepComplete = async (stepData: any) => {
     setIsLoading(true)
     
     // Update onboarding state
-    setOnboardingState(prev => ({
-      ...prev,
+    const updatedState = {
+      ...onboardingState,
       [currentStep.id]: stepData
-    }))
-
-    // Track step completion
-    trackCustomEvent('onboarding_step_completed', 1, {
-      step: currentStep.id,
-      step_index: currentStepIndex,
-      data: stepData
-    })
-
-    // If this is the last step, complete onboarding
-    if (currentStepIndex === STEPS.length - 1) {
-      await completeOnboarding({
-        ...onboardingState,
-        [currentStep.id]: stepData
-      })
-    } else {
-      // Move to next step
-      setCurrentStepIndex(prev => prev + 1)
     }
     
-    setIsLoading(false)
+    setOnboardingState(updatedState)
+
+    try {
+      // Save step data to database
+      await saveStepData(currentStep.id, stepData)
+
+      // If this is the last step, complete onboarding
+      if (currentStepIndex === STEPS.length - 1) {
+        await completeOnboarding(updatedState)
+      } else {
+        // Move to next step
+        setCurrentStepIndex(prev => prev + 1)
+      }
+    } catch (error) {
+      console.error(`Error saving ${currentStep.id} step data:`, error)
+      toast({
+        title: "Error saving your progress",
+        description: "Please try again or continue without saving.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const saveStepData = async (stepId: string, stepData: any) => {
+    if (!userId) return
+    
+    // Defensive: always provide a valid onboarding_data object
+    const jsonbData: Record<string, any> = stepData && Object.keys(stepData).length > 0 ? { [stepId]: stepData } : { [stepId]: {} }
+
+    // Update onboarding state
+    const { error: stateError } = await supabase
+      .from('user_onboarding_state')
+      .upsert({
+        user_id: userId,
+        current_step: stepId,
+        onboarding_data: jsonbData
+      })
+
+    if (stateError) {
+      console.error('Onboarding state upsert error:', stateError)
+      throw stateError
+    }
+
+    // Handle specific step data that needs to be saved to dedicated tables
+    switch (stepId) {
+      case 'categories':
+        if (stepData.categories && Array.isArray(stepData.categories)) {
+          await saveCategories(stepData.categories)
+        }
+        break
+        
+      case 'skills':
+        if (stepData.skills && Array.isArray(stepData.skills)) {
+          await saveSkills(stepData.skills)
+        }
+        break
+        
+      case 'preferences':
+        await savePreferences(stepData)
+        break
+        
+      case 'assessment':
+        if (stepData.questions && stepData.answers && stepData.results) {
+          await saveAssessment(stepData)
+        }
+        break
+    }
+  }
+
+  const saveCategories = async (categories: Array<{ id: string; interest_level: number; priority_rank?: number }>) => {
+    // Insert or update user category preferences
+    for (const category of categories) {
+      await supabase
+        .from('user_category_preferences')
+        .upsert({
+          user_id: userId,
+          category_id: category.id,
+          interest_level: category.interest_level,
+          priority_rank: category.priority_rank,
+          selected_during_onboarding: true
+        })
+    }
+  }
+
+  const saveSkills = async (skills: Array<{ id: string; interest_level: number; target_mastery_level?: string; learning_timeline?: string }>) => {
+    // Insert or update user skill preferences
+    for (const skill of skills) {
+      await supabase
+        .from('user_skill_preferences')
+        .upsert({
+          user_id: userId,
+          skill_id: skill.id,
+          interest_level: skill.interest_level,
+          target_mastery_level: skill.target_mastery_level || 'intermediate',
+          learning_timeline: skill.learning_timeline || 'flexible',
+          selected_during_onboarding: true
+        })
+    }
+  }
+
+  const savePreferences = async (preferences: any) => {
+    // Insert or update user platform preferences
+    await supabase
+      .from('user_platform_preferences')
+      .upsert({
+        user_id: userId,
+        learning_style: preferences.learningStyle || 'mixed',
+        preferred_difficulty: preferences.difficulty || 'adaptive',
+        push_notifications: preferences.reminders || false,
+        // Add other preference fields as needed
+      })
+  }
+
+  const saveAssessment = async (assessmentData: any) => {
+    // Insert or update user assessment data
+    await supabase
+      .from('user_onboarding_assessment')
+      .upsert({
+        user_id: userId,
+        assessment_type: 'initial_skills',
+        assessment_data: {
+          questions: assessmentData.questions,
+          answers: assessmentData.answers
+        },
+        results: assessmentData.results,
+        score: assessmentData.score || 0
+      })
   }
 
   const handleNext = () => {
@@ -90,32 +345,79 @@ export function OnboardingFlow() {
     }
   }
 
-  const handleSkip = (reason: string) => {
-    trackCustomEvent('onboarding_step_skipped', 1, {
-      step: currentStep.id,
-      step_index: currentStepIndex,
-      reason
-    })
-    
-    // Skip to next step
-    handleNext()
+  const handleSkip = async (reason: string) => {
+    try {
+      // Record skip reason in database
+      if (userId) {
+        await supabase
+          .from('user_onboarding_state')
+          .upsert({
+            user_id: userId,
+            skip_reason: reason,
+            current_step: currentStep.id,
+            is_completed: reason === 'skip_all'
+          })
+      }
+      
+      // If it's the last step or the user wants to skip entirely
+      if (currentStepIndex === STEPS.length - 1 || reason === 'skip_all') {
+        if (onSkip) {
+          onSkip(reason);
+        } else {
+          // Default behavior - redirect to dashboard
+          toast({
+            title: "Setup skipped",
+            description: "You can complete setup anytime from your dashboard.",
+            variant: "default",
+          })
+          router.push('/dashboard')
+        }
+      } else {
+        // Skip to next step
+        handleNext()
+      }
+    } catch (error) {
+      console.error('Error recording skip:', error)
+      // Still skip even if there was an error recording
+      handleNext()
+    }
   }
 
   const completeOnboarding = async (finalState: OnboardingState) => {
     try {
-      // Track completion
-      const totalSteps = STEPS.length
-      const completionTime = Math.round((Date.now() - (finalState.welcome?.startTime || Date.now())) / 1000)
-      trackAuth.onboardingCompleted(completionTime, totalSteps, [])
+      // Mark onboarding as complete in database
+      await supabase
+        .from('user_onboarding_state')
+        .upsert({
+          user_id: userId,
+          current_step: 'completion',
+          is_completed: true,
+          completed_at: new Date().toISOString()
+        })
 
-      // TODO: Save onboarding data to database via API
-      // await saveOnboardingData(finalState)
+      // Show success message
+      toast({
+        title: "Setup complete!",
+        description: "Welcome to your personalized CivicSense experience.",
+        variant: "default",
+      })
 
-      // Redirect to dashboard
-      router.push('/dashboard')
+      // If external completion handler is provided, call it
+      if (onComplete) {
+        onComplete()
+      } else {
+        // Default behavior - redirect to dashboard
+        router.push('/dashboard')
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error)
-      // Handle error appropriately
+      
+      // Still call onComplete even if there was an error saving
+      if (onComplete) {
+        onComplete()
+      } else {
+        router.push('/dashboard')
+      }
     }
   }
 
@@ -196,6 +498,8 @@ export function OnboardingFlow() {
               onBack={handleBack}
               onSkip={handleSkip}
               onboardingState={onboardingState}
+              initialData={onboardingState[currentStep.id]}
+              userId={userId}
             />
           )}
         </div>
@@ -214,9 +518,13 @@ export function OnboardingFlow() {
               {currentStepIndex === 5 && 'Your personalized setup is complete'}
             </div>
             
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
-              {Math.round(progress)}% complete
-            </div>
+            <Button
+              variant="link"
+              onClick={() => handleSkip('skip_all')}
+              className="text-sm text-slate-500 dark:text-slate-500"
+            >
+              Skip setup
+            </Button>
           </div>
         </div>
       </div>

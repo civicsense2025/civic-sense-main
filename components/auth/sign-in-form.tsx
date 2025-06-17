@@ -1,17 +1,14 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { GoogleOAuthButton } from "./google-oauth-button"
+import { AlertCircle, Lock, Mail } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useAnalytics } from "@/utils/analytics"
+import { GoogleOAuthButton } from "./google-oauth-button"
 
 interface SignInFormProps {
   onSuccess: () => void
@@ -24,7 +21,6 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
-  const { trackAuth } = useAnalytics()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,23 +28,17 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       })
 
       if (error) {
         setError(error.message)
-      } else {
-        // Track successful login
-        trackAuth.userLogin({
-          login_method: 'email',
-          source: 'direct'
-        })
-        
+      } else if (data?.user) {
         toast({
-          title: "Welcome back! 👋",
-          description: "You've successfully signed in to CivicSense.",
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
           variant: "default",
         })
         onSuccess()
@@ -61,42 +51,13 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
   }
 
   const handleGoogleSuccess = () => {
-    // Track successful Google login
-    trackAuth.userLogin({
-      login_method: 'google',
-      source: 'direct'
-    })
-    
-    toast({
-      title: "Welcome! 🎉",
-      description: "You've successfully signed in with Google.",
-      variant: "default",
-    })
+    // The actual auth happens in GoogleOAuthButton
+    // This is just for handling the callback
     onSuccess()
   }
 
   return (
-    <div className="space-y-8">
-      {/* Google Sign In */}
-      <GoogleOAuthButton 
-        onSuccess={handleGoogleSuccess}
-        onError={setError}
-        variant="sign-in"
-      />
-
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-200 dark:border-slate-700" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white dark:bg-slate-950 px-4 text-slate-600 dark:text-slate-400 font-light">
-            or sign in with email
-          </span>
-        </div>
-      </div>
-
-      {/* Error Alert */}
+    <div className="space-y-6">
       {error && (
         <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
           <AlertCircle className="h-4 w-4" />
@@ -104,57 +65,70 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
         </Alert>
       )}
 
-      {/* Email Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="signin-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
           <Input
-            id="signin-email"
+            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-            placeholder="your@email.com"
+            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+            placeholder="you@example.com"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signin-password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Password
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Password
+            </Label>
+            <Button 
+              type="button" 
+              variant="link" 
+              onClick={onResetPassword}
+              className="text-xs text-blue-600 dark:text-blue-400 p-0 h-auto font-normal"
+            >
+              Forgot password?
+            </Button>
+          </div>
           <Input
-            id="signin-password"
+            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-            placeholder="••••••••"
+            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
           />
         </div>
 
         <Button
           type="submit"
-          disabled={isLoading}
-          className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200"
+          disabled={isLoading || !email || !password}
+          className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200 mt-2"
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          <Lock className="h-4 w-4 mr-2" />
+          {isLoading ? "Signing in..." : "Sign in with email"}
         </Button>
       </form>
 
-      {/* Forgot password link */}
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={onResetPassword}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
-        >
-          Forgot your password?
-        </button>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white dark:bg-slate-950 px-2 text-slate-500 dark:text-slate-400">Or continue with</span>
+        </div>
       </div>
+
+      <GoogleOAuthButton 
+        onSuccess={handleGoogleSuccess}
+        onError={setError}
+        variant="sign-in"
+      />
     </div>
   )
 }

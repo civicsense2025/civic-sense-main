@@ -131,7 +131,7 @@ export const topicOperations = {
   },
 
   // Convert DB topic to app format
-  toAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
+  toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
     return {
       topic_id: dbTopic.topic_id,
       topic_title: dbTopic.topic_title,
@@ -278,7 +278,7 @@ export const questionOperations = {
   },
 
   // Convert DB question to app format
-  toAppFormat(dbQuestion: DbQuestion): QuizQuestion {
+  toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
     return {
       topic_id: dbQuestion.topic_id,
       question_number: dbQuestion.question_number,
@@ -1041,5 +1041,38 @@ export const skillOperations = {
     }
     
     return userSkills
+  }
+}
+
+// Add as a top-level export
+export function toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
+  return {
+    topic_id: dbTopic.topic_id,
+    topic_title: dbTopic.topic_title,
+    description: dbTopic.description,
+    why_this_matters: dbTopic.why_this_matters,
+    emoji: dbTopic.emoji,
+    date: dbTopic.date || '',
+    dayOfWeek: dbTopic.day_of_week || '',
+    categories: Array.isArray(dbTopic.categories) ? dbTopic.categories as string[] : [],
+  }
+}
+
+export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
+  return {
+    topic_id: dbQuestion.topic_id,
+    question_number: dbQuestion.question_number,
+    question_type: dbQuestion.question_type as QuestionType,
+    category: dbQuestion.category,
+    question: dbQuestion.question,
+    option_a: dbQuestion.option_a ?? undefined,
+    option_b: dbQuestion.option_b ?? undefined,
+    option_c: dbQuestion.option_c ?? undefined,
+    option_d: dbQuestion.option_d ?? undefined,
+    correct_answer: dbQuestion.correct_answer,
+    hint: dbQuestion.hint,
+    explanation: dbQuestion.explanation,
+    tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
+    sources: Array.isArray(dbQuestion.sources) ? dbQuestion.sources as Array<{ name: string; url: string }> : [],
   }
 }

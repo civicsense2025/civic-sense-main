@@ -9,6 +9,119 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      assessment_analytics: {
+        Row: {
+          event_type: string | null
+          final_score: number | null
+          metadata: Json | null
+          session_id: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          event_type?: string | null
+          final_score?: number | null
+          metadata?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          event_type?: string | null
+          final_score?: number | null
+          metadata?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      assessment_questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          created_at: string | null
+          difficulty: number
+          explanation: string | null
+          friendly_explanation: string | null
+          id: string
+          is_active: boolean | null
+          options: Json
+          question: string
+          skill_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          correct_answer: string
+          created_at?: string | null
+          difficulty: number
+          explanation?: string | null
+          friendly_explanation?: string | null
+          id?: string
+          is_active?: boolean | null
+          options: Json
+          question: string
+          skill_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          created_at?: string | null
+          difficulty?: number
+          explanation?: string | null
+          friendly_explanation?: string | null
+          id?: string
+          is_active?: boolean | null
+          options?: Json
+          question?: string
+          skill_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_scoring: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          recommended_content: string[] | null
+          score_range_max: number
+          score_range_min: number
+          skill_level: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          recommended_content?: string[] | null
+          score_range_max: number
+          score_range_min: number
+          skill_level: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          recommended_content?: string[] | null
+          score_range_max?: number
+          score_range_min?: number
+          skill_level?: string
+        }
+        Relationships: []
+      }
       badge_requirements: {
         Row: {
           badge_id: string | null
@@ -246,6 +359,336 @@ export type Database = {
           },
         ]
       }
+      figure_events: {
+        Row: {
+          created_at: string | null
+          event_date: string
+          event_description: string | null
+          event_title: string
+          event_type: string
+          figure_id: string | null
+          id: string
+          media_coverage_scale: string | null
+          policy_areas: string[] | null
+          quiz_potential: number | null
+          related_figures: string[] | null
+          significance_level: number | null
+          sources: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_date: string
+          event_description?: string | null
+          event_title: string
+          event_type: string
+          figure_id?: string | null
+          id?: string
+          media_coverage_scale?: string | null
+          policy_areas?: string[] | null
+          quiz_potential?: number | null
+          related_figures?: string[] | null
+          significance_level?: number | null
+          sources?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          event_date?: string
+          event_description?: string | null
+          event_title?: string
+          event_type?: string
+          figure_id?: string | null
+          id?: string
+          media_coverage_scale?: string | null
+          policy_areas?: string[] | null
+          quiz_potential?: number | null
+          related_figures?: string[] | null
+          significance_level?: number | null
+          sources?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figure_events_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      figure_organizations: {
+        Row: {
+          appointment_announcement_url: string | null
+          compensation_type: string | null
+          created_at: string | null
+          end_date: string | null
+          figure_id: string | null
+          id: string
+          influence_within_org: number | null
+          is_active: boolean | null
+          organization_id: string | null
+          public_visibility: string | null
+          role_description: string | null
+          role_title: string | null
+          role_type: string | null
+          sources: Json | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_announcement_url?: string | null
+          compensation_type?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          figure_id?: string | null
+          id?: string
+          influence_within_org?: number | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          public_visibility?: string | null
+          role_description?: string | null
+          role_title?: string | null
+          role_type?: string | null
+          sources?: Json | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_announcement_url?: string | null
+          compensation_type?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          figure_id?: string | null
+          id?: string
+          influence_within_org?: number | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          public_visibility?: string | null
+          role_description?: string | null
+          role_title?: string | null
+          role_type?: string | null
+          sources?: Json | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figure_organizations_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      figure_policy_positions: {
+        Row: {
+          certainty_level: string | null
+          consistency_score: number | null
+          created_at: string | null
+          figure_id: string | null
+          id: string
+          policy_area: string
+          position_date: string | null
+          position_description: string
+          public_statement_url: string | null
+          sources: Json | null
+          specific_policy: string | null
+          updated_at: string | null
+          voting_record_evidence: Json | null
+        }
+        Insert: {
+          certainty_level?: string | null
+          consistency_score?: number | null
+          created_at?: string | null
+          figure_id?: string | null
+          id?: string
+          policy_area: string
+          position_date?: string | null
+          position_description: string
+          public_statement_url?: string | null
+          sources?: Json | null
+          specific_policy?: string | null
+          updated_at?: string | null
+          voting_record_evidence?: Json | null
+        }
+        Update: {
+          certainty_level?: string | null
+          consistency_score?: number | null
+          created_at?: string | null
+          figure_id?: string | null
+          id?: string
+          policy_area?: string
+          position_date?: string | null
+          position_description?: string
+          public_statement_url?: string | null
+          sources?: Json | null
+          specific_policy?: string | null
+          updated_at?: string | null
+          voting_record_evidence?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figure_policy_positions_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      figure_quiz_topics: {
+        Row: {
+          content_themes: string[] | null
+          created_at: string | null
+          difficulty_distribution: Json | null
+          featured_figures: string[] | null
+          focus_type: string
+          id: string
+          network_depth: number | null
+          performance_metrics: Json | null
+          primary_figure_id: string | null
+          topic_id: string | null
+        }
+        Insert: {
+          content_themes?: string[] | null
+          created_at?: string | null
+          difficulty_distribution?: Json | null
+          featured_figures?: string[] | null
+          focus_type: string
+          id?: string
+          network_depth?: number | null
+          performance_metrics?: Json | null
+          primary_figure_id?: string | null
+          topic_id?: string | null
+        }
+        Update: {
+          content_themes?: string[] | null
+          created_at?: string | null
+          difficulty_distribution?: Json | null
+          featured_figures?: string[] | null
+          focus_type?: string
+          id?: string
+          network_depth?: number | null
+          performance_metrics?: Json | null
+          primary_figure_id?: string | null
+          topic_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figure_quiz_topics_primary_figure_id_fkey"
+            columns: ["primary_figure_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      figure_relationships: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          evidence_sources: Json | null
+          figure_a_id: string | null
+          figure_b_id: string | null
+          financial_connections: Json | null
+          id: string
+          is_active: boolean | null
+          is_public: boolean | null
+          key_interactions: Json | null
+          policy_alignments: string[] | null
+          relationship_direction: string | null
+          relationship_end_date: string | null
+          relationship_start_date: string | null
+          relationship_strength: number | null
+          relationship_type: string
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          evidence_sources?: Json | null
+          figure_a_id?: string | null
+          figure_b_id?: string | null
+          financial_connections?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          key_interactions?: Json | null
+          policy_alignments?: string[] | null
+          relationship_direction?: string | null
+          relationship_end_date?: string | null
+          relationship_start_date?: string | null
+          relationship_strength?: number | null
+          relationship_type: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          evidence_sources?: Json | null
+          figure_a_id?: string | null
+          figure_b_id?: string | null
+          financial_connections?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_public?: boolean | null
+          key_interactions?: Json | null
+          policy_alignments?: string[] | null
+          relationship_direction?: string | null
+          relationship_end_date?: string | null
+          relationship_start_date?: string | null
+          relationship_strength?: number | null
+          relationship_type?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "figure_relationships_figure_a_id_fkey"
+            columns: ["figure_a_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_relationships_figure_b_id_fkey"
+            columns: ["figure_b_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glossary_terms: {
         Row: {
           category: string | null
@@ -348,6 +791,163 @@ export type Database = {
         }
         Relationships: []
       }
+      key_policy_positions: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean | null
+          spectrum: string
+          stance_label: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: never
+          id?: string
+          is_active?: boolean | null
+          spectrum: string
+          stance_label: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: never
+          id?: string
+          is_active?: boolean | null
+          spectrum?: string
+          stance_label?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_policy_positions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_objectives: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          mastery_level_required: string | null
+          objective_text: string
+          objective_type: string
+          skill_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          mastery_level_required?: string | null
+          objective_text: string
+          objective_type?: string
+          skill_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          mastery_level_required?: string | null
+          objective_text?: string
+          objective_type?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_objectives_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          annual_budget: number | null
+          civicsense_priority: number | null
+          content_review_status: string | null
+          created_at: string | null
+          description: string | null
+          employee_count: number | null
+          founding_date: string | null
+          headquarters_location: string | null
+          id: string
+          influence_level: number | null
+          is_active: boolean | null
+          key_focus_areas: string[] | null
+          media_mentions_count: number | null
+          name: string
+          organization_type: string
+          policy_impact_score: number | null
+          political_leaning: string | null
+          slug: string
+          social_media_handles: Json | null
+          sources: Json | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          annual_budget?: number | null
+          civicsense_priority?: number | null
+          content_review_status?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: number | null
+          founding_date?: string | null
+          headquarters_location?: string | null
+          id?: string
+          influence_level?: number | null
+          is_active?: boolean | null
+          key_focus_areas?: string[] | null
+          media_mentions_count?: number | null
+          name: string
+          organization_type: string
+          policy_impact_score?: number | null
+          political_leaning?: string | null
+          slug: string
+          social_media_handles?: Json | null
+          sources?: Json | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          annual_budget?: number | null
+          civicsense_priority?: number | null
+          content_review_status?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: number | null
+          founding_date?: string | null
+          headquarters_location?: string | null
+          id?: string
+          influence_level?: number | null
+          is_active?: boolean | null
+          key_focus_areas?: string[] | null
+          media_mentions_count?: number | null
+          name?: string
+          organization_type?: string
+          policy_impact_score?: number | null
+          political_leaning?: string | null
+          slug?: string
+          social_media_handles?: Json | null
+          sources?: Json | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       pathway_skills: {
         Row: {
           created_at: string | null
@@ -417,6 +1017,159 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      public_figures: {
+        Row: {
+          bills_sponsored: number | null
+          birth_state: string | null
+          birth_year: number | null
+          book_publications: string[] | null
+          career_highlights: string[] | null
+          civicsense_priority: number | null
+          committee_memberships: string[] | null
+          content_difficulty_level: number | null
+          content_review_status: string | null
+          created_at: string | null
+          current_positions: string[] | null
+          current_residence_state: string | null
+          display_name: string | null
+          education_background: string | null
+          fact_check_status: string | null
+          financial_interests: string[] | null
+          full_name: string
+          id: string
+          influence_level: number | null
+          key_policies_supported: string[] | null
+          key_positions: string[] | null
+          key_votes: Json | null
+          last_quiz_topic_generated: string | null
+          major_speeches: Json | null
+          media_appearances_count: number | null
+          net_worth_estimate: number | null
+          notable_controversies: string[] | null
+          party_affiliation: string | null
+          policy_flip_flops: Json | null
+          primary_role_category: string | null
+          quotable_statements: string[] | null
+          region: string | null
+          scandals_timeline: Json | null
+          slug: string
+          social_media_handles: Json | null
+          sources: Json | null
+          trump_relationship_type: string | null
+          updated_at: string | null
+          voting_record_url: string | null
+        }
+        Insert: {
+          bills_sponsored?: number | null
+          birth_state?: string | null
+          birth_year?: number | null
+          book_publications?: string[] | null
+          career_highlights?: string[] | null
+          civicsense_priority?: number | null
+          committee_memberships?: string[] | null
+          content_difficulty_level?: number | null
+          content_review_status?: string | null
+          created_at?: string | null
+          current_positions?: string[] | null
+          current_residence_state?: string | null
+          display_name?: string | null
+          education_background?: string | null
+          fact_check_status?: string | null
+          financial_interests?: string[] | null
+          full_name: string
+          id?: string
+          influence_level?: number | null
+          key_policies_supported?: string[] | null
+          key_positions?: string[] | null
+          key_votes?: Json | null
+          last_quiz_topic_generated?: string | null
+          major_speeches?: Json | null
+          media_appearances_count?: number | null
+          net_worth_estimate?: number | null
+          notable_controversies?: string[] | null
+          party_affiliation?: string | null
+          policy_flip_flops?: Json | null
+          primary_role_category?: string | null
+          quotable_statements?: string[] | null
+          region?: string | null
+          scandals_timeline?: Json | null
+          slug: string
+          social_media_handles?: Json | null
+          sources?: Json | null
+          trump_relationship_type?: string | null
+          updated_at?: string | null
+          voting_record_url?: string | null
+        }
+        Update: {
+          bills_sponsored?: number | null
+          birth_state?: string | null
+          birth_year?: number | null
+          book_publications?: string[] | null
+          career_highlights?: string[] | null
+          civicsense_priority?: number | null
+          committee_memberships?: string[] | null
+          content_difficulty_level?: number | null
+          content_review_status?: string | null
+          created_at?: string | null
+          current_positions?: string[] | null
+          current_residence_state?: string | null
+          display_name?: string | null
+          education_background?: string | null
+          fact_check_status?: string | null
+          financial_interests?: string[] | null
+          full_name?: string
+          id?: string
+          influence_level?: number | null
+          key_policies_supported?: string[] | null
+          key_positions?: string[] | null
+          key_votes?: Json | null
+          last_quiz_topic_generated?: string | null
+          major_speeches?: Json | null
+          media_appearances_count?: number | null
+          net_worth_estimate?: number | null
+          notable_controversies?: string[] | null
+          party_affiliation?: string | null
+          policy_flip_flops?: Json | null
+          primary_role_category?: string | null
+          quotable_statements?: string[] | null
+          region?: string | null
+          scandals_timeline?: Json | null
+          slug?: string
+          social_media_handles?: Json | null
+          sources?: Json | null
+          trump_relationship_type?: string | null
+          updated_at?: string | null
+          voting_record_url?: string | null
+        }
+        Relationships: []
+      }
+      question_analytics: {
+        Row: {
+          is_correct: boolean | null
+          question_id: string | null
+          selected_answer: string | null
+          time_spent_seconds: number | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          is_correct?: boolean | null
+          question_id?: string | null
+          selected_answer?: string | null
+          time_spent_seconds?: number | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          is_correct?: boolean | null
+          question_id?: string | null
+          selected_answer?: string | null
+          time_spent_seconds?: number | null
+          timestamp?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -640,6 +1393,7 @@ export type Database = {
           emoji: string
           id: string
           is_active: boolean | null
+          is_breaking: boolean | null
           topic_id: string
           topic_title: string
           updated_at: string | null
@@ -654,6 +1408,7 @@ export type Database = {
           emoji: string
           id?: string
           is_active?: boolean | null
+          is_breaking?: boolean | null
           topic_id: string
           topic_title: string
           updated_at?: string | null
@@ -668,6 +1423,7 @@ export type Database = {
           emoji?: string
           id?: string
           is_active?: boolean | null
+          is_breaking?: boolean | null
           topic_id?: string
           topic_title?: string
           updated_at?: string | null
@@ -928,6 +1684,39 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_categories: {
+        Row: {
+          category_name: string
+          created_at: string
+          description: string | null
+          display_name: string
+          display_order: number | null
+          emoji: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       skill_learning_objectives: {
         Row: {
           created_at: string | null
@@ -1132,6 +1921,51 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_relationships: {
+        Row: {
+          created_at: string
+          id: string
+          is_strict_requirement: boolean | null
+          relationship_type: string
+          required_mastery_level: string | null
+          source_skill_id: string
+          target_skill_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_strict_requirement?: boolean | null
+          relationship_type?: string
+          required_mastery_level?: string | null
+          source_skill_id: string
+          target_skill_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_strict_requirement?: boolean | null
+          relationship_type?: string
+          required_mastery_level?: string | null
+          source_skill_id?: string
+          target_skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_relationships_source_skill_id_fkey"
+            columns: ["source_skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_relationships_target_skill_id_fkey"
+            columns: ["target_skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skills: {
         Row: {
           category_id: string
@@ -1333,6 +2167,50 @@ export type Database = {
         }
         Relationships: []
       }
+      spaced_repetition_schedule: {
+        Row: {
+          created_at: string
+          easiness_factor: number | null
+          id: string
+          interval_days: number | null
+          next_review_date: string
+          repetition_count: number | null
+          skill_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          easiness_factor?: number | null
+          id?: string
+          interval_days?: number | null
+          next_review_date: string
+          repetition_count?: number | null
+          skill_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          easiness_factor?: number | null
+          id?: string
+          interval_days?: number | null
+          next_review_date?: string
+          repetition_count?: number | null
+          skill_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spaced_repetition_schedule_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_tier_limits: {
         Row: {
           advanced_analytics: boolean | null
@@ -1429,6 +2307,42 @@ export type Database = {
           started_at?: string
           user_id?: string
           uses_remaining?: number | null
+        }
+        Relationships: []
+      }
+      user_assessments: {
+        Row: {
+          answers: Json | null
+          assessment_type: string
+          category_breakdown: Json | null
+          completed_at: string | null
+          id: string
+          level: string
+          metadata: Json | null
+          score: number
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          assessment_type?: string
+          category_breakdown?: Json | null
+          completed_at?: string | null
+          id?: string
+          level: string
+          metadata?: Json | null
+          score: number
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          assessment_type?: string
+          category_breakdown?: Json | null
+          completed_at?: string | null
+          id?: string
+          level?: string
+          metadata?: Json | null
+          score?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3080,6 +3994,22 @@ export type Database = {
           priority_score: number
         }[]
       }
+      get_skills_needing_review: {
+        Args: { p_user_id: string; p_limit?: number }
+        Returns: {
+          skill_id: string
+          skill_name: string
+          skill_slug: string
+          category_name: string
+          description: string
+          difficulty_level: number
+          is_core_skill: boolean
+          mastery_level: string
+          days_since_practice: number
+          needs_practice: boolean
+          priority_score: number
+        }[]
+      }
       get_user_boost_summary: {
         Args: { target_user_id: string }
         Returns: {
@@ -3296,36 +4226,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-// Convenient type exports for easier usage
-export type DbQuestionTopic = Tables<'question_topics'>
-export type DbQuestion = Tables<'questions'>
-export type DbQuestionFeedback = Tables<'question_feedback'>
-export type DbUserQuizAttempt = Tables<'user_quiz_attempts'>
-export type DbUserProgress = Tables<'user_progress'>
-export type DbUserQuestionResponse = Tables<'user_question_responses'>
-export type DbProfile = Tables<'profiles'>
-export type DbCategory = Tables<'categories'>
-export type DbEvent = Tables<'events'>
-
-// Insert types
-export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
-export type DbQuestionInsert = TablesInsert<'questions'>
-export type DbQuestionFeedbackInsert = TablesInsert<'question_feedback'>
-export type DbUserQuizAttemptInsert = TablesInsert<'user_quiz_attempts'>
-export type DbUserProgressInsert = TablesInsert<'user_progress'>
-export type DbUserQuestionResponseInsert = TablesInsert<'user_question_responses'>
-export type DbProfileInsert = TablesInsert<'profiles'>
-export type DbCategoryInsert = TablesInsert<'categories'>
-export type DbEventInsert = TablesInsert<'events'>
-
-// Update types
-export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
-export type DbQuestionUpdate = TablesUpdate<'questions'>
-export type DbQuestionFeedbackUpdate = TablesUpdate<'question_feedback'>
-export type DbUserQuizAttemptUpdate = TablesUpdate<'user_quiz_attempts'>
-export type DbUserProgressUpdate = TablesUpdate<'user_progress'>
-export type DbUserQuestionResponseUpdate = TablesUpdate<'user_question_responses'>
-export type DbProfileUpdate = TablesUpdate<'profiles'>
-export type DbCategoryUpdate = TablesUpdate<'categories'>
-export type DbEventUpdate = TablesUpdate<'events'>

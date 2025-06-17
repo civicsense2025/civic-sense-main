@@ -22,9 +22,10 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
-import { quizDatabase } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from "@/hooks/useGamification"
+import { usePremium } from "@/hooks/usePremium"
 import type { BoostEffects } from "@/lib/game-boosts"
 import { BoostManager } from "@/lib/game-boosts"
 import { enhancedProgressOperations, updateEnhancedProgress } from "@/lib/enhanced-gamification"
@@ -48,18 +49,22 @@ interface QuizEngineProps {
   onTopicChange?: (topicId: string) => void
 }
 
-interface UserAnswer {
+interface EnhancedUserAnswer {
   questionId: number
   answer: string
   isCorrect: boolean
   timeSpent: number
+  hintUsed?: boolean
+  boostUsed?: string | null
+  difficulty?: 'easy' | 'medium' | 'hard'
+  category?: string
+  attemptNumber?: number
 }
 
-// Enhanced Fisher-Yates shuffle with crypto randomness for better uniqueness
+// Enhanced Fisher-Yates shuffle with crypto randomness
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
   
-  // Use crypto.getRandomValues for better randomness if available
   const getRandomValue = () => {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       const randomArray = new Uint32Array(1)
@@ -77,19 +82,18 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-// Enhanced validation and deduplication with better unique key generation
+// Enhanced validation and deduplication
 function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestion[] {
   const seen = new Set<string>()
   const uniqueQuestions: QuizQuestion[] = []
   
   for (const question of questions) {
-    // Create a more robust unique key using multiple question properties
     const questionContent = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
     const questionKey = [
       question.topic_id,
       question.question_number,
       question.question_type,
-      questionContent.slice(0, 100), // Use more characters for uniqueness
+      questionContent.slice(0, 100),
       question.correct_answer,
       question.option_a || '',
       question.option_b || ''
@@ -102,15 +106,13 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
       console.warn(`Duplicate question detected and removed:`, {
         topic_id: question.topic_id,
         question_number: question.question_number,
-        question_preview: question.question.slice(0, 50) + '...',
-        question_type: question.question_type
+        question_preview: question.question.slice(0, 50) + '...'
       })
     }
   }
   
   console.log(`Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
   
-  // Additional validation to ensure we have truly unique content
   const contentSeen = new Set<string>()
   const finalQuestions = uniqueQuestions.filter(question => {
     const contentKey = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
@@ -126,7 +128,7 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
   return finalQuestions
 }
 
-// Memoized components to prevent unnecessary re-renders
+// Memoized components
 const MemoizedQuestionDisplay = memo(({ 
   question, 
   showHint 
@@ -139,7 +141,6 @@ const MemoizedQuestionDisplay = memo(({
       <GlossaryLinkText text={question.question} />
     </h1>
     
-    {/* Hint - clean and minimal with animation */}
     {showHint && (
       <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
@@ -154,81 +155,6 @@ const MemoizedQuestionDisplay = memo(({
 
 MemoizedQuestionDisplay.displayName = 'MemoizedQuestionDisplay'
 
-// Memoized boost buttons
-const MemoizedBoostButtons = memo(({
-  boostEffects,
-  timeFrozen,
-  answerRevealUsed,
-  hasUsedSecondChance,
-  isAnswerSubmitted,
-  questionType,
-  onUseTimeFreeze,
-  onUseAnswerReveal,
-  onUseSecondChance
-}: {
-  boostEffects: BoostEffects
-  timeFrozen: boolean
-  answerRevealUsed: boolean
-  hasUsedSecondChance: boolean
-  isAnswerSubmitted: boolean
-  questionType: string
-  onUseTimeFreeze: () => void
-  onUseAnswerReveal: () => void
-  onUseSecondChance: () => void
-}) => {
-  if (!boostEffects.timeFreezeAvailable && 
-      !boostEffects.answerRevealAvailable && 
-      !boostEffects.secondChanceAvailable) {
-    return null
-  }
-
-  return (
-    <div className="flex items-center justify-center gap-3 animate-in fade-in duration-300">
-      {boostEffects.timeFreezeAvailable && !timeFrozen && (
-        <Button 
-          onClick={onUseTimeFreeze}
-          variant="outline"
-          size="sm"
-          className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all hover:scale-105"
-        >
-          <Snowflake className="h-4 w-4 mr-1" />
-          Freeze Time
-        </Button>
-      )}
-      
-      {boostEffects.answerRevealAvailable && 
-       !answerRevealUsed && 
-       questionType === 'multiple_choice' && (
-        <Button 
-          onClick={onUseAnswerReveal}
-          variant="outline"
-          size="sm"
-          className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all hover:scale-105"
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          Reveal Answer
-        </Button>
-      )}
-      
-      {boostEffects.secondChanceAvailable && 
-       !hasUsedSecondChance && 
-       isAnswerSubmitted && (
-        <Button 
-          onClick={onUseSecondChance}
-          variant="outline"
-          size="sm"
-          className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all hover:scale-105"
-        >
-          <RotateCcw className="h-4 w-4 mr-1" />
-          Second Chance
-        </Button>
-      )}
-    </div>
-  )
-})
-
-MemoizedBoostButtons.displayName = 'MemoizedBoostButtons'
-
 export function QuizEngine({ 
   questions, 
   topicId, 
@@ -238,6 +164,7 @@ export function QuizEngine({
   onTopicChange 
 }: QuizEngineProps) {
   const { user } = useAuth()
+  const { hasFeatureAccess, isPremium, isPro } = usePremium()
   
   // Analytics integration
   const { trackQuiz, trackGameification, trackEngagement } = useAnalytics()
@@ -251,41 +178,23 @@ export function QuizEngine({
   // Topic navigation integration
   const topicNavigation = useQuizNavigation(availableTopics, topicId)
   
-  // Navigation handlers
-  const handleTopicSelect = useCallback((selectedTopicId: string) => {
-    if (onTopicChange && selectedTopicId !== topicId) {
-      onTopicChange(selectedTopicId)
-    }
-  }, [onTopicChange, topicId])
-  
-  const handleTopicNavigate = useCallback((direction: 'prev' | 'next') => {
-    const newTopicId = topicNavigation.navigateToTopic(direction)
-    if (newTopicId && onTopicChange) {
-      onTopicChange(newTopicId)
-    }
-  }, [topicNavigation, onTopicChange])
-  
   // Enhanced question randomization with session uniqueness
   const randomizedQuestions = useMemo(() => {
-    console.log(`=== QUIZ ENGINE QUESTION PROCESSING ===`)
+    console.log(`=== ENHANCED QUIZ ENGINE PROCESSING ===`)
     console.log(`Input questions for topic ${topicId}:`, questions.length)
     
-    // Handle edge case of no questions
     if (!questions || questions.length === 0) {
       console.error(`No questions provided for topic ${topicId}`)
       return []
     }
     
-    // First, validate and deduplicate questions with enhanced logic
     const validatedQuestions = validateAndDeduplicateQuestions(questions)
     
-    // Handle edge case where all questions were duplicates
     if (validatedQuestions.length === 0) {
       console.error(`All questions were duplicates or invalid for topic ${topicId}`)
       return []
     }
     
-    // Add session uniqueness by incorporating timestamp and user ID
     const sessionSeed = `${Date.now()}-${user?.id || 'anonymous'}-${topicId}`
     console.log(`Session seed for randomization: ${sessionSeed}`)
     
@@ -298,9 +207,8 @@ export function QuizEngine({
     console.log(`Final randomized questions:`, shuffled.length)
     console.log(`Question numbers:`, shuffled.map(q => q.question_number))
     console.log(`Question types:`, shuffled.map(q => q.question_type))
-    console.log(`Question previews:`, shuffled.map(q => q.question.slice(0, 30) + '...'))
     
-    // Validate that each question has required fields
+    // Validate final questions
     const validQuestions = shuffled.filter(q => {
       const isValid = q.question && q.question_type && q.correct_answer
       if (!isValid) {
@@ -317,7 +225,7 @@ export function QuizEngine({
     
     console.log(`Valid questions after filtering: ${validQuestions.length}`)
     return validQuestions
-  }, [questions, topicId, user?.id]) // Added user.id to dependencies for session uniqueness
+  }, [questions, topicId, user?.id])
 
   // Handle case where no valid questions are available
   if (randomizedQuestions.length === 0) {
@@ -336,8 +244,9 @@ export function QuizEngine({
     )
   }
   
+  // State management
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
+  const [userAnswers, setUserAnswers] = useState<EnhancedUserAnswer[]>([])
   const [showResults, setShowResults] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
@@ -347,6 +256,15 @@ export function QuizEngine({
   const [streak, setStreak] = useState(0)
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
+  
+  // Enhanced analytics tracking
+  const [sessionAnalytics, setSessionAnalytics] = useState({
+    hintsUsed: 0,
+    boostsUsed: [] as string[],
+    categoryPerformance: {} as Record<string, { correct: number; total: number; avgTime: number }>,
+    difficultyDistribution: { easy: 0, medium: 0, hard: 0 },
+    questionAttempts: [] as Array<{ questionId: number; attempts: number; finalCorrect: boolean }>
+  })
   
   // Boost system state
   const [boostManager] = useState(() => BoostManager.getInstance())
@@ -364,13 +282,13 @@ export function QuizEngine({
   const [hasUsedSecondChance, setHasUsedSecondChance] = useState(false)
   const [answerRevealUsed, setAnswerRevealUsed] = useState(false)
   const [timeFrozen, setTimeFrozen] = useState(false)
+  const [currentAttemptNumber, setCurrentAttemptNumber] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
-  const [showSources, setShowSources] = useState(false)
 
   // Keyboard interaction state
   const [keyboardEnabled, setKeyboardEnabled] = useState(true)
 
-  // Use the timer hook with boost extra time
+  // Timer integration
   const initialTime = 60 + currentBoostEffects.extraTimeSeconds
   const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(initialTime)
 
@@ -379,7 +297,38 @@ export function QuizEngine({
   const isLastQuestion = useMemo(() => currentQuestionIndex === randomizedQuestions.length - 1, [currentQuestionIndex, randomizedQuestions.length])
   const progress = useMemo(() => ((currentQuestionIndex + 1) / randomizedQuestions.length) * 100, [currentQuestionIndex, randomizedQuestions.length])
 
-  // Mobile detection with debounce
+  // Enhanced difficulty detection
+  const getQuestionDifficulty = useCallback((question: QuizQuestion): 'easy' | 'medium' | 'hard' => {
+    // Basic heuristic - could be enhanced with ML
+    if (question.tags?.includes('advanced') || question.tags?.includes('expert')) return 'hard'
+    if (question.tags?.includes('intermediate')) return 'medium'
+    if (question.tags?.includes('basic') || question.tags?.includes('beginner')) return 'easy'
+    
+    // Default based on question complexity
+    const questionLength = question.question.length
+    const hasMultipleChoices = question.question_type === 'multiple_choice' && 
+                              [question.option_a, question.option_b, question.option_c, question.option_d].filter(Boolean).length >= 4
+    
+    if (questionLength > 200 || !hasMultipleChoices) return 'hard'
+    if (questionLength > 100) return 'medium'
+    return 'easy'
+  }, [])
+
+  // Navigation handlers
+  const handleTopicSelect = useCallback((selectedTopicId: string) => {
+    if (onTopicChange && selectedTopicId !== topicId) {
+      onTopicChange(selectedTopicId)
+    }
+  }, [onTopicChange, topicId])
+  
+  const handleTopicNavigate = useCallback((direction: 'prev' | 'next') => {
+    const newTopicId = topicNavigation.navigateToTopic(direction)
+    if (newTopicId && onTopicChange) {
+      onTopicChange(newTopicId)
+    }
+  }, [topicNavigation, onTopicChange])
+
+  // Mobile detection
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
     
@@ -418,30 +367,38 @@ export function QuizEngine({
         streak_count: currentStreak
       })
       
-      console.log('🎯 Quiz started event tracked for:', topicId)
+      console.log('🎯 Enhanced quiz started event tracked for:', topicId)
     }
   }, [randomizedQuestions.length, topicId, trackQuiz, currentBoostEffects, currentLevel, currentStreak])
 
-  // Log current question for debugging
-  useEffect(() => {
-    if (currentQuestion) {
-      console.log(`=== RENDERING QUESTION ${currentQuestionIndex + 1}/${randomizedQuestions.length} ===`)
-      console.log(`Question ID: ${currentQuestion.topic_id}-${currentQuestion.question_number}`)
-      console.log(`Question Type: ${currentQuestion.question_type}`)
-      console.log(`Question Preview: ${currentQuestion.question.slice(0, 100)}...`)
-      console.log(`Correct Answer: ${currentQuestion.correct_answer}`)
-    }
-  }, [currentQuestion, currentQuestionIndex, randomizedQuestions.length])
-
-  // Load partial quiz state on mount
+  // Load partial quiz state and initialize boost system
   useEffect(() => {
     if (!user) return
 
-    const partialState = quizDatabase.loadPartialQuizState(user.id, topicId)
-    if (partialState) {
-      setCurrentQuestionIndex(partialState.currentQuestionIndex)
-      setUserAnswers(partialState.userAnswers)
+    // Load partial state from enhanced database
+    const loadPartialState = async () => {
+      try {
+        // Check for existing incomplete attempt
+        const { data: incompleteAttempt } = await supabase
+          .from('user_quiz_attempts')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .eq('topic_id', topicId)
+          .eq('is_completed', false)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (incompleteAttempt) {
+          console.log('📋 Found incomplete quiz attempt:', incompleteAttempt.id)
+          // Could load partial state here if implemented
+        }
+      } catch (error) {
+        console.error('Error loading partial state:', error)
+      }
     }
+
+    loadPartialState()
     
     // Initialize boost system and load user XP
     boostManager.initialize(user.id)
@@ -461,17 +418,49 @@ export function QuizEngine({
     }
   }, [user])
 
-  // Boost handlers with useCallback for optimization
+  // Enhanced analytics tracking helper
+  const updateSessionAnalytics = useCallback((update: Partial<typeof sessionAnalytics>) => {
+    setSessionAnalytics(prev => ({
+      ...prev,
+      ...update
+    }))
+  }, [])
+
+  // Track category performance
+  const updateCategoryPerformance = useCallback((question: QuizQuestion, isCorrect: boolean, timeSpent: number) => {
+    const category = question.category || 'General'
+    
+    setSessionAnalytics(prev => {
+      const categoryData = prev.categoryPerformance[category] || { correct: 0, total: 0, avgTime: 0 }
+      const newTotal = categoryData.total + 1
+      const newCorrect = categoryData.correct + (isCorrect ? 1 : 0)
+      const newAvgTime = ((categoryData.avgTime * categoryData.total) + timeSpent) / newTotal
+
+      return {
+        ...prev,
+        categoryPerformance: {
+          ...prev.categoryPerformance,
+          [category]: {
+            correct: newCorrect,
+            total: newTotal,
+            avgTime: newAvgTime
+          }
+        }
+      }
+    })
+  }, [])
+
+  // Boost handlers
   const handleBoostActivated = useCallback((effects: BoostEffects) => {
     setCurrentBoostEffects(effects)
     
-    // Apply automatic effects
     if (effects.autoHintEnabled && !showHint) {
       setShowHint(true)
+      updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
     }
     
-    console.log('🚀 Boost effects activated:', effects)
-  }, [showHint])
+    console.log('🚀 Enhanced boost effects activated:', effects)
+  }, [showHint, sessionAnalytics.hintsUsed, updateSessionAnalytics])
 
   const handleUseTimeFreeze = useCallback(() => {
     if (!user || !currentBoostEffects.timeFreezeAvailable) return
@@ -479,7 +468,11 @@ export function QuizEngine({
     setTimeFrozen(true)
     stopTimer()
     
-    // Track boost activation
+    // Track boost usage
+    updateSessionAnalytics({ 
+      boostsUsed: [...sessionAnalytics.boostsUsed, 'time_freeze'] 
+    })
+    
     trackGameification.boostActivated({
       boost_type: 'time_freeze',
       activation_context: 'mid_quiz',
@@ -487,27 +480,25 @@ export function QuizEngine({
       remaining_uses: 0
     })
     
-    // Unfreeze after 10 seconds
     setTimeout(() => {
       setTimeFrozen(false)
-      // Resume timer if question not submitted
       if (!isAnswerSubmitted) {
         resetTimer()
       }
     }, 10000)
     
-    // Consume the boost use
     boostManager.useBoost(user.id, 'time_freeze')
-    
     console.log('❄️ Time frozen for 10 seconds')
-  }, [user, currentBoostEffects.timeFreezeAvailable, stopTimer, trackGameification, currentLevel, isAnswerSubmitted, resetTimer, boostManager])
+  }, [user, currentBoostEffects.timeFreezeAvailable, stopTimer, trackGameification, currentLevel, isAnswerSubmitted, resetTimer, boostManager, sessionAnalytics.boostsUsed, updateSessionAnalytics])
 
   const handleUseAnswerReveal = useCallback(() => {
     if (!user || !currentBoostEffects.answerRevealAvailable || answerRevealUsed) return
     
     setAnswerRevealUsed(true)
+    updateSessionAnalytics({ 
+      boostsUsed: [...sessionAnalytics.boostsUsed, 'answer_reveal'] 
+    })
     
-    // Track boost activation
     trackGameification.boostActivated({
       boost_type: 'answer_reveal',
       activation_context: 'specific_question',
@@ -516,14 +507,12 @@ export function QuizEngine({
     })
     
     boostManager.useBoost(user.id, 'answer_reveal')
-    
     console.log('🔍 Answer reveal used')
-  }, [user, currentBoostEffects.answerRevealAvailable, answerRevealUsed, trackGameification, currentLevel, boostManager])
+  }, [user, currentBoostEffects.answerRevealAvailable, answerRevealUsed, trackGameification, currentLevel, boostManager, sessionAnalytics.boostsUsed, updateSessionAnalytics])
 
   const handleUseSecondChance = useCallback(() => {
     if (!user || !currentBoostEffects.secondChanceAvailable || hasUsedSecondChance) return
     
-    // Track boost activation
     trackGameification.boostActivated({
       boost_type: 'second_chance',
       activation_context: 'specific_question',
@@ -537,47 +526,34 @@ export function QuizEngine({
     setShowFeedback(false)
     setAnswerRevealUsed(false)
     setHasUsedSecondChance(true)
+    setCurrentAttemptNumber(prev => prev + 1)
     
-    // Reset timer
+    updateSessionAnalytics({ 
+      boostsUsed: [...sessionAnalytics.boostsUsed, 'second_chance'] 
+    })
+    
     resetTimer()
-    
-    // Consume the boost
     boostManager.useBoost(user.id, 'second_chance')
-    
     console.log('🔄 Second chance activated')
-  }, [user, currentBoostEffects.secondChanceAvailable, hasUsedSecondChance, trackGameification, currentLevel, resetTimer, boostManager])
-
-  // Save partial state whenever answers change
-  useEffect(() => {
-    if (!user || userAnswers.length === 0) return
-
-    const partialState = {
-      currentQuestionIndex,
-      userAnswers,
-      startTime: quizStartTime
-    }
-
-    quizDatabase.savePartialQuizState(user.id, topicId, partialState)
-  }, [user, topicId, currentQuestionIndex, userAnswers, quizStartTime])
+  }, [user, currentBoostEffects.secondChanceAvailable, hasUsedSecondChance, trackGameification, currentLevel, resetTimer, boostManager, sessionAnalytics.boostsUsed, updateSessionAnalytics])
 
   // Reset question state when moving to next question
   useEffect(() => {
-    console.log('🔄 Resetting question state for question index:', currentQuestionIndex)
+    console.log('🔄 Resetting enhanced question state for question index:', currentQuestionIndex)
     setSelectedAnswer(null)
     setIsAnswerSubmitted(false)
     setShowHint(false)
     setShowFeedback(false)
     setQuestionStartTime(Date.now())
-    setShowSources(false)
     setHasUsedSecondChance(false)
     setAnswerRevealUsed(false)
+    setCurrentAttemptNumber(1)
     resetTimer()
     
-    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentQuestionIndex, resetTimer])
 
-  // Optimized audio auto-play effect
+  // Auto-play effect
   useEffect(() => {
     if (!autoPlayEnabled || !currentQuestion?.question || currentQuestionIndex < 0) return
     
@@ -587,64 +563,75 @@ export function QuizEngine({
       } catch (error) {
         console.warn('Auto-play failed:', error)
       }
-    }, 300) // Reduced delay for better responsiveness
+    }, 300)
     
     return () => clearTimeout(timer)
   }, [currentQuestionIndex, autoPlayEnabled, currentQuestion?.question, playText])
 
-  // Define all handler functions as regular functions instead of useCallback
-  // to avoid circular dependencies
+  // Enhanced event handlers
   function handleTimeUp() {
     if (isAnswerSubmitted) return
     
     console.log('⏰ Time up for question:', currentQuestion?.question_number)
     stopTimer()
     
-    // Auto-submit with no answer
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
-    const newAnswer: UserAnswer = {
+    const difficulty = getQuestionDifficulty(currentQuestion)
+    
+    const newAnswer: EnhancedUserAnswer = {
       questionId: currentQuestion.question_number,
       answer: "timeout",
       isCorrect: false,
-      timeSpent
+      timeSpent,
+      hintUsed: showHint,
+      boostUsed: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null,
+      difficulty,
+      category: currentQuestion.category,
+      attemptNumber: currentAttemptNumber
     }
     
-    // Track question answered event
+    // Update analytics
+    updateCategoryPerformance(currentQuestion, false, timeSpent)
+    
+    setUserAnswers(prev => [...prev, newAnswer])
+    setIsAnswerSubmitted(true)
+    setShowFeedback(true)
+    
+    // Track event
     trackQuiz.questionAnswered({
       question_id: `${topicId}-${currentQuestion.question_number}`,
       question_category: currentQuestion?.category || 'general',
       answer_correct: false,
       response_time_seconds: timeSpent,
-      attempt_number: 1,
+      attempt_number: currentAttemptNumber,
       hint_used: showHint,
-      boost_active: Object.keys(currentBoostEffects).find(key => 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
-      ) || null,
+      boost_active: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null,
       confidence_level: 1
     })
-    
-    setUserAnswers(prev => [...prev, newAnswer])
-    setIsAnswerSubmitted(true)
-    setShowFeedback(true)
   }
 
   function handleSkipQuestion() {
-    if (isAnswerSubmitted) {
-      console.log('⏭️ Skip blocked: answer already submitted')
-      return
-    }
+    if (isAnswerSubmitted) return
     
     console.log('⏭️ Skipping question:', currentQuestion?.question_number)
     stopTimer()
-    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
     
-    const newAnswer: UserAnswer = {
+    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
+    const difficulty = getQuestionDifficulty(currentQuestion)
+    
+    const newAnswer: EnhancedUserAnswer = {
       questionId: currentQuestion.question_number,
       answer: "skipped",
       isCorrect: false,
-      timeSpent
+      timeSpent,
+      hintUsed: showHint,
+      boostUsed: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null,
+      difficulty,
+      category: currentQuestion.category,
+      attemptNumber: currentAttemptNumber
     }
+    
+    updateCategoryPerformance(currentQuestion, false, timeSpent)
     
     setUserAnswers(prev => [...prev, newAnswer])
     setSelectedAnswer("skipped")
@@ -652,84 +639,29 @@ export function QuizEngine({
     setShowFeedback(true)
   }
 
-  const [currentXpGained, setCurrentXpGained] = useState(0)
-
   function handleAnswerSelect(answer: string) {
     if (isAnswerSubmitted || !currentQuestion) return
 
     setSelectedAnswer(answer)
-    
-    // Stop the timer
     stopTimer()
-    
-    // Calculate XP gained (10 XP per correct answer)
-    let xpGained = 0
-    const isCorrect = answer === currentQuestion.correct_answer
-    
-    if (isCorrect) {
-      // Base XP for correct answer
-      xpGained = 10
-      
-      // Time bonus (up to 5 extra XP for answering quickly)
-      if (timeLeft > 45) {
-        xpGained += 5
-      } else if (timeLeft > 30) {
-        xpGained += 3
-      } else if (timeLeft > 15) {
-        xpGained += 1
-      }
-      
-      // Apply XP multiplier from boosts
-      xpGained = Math.round(xpGained * currentBoostEffects.xpMultiplier)
-      
-      setCurrentXpGained(xpGained)
-    }
   }
 
   function handleInteractiveAnswer(answer: string, isCorrect: boolean) {
     if (isAnswerSubmitted || !currentQuestion) return
 
     setSelectedAnswer(answer)
-    
-    // Stop the timer
     stopTimer()
-    
-    // Calculate XP gained (10 XP per correct answer)
-    let xpGained = 0
-    
-    if (isCorrect) {
-      // Base XP for correct answer
-      xpGained = 10
-      
-      // Time bonus (up to 5 extra XP for answering quickly)
-      if (timeLeft > 45) {
-        xpGained += 5
-      } else if (timeLeft > 30) {
-        xpGained += 3
-      } else if (timeLeft > 15) {
-        xpGained += 1
-      }
-      
-      // Apply XP multiplier from boosts
-      xpGained = Math.round(xpGained * currentBoostEffects.xpMultiplier)
-      
-      setCurrentXpGained(xpGained)
-    }
   }
 
   function handleSubmitAnswer() {
-    if (!selectedAnswer || isAnswerSubmitted) {
-      console.log('🚫 Submit blocked:', { selectedAnswer, isAnswerSubmitted })
-      return
-    }
+    if (!selectedAnswer || isAnswerSubmitted) return
     
-    console.log('📤 Submitting answer:', selectedAnswer)
+    console.log('📤 Submitting enhanced answer:', selectedAnswer)
     stopTimer()
     
-    // Determine if answer is correct based on question type
+    // Determine if answer is correct
     let isCorrect = false
     if (currentQuestion.question_type === 'short_answer') {
-      // Check if the user's answer was shown as correct in real-time feedback
       const answerStatus = checkAnswerDetailed(selectedAnswer, currentQuestion.correct_answer)
       isCorrect = answerStatus === 'correct'
     } else if (currentQuestion.question_type === 'true_false') {
@@ -739,27 +671,31 @@ export function QuizEngine({
     }
     
     const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
-    const newAnswer: UserAnswer = {
+    const difficulty = getQuestionDifficulty(currentQuestion)
+    
+    const newAnswer: EnhancedUserAnswer = {
       questionId: currentQuestion.question_number,
       answer: selectedAnswer,
       isCorrect,
-      timeSpent
+      timeSpent,
+      hintUsed: showHint,
+      boostUsed: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null,
+      difficulty,
+      category: currentQuestion.category,
+      attemptNumber: currentAttemptNumber
     }
     
-    // Track question answered event
-    trackQuiz.questionAnswered({
-      question_id: `${topicId}-${currentQuestion.question_number}`,
-      question_category: currentQuestion?.category || 'general',
-      answer_correct: isCorrect,
-      response_time_seconds: timeSpent,
-      attempt_number: hasUsedSecondChance ? 2 : 1,
-      hint_used: showHint,
-      boost_active: Object.keys(currentBoostEffects).find(key => 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
-      ) || null,
-      confidence_level: isCorrect ? (timeSpent < 10 ? 5 : timeSpent < 30 ? 4 : 3) : 2
-    })
+    // Update enhanced analytics
+    updateCategoryPerformance(currentQuestion, isCorrect, timeSpent)
+    
+    // Update difficulty distribution
+    setSessionAnalytics(prev => ({
+      ...prev,
+      difficultyDistribution: {
+        ...prev.difficultyDistribution,
+        [difficulty]: prev.difficultyDistribution[difficulty] + 1
+      }
+    }))
     
     setUserAnswers(prev => [...prev, newAnswer])
     setIsAnswerSubmitted(true)
@@ -772,20 +708,33 @@ export function QuizEngine({
       setStreak(0)
     }
     
-    // Animate progress bar
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
     
-    console.log('🎮 Question response:', {
-      questionId: currentQuestion.question_number,
-      category: currentQuestion.category,
-      isCorrect,
-      timeSpent,
-      difficulty: currentQuestion.tags?.includes('advanced') ? 3 : 
-                  currentQuestion.tags?.includes('intermediate') ? 2 : 1
+    // Enhanced tracking
+    trackQuiz.questionAnswered({
+      question_id: `${topicId}-${currentQuestion.question_number}`,
+      question_category: currentQuestion?.category || 'general',
+      answer_correct: isCorrect,
+      response_time_seconds: timeSpent,
+      attempt_number: currentAttemptNumber,
+      hint_used: showHint,
+      boost_active: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null,
+      confidence_level: isCorrect ? (timeSpent < 10 ? 5 : timeSpent < 30 ? 4 : 3) : 2
     })
     
-    // Auto-play explanation if global autoplay is enabled
+    console.log('🎮 Enhanced question response:', {
+      questionId: currentQuestion.question_number,
+      category: currentQuestion.category,
+      difficulty,
+      isCorrect,
+      timeSpent,
+      attemptNumber: currentAttemptNumber,
+      hintUsed: showHint,
+      boostUsed: sessionAnalytics.boostsUsed.length > 0 ? sessionAnalytics.boostsUsed[sessionAnalytics.boostsUsed.length - 1] : null
+    })
+    
+    // Auto-play explanation
     if (autoPlayEnabled && currentQuestion?.explanation) {
       setTimeout(() => {
         try {
@@ -798,16 +747,13 @@ export function QuizEngine({
   }
 
   async function handleFinishQuiz() {
-    // Calculate quiz metrics
+    // Enhanced quiz completion with analytics
     const totalQuestions = randomizedQuestions.length
     const correctAnswers = userAnswers.filter(a => a.isCorrect).length
     const totalTimeSeconds = userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0)
     const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100)
-    const activeBoosts = Object.entries(currentBoostEffects)
-      .filter(([key, value]) => value && value !== 0 && value !== false)
-      .map(([key]) => key)
-
-    // Track quiz completion
+    
+    // Track completion with enhanced data
     trackQuiz.quizCompleted({
       quiz_id: topicId,
       quiz_category: mapCategoryToAnalytics(currentQuestion?.category || 'General'),
@@ -816,17 +762,18 @@ export function QuizEngine({
       correct_answers: correctAnswers,
       total_time_seconds: totalTimeSeconds,
       user_level: currentLevel,
-      active_boosts: activeBoosts,
+      active_boosts: sessionAnalytics.boostsUsed,
       streak_count: currentStreak,
-      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier, // Base XP calculation (actual award happens in updateProgress)
+      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier,
       streak_maintained: correctAnswers > 0,
       new_level_reached: false,
-      boosts_used: activeBoosts
+      boosts_used: sessionAnalytics.boostsUsed
     })
 
-    // Update enhanced gamification progress before showing results
+    // Update enhanced gamification progress
     if (user) {
       try {
+        // Prepare question responses for skill tracking
         const questionResponses = userAnswers.map(answer => {
           const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
           return {
@@ -837,6 +784,7 @@ export function QuizEngine({
           }
         })
 
+        // 1. Update gamification progress
         const quizData = {
           topicId,
           totalQuestions: randomizedQuestions.length,
@@ -845,13 +793,35 @@ export function QuizEngine({
           questionResponses
         }
 
-        console.log('🎮 Updating gamification progress:', quizData)
+        console.log('🎮 Updating enhanced gamification progress:', quizData)
         const results = await updateProgress(quizData)
-        console.log('✅ Gamification progress updated successfully:', {
+        console.log('✅ Enhanced gamification progress updated:', {
           achievements: results.newAchievements?.length || 0,
           levelUp: results.levelUp || false,
           skillUpdates: results.skillUpdates?.length || 0
         })
+
+        // 2. Update skill progress with our new skill tracking system
+        try {
+          console.log('🔄 Updating skill progress...')
+          const skillResults = await enhancedQuizDatabase.updateSkillProgress(
+            user.id,
+            questionResponses
+          )
+          
+          console.log('✅ Skill progress updated:', {
+            updatedSkills: skillResults.updatedSkills.length,
+            masteryChanges: Object.keys(skillResults.masteryChanges).length > 0 
+              ? skillResults.masteryChanges 
+              : 'No mastery changes'
+          })
+          
+          // If there were mastery changes, we could notify the user here
+          
+        } catch (skillError) {
+          console.error('❌ Error updating skill progress:', skillError)
+          // Continue despite error
+        }
 
         // Track achievements and level ups
         if (results.newAchievements && results.newAchievements.length > 0) {
@@ -872,9 +842,18 @@ export function QuizEngine({
           })
         }
       } catch (error) {
-        console.error('❌ Failed to update gamification progress:', error)
+        console.error('❌ Failed to update enhanced gamification progress:', error)
       }
     }
+    
+    console.log('🎯 Enhanced quiz completion with analytics:', {
+      totalQuestions,
+      correctAnswers,
+      scorePercentage,
+      sessionAnalytics,
+      categoryPerformance: sessionAnalytics.categoryPerformance,
+      boostsUsed: sessionAnalytics.boostsUsed
+    })
     
     setShowResults(true)
   }
@@ -883,19 +862,15 @@ export function QuizEngine({
     if (isLastQuestion) {
       handleFinishQuiz()
     } else {
-      // Scroll to top when moving to next question
       window.scrollTo({ top: 0, behavior: 'smooth' })
       setCurrentQuestionIndex(prev => prev + 1)
     }
-    
-    setCurrentXpGained(0)
   }
 
+  // Enhanced keyboard shortcuts
   function handleKeyDown(event: KeyboardEvent) {
-    // Skip if keyboard is disabled
     if (!keyboardEnabled) return
     
-    // Don't handle shortcuts if user is typing in an input or textarea
     const target = event.target as HTMLElement
     if (target && (
       target.tagName === 'INPUT' || 
@@ -906,12 +881,10 @@ export function QuizEngine({
       return
     }
 
-    // Don't handle shortcuts after answer is submitted (except for spacebar for hints)
     if (isAnswerSubmitted && event.key !== ' ') return
 
-    console.log('🎹 Key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
+    console.log('🎹 Enhanced key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
 
-    // Handle different key combinations
     switch (event.key.toLowerCase()) {
       case 'enter':
         if (!isAnswerSubmitted && selectedAnswer) {
@@ -928,14 +901,14 @@ export function QuizEngine({
         setShowHint(prev => {
           const newShowHint = !prev
           if (newShowHint && currentQuestion) {
-            // Track hint usage
+            updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
             trackQuiz.hintUsed(
               `${topicId}-${currentQuestion.question_number}`,
               'manual',
               true
             )
           }
-          console.log('💡 Hint toggled via Space:', newShowHint ? 'shown' : 'hidden')
+          console.log('💡 Enhanced hint toggled via Space:', newShowHint ? 'shown' : 'hidden')
           return newShowHint
         })
         break
@@ -956,7 +929,7 @@ export function QuizEngine({
           ].filter(Boolean)
           
           if (optionIndex < options.length) {
-            const optionId = `option_${String.fromCharCode(97 + optionIndex)}` // option_a, option_b, etc.
+            const optionId = `option_${String.fromCharCode(97 + optionIndex)}`
             console.log('🔢 Selecting option via keyboard:', optionId)
             handleAnswerSelect(optionId)
           }
@@ -1001,34 +974,32 @@ export function QuizEngine({
     }
   }
 
-  // Enhanced keyboard event registration
+  // Keyboard event registration
   useEffect(() => {
-    // Enable keyboard shortcuts when component mounts
     setKeyboardEnabled(true)
     
-    // Add event listener with better options
     const handleKeyDownWrapper = (event: KeyboardEvent) => {
       try {
         handleKeyDown(event)
       } catch (error) {
-        console.error('Keyboard handler error:', error)
+        console.error('Enhanced keyboard handler error:', error)
       }
     }
     
     document.addEventListener('keydown', handleKeyDownWrapper, {
       passive: false,
-      capture: true // Use capture phase for better event handling
+      capture: true
     })
     
-    console.log('🎹 Keyboard shortcuts enabled')
+    console.log('🎹 Enhanced keyboard shortcuts enabled')
     
     return () => {
       document.removeEventListener('keydown', handleKeyDownWrapper, { capture: true })
-      console.log('🎹 Keyboard shortcuts disabled')
+      console.log('🎹 Enhanced keyboard shortcuts disabled')
     }
-  }, [isAnswerSubmitted, selectedAnswer, currentQuestionIndex]) // Add dependencies to re-register on state changes
+  }, [isAnswerSubmitted, selectedAnswer, currentQuestionIndex])
 
-  // Disable keyboard shortcuts when inputs are focused
+  // Input focus handlers
   useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => {
       const target = event.target as HTMLElement
@@ -1038,15 +1009,14 @@ export function QuizEngine({
         target.isContentEditable
       )) {
         setKeyboardEnabled(false)
-        console.log('🎹 Keyboard shortcuts disabled (input focused)')
+        console.log('🎹 Enhanced keyboard shortcuts disabled (input focused)')
       }
     }
     
-    const handleFocusOut = (event: FocusEvent) => {
-      // Re-enable after a short delay to prevent race conditions
+    const handleFocusOut = () => {
       setTimeout(() => {
         setKeyboardEnabled(true)
-        console.log('🎹 Keyboard shortcuts re-enabled (input unfocused)')
+        console.log('🎹 Enhanced keyboard shortcuts re-enabled (input unfocused)')
       }, 100)
     }
     
@@ -1059,14 +1029,12 @@ export function QuizEngine({
     }
   }, [])
 
-  // Initialize quiz attempt in the database when the quiz starts
+  // Initialize quiz attempt in database
   const [resumedAttemptId, setResumedAttemptId] = useState<string | null>(null)
   useEffect(() => {
-    // Only create an attempt if the user is logged in and we haven't already set a resumed ID
     const createAttempt = async () => {
       if (user && !resumedAttemptId) {
         try {
-          // Create an initial attempt record with is_completed = false
           const { data: attempt, error } = await supabase
             .from('user_quiz_attempts')
             .insert({
@@ -1080,13 +1048,13 @@ export function QuizEngine({
             .single()
             
           if (error) {
-            console.error('Error creating initial quiz attempt:', error)
+            console.error('Error creating enhanced quiz attempt:', error)
           } else if (attempt) {
-            console.log(`Created initial quiz attempt: ${attempt.id}`)
+            console.log(`✅ Created enhanced quiz attempt: ${attempt.id}`)
             setResumedAttemptId(attempt.id)
           }
         } catch (err) {
-          console.error('Failed to create initial quiz attempt:', err)
+          console.error('Failed to create enhanced quiz attempt:', err)
         }
       }
     }
@@ -1164,7 +1132,7 @@ export function QuizEngine({
 
   return (
     <div className="min-h-screen">
-      {/* Topic Navigation - always visible */}
+      {/* Topic Navigation */}
       {availableTopics.length > 0 && (
         <QuizDateNavigation
           currentTopic={currentTopic}
@@ -1189,22 +1157,27 @@ export function QuizEngine({
         
         {/* Question number and timer */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Question {currentQuestionIndex + 1}/{randomizedQuestions.length}
             </span>
+            {/* Show attempt number if using second chance */}
+            {currentAttemptNumber > 1 && (
+              <Badge variant="outline" className="text-xs">
+                Attempt {currentAttemptNumber}
+              </Badge>
+            )}
           </div>
           
-          {/* Timer - use key to force reset when question changes */}
           <QuestionTimer
-            key={`timer-${currentQuestionIndex}`}
+            key={`timer-${currentQuestionIndex}-${currentAttemptNumber}`}
             initialTime={60}
             isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
             onTimeUp={handleTimeUp}
           />
         </div>
 
-        {/* Progress bar - enhanced with animation - hidden on mobile */}
+        {/* Enhanced progress bar */}
         <div className={cn("relative", "hidden md:block")}>
           <Progress 
             value={progress} 
@@ -1216,20 +1189,23 @@ export function QuizEngine({
           <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent w-12 animate-shimmer" />
         </div>
 
-        {/* Question section - Apple style */}
+        {/* Question section */}
         <div className="text-center space-y-8">
-          {/* Question text and hint */}
           <div className="space-y-4">
             <MemoizedQuestionDisplay 
               question={currentQuestion} 
               showHint={showHint} 
             />
             
-            {/* Timer and hint button */}
             <div className="flex items-center justify-center space-x-6 animate-in fade-in duration-300">
               <Button 
                 variant="ghost" 
-                onClick={() => setShowHint(!showHint)} 
+                onClick={() => {
+                  setShowHint(!showHint)
+                  if (!showHint) {
+                    updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
+                  }
+                }} 
                 className={cn(
                   "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-light text-sm h-auto p-2 transition-all hover:scale-105",
                   showHint && "text-blue-600 dark:text-blue-400"
@@ -1240,14 +1216,12 @@ export function QuizEngine({
             </div>
           </div>
 
-          {/* Question content - only show if answer not submitted */}
           {!isAnswerSubmitted && (
             <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               {renderQuestion()}
             </div>
           )}
 
-          {/* Feedback section using new component */}
           {isAnswerSubmitted && (
             <QuestionFeedbackDisplay
               question={currentQuestion}
@@ -1255,28 +1229,62 @@ export function QuizEngine({
               timeLeft={timeLeft}
               isLastQuestion={isLastQuestion}
               onNextQuestion={handleNextQuestion}
-              xpGained={currentXpGained}
+              xpGained={0} // Will be calculated in results
             />
           )}
         </div>
 
-        {/* Action buttons - only show when answer not submitted (desktop only) */}
+        {/* Enhanced action buttons */}
         {!isAnswerSubmitted && !isMobile && (
           <div className="space-y-6">
-            {/* Boost Action Buttons */}
-            <MemoizedBoostButtons
-              boostEffects={currentBoostEffects}
-              timeFrozen={timeFrozen}
-              answerRevealUsed={answerRevealUsed}
-              hasUsedSecondChance={hasUsedSecondChance}
-              isAnswerSubmitted={isAnswerSubmitted}
-              questionType={currentQuestion.question_type}
-              onUseTimeFreeze={handleUseTimeFreeze}
-              onUseAnswerReveal={handleUseAnswerReveal}
-              onUseSecondChance={handleUseSecondChance}
-            />
+            {/* Boost buttons */}
+            {(currentBoostEffects.timeFreezeAvailable || 
+              currentBoostEffects.answerRevealAvailable || 
+              currentBoostEffects.secondChanceAvailable) && (
+              <div className="flex items-center justify-center gap-3 animate-in fade-in duration-300">
+                {currentBoostEffects.timeFreezeAvailable && !timeFrozen && (
+                  <Button 
+                    onClick={handleUseTimeFreeze}
+                    variant="outline"
+                    size="sm"
+                    className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all hover:scale-105"
+                  >
+                    <Snowflake className="h-4 w-4 mr-1" />
+                    Freeze Time
+                  </Button>
+                )}
+                
+                {currentBoostEffects.answerRevealAvailable && 
+                 !answerRevealUsed && 
+                 currentQuestion.question_type === 'multiple_choice' && (
+                  <Button 
+                    onClick={handleUseAnswerReveal}
+                    variant="outline"
+                    size="sm"
+                    className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all hover:scale-105"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Reveal Answer
+                  </Button>
+                )}
+                
+                {currentBoostEffects.secondChanceAvailable && 
+                 !hasUsedSecondChance && 
+                 isAnswerSubmitted && (
+                  <Button 
+                    onClick={handleUseSecondChance}
+                    variant="outline"
+                    size="sm"
+                    className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all hover:scale-105"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Second Chance
+                  </Button>
+                )}
+              </div>
+            )}
             
-            {/* Main Action Buttons */}
+            {/* Main action buttons */}
             <div className="flex items-center justify-center gap-6 animate-in fade-in duration-300">
               <Button 
                 onClick={handleSkipQuestion}
@@ -1302,7 +1310,7 @@ export function QuizEngine({
           </div>
         )}
 
-        {/* Gamification display - enhanced animation */}
+        {/* Enhanced gamification display */}
         {user && !isMobile && (
           <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center space-x-4 text-sm">
@@ -1319,29 +1327,40 @@ export function QuizEngine({
                   Level {currentLevel}
                 </Badge>
               </div>
+              {/* Show analytics indicator for premium users */}
+              {isPremium && (
+                <div className="flex items-center space-x-1">
+                  <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
+                    Analytics
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Debug panel - quiz info only (desktop only) */}
+        {/* Enhanced debug panel */}
         {process.env.NODE_ENV === 'development' && !isMobile && (
           <div className="fixed top-4 right-4 z-50 max-w-sm">
             <div className="bg-black/80 text-white p-4 rounded-lg text-xs font-mono backdrop-blur-sm">
-              <div className="text-xs font-bold mb-2">Quiz Debug:</div>
+              <div className="text-xs font-bold mb-2">Enhanced Quiz Debug:</div>
               <div>Selected: {selectedAnswer || 'None'}</div>
               <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
               <div>Timer: {timeLeft}s {timeFrozen && '(Frozen)'}</div>
               <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
               <div>Type: {currentQuestion?.question_type}</div>
-              <div>Auto-play: {autoPlayEnabled ? 'On' : 'Off'}</div>
-              <div>Streak: {currentStreak}</div>
-              <div>Level: {currentLevel}</div>
+              <div>Difficulty: {getQuestionDifficulty(currentQuestion)}</div>
+              <div>Category: {currentQuestion?.category}</div>
+              <div>Attempt: {currentAttemptNumber}</div>
+              <div>Hints Used: {sessionAnalytics.hintsUsed}</div>
+              <div>Boosts Used: {sessionAnalytics.boostsUsed.length}</div>
+              <div>Premium: {isPremium ? 'Yes' : 'No'}</div>
               <div>Keyboard: {keyboardEnabled ? 'Enabled' : 'Disabled'}</div>
             </div>
           </div>
         )}
 
-        {/* Enhanced keyboard shortcuts - only show when answer not submitted */}
+        {/* Enhanced keyboard shortcuts */}
         {!isAnswerSubmitted && !isMobile && (
           <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
             <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
@@ -1358,7 +1377,6 @@ export function QuizEngine({
           </div>
         )}
 
-        {/* Show next question shortcut when answer is submitted */}
         {isAnswerSubmitted && !isMobile && (
           <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
             <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
@@ -1368,7 +1386,7 @@ export function QuizEngine({
         )}
       </div>
 
-      {/* Fixed Bottom Bar for Mobile - enhanced and larger */}
+      {/* Enhanced mobile bottom bar */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-6 pb-8 z-50 animate-in slide-in-from-bottom duration-300 shadow-2xl">
           {!isAnswerSubmitted ? (
@@ -1384,7 +1402,6 @@ export function QuizEngine({
               <Button 
                 onClick={handleSubmitAnswer}
                 disabled={!selectedAnswer || timeLeft === 0}
-                data-answer-button
                 className={cn(
                   "rounded-full px-8 py-4 h-14 font-medium transition-all duration-300 flex-2 text-base shadow-lg",
                   selectedAnswer 
@@ -1399,7 +1416,6 @@ export function QuizEngine({
             <div className="flex items-center justify-center">
               <Button 
                 onClick={handleNextQuestion}
-                data-next-button
                 className={cn(
                   "w-full h-14 rounded-xl font-semibold text-lg",
                   "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
@@ -1418,7 +1434,7 @@ export function QuizEngine({
         </div>
       )}
 
-      {/* Boost Command Bar - Floating */}
+      {/* Enhanced Boost Command Bar */}
       {user && (
         <BoostCommandBar
           userXP={userXP}

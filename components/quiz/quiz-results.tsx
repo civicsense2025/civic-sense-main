@@ -13,7 +13,7 @@ import { QuestionFeedback } from "./question-feedback"
 import { AchievementNotification } from "@/components/achievement-notification"
 import { useAuth } from "@/components/auth/auth-provider"
 import { updateEnhancedProgress, type Achievement } from "@/lib/enhanced-gamification"
-import { quizDatabase, type QuizAttemptData } from "@/lib/quiz-database"
+import { enhancedQuizDatabase, type EnhancedQuizAttemptData } from "@/lib/quiz-database"
 import { useGamification } from "@/hooks/useGamification"
 import { progressiveXpOperations } from "@/lib/enhanced-gamification"
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
@@ -21,12 +21,15 @@ import { SourceMetadataCard } from "@/components/source-metadata-card"
 import { usePremium } from "@/hooks/usePremium"
 import { useAnalytics } from "@/utils/analytics"
 import { useTopicTitle } from "@/hooks/useTopicTitle"
+import { skillOperations } from "@/lib/skill-operations"
 
 interface UserAnswer {
   questionId: number
   answer: string
   isCorrect: boolean
   timeSpent: number
+  hintUsed?: boolean
+  boostUsed?: string | null
 }
 
 interface QuizResultsProps {
@@ -37,7 +40,7 @@ interface QuizResultsProps {
   resumedAttemptId?: string | null
 }
 
-// Memoized components for performance
+// Memoized components for performance (keeping existing ones)
 const MemoizedScoreDisplay = memo(({ 
   animatedScore, 
   score, 
@@ -53,6 +56,13 @@ const MemoizedScoreDisplay = memo(({
     if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
     return "text-red-600 dark:text-red-400"
   }, [score])
+
+  const getBadgeTextColor = () => {
+    if (score >= 90) return "text-green-700 dark:text-green-300"
+    if (score >= 80) return "text-blue-700 dark:text-blue-300"
+    if (score >= 70) return "text-yellow-700 dark:text-yellow-300"
+    return "text-red-700 dark:text-red-300"
+  }
 
   return (
     <>
@@ -86,185 +96,18 @@ const MemoizedScoreDisplay = memo(({
           {animatedScore}%
         </div>
       </div>
+      <div className={cn(
+        "mt-6 text-2xl font-bold flex items-center justify-center gap-2",
+        getBadgeTextColor()
+      )}>
+        <span className="animate-bounce">{badge.emoji}</span>
+        <span>{badge.text}</span>
+      </div>
     </>
   )
 })
 
 MemoizedScoreDisplay.displayName = 'MemoizedScoreDisplay'
-
-const MemoizedStatCard = memo(({ 
-  icon, 
-  label, 
-  value, 
-  delay = 0 
-}: { 
-  icon: string
-  label: string
-  value: string | number
-  delay?: number
-}) => (
-  <div 
-    className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500"
-    style={{ animationDelay: `${delay}ms` }}
-  >
-    <div className="text-2xl mb-2">{icon}</div>
-    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{label}</div>
-    <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{value}</div>
-  </div>
-))
-
-MemoizedStatCard.displayName = 'MemoizedStatCard'
-
-const MemoizedQuestionReview = memo(({ 
-  question, 
-  userAnswer, 
-  index,
-  showExplanations,
-  topicId,
-  formatTime,
-  getSelectedAnswerText
-}: {
-  question: QuizQuestion
-  userAnswer: UserAnswer | undefined
-  index: number
-  showExplanations: boolean
-  topicId: string
-  formatTime: (seconds: number) => string
-  getSelectedAnswerText: (question: QuizQuestion, answerKey: string) => string
-}) => {
-  const isCorrect = userAnswer?.isCorrect || false
-  const selectedAnswer = userAnswer?.answer || ""
-  const timeSpent = userAnswer?.timeSpent || 0
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  return (
-    <div 
-      className={cn(
-        "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 transition-all duration-300",
-        "hover:shadow-lg animate-in fade-in slide-in-from-bottom-4",
-        isExpanded && "scale-[1.02]"
-      )}
-      style={{ animationDelay: `${index * 50}ms` }}
-    >
-      <div className="flex items-start gap-4">
-        {/* Question number with enhanced styling */}
-        <div className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold transition-all duration-300",
-          isCorrect 
-            ? "bg-green-500 border-green-500 text-white animate-in zoom-in duration-300" 
-            : "bg-red-500 border-red-500 text-white animate-in zoom-in duration-300 animate-pulse"
-        )}>
-          {index + 1}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start mb-3">
-            <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
-              {question.question}
-            </p>
-            <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
-              <Clock className="h-4 w-4 mr-1" />
-              {formatTime(timeSpent)}
-            </div>
-          </div>
-
-          {/* Answer feedback with smooth transitions */}
-          <div className="space-y-2 mb-4">
-            {isCorrect ? (
-              <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300">
-                <CheckCircle className="inline h-4 w-4 mr-1" />
-                <span className="font-medium">Your answer:</span>{" "}
-                <span className="font-semibold">
-                  {question.question_type === "multiple_choice"
-                    ? getSelectedAnswerText(question, selectedAnswer)
-                    : selectedAnswer}
-                </span>
-              </p>
-            ) : (
-              <>
-                <p className="text-red-600 dark:text-red-400 text-sm animate-in fade-in duration-300">
-                  <XCircle className="inline h-4 w-4 mr-1" />
-                  <span className="font-medium">Your answer:</span>{" "}
-                  <span className="line-through opacity-75">
-                    {question.question_type === "multiple_choice"
-                      ? getSelectedAnswerText(question, selectedAnswer)
-                      : selectedAnswer || "(no answer)"}
-                  </span>
-                </p>
-                <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300 delay-100">
-                  <CheckCircle className="inline h-4 w-4 mr-1" />
-                  <span className="font-medium">Correct answer:</span>{" "}
-                  <span className="font-semibold">
-                    {question.question_type === "multiple_choice"
-                      ? getSelectedAnswerText(question, question.correct_answer)
-                      : question.correct_answer}
-                  </span>
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Explanation with smooth expand/collapse */}
-          {showExplanations && (
-            <div 
-              className={cn(
-                "overflow-hidden transition-all duration-500",
-                isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-              )}
-            >
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
-                <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                  {question.explanation}
-                </p>
-              </div>
-
-              {/* Sources using SourceMetadataCard */}
-              {question.sources.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-mono font-medium text-slate-900 dark:text-slate-50 mb-3">
-                    📚 Learn more:
-                  </p>
-                  <div className="space-y-3">
-                    {question.sources.map((source, idx) => (
-                      <SourceMetadataCard
-                        key={idx}
-                        source={source}
-                        showThumbnail={true}
-                        compact={false}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Expand/Collapse button */}
-          {showExplanations && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
-            >
-              {isExpanded ? "Hide details" : "Show details"}
-              <Sparkles className="h-3 w-3 ml-1" />
-            </Button>
-          )}
-
-          {/* Question Feedback */}
-          <QuestionFeedback 
-            questionId={question.question_number?.toString() || `${question.question_number}`}
-            questionText={question.question}
-            topicId={topicId}
-          />
-        </div>
-      </div>
-    </div>
-  )
-})
-
-MemoizedQuestionReview.displayName = 'MemoizedQuestionReview'
 
 export function QuizResults({ 
   userAnswers, 
@@ -274,19 +117,25 @@ export function QuizResults({
   resumedAttemptId
 }: QuizResultsProps) {
   const { user } = useAuth()
-  const { isPremium, isPro } = usePremium()
+  const { isPremium, isPro, hasFeatureAccess } = usePremium()
   const { trackQuiz } = useAnalytics()
   const { topicTitle, setTopicTitle } = useTopicTitle(topicId)
   const { progress, refreshProgress } = useGamification()
+  
+  // State management
   const [showStats, setShowStats] = useState(false)
   const [animatedScore, setAnimatedScore] = useState(0)
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([])
   const [levelUpInfo, setLevelUpInfo] = useState<{ newLevel: number; xpGained: number } | undefined>(undefined)
   const [showAchievements, setShowAchievements] = useState(false)
-  const [progressUpdated, setProgressUpdated] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error' | 'idle'>('idle')
   const [showExplanations, setShowExplanations] = useState(true)
   const [xpGained, setXpGained] = useState(0)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [analyticsCreated, setAnalyticsCreated] = useState(false)
+  
+  // Refs for cleanup
+  const savePromiseRef = useRef<Promise<void> | null>(null)
+  const hasSavedRef = useRef(false)
 
   // Memoized calculations
   const { correctAnswers, totalQuestions, score, isPerfectScore } = useMemo(() => {
@@ -328,7 +177,61 @@ export function QuizResults({
     }
   }, [userAnswers])
 
-  // Memoized helper functions
+  // Enhanced session analysis for premium users
+  const sessionAnalysis = useMemo(() => {
+    if (!hasFeatureAccess('advanced_analytics')) {
+      return null
+    }
+
+    // Calculate category performance
+    const categoryPerformance: Record<string, { correct: number; total: number; avgTime: number }> = {}
+    
+    userAnswers.forEach((answer, index) => {
+      const question = questions[index]
+      const category = question?.category || 'General'
+      
+      if (!categoryPerformance[category]) {
+        categoryPerformance[category] = { correct: 0, total: 0, avgTime: 0 }
+      }
+      
+      categoryPerformance[category].total += 1
+      if (answer.isCorrect) {
+        categoryPerformance[category].correct += 1
+      }
+      categoryPerformance[category].avgTime += answer.timeSpent
+    })
+
+    // Calculate averages
+    Object.keys(categoryPerformance).forEach(category => {
+      const data = categoryPerformance[category]
+      data.avgTime = data.avgTime / data.total
+    })
+
+    // Determine time pattern
+    const currentHour = new Date().getHours()
+    const timePattern = currentHour < 12 ? 'morning' : 
+                       currentHour < 17 ? 'afternoon' : 
+                       currentHour < 21 ? 'evening' : 'night'
+
+    // Calculate improvement trend (simplified - would use historical data)
+    const improvementTrend = score >= 80 ? 0.1 : score >= 60 ? 0.05 : -0.05
+
+    // Calculate consistency score
+    const timeVariance = userAnswers.reduce((acc, answer) => {
+      const diff = answer.timeSpent - averageTime
+      return acc + (diff * diff)
+    }, 0) / userAnswers.length
+    const consistencyScore = Math.max(0, 1 - (Math.sqrt(timeVariance) / averageTime))
+
+    return {
+      categoryPerformance,
+      timePattern: timePattern as 'morning' | 'afternoon' | 'evening' | 'night',
+      improvementTrend,
+      consistencyScore
+    }
+  }, [userAnswers, questions, averageTime, score, hasFeatureAccess])
+
+  // Helper functions
   const formatTime = useCallback((seconds: number) => {
     if (seconds < 60) return `${seconds}s`
     const minutes = Math.floor(seconds / 60)
@@ -375,112 +278,225 @@ export function QuizResults({
     }
 
     loadTopicTitle()
-  }, [topicId])
+  }, [topicId, setTopicTitle])
 
-  // Debounced save quiz results
+  // Enhanced save quiz results function
   const saveQuizResults = useCallback(async () => {
-    if (!user || progressUpdated) return
+    if (!user || hasSavedRef.current) {
+      return
+    }
 
+    hasSavedRef.current = true
+    setSaveStatus('saving')
+    
     try {
-      // Clear any existing timeout
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
+      console.log('💾 Starting enhanced quiz save...')
+      
+      // Prepare enhanced quiz attempt data
+      const enhancedAttemptData: EnhancedQuizAttemptData = {
+        userId: user.id,
+        topicId,
+        topicTitle,
+        totalQuestions,
+        correctAnswers,
+        score,
+        timeSpentSeconds: totalTime,
+        userAnswers: userAnswers.map(answer => ({
+          questionId: answer.questionId,
+          answer: answer.answer,
+          isCorrect: answer.isCorrect,
+          timeSpent: answer.timeSpent,
+          hintUsed: answer.hintUsed || false,
+          boostUsed: answer.boostUsed || null
+        })),
+        attemptId: resumedAttemptId,
+        sessionData: sessionAnalysis ? {
+          difficultyDistribution: { easy: 0, medium: 0, hard: 0 }, // Would be calculated from question data
+          categoryPerformance: sessionAnalysis.categoryPerformance,
+          timePattern: sessionAnalysis.timePattern,
+          improvementTrend: sessionAnalysis.improvementTrend,
+          consistencyScore: sessionAnalysis.consistencyScore
+        } : undefined
       }
 
-      // Debounce the save operation
-      saveTimeoutRef.current = setTimeout(async () => {
-        // Prepare quiz attempt data for database
-        const quizAttemptData: QuizAttemptData = {
-          userId: user.id,
-          topicId,
-          topicTitle,
-          totalQuestions,
-          correctAnswers,
-          score,
-          timeSpentSeconds: totalTime,
-          userAnswers: userAnswers.map(answer => ({
-            questionId: answer.questionId,
-            answer: answer.answer,
+      // Save to enhanced database
+      const saveResult = await enhancedQuizDatabase.saveEnhancedQuizAttempt(enhancedAttemptData)
+      
+      console.log('✅ Enhanced quiz save completed:', {
+        attemptId: saveResult.attemptId,
+        analyticsCreated: saveResult.analyticsCreated,
+        progressUpdated: saveResult.progressUpdated
+      })
+
+      setAnalyticsCreated(saveResult.analyticsCreated)
+      setSaveStatus('saved')
+
+      // Also update skill progress for this quiz
+      try {
+        const questionResponses = userAnswers.map(answer => {
+          const question = questions.find(q => q.question_number === answer.questionId)
+          return {
+            questionId: answer.questionId.toString(),
+            category: question?.category || 'General',
             isCorrect: answer.isCorrect,
             timeSpent: answer.timeSpent
-          })),
-          attemptId: resumedAttemptId // Add the attemptId if it exists
-        }
-
-        // Save to database
-        const savedAttempt = await quizDatabase.saveQuizAttempt(quizAttemptData)
-        console.log('Quiz attempt saved to database:', savedAttempt.id)
-
-        // Also save to localStorage as backup/cache
-        const quizResult = {
-          topicId,
-          topicTitle,
-          totalQuestions,
-          correctAnswers,
-          score,
-          timeSpent: totalTime,
-          completedAt: new Date().toISOString(),
-          userAnswers: userAnswers.map(answer => ({
-            questionId: answer.questionId,
-            isCorrect: answer.isCorrect,
-            timeSpent: answer.timeSpent
-          }))
-        }
-
-        const resultsKey = `civicAppQuizResults_${user.id}_v1`
-        const existingResults = localStorage.getItem(resultsKey)
-        const savedResults = existingResults ? JSON.parse(existingResults) : []
-        savedResults.push(quizResult)
-        
-        // Keep only the last 50 results
-        if (savedResults.length > 50) {
-          savedResults.splice(0, savedResults.length - 50)
-        }
-        
-        localStorage.setItem(resultsKey, JSON.stringify(savedResults))
-
-        // Clear any partial quiz state
-        quizDatabase.clearPartialQuizState(user.id, topicId)
-
-        console.log('💾 Quiz results saved')
-
-        // Refresh gamification progress
-        if (refreshProgress) {
-          await refreshProgress()
-        }
-
-        setProgressUpdated(true)
-
-        // Show achievements after a delay
-        setTimeout(() => {
-          if (progress?.currentStreak && progress.currentStreak > 0) {
-            console.log('🎮 Updated gamification stats available')
           }
-        }, 3000)
+        })
+        
+        // Update skill progress
+        const skillResults = await enhancedQuizDatabase.updateSkillProgress(
+          user.id,
+          questionResponses
+        )
+        
+        // If any skills had mastery changes, let's add them to achievements
+        const masteryChanges = skillResults.masteryChanges
+        if (Object.keys(masteryChanges).length > 0) {
+          const newSkillAchievements = await Promise.all(
+            Object.entries(masteryChanges).map(async ([skillId, change]) => {
+              // Only recognize upgrades, not downgrades
+              if (change.from < change.to) {
+                // Get the skill name
+                const skill = await skillOperations.getSkillBySlug(skillId)
+                return {
+                  skillId,
+                  skillName: skill?.skill_name || 'Skill',
+                  oldMastery: change.from,
+                  newMastery: change.to
+                }
+              }
+              return null
+            })
+          ).then(results => results.filter(Boolean))
+          
+          if (newSkillAchievements.length > 0) {
+            // Convert to proper Achievement format
+            const skillAchievements: Achievement[] = newSkillAchievements.map(achievement => ({
+              id: `skill-${achievement?.skillId}`,
+              type: 'skill_mastery',
+              data: {
+                skillId: achievement?.skillId,
+                skillName: achievement?.skillName,
+                oldMastery: achievement?.oldMastery,
+                newMastery: achievement?.newMastery
+              },
+              earnedAt: new Date().toISOString(),
+              isMilestone: true,
+              title: `${achievement?.newMastery} ${achievement?.skillName}`,
+              description: `You've reached ${achievement?.newMastery} mastery in ${achievement?.skillName}!`,
+              emoji: '🌟'
+            } as Achievement))
+            
+            setNewAchievements(prev => [...prev, ...skillAchievements])
+          }
+        }
+      } catch (skillError) {
+        console.error('Error updating skill progress:', skillError)
+      }
 
-      }, 500) // 500ms debounce
+      // Also save to localStorage as backup/cache (simplified version)
+      const quizResult = {
+        topicId,
+        topicTitle,
+        totalQuestions,
+        correctAnswers,
+        score,
+        timeSpent: totalTime,
+        completedAt: new Date().toISOString(),
+        userAnswers: userAnswers.map(answer => ({
+          questionId: answer.questionId,
+          isCorrect: answer.isCorrect,
+          timeSpent: answer.timeSpent
+        }))
+      }
+
+      const resultsKey = `civicAppQuizResults_${user.id}_v2` // v2 for enhanced version
+      const existingResults = localStorage.getItem(resultsKey)
+      const savedResults = existingResults ? JSON.parse(existingResults) : []
+      savedResults.push(quizResult)
+      
+      // Keep only the last 50 results
+      if (savedResults.length > 50) {
+        savedResults.splice(0, savedResults.length - 50)
+      }
+      
+      localStorage.setItem(resultsKey, JSON.stringify(savedResults))
+
+      // Clear any partial quiz state
+      const partialKey = `civicAppPartialQuiz_${user.id}_${topicId}`
+      localStorage.removeItem(partialKey)
+
+      // Refresh gamification progress
+      if (refreshProgress) {
+        await refreshProgress()
+      }
+
+      // Calculate XP gained
+      const baseXp = correctAnswers * 10
+      const timeBonus = totalTime < (totalQuestions * 30) ? Math.floor(correctAnswers * 2) : 0 // Bonus for speed
+      const perfectBonus = isPerfectScore ? 20 : 0
+      setXpGained(baseXp + timeBonus + perfectBonus)
+
+      console.log('🎮 Quiz save completed successfully')
 
     } catch (error) {
-      console.error('Error saving quiz results:', error)
-      setProgressUpdated(true)
-    }
-  }, [user, progressUpdated, topicId, topicTitle, totalQuestions, correctAnswers, score, totalTime, userAnswers, refreshProgress, progress, resumedAttemptId])
-
-  // Save quiz results
-  useEffect(() => {
-    saveQuizResults()
-    
-    // Simulate XP gained (10 XP per correct answer)
-    setXpGained(correctAnswers * 10)
-    
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
+      console.error('❌ Enhanced quiz save failed:', error)
+      setSaveStatus('error')
+      
+      // Fallback to basic localStorage save
+      try {
+        const fallbackResult = {
+          topicId,
+          topicTitle,
+          score,
+          completedAt: new Date().toISOString(),
+          error: 'Database save failed'
+        }
+        localStorage.setItem(`civicAppQuizFallback_${user.id}_${Date.now()}`, JSON.stringify(fallbackResult))
+        console.log('💾 Fallback save completed')
+      } catch (fallbackError) {
+        console.error('❌ Even fallback save failed:', fallbackError)
       }
     }
-  }, [saveQuizResults, correctAnswers])
+  }, [
+    user, 
+    topicId, 
+    topicTitle, 
+    totalQuestions, 
+    correctAnswers, 
+    score, 
+    totalTime, 
+    userAnswers, 
+    resumedAttemptId, 
+    sessionAnalysis, 
+    refreshProgress,
+    isPerfectScore
+  ])
 
-  // Optimized score animation with requestAnimationFrame
+  // Save quiz results on mount
+  useEffect(() => {
+    if (user && !hasSavedRef.current) {
+      // Create a promise and store it
+      const savePromise = saveQuizResults()
+      savePromiseRef.current = savePromise
+      
+      // Don't await here - let it run in background
+      savePromise.catch(error => {
+        console.error('Background save failed:', error)
+      })
+    }
+
+    // Cleanup function
+    return () => {
+      if (savePromiseRef.current) {
+        // The save is running, but we don't need to cancel it
+        // Just clear the reference
+        savePromiseRef.current = null
+      }
+    }
+  }, [user, saveQuizResults])
+
+  // Score animation (keeping existing logic)
   useEffect(() => {
     const duration = 2000
     const startTime = Date.now()
@@ -492,7 +508,6 @@ export function QuizResults({
       const elapsed = now - startTime
       const progress = Math.min(elapsed / duration, 1)
       
-      // Easing function for smooth animation
       const easeOutQuart = 1 - Math.pow(1 - progress, 4)
       const currentValue = Math.round(startValue + (endValue - startValue) * easeOutQuart)
       
@@ -503,7 +518,6 @@ export function QuizResults({
       } else {
         setShowStats(true)
         
-        // Trigger confetti for good scores
         if (score >= 80) {
           setTimeout(() => {
             confetti({
@@ -519,7 +533,7 @@ export function QuizResults({
     requestAnimationFrame(animate)
   }, [score])
 
-  // Optimized confetti effect for perfect scores
+  // Perfect score confetti
   useEffect(() => {
     if (!isPerfectScore || animatedScore !== score) return
 
@@ -541,7 +555,6 @@ export function QuizResults({
 
       const particleCount = 50 * (timeLeft / duration)
 
-      // Shoot confetti from different sides
       confetti({
         ...defaults,
         particleCount,
@@ -563,7 +576,6 @@ export function QuizResults({
     setLevelUpInfo(undefined)
   }, [])
 
-  // Get a witty completion message based on score
   const getCompletionMessage = useCallback(() => {
     if (score >= 90) return "Knowledge Unlocked! 🧠"
     if (score >= 80) return "Civic Mission Accomplished! 🎯"
@@ -572,8 +584,29 @@ export function QuizResults({
     return "Civic Quest Completed! 🔍"
   }, [score])
 
+  // Render save status indicator
+  const renderSaveStatus = () => {
+    if (saveStatus === 'idle') return null
+    
+    return (
+      <div className={cn(
+        "fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+        saveStatus === 'saving' && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+        saveStatus === 'saved' && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+        saveStatus === 'error' && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+      )}>
+        {saveStatus === 'saving' && "💾 Saving results..."}
+        {saveStatus === 'saved' && analyticsCreated && isPremium && "✅ Premium analytics saved"}
+        {saveStatus === 'saved' && !analyticsCreated && "✅ Results saved"}
+        {saveStatus === 'error' && "⚠️ Save failed (cached locally)"}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
+      {renderSaveStatus()}
+      
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-16">
         {/* Clean header with lots of whitespace */}
         <div className="text-center space-y-4">
@@ -585,7 +618,7 @@ export function QuizResults({
           </p>
         </div>
 
-        {/* Score Display - Clean Design */}
+        {/* Score Display */}
         <div className="text-center space-y-8">
           <MemoizedScoreDisplay 
             animatedScore={animatedScore} 
@@ -593,51 +626,71 @@ export function QuizResults({
             badge={badge} 
           />
           
-          <div className={cn(
-            "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg transition-all duration-500 hover:scale-105",
-            badge.color,
-            "animate-in slide-in-from-bottom-4 duration-700 delay-300"
-          )}>
-            <span className="text-2xl mr-3 animate-bounce">{badge.emoji}</span>
-            {badge.text}
-          </div>
-
           <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light">
             {getPerformanceMessage()}
           </p>
         </div>
 
-        {/* Stats Cards - Enhanced with staggered animations */}
+        {/* Enhanced Stats Cards */}
         {showStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <MemoizedStatCard 
-              icon="⏱️" 
-              label="Avg Time" 
-              value={formatTime(averageTime)} 
-              delay={0}
-            />
-            <MemoizedStatCard 
-              icon="⚡" 
-              label="Fastest" 
-              value={formatTime(fastestAnswer)} 
-              delay={100}
-            />
-            <MemoizedStatCard 
-              icon="🔥" 
-              label="Global Streak" 
-              value={progress?.currentStreak || 0} 
-              delay={200}
-            />
-            <MemoizedStatCard 
-              icon="✨" 
-              label="XP Earned" 
-              value={`+${xpGained}`} 
-              delay={300}
-            />
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-2xl mb-2">⏱️</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Avg Time</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(averageTime)}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
+              <div className="text-2xl mb-2">⚡</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fastest</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(fastestAnswer)}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+              <div className="text-2xl mb-2">🔥</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Quiz Streak</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{streak}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
+              <div className="text-2xl mb-2">✨</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">XP Earned</div>
+              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">+{xpGained}</div>
+            </div>
           </div>
         )}
 
-        {/* Question Review */}
+        {/* Premium Analytics Preview */}
+        {isPremium && analyticsCreated && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800 animate-in fade-in duration-500">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                🎯 Premium Analytics Created
+              </h3>
+              <p className="text-purple-600 dark:text-purple-300 text-sm mb-4">
+                Your detailed performance data has been analyzed and is available in your dashboard.
+              </p>
+              {sessionAnalysis && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="font-medium text-purple-800 dark:text-purple-200">Study Time</div>
+                    <div className="text-purple-600 dark:text-purple-300 capitalize">{sessionAnalysis.timePattern}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-purple-800 dark:text-purple-200">Consistency</div>
+                    <div className="text-purple-600 dark:text-purple-300">{Math.round(sessionAnalysis.consistencyScore * 100)}%</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-purple-800 dark:text-purple-200">Categories</div>
+                    <div className="text-purple-600 dark:text-purple-300">{Object.keys(sessionAnalysis.categoryPerformance).length} analyzed</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Question Review Section */}
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-light text-slate-900 dark:text-slate-50">
@@ -660,30 +713,127 @@ export function QuizResults({
           <div className="space-y-6">
             {questions.map((question, index) => {
               const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
+              const isCorrect = userAnswer?.isCorrect || false
+              const selectedAnswer = userAnswer?.answer || ""
+              const timeSpent = userAnswer?.timeSpent || 0
               
               return (
-                <MemoizedQuestionReview
+                <div 
                   key={question.question_number}
-                  question={question}
-                  userAnswer={userAnswer}
-                  index={index}
-                  showExplanations={showExplanations}
-                  topicId={topicId}
-                  formatTime={formatTime}
-                  getSelectedAnswerText={getSelectedAnswerText}
-                />
+                  className={cn(
+                    "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 transition-all duration-300",
+                    "hover:shadow-lg animate-in fade-in slide-in-from-bottom-4"
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold transition-all duration-300",
+                      isCorrect 
+                        ? "bg-green-500 border-green-500 text-white animate-in zoom-in duration-300" 
+                        : "bg-red-500 border-red-500 text-white animate-in zoom-in duration-300"
+                    )}>
+                      {index + 1}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-3">
+                        <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
+                          {question.question}
+                        </p>
+                        <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {formatTime(timeSpent)}
+                        </div>
+                      </div>
+
+                      {/* Answer feedback */}
+                      <div className="space-y-2 mb-4">
+                        {isCorrect ? (
+                          <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300">
+                            <CheckCircle className="inline h-4 w-4 mr-1" />
+                            <span className="font-medium">Your answer:</span>{" "}
+                            <span className="font-semibold">
+                              {question.question_type === "multiple_choice"
+                                ? getSelectedAnswerText(question, selectedAnswer)
+                                : selectedAnswer}
+                            </span>
+                          </p>
+                        ) : (
+                          <>
+                            <p className="text-red-600 dark:text-red-400 text-sm animate-in fade-in duration-300">
+                              <XCircle className="inline h-4 w-4 mr-1" />
+                              <span className="font-medium">Your answer:</span>{" "}
+                              <span className="line-through opacity-75">
+                                {question.question_type === "multiple_choice"
+                                  ? getSelectedAnswerText(question, selectedAnswer)
+                                  : selectedAnswer || "(no answer)"}
+                              </span>
+                            </p>
+                            <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300 delay-100">
+                              <CheckCircle className="inline h-4 w-4 mr-1" />
+                              <span className="font-medium">Correct answer:</span>{" "}
+                              <span className="font-semibold">
+                                {question.question_type === "multiple_choice"
+                                  ? getSelectedAnswerText(question, question.correct_answer)
+                                  : question.correct_answer}
+                              </span>
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Explanation */}
+                      {showExplanations && (
+                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
+                          <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                            {question.explanation}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Sources */}
+                      {showExplanations && question.sources.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-sm font-mono font-medium text-slate-900 dark:text-slate-50 mb-3">
+                            📚 Learn more:
+                          </p>
+                          <div className="space-y-3">
+                            {question.sources.map((source, idx) => (
+                              <SourceMetadataCard
+                                key={idx}
+                                source={source}
+                                showThumbnail={true}
+                                compact={false}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Question Feedback */}
+                      <QuestionFeedback 
+                        questionId={question.question_number?.toString() || `${question.question_number}`}
+                        questionText={question.question}
+                        topicId={topicId}
+                      />
+                    </div>
+                  </div>
+                </div>
               )
             })}
           </div>
         </div>
 
-        {/* Premium Data Teaser */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <PremiumDataTeaser 
-            variant="banner"
-            className="mb-6"
-          />
-        </div>
+        {/* Premium Data Teaser for free users */}
+        {!isPremium && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <PremiumDataTeaser 
+              variant="banner"
+              className="mb-6"
+            />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="space-y-6">

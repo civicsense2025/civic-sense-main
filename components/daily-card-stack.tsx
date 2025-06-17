@@ -961,9 +961,17 @@ export function DailyCardStack({
                     <Badge 
                       key={category} 
                       variant="secondary"
-                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1"
                     >
                       {category}
+                      {isTopicCompleted(currentTopic.topic_id) && (
+                        <span className="ml-1 text-green-600" title="Completed">
+                          <svg className="inline h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
+                            <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      )}
                     </Badge>
                   ))}
                 </div>

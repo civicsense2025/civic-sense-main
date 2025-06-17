@@ -60,12 +60,14 @@ export function SkillSelectionStep({
           ? `?category_ids=${JSON.stringify(selectedCategoryIds)}`
           : '';
         
-        const { data } = await fetch(`/api/onboarding/skills${queryParams}`).then(res => res.json());
-        setSkills(data || []);
+        const response = await fetch(`/api/onboarding/skills${queryParams}`).then(res => res.json());
+        // Handle the new API response format
+        const skillsData = response.data || [];
+        setSkills(skillsData);
         
         // Group skills by category
         const grouped = new Map<string, Skill[]>();
-        (data || []).forEach((skill: Skill) => {
+        skillsData.forEach((skill: Skill) => {
           if (!grouped.has(skill.category_name)) {
             grouped.set(skill.category_name, []);
           }
@@ -87,6 +89,50 @@ export function SkillSelectionStep({
         }
       } catch (error) {
         console.error('Failed to load skills:', error);
+        // Provide fallback skills if API fails
+        const fallbackSkills = [
+          {
+            id: '1',
+            skill_name: 'Read Government Budgets',
+            skill_slug: 'read-budgets',
+            category_id: '1',
+            category_name: 'Government',
+            description: 'Understand where tax money goes and what governments prioritize',
+            difficulty_level: 2,
+            is_core_skill: true
+          },
+          {
+            id: '2',
+            skill_name: 'Research Candidates',
+            skill_slug: 'research-candidates',
+            category_id: '2',
+            category_name: 'Elections',
+            description: 'Look up candidates\' backgrounds, positions, and track records',
+            difficulty_level: 2,
+            is_core_skill: true
+          },
+          {
+            id: '3',
+            skill_name: 'Check Sources',
+            skill_slug: 'check-sources',
+            category_id: '4',
+            category_name: 'Media Literacy',
+            description: 'Verify whether news sources and websites are trustworthy',
+            difficulty_level: 1,
+            is_core_skill: true
+          }
+        ];
+        setSkills(fallbackSkills);
+        
+        // Group fallback skills by category
+        const grouped = new Map<string, Skill[]>();
+        fallbackSkills.forEach((skill: any) => {
+          if (!grouped.has(skill.category_name)) {
+            grouped.set(skill.category_name, []);
+          }
+          grouped.get(skill.category_name)!.push(skill);
+        });
+        setGroupedSkills(grouped);
       } finally {
         setLoading(false);
       }
@@ -189,17 +235,20 @@ export function SkillSelectionStep({
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="text-center space-y-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-2"
-        >
-          <h2 className="text-3xl font-bold text-gray-900">Choose Your Learning Goals</h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Select the specific civic skills you want to develop. We'll create a personalized 
-            learning path based on your interests and goals.
-          </p>
-        </motion.div>
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-gray-900">Choose Your Learning Goals</h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Select the specific civic skills you want to develop. We'll create a personalized 
+                learning path based on your interests and goals.
+              </p>
+            </div>
+          </motion.div>
+        </div>
 
         <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
           <div className="flex items-center space-x-1">
@@ -220,198 +269,207 @@ export function SkillSelectionStep({
       {/* Skills grouped by category */}
       <div className="space-y-8">
         {Array.from(groupedSkills.entries()).map(([categoryName, categorySkills]) => (
-          <motion.div
-            key={categoryName}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
-              <Brain className="w-5 h-5 text-blue-600" />
-              <h3 className="text-xl font-semibold text-gray-900">{categoryName}</h3>
-              <Badge variant="outline">
-                {categorySkills.filter(skill => selectedSkills.has(skill.id)).length} / {categorySkills.length} selected
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categorySkills.map((skill, index) => {
-                const isSelected = selectedSkills.has(skill.id);
-                const preferences = selectedSkills.get(skill.id);
+          <div key={categoryName}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
+                  <Brain className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-xl font-semibold text-gray-900">{categoryName}</h3>
+                  <Badge variant="outline">
+                    {categorySkills.filter(skill => selectedSkills.has(skill.id)).length} / {categorySkills.length} selected
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {categorySkills.map((skill, index) => {
+                    const isSelected = selectedSkills.has(skill.id);
+                    const preferences = selectedSkills.get(skill.id);
 
-                return (
-                  <motion.div
-                    key={skill.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Card 
-                      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                        isSelected 
-                          ? 'ring-2 ring-blue-500 border-blue-200 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => toggleSkill(skill.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <CardTitle className="text-lg font-medium">{skill.skill_name}</CardTitle>
-                              {skill.is_core_skill && (
-                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                                  <Star className="w-3 h-3 mr-1" />
-                                  Core
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center space-x-3 text-sm text-gray-600">
-                              <div className="flex items-center space-x-1">
-                                {getDifficultyIcon(skill.difficulty_level)}
-                                <span>{getDifficultyLabel(skill.difficulty_level)}</span>
-                              </div>
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                              {skill.description}
-                            </p>
-                          </div>
-                          
-                          {isSelected ? (
-                            <CheckCircle2 className="w-6 h-6 text-blue-600 flex-shrink-0 ml-3" />
-                          ) : (
-                            <Circle className="w-6 h-6 text-gray-400 flex-shrink-0 ml-3" />
-                          )}
-                        </div>
-                      </CardHeader>
-
-                      {isSelected && preferences && (
-                        <CardContent className="pt-0">
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="space-y-4 pt-3 border-t border-gray-200"
+                    return (
+                      <div key={skill.id}>
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card 
+                            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              isSelected 
+                                ? 'ring-2 ring-blue-500 border-blue-200 bg-blue-50' 
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => toggleSkill(skill.id)}
                           >
-                            {/* Interest Level */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">Interest Level</label>
-                              <div className="flex space-x-1">
-                                {[1, 2, 3, 4, 5].map((level) => (
-                                  <button
-                                    key={level}
-                                    className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
-                                      level <= preferences.interest_level
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                    }`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      updateSkillPreference(skill.id, 'interest_level', level);
-                                    }}
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <CardTitle className="text-lg font-medium">{skill.skill_name}</CardTitle>
+                                    {skill.is_core_skill && (
+                                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                        <Star className="w-3 h-3 mr-1" />
+                                        Core
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <div className="flex items-center space-x-1">
+                                      {getDifficultyIcon(skill.difficulty_level)}
+                                      <span>{getDifficultyLabel(skill.difficulty_level)}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <p className="text-sm text-gray-600 leading-relaxed">
+                                    {skill.description}
+                                  </p>
+                                </div>
+                                
+                                {isSelected ? (
+                                  <CheckCircle2 className="w-6 h-6 text-blue-600 flex-shrink-0 ml-3" />
+                                ) : (
+                                  <Circle className="w-6 h-6 text-gray-400 flex-shrink-0 ml-3" />
+                                )}
+                              </div>
+                            </CardHeader>
+
+                            {isSelected && preferences && (
+                              <CardContent className="pt-0">
+                                <div>
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
                                   >
-                                    {level}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
+                                    <div className="space-y-4 pt-3 border-t border-gray-200">
+                                      {/* Interest Level */}
+                                      <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700">Interest Level</label>
+                                        <div className="flex space-x-1">
+                                          {[1, 2, 3, 4, 5].map((level) => (
+                                            <button
+                                              key={level}
+                                              className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
+                                                level <= preferences.interest_level
+                                                  ? 'bg-blue-600 text-white'
+                                                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                              }`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateSkillPreference(skill.id, 'interest_level', level);
+                                              }}
+                                            >
+                                              {level}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
 
-                            {/* Target Mastery & Timeline */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Target Level</label>
-                                <select
-                                  value={preferences.target_mastery_level}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    updateSkillPreference(skill.id, 'target_mastery_level', e.target.value);
-                                  }}
-                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                  <option value="novice">Novice</option>
-                                  <option value="beginner">Beginner</option>
-                                  <option value="intermediate">Intermediate</option>
-                                  <option value="advanced">Advanced</option>
-                                  <option value="expert">Expert</option>
-                                </select>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Timeline</label>
-                                <select
-                                  value={preferences.learning_timeline}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    updateSkillPreference(skill.id, 'learning_timeline', e.target.value);
-                                  }}
-                                  className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                  <option value="immediate">Immediate</option>
-                                  <option value="weeks">Few Weeks</option>
-                                  <option value="months">Few Months</option>
-                                  <option value="flexible">Flexible</option>
-                                </select>
-                              </div>
-                            </div>
+                                      {/* Target Mastery & Timeline */}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <label className="text-sm font-medium text-gray-700">Target Level</label>
+                                          <select
+                                            value={preferences.target_mastery_level}
+                                            onChange={(e) => {
+                                              e.stopPropagation();
+                                              updateSkillPreference(skill.id, 'target_mastery_level', e.target.value);
+                                            }}
+                                            className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          >
+                                            <option value="novice">Novice</option>
+                                            <option value="beginner">Beginner</option>
+                                            <option value="intermediate">Intermediate</option>
+                                            <option value="advanced">Advanced</option>
+                                            <option value="expert">Expert</option>
+                                          </select>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                          <label className="text-sm font-medium text-gray-700">Timeline</label>
+                                          <select
+                                            value={preferences.learning_timeline}
+                                            onChange={(e) => {
+                                              e.stopPropagation();
+                                              updateSkillPreference(skill.id, 'learning_timeline', e.target.value);
+                                            }}
+                                            className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          >
+                                            <option value="immediate">Immediate</option>
+                                            <option value="weeks">Few Weeks</option>
+                                            <option value="months">Few Months</option>
+                                            <option value="flexible">Flexible</option>
+                                          </select>
+                                        </div>
+                                      </div>
 
-                            {/* Preview badges */}
-                            <div className="flex flex-wrap gap-2">
-                              <Badge className={getMasteryLevelColor(preferences.target_mastery_level)}>
-                                <Target className="w-3 h-3 mr-1" />
-                                {preferences.target_mastery_level}
-                              </Badge>
-                              <Badge className={getTimelineColor(preferences.learning_timeline)}>
-                                <Clock className="w-3 h-3 mr-1" />
-                                {preferences.learning_timeline}
-                              </Badge>
-                            </div>
-                          </motion.div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
+                                      {/* Preview badges */}
+                                      <div className="flex flex-wrap gap-2">
+                                        <Badge className={getMasteryLevelColor(preferences.target_mastery_level)}>
+                                          <Target className="w-3 h-3 mr-1" />
+                                          {preferences.target_mastery_level}
+                                        </Badge>
+                                        <Badge className={getTimelineColor(preferences.learning_timeline)}>
+                                          <Clock className="w-3 h-3 mr-1" />
+                                          {preferences.learning_timeline}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                </div>
+                              </CardContent>
+                            )}
+                          </Card>
+                        </motion.div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Selection Summary */}
       {selectedSkills.size > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-gray-200 rounded-lg p-6"
-        >
-          <h4 className="font-semibold text-gray-900 mb-3">
-            Learning Plan Summary ({selectedSkills.size} skills selected)
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from(selectedSkills.entries()).map(([skillId, preferences]) => {
-              const skill = skills.find(s => s.id === skillId);
-              if (!skill) return null;
-              
-              return (
-                <div key={skillId} className="bg-gray-50 rounded-lg p-3 space-y-2">
-                  <div className="font-medium text-sm text-gray-900">{skill.skill_name}</div>
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      Level {preferences.interest_level}/5
-                    </Badge>
-                    <Badge className={getMasteryLevelColor(preferences.target_mastery_level) + ' text-xs'}>
-                      {preferences.target_mastery_level}
-                    </Badge>
-                    <Badge className={getTimelineColor(preferences.learning_timeline) + ' text-xs'}>
-                      {preferences.learning_timeline}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Learning Plan Summary ({selectedSkills.size} skills selected)
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from(selectedSkills.entries()).map(([skillId, preferences]) => {
+                  const skill = skills.find(s => s.id === skillId);
+                  if (!skill) return null;
+                  
+                  return (
+                    <div key={skillId} className="bg-gray-50 rounded-lg p-3 space-y-2">
+                      <div className="font-medium text-sm text-gray-900">{skill.skill_name}</div>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="outline" className="text-xs">
+                          Level {preferences.interest_level}/5
+                        </Badge>
+                        <Badge className={getMasteryLevelColor(preferences.target_mastery_level) + ' text-xs'}>
+                          {preferences.target_mastery_level}
+                        </Badge>
+                        <Badge className={getTimelineColor(preferences.learning_timeline) + ' text-xs'}>
+                          {preferences.learning_timeline}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
 
       {/* Navigation */}
