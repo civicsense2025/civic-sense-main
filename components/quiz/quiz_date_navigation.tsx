@@ -161,10 +161,10 @@ export function QuizDateNavigation({
                 <ChevronDown className="h-4 w-4 text-slate-500" />
               </div>
               <div className={cn(
-                "text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-[200px] text-center",
-                isMobile && "max-w-[120px] truncate"
+                "text-slate-600 dark:text-slate-400 mt-1 max-w-[200px] text-center",
+                isMobile ? "text-[8px] max-w-[120px] truncate" : "text-xs"
               )}>
-                {truncateTitle(currentTopic.title, isMobile ? 15 : 30)}
+                {truncateTitle(currentTopic.title, isMobile ? 12 : 30)}
               </div>
             </div>
           </Button>

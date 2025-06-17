@@ -1733,21 +1733,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                 </TooltipContent>
               </Tooltip>
               
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsMinimized(false)}
-                    className="absolute -top-1 -right-1 w-4 h-4 p-0 rounded-full bg-white dark:bg-black border border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                  >
-                    <Maximize2 className="h-2 w-2 text-slate-900 dark:text-white" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
-                  Expand controls
-                </TooltipContent>
-              </Tooltip>
+
             </div>
           ) : (
             // Full state - clean, minimal design matching dashboard

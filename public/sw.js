@@ -1,6 +1,6 @@
 // CivicSense Service Worker - Production Ready
-// Update version when design changes to force cache refresh
-const CACHE_VERSION = '1.0.1' // Increment this when you update design
+// Update version when design changes to force cache refresh  
+const CACHE_VERSION = '1.0.2' // Incremented for lazy loading performance improvements
 const CACHE_NAME = `civicsense-v${CACHE_VERSION}`
 const STATIC_CACHE_NAME = `civicsense-static-v${CACHE_VERSION}`
 const DYNAMIC_CACHE_NAME = `civicsense-dynamic-v${CACHE_VERSION}`

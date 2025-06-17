@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 export function Header({ onSignInClick, className, showTopBar = true, showMainHeader = true }: HeaderProps) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -24,19 +24,19 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
     <div className={className}>
       {/* Unified header with integrated utility bar */}
       {showTopBar && showMainHeader && (
-        <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm overflow-hidden">
+        <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
-            {/* Left side - Site branding */}
+            {/* Left side - Site branding with inline alpha badge */}
             <div className="flex items-center">
               <Link 
                 href="/" 
                 className="group hover:opacity-80 transition-opacity"
               >
-                <div className="relative inline-block">
+                <div className="flex items-center gap-2">
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                     CivicSense
                   </div>
-                  <span className="absolute top-full left-[60%] translate-y-1/2 text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm z-10">
+                  <span className="text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm">
                     alpha
                   </span>
                 </div>
@@ -46,22 +46,9 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
             {/* Center - Navigation (hidden on small screens) */}
             <div className="hidden sm:flex flex-1 justify-center">
               <nav className="flex items-center space-x-6 lg:space-x-8">
-                {pathname === '/civics-test' ? (
-                  <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-medium">
-                    Civics Test
-                  </div>
-                ) : (
-                  <Link 
-                    href="/civics-test"
-                    className="text-sm sm:text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors"
-                  >
-                    Take Civics Test
-                  </Link>
-                )}
-                
-                {pathname !== '/' && !pathname.includes('/civics-test') && (
+                {pathname !== '/' && (
                   <div className="text-sm sm:text-base text-slate-700 dark:text-slate-200 font-light">
-                    {pathname.includes('/quiz/') ? 'Quiz' : 'Home'}
+                    {pathname.includes('/quiz/') ? 'Quiz' : pathname === '/civics-test' ? 'Civics Test' : 'Home'}
                   </div>
                 )}
               </nav>
@@ -75,10 +62,15 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 <UserMenu onSignInClick={onSignInClick} />
               </div>
               
+              {/* Mobile-only theme toggle */}
+              <div className="sm:hidden">
+                <ThemeToggle />
+              </div>
+              
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="sm:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="sm:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-[100]"
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? (
@@ -89,68 +81,115 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               </button>
             </div>
           </div>
-          
-          {/* Mobile menu overlay */}
-          {isMobileMenuOpen && (
-            <>
-              {/* Backdrop */}
-              <div 
-                className="sm:hidden fixed inset-0 z-30 bg-black/20" 
+        </div>
+      )}
+
+      {/* Mobile menu overlay - highest z-index */}
+      {isMobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="sm:hidden fixed inset-0 z-[90] bg-black/20 backdrop-blur-sm" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          {/* Menu content */}
+          <div className="sm:hidden fixed top-0 left-0 right-0 z-[95] bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-xl">
+            {/* Header in mobile menu */}
+            <div className="flex items-center justify-between px-3 py-3 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  CivicSense
+                </div>
+                <span className="text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm">
+                  alpha
+                </span>
+              </div>
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-lg w-full max-w-full">
-                <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
-                {/* Navigation Links */}
-                <div className="space-y-3">
-                  {pathname !== '/civics-test' && (
-                    <Link 
-                      href="/civics-test"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2"
-                    >
-                      Take Civics Test
-                    </Link>
-                  )}
-                  
-                  {pathname !== '/' && (
-                    <Link 
-                      href="/"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2"
-                    >
-                      Home
-                    </Link>
-                  )}
-                  
+                className="p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Menu content */}
+            <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
+              {/* Navigation Links */}
+              <div className="space-y-3">
+                {pathname !== '/' && (
                   <Link 
-                    href="/donate"
+                    href="/"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2"
+                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
                   >
-                    Support
+                    Home
                   </Link>
-                </div>
+                )}
                 
-                {/* Divider */}
-                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                  {/* Mobile controls */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Theme</span>
-                    <ThemeToggle />
-                  </div>
-                  
-                  <div className="mt-4">
-                    <UserMenu onSignInClick={() => {
-                      setIsMobileMenuOpen(false)
-                      onSignInClick()
-                    }} />
-                  </div>
-                </div>
+                <Link 
+                  href="/donate"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  Support
+                </Link>
+              </div>
+              
+              {/* Divider */}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                {/* Authentication Links - Mobile Only */}
+                <div className="space-y-3">
+                  {!user ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false)
+                          onSignInClick()
+                        }}
+                        className="block w-full text-left text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                      >
+                        Sign In
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link 
+                        href="/dashboard"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                      >
+                        Dashboard
+                      </Link>
+                      
+                      <Link 
+                        href="/settings"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                      >
+                        Settings
+                      </Link>
+                      
+                      <button
+                        onClick={async () => {
+                          setIsMobileMenuOpen(false)
+                          try {
+                            await signOut()
+                          } catch (error) {
+                            console.error('Error signing out:', error)
+                          }
+                        }}
+                        className="block w-full text-left text-base text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors py-2 px-3 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Fallback for individual components */}
@@ -172,11 +211,11 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               href="/" 
               className="group hover:opacity-80 transition-opacity"
             >
-              <div className="relative inline-block">
+              <div className="flex items-center gap-2">
                 <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                   CivicSense
                 </div>
-                <span className="absolute top-full left-[60%] translate-y-1/2 text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm z-10">
+                <span className="text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm">
                   alpha
                 </span>
               </div>

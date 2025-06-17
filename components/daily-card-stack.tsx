@@ -576,29 +576,98 @@ export function DailyCardStack({
     setTopicsWithoutQuestions(topicsWithoutQuestionsSet)
   }, [])
 
-  // Enhance loadInitialTopics to load more data
+  // Keep track of loaded date ranges to avoid duplicate loading
+  const [loadedDateRanges, setLoadedDateRanges] = useState<Set<string>>(new Set())
+
+  // Lazy load topics for a specific date range
+  const loadTopicsForDateRange = useCallback(async (startDate: Date, endDate: Date) => {
+    const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
+    
+    // Skip if we've already loaded this range
+    if (loadedDateRanges.has(rangeKey)) {
+      return
+    }
+
+    try {
+      setIsLoadingTopics(true)
+      
+      const topicsData = await dataService.getTopicsInRange(startDate, endDate)
+      const newTopicsArray: TopicMetadata[] = Object.values(topicsData)
+      
+      // Merge with existing topics (avoid duplicates)
+      setTopicsList(prevTopics => {
+        const existingIds = new Set(prevTopics.map(t => t.topic_id))
+        const uniqueNewTopics = newTopicsArray.filter(t => !existingIds.has(t.topic_id))
+        
+        if (uniqueNewTopics.length > 0) {
+          console.log(`📚 Lazy loaded ${uniqueNewTopics.length} new topics for date range`)
+          return [...prevTopics, ...uniqueNewTopics].sort((a, b) => {
+            const dateA = new Date(a.date || '').getTime()
+            const dateB = new Date(b.date || '').getTime()
+            return dateB - dateA // Most recent first
+          })
+        }
+        return prevTopics
+      })
+      
+      // Mark this range as loaded
+      setLoadedDateRanges(prev => new Set([...prev, rangeKey]))
+      
+      // Check questions for new topics (but limit the number to avoid performance issues)
+      if (process.env.NODE_ENV !== 'development' && newTopicsArray.length > 0 && newTopicsArray.length < 20) {
+        await checkTopicsForQuestions(newTopicsArray)
+      }
+    } catch (error) {
+      console.error('Error lazy loading topics:', error)
+    } finally {
+      setIsLoadingTopics(false)
+    }
+  }, [loadedDateRanges, checkTopicsForQuestions])
+
+  // Enhanced loading with lazy loading support
   useEffect(() => {
     let isCancelled = false
 
     const loadInitialTopics = async () => {
       try {
         setIsLoadingTopics(true)
-        // Fetch all topics instead of limiting to a date range to ensure we include
-        // the full catalog (400+ topics). We'll filter and categorize them later.
-        const topicsData = await dataService.getAllTopics()
+        
+        // Only load topics for current week (±3 days) for faster initial load
+        const today = getTodayAtMidnight()
+        const startDate = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
+        const endDate = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)   // 3 days ahead
+        
+        const topicsData = await dataService.getTopicsInRange(startDate, endDate)
         
         if (isCancelled) return
         
-        const topicsArray = Object.values(topicsData)
+        const topicsArray: TopicMetadata[] = Object.values(topicsData)
         setTopicsList(topicsArray)
         
-        if (process.env.NODE_ENV !== 'development' && !isCancelled) {
+        // Mark initial range as loaded
+        const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
+        setLoadedDateRanges(new Set([rangeKey]))
+        
+        // Only check questions for the initially loaded topics
+        if (process.env.NODE_ENV !== 'development' && !isCancelled && topicsArray.length < 50) {
           await checkTopicsForQuestions(topicsArray)
         }
       } catch (error) {
         if (!isCancelled) {
           console.error('Error loading initial topics:', error)
-          setTopicsList([])
+          // Fallback to loading all topics if date range fails
+          try {
+            const allTopicsData = await dataService.getAllTopics()
+            if (!isCancelled) {
+              const allTopicsArray: TopicMetadata[] = Object.values(allTopicsData)
+              setTopicsList(allTopicsArray)
+              // Mark as "all loaded" so we don't lazy load anymore
+              setLoadedDateRanges(new Set(['all_topics_loaded']))
+            }
+          } catch (fallbackError) {
+            console.error('Fallback loading failed:', fallbackError)
+            setTopicsList([])
+          }
         }
       } finally {
         if (!isCancelled) {
@@ -612,7 +681,7 @@ export function DailyCardStack({
     return () => {
       isCancelled = true
     }
-  }, []) // Remove checkTopicsForQuestions dependency to prevent infinite loops
+  }, [])
 
   useEffect(() => {
     const topicParam = searchParams.get('topic')
@@ -671,7 +740,7 @@ export function DailyCardStack({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentStackIndex, allFilteredTopics.length]) // Minimize dependencies
 
-  // Add scroll handler for dropdown
+  // Add scroll handler for dropdown with lazy loading
   const handleDropdownScroll = useCallback(() => {
     if (debouncedDropdownSearch) return // no progressive loading while searching
     if (!dropdownRef.current) return
@@ -682,8 +751,18 @@ export function DailyCardStack({
     // If scrolled to 80% of the way down, load more topics
     if (scrollPosition > scrollHeight * 0.8 && visibleTopicsCount < allFilteredTopics.length) {
       setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
+      
+      // Also trigger lazy loading for more topics if we're running low and haven't loaded all yet
+      if (!loadedDateRanges.has('all_topics_loaded') && allFilteredTopics.length - visibleTopicsCount < 50) {
+        // Load more topics from database for future navigation
+        const today = getTodayAtMidnight()
+        const futureDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days ahead
+        const pastDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)   // 30 days back
+        
+        loadTopicsForDateRange(pastDate, futureDate)
+      }
     }
-  }, [debouncedDropdownSearch, visibleTopicsCount, allFilteredTopics.length])
+  }, [debouncedDropdownSearch, visibleTopicsCount, allFilteredTopics.length, loadedDateRanges, loadTopicsForDateRange])
 
   // Reset visible topics & search when dropdown opens and scroll to current item
   useEffect(() => {
@@ -764,6 +843,44 @@ export function DailyCardStack({
   useEffect(() => {
     prevIndexRef.current = currentStackIndex
   }, [currentStackIndex])
+
+  // Lazy load more topics when navigating near the edges of available topics
+  useEffect(() => {
+    if (allFilteredTopics.length === 0 || loadedDateRanges.has('all_topics_loaded')) return
+
+    const currentTopic = allFilteredTopics[currentStackIndex]
+    if (!currentTopic?.date) return
+
+    const currentDate = parseTopicDate(currentTopic.date)
+    if (!currentDate) return
+
+    // If we're near the end of our loaded topics (within 10 topics of the edge), 
+    // preemptively load more in that direction
+    const isNearEnd = currentStackIndex >= allFilteredTopics.length - 10
+    const isNearBeginning = currentStackIndex < 10
+
+    if (isNearEnd || isNearBeginning) {
+      const today = getTodayAtMidnight()
+      
+      if (isNearEnd) {
+        // Load older topics (further back in time)
+        const startDate = new Date(currentDate.getTime() - 60 * 24 * 60 * 60 * 1000) // 60 days back from current
+        const endDate = new Date(currentDate.getTime() - 1 * 24 * 60 * 60 * 1000)    // 1 day back from current
+        
+        console.log('📚 Preloading older topics for navigation...')
+        loadTopicsForDateRange(startDate, endDate)
+      }
+      
+      if (isNearBeginning) {
+        // Load newer topics (further forward in time)
+        const startDate = new Date(currentDate.getTime() + 1 * 24 * 60 * 60 * 1000)  // 1 day ahead from current
+        const endDate = new Date(currentDate.getTime() + 60 * 24 * 60 * 60 * 1000)   // 60 days ahead from current
+        
+        console.log('📚 Preloading newer topics for navigation...')
+        loadTopicsForDateRange(startDate, endDate)
+      }
+    }
+  }, [currentStackIndex, allFilteredTopics.length, loadedDateRanges, loadTopicsForDateRange, parseTopicDate])
 
   // Loading state
   if (isLoadingTopics) {
@@ -1008,7 +1125,7 @@ export function DailyCardStack({
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
-              <h2 className="text-6xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3">
+              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3">
                 {currentTopic.topic_title}
               </h2>
               {/* Topic categories */}
