@@ -3,7 +3,7 @@
 import Script from 'next/script'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { DonateForm } from '@/components/donate-form'
 import { AutoReadPage } from '@/components/auto-read-page'
 import { FeedbackButton } from '@/components/feedback'
@@ -12,7 +12,7 @@ import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Info } from 'lucide-react'
 
-export default function DonatePage() {
+function DonatePageContent() {
   // Get the Stripe donation price/product ID from env
   const donationPriceId = process.env.NEXT_PUBLIC_STRIPE_DONATION
   const searchParams = useSearchParams()
@@ -142,5 +142,17 @@ export default function DonatePage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function DonatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-white"></div>
+      </div>
+    }>
+      <DonatePageContent />
+    </Suspense>
   )
 } 
