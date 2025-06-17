@@ -127,9 +127,9 @@ export default function HomePage() {
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
     
       
-      <main className="w-full py-8">
+      <main className="w-full py-4 sm:py-6 lg:py-8">
         {/* Main content - use full available width with responsive constraints */}
-        <div className="w-full px-4 sm:px-8 py-1 sm:py-2">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -157,21 +157,21 @@ export default function HomePage() {
 
           {/* Continue Where You Left Off Section */}
           {user && incompleteAttempts.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-bold mb-4 text-slate-900 dark:text-slate-100">Continue Where You Left Off</h2>
-              <div className="flex flex-col gap-3">
+            <div className="mt-6 sm:mt-8">
+              <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-slate-900 dark:text-slate-100">Continue Where You Left Off</h2>
+              <div className="flex flex-col gap-2 sm:gap-3">
                 {incompleteAttempts.map((attempt, idx) => {
                   const topic = incompleteTopics[idx]
                   if (!topic) return null
                   return (
-                    <div key={attempt.id} className="flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-3 shadow-sm">
-                      <span className="text-3xl mr-4">{topic.emoji}</span>
+                    <div key={attempt.id} className="flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 sm:px-4 py-2 sm:py-3 shadow-sm">
+                      <span className="text-2xl sm:text-3xl mr-3 sm:mr-4">{topic.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
+                        <div className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
                       </div>
                       <button
-                        className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                        className="ml-2 sm:ml-4 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700 transition"
                         onClick={() => router.push(`/quiz/${topic.topic_id}`)}
                       >
                         Continue
