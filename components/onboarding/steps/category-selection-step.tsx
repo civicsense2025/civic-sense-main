@@ -163,14 +163,6 @@ export function CategorySelectionStep({
                         {category.description}
                       </p>
                     </div>
-                    
-                    <div className={`text-xs font-light ${
-                      isSelected 
-                        ? 'text-slate-300 dark:text-slate-600' 
-                        : 'text-slate-500 dark:text-slate-500'
-                    }`}>
-                      {category.question_count} questions
-                    </div>
                   </div>
                 </button>
               </motion.div>

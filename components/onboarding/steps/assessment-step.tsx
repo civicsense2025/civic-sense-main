@@ -29,6 +29,39 @@ interface AssessmentStepProps {
   userId?: string
 }
 
+// WordReveal microanimation component
+function WordReveal({ text, speed = 60, className, onComplete }: { text: string, speed?: number, className?: string, onComplete?: () => void }) {
+  const words = text.split(' ')
+  const [visibleCount, setVisibleCount] = useState(0)
+  useEffect(() => {
+    setVisibleCount(0)
+    if (!text) return
+    let cancelled = false
+    function revealNext() {
+      if (cancelled) return
+      setVisibleCount(count => {
+        if (count < words.length) {
+          setTimeout(revealNext, speed)
+          return count + 1
+        } else {
+          onComplete?.()
+          return count
+        }
+      })
+    }
+    setTimeout(revealNext, speed)
+    return () => { cancelled = true }
+  }, [text])
+  return (
+    <span className={className}>
+      {words.slice(0, visibleCount).map((word, i) => (
+        <span key={i} style={{ opacity: 1, transition: 'opacity 0.2s' }}>{word + ' '}</span>
+      ))}
+      {visibleCount < words.length && <span className="animate-pulse">|</span>}
+    </span>
+  )
+}
+
 export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: AssessmentStepProps) {
   const [questions, setQuestions] = useState<AssessmentQuestion[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -47,6 +80,13 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   const [startTime, setStartTime] = useState<number>(Date.now())
   const responseTimes = useRef<{ [questionId: string]: number }>({})
   const { logEvent } = useStatsig();
+  const autoAdvanceTimeout = useRef<NodeJS.Timeout | null>(null)
+  const [canAdvance, setCanAdvance] = useState(false)
+  const [assessmentMode, setAssessmentMode] = useState<'quick' | 'full'>('quick')
+  const [xpAwarded, setXpAwarded] = useState(0)
+  const [xpAlreadyAwarded, setXpAlreadyAwarded] = useState(false)
+  const [hasCompletedQuick, setHasCompletedQuick] = useState(false)
+  const [hasCompletedFull, setHasCompletedFull] = useState(false)
 
   // Normalize API question
   function normalizeQuestion(q: any): AssessmentQuestion {
@@ -82,7 +122,8 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         const categoryIds = selectedCategories.map((cat: any) => cat.id).filter(Boolean)
         const params = new URLSearchParams()
         params.set('balanced', 'true')
-        params.set('count', '8')
+        const count = assessmentMode === 'quick' ? 8 : 100 // 8 for quick, 100 for full (or all)
+        params.set('count', String(count))
         if (categoryIds.length > 0) {
           params.set('categories', JSON.stringify(categoryIds))
         }
@@ -100,7 +141,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
       }
     }
     fetchQuestions()
-  }, [onboardingState])
+  }, [onboardingState, assessmentMode])
 
   // Track response time
   useEffect(() => {
@@ -113,15 +154,16 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   // Handle answer selection
   const handleAnswer = async (optionId: string) => {
     if (!currentQuestion) return
-    const isCorrect = optionId === currentQuestion.correctAnswer
+    // Find the correct option's id
+    const correctOption = currentQuestion.options.find(
+      (opt) => opt.text === currentQuestion.correctAnswer
+    )
+    const isCorrect = optionId === (correctOption?.id ?? currentQuestion.correctAnswer)
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: optionId }))
     setAnsweredIds(prev => [...prev, currentQuestion.id])
-    // Track streak
     setStreak(prev => (isCorrect ? prev + 1 : 0))
     setMaxStreak(prev => (isCorrect && prev + 1 > maxStreak ? prev + 1 : maxStreak))
-    // Track response time
     responseTimes.current[currentQuestion.id] = Math.floor((Date.now() - startTime) / 1000)
-    // Track category performance
     setCategoryPerformance(prev => {
       const cat = currentQuestion.category
       const prevStats = prev[cat] || { correct: 0, total: 0 }
@@ -134,55 +176,74 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
       }
     })
     setShowResult(true)
-    setTimeout(async () => {
-      setShowResult(false)
-      // If at end, check if adaptive follow-up is needed
-      if (currentQuestionIndex === questions.length - 1 && !assessmentComplete) {
-        // Identify weak categories
-        const weak = Object.entries(categoryPerformance)
-          .filter(([_, stats]) => stats.correct / stats.total < 0.6)
-          .map(([cat]) => cat)
-        setWeakCategories(weak)
-        // If user struggled, fetch more questions adaptively
-        if (questions.length < 12 && weak.length > 0) {
-          setAdaptiveLoading(true)
-          setAdaptiveMode(true)
-          // Calculate performance
-          const correctCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.correct, 0)
-          const totalCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.total, 0)
-          const performance = totalCount > 0 ? correctCount / totalCount : 0.5
-          // Target easier if low, harder if high
-          let targetDifficulty = 2
-          if (performance >= 0.8) targetDifficulty = 3
-          else if (performance <= 0.4) targetDifficulty = 1
-          // POST for adaptive question
-          const resp = await fetch('/api/onboarding/assessment-questions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              performance,
-              answeredQuestions: answeredIds,
-              targetDifficulty,
-              categories: weak
-            })
+    setCanAdvance(false)
+    // Start 10s timer for auto-advance
+    if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
+    autoAdvanceTimeout.current = setTimeout(() => {
+      handleAdvance()
+    }, 10000)
+    // Allow manual advance after 1s (so button doesn't appear instantly)
+    setTimeout(() => setCanAdvance(true), 1000)
+  }
+
+  // Manual advance handler
+  function handleAdvance() {
+    setShowResult(false)
+    setCanAdvance(false)
+    if (autoAdvanceTimeout.current) {
+      clearTimeout(autoAdvanceTimeout.current)
+      autoAdvanceTimeout.current = null
+    }
+    if (currentQuestionIndex === questions.length - 1 && !assessmentComplete) {
+      // Identify weak categories
+      const weak = Object.entries(categoryPerformance)
+        .filter(([_, stats]) => stats.correct / stats.total < 0.6)
+        .map(([cat]) => cat)
+      setWeakCategories(weak)
+      if (questions.length < 12 && weak.length > 0) {
+        setAdaptiveLoading(true)
+        setAdaptiveMode(true)
+        const correctCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.correct, 0)
+        const totalCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.total, 0)
+        const performance = totalCount > 0 ? correctCount / totalCount : 0.5
+        let targetDifficulty = 2
+        if (performance >= 0.8) targetDifficulty = 3
+        else if (performance <= 0.4) targetDifficulty = 1
+        fetch('/api/onboarding/assessment-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            performance,
+            answeredQuestions: answeredIds,
+            targetDifficulty,
+            categories: weak
           })
-          const data = await resp.json()
-          if (data.question) {
-            setQuestions(prev => [...prev, normalizeQuestion(data.question)])
-            setCurrentQuestionIndex(prev => prev + 1)
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            if (data.question) {
+              setQuestions(prev => [...prev, normalizeQuestion(data.question)])
+              setCurrentQuestionIndex(prev => prev + 1)
+            }
             setAdaptiveLoading(false)
-            return
-          }
-          setAdaptiveLoading(false)
-        }
+          })
         setAssessmentComplete(true)
-      } else if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1)
       } else {
         setAssessmentComplete(true)
       }
-    }, 1200)
+    } else if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1)
+    } else {
+      setAssessmentComplete(true)
+    }
   }
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
+    }
+  }, [])
 
   // Calculate results
   const calculateResults = () => {
@@ -190,9 +251,10 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     let perCategory: Record<string, { correct: number; total: number }> = {}
     questions.forEach(q => {
       const userAnswer = answers[q.id]
+      const correctOption = q.options.find(opt => opt.text === q.correctAnswer)
       if (!perCategory[q.category]) perCategory[q.category] = { correct: 0, total: 0 }
       perCategory[q.category].total++
-      if (userAnswer === q.correctAnswer) {
+      if (userAnswer === (correctOption?.id ?? q.correctAnswer)) {
         correct++
         perCategory[q.category].correct++
       }
@@ -211,6 +273,31 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     return "Perfect starting point! Everyone begins somewhere."
   }
 
+  // On mount, check if user has already completed quick/full assessment
+  useEffect(() => {
+    async function checkAssessmentCompletion() {
+      const resolvedUserId = userId || onboardingState?.userId || onboardingState?.user_id || onboardingState?.user?.id;
+      if (!resolvedUserId) return;
+      const { data: quick } = await supabase
+        .from('user_assessments')
+        .select('id')
+        .eq('user_id', resolvedUserId)
+        .eq('assessment_type', 'onboarding')
+        .eq('mode', 'quick')
+        .maybeSingle()
+      const { data: full } = await supabase
+        .from('user_assessments')
+        .select('id')
+        .eq('user_id', resolvedUserId)
+        .eq('assessment_type', 'onboarding')
+        .eq('mode', 'full')
+        .maybeSingle()
+      setHasCompletedQuick(!!quick)
+      setHasCompletedFull(!!full)
+    }
+    checkAssessmentCompletion()
+  }, [userId, onboardingState])
+
   // Helper to persist assessment analytics and personalize user
   async function handleAssessmentAnalytics(results: any) {
     try {
@@ -225,45 +312,58 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         final_score: results.score,
         timestamp: new Date().toISOString()
       });
-      // 2. Store user_assessments
+      // 2. Look up scoring
+      const { data: scoring } = await supabase
+        .from('assessment_scoring')
+        .select('*')
+        .lte('score_range_min', results.score)
+        .gte('score_range_max', results.score)
+        .single()
+      const mappedLevel = scoring?.skill_level || results.level
+      const mappedDescription = scoring?.description || getPersonalizedMessage(results.level)
+      const recommendations = scoring?.recommended_content || []
+      // 3. Check if already completed for this mode
+      const mode = assessmentMode
+      const { data: existing } = await supabase
+        .from('user_assessments')
+        .select('id')
+        .eq('user_id', resolvedUserId)
+        .eq('assessment_type', 'onboarding')
+        .eq('mode', mode)
+        .maybeSingle()
+      let xp = 0
+      if (!existing) {
+        xp = mode === 'full' ? 500 : 100
+        setXpAwarded(xp)
+        setXpAlreadyAwarded(false)
+      } else {
+        setXpAwarded(0)
+        setXpAlreadyAwarded(true)
+      }
+      // 4. Store user_assessments (always allow retake, but only award XP on first try)
       await supabase.from('user_assessments').insert({
         user_id: resolvedUserId,
         assessment_type: 'onboarding',
         score: results.score,
-        level: results.level,
+        level: mappedLevel,
         category_breakdown: results.perCategory,
         answers: answers,
+        recommendations,
+        mode,
         completed_at: new Date().toISOString()
       });
-      // 3. Update user_category_skills for each category
-      for (const [category, statsRaw] of Object.entries(results.perCategory)) {
-        const stats = statsRaw as { correct: number; total: number };
-        let mastery = 'novice';
-        const pct = stats.total > 0 ? stats.correct / stats.total : 0;
-        if (pct >= 0.9) mastery = 'expert';
-        else if (pct >= 0.75) mastery = 'advanced';
-        else if (pct >= 0.5) mastery = 'intermediate';
-        else if (pct >= 0.25) mastery = 'beginner';
-        await supabase.from('user_category_skills').upsert({
-          user_id: resolvedUserId,
-          category,
-          skill_level: Math.round(pct * 100),
-          mastery_level: mastery,
-          questions_attempted: stats.total,
-          questions_correct: stats.correct,
-          last_practiced_at: new Date().toISOString()
-        }, { onConflict: 'user_id,category' });
-      }
-      // 4. Fire Statsig events
+      // 5. Fire Statsig events
       logEvent('onboarding_assessment_completed', results.score, {
-        level: results.level,
+        level: mappedLevel,
         perCategory: results.perCategory,
         streak: maxStreak,
-        total: results.total
+        total: results.total,
+        mode
       });
       logEvent('onboarding_step_completed', 'assessment', {
         score: results.score,
-        level: results.level
+        level: mappedLevel,
+        mode
       });
     } catch (err) {
       console.error('Assessment analytics/personalization error:', err);
@@ -362,6 +462,11 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
+        {xpAlreadyAwarded && (
+          <div className="text-center text-sm text-yellow-600 mt-2">
+            XP is only awarded for your first completion of this assessment mode.
+          </div>
+        )}
       </div>
     )
   }
@@ -437,7 +542,11 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             <div className="space-y-6">
               <div className="space-y-3">
                 {currentQuestion.options.map((option) => {
-                  const isCorrect = option.id === currentQuestion.correctAnswer
+                  // Find the correct option's id for highlighting
+                  const correctOption = currentQuestion.options.find(
+                    (opt) => opt.text === currentQuestion.correctAnswer
+                  )
+                  const isCorrect = option.id === (correctOption?.id ?? currentQuestion.correctAnswer)
                   const isSelected = answers[currentQuestion.id] === option.id
                   return (
                     <div 
@@ -463,13 +572,32 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
                 })}
               </div>
               <div className="text-center text-lg font-medium mt-2">
-                {getFeedback(answers[currentQuestion.id] === currentQuestion.correctAnswer)}
+                {getFeedback(
+                  answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
+                )}
               </div>
               <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
-                <p className="text-slate-600 dark:text-slate-400 font-light">
-                  {currentQuestion.friendlyExplanation || currentQuestion.explanation}
-                </p>
+                <WordReveal
+                  text={currentQuestion.friendlyExplanation || currentQuestion.explanation}
+                  speed={60}
+                  className="text-slate-600 dark:text-slate-400 font-light"
+                />
               </div>
+              {canAdvance && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={handleAdvance}
+                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+              {!canAdvance && (
+                <div className="flex justify-center pt-4">
+                  <span className="text-xs text-slate-400">You can advance in a moment...</span>
+                </div>
+              )}
             </div>
           )}
         </motion.div>
@@ -482,6 +610,24 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
           className="text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-light"
         >
           Skip assessment
+        </Button>
+      </div>
+      {/* Assessment mode toggle */}
+      <div className="flex justify-center mb-6">
+        <Button
+          variant={assessmentMode === 'quick' ? 'default' : 'outline'}
+          onClick={() => setAssessmentMode('quick')}
+          className="mr-2"
+        >
+          Quick (5-10 questions)
+          <span className="ml-2 text-xs text-green-600">+100 XP{hasCompletedQuick && ' (first time only)'}</span>
+        </Button>
+        <Button
+          variant={assessmentMode === 'full' ? 'default' : 'outline'}
+          onClick={() => setAssessmentMode('full')}
+        >
+          Full (all questions)
+          <span className="ml-2 text-xs text-green-600">+500 XP{hasCompletedFull && ' (first time only)'}</span>
         </Button>
       </div>
     </div>

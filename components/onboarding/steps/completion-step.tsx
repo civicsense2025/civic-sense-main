@@ -73,7 +73,16 @@ export function CompletionStep({ onComplete, onboardingState }: CompletionStepPr
   }
 
   // Extract data for personalization
-  const selectedCategories = onboardingState?.categories?.categories || []
+  let selectedCategories = onboardingState?.categories?.categories || [];
+  // If categories are just IDs, try to map to full objects
+  if (selectedCategories.length > 0 && typeof selectedCategories[0] === 'string') {
+    // Try to get all categories from onboardingState or fallback
+    const allCategories = onboardingState?.allCategories || [];
+    selectedCategories = selectedCategories.map((id: string) => {
+      const found = allCategories.find((cat: any) => cat.id === id);
+      return found || { id, name: id, emoji: '🧠' };
+    });
+  }
   const assessmentScore = onboardingState?.assessment?.assessmentResults?.score || 0
   const learningStyle = onboardingState?.preferences?.preferences?.learningStyle || 'mixed'
 
@@ -144,15 +153,15 @@ export function CompletionStep({ onComplete, onboardingState }: CompletionStepPr
                 <Rocket className="h-5 w-5 text-blue-500" />
                 <h3 className="text-xl font-light">Focus Areas</h3>
               </div>
-              
               <div className="flex flex-wrap gap-2 justify-center">
                 {selectedCategories.slice(0, 5).map((cat: any, index: number) => (
-                  <Badge key={index} variant="outline" className="text-sm px-3 py-1">
-                    {cat.id}
+                  <Badge key={index} variant="outline" className="text-sm px-3 py-1 flex items-center gap-2">
+                    <span className="text-lg">{cat.emoji || '🧠'}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{cat.name ? cat.name : cat.id}</span>
                   </Badge>
                 ))}
                 {selectedCategories.length > 5 && (
-                  <Badge variant="outline" className="text-sm px-3 py-1">
+                  <Badge variant="outline" className="text-sm px-3 py-1 font-medium text-slate-700 dark:text-slate-200">
                     +{selectedCategories.length - 5} more
                   </Badge>
                 )}

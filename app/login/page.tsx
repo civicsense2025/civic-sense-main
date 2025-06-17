@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
-export default function LoginPage() {
+function LoginPageContent({ onAuthSuccess, onClose }: { onAuthSuccess: () => void; onClose: () => void }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -65,23 +65,32 @@ export default function LoginPage() {
     }
   }
 
+  return (
+    <AuthDialog
+      isOpen={isAuthDialogOpen}
+      onClose={onClose}
+      onAuthSuccess={onAuthSuccess}
+      initialMode="sign-in"
+    />
+  )
+}
+
+export default function LoginPage() {
   const handleAuthSuccess = () => {
     // Dialog will close automatically and user will be redirected by the above effect
   }
 
   const handleClose = () => {
     // If user closes the dialog, redirect to home page
+    const router = useRouter()
     router.push('/')
   }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
-      <AuthDialog
-        isOpen={isAuthDialogOpen}
-        onClose={handleClose}
-        onAuthSuccess={handleAuthSuccess}
-        initialMode="sign-in"
-      />
+      <Suspense>
+        <LoginPageContent onAuthSuccess={handleAuthSuccess} onClose={handleClose} />
+      </Suspense>
     </div>
   )
 } 

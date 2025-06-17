@@ -240,7 +240,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
         user_id: userId,
         current_step: stepId,
         onboarding_data: jsonbData
-      })
+      }, { onConflict: 'user_id' })
 
     if (stateError) {
       console.error('Onboarding state upsert error:', stateError)
@@ -356,7 +356,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
             skip_reason: reason,
             current_step: currentStep.id,
             is_completed: reason === 'skip_all'
-          })
+          }, { onConflict: 'user_id' })
       }
       
       // If it's the last step or the user wants to skip entirely
@@ -393,7 +393,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
           current_step: 'completion',
           is_completed: true,
           completed_at: new Date().toISOString()
-        })
+        }, { onConflict: 'user_id' })
 
       // Show success message
       toast({
@@ -424,8 +424,8 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Progress Header */}
-      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 py-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <Button
@@ -484,8 +484,8 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
       </div>
 
       {/* Step Content */}
-      <div className="flex-1 px-4 py-12">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1">
+        <div className="max-w-4xl mx-auto px-4 py-12">
           {isLoading ? (
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-white mx-auto"></div>
@@ -506,8 +506,8 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
       </div>
 
       {/* Footer */}
-      <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-4 py-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
+        <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
               {currentStepIndex === 0 && 'Welcome to CivicSense'}

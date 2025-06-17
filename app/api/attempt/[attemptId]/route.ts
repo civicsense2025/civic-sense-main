@@ -1,4 +1,4 @@
-import { quizDatabase } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { NextResponse } from "next/server"
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
       return NextResponse.json({ error: "Missing attemptId" }, { status: 400 })
     }
 
-    const details = await quizDatabase.getQuizAttemptDetails(attemptId)
+    const details = await enhancedQuizDatabase.getQuizAttemptDetails(attemptId)
     if (!details.attempt) {
       return NextResponse.json({ error: "Attempt not found" }, { status: 404 })
     }

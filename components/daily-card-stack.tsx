@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGlobalAudio } from "@/components/global-audio-controls"
-import { quizDatabase, type QuizAttempt } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { createClient as createSupabaseClient } from "@/utils/supabase/client"
 import { StartQuizButton } from "@/components/start-quiz-button"

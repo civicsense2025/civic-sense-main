@@ -1,5 +1,5 @@
 import { Metadata, ResolvingMetadata } from 'next'
-import { quizDatabase } from "@/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { dataService } from '@/lib/data-service'
 
 // Define the params type
@@ -14,7 +14,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   try {
     // Get the attempt details
-    const details = await quizDatabase.getQuizAttemptDetails(params.attemptId)
+    const details = await enhancedQuizDatabase.getQuizAttemptDetails(params.attemptId)
     if (!details.attempt) {
       return {
         title: 'Results Not Found | CivicSense',
