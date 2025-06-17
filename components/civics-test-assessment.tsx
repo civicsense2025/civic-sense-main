@@ -8,6 +8,8 @@ import { Check, X, ArrowRight, Loader2, Flame, RotateCcw, Clock } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
+import { pendingUserAttribution } from '@/lib/pending-user-attribution'
+import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
 
 interface AssessmentQuestion {
   id: string
@@ -457,11 +459,41 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
   const handleAnswer = async (optionId: string) => {
     if (!currentQuestion || !testState) return
     
-    // Find the correct option's id
-    const correctOption = currentQuestion.options.find(
-      (opt) => opt.text === currentQuestion.correctAnswer
+    // Robust correct answer checking
+    let isCorrect = false
+    
+    // Method 1: Find option by matching text exactly
+    const correctOptionByText = currentQuestion.options.find(
+      (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
     )
-    const isCorrect = optionId === (correctOption?.id ?? currentQuestion.correctAnswer)
+    
+    if (correctOptionByText) {
+      isCorrect = optionId === correctOptionByText.id
+    } else {
+      // Method 2: Find option by matching text (case-insensitive, normalized)
+      const correctOptionByNormalizedText = currentQuestion.options.find(
+        (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+      )
+      
+      if (correctOptionByNormalizedText) {
+        isCorrect = optionId === correctOptionByNormalizedText.id
+      } else {
+        // Method 3: Check if correctAnswer is already an option ID
+        isCorrect = optionId === currentQuestion.correctAnswer
+      }
+    }
+    
+    // Debug logging for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Answer check:', {
+        questionId: currentQuestion.id,
+        userSelectedId: optionId,
+        correctAnswer: currentQuestion.correctAnswer,
+        options: currentQuestion.options,
+        correctOptionByText: correctOptionByText?.id,
+        isCorrect
+      })
+    }
     
     const newStreak = isCorrect ? testState.streak + 1 : 0
     const responseTime = Math.floor((Date.now() - questionStartTime.current) / 1000)
@@ -544,12 +576,35 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     
     testState.questions.forEach(q => {
       const userAnswer = testState.answers[q.id]
-      const correctOption = q.options.find(opt => opt.text === q.correctAnswer)
       
       if (!perCategory[q.category]) perCategory[q.category] = { correct: 0, total: 0 }
       perCategory[q.category].total++
       
-      if (userAnswer === (correctOption?.id ?? q.correctAnswer)) {
+      // Robust correct answer checking (same logic as handleAnswer)
+      let isCorrectAnswer = false
+      
+      // Method 1: Find option by matching text exactly
+      const correctOptionByText = q.options.find(
+        (opt) => opt.text.trim() === q.correctAnswer.trim()
+      )
+      
+      if (correctOptionByText) {
+        isCorrectAnswer = userAnswer === correctOptionByText.id
+      } else {
+        // Method 2: Find option by matching text (case-insensitive, normalized)
+        const correctOptionByNormalizedText = q.options.find(
+          (opt) => opt.text.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+        )
+        
+        if (correctOptionByNormalizedText) {
+          isCorrectAnswer = userAnswer === correctOptionByNormalizedText.id
+        } else {
+          // Method 3: Check if correctAnswer is already an option ID
+          isCorrectAnswer = userAnswer === q.correctAnswer
+        }
+      }
+      
+      if (isCorrectAnswer) {
         correct++
         perCategory[q.category].correct++
       }
@@ -630,6 +685,127 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
 
   if (assessmentComplete && testState) {
     const results = calculateResults()
+    
+    // Handle XP awarding and data attribution
+    const handleContinue = async () => {
+      clearSavedState()
+      
+      // Prepare question responses for enhanced gamification
+      const questionResponses = testState.questions.map(q => {
+        const userAnswer = testState.answers[q.id]
+        
+        // Robust correct answer checking (same logic as handleAnswer)
+        let isCorrect = false
+        const correctOptionByText = q.options.find(
+          (opt) => opt.text.trim() === q.correctAnswer.trim()
+        )
+        
+        if (correctOptionByText) {
+          isCorrect = userAnswer === correctOptionByText.id
+        } else {
+          const correctOptionByNormalizedText = q.options.find(
+            (opt) => opt.text.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+          )
+          if (correctOptionByNormalizedText) {
+            isCorrect = userAnswer === correctOptionByNormalizedText.id
+          } else {
+            isCorrect = userAnswer === q.correctAnswer
+          }
+        }
+        
+        return {
+          questionId: q.id,
+          category: q.category,
+          isCorrect,
+          timeSpent: testState.responseTimes[q.id] || 30
+        }
+      })
+
+      // Calculate total time spent
+      const totalTimeSeconds = Object.values(testState.responseTimes).reduce((sum, time) => sum + time, 0)
+
+      if (userId) {
+        // User is logged in - award XP directly through enhanced gamification
+        try {
+          const quizData = {
+            topicId: `civics_test_${testState.testType}`,
+            totalQuestions: results.total,
+            correctAnswers: results.correct,
+            timeSpentSeconds: totalTimeSeconds,
+            questionResponses
+          }
+
+          console.log('🎮 Updating enhanced gamification for civics test:', quizData)
+          const gamificationResult = await updateEnhancedProgress(userId, quizData)
+          
+          console.log('✅ Enhanced gamification updated:', {
+            achievements: gamificationResult.newAchievements?.length || 0,
+            levelUp: gamificationResult.levelUp || false,
+            skillUpdates: gamificationResult.skillUpdates?.length || 0
+          })
+
+          // Also track in civics test analytics
+          await fetch('/api/civics-test/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'completed',
+              session_id: testState.sessionId,
+              user_id: userId,
+              metadata: { 
+                test_type: testState.testType,
+                final_score: results.score,
+                level: results.level,
+                streak: testState.maxStreak
+              }
+            })
+          })
+
+        } catch (error) {
+          console.error('Error updating gamification for authenticated user:', error)
+        }
+      } else {
+        // User is not logged in - store for pending attribution
+        try {
+          pendingUserAttribution.storePendingAssessment({
+            type: 'civics_test',
+            sessionId: testState.sessionId,
+            completedAt: Date.now(),
+            results: {
+              score: results.score,
+              correct: results.correct,
+              total: results.total,
+              level: results.level,
+              perCategory: results.perCategory
+            },
+            answers: testState.answers,
+            responseTimes: testState.responseTimes,
+            streak: testState.maxStreak,
+            testType: testState.testType,
+            metadata: {
+              timeSpentSeconds: totalTimeSeconds,
+              questionResponses
+            }
+          })
+
+          console.log('📝 Stored civics test assessment for pending attribution')
+        } catch (error) {
+          console.error('Error storing pending assessment:', error)
+        }
+      }
+
+      // Call the original onComplete handler
+      onComplete({
+        assessmentResults: results,
+        answers: testState.answers,
+        responseTimes: testState.responseTimes,
+        completedAt: Date.now(),
+        streak: testState.maxStreak,
+        testType: testState.testType,
+        sessionId: testState.sessionId
+      })
+    }
+    
     return (
       <div className="max-w-2xl mx-auto space-y-12">
         <div className="text-center space-y-6">
@@ -646,6 +822,11 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
             <p className="text-slate-600 dark:text-slate-400 font-light">
               {getPersonalizedMessage(results.level, results.score)}
             </p>
+            {!userId && (
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-4">
+                💡 Sign up to save your progress and earn XP!
+              </p>
+            )}
           </div>
         </div>
         
@@ -664,6 +845,13 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
                   <span className="text-sm font-medium">Best Streak: {testState.maxStreak}</span>
                 </div>
               )}
+              {!userId && (
+                <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400">
+                  <span className="text-sm font-medium">
+                    +{results.correct * 10 + (testState.testType === 'full' ? 500 : 100)} XP waiting!
+                  </span>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <h4 className="font-medium text-slate-900 dark:text-white">Knowledge Areas</h4>
@@ -680,18 +868,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
         
         <div className="text-center pt-4">
           <Button 
-            onClick={() => {
-              clearSavedState()
-              onComplete({
-                assessmentResults: results,
-                answers: testState.answers,
-                responseTimes: testState.responseTimes,
-                completedAt: Date.now(),
-                streak: testState.maxStreak,
-                testType: testState.testType,
-                sessionId: testState.sessionId
-              })
-            }}
+            onClick={handleContinue}
             className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light group"
           >
             Continue
@@ -810,11 +987,31 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
             <div className="space-y-6">
               <div className="space-y-3">
                 {currentQuestion.options.map((option) => {
-                  // Find the correct option's id for highlighting
-                  const correctOption = currentQuestion.options.find(
-                    (opt) => opt.text === currentQuestion.correctAnswer
+                  // Robust correct option finding (same logic as handleAnswer)
+                  let correctOptionId: string | null = null
+                  
+                  // Method 1: Find option by matching text exactly
+                  const correctOptionByText = currentQuestion.options.find(
+                    (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
                   )
-                  const isCorrect = option.id === (correctOption?.id ?? currentQuestion.correctAnswer)
+                  
+                  if (correctOptionByText) {
+                    correctOptionId = correctOptionByText.id
+                  } else {
+                    // Method 2: Find option by matching text (case-insensitive, normalized)
+                    const correctOptionByNormalizedText = currentQuestion.options.find(
+                      (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+                    )
+                    
+                    if (correctOptionByNormalizedText) {
+                      correctOptionId = correctOptionByNormalizedText.id
+                    } else {
+                      // Method 3: Check if correctAnswer is already an option ID
+                      correctOptionId = currentQuestion.correctAnswer
+                    }
+                  }
+                  
+                  const isCorrect = option.id === correctOptionId
                   const isSelected = testState?.answers[currentQuestion.id] === option.id
                   
                   return (
@@ -843,7 +1040,23 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
               
               <div className="text-center text-lg font-medium mt-2">
                 {getFeedback(
-                  testState?.answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
+                  (() => {
+                    const userAnswer = testState?.answers[currentQuestion.id]
+                    // Robust correct answer checking (same logic as handleAnswer)
+                    const correctOptionByText = currentQuestion.options.find(
+                      (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
+                    )
+                    if (correctOptionByText) {
+                      return userAnswer === correctOptionByText.id
+                    }
+                    const correctOptionByNormalizedText = currentQuestion.options.find(
+                      (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+                    )
+                    if (correctOptionByNormalizedText) {
+                      return userAnswer === correctOptionByNormalizedText.id
+                    }
+                    return userAnswer === currentQuestion.correctAnswer
+                  })()
                 )}
               </div>
               

@@ -8,6 +8,8 @@ import { Check, X, ArrowRight, Loader2, Flame } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useStatsig } from '@/components/providers/statsig-provider'
+import { pendingUserAttribution } from '@/lib/pending-user-attribution'
+import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
 
 interface AssessmentQuestion {
   id: string
@@ -220,11 +222,30 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   // Handle answer selection
   const handleAnswer = async (optionId: string) => {
     if (!currentQuestion) return
-    // Find the correct option's id
-    const correctOption = currentQuestion.options.find(
-      (opt) => opt.text === currentQuestion.correctAnswer
+    
+    // Robust correct answer checking
+    let isCorrect = false
+    
+    // Method 1: Find option by matching text exactly
+    const correctOptionByText = currentQuestion.options.find(
+      (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
     )
-    const isCorrect = optionId === (correctOption?.id ?? currentQuestion.correctAnswer)
+    
+    if (correctOptionByText) {
+      isCorrect = optionId === correctOptionByText.id
+    } else {
+      // Method 2: Find option by matching text (case-insensitive, normalized)
+      const correctOptionByNormalizedText = currentQuestion.options.find(
+        (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+      )
+      
+      if (correctOptionByNormalizedText) {
+        isCorrect = optionId === correctOptionByNormalizedText.id
+      } else {
+        // Method 3: Check if correctAnswer is already an option ID
+        isCorrect = optionId === currentQuestion.correctAnswer
+      }
+    }
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: optionId }))
     setAnsweredIds(prev => [...prev, currentQuestion.id])
     setStreak(prev => (isCorrect ? prev + 1 : 0))
@@ -317,10 +338,35 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     let perCategory: Record<string, { correct: number; total: number }> = {}
     questions.forEach(q => {
       const userAnswer = answers[q.id]
-      const correctOption = q.options.find(opt => opt.text === q.correctAnswer)
+      
       if (!perCategory[q.category]) perCategory[q.category] = { correct: 0, total: 0 }
       perCategory[q.category].total++
-      if (userAnswer === (correctOption?.id ?? q.correctAnswer)) {
+      
+      // Robust correct answer checking (same logic as handleAnswer)
+      let isCorrectAnswer = false
+      
+      // Method 1: Find option by matching text exactly
+      const correctOptionByText = q.options.find(
+        (opt) => opt.text.trim() === q.correctAnswer.trim()
+      )
+      
+      if (correctOptionByText) {
+        isCorrectAnswer = userAnswer === correctOptionByText.id
+      } else {
+        // Method 2: Find option by matching text (case-insensitive, normalized)
+        const correctOptionByNormalizedText = q.options.find(
+          (opt) => opt.text.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+        )
+        
+        if (correctOptionByNormalizedText) {
+          isCorrectAnswer = userAnswer === correctOptionByNormalizedText.id
+        } else {
+          // Method 3: Check if correctAnswer is already an option ID
+          isCorrectAnswer = userAnswer === q.correctAnswer
+        }
+      }
+      
+      if (isCorrectAnswer) {
         correct++
         perCategory[q.category].correct++
       }
@@ -514,6 +560,99 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
           <Button 
             onClick={async () => {
               await handleAssessmentAnalytics(results);
+              
+              // Handle XP awarding and data attribution
+              const resolvedUserId = userId || onboardingState?.userId || onboardingState?.user_id || onboardingState?.user?.id;
+              
+              // Prepare question responses for enhanced gamification
+              const questionResponses = questions.map(q => {
+                const userAnswer = answers[q.id]
+                
+                // Robust correct answer checking (same logic as handleAnswer)
+                let isCorrect = false
+                const correctOptionByText = q.options.find(
+                  (opt) => opt.text.trim() === q.correctAnswer.trim()
+                )
+                
+                if (correctOptionByText) {
+                  isCorrect = userAnswer === correctOptionByText.id
+                } else {
+                  const correctOptionByNormalizedText = q.options.find(
+                    (opt) => opt.text.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
+                  )
+                  if (correctOptionByNormalizedText) {
+                    isCorrect = userAnswer === correctOptionByNormalizedText.id
+                  } else {
+                    isCorrect = userAnswer === q.correctAnswer
+                  }
+                }
+                
+                return {
+                  questionId: q.id,
+                  category: q.category,
+                  isCorrect,
+                  timeSpent: responseTimes.current[q.id] || 30
+                }
+              })
+
+              // Calculate total time spent
+              const totalTimeSeconds = Object.values(responseTimes.current).reduce((sum, time) => sum + time, 0)
+
+              if (resolvedUserId) {
+                // User is logged in - award XP directly through enhanced gamification
+                try {
+                  const quizData = {
+                    topicId: `onboarding_assessment_${assessmentMode}`,
+                    totalQuestions: results.total,
+                    correctAnswers: results.correct,
+                    timeSpentSeconds: totalTimeSeconds,
+                    questionResponses
+                  }
+
+                  console.log('🎮 Updating enhanced gamification for onboarding assessment:', quizData)
+                  const gamificationResult = await updateEnhancedProgress(resolvedUserId, quizData)
+                  
+                  console.log('✅ Enhanced gamification updated:', {
+                    achievements: gamificationResult.newAchievements?.length || 0,
+                    levelUp: gamificationResult.levelUp || false,
+                    skillUpdates: gamificationResult.skillUpdates?.length || 0
+                  })
+
+                } catch (error) {
+                  console.error('Error updating gamification for authenticated user:', error)
+                }
+              } else {
+                // User is not logged in - store for pending attribution
+                try {
+                  const sessionId = `onboarding-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                  
+                  pendingUserAttribution.storePendingAssessment({
+                    type: 'onboarding_assessment',
+                    sessionId,
+                    completedAt: Date.now(),
+                    results: {
+                      score: results.score,
+                      correct: results.correct,
+                      total: results.total,
+                      level: results.level,
+                      perCategory: results.perCategory
+                    },
+                    answers,
+                    responseTimes: responseTimes.current,
+                    streak: maxStreak,
+                    testType: assessmentMode,
+                    metadata: {
+                      timeSpentSeconds: totalTimeSeconds,
+                      questionResponses
+                    }
+                  })
+
+                  console.log('📝 Stored onboarding assessment for pending attribution')
+                } catch (error) {
+                  console.error('Error storing pending assessment:', error)
+                }
+              }
+              
               onComplete({
                 assessmentResults: results,
                 answers,
@@ -615,11 +754,31 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             <div className="space-y-6">
               <div className="space-y-3">
                 {currentQuestion.options.map((option) => {
-                  // Find the correct option's id for highlighting
-                  const correctOption = currentQuestion.options.find(
-                    (opt) => opt.text === currentQuestion.correctAnswer
+                  // Robust correct option finding (same logic as handleAnswer)
+                  let correctOptionId: string | null = null
+                  
+                  // Method 1: Find option by matching text exactly
+                  const correctOptionByText = currentQuestion.options.find(
+                    (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
                   )
-                  const isCorrect = option.id === (correctOption?.id ?? currentQuestion.correctAnswer)
+                  
+                  if (correctOptionByText) {
+                    correctOptionId = correctOptionByText.id
+                  } else {
+                    // Method 2: Find option by matching text (case-insensitive, normalized)
+                    const correctOptionByNormalizedText = currentQuestion.options.find(
+                      (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+                    )
+                    
+                    if (correctOptionByNormalizedText) {
+                      correctOptionId = correctOptionByNormalizedText.id
+                    } else {
+                      // Method 3: Check if correctAnswer is already an option ID
+                      correctOptionId = currentQuestion.correctAnswer
+                    }
+                  }
+                  
+                  const isCorrect = option.id === correctOptionId
                   const isSelected = answers[currentQuestion.id] === option.id
                   return (
                     <div 
@@ -646,7 +805,23 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
               </div>
               <div className="text-center text-lg font-medium mt-2">
                 {getFeedback(
-                  answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
+                  (() => {
+                    const userAnswer = answers[currentQuestion.id]
+                    // Robust correct answer checking (same logic as handleAnswer)
+                    const correctOptionByText = currentQuestion.options.find(
+                      (opt) => opt.text.trim() === currentQuestion.correctAnswer.trim()
+                    )
+                    if (correctOptionByText) {
+                      return userAnswer === correctOptionByText.id
+                    }
+                    const correctOptionByNormalizedText = currentQuestion.options.find(
+                      (opt) => opt.text.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+                    )
+                    if (correctOptionByNormalizedText) {
+                      return userAnswer === correctOptionByNormalizedText.id
+                    }
+                    return userAnswer === currentQuestion.correctAnswer
+                  })()
                 )}
               </div>
               <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">

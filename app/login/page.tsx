@@ -58,9 +58,10 @@ function LoginPageContent() {
 
   if (showPasswordReset) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <Header onSignInClick={() => {}} />
-        <div className="w-full max-w-md space-y-8 py-12">
+        <div className="flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md space-y-8">
           <Card className="border-0 shadow-xl rounded-3xl bg-white dark:bg-slate-900">
             <CardHeader className="pb-8 pt-12 px-8 text-center">
               <div className="mb-4">
@@ -84,6 +85,7 @@ function LoginPageContent() {
               <PasswordResetForm onBack={() => setShowPasswordReset(false)} />
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     )

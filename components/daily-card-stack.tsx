@@ -1125,7 +1125,7 @@ export function DailyCardStack({
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
-              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3">
+              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3 max-w-4xl mx-auto">
                 {currentTopic.topic_title}
               </h2>
               {/* Topic categories */}
@@ -1176,7 +1176,7 @@ export function DailyCardStack({
       <div className="flex justify-center mt-8">
         {currentAccessStatus.accessible ? (
           <StartQuizButton
-            label={isTopicCompleted(currentTopic.topic_id) ? 'Review Quiz' : 'Start Quiz'}
+            label={isTopicCompleted(currentTopic.topic_id) ? 'Read Again' : 'Read More'}
             onClick={() => handleExploreGame(currentTopic.topic_id)}
           />
         ) : (

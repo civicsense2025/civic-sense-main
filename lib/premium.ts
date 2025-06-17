@@ -473,5 +473,131 @@ export const premiumUtils = {
       style: 'currency',
       currency: currency,
     }).format(cents / 100)
+  },
+
+  /**
+   * Check if email address is from an educational institution (.edu domain)
+   */
+  isEducationalEmail(email: string): boolean {
+    if (!email || typeof email !== 'string') return false
+    
+    // Convert to lowercase for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase().trim()
+    
+    // Check for .edu domain
+    return normalizedEmail.endsWith('.edu')
+  },
+
+  /**
+   * Extract domain from email address
+   */
+  getEmailDomain(email: string): string | null {
+    if (!email || typeof email !== 'string') return null
+    
+    const atIndex = email.lastIndexOf('@')
+    if (atIndex === -1) return null
+    
+    return email.substring(atIndex + 1).toLowerCase().trim()
+  }
+}
+
+// =============================================================================
+// EDUCATIONAL ACCESS OPERATIONS
+// =============================================================================
+
+export const educationalAccess = {
+  /**
+   * Automatically grant premium access to users with confirmed .edu email addresses
+   */
+  async grantEducationalPremium(userId: string, userEmail: string): Promise<boolean> {
+    try {
+      // Check if email is from educational institution
+      if (!premiumUtils.isEducationalEmail(userEmail)) {
+        return false
+      }
+
+      // Check if user already has a subscription
+      const existingSubscription = await subscriptionOperations.getUserSubscription(userId)
+      
+      // Don't override existing paid subscriptions
+      if (existingSubscription && 
+          existingSubscription.subscription_status === 'active' && 
+          existingSubscription.payment_provider === 'stripe') {
+        console.log(`User ${userId} already has paid subscription, skipping educational access`)
+        return false
+      }
+
+      // Create educational premium subscription
+      const educationalSubscription = {
+        user_id: userId,
+        subscription_tier: 'premium' as SubscriptionTier,
+        subscription_status: 'active' as SubscriptionStatus,
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: null, // Lifetime for .edu
+        trial_end_date: null,
+        payment_provider: 'educational',
+        external_subscription_id: `edu_${userId}_${Date.now()}`,
+        last_payment_date: null,
+        next_billing_date: null,
+        billing_cycle: 'educational',
+        amount_cents: 0,
+        currency: 'USD',
+        updated_at: new Date().toISOString()
+      }
+
+      const result = await subscriptionOperations.upsertSubscription(educationalSubscription)
+      
+      if (result) {
+        console.log(`Educational premium access granted to ${userEmail} (${userId})`)
+        return true
+      } else {
+        console.error(`Failed to grant educational access to ${userId}`)
+        return false
+      }
+    } catch (error) {
+      console.error('Error granting educational premium access:', error)
+      return false
+    }
+  },
+
+  /**
+   * Check if user's subscription is educational
+   */
+  isEducationalSubscription(subscription: UserSubscription | null): boolean {
+    return subscription?.payment_provider === 'educational' || 
+           subscription?.billing_cycle === 'educational'
+  },
+
+  /**
+   * Get educational subscription status message
+   */
+  getEducationalStatusMessage(userEmail: string): string {
+    const domain = premiumUtils.getEmailDomain(userEmail)
+    return `Educational access granted for ${domain}. You have lifetime premium access as a student or faculty member.`
+  },
+
+  /**
+   * Process new user signup for educational access
+   */
+  async processNewUserEducationalAccess(userId: string, userEmail: string, emailConfirmed: boolean = false): Promise<void> {
+    try {
+      // Only grant access if email is confirmed
+      if (!emailConfirmed) {
+        console.log(`Email not confirmed for ${userEmail}, skipping educational access check`)
+        return
+      }
+
+      // Check if this is an educational email and grant access
+      const granted = await this.grantEducationalPremium(userId, userEmail)
+      
+      if (granted) {
+        console.log(`Educational premium access automatically granted to ${userEmail}`)
+        
+        // Optional: You could also trigger a welcome email or notification here
+        // await sendEducationalWelcomeEmail(userEmail)
+      }
+    } catch (error) {
+      console.error('Error processing educational access for new user:', error)
+    }
   }
 } 

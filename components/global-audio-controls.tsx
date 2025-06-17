@@ -1709,31 +1709,56 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
       )}>
         <div className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border border-slate-100 dark:border-slate-900 rounded-2xl shadow-xl">
           {isMinimized ? (
-            // Minimized state - clean single button
-            <div className="p-4">
+            // Minimized state - clickable container to expand
+            <div 
+              className="p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all duration-200 rounded-2xl group"
+              onClick={() => setIsMinimized(false)}
+              title="Click to expand audio controls"
+            >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={currentText ? (isPlaying ? (isPaused ? resume : pause) : restart) : readCurrentPage}
-                    className="w-6 h-6 p-0 rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                  >
-                    {isPlaying ? (
-                      isPaused ? <Play className="h-3 w-3 text-slate-900 dark:text-white" /> : <Pause className="h-3 w-3 text-slate-900 dark:text-white" />
-                    ) : currentText ? (
-                      <Play className="h-3 w-3 text-slate-900 dark:text-white" />
-                    ) : (
-                      <Headphones className="h-3 w-3 text-slate-900 dark:text-white" />
-                    )}
-                  </Button>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation() // Prevent container click
+                        if (currentText) {
+                          if (isPlaying) {
+                            if (isPaused) {
+                              resume()
+                            } else {
+                              pause()
+                            }
+                          } else {
+                            restart()
+                          }
+                        } else {
+                          readCurrentPage()
+                        }
+                      }}
+                      className="w-6 h-6 p-0 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-10"
+                    >
+                      {isPlaying ? (
+                        isPaused ? <Play className="h-3 w-3 text-slate-900 dark:text-white" /> : <Pause className="h-3 w-3 text-slate-900 dark:text-white" />
+                      ) : currentText ? (
+                        <Play className="h-3 w-3 text-slate-900 dark:text-white" />
+                      ) : (
+                        <Headphones className="h-3 w-3 text-slate-900 dark:text-white" />
+                      )}
+                    </Button>
+                    
+                    {/* Subtle expand indicator */}
+                    <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-60 group-hover:opacity-100 group-hover:scale-125 transition-all duration-200"></div>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
-                  {currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
+                  <div className="text-center space-y-1">
+                    <div>{currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}</div>
+                    <div className="text-xs opacity-75">Click anywhere to expand</div>
+                  </div>
                 </TooltipContent>
               </Tooltip>
-              
-
             </div>
           ) : (
             // Full state - clean, minimal design matching dashboard

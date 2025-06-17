@@ -766,20 +766,20 @@ export function QuizEngine({
       boosts_used: sessionAnalytics.boostsUsed
     })
 
+    // Prepare question responses for skill tracking and pending attribution
+    const questionResponses = userAnswers.map(answer => {
+      const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
+      return {
+        questionId: answer.questionId.toString(),
+        category: question?.category || 'General',
+        isCorrect: answer.isCorrect,
+        timeSpent: answer.timeSpent
+      }
+    })
+
     // Update enhanced gamification progress
     if (user) {
       try {
-        // Prepare question responses for skill tracking
-        const questionResponses = userAnswers.map(answer => {
-          const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
-          return {
-            questionId: answer.questionId.toString(),
-            category: question?.category || 'General',
-            isCorrect: answer.isCorrect,
-            timeSpent: answer.timeSpent
-          }
-        })
-
         // 1. Update gamification progress
         const quizData = {
           topicId,
@@ -839,6 +839,29 @@ export function QuizEngine({
         }
       } catch (error) {
         console.error('❌ Failed to update enhanced gamification progress:', error)
+      }
+    } else {
+      // User is not logged in - store quiz result for pending attribution
+      try {
+        // Import the pending attribution module dynamically to avoid SSR issues
+        const { pendingUserAttribution } = await import('@/lib/pending-user-attribution')
+        
+        const sessionId = `quiz-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        
+        pendingUserAttribution.storePendingQuiz({
+          topicId,
+          sessionId,
+          completedAt: Date.now(),
+          score: scorePercentage,
+          correctAnswers,
+          totalQuestions,
+          timeSpentSeconds: totalTimeSeconds,
+          questionResponses
+        })
+
+        console.log('📝 Stored quiz result for pending attribution')
+      } catch (error) {
+        console.error('Error storing pending quiz result:', error)
       }
     }
     

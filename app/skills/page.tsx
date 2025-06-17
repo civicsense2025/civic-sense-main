@@ -23,6 +23,7 @@ import {
   ArrowDownRight
 } from "lucide-react"
 import Link from "next/link"
+import { Header } from "@/components/header"
 
 // Category data with emojis
 const CIVIC_CATEGORIES = [
@@ -196,7 +197,7 @@ export default function SkillsPage() {
             id: '6',
             skill_name: 'Understand Constitutional Rights',
             skill_slug: 'constitutional-rights',
-            category_name: 'Law',
+            category_name: 'Constitutional Law',
             description: 'Know your civil liberties, how they apply in different contexts, and their historical development',
             difficulty_level: 2,
             is_core_skill: true,
@@ -210,7 +211,7 @@ export default function SkillsPage() {
             id: '7',
             skill_name: 'Engage in Civil Discourse',
             skill_slug: 'civil-discourse',
-            category_name: 'Civic Engagement',
+            category_name: 'Civic Action',
             description: 'Discuss contentious issues respectfully while focusing on facts and shared values',
             difficulty_level: 2,
             is_core_skill: false,
@@ -302,7 +303,8 @@ export default function SkillsPage() {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
+        <Header onSignInClick={() => {}} />
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto"></div>
           <p className="text-slate-600 dark:text-slate-400 font-light">Loading your skills...</p>
@@ -314,8 +316,61 @@ export default function SkillsPage() {
   // Add an empty state when no skills are found
   if (filteredSkills.length === 0 && !isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <Header onSignInClick={() => {}} />
+        <main className="w-full py-8">
+          <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+                Civic Skills
+              </h1>
+              <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+                Track and develop your civic knowledge and abilities
+              </p>
+              <div className="pt-4">
+                <Button variant="ghost" asChild className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                  <Link href="/dashboard">
+                    ← Back to Dashboard
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-12 text-center">
+              <div className="text-4xl mb-6">🔍</div>
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-4">No Skills Found</h2>
+              <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light mb-8">
+                {searchQuery ? (
+                  <>No skills match your search for "<strong>{searchQuery}</strong>"</>
+                ) : selectedCategory ? (
+                  <>No skills found in the "<strong>{selectedCategory}</strong>" category</>
+                ) : (
+                  <>Try adjusting your filters or check back later as we add more skills</>
+                )}
+              </p>
+              <Button 
+                onClick={() => {
+                  setSearchQuery('')
+                  setSelectedCategory('')
+                  setActiveTab('all')
+                }}
+                variant="outline"
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <Header onSignInClick={() => {}} />
+      <main className="w-full py-8">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+          {/* Clean header with lots of whitespace - matching dashboard */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
               Civic Skills
@@ -332,214 +387,167 @@ export default function SkillsPage() {
             </div>
           </div>
           
-          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-12 text-center">
-            <div className="text-4xl mb-6">🔍</div>
-            <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-4">No Skills Found</h2>
-            <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light mb-8">
-              {searchQuery ? (
-                <>No skills match your search for "<strong>{searchQuery}</strong>"</>
-              ) : selectedCategory ? (
-                <>No skills found in the "<strong>{selectedCategory}</strong>" category</>
-              ) : (
-                <>Try adjusting your filters or check back later as we add more skills</>
-              )}
-            </p>
-            <Button 
-              onClick={() => {
-                setSearchQuery('')
-                setSelectedCategory('')
-                setActiveTab('all')
-              }}
-              variant="outline"
-            >
-              Reset Filters
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  
-  return (
-    <div className="min-h-screen bg-white dark:bg-black">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-        {/* Clean header with lots of whitespace */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            Civic Skills
-          </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-            Track and develop your civic knowledge and abilities
-          </p>
-          <div className="pt-4">
-            <Button variant="ghost" asChild className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-              <Link href="/dashboard">
-                ← Back to Dashboard
-              </Link>
-            </Button>
-          </div>
-        </div>
-        
-        {/* Clean search and filters */}
-        <div className="max-w-2xl mx-auto space-y-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search skills..."
-              className="w-full rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-10 py-3 text-sm placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-slate-400 dark:focus:border-slate-500 focus:outline-none transition-colors"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
-                onClick={() => setSearchQuery("")}
-              >
-                <span className="sr-only">Clear search</span>
-                <span className="text-xs">✕</span>
-              </Button>
-            )}
-          </div>
-          
-          {/* Category filters */}
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button 
-              variant={selectedCategory === null ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedCategory(null)}
-              className="rounded-full font-light"
-            >
-              All Categories
-            </Button>
-            {Array.from(new Set(skills.map(s => s.category_name)))
-              .sort()
-              .slice(0, 5)
-              .map(category => (
+          {/* Clean search and filters - matching dashboard style */}
+          <div className="max-w-2xl mx-auto space-y-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search skills..."
+                className="w-full rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-10 py-3 text-sm placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-slate-400 dark:focus:border-slate-500 focus:outline-none transition-colors"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
                 <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="rounded-full font-light flex items-center gap-1"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={() => setSearchQuery("")}
                 >
-                  <span>{getCategoryEmoji(category)}</span>
-                  <span>{category}</span>
+                  <span className="sr-only">Clear search</span>
+                  <span className="text-xs">✕</span>
                 </Button>
-              ))
-            }
+              )}
+            </div>
+            
+            {/* Category filters */}
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button 
+                variant={selectedCategory === null ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+                className="rounded-full font-light"
+              >
+                All Categories
+              </Button>
+              {Array.from(new Set(skills.map(s => s.category_name)))
+                .sort()
+                .slice(0, 5)
+                .map(category => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category)}
+                    className="rounded-full font-light flex items-center gap-1"
+                  >
+                    <span>{getCategoryEmoji(category)}</span>
+                    <span>{category}</span>
+                  </Button>
+                ))
+              }
+            </div>
           </div>
-        </div>
-        
-        {/* Clean tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-5 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
-            <TabsTrigger value="all" className="rounded-full font-light">All</TabsTrigger>
-            <TabsTrigger value="core" className="rounded-full font-light">Core</TabsTrigger>
-            <TabsTrigger value="in-progress" className="rounded-full font-light">Learning</TabsTrigger>
-            <TabsTrigger value="mastered" className="rounded-full font-light">Mastered</TabsTrigger>
-            <TabsTrigger value="not-started" className="rounded-full font-light">New</TabsTrigger>
-          </TabsList>
           
-          <TabsContent value={activeTab} className="space-y-8">
-            {filteredSkills.length > 0 ? (
-              <div className="max-w-4xl mx-auto space-y-6">
-                {filteredSkills.map((skill) => (
-                  <div key={skill.id} className="group">
-                    <div className="flex items-center justify-between py-6 border-b border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-4">
-                          <span className="text-2xl">{getCategoryEmoji(skill.category_name)}</span>
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-slate-900 dark:text-white">{skill.skill_name}</h3>
-                            <div className="flex items-center gap-3 mt-1">
-                              <Badge 
-                                className={`${getMasteryBadgeColor(skill.mastery_level || 'novice')} font-light border-0`}
-                              >
-                                {skill.mastery_level || 'novice'}
-                              </Badge>
-                              <span className="text-sm text-slate-500 dark:text-slate-400">{skill.category_name}</span>
-                              {skill.is_core_skill && (
-                                <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700 font-light">
-                                  Core
+          {/* Clean tabs - matching dashboard style */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+            <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-5 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
+              <TabsTrigger value="all" className="rounded-full font-light">All</TabsTrigger>
+              <TabsTrigger value="core" className="rounded-full font-light">Core</TabsTrigger>
+              <TabsTrigger value="in-progress" className="rounded-full font-light">Learning</TabsTrigger>
+              <TabsTrigger value="mastered" className="rounded-full font-light">Mastered</TabsTrigger>
+              <TabsTrigger value="not-started" className="rounded-full font-light">New</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={activeTab} className="space-y-8">
+              {filteredSkills.length > 0 ? (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  {filteredSkills.map((skill) => (
+                    <div key={skill.id} className="group">
+                      <div className="flex items-center justify-between py-6 border-b border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl">{getCategoryEmoji(skill.category_name)}</span>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-medium text-slate-900 dark:text-white">{skill.skill_name}</h3>
+                              <div className="flex items-center gap-3 mt-1">
+                                <Badge 
+                                  className={`${getMasteryBadgeColor(skill.mastery_level || 'novice')} font-light border-0`}
+                                >
+                                  {skill.mastery_level || 'novice'}
                                 </Badge>
-                              )}
+                                <span className="text-sm text-slate-500 dark:text-slate-400">{skill.category_name}</span>
+                                {skill.is_core_skill && (
+                                  <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700 font-light">
+                                    Core
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 font-light ml-12">
-                          {skill.description}
-                        </p>
-                        {skill.questions_attempted && skill.questions_attempted > 0 && (
-                          <div className="text-sm text-slate-500 dark:text-slate-500 ml-12">
-                            {skill.questions_correct}/{skill.questions_attempted} questions correct
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <div className="text-lg font-light text-slate-900 dark:text-white">
-                            {skill.progress_percentage || 0}%
-                          </div>
-                          <div className="w-20 bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1">
-                            <div 
-                              className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-500"
-                              style={{ width: `${skill.progress_percentage || 0}%` }}
-                            />
-                          </div>
+                          <p className="text-slate-600 dark:text-slate-400 font-light ml-12">
+                            {skill.description}
+                          </p>
+                          {skill.questions_attempted && skill.questions_attempted > 0 && (
+                            <div className="text-sm text-slate-500 dark:text-slate-500 ml-12">
+                              {skill.questions_correct}/{skill.questions_attempted} questions correct
+                            </div>
+                          )}
                         </div>
                         
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-light"
-                          onClick={() => {
-                            setSelectedSkill(skill.skill_slug)
-                            setIsSkillModalOpen(true)
-                          }}
-                        >
-                          View Details
-                        </Button>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <div className="text-lg font-light text-slate-900 dark:text-white">
+                              {skill.progress_percentage || 0}%
+                            </div>
+                            <div className="w-20 bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1">
+                              <div 
+                                className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-500"
+                                style={{ width: `${skill.progress_percentage || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-light"
+                            onClick={() => {
+                              setSelectedSkill(skill.skill_slug)
+                              setIsSkillModalOpen(true)
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-6">🔍</div>
-                <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No skills found</h3>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-6">🔍</div>
+                  <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No skills found</h3>
+                  <p className="text-slate-600 dark:text-slate-400 font-light">
+                    Try adjusting your filters or search query
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+          
+          {/* Skill progression visualization (for premium users) */}
+          {isPremium && (
+            <div className="space-y-8 pt-16 border-t border-slate-100 dark:border-slate-800">
+              <div className="text-center">
+                <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-2">
+                  Skill Relationships
+                </h2>
                 <p className="text-slate-600 dark:text-slate-400 font-light">
-                  Try adjusting your filters or search query
+                  Visualize how your skills connect and build upon each other
                 </p>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        {/* Skill progression visualization (for premium users) */}
-        {isPremium && (
-          <div className="space-y-8 pt-16 border-t border-slate-100 dark:border-slate-800">
-            <div className="text-center">
-              <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-2">
-                Skill Relationships
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 font-light">
-                Visualize how your skills connect and build upon each other
-              </p>
+              {user && (
+                <SkillRelationshipMap 
+                  userId={user.id} 
+                  selectedCategory={selectedCategory || undefined}
+                />
+              )}
             </div>
-            {user && (
-              <SkillRelationshipMap 
-                userId={user.id} 
-                selectedCategory={selectedCategory || undefined}
-              />
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
       
       {/* Skill detail modal */}
       <SkillDetailModal 

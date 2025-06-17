@@ -12,10 +12,10 @@ import { PremiumSubscriptionCard } from "@/components/premium-subscription-card"
 import { PremiumFeaturesShowcase } from "@/components/premium-features-showcase"
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { AIDeckCreator } from "@/components/ai-deck-creator"
-import { SkillDetailModal } from "@/components/skill-detail-modal"
+
 import { LearningObjectivesCard } from "@/components/learning-objectives-card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
@@ -68,59 +68,21 @@ interface DashboardData {
   achievements: Achievement[]
 }
 
-interface Skill {
-  id: string
-  skill_name: string
-  skill_slug: string
-  category_name: string
-  description: string
-  difficulty_level: number
-  is_core_skill: boolean
-  mastery_level?: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert'
-  progress_percentage?: number
-  questions_attempted?: number
-  questions_correct?: number
-  last_practiced_at?: string
-  needs_practice?: boolean
-}
 
-// Category data with emojis
-const CIVIC_CATEGORIES = [
-  { name: "Government", emoji: "🏛️" },
-  { name: "Elections", emoji: "🗳️" },
-  { name: "Economy", emoji: "💰" },
-  { name: "Foreign Policy", emoji: "🌐" },
-  { name: "Justice", emoji: "⚖️" },
-  { name: "Civil Rights", emoji: "✊" },
-  { name: "Environment", emoji: "🌱" },
-  { name: "Local Issues", emoji: "🏙️" },
-  { name: "Constitutional Law", emoji: "📜" },
-  { name: "National Security", emoji: "🛡️" },
-  { name: "Public Policy", emoji: "📋" },
-  { name: "Historical Precedent", emoji: "📚" },
-  { name: "Civic Action", emoji: "🤝" },
-  { name: "Media Literacy", emoji: "📰" },
-  { name: "AI Governance", emoji: "🤖" }
-] as const
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
   const { trackEngagement } = useAnalytics()
-  const [activeTab, setActiveTab] = useState("overview")
+
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [enhancedProgress, setEnhancedProgress] = useState<EnhancedUserProgress | null>(null)
-  const [userSkills, setUserSkills] = useState<Skill[]>([])
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const [showAllAttempts, setShowAllAttempts] = useState(false)
   const [allAttempts, setAllAttempts] = useState<DashboardData['recentActivity']>([])
-
-  // Add state for skill detail modal
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(null)
-  const [isSkillModalOpen, setIsSkillModalOpen] = useState(false)
 
   // Add state for onboarding status
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
@@ -380,81 +342,7 @@ export default function DashboardPage() {
     loadDashboardData()
   }, [user])
 
-  // Load user skills
-  useEffect(() => {
-    const loadUserSkills = async () => {
-      if (!user) return
-      
-      try {
-        // Add timeout protection to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Skills loading timeout')), 8000) // 8 second timeout
-        )
-        
-        // Load skills from API endpoint
-        const skillPromise = fetch('/api/skills/user-skills')
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`API returned ${response.status}: ${response.statusText}`)
-            }
-            return response.json()
-          })
-          .then(data => data.data)
-        
-        const skills = await Promise.race([skillPromise, timeoutPromise])
-        
-        // If we got skills, use them
-        if (skills && Array.isArray(skills) && skills.length > 0) {
-          setUserSkills(skills as unknown as Skill[])
-        } else {
-          // Use fallback skills
-          throw new Error('No skills returned')
-        }
-      } catch (error) {
-        console.error('Error loading user skills (using fallback):', error)
-        
-        // Create default skills for new users
-        const defaultSkills: Skill[] = [
-          {
-            id: '1',
-            skill_name: 'Read Government Budgets',
-            skill_slug: 'read-budgets',
-            category_name: 'Government',
-            description: 'Understand where tax money goes and what governments prioritize',
-            difficulty_level: 2,
-            is_core_skill: true,
-            mastery_level: 'novice',
-            progress_percentage: 0
-          },
-          {
-            id: '2',
-            skill_name: 'Research Candidates',
-            skill_slug: 'research-candidates',
-            category_name: 'Elections',
-            description: 'Look up candidates\' backgrounds, positions, and track records',
-            difficulty_level: 2,
-            is_core_skill: true,
-            mastery_level: 'novice',
-            progress_percentage: 0
-          },
-          {
-            id: '3',
-            skill_name: 'Check Sources',
-            skill_slug: 'check-sources',
-            category_name: 'Media Literacy',
-            description: 'Verify whether news sources and websites are trustworthy',
-            difficulty_level: 1,
-            is_core_skill: true,
-            mastery_level: 'novice',
-            progress_percentage: 0
-          }
-        ]
-        setUserSkills(defaultSkills)
-      }
-    }
 
-    loadUserSkills()
-  }, [user])
 
   // Add useEffect to check onboarding status
   useEffect(() => {
@@ -531,7 +419,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header onSignInClick={() => {}} />
       <main className="w-full py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
           {/* Onboarding banner - only show if not complete */}
           {showOnboardingBanner && (
             <div className="relative rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900/40 p-6 overflow-hidden mb-4">
@@ -635,64 +523,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Skills section - clean list */}
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-light text-slate-900 dark:text-white">Civic Skills</h2>
-              <Button variant="ghost" asChild className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                <Link href="/skills">
-                  View All →
-                </Link>
-              </Button>
-            </div>
-            
-            <div className="space-y-6">
-              {userSkills.slice(0, 3).map((skill, index) => (
-                <div key={skill.id} className="group">
-                  <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{CIVIC_CATEGORIES.find(c => c.name === skill.category_name)?.emoji || '📚'}</span>
-                        <h3 className="font-medium text-slate-900 dark:text-white">{skill.skill_name}</h3>
-                        <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700">
-                          {skill.mastery_level}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 font-light ml-8">
-                        {skill.description}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {skill.progress_percentage}%
-                        </div>
-                        <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1">
-                          <div 
-                            className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-500"
-                            style={{ width: `${skill.progress_percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-400"
-                        onClick={() => {
-                          setSelectedSkill(skill.skill_slug)
-                          setIsSkillModalOpen(true)
-                        }}
-                      >
-                        Details
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           {/* Recent activity - clean list */}
           {dashboardData.recentActivity && dashboardData.recentActivity.length > 0 ? (
@@ -818,91 +649,12 @@ export default function DashboardPage() {
           <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">
             <PremiumDataTeaser 
               variant="banner"
-              onUpgradeClick={() => setActiveTab('subscription')}
             />
           </div>
 
-          {/* Navigation tabs - minimal */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-50 dark:bg-slate-900 border-0 rounded-full p-1">
-              <TabsTrigger 
-                value="overview" 
-                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics" 
-                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-              >
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="subscription" 
-                className="rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-light"
-              >
-                Account
-              </TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="overview" className="space-y-12">
-              {/* Learning objectives */}
-              {user && (
-                <div className="max-w-2xl mx-auto">
-                  <LearningObjectivesCard 
-                    limit={5} 
-                    onViewSkill={(skillSlug) => {
-                      setSelectedSkill(skillSlug)
-                      setIsSkillModalOpen(true)
-                    }}
-                  />
-                </div>
-              )}
-            </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-12">
-              <div className="max-w-4xl mx-auto">
-                {hasFeatureAccess('advanced_analytics') ? (
-                  <PremiumAnalytics />
-                ) : (
-                  <div className="text-center py-16">
-                    <div className="text-4xl mb-4">📊</div>
-                    <h3 className="text-xl font-light mb-2 text-slate-900 dark:text-white">Advanced Analytics</h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto font-light">
-                      Unlock detailed insights into your learning progress and skill development
-                    </p>
-                    <Button 
-                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 rounded-full px-8"
-                      onClick={() => setActiveTab('subscription')}
-                    >
-                      Upgrade to Premium
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
 
-            <TabsContent value="subscription" className="space-y-12">
-              <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="space-y-6">
-                  <h3 className="text-xl font-light text-slate-900 dark:text-white">Current Plan</h3>
-                  <PremiumSubscriptionCard />
-                </div>
-                
-                <div className="space-y-6">
-                  <h3 className="text-xl font-light text-slate-900 dark:text-white">Upgrade Options</h3>
-                  <PremiumFeaturesShowcase />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Skill detail modal */}
-          <SkillDetailModal 
-            isOpen={isSkillModalOpen} 
-            onClose={() => setIsSkillModalOpen(false)} 
-            skillSlug={selectedSkill || undefined}
-          />
         </div>
       </main>
     </div>
