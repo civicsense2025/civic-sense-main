@@ -10,15 +10,18 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, Save, Send, Star } from "lucide-react"
+import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail } from "lucide-react"
 
 // Survey Types
 export interface SurveyQuestion {
   id: string
-  type: 'multiple_choice' | 'multiple_select' | 'scale' | 'text' | 'textarea' | 'ranking' | 'likert'
+  type: 'multiple_choice' | 'multiple_select' | 'scale' | 'text' | 'textarea' | 'ranking' | 'likert' | 
+        'matrix' | 'slider' | 'date' | 'email' | 'phone' | 'number' | 'dropdown' | 'image_choice' | 
+        'file_upload' | 'rating_stars' | 'yes_no' | 'statement' | 'contact_info'
   question: string
   description?: string
   required?: boolean
@@ -27,6 +30,14 @@ export interface SurveyQuestion {
   scale_max?: number
   scale_labels?: { min: string; max: string }
   max_selections?: number
+  max_rankings?: number
+  matrix_config?: {
+    scale: {
+      min: number
+      max: number
+      labels: { min: string; max: string }
+    }
+  }
   conditional_logic?: {
     show_if: string // question id
     show_when: string | string[] // answer value(s)
