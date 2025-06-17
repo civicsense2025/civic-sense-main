@@ -431,7 +431,9 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
   }, [testState?.currentQuestionIndex])
 
   const currentQuestion = testState?.questions[testState.currentQuestionIndex]
-  const progress = testState?.questions.length ? ((testState.currentQuestionIndex + 1) / testState.questions.length) * 100 : 0
+  // Progress should be based on answered questions, not current position
+  const answeredCount = testState ? Object.keys(testState.answers).length : 0
+  const progress = testState?.questions.length ? (answeredCount / testState.questions.length) * 100 : 0
 
   // Show streak animation and hide after delay
   const triggerStreakAnimation = (newStreak: number) => {

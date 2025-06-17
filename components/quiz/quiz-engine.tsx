@@ -253,7 +253,7 @@ export function QuizEngine({
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false)
   const [questionStartTime, setQuestionStartTime] = useState(Date.now())
   const [showFeedback, setShowFeedback] = useState(false)
-  const [streak, setStreak] = useState(0)
+
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
   
@@ -701,12 +701,8 @@ export function QuizEngine({
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
     
-    // Update streak
-    if (isCorrect) {
-      setStreak(prev => prev + 1)
-    } else {
-      setStreak(0)
-    }
+    // Note: Streak is now managed by the gamification system
+    // The actual streak update will happen when the quiz is completed
     
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
@@ -1174,6 +1170,13 @@ export function QuizEngine({
                 Attempt {currentAttemptNumber}
               </Badge>
             )}
+            {/* Streak indicator - simple and close to question info */}
+            {user && currentStreak > 0 && (
+              <div className="flex items-center space-x-1 text-xs text-slate-500 dark:text-slate-400">
+                <Flame className="h-3 w-3 text-orange-500" />
+                <span>{currentStreak}</span>
+              </div>
+            )}
           </div>
           
           <QuestionTimer
@@ -1317,34 +1320,7 @@ export function QuizEngine({
           </div>
         )}
 
-        {/* Enhanced gamification display */}
-        {user && !isMobile && (
-          <div className="fixed top-4 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50 animate-in slide-in-from-top duration-500">
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="flex items-center space-x-1">
-                <Flame className={cn(
-                  "h-4 w-4 text-orange-500 transition-all",
-                  streak > 0 && "animate-pulse"
-                )} />
-                <span className="font-medium text-slate-900 dark:text-slate-100">{currentStreak}</span>
-                <span className="text-slate-500 dark:text-slate-400">streak</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Badge variant="outline" className="text-xs transition-all hover:scale-105">
-                  Level {currentLevel}
-                </Badge>
-              </div>
-              {/* Show analytics indicator for premium users */}
-              {isPremium && (
-                <div className="flex items-center space-x-1">
-                  <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
-                    Analytics
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {/* Enhanced debug panel */}
         {process.env.NODE_ENV === 'development' && !isMobile && (

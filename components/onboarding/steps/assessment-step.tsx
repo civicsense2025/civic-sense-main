@@ -213,7 +213,9 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   }, [currentQuestionIndex])
 
   const currentQuestion = questions[currentQuestionIndex]
-  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0
+  // Progress should be based on answered questions, not current position
+  const answeredCount = Object.keys(answers).length
+  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0
 
   // Handle answer selection
   const handleAnswer = async (optionId: string) => {
