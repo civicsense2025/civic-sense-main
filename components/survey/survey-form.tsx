@@ -58,7 +58,7 @@ export interface Survey {
 
 export interface SurveyResponse {
   question_id: string
-  answer: string | string[] | number
+  answer: string | string[] | number | Record<string, any>
   answered_at: string
 }
 
@@ -117,7 +117,7 @@ export function SurveyForm({
   const currentQuestion = visibleQuestions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100
 
-  const updateResponse = (questionId: string, answer: string | string[] | number) => {
+  const updateResponse = (questionId: string, answer: string | string[] | number | Record<string, any>) => {
     const newResponse: SurveyResponse = {
       question_id: questionId,
       answer,
@@ -205,9 +205,9 @@ export function SurveyForm({
             className="space-y-3"
           >
             {question.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
+              <div key={index} className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <RadioGroupItem value={option} id={`${question.id}-${index}`} />
-                <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer">
+                <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer font-light">
                   {option}
                 </Label>
               </div>
@@ -220,7 +220,7 @@ export function SurveyForm({
         return (
           <div className="space-y-3">
             {question.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
+              <div key={index} className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <Checkbox
                   id={`${question.id}-${index}`}
                   checked={selectedOptions.includes(option)}
@@ -243,13 +243,13 @@ export function SurveyForm({
                     updateResponse(question.id, newSelection)
                   }}
                 />
-                <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer">
+                <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer font-light">
                   {option}
                 </Label>
               </div>
             ))}
             {question.max_selections && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3">
                 Select up to {question.max_selections} options
               </p>
             )}
@@ -259,20 +259,20 @@ export function SurveyForm({
       case 'scale':
         const scaleValue = currentResponse?.answer as number || 0
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               {question.scale_labels && (
                 <>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
                     {question.scale_labels.min}
                   </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
                     {question.scale_labels.max}
                   </span>
                 </>
               )}
             </div>
-            <div className="flex justify-center space-x-2">
+            <div className="flex justify-center space-x-3">
               {Array.from({ length: (question.scale_max || 5) - (question.scale_min || 1) + 1 }, (_, i) => {
                 const value = (question.scale_min || 1) + i
                 return (
@@ -280,11 +280,13 @@ export function SurveyForm({
                     key={value}
                     type="button"
                     variant={scaleValue === value ? "default" : "outline"}
-                    size="sm"
+                    size="lg"
                     onClick={() => updateResponse(question.id, value)}
                     className={cn(
-                      "w-12 h-12 rounded-full",
-                      scaleValue === value && "bg-blue-600 text-white hover:bg-blue-700"
+                      "w-14 h-14 rounded-full font-medium transition-all duration-200",
+                      scaleValue === value 
+                        ? "bg-blue-600 text-white hover:bg-blue-700 scale-110 shadow-lg" 
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
                     )}
                   >
                     {value}
@@ -295,14 +297,114 @@ export function SurveyForm({
           </div>
         )
 
+      case 'rating_stars':
+        const starRating = currentResponse?.answer as number || 0
+        return (
+          <div className="flex justify-center space-x-2">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Button
+                key={i}
+                type="button"
+                variant="ghost"
+                size="lg"
+                onClick={() => updateResponse(question.id, i + 1)}
+                className="p-2"
+              >
+                <Star 
+                  className={cn(
+                    "h-8 w-8 transition-colors",
+                    i < starRating 
+                      ? "fill-yellow-400 text-yellow-400" 
+                      : "text-slate-300 dark:text-slate-600"
+                  )}
+                />
+              </Button>
+            ))}
+          </div>
+        )
+
+      case 'yes_no':
+        return (
+          <RadioGroup
+            value={currentResponse?.answer as string || ""}
+            onValueChange={(value) => updateResponse(question.id, value)}
+            className="flex space-x-6 justify-center"
+          >
+            <div className="flex items-center space-x-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <RadioGroupItem value="yes" id={`${question.id}-yes`} />
+              <Label htmlFor={`${question.id}-yes`} className="cursor-pointer font-medium text-green-700 dark:text-green-400">
+                Yes
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <RadioGroupItem value="no" id={`${question.id}-no`} />
+              <Label htmlFor={`${question.id}-no`} className="cursor-pointer font-medium text-red-700 dark:text-red-400">
+                No
+              </Label>
+            </div>
+          </RadioGroup>
+        )
+
       case 'text':
         return (
           <Input
             value={currentResponse?.answer as string || ""}
             onChange={(e) => updateResponse(question.id, e.target.value)}
             placeholder="Enter your answer..."
-            className="w-full"
+            className="w-full text-base p-4 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
           />
+        )
+
+      case 'email':
+        return (
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Input
+              type="email"
+              value={currentResponse?.answer as string || ""}
+              onChange={(e) => updateResponse(question.id, e.target.value)}
+              placeholder="your@email.com"
+              className="w-full text-base p-4 pl-12 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
+            />
+          </div>
+        )
+
+      case 'phone':
+        return (
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Input
+              type="tel"
+              value={currentResponse?.answer as string || ""}
+              onChange={(e) => updateResponse(question.id, e.target.value)}
+              placeholder="(555) 123-4567"
+              className="w-full text-base p-4 pl-12 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
+            />
+          </div>
+        )
+
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={currentResponse?.answer as string || ""}
+            onChange={(e) => updateResponse(question.id, e.target.value)}
+            placeholder="Enter a number..."
+            className="w-full text-base p-4 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
+          />
+        )
+
+      case 'date':
+        return (
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Input
+              type="date"
+              value={currentResponse?.answer as string || ""}
+              onChange={(e) => updateResponse(question.id, e.target.value)}
+              className="w-full text-base p-4 pl-12 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400"
+            />
+          </div>
         )
 
       case 'textarea':
@@ -310,73 +412,276 @@ export function SurveyForm({
           <Textarea
             value={currentResponse?.answer as string || ""}
             onChange={(e) => updateResponse(question.id, e.target.value)}
-            placeholder="Enter your answer..."
-            className="w-full min-h-[120px]"
+            placeholder="Share your thoughts..."
+            className="w-full min-h-[120px] text-base p-4 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 resize-none"
             maxLength={1000}
           />
         )
 
+      case 'dropdown':
+        return (
+          <Select
+            value={currentResponse?.answer as string || ""}
+            onValueChange={(value) => updateResponse(question.id, value)}
+          >
+            <SelectTrigger className="w-full text-base p-4 h-auto border-slate-200 dark:border-slate-700">
+              <SelectValue placeholder="Choose an option..." />
+            </SelectTrigger>
+            <SelectContent>
+              {question.options?.map((option, index) => (
+                <SelectItem key={index} value={option} className="text-base p-3">
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )
+
+      case 'slider':
+        const sliderValue = currentResponse?.answer as number || (question.scale_min || 0)
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              {question.scale_labels && (
+                <>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                    {question.scale_labels.min}
+                  </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                    {question.scale_labels.max}
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="px-3">
+              <Slider
+                value={[sliderValue]}
+                onValueChange={(value) => updateResponse(question.id, value[0])}
+                min={question.scale_min || 0}
+                max={question.scale_max || 100}
+                step={1}
+                className="w-full"
+              />
+              <div className="text-center mt-4">
+                <span className="text-2xl font-light text-slate-900 dark:text-white">{sliderValue}</span>
+              </div>
+            </div>
+          </div>
+        )
+
       case 'ranking':
-        // Simple ranking implementation - could be enhanced with drag & drop
         const rankingOptions = question.options || []
         const rankings = (currentResponse?.answer as string[]) || []
+        const maxRankings = question.max_rankings || rankingOptions.length
         
         return (
-          <div className="space-y-3">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Rank these options in order of preference (1 = most preferred)
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              {question.max_rankings 
+                ? `Rank your top ${question.max_rankings} preferences (1 = most preferred)`
+                : "Rank these options in order of preference (1 = most preferred)"}
             </p>
-            {rankingOptions.map((option, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <Select
-                  value={rankings.indexOf(option) >= 0 ? String(rankings.indexOf(option) + 1) : ""}
-                  onValueChange={(value) => {
-                    const newRankings = [...rankings]
-                    const currentIndex = newRankings.indexOf(option)
-                    
-                    // Remove from current position
-                    if (currentIndex >= 0) {
-                      newRankings.splice(currentIndex, 1)
-                    }
-                    
-                    // Insert at new position
-                    const newPosition = parseInt(value) - 1
-                    newRankings.splice(newPosition, 0, option)
-                    
-                    updateResponse(question.id, newRankings)
-                  }}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue placeholder="Rank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rankingOptions.map((_, i) => (
-                      <SelectItem key={i} value={String(i + 1)}>
-                        {i + 1}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Label className="flex-1">{option}</Label>
+            {rankingOptions.map((option, index) => {
+              const currentRank = rankings.indexOf(option) + 1
+              return (
+                <div key={index} className="flex items-center space-x-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <Select
+                    value={currentRank > 0 ? String(currentRank) : ""}
+                    onValueChange={(value) => {
+                      const newRankings = [...rankings]
+                      const currentIndex = newRankings.indexOf(option)
+                      
+                      if (currentIndex >= 0) {
+                        newRankings.splice(currentIndex, 1)
+                      }
+                      
+                      if (value) {
+                        const newPosition = parseInt(value) - 1
+                        newRankings.splice(newPosition, 0, option)
+                      }
+                      
+                      updateResponse(question.id, newRankings.slice(0, maxRankings))
+                    }}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue placeholder="Rank" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {Array.from({ length: maxRankings }, (_, i) => (
+                        <SelectItem key={i} value={String(i + 1)}>
+                          {i + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Label className="flex-1 font-light">{option}</Label>
+                </div>
+              )
+            })}
+          </div>
+        )
+
+      case 'matrix':
+        const matrixResponses = (currentResponse?.answer as Record<string, number>) || {}
+        const scale = question.matrix_config?.scale || { min: 1, max: 5, labels: { min: "Low", max: "High" } }
+        
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                {scale.labels.min}
+              </span>
+              <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                {scale.labels.max}
+              </span>
+            </div>
+            
+            {question.options?.map((statement, index) => (
+              <div key={index} className="space-y-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div className="font-light text-slate-900 dark:text-white">{statement}</div>
+                <div className="flex justify-center space-x-2">
+                  {Array.from({ length: scale.max - scale.min + 1 }, (_, i) => {
+                    const value = scale.min + i
+                    const isSelected = matrixResponses[statement] === value
+                    return (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          const newResponses = { ...matrixResponses, [statement]: value }
+                          updateResponse(question.id, newResponses)
+                        }}
+                        className={cn(
+                          "w-10 h-10 rounded-full",
+                          isSelected && "bg-blue-600 text-white hover:bg-blue-700"
+                        )}
+                      >
+                        {value}
+                      </Button>
+                    )
+                  })}
+                </div>
               </div>
             ))}
+          </div>
+        )
+
+      case 'contact_info':
+        const contactData = (currentResponse?.answer as Record<string, string>) || {}
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor={`${question.id}-first`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  First Name
+                </Label>
+                <Input
+                  id={`${question.id}-first`}
+                  value={contactData.firstName || ""}
+                  onChange={(e) => updateResponse(question.id, { ...contactData, firstName: e.target.value })}
+                  placeholder="First name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor={`${question.id}-last`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Last Name
+                </Label>
+                <Input
+                  id={`${question.id}-last`}
+                  value={contactData.lastName || ""}
+                  onChange={(e) => updateResponse(question.id, { ...contactData, lastName: e.target.value })}
+                  placeholder="Last name"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor={`${question.id}-email`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Email Address
+              </Label>
+              <Input
+                id={`${question.id}-email`}
+                type="email"
+                value={contactData.email || ""}
+                onChange={(e) => updateResponse(question.id, { ...contactData, email: e.target.value })}
+                placeholder="your@email.com"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`${question.id}-phone`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Phone Number (Optional)
+              </Label>
+              <Input
+                id={`${question.id}-phone`}
+                type="tel"
+                value={contactData.phone || ""}
+                onChange={(e) => updateResponse(question.id, { ...contactData, phone: e.target.value })}
+                placeholder="(555) 123-4567"
+                className="mt-1"
+              />
+            </div>
+          </div>
+        )
+
+      case 'file_upload':
+        return (
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+              <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-600 dark:text-slate-400 mb-2">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-500">
+                PNG, JPG, PDF up to 10MB
+              </p>
+              <Input
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    updateResponse(question.id, file.name)
+                  }
+                }}
+                className="hidden"
+                accept=".png,.jpg,.jpeg,.pdf"
+              />
+            </div>
+            {currentResponse?.answer && (
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Selected: {currentResponse.answer as string}
+              </p>
+            )}
+          </div>
+        )
+
+      case 'statement':
+        return (
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-slate-700 dark:text-slate-300 font-light leading-relaxed">
+              {question.question}
+            </p>
           </div>
         )
 
       case 'likert':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-6 gap-2 text-center text-sm">
+            <div className="grid grid-cols-6 gap-2 text-center text-sm mb-6">
               <div></div>
-              <div>Strongly Disagree</div>
-              <div>Disagree</div>
-              <div>Neutral</div>
-              <div>Agree</div>
-              <div>Strongly Agree</div>
+              <div className="text-slate-600 dark:text-slate-400 font-light">Strongly Disagree</div>
+              <div className="text-slate-600 dark:text-slate-400 font-light">Disagree</div>
+              <div className="text-slate-600 dark:text-slate-400 font-light">Neutral</div>
+              <div className="text-slate-600 dark:text-slate-400 font-light">Agree</div>
+              <div className="text-slate-600 dark:text-slate-400 font-light">Strongly Agree</div>
             </div>
             {question.options?.map((statement, index) => (
-              <div key={index} className="grid grid-cols-6 gap-2 items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="text-sm">{statement}</div>
+              <div key={index} className="grid grid-cols-6 gap-2 items-center border-b border-slate-100 dark:border-slate-800 pb-4 last:border-0">
+                <div className="text-sm font-light pr-4">{statement}</div>
                 {[1, 2, 3, 4, 5].map(value => (
                   <div key={value} className="flex justify-center">
                     <RadioGroup
@@ -393,7 +698,11 @@ export function SurveyForm({
         )
 
       default:
-        return <div>Question type not supported</div>
+        return (
+          <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+            Question type "{question.type}" not yet implemented
+          </div>
+        )
     }
   }
 

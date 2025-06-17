@@ -1,0 +1,6 @@
+export { MultipleChoice } from './multiple-choice'
+export { ScaleRating } from './scale-rating'
+export { StarRating } from './star-rating'
+export { MatrixGrid } from './matrix-grid'
+export { TextInput } from './text-input'
+export { SliderInput } from './slider-input' 

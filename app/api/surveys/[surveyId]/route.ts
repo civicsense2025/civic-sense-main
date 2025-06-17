@@ -53,6 +53,8 @@ export async function GET(
       scale_max: q.scale_config?.max,
       scale_labels: q.scale_config?.labels,
       max_selections: q.scale_config?.max_selections,
+      max_rankings: q.scale_config?.max_rankings,
+      matrix_config: q.scale_config?.scale ? { scale: q.scale_config.scale } : undefined,
       conditional_logic: q.conditional_logic
     }))
 
