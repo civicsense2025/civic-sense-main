@@ -129,7 +129,7 @@ export default function HomePage() {
       
       <main className="w-full py-4 sm:py-6 lg:py-8">
         {/* Main content - use full available width with responsive constraints */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>

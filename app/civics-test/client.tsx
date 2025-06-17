@@ -438,7 +438,7 @@ export default function CivicsTestLanding() {
       <main className="w-full">
         {/* Hero Section */}
         <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+          <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
             <div className="space-y-4 sm:space-y-6">
               <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-0 px-3 sm:px-4 py-1 font-mono font-light text-xs sm:text-sm">
                 Free • No signup required • 10 minutes
@@ -474,7 +474,7 @@ export default function CivicsTestLanding() {
 
         {/* Test Info Section */}
         <section className="py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {testInfo.map((info, index) => (
                 <div key={index} className="text-center space-y-2 sm:space-y-4">
@@ -491,7 +491,7 @@ export default function CivicsTestLanding() {
 
         {/* Why This Test Is Different Section */}
         <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 rounded-2xl sm:rounded-3xl mx-2 sm:mx-4 my-6 sm:my-8">
-          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+          <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white px-2">
               Why this test is different
             </h2>

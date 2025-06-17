@@ -109,34 +109,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={`${inter.className} ${spaceMono.variable} bg-white dark:bg-slate-950 min-h-screen antialiased`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthProvider>
-              <StatsigProvider>
-                <PWAProvider>
-                  <div className="min-h-screen flex flex-col">
-                    <main className="flex-1">
-                      {children}
-                    </main>
-                    <div className="mt-8">
-                      <Footer />
-                    </div>
-                  </div>
-                  <Toaster />
-                  <GlobalAudioWrapper />
-                  <Analytics />
-                  {process.env.NODE_ENV === 'development' && <PWAStatus />}
-                </PWAProvider>
-              </StatsigProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </div>
+      <body className={`${inter.className} ${spaceMono.variable} bg-white dark:bg-slate-950 min-h-screen antialiased overflow-x-hidden`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <StatsigProvider>
+              <PWAProvider>
+                <div className="min-h-screen flex flex-col w-full">
+                  <main className="flex-1 w-full">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+                <Toaster />
+                <GlobalAudioWrapper />
+                <Analytics />
+                {process.env.NODE_ENV === 'development' && <PWAStatus />}
+              </PWAProvider>
+            </StatsigProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

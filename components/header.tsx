@@ -24,8 +24,8 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
     <div className={className}>
       {/* Unified header with integrated utility bar */}
       {showTopBar && showMainHeader && (
-        <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
+        <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm overflow-hidden">
+          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
             {/* Left side - Site branding */}
             <div className="flex items-center">
               <Link 
@@ -98,8 +98,8 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 className="sm:hidden fixed inset-0 z-30 bg-black/20" 
                 onClick={() => setIsMobileMenuOpen(false)}
               />
-              <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-lg">
-                <div className="px-3 py-4 space-y-4">
+              <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-lg w-full max-w-full">
+                <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
                 {/* Navigation Links */}
                 <div className="space-y-3">
                   {pathname !== '/civics-test' && (
@@ -156,7 +156,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
       {/* Fallback for individual components */}
       {showTopBar && !showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-end w-full px-3 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <ThemeToggle />
               <UserMenu onSignInClick={onSignInClick} />
@@ -167,7 +167,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
 
       {!showTopBar && showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
             <Link 
               href="/" 
               className="group hover:opacity-80 transition-opacity"

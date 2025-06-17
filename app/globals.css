@@ -4,11 +4,18 @@
 
 
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   color: rgb(var(--foreground));
   background: rgb(var(--background));
   font-family: Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   font-feature-settings: 'rlig' 1, 'calt' 1;
+  overflow-x: hidden;
+  width: 100%;
+  min-width: 0;
 }
 
 .text-balance {
@@ -126,6 +133,14 @@ body {
 /* Clean base styles */
 * {
   border-color: rgb(var(--border));
+}
+
+/* Prevent horizontal overflow */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 body {
