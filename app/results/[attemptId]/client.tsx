@@ -13,6 +13,28 @@ interface ResultsPageProps {
   }
 }
 
+// Add normalization function for assessment questions
+function normalizeAssessmentQuestion(q: any): any {
+  // Map options array to option_a, option_b, etc.
+  const options = Array.isArray(q.options) ? q.options : []
+  return {
+    topic_id: q.category || "assessment",
+    question_number: q.question_number || 0,
+    question_type: q.question_type || "multiple_choice",
+    category: q.category || "",
+    question: q.question,
+    option_a: options[0]?.text || options[0] || undefined,
+    option_b: options[1]?.text || options[1] || undefined,
+    option_c: options[2]?.text || options[2] || undefined,
+    option_d: options[3]?.text || options[3] || undefined,
+    correct_answer: q.correctAnswer || q.correct_answer,
+    hint: q.hint || "",
+    explanation: q.friendlyExplanation || q.friendly_explanation || q.explanation || "",
+    tags: q.tags || [],
+    sources: q.sources || [],
+  }
+}
+
 export default function ResultsPageClient({ params }: ResultsPageProps) {
   const attemptId = params.attemptId
   const router = useRouter()
@@ -49,7 +71,18 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
           timeSpent: ans.timeSpent
         }))
 
-        setState({ topicId: attempt.topicId, userAnswers: convertedAnswers, questions })
+        // Normalize questions if this is an assessment
+        let normalizedQuestions = questions
+        // Type guard: check if question has 'options' property
+        const isAssessmentFormat = (q: any) => q && (Array.isArray(q.options) || q.hasOwnProperty('options'))
+        if (
+          attempt.topicId === 'assessment' ||
+          (questions.length > 0 && isAssessmentFormat(questions[0]))
+        ) {
+          normalizedQuestions = questions.map(normalizeAssessmentQuestion)
+        }
+
+        setState({ topicId: attempt.topicId, userAnswers: convertedAnswers, questions: normalizedQuestions })
       } catch (e) {
         console.error(e)
         setError("Failed to load attempt details")

@@ -33,3 +33,6 @@ ai-config.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database type backups
+lib/database.types.ts.backup.*

@@ -13,12 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
+import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   User, Settings, Crown, Bell, Shield, Download,
   Mail, Calendar, CreditCard, Key, Trash2,
   ArrowLeft, Save, AlertCircle, CheckCircle,
-  Moon, Sun, Globe, Smartphone, Lock
+  Moon, Sun, Globe, Smartphone, Lock,
+  Accessibility, Volume2, Eye, Type, Headphones
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -32,6 +34,20 @@ interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
   language: string
   timezone: string
+  // Accessibility preferences
+  accessibilityEnabled: boolean
+  audioEnabled: boolean
+  autoPlayQuestions: boolean
+  autoPlayAnswers: boolean
+  speechRate: number
+  speechPitch: number
+  speechVolume: number
+  highContrast: boolean
+  largeText: boolean
+  reducedMotion: boolean
+  keyboardShortcuts: boolean
+  extendedTimeouts: boolean
+  confirmActions: boolean
 }
 
 export default function SettingsPage() {
@@ -41,6 +57,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("account")
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   
   const [preferences, setPreferences] = useState<UserPreferences>({
     emailNotifications: true,
@@ -49,7 +66,21 @@ export default function SettingsPage() {
     achievementAlerts: true,
     theme: 'system',
     language: 'en',
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
+    // Accessibility defaults
+    accessibilityEnabled: false,
+    audioEnabled: true,
+    autoPlayQuestions: false,
+    autoPlayAnswers: false,
+    speechRate: 1.0,
+    speechPitch: 1.0,
+    speechVolume: 0.8,
+    highContrast: false,
+    largeText: false,
+    reducedMotion: false,
+    keyboardShortcuts: true,
+    extendedTimeouts: false,
+    confirmActions: false
   })
 
   const [accountData, setAccountData] = useState({
@@ -59,6 +90,36 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: ''
   })
+
+  // Load available voices for text-to-speech
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        const availableVoices = speechSynthesis.getVoices()
+        setVoices(availableVoices.filter(voice => voice.lang.startsWith('en')))
+      }
+
+      loadVoices()
+      speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      
+      return () => {
+        speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+      }
+    }
+  }, [])
+
+  // Load preferences from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('civicsense-preferences')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setPreferences(prev => ({ ...prev, ...parsed }))
+      } catch (error) {
+        console.error('Error loading preferences:', error)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -73,8 +134,18 @@ export default function SettingsPage() {
   const handleSavePreferences = async () => {
     setSaveStatus('saving')
     try {
-      // In a real app, this would save to your backend
-      localStorage.setItem('userPreferences', JSON.stringify(preferences))
+      // Save to localStorage and potentially backend
+      localStorage.setItem('civicsense-preferences', JSON.stringify(preferences))
+      
+      // Apply accessibility settings to document
+      if (preferences.accessibilityEnabled) {
+        document.documentElement.classList.toggle('high-contrast', preferences.highContrast)
+        document.documentElement.classList.toggle('large-text', preferences.largeText)
+        document.documentElement.classList.toggle('reduced-motion', preferences.reducedMotion)
+      } else {
+        document.documentElement.classList.remove('high-contrast', 'large-text', 'reduced-motion')
+      }
+      
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (error) {
@@ -228,7 +299,7 @@ export default function SettingsPage() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <TabsList className="grid w-full grid-cols-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
             <TabsTrigger value="account" className="data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800">
               <User className="h-4 w-4 mr-2" />
               Account
@@ -240,6 +311,10 @@ export default function SettingsPage() {
             <TabsTrigger value="preferences" className="data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800">
               <Settings className="h-4 w-4 mr-2" />
               Preferences
+            </TabsTrigger>
+            <TabsTrigger value="accessibility" className="data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800">
+              <Accessibility className="h-4 w-4 mr-2" />
+              Accessibility
             </TabsTrigger>
             <TabsTrigger value="privacy" className="data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800">
               <Shield className="h-4 w-4 mr-2" />
@@ -449,6 +524,199 @@ export default function SettingsPage() {
                         }
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSavePreferences}
+                    disabled={saveStatus === 'saving'}
+                    className="bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Preferences
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Accessibility Tab */}
+          <TabsContent value="accessibility" className="space-y-6">
+            <Card className="border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Accessibility className="h-5 w-5" />
+                  <span>Accessibility Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Customize your CivicSense experience for accessibility
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Accessibility Settings */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Accessibility</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>High Contrast</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable high contrast mode
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.highContrast}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, highContrast: checked }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Large Text</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable large text mode
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.largeText}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, largeText: checked }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Reduced Motion</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable reduced motion mode
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.reducedMotion}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, reducedMotion: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Text-to-Speech Settings */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Text-to-Speech</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Speech Rate</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Adjust the speed of text-to-speech
+                      </p>
+                    </div>
+                    <Slider
+                      value={[preferences.speechRate]}
+                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechRate: value[0] }))}
+                      max={2.0}
+                      min={0.5}
+                      step={0.1}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Speech Pitch</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Adjust the pitch of text-to-speech
+                      </p>
+                    </div>
+                    <Slider
+                      value={[preferences.speechPitch]}
+                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechPitch: value[0] }))}
+                      max={2.0}
+                      min={0.5}
+                      step={0.1}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Speech Volume</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Adjust the volume of text-to-speech
+                      </p>
+                    </div>
+                    <Slider
+                      value={[preferences.speechVolume]}
+                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechVolume: value[0] }))}
+                      max={1.0}
+                      min={0.0}
+                      step={0.1}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Keyboard Shortcuts */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Keyboard Shortcuts</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Enable Keyboard Shortcuts</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable keyboard shortcuts for faster navigation
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.keyboardShortcuts}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, keyboardShortcuts: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Extended Timeouts */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Extended Timeouts</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Enable Extended Timeouts</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable longer timeouts for actions
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.extendedTimeouts}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, extendedTimeouts: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Confirm Actions */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Confirm Actions</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Enable Confirm Actions</Label>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Enable confirmation before performing actions
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.confirmActions}
+                      onCheckedChange={(checked: boolean) => 
+                        setPreferences(prev => ({ ...prev, confirmActions: checked }))
+                      }
+                    />
                   </div>
                 </div>
 

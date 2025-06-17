@@ -267,6 +267,45 @@ export type Database = {
           },
         ]
       }
+      civics_test_analytics: {
+        Row: {
+          event_type: string
+          guest_token: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          score: number | null
+          session_id: string
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          event_type: string
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          score?: number | null
+          session_id: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          score?: number | null
+          session_id?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           date: string
@@ -722,6 +761,54 @@ export type Database = {
           synonyms?: string[] | null
           term?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      guest_civics_test_results: {
+        Row: {
+          answers: Json | null
+          category_breakdown: Json | null
+          completed_at: string
+          converted_at: string | null
+          converted_user_id: string | null
+          guest_token: string
+          id: string
+          ip_address: unknown | null
+          level: string
+          score: number
+          session_id: string
+          test_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          category_breakdown?: Json | null
+          completed_at?: string
+          converted_at?: string | null
+          converted_user_id?: string | null
+          guest_token: string
+          id?: string
+          ip_address?: unknown | null
+          level: string
+          score: number
+          session_id: string
+          test_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          category_breakdown?: Json | null
+          completed_at?: string
+          converted_at?: string | null
+          converted_user_id?: string | null
+          guest_token?: string
+          id?: string
+          ip_address?: unknown | null
+          level?: string
+          score?: number
+          session_id?: string
+          test_type?: string
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -1973,6 +2060,7 @@ export type Database = {
           description: string | null
           difficulty_level: number | null
           display_order: number | null
+          emoji: string | null
           id: string
           is_active: boolean | null
           is_core_skill: boolean | null
@@ -1987,6 +2075,7 @@ export type Database = {
           description?: string | null
           difficulty_level?: number | null
           display_order?: number | null
+          emoji?: string | null
           id?: string
           is_active?: boolean | null
           is_core_skill?: boolean | null
@@ -2001,6 +2090,7 @@ export type Database = {
           description?: string | null
           difficulty_level?: number | null
           display_order?: number | null
+          emoji?: string | null
           id?: string
           is_active?: boolean | null
           is_core_skill?: boolean | null
@@ -2794,39 +2884,6 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           valid_until?: string | null
-        }
-        Relationships: []
-      }
-      user_onboarding_assessment: {
-        Row: {
-          assessment_data: Json
-          assessment_type: string
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          results: Json
-          score: number | null
-          user_id: string
-        }
-        Insert: {
-          assessment_data?: Json
-          assessment_type?: string
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          results?: Json
-          score?: number | null
-          user_id: string
-        }
-        Update: {
-          assessment_data?: Json
-          assessment_type?: string
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          results?: Json
-          score?: number | null
-          user_id?: string
         }
         Relationships: []
       }
@@ -3647,6 +3704,20 @@ export type Database = {
       }
     }
     Views: {
+      civics_test_metrics: {
+        Row: {
+          abandonments: number | null
+          avg_score: number | null
+          completions: number | null
+          day: string | null
+          signups: number | null
+          starts: number | null
+          unique_guests: number | null
+          unique_sessions: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
       question_feedback_stats: {
         Row: {
           category: string | null
@@ -3927,6 +3998,10 @@ export type Database = {
         Args: { target_user_id: string; step_name: string; step_data?: Json }
         Returns: boolean
       }
+      convert_guest_civics_results: {
+        Args: { p_guest_token: string; p_user_id: string }
+        Returns: number
+      }
       get_available_boosts_for_user: {
         Args: { target_user_id: string; user_level?: number }
         Returns: {
@@ -3939,6 +4014,17 @@ export type Database = {
           rarity: string
           level_requirement: number
           tags: string[]
+        }[]
+      }
+      get_guest_test_summary: {
+        Args: { p_guest_token: string }
+        Returns: {
+          total_tests: number
+          average_score: number
+          latest_score: number
+          latest_level: string
+          has_converted: boolean
+          converted_user_id: string
         }[]
       }
       get_onboarding_categories: {
@@ -4226,3 +4312,102 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// Convenient type exports for easier usage
+export type DbQuestionTopic = Tables<'question_topics'>
+export type DbQuestion = Tables<'questions'>
+export type DbQuestionFeedback = Tables<'question_feedback'>
+export type DbUserQuizAttempt = Tables<'user_quiz_attempts'>
+export type DbUserProgress = Tables<'user_progress'>
+export type DbUserQuestionResponse = Tables<'user_question_responses'>
+export type DbProfile = Tables<'profiles'>
+export type DbCategory = Tables<'categories'>
+export type DbEvent = Tables<'events'>
+
+// Assessment and onboarding types
+export type DbAssessmentQuestion = Tables<'assessment_questions'>
+export type DbAssessmentAnalytics = Tables<'assessment_analytics'>
+export type DbAssessmentScoring = Tables<'assessment_scoring'>
+export type DbUserAssessment = Tables<'user_assessments'>
+export type DbUserOnboardingState = Tables<'user_onboarding_state'>
+
+// Skills and learning types
+export type DbSkill = Tables<'skills'>
+export type DbSkillRelationship = Tables<'skill_relationships'>
+export type DbUserSkillProgress = Tables<'user_skill_progress'>
+export type DbUserSkillPreference = Tables<'user_skill_preferences'>
+export type DbLearningObjective = Tables<'learning_objectives'>
+
+// Premium and subscription types
+export type DbUserSubscription = Tables<'user_subscriptions'>
+
+// Guest access types
+export type DbGuestUsageTracking = Tables<'guest_usage_tracking'>
+export type DbGuestUsageAnalytics = Tables<'guest_usage_analytics'>
+export type DbGuestCivicsTestResult = Tables<'guest_civics_test_results'>
+
+// Civics test analytics
+export type DbCivicsTestAnalytics = Tables<'civics_test_analytics'>
+
+// Public figures and organizations
+export type DbPublicFigure = Tables<'public_figures'>
+export type DbOrganization = Tables<'organizations'>
+export type DbFigureEvent = Tables<'figure_events'>
+export type DbFigureRelationship = Tables<'figure_relationships'>
+
+// Insert types
+export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
+export type DbQuestionInsert = TablesInsert<'questions'>
+export type DbQuestionFeedbackInsert = TablesInsert<'question_feedback'>
+export type DbUserQuizAttemptInsert = TablesInsert<'user_quiz_attempts'>
+export type DbUserProgressInsert = TablesInsert<'user_progress'>
+export type DbUserQuestionResponseInsert = TablesInsert<'user_question_responses'>
+export type DbProfileInsert = TablesInsert<'profiles'>
+export type DbCategoryInsert = TablesInsert<'categories'>
+export type DbEventInsert = TablesInsert<'events'>
+
+// Assessment insert types
+export type DbAssessmentQuestionInsert = TablesInsert<'assessment_questions'>
+export type DbAssessmentAnalyticsInsert = TablesInsert<'assessment_analytics'>
+export type DbUserAssessmentInsert = TablesInsert<'user_assessments'>
+export type DbUserOnboardingStateInsert = TablesInsert<'user_onboarding_state'>
+
+// Skills insert types
+export type DbUserSkillProgressInsert = TablesInsert<'user_skill_progress'>
+export type DbUserSkillPreferenceInsert = TablesInsert<'user_skill_preferences'>
+
+// Guest access insert types
+export type DbGuestUsageTrackingInsert = TablesInsert<'guest_usage_tracking'>
+export type DbGuestCivicsTestResultInsert = TablesInsert<'guest_civics_test_results'>
+export type DbCivicsTestAnalyticsInsert = TablesInsert<'civics_test_analytics'>
+
+// Update types
+export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
+export type DbQuestionUpdate = TablesUpdate<'questions'>
+export type DbQuestionFeedbackUpdate = TablesUpdate<'question_feedback'>
+export type DbUserQuizAttemptUpdate = TablesUpdate<'user_quiz_attempts'>
+export type DbUserProgressUpdate = TablesUpdate<'user_progress'>
+export type DbUserQuestionResponseUpdate = TablesUpdate<'user_question_responses'>
+export type DbProfileUpdate = TablesUpdate<'profiles'>
+export type DbCategoryUpdate = TablesUpdate<'categories'>
+export type DbEventUpdate = TablesUpdate<'events'>
+
+// Assessment update types
+export type DbAssessmentQuestionUpdate = TablesUpdate<'assessment_questions'>
+export type DbUserAssessmentUpdate = TablesUpdate<'user_assessments'>
+export type DbUserOnboardingStateUpdate = TablesUpdate<'user_onboarding_state'>
+
+// Skills update types
+export type DbUserSkillProgressUpdate = TablesUpdate<'user_skill_progress'>
+export type DbUserSkillPreferenceUpdate = TablesUpdate<'user_skill_preferences'>
+
+// Guest access update types
+export type DbGuestUsageTrackingUpdate = TablesUpdate<'guest_usage_tracking'>
+export type DbGuestCivicsTestResultUpdate = TablesUpdate<'guest_civics_test_results'>
+
+// Subscription update types
+export type DbUserSubscriptionUpdate = TablesUpdate<'user_subscriptions'>
+
+// Enum types (add as needed)
+// Example: export type DbUserRole = Database['public']['Enums']['user_role']
+// Example: export type DbQuestionType = Database['public']['Enums']['question_type']

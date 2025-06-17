@@ -7,7 +7,6 @@ import { Progress } from '@/components/ui/progress'
 import { Check, X, ArrowRight, Loader2, Flame } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { useStatsig } from '@/components/providers/statsig-provider'
 
 interface AssessmentQuestion {
   id: string
@@ -21,12 +20,12 @@ interface AssessmentQuestion {
   skill_id?: string
 }
 
-interface AssessmentStepProps {
+interface CivicsTestAssessmentProps {
   onComplete: (data: any) => void
-  onNext: () => void
-  onSkip: (reason: string) => void
-  onboardingState: any
+  onBack: () => void
+  testType: 'quick' | 'full'
   userId?: string
+  guestToken?: string
 }
 
 // Enhanced WordReveal with natural typing animation
@@ -105,7 +104,7 @@ function WordReveal({ text, speed = 100, className, onComplete }: { text: string
   )
 }
 
-export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: AssessmentStepProps) {
+export function CivicsTestAssessment({ onComplete, onBack, testType, userId, guestToken }: CivicsTestAssessmentProps) {
   const [questions, setQuestions] = useState<AssessmentQuestion[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<{ [questionId: string]: string }>({})
@@ -116,39 +115,25 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   const [streak, setStreak] = useState(0)
   const [maxStreak, setMaxStreak] = useState(0)
   const [categoryPerformance, setCategoryPerformance] = useState<Record<string, { correct: number; total: number }>>({})
-  const [adaptiveLoading, setAdaptiveLoading] = useState(false)
-  const [adaptiveMode, setAdaptiveMode] = useState(false)
-  const [answeredIds, setAnsweredIds] = useState<string[]>([])
-  const [weakCategories, setWeakCategories] = useState<string[]>([])
   const [startTime, setStartTime] = useState<number>(Date.now())
   const responseTimes = useRef<{ [questionId: string]: number }>({})
-  const { logEvent } = useStatsig();
   const autoAdvanceTimeout = useRef<NodeJS.Timeout | null>(null)
   const [canAdvance, setCanAdvance] = useState(false)
-  const [assessmentMode, setAssessmentMode] = useState<'quick' | 'full'>('quick')
-  const [xpAwarded, setXpAwarded] = useState(0)
-  const [xpAlreadyAwarded, setXpAlreadyAwarded] = useState(false)
-  const [hasCompletedQuick, setHasCompletedQuick] = useState(false)
-  const [hasCompletedFull, setHasCompletedFull] = useState(false)
 
-  // Get dynamic headings based on assessment mode and question count
+  // Get dynamic headings based on test type and question count
   const getAssessmentTitle = () => {
-    if (questions.length >= 20) {
-      return "Comprehensive Civic Knowledge Review"
-    } else if (assessmentMode === 'full') {
-      return "Full Civic Assessment"
+    if (testType === 'full') {
+      return "The Civic Knowledge Test That Actually Matters"
     } else {
-      return "Quick Knowledge Check"
+      return "Quick Civic Knowledge Check"
     }
   }
 
   const getAssessmentDescription = () => {
-    if (questions.length >= 20) {
-      return "This comprehensive review covers all areas of civic knowledge. Take your time and think through each question carefully."
-    } else if (assessmentMode === 'full') {
-      return "A thorough assessment of your civic knowledge across multiple categories. This helps us understand your strengths and areas for growth."
+    if (testType === 'full') {
+      return "We're about to test whether you understand how power actually works in America today. No memorized facts—just real-world knowledge."
     } else {
-      return "Let's see what you already know. No pressure — this helps us personalize your experience."
+      return "A quick assessment of your civic knowledge. We'll focus on the most important questions about how democracy functions."
     }
   }
 
@@ -176,23 +161,20 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     }
   }
 
-  // Fetch initial questions
+  // Fetch questions based on test type
   useEffect(() => {
     const fetchQuestions = async () => {
       setLoading(true)
       setError(null)
       try {
-        const selectedCategories = onboardingState?.categories?.categories || []
-        const categoryIds = selectedCategories.map((cat: any) => cat.id).filter(Boolean)
         const params = new URLSearchParams()
         params.set('balanced', 'true')
-        const count = assessmentMode === 'quick' ? 8 : 100 // 8 for quick, 100 for full (or all)
+        const count = testType === 'quick' ? 8 : 20 // 8 for quick, 20 for full
         params.set('count', String(count))
-        if (categoryIds.length > 0) {
-          params.set('categories', JSON.stringify(categoryIds))
-        }
+        
         const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
         const result = await res.json()
+        
         if (result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
           setQuestions(result.questions.map(normalizeQuestion))
         } else {
@@ -200,12 +182,13 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         }
       } catch (err) {
         setError('Failed to load assessment questions')
+        console.error('Error fetching questions:', err)
       } finally {
         setLoading(false)
       }
     }
     fetchQuestions()
-  }, [onboardingState, assessmentMode])
+  }, [testType])
 
   // Track response time
   useEffect(() => {
@@ -218,16 +201,18 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   // Handle answer selection
   const handleAnswer = async (optionId: string) => {
     if (!currentQuestion) return
+    
     // Find the correct option's id
     const correctOption = currentQuestion.options.find(
       (opt) => opt.text === currentQuestion.correctAnswer
     )
     const isCorrect = optionId === (correctOption?.id ?? currentQuestion.correctAnswer)
+    
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: optionId }))
-    setAnsweredIds(prev => [...prev, currentQuestion.id])
     setStreak(prev => (isCorrect ? prev + 1 : 0))
     setMaxStreak(prev => (isCorrect && prev + 1 > maxStreak ? prev + 1 : maxStreak))
     responseTimes.current[currentQuestion.id] = Math.floor((Date.now() - startTime) / 1000)
+    
     setCategoryPerformance(prev => {
       const cat = currentQuestion.category
       const prevStats = prev[cat] || { correct: 0, total: 0 }
@@ -239,13 +224,16 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         }
       }
     })
+    
     setShowResult(true)
     setCanAdvance(false)
+    
     // Start 10s timer for auto-advance
     if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
     autoAdvanceTimeout.current = setTimeout(() => {
       handleAdvance()
     }, 10000)
+    
     // Allow manual advance after 2s (give time to read explanation)
     setTimeout(() => setCanAdvance(true), 2000)
   }
@@ -254,51 +242,16 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   function handleAdvance() {
     setShowResult(false)
     setCanAdvance(false)
+    
     if (autoAdvanceTimeout.current) {
       clearTimeout(autoAdvanceTimeout.current)
       autoAdvanceTimeout.current = null
     }
-    if (currentQuestionIndex === questions.length - 1 && !assessmentComplete) {
-      // Identify weak categories
-      const weak = Object.entries(categoryPerformance)
-        .filter(([_, stats]) => stats.correct / stats.total < 0.6)
-        .map(([cat]) => cat)
-      setWeakCategories(weak)
-      if (questions.length < 12 && weak.length > 0) {
-        setAdaptiveLoading(true)
-        setAdaptiveMode(true)
-        const correctCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.correct, 0)
-        const totalCount = Object.values(categoryPerformance).reduce((sum, stats) => sum + stats.total, 0)
-        const performance = totalCount > 0 ? correctCount / totalCount : 0.5
-        let targetDifficulty = 2
-        if (performance >= 0.8) targetDifficulty = 3
-        else if (performance <= 0.4) targetDifficulty = 1
-        fetch('/api/onboarding/assessment-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            performance,
-            answeredQuestions: answeredIds,
-            targetDifficulty,
-            categories: weak
-          })
-        })
-          .then(resp => resp.json())
-          .then(data => {
-            if (data.question) {
-              setQuestions(prev => [...prev, normalizeQuestion(data.question)])
-              setCurrentQuestionIndex(prev => prev + 1)
-            }
-            setAdaptiveLoading(false)
-          })
-        setAssessmentComplete(true)
-      } else {
-        setAssessmentComplete(true)
-      }
-    } else if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1)
-    } else {
+    
+    if (currentQuestionIndex === questions.length - 1) {
       setAssessmentComplete(true)
+    } else {
+      setCurrentQuestionIndex(prev => prev + 1)
     }
   }
 
@@ -313,134 +266,46 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   const calculateResults = () => {
     let correct = 0
     let perCategory: Record<string, { correct: number; total: number }> = {}
+    
     questions.forEach(q => {
       const userAnswer = answers[q.id]
       const correctOption = q.options.find(opt => opt.text === q.correctAnswer)
+      
       if (!perCategory[q.category]) perCategory[q.category] = { correct: 0, total: 0 }
       perCategory[q.category].total++
+      
       if (userAnswer === (correctOption?.id ?? q.correctAnswer)) {
         correct++
         perCategory[q.category].correct++
       }
     })
+    
     const score = Math.round((correct / questions.length) * 100)
     let level: 'beginner' | 'intermediate' | 'advanced' = 'beginner'
     if (score >= 80) level = 'advanced'
     else if (score >= 60) level = 'intermediate'
+    
     return { score, correct, total: questions.length, level, perCategory }
   }
 
   // Personalized message
-  const getPersonalizedMessage = (level: string) => {
-    if (level === 'advanced') return "You really know your stuff! Ready for complex analysis."
-    if (level === 'intermediate') return "You have a solid foundation and are ready to build on it."
-    return "Perfect starting point! Everyone begins somewhere."
-  }
-
-  // On mount, check if user has already completed quick/full assessment
-  useEffect(() => {
-    async function checkAssessmentCompletion() {
-      const resolvedUserId = userId || onboardingState?.userId || onboardingState?.user_id || onboardingState?.user?.id;
-      if (!resolvedUserId) return;
-      const { data: quick } = await supabase
-        .from('user_assessments')
-        .select('id')
-        .eq('user_id', resolvedUserId)
-        .eq('assessment_type', 'onboarding')
-        .eq('mode', 'quick')
-        .maybeSingle()
-      const { data: full } = await supabase
-        .from('user_assessments')
-        .select('id')
-        .eq('user_id', resolvedUserId)
-        .eq('assessment_type', 'onboarding')
-        .eq('mode', 'full')
-        .maybeSingle()
-      setHasCompletedQuick(!!quick)
-      setHasCompletedFull(!!full)
+  const getPersonalizedMessage = (level: string, score: number) => {
+    if (level === 'advanced') {
+      return "You understand how power actually works. You're in the minority of Americans who grasp the real mechanics of democracy."
     }
-    checkAssessmentCompletion()
-  }, [userId, onboardingState])
-
-  // Helper to persist assessment analytics and personalize user
-  async function handleAssessmentAnalytics(results: any) {
-    try {
-      const resolvedUserId = userId || onboardingState?.userId || onboardingState?.user_id || onboardingState?.user?.id;
-      if (!resolvedUserId) return;
-      const sessionId = `${resolvedUserId}-onboarding-${Date.now()}`;
-      // 1. Record assessment_analytics
-      await supabase.from('assessment_analytics').insert({
-        user_id: resolvedUserId,
-        session_id: sessionId,
-        event_type: 'completed',
-        final_score: results.score,
-        timestamp: new Date().toISOString()
-      });
-      // 2. Look up scoring
-      const { data: scoring } = await supabase
-        .from('assessment_scoring')
-        .select('*')
-        .lte('score_range_min', results.score)
-        .gte('score_range_max', results.score)
-        .single()
-      const mappedLevel = scoring?.skill_level || results.level
-      const mappedDescription = scoring?.description || getPersonalizedMessage(results.level)
-      const recommendations = scoring?.recommended_content || []
-      // 3. Check if already completed for this mode
-      const mode = assessmentMode
-      const { data: existing } = await supabase
-        .from('user_assessments')
-        .select('id')
-        .eq('user_id', resolvedUserId)
-        .eq('assessment_type', 'onboarding')
-        .eq('mode', mode)
-        .maybeSingle()
-      let xp = 0
-      if (!existing) {
-        xp = mode === 'full' ? 500 : 100
-        setXpAwarded(xp)
-        setXpAlreadyAwarded(false)
-      } else {
-        setXpAwarded(0)
-        setXpAlreadyAwarded(true)
-      }
-      // 4. Store user_assessments (always allow retake, but only award XP on first try)
-      await supabase.from('user_assessments').insert({
-        user_id: resolvedUserId,
-        assessment_type: 'onboarding',
-        score: results.score,
-        level: mappedLevel,
-        category_breakdown: results.perCategory,
-        answers: answers,
-        recommendations,
-        mode,
-        completed_at: new Date().toISOString()
-      });
-      // 5. Fire Statsig events
-      logEvent('onboarding_assessment_completed', results.score, {
-        level: mappedLevel,
-        perCategory: results.perCategory,
-        streak: maxStreak,
-        total: results.total,
-        mode
-      });
-      logEvent('onboarding_step_completed', 'assessment', {
-        score: results.score,
-        level: mappedLevel,
-        mode
-      });
-    } catch (err) {
-      console.error('Assessment analytics/personalization error:', err);
+    if (level === 'intermediate') {
+      return "You have a solid foundation, but there are gaps in your understanding of how the system really operates."
     }
+    return `You scored ${score}%, which puts you ahead of many Americans, but there's more to learn about how democracy actually functions.`
   }
 
   // Loading state
-  if (loading || adaptiveLoading) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
         <Loader2 className="h-8 w-8 animate-spin text-slate-700 dark:text-slate-300" />
         <p className="text-slate-600 dark:text-slate-400 font-light">
-          {adaptiveLoading ? 'Finding your next question...' : 'Preparing your knowledge assessment...'}
+          Preparing your civic knowledge assessment...
         </p>
       </div>
     )
@@ -456,10 +321,10 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         </h3>
         <div className="space-y-4 pt-4">
           <Button
-            onClick={() => onSkip('assessment_error')}
+            onClick={onBack}
             className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 py-2 rounded-full font-light"
           >
-            Skip Assessment
+            Go Back
           </Button>
         </div>
       </div>
@@ -476,16 +341,17 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
           </div>
           <div className="space-y-2">
             <h2 className="text-3xl font-light text-slate-900 dark:text-white">
-              Assessment Complete!
+              Assessment Complete
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400 font-light">
               You got {results.correct} out of {results.total} questions right.
             </p>
             <p className="text-slate-600 dark:text-slate-400 font-light">
-              {getPersonalizedMessage(results.level)}
+              {getPersonalizedMessage(results.level, results.score)}
             </p>
           </div>
         </div>
+        
         <div className="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 text-center">
           <div className="space-y-8">
             <div className="text-5xl font-light text-slate-900 dark:text-white">
@@ -493,11 +359,11 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             </div>
             <div>
               <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm px-4 py-1 font-light">
-                {results.level.charAt(0).toUpperCase() + results.level.slice(1)}
+                {results.level.charAt(0).toUpperCase() + results.level.slice(1)} Level
               </Badge>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium text-slate-900 dark:text-white">Category Breakdown</h4>
+              <h4 className="font-medium text-slate-900 dark:text-white">Knowledge Areas</h4>
               <div className="flex flex-wrap gap-3 justify-center">
                 {Object.entries(results.perCategory).map(([cat, stats]) => (
                   <Badge key={cat} variant="outline" className="text-xs">
@@ -508,16 +374,17 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             </div>
           </div>
         </div>
+        
         <div className="text-center pt-4">
           <Button 
-            onClick={async () => {
-              await handleAssessmentAnalytics(results);
+            onClick={() => {
               onComplete({
                 assessmentResults: results,
                 answers,
                 responseTimes: responseTimes.current,
                 completedAt: Date.now(),
-                streak: maxStreak
+                streak: maxStreak,
+                testType
               })
             }}
             className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light group"
@@ -526,11 +393,6 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
-        {xpAlreadyAwarded && (
-          <div className="text-center text-sm text-yellow-600 mt-2">
-            XP is only awarded for your first completion of this assessment mode.
-          </div>
-        )}
       </div>
     )
   }
@@ -539,20 +401,20 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   const getFeedback = (isCorrect: boolean) => {
     if (isCorrect) {
       const messages = [
-        "Nice! That's correct.",
-        "Great job!",
+        "That's right!",
+        "Correct!",
         "You got it!",
-        "Well done!",
-        "That's right!"
+        "Exactly!",
+        "Well done!"
       ]
       return messages[Math.floor(Math.random() * messages.length)]
     } else {
       const messages = [
-        "Not quite, but that's okay!",
-        "Almost! Keep going.",
-        "Good try!",
-        "Don't worry, you'll get the next one.",
-        "Let's see the explanation."
+        "Not quite—here's why:",
+        "Close, but here's the reality:",
+        "Actually, here's how it works:",
+        "That's a common misconception. Here's the truth:",
+        "Here's what's really happening:"
       ]
       return messages[Math.floor(Math.random() * messages.length)]
     }
@@ -569,14 +431,13 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         <p className="text-lg text-slate-600 dark:text-slate-400 font-light text-center">
           {getAssessmentDescription()}
         </p>
-        {questions.length >= 20 && (
-          <div className="text-center">
-            <Badge variant="outline" className="text-sm">
-              {questions.length} Questions • Comprehensive Review
-            </Badge>
-          </div>
-        )}
+        <div className="text-center">
+          <Badge variant="outline" className="text-sm">
+            Question {currentQuestionIndex + 1} of {questions.length}
+          </Badge>
+        </div>
       </div>
+      
       {/* Progress & Streak */}
       <div className="flex items-center justify-between mb-2">
         <Progress value={progress} className="h-1 w-3/4" />
@@ -585,6 +446,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
           <span className="text-xs text-orange-500">Streak: {streak}</span>
         </div>
       </div>
+      
       {/* Question */}
       <div className="space-y-8">
         <motion.div
@@ -597,6 +459,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
               {currentQuestion.question}
             </h3>
           </div>
+          
           {!showResult ? (
             <div className="space-y-3">
               {currentQuestion.options.map((option) => (
@@ -619,6 +482,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
                   )
                   const isCorrect = option.id === (correctOption?.id ?? currentQuestion.correctAnswer)
                   const isSelected = answers[currentQuestion.id] === option.id
+                  
                   return (
                     <div 
                       key={option.id} 
@@ -642,11 +506,13 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
                   )
                 })}
               </div>
+              
               <div className="text-center text-lg font-medium mt-2">
                 {getFeedback(
                   answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
                 )}
               </div>
+              
               <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
                 <WordReveal
                   text={currentQuestion.friendlyExplanation || currentQuestion.explanation}
@@ -654,16 +520,18 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
                   className="text-slate-600 dark:text-slate-400 font-light leading-relaxed"
                 />
               </div>
+              
               {canAdvance && (
                 <div className="flex justify-center pt-4">
                   <Button
                     onClick={handleAdvance}
                     className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light"
                   >
-                    Next
+                    {currentQuestionIndex === questions.length - 1 ? 'See Results' : 'Next Question'}
                   </Button>
                 </div>
               )}
+              
               {!canAdvance && (
                 <div className="flex justify-center pt-4">
                   <span className="text-xs text-slate-400">Reading explanation...</span>
@@ -673,34 +541,17 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
           )}
         </motion.div>
       </div>
-      {/* Skip option */}
+      
+      {/* Back option */}
       <div className="flex justify-center pt-8">
         <Button
           variant="ghost"
-          onClick={() => onSkip('assessment_skipped')}
+          onClick={onBack}
           className="text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-light"
         >
-          Skip assessment
-        </Button>
-      </div>
-      {/* Assessment mode toggle */}
-      <div className="flex justify-center mb-6">
-        <Button
-          variant={assessmentMode === 'quick' ? 'default' : 'outline'}
-          onClick={() => setAssessmentMode('quick')}
-          className="mr-2"
-        >
-          Quick (8-10 questions)
-          <span className="ml-2 text-xs text-green-600">+100 XP{hasCompletedQuick && ' (first time only)'}</span>
-        </Button>
-        <Button
-          variant={assessmentMode === 'full' ? 'default' : 'outline'}
-          onClick={() => setAssessmentMode('full')}
-        >
-          Full Review (20+ questions)
-          <span className="ml-2 text-xs text-green-600">+500 XP{hasCompletedFull && ' (first time only)'}</span>
+          ← Back to overview
         </Button>
       </div>
     </div>
   )
-}
+} 

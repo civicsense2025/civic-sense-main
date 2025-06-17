@@ -528,10 +528,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header onSignInClick={() => {}} />
-      <div className="min-h-screen bg-white dark:bg-black">
-        <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+      <main className="w-full py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
           {/* Onboarding banner - only show if not complete */}
           {showOnboardingBanner && (
             <div className="relative rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900/40 p-6 overflow-hidden mb-4">
@@ -904,7 +904,7 @@ export default function DashboardPage() {
             skillSlug={selectedSkill || undefined}
           />
         </div>
-      </div>
+      </main>
     </div>
   )
 } 

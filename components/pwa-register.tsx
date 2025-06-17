@@ -11,7 +11,7 @@ export function PWARegister() {
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState(false)
 
-  // Register service worker with low priority
+  // Register service worker with very low priority to avoid performance impact
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
       return
@@ -19,7 +19,7 @@ export function PWARegister() {
     
     console.log('PWA: Service Worker is supported')
     
-    // Use requestIdleCallback or setTimeout to defer registration
+    // Use an even more aggressive delay to ensure no performance impact
     const registerServiceWorker = () => {
       navigator.serviceWorker
         .register('/sw.js')
@@ -63,15 +63,16 @@ export function PWARegister() {
         })
     }
 
-    // Register after the page is fully loaded and idle
+    // Register much later to avoid any performance impact
     if ('requestIdleCallback' in window) {
-      // Use requestIdleCallback when available (low priority)
+      // Use requestIdleCallback with a much longer timeout
       window.requestIdleCallback(() => {
-        registerServiceWorker()
-      }, { timeout: 5000 })
+        // Add another delay to be extra safe
+        setTimeout(registerServiceWorker, 2000)
+      }, { timeout: 10000 })
     } else {
-      // Fallback to setTimeout
-      setTimeout(registerServiceWorker, 3000)
+      // Fallback with much longer delay
+      setTimeout(registerServiceWorker, 5000)
     }
 
     // Handle service worker updates

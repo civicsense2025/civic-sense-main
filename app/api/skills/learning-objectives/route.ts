@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching learning objectives:', error);
     
     // Use the mock data from skillOperations for consistency
-    const mockObjectives = await skillOperations.getMockLearningObjectives();
+    const mockObjectives = skillOperations.getMockLearningObjectives();
     return NextResponse.json({ data: mockObjectives });
   }
 } 

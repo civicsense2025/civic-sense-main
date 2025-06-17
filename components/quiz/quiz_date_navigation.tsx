@@ -90,6 +90,10 @@ export function QuizDateNavigation({
     return title.slice(0, maxLength) + '...'
   }
 
+  function truncateTitleNav(title: string, maxLength: number = 20) {
+    return title.length > maxLength ? title.slice(0, maxLength) + '…' : title;
+  }
+
   const currentDate = formatDate(currentTopic.date, currentTopic.dayOfWeek)
 
   return (
@@ -118,12 +122,12 @@ export function QuizDateNavigation({
                 {formatDate(previousTopic.date, previousTopic.dayOfWeek).month} {formatDate(previousTopic.date, previousTopic.dayOfWeek).day}, {formatDate(previousTopic.date, previousTopic.dayOfWeek).year}
               </div>
               <div className="flex items-center gap-1 font-medium text-sm">
-                <span>{previousTopic.emoji}</span>
+                <span className="text-base">{previousTopic.emoji}</span>
                 <span className={cn(
-                  "text-left",
-                  isMobile && "max-w-[80px] truncate"
+                  "text-left max-w-[120px] truncate",
+                  isMobile && "max-w-[80px]"
                 )}>
-                  {truncateTitle(previousTopic.title)}
+                  {truncateTitleNav(previousTopic.title, 20)}
                 </span>
               </div>
             </>
@@ -147,7 +151,7 @@ export function QuizDateNavigation({
           >
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
-                <span className="text-lg">{currentTopic.emoji}</span>
+                <span className="text-base">{currentTopic.emoji}</span>
                 <span className={cn(
                   "text-lg font-bold",
                   isMobile ? "text-base" : "text-xl"
@@ -190,7 +194,7 @@ export function QuizDateNavigation({
                   )}
                 >
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="text-base sm:text-lg" style={{ fontSize: '1.25rem', lineHeight: '1.25rem' }}>{topic.emoji}</span>
+                    <span className="text-sm" style={{ fontSize: '1rem', lineHeight: '1rem' }}>{topic.emoji}</span>
                     <div className="flex flex-col flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className={cn(
@@ -242,12 +246,12 @@ export function QuizDateNavigation({
               </div>
               <div className="flex items-center gap-1 font-medium text-sm">
                 <span className={cn(
-                  "text-right",
-                  isMobile && "max-w-[80px] truncate"
+                  "text-right max-w-[120px] truncate",
+                  isMobile && "max-w-[80px]"
                 )}>
-                  {truncateTitle(nextTopic.title)}
+                  {truncateTitleNav(nextTopic.title, 20)}
                 </span>
-                <span>{nextTopic.emoji}</span>
+                <span className="text-base">{nextTopic.emoji}</span>
               </div>
             </>
           ) : (

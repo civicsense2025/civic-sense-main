@@ -365,6 +365,10 @@ function InlinePremiumPrompt({
   );
 }
 
+function truncateTitle(title: string, maxLength: number = 20) {
+  return title.length > maxLength ? title.slice(0, maxLength) + '…' : title;
+}
+
 export function DailyCardStack({
   selectedCategory,
   searchQuery,
@@ -779,7 +783,7 @@ export function DailyCardStack({
       {/* Navigation - Simplified for readability */}
       {allFilteredTopics.length > 1 && (
         <div className="mb-6">
-          <div className="flex items-center justify-between px-2 sm:px-6">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Previous button */}
             <button
               onClick={handlePrevious}
@@ -795,9 +799,9 @@ export function DailyCardStack({
                     ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-xl">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
                     <span className="text-left max-w-[120px] truncate">
-                      {allFilteredTopics[currentStackIndex - 1].topic_title}
+                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 20)}
                     </span>
                   </div>
                 </div>
@@ -809,7 +813,7 @@ export function DailyCardStack({
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity">
                   <span className="flex items-center gap-2">
-                    <span className="text-lg">{currentTopic.emoji}</span>
+                    <span className="text-base">{currentTopic.emoji}</span>
                     <span>
                       {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
                         weekday: 'short', month: 'short', day: 'numeric' 
@@ -884,7 +888,7 @@ export function DailyCardStack({
                           disabled={!accessStatus.accessible}
                         >
                           <div className="flex items-center space-x-3 flex-grow min-w-0">
-                            <span className="text-7xl flex-shrink-0">{topic.emoji}</span>
+                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
                             <div className="flex-grow min-w-0">
                               <div className="text-sm font-medium truncate">{topic.topic_title}</div>
                               <div className="text-xs text-slate-500 truncate">{topic.description}</div>
@@ -927,10 +931,10 @@ export function DailyCardStack({
                     {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
+                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
                     <span className="text-right max-w-[120px] truncate">
-                      {allFilteredTopics[currentStackIndex + 1].topic_title}
+                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 20)}
                     </span>
-                    <span>{allFilteredTopics[currentStackIndex + 1].emoji}</span>
                   </div>
                 </div>
               )}
@@ -948,7 +952,7 @@ export function DailyCardStack({
             currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4"
           )}
         >
-          <div className="max-w-3xl mx-auto px-4 py-12 sm:px-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
               <h2 className="text-6xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3">
@@ -976,7 +980,7 @@ export function DailyCardStack({
                   ))}
                 </div>
               )}
-              <p className="text-base sm:text-2xl md:text-3xl lg:text-2xl font-light text-slate-800 dark:text-slate-300 max-w-2xl mx-auto">
+              <p className="text-base sm:text-2xl md:text-3xl lg:text-2xl font-light text-slate-800 dark:text-slate-300 max-w-4xl mx-auto">
                 {currentTopic.description}
               </p>
               

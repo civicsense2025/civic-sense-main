@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
+import { Header } from '@/components/header'
 
 // Import step components
 import { WelcomeStep } from './steps/welcome-step'
@@ -423,109 +424,99 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
+      <Header onSignInClick={() => {}} />
       {/* Progress Header */}
-      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                disabled={currentStepIndex === 0}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                Step {currentStepIndex + 1} of {STEPS.length}
-              </span>
-              <Badge variant="outline" className="text-xs">
-                {currentStep.title}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-3">
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between">
-              {STEPS.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`flex items-center space-x-2 ${
-                    index <= currentStepIndex 
-                      ? 'text-slate-900 dark:text-white' 
-                      : 'text-slate-400 dark:text-slate-600'
-                  }`}
-                >
-                  {index < currentStepIndex ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <div 
-                      className={`w-4 h-4 rounded-full border-2 ${
-                        index === currentStepIndex
-                          ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white'
-                          : 'border-slate-300 dark:border-slate-600'
-                      }`} 
-                    />
-                  )}
-                  <span className="text-xs font-light hidden sm:block">
-                    {step.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Step Content */}
-      <div className="flex-1">
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          {isLoading ? (
-            <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-white mx-auto"></div>
-              <p className="text-slate-600 dark:text-slate-400 font-light">Processing...</p>
-            </div>
-          ) : (
-            <StepComponent
-              onComplete={handleStepComplete}
-              onNext={handleNext}
-              onBack={handleBack}
-              onSkip={handleSkip}
-              onboardingState={onboardingState}
-              initialData={onboardingState[currentStep.id]}
-              userId={userId}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
-              {currentStepIndex === 0 && 'Welcome to CivicSense'}
-              {currentStepIndex === 1 && 'Choose your areas of interest'}
-              {currentStepIndex === 2 && 'Select skills to develop'}
-              {currentStepIndex === 3 && 'Set your learning preferences'}
-              {currentStepIndex === 4 && 'Quick knowledge assessment'}
-              {currentStepIndex === 5 && 'Your personalized setup is complete'}
-            </div>
-            
+      <div className="max-w-7xl mx-auto px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
             <Button
-              variant="link"
-              onClick={() => handleSkip('skip_all')}
-              className="text-sm text-slate-500 dark:text-slate-500"
+              variant="ghost"
+              onClick={handleBack}
+              disabled={currentStepIndex === 0}
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
-              Skip setup
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
           </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              Step {currentStepIndex + 1} of {STEPS.length}
+            </span>
+            <Badge variant="outline" className="text-xs">
+              {currentStep.title}
+            </Badge>
+          </div>
+        </div>
+        {/* Progress Bar */}
+        <div className="space-y-3">
+          <Progress value={progress} className="h-2" />
+          <div className="flex justify-between">
+            {STEPS.map((step, index) => (
+              <div
+                key={step.id}
+                className={`flex items-center space-x-2 ${
+                  index <= currentStepIndex 
+                    ? 'text-slate-900 dark:text-white' 
+                    : 'text-slate-400 dark:text-slate-600'
+                }`}
+              >
+                {index < currentStepIndex ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <div 
+                    className={`w-4 h-4 rounded-full border-2 ${
+                      index === currentStepIndex
+                        ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white'
+                        : 'border-slate-300 dark:border-slate-600'
+                    }`} 
+                  />
+                )}
+                <span className="text-xs font-light hidden sm:block">
+                  {step.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Step Content */}
+      <main className="max-w-7xl mx-auto px-8 py-12">
+        {isLoading ? (
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-white mx-auto"></div>
+            <p className="text-slate-600 dark:text-slate-400 font-light">Processing...</p>
+          </div>
+        ) : (
+          <StepComponent
+            onComplete={handleStepComplete}
+            onNext={handleNext}
+            onBack={handleBack}
+            onSkip={handleSkip}
+            onboardingState={onboardingState}
+            initialData={onboardingState[currentStep.id]}
+            userId={userId}
+          />
+        )}
+      </main>
+      {/* Footer */}
+      <div className="max-w-7xl mx-auto px-8 py-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+            {currentStepIndex === 0 && 'Welcome to CivicSense'}
+            {currentStepIndex === 1 && 'Choose your areas of interest'}
+            {currentStepIndex === 2 && 'Select skills to develop'}
+            {currentStepIndex === 3 && 'Set your learning preferences'}
+            {currentStepIndex === 4 && 'Quick knowledge assessment'}
+            {currentStepIndex === 5 && 'Your personalized setup is complete'}
+          </div>
+          <Button
+            variant="link"
+            onClick={() => handleSkip('skip_all')}
+            className="text-sm text-slate-500 dark:text-slate-500"
+          >
+            Skip setup
+          </Button>
         </div>
       </div>
     </div>

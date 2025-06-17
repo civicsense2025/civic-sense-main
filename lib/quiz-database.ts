@@ -573,49 +573,65 @@ export const enhancedQuizDatabase = {
     completedAt: string
     timeSpent?: number
     isPartial?: boolean
+    level?: string // For assessments
+    activityType?: 'quiz' | 'assessment'
   }>> {
     try {
+      // Fetch quiz attempts
       const { data: attempts, error } = await supabase
         .from('user_quiz_attempts')
         .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed')
         .eq('user_id', userId)
         .order('completed_at', { ascending: false })
-        .limit(limit * 2) // Fetch more to account for deduplication
-
       if (error) throw error
-
       // Fetch topics to get titles
       const { data: topics } = await supabase
         .from('question_topics')
         .select('topic_id, topic_title')
-
       const topicMap = topics?.reduce<Record<string, string>>((acc, topic) => {
         acc[topic.topic_id] = topic.topic_title
         return acc
       }, {}) || {}
-
-      // Process and deduplicate results
+      // Fetch assessment completions
+      const { data: assessments } = await supabase
+        .from('user_assessments')
+        .select('id, score, completed_at, level')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: false })
+        .limit(limit * 2)
+      // Build activity list
+      const quizActivity = (attempts || []).map(attempt => ({
+        attemptId: attempt.id,
+        topicId: attempt.topic_id,
+        topicTitle: topicMap[attempt.topic_id] || 'Unknown Topic',
+        score: attempt.score ?? 0,
+        completedAt: attempt.completed_at ?? new Date().toISOString(),
+        timeSpent: attempt.time_spent_seconds ?? undefined,
+        isPartial: !attempt.is_completed,
+        activityType: 'quiz' as const
+      }))
+      const assessmentActivity = (assessments || []).map(a => ({
+        attemptId: a.id,
+        topicId: 'assessment',
+        topicTitle: 'CivicSense Assessment',
+        score: a.score ?? 0,
+        completedAt: a.completed_at ?? new Date().toISOString(),
+        isPartial: false,
+        level: a.level,
+        activityType: 'assessment' as const
+      }))
+      // Merge and dedupe by completedAt+type+attemptId
+      const all = [...quizActivity, ...assessmentActivity]
       const seen = new Set<string>()
-      const activity = attempts
-        ?.filter(attempt => {
-          if (!seen.has(attempt.topic_id)) {
-            seen.add(attempt.topic_id)
-            return true
-          }
-          return false
-        })
-        .slice(0, limit)
-        .map(attempt => ({
-          attemptId: attempt.id,
-          topicId: attempt.topic_id,
-          topicTitle: topicMap[attempt.topic_id] || 'Unknown Topic',
-          score: attempt.score ?? 0, // Handle null with default 0
-          completedAt: attempt.completed_at ?? new Date().toISOString(), // Handle null with current date
-          timeSpent: attempt.time_spent_seconds ?? undefined, // Convert null to undefined
-          isPartial: !attempt.is_completed
-        })) || []
-
-      return activity
+      const deduped = all.filter(item => {
+        const key = `${item.completedAt}-${item.activityType}-${item.attemptId}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      // Sort by completedAt desc
+      deduped.sort((a, b) => (b.completedAt > a.completedAt ? 1 : -1))
+      return deduped.slice(0, limit)
     } catch (error) {
       console.error('Error getting recent activity:', error)
       return []
@@ -639,14 +655,19 @@ export const enhancedQuizDatabase = {
         .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed')
         .eq('user_id', userId)
         .order('completed_at', { ascending: false })
-
       if (error) throw error
-
-      return (attempts || []).map(attempt => ({
+      // Deduplicate by id+completedAt
+      const seen = new Set<string>()
+      return (attempts || []).filter(attempt => {
+        const key = `${attempt.id}-${attempt.completed_at}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      }).map(attempt => ({
         id: attempt.id,
         topicId: attempt.topic_id,
-        score: attempt.score ?? 0, // Handle null with default 0
-        completedAt: attempt.completed_at ?? new Date().toISOString(), // Handle null with current date
+        score: attempt.score ?? 0,
+        completedAt: attempt.completed_at ?? new Date().toISOString(),
         timeSpentSeconds: attempt.time_spent_seconds || 0,
         isPartial: !attempt.is_completed
       }))

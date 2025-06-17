@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/placeholder.jpg',
+        url: '/images/CivicSense-Main-Share.png',
         width: 1200,
         height: 630,
         alt: 'CivicSense Skills',

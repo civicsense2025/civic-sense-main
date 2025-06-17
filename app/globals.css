@@ -823,3 +823,173 @@ button, .card, .quiz-option {
   }
 }
 
+/* Accessibility Enhancement Styles */
+
+/* High Contrast Mode */
+.high-contrast {
+  --background: 255 255 255;
+  --foreground: 0 0 0;
+  --foreground-secondary: 0 0 0;
+  --foreground-tertiary: 0 0 0;
+  --foreground-muted: 0 0 0;
+  --primary: 0 0 139;                        /* Dark blue for maximum contrast */
+  --primary-foreground: 255 255 255;
+  --border: 0 0 0;
+  --card: 255 255 255;
+  --card-foreground: 0 0 0;
+}
+
+.high-contrast.dark {
+  --background: 0 0 0;
+  --foreground: 255 255 255;
+  --foreground-secondary: 255 255 255;
+  --foreground-tertiary: 255 255 255;
+  --foreground-muted: 255 255 255;
+  --primary: 255 255 0;                      /* Bright yellow for maximum contrast */
+  --primary-foreground: 0 0 0;
+  --border: 255 255 255;
+  --card: 0 0 0;
+  --card-foreground: 255 255 255;
+}
+
+.high-contrast * {
+  border-color: rgb(var(--border)) !important;
+  transition: none !important;
+}
+
+.high-contrast button,
+.high-contrast .card,
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  border: 2px solid rgb(var(--border)) !important;
+  background: rgb(var(--background)) !important;
+  color: rgb(var(--foreground)) !important;
+}
+
+.high-contrast button:hover,
+.high-contrast button:focus {
+  background: rgb(var(--primary)) !important;
+  color: rgb(var(--primary-foreground)) !important;
+}
+
+/* Large Text Mode */
+.large-text {
+  font-size: 18px !important;
+}
+
+.large-text h1 {
+  font-size: 3rem !important;
+}
+
+.large-text h2 {
+  font-size: 2.5rem !important;
+}
+
+.large-text h3 {
+  font-size: 2rem !important;
+}
+
+.large-text h4 {
+  font-size: 1.75rem !important;
+}
+
+.large-text h5 {
+  font-size: 1.5rem !important;
+}
+
+.large-text h6 {
+  font-size: 1.25rem !important;
+}
+
+.large-text .text-xs {
+  font-size: 1rem !important;
+}
+
+.large-text .text-sm {
+  font-size: 1.125rem !important;
+}
+
+.large-text .text-base {
+  font-size: 1.25rem !important;
+}
+
+.large-text .text-lg {
+  font-size: 1.5rem !important;
+}
+
+.large-text .text-xl {
+  font-size: 1.75rem !important;
+}
+
+.large-text button,
+.large-text input,
+.large-text select,
+.large-text textarea {
+  font-size: 1.25rem !important;
+  padding: 1rem 1.5rem !important;
+}
+
+/* Reduced Motion Mode */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduced-motion .animate-spin,
+.reduced-motion .animate-pulse,
+.reduced-motion .animate-bounce {
+  animation: none !important;
+}
+
+.reduced-motion .transition-all,
+.reduced-motion .transition-transform,
+.reduced-motion .transition-opacity {
+  transition: none !important;
+}
+
+/* Focus indicators for accessibility */
+.high-contrast button:focus,
+.high-contrast input:focus,
+.high-contrast select:focus,
+.high-contrast textarea:focus,
+.high-contrast [tabindex]:focus {
+  outline: 4px solid rgb(var(--primary)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: 600;
+}
+
+.skip-to-content:focus {
+  top: 6px;
+}
+

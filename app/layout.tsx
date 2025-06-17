@@ -14,7 +14,14 @@ import { PWAStatus } from "@/components/pwa-status"
 
 const inter = Inter({ subsets: ["latin"] })
 
+const getBaseUrl = () => {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+  return 'http://localhost:3000'
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(getBaseUrl()),
   title: "CivicSense - Civic Education Made Simple",
   description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
   manifest: "/manifest.json",
@@ -32,11 +39,20 @@ export const metadata: Metadata = {
     siteName: "CivicSense",
     title: "CivicSense - Civic Education Made Simple",
     description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
+    images: [
+      {
+        url: "/images/CivicSense-Main-Share.png",
+        width: 1200,
+        height: 630,
+        alt: "CivicSense - Civic Education Made Simple",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "CivicSense - Civic Education Made Simple",
     description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
+    images: ["/images/CivicSense-Main-Share.png"],
   },
   keywords: [
     "civic education",
@@ -65,7 +81,7 @@ export const metadata: Metadata = {
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/apple-icon-180.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-180x180.png", sizes: "180x180", type: "image/png" },
     ],
   },
 }
@@ -84,36 +100,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
-        <link rel="apple-touch-icon" href="/icons/apple-icon-180.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <StatsigProvider>
-              <PWAProvider>
-                <div className="min-h-screen flex flex-col">
-                  <main className="flex-1">
-                    {children}
-                  </main>
-                  <div className="mt-8">
-                    <Footer />
+      <body className={inter.className + ' bg-white dark:bg-slate-950 min-h-screen antialiased'}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <StatsigProvider>
+                <PWAProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                    <div className="mt-8">
+                      <Footer />
+                    </div>
                   </div>
-                </div>
-                <Toaster />
-                <GlobalAudioWrapper />
-                <Analytics />
-                <PWAStatus />
-              </PWAProvider>
-            </StatsigProvider>
-          </AuthProvider>
-        </ThemeProvider>
+                  <Toaster />
+                  <GlobalAudioWrapper />
+                  <Analytics />
+                  {process.env.NODE_ENV === 'development' && <PWAStatus />}
+                </PWAProvider>
+              </StatsigProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   )

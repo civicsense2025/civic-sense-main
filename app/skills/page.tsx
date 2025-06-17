@@ -315,7 +315,7 @@ export default function SkillsPage() {
   if (filteredSkills.length === 0 && !isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-black">
-        <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
               Civic Skills
@@ -362,7 +362,7 @@ export default function SkillsPage() {
   
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 space-y-16">
         {/* Clean header with lots of whitespace */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
