@@ -28,6 +28,39 @@ const nextConfig = {
     
     return config
   },
+  async headers() {
+    return [
+      {
+        // Prevent aggressive caching of CSS/JS to avoid stale design issues
+        source: '/_next/static/css/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate', // 1 day, must revalidate
+          },
+        ],
+      },
+      {
+        source: '/_next/static/chunks/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate', // 1 day, must revalidate
+          },
+        ],
+      },
+      {
+        // Don't cache HTML pages to prevent stale content
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig

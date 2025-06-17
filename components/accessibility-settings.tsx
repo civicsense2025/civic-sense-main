@@ -81,19 +81,45 @@ export function AccessibilitySettings({ className, trigger }: AccessibilitySetti
     }
   }, [])
 
-  // Load available voices
+  // Load available voices (optimized with caching)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      let isLoaded = false
+      
       const loadVoices = () => {
+        // Prevent multiple loads
+        if (isLoaded) return
+        
         const availableVoices = speechSynthesis.getVoices()
-        setVoices(availableVoices.filter(voice => voice.lang.startsWith('en')))
+        if (availableVoices.length === 0) return
+        
+        isLoaded = true
+        
+        // Only load top quality English voices for settings
+        const englishVoices = availableVoices
+          .filter(voice => voice.lang.startsWith('en'))
+          .filter(voice => {
+            const name = voice.name.toLowerCase()
+            return !['espeak', 'festival', 'flite', 'pico'].some(pattern => name.includes(pattern))
+          })
+          .slice(0, 6) // Limit to 6 voices max for settings dropdown
+        
+        setVoices(englishVoices)
       }
 
       loadVoices()
-      speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      
+      // Single event listener, only if voices not loaded
+      if (!isLoaded && speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      }
       
       return () => {
-        speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        try {
+          speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     }
   }, [])

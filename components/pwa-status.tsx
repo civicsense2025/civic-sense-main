@@ -73,20 +73,57 @@ export function PWAStatus() {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
     try {
+      // First try to send message to service worker to clear cache
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' })
+        
+        // Wait a bit for the service worker to clear cache
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
       // Unregister all service workers
       const registrations = await navigator.serviceWorker.getRegistrations()
       await Promise.all(registrations.map(reg => reg.unregister()))
       console.log('Unregistered all service workers')
 
-      // Clear all caches
+      // Clear all browser caches
       const cacheNames = await caches.keys()
       await Promise.all(cacheNames.map(name => caches.delete(name)))
       console.log('Cleared all caches')
 
-      // Reload the page
-      window.location.reload()
+      // Clear localStorage and sessionStorage for good measure
+      localStorage.clear()
+      sessionStorage.clear()
+      console.log('Cleared local and session storage')
+
+      // Hard reload to bypass any remaining cache
+      window.location.href = window.location.href
     } catch (error) {
       console.error('Error clearing service worker cache:', error)
+      // Fallback: just do a hard reload
+      window.location.href = window.location.href
+    }
+  }
+
+  const refreshDesignCache = async () => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+
+    try {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'REFRESH_DESIGN_CACHE' })
+        console.log('Sent design cache refresh request to service worker')
+        
+        // Wait a bit and then reload
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      } else {
+        // No service worker, just do a hard reload
+        window.location.href = window.location.href
+      }
+    } catch (error) {
+      console.error('Error refreshing design cache:', error)
+      window.location.href = window.location.href
     }
   }
 
@@ -109,12 +146,22 @@ export function PWAStatus() {
           <div>🚫 PWA disabled to prevent caching issues</div>
           <div>💡 Service workers won't interfere with hot reload</div>
           <div>🔄 Changes will appear immediately</div>
-          <button
-            onClick={clearServiceWorkerCache}
-            className="mt-2 px-2 py-1 bg-amber-700 hover:bg-amber-600 text-amber-100 rounded text-xs font-bold"
-          >
-            Clear All Cache & SW
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={clearServiceWorkerCache}
+              className="px-2 py-1 bg-red-700 hover:bg-red-600 text-red-100 rounded text-xs font-bold"
+              title="Clear all service worker caches and storage"
+            >
+              Clear All Cache
+            </button>
+            <button
+              onClick={refreshDesignCache}
+              className="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-blue-100 rounded text-xs font-bold"
+              title="Refresh CSS/JS cache to get latest design"
+            >
+              Refresh Design
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-1">

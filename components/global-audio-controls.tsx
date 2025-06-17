@@ -438,28 +438,16 @@ class GlobalAudioManager {
       if (options?.voice) {
         utterance.voice = options.voice
       } else {
-        // Try to get a high-quality voice
+        // Optimized voice selection
         try {
           const voices = speechSynthesis.getVoices()
           
-          // First try to find a high-quality voice
-          let selectedVoice = voices.find(v => 
-            v.localService && 
-            (v.name.includes('Enhanced') || v.name.includes('Premium') || v.name.includes('Neural'))
-          )
-          
-          // If no high-quality voice, try to find an English voice
-          if (!selectedVoice) {
-            selectedVoice = voices.find(v => v.lang.startsWith('en') && v.localService)
-          }
-          
-          // If still no voice, use any available voice
-          if (!selectedVoice && voices.length > 0) {
-            selectedVoice = voices[0]
-          }
-          
-          if (selectedVoice) {
-            utterance.voice = selectedVoice
+          if (voices.length > 0) {
+            // Quick selection - prefer English, then any available
+            const selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0]
+            if (selectedVoice) {
+              utterance.voice = selectedVoice
+            }
           }
         } catch (e) {
           console.warn('Error selecting voice:', e)
@@ -1209,17 +1197,25 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     }
   }, [])
 
-  // Check for speech synthesis support and load voices
+  // Check for speech synthesis support and load voices (optimized with caching)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true)
       
+      let voicesLoaded = false
+      let loadTimeout: NodeJS.Timeout | null = null
+      
       const loadVoices = () => {
+        // Prevent multiple simultaneous loads
+        if (voicesLoaded) return
+        
         try {
           const availableVoices = speechSynthesis.getVoices()
           
-          // Limit logging to just count instead of all voices
-          console.log(`Speech synthesis: ${availableVoices.length} voices available`)
+          // Only log count if voices actually loaded
+          if (availableVoices.length > 0) {
+            console.log(`Speech synthesis: ${availableVoices.length} voices available (cached)`)
+          }
           
           // Update diagnostics
           setDiagnostics({
@@ -1231,22 +1227,27 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
           })
           
           if (availableVoices.length === 0) {
-            setLastError('No voices available. Voices may still be loading...')
-            // Try again after a delay
-            setTimeout(loadVoices, 1000)
+            // Only retry once after initial load
+            if (!loadTimeout) {
+              setLastError('Voices loading...')
+              loadTimeout = setTimeout(() => {
+                loadTimeout = null
+                loadVoices()
+              }, 1000)
+            }
             return
           }
           
-          // Filter to just a small set of high-quality voices
-          // Focus on English voices and limit to max 10 voices total
-          const voiceOptions: VoiceOption[] = availableVoices
-            .filter(voice => {
-              // Prefer English voices
-              if (voice.lang.startsWith('en')) return true
-              
-              // Add a few non-English voices if needed to reach minimum count
-              return availableVoices.length < 5
-            })
+          voicesLoaded = true // Mark as loaded to prevent duplicate processing
+          
+          // Pre-filter for performance - only process English voices + top 2 non-English
+          const preFilteredVoices = [
+            ...availableVoices.filter(voice => voice.lang.startsWith('en')),
+            ...availableVoices.filter(voice => !voice.lang.startsWith('en')).slice(0, 2)
+          ]
+          
+          // Process only the pre-filtered subset (much faster)
+          const voiceOptions: VoiceOption[] = preFilteredVoices
             .map(voice => ({
               voice,
               name: voice.name,
@@ -1254,49 +1255,39 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
               quality: getVoiceQuality(voice)
             }))
             .filter(voiceOption => {
-              // Only show high quality voices if we have enough
+              // Filter out low quality and robotic voices
               if (voiceOption.quality === 'low') return false
               
-              // Filter out obviously robotic/poor voices
               const name = voiceOption.name.toLowerCase()
-              const badVoicePatterns = [
-                'espeak', 'festival', 'flite', 'pico',
-                'robot', 'synthetic', 'computer', 'artificial'
-              ]
-              
-              if (badVoicePatterns.some(pattern => name.includes(pattern))) {
-                return false
-              }
-              
-              return true
+              return !['espeak', 'festival', 'flite', 'pico', 'robot', 'synthetic'].some(pattern => 
+                name.includes(pattern)
+              )
             })
             .sort((a, b) => {
-              // Sort by language (English first), then quality, then name
-              if (a.lang.startsWith('en') && !b.lang.startsWith('en')) return -1
-              if (!a.lang.startsWith('en') && b.lang.startsWith('en')) return 1
+              // Quick sort: English first, then quality, then name
+              if (a.lang.startsWith('en') !== b.lang.startsWith('en')) {
+                return a.lang.startsWith('en') ? -1 : 1
+              }
               
               const qualityOrder = { high: 3, medium: 2, low: 1 }
-              if (qualityOrder[a.quality] !== qualityOrder[b.quality]) {
-                return qualityOrder[b.quality] - qualityOrder[a.quality]
-              }
-              return a.name.localeCompare(b.name)
+              const qualityDiff = qualityOrder[b.quality] - qualityOrder[a.quality]
+              return qualityDiff !== 0 ? qualityDiff : a.name.localeCompare(b.name)
             })
-            // Limit to max 10 voices to prevent performance issues
-            .slice(0, 10)
+            .slice(0, 8) // Reduced to 8 voices max for better performance
 
           setVoices(voiceOptions)
           
-          // Clear error if we have voices now
           if (voiceOptions.length > 0) {
             setLastError(null)
-          }
-          
-          // Set default voice (prefer English, high quality)
-          const defaultVoice = voiceOptions.find(v => v.lang.startsWith('en') && v.quality === 'high') || 
-                              voiceOptions.find(v => v.lang.startsWith('en')) ||
-                              voiceOptions[0]
-          if (defaultVoice) {
-            setSelectedVoice(defaultVoice.voice)
+            
+            // Set default voice efficiently
+            const defaultVoice = voiceOptions.find(v => 
+              v.lang.startsWith('en') && v.quality === 'high'
+            ) || voiceOptions[0]
+            
+            if (defaultVoice) {
+              setSelectedVoice(defaultVoice.voice)
+            }
           }
         } catch (e) {
           console.warn('Error loading voices:', e)
@@ -1304,19 +1295,34 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         }
       }
 
-      // Load voices immediately
+      // Single load attempt with event listener
+      const voicesChangedHandler = () => {
+        if (!voicesLoaded) {
+          loadVoices()
+        }
+      }
+
+      // Try immediate load
       loadVoices()
       
-      // Listen for voice changes (important for async loading)
-      speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      // Single event listener (removed redundant timeouts)
+      speechSynthesis.addEventListener('voiceschanged', voicesChangedHandler)
       
-      // Fallback: try loading voices again after delays
-      setTimeout(loadVoices, 500)
-      setTimeout(loadVoices, 2000)
+      // Single fallback timeout only if voices aren't loaded immediately
+      if (speechSynthesis.getVoices().length === 0) {
+        loadTimeout = setTimeout(() => {
+          if (!voicesLoaded) {
+            loadVoices()
+          }
+        }, 1000)
+      }
       
       return () => {
+        if (loadTimeout) {
+          clearTimeout(loadTimeout)
+        }
         try {
-          speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+          speechSynthesis.removeEventListener('voiceschanged', voicesChangedHandler)
         } catch (e) {
           console.warn('Error removing voice listener:', e)
         }

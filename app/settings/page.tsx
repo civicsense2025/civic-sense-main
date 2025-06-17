@@ -91,19 +91,44 @@ export default function SettingsPage() {
     confirmPassword: ''
   })
 
-  // Load available voices for text-to-speech
+  // Load available voices for text-to-speech (optimized)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      let voicesLoaded = false
+      
       const loadVoices = () => {
+        if (voicesLoaded) return
+        
         const availableVoices = speechSynthesis.getVoices()
-        setVoices(availableVoices.filter(voice => voice.lang.startsWith('en')))
+        if (availableVoices.length === 0) return
+        
+        voicesLoaded = true
+        
+        // Optimized voice selection for settings page
+        const qualityVoices = availableVoices
+          .filter(voice => voice.lang.startsWith('en'))
+          .filter(voice => {
+            const name = voice.name.toLowerCase()
+            return !['espeak', 'festival', 'flite', 'pico'].some(pattern => name.includes(pattern))
+          })
+          .slice(0, 8) // Limit to 8 voices for settings
+        
+        setVoices(qualityVoices)
       }
 
       loadVoices()
-      speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      
+      // Only listen for voice changes if not loaded immediately
+      if (!voicesLoaded && speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      }
       
       return () => {
-        speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        try {
+          speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     }
   }, [])

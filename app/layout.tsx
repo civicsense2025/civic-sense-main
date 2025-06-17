@@ -12,6 +12,11 @@ import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/next"
 import { PWAStatus } from "@/components/pwa-status"
 
+// Import cache debug utilities in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/cache-debug').catch(() => {})
+}
+
 const inter = Inter({ subsets: ["latin"] })
 const spaceMono = Space_Mono({ 
   subsets: ["latin"],

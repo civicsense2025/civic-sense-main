@@ -69,13 +69,25 @@ export function AudioControls({
         setAutoPlayMode(true)
       }
       
-      // Load voices
+      // Load voices (optimized for quiz components)
+      let voicesLoaded = false
+      
       const loadVoices = () => {
-        const availableVoices = speechSynthesis.getVoices()
+        // Prevent multiple loads
+        if (voicesLoaded) return
         
-        // Categorize voices by quality (prefer neural/premium voices)
+        const availableVoices = speechSynthesis.getVoices()
+        if (availableVoices.length === 0) return
+        
+        voicesLoaded = true
+        
+        // Pre-filter and optimize for quiz performance
         const voiceOptions: VoiceOption[] = availableVoices
           .filter(voice => voice.lang.startsWith('en'))
+          .filter(voice => {
+            const name = voice.name.toLowerCase()
+            return !['espeak', 'festival', 'flite', 'pico', 'robot'].some(pattern => name.includes(pattern))
+          })
           .map(voice => ({
             voice,
             name: voice.name,
@@ -83,13 +95,11 @@ export function AudioControls({
             quality: getVoiceQuality(voice)
           }))
           .sort((a, b) => {
-            // Sort by quality, then by name
             const qualityOrder = { high: 3, medium: 2, low: 1 }
-            if (qualityOrder[a.quality] !== qualityOrder[b.quality]) {
-              return qualityOrder[b.quality] - qualityOrder[a.quality]
-            }
-            return a.name.localeCompare(b.name)
+            const qualityDiff = qualityOrder[b.quality] - qualityOrder[a.quality]
+            return qualityDiff !== 0 ? qualityDiff : a.name.localeCompare(b.name)
           })
+          .slice(0, 5) // Limit to 5 voices for quiz components
 
         setVoices(voiceOptions)
         
@@ -100,12 +110,20 @@ export function AudioControls({
         }
       }
 
-      // Load voices immediately and on voiceschanged event
+      // Single load attempt
       loadVoices()
-      speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      
+      // Only add event listener if voices weren't loaded immediately
+      if (!voicesLoaded && speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      }
       
       return () => {
-        speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        try {
+          speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     }
   }, [])
