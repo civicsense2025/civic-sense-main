@@ -40,6 +40,12 @@ export const skillOperations = {
   // Get user's skills with progress information
   async getUserSkills(userId: string): Promise<Skill[]> {
     try {
+      // Handle guest user case
+      if (!userId || userId === 'guest-user') {
+        // Return empty array or mock data for guest users
+        return this.getMockSkills();
+      }
+
       const { data, error } = await supabase
         .from('user_skill_analytics')
         .select('*')
@@ -66,8 +72,57 @@ export const skillOperations = {
       return skills
     } catch (error) {
       console.error(`Error fetching skills for user ${userId}:`, error)
-      return []
+      // Return mock skills on error
+      return this.getMockSkills()
     }
+  },
+
+  // Helper method to provide consistent mock skills
+  getMockSkills(): Skill[] {
+    return [
+      {
+        id: 'mock-skill-1',
+        skill_name: 'Understanding Government',
+        skill_slug: 'understanding-government',
+        category_name: 'Government',
+        description: 'Learn the basics of how government works',
+        difficulty_level: 1,
+        is_core_skill: true,
+        mastery_level: 'beginner',
+        progress_percentage: 25,
+        questions_attempted: 5,
+        questions_correct: 3,
+        last_practiced_at: new Date().toISOString()
+      },
+      {
+        id: 'mock-skill-2',
+        skill_name: 'Media Literacy',
+        skill_slug: 'media-literacy',
+        category_name: 'Media',
+        description: 'Learn to critically evaluate media sources',
+        difficulty_level: 2,
+        is_core_skill: true,
+        mastery_level: 'beginner',
+        progress_percentage: 10,
+        questions_attempted: 2,
+        questions_correct: 1,
+        last_practiced_at: new Date().toISOString()
+      },
+      {
+        id: 'mock-skill-3',
+        skill_name: 'Civic Engagement',
+        skill_slug: 'civic-engagement',
+        category_name: 'Civic Action',
+        description: 'Discover ways to participate in your community',
+        difficulty_level: 1,
+        is_core_skill: true,
+        mastery_level: 'novice',
+        progress_percentage: 5,
+        questions_attempted: 1,
+        questions_correct: 1,
+        last_practiced_at: new Date().toISOString()
+      }
+    ];
   },
 
   // Get a specific skill by slug
@@ -258,43 +313,129 @@ export const skillOperations = {
     }
   },
 
-  // Get all skill relationships for visualization
-  async getAllSkillRelationships(): Promise<{
+  // Helper method to provide consistent mock skill relationships
+  getMockSkillRelationships(categoryFilter?: string): {
+    nodes: Array<{ id: string, name: string, category: string, level?: string }>,
+    links: Array<{ source: string, target: string, required_level: string, is_strict: boolean }>
+  } {
+    const mockNodes = [
+      { id: 'gov-basics', name: 'Government Basics', category: 'Government', level: 'beginner' },
+      { id: 'media-literacy', name: 'Media Literacy', category: 'Media', level: 'beginner' },
+      { id: 'civic-engagement', name: 'Civic Engagement', category: 'Participation', level: 'intermediate' },
+      { id: 'voting-rights', name: 'Voting Rights', category: 'Elections', level: 'beginner' },
+      { id: 'fact-checking', name: 'Fact Checking', category: 'Media', level: 'intermediate' },
+      { id: 'budget-analysis', name: 'Budget Analysis', category: 'Government', level: 'advanced' }
+    ];
+    
+    const mockLinks = [
+      { source: 'gov-basics', target: 'civic-engagement', required_level: 'beginner', is_strict: true },
+      { source: 'media-literacy', target: 'civic-engagement', required_level: 'beginner', is_strict: false },
+      { source: 'gov-basics', target: 'budget-analysis', required_level: 'intermediate', is_strict: true },
+      { source: 'media-literacy', target: 'fact-checking', required_level: 'beginner', is_strict: true },
+      { source: 'voting-rights', target: 'civic-engagement', required_level: 'beginner', is_strict: false }
+    ];
+    
+    // Filter by category if specified
+    if (categoryFilter) {
+      const filteredNodes = mockNodes.filter(node => 
+        node.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+      
+      // Get IDs of filtered nodes
+      const nodeIds = new Set(filteredNodes.map(node => node.id));
+      
+      // Filter links to only include connections between filtered nodes
+      const filteredLinks = mockLinks.filter(link => 
+        nodeIds.has(link.source) && nodeIds.has(link.target)
+      );
+      
+      return {
+        nodes: filteredNodes,
+        links: filteredLinks
+      };
+    }
+    
+    return {
+      nodes: mockNodes,
+      links: mockLinks
+    };
+  },
+  
+  // Update getAllSkillRelationships to handle guest users
+  async getAllSkillRelationships(categoryFilter?: string): Promise<{
     nodes: Array<{ id: string, name: string, category: string, level?: string }>,
     links: Array<{ source: string, target: string, required_level: string, is_strict: boolean }>
   }> {
     try {
-      // Get all skills to create nodes
-      const { skillOperations: existingSkillOps } = await import('@/lib/database')
-      const allSkills = await existingSkillOps.getAll()
+      // Get all skills
+      const { data: skillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('id, skill_name, category_name, difficulty_level')
       
-      // Create nodes from skills
-      const nodes = allSkills.map(skill => ({
-        id: skill.name.toLowerCase().replace(/\s+/g, '-'),
-        name: skill.name,
-        category: skill.name, // Using name as category for now
-        level: 'beginner'
+      if (skillsError) throw skillsError
+      
+      // Get all skill relationships using direct query instead of RPC
+      const { data: relData, error: relError } = await supabase
+        .from('skill_prerequisites')
+        .select('*')
+      
+      if (relError) {
+        console.error('Error fetching skill relationships:', relError)
+        // Fallback to mock data on error
+        return this.getMockSkillRelationships(categoryFilter)
+      }
+      
+      // Transform data
+      const nodes = (skillsData || []).map((skill: any) => ({
+        id: skill.id,
+        name: skill.skill_name,
+        category: skill.category_name,
+        level: this.difficultyToLevel(skill.difficulty_level)
       }))
       
-      // Create some mock links for visualization
-      const links: Array<{ source: string, target: string, required_level: string, is_strict: boolean }> = []
+      const links = (relData || []).map((rel: any) => ({
+        source: rel.prerequisite_skill_id,
+        target: rel.dependent_skill_id,
+        required_level: rel.required_mastery_level,
+        is_strict: rel.is_strict_requirement
+      }))
       
-      // Create connections between some of the skills
-      if (nodes.length > 1) {
-        for (let i = 1; i < Math.min(nodes.length, 10); i++) {
-          links.push({
-            source: nodes[i].id,
-            target: nodes[0].id, // Connect to the first node
-            required_level: 'beginner',
-            is_strict: i % 2 === 0
-          })
+      // Filter by category if specified
+      if (categoryFilter && nodes.length > 0) {
+        const filteredNodes = nodes.filter(node => 
+          node.category.toLowerCase() === categoryFilter.toLowerCase()
+        )
+        
+        // Get IDs of filtered nodes
+        const nodeIds = new Set(filteredNodes.map(node => node.id))
+        
+        // Filter links to only include connections between filtered nodes
+        const filteredLinks = links.filter((link: { source: string, target: string }) => 
+          nodeIds.has(link.source) && nodeIds.has(link.target)
+        )
+        
+        return {
+          nodes: filteredNodes,
+          links: filteredLinks
         }
       }
       
       return { nodes, links }
     } catch (error) {
       console.error('Error fetching skill relationships:', error)
-      return { nodes: [], links: [] }
+      // Return mock data on error
+      return this.getMockSkillRelationships(categoryFilter)
+    }
+  },
+  
+  // Helper to convert difficulty level to mastery level
+  difficultyToLevel(difficulty: number): string {
+    switch (difficulty) {
+      case 1: return 'beginner'
+      case 2: return 'intermediate'
+      case 3: return 'advanced'
+      case 4: return 'expert'
+      default: return 'beginner'
     }
   },
 
@@ -309,53 +450,114 @@ export const skillOperations = {
     display_order: number
   }[]> {
     try {
-      // Get user skills
+      // Handle guest user case
+      if (!userId || userId === 'guest-user') {
+        // Return mock learning objectives for guest users
+        return this.getMockLearningObjectives(limit);
+      }
+      
+      // Get user's skills with progress info
       const userSkills = await this.getUserSkills(userId)
       
-      // Create some learning objectives based on the user's skills
-      let objectives: Array<{
-        skill_slug: string,
-        skill_name: string,
-        category_name: string,
-        objective_text: string,
-        mastery_level_required: string,
-        objective_type: string,
-        display_order: number
-      }> = []
+      // Get all learning objectives using a valid table name
+      const { data, error } = await supabase
+        .from('skill_learning_objectives')
+        .select('*, skills(*)')
+        .order('display_order', { ascending: true })
       
-      // Add objectives for each skill
-      for (const skill of userSkills.slice(0, 3)) {
-        objectives.push({
-          skill_slug: skill.skill_slug,
-          skill_name: skill.skill_name,
-          category_name: skill.category_name,
-          objective_text: `Understand the basic principles of ${skill.skill_name}`,
-          mastery_level_required: 'beginner',
-          objective_type: 'knowledge',
-          display_order: 1
-        })
-        
-        objectives.push({
-          skill_slug: skill.skill_slug,
-          skill_name: skill.skill_name,
-          category_name: skill.category_name,
-          objective_text: `Apply ${skill.skill_name} in real-world scenarios`,
-          mastery_level_required: 'intermediate',
-          objective_type: 'application',
-          display_order: 2
-        })
-      }
+      if (error) throw error
+      
+      // Transform data
+      const objectives = (data || []).map((obj: any) => ({
+        skill_slug: obj.skills?.skill_slug || '',
+        skill_name: obj.skills?.skill_name || '',
+        category_name: obj.skills?.category_name || '',
+        objective_text: obj.objective_text,
+        mastery_level_required: obj.mastery_level_required,
+        objective_type: obj.objective_type,
+        display_order: obj.display_order
+      }))
+      
+      // Filter and limit
+      let result = objectives
       
       // Apply limit if specified
-      if (limit && objectives.length > limit) {
-        objectives = objectives.slice(0, limit)
+      if (limit && limit > 0) {
+        result = result.slice(0, limit)
       }
       
-      return objectives
+      return result
     } catch (error) {
       console.error(`Error fetching learning objectives for user ${userId}:`, error)
-      return []
+      // Return mock data on error
+      return this.getMockLearningObjectives(limit)
     }
+  },
+
+  // Helper method to provide consistent mock learning objectives
+  getMockLearningObjectives(limit?: number): {
+    skill_slug: string,
+    skill_name: string,
+    category_name: string,
+    objective_text: string,
+    mastery_level_required: string,
+    objective_type: string,
+    display_order: number
+  }[] {
+    const mockObjectives = [
+      {
+        skill_slug: 'government-basics',
+        skill_name: 'Government Basics',
+        category_name: 'Government',
+        objective_text: 'Understand the three branches of government',
+        mastery_level_required: 'beginner',
+        objective_type: 'knowledge',
+        display_order: 1
+      },
+      {
+        skill_slug: 'media-literacy',
+        skill_name: 'Media Literacy',
+        category_name: 'Media',
+        objective_text: 'Identify reliable news sources',
+        mastery_level_required: 'beginner',
+        objective_type: 'application',
+        display_order: 1
+      },
+      {
+        skill_slug: 'civic-participation',
+        skill_name: 'Civic Participation',
+        category_name: 'Participation',
+        objective_text: 'Learn how to contact your representatives',
+        mastery_level_required: 'intermediate',
+        objective_type: 'application',
+        display_order: 2
+      },
+      {
+        skill_slug: 'voting-rights',
+        skill_name: 'Voting Rights',
+        category_name: 'Elections',
+        objective_text: 'Understand voter registration requirements in your state',
+        mastery_level_required: 'beginner',
+        objective_type: 'knowledge',
+        display_order: 1
+      },
+      {
+        skill_slug: 'fact-checking',
+        skill_name: 'Fact Checking',
+        category_name: 'Media Literacy',
+        objective_text: 'Learn to verify claims using primary sources',
+        mastery_level_required: 'intermediate',
+        objective_type: 'application',
+        display_order: 2
+      }
+    ];
+    
+    // Apply limit if specified
+    if (limit && limit > 0) {
+      return mockObjectives.slice(0, limit);
+    }
+    
+    return mockObjectives;
   },
 
   // Get user's skill progress - this function was missing

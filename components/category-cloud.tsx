@@ -44,7 +44,7 @@ export function CategoryCloud({ onSelectCategory, selectedCategory, className }:
             className="apple-button-secondary group inline-flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105"
           >
             <X className="w-4 h-4" />
-            <span className="apple-caption font-medium">Clear Filter</span>
+            <span className="text-sm font-mono font-medium">Clear Filter</span>
           </Button>
         )}
 
@@ -69,7 +69,7 @@ export function CategoryCloud({ onSelectCategory, selectedCategory, className }:
               <span className="text-lg" role="img" aria-label={category.name}>
                 {category.emoji}
               </span>
-              <span className="apple-caption font-medium">
+              <span className="text-sm font-mono font-medium">
                 {category.name}
               </span>
             </Button>
@@ -84,7 +84,7 @@ export function CategoryCloud({ onSelectCategory, selectedCategory, className }:
             <span className="text-base">
               {categoryInfo[selectedCategory].emoji}
             </span>
-            <span className="apple-caption text-blue-700 dark:text-blue-300 font-medium">
+            <span className="text-sm font-mono text-blue-700 dark:text-blue-300 font-medium">
               Filtering by {categoryInfo[selectedCategory].name}
             </span>
           </div>

@@ -70,9 +70,9 @@ export default function HomePage() {
         </div>
 
         {/* Main content - centered for better viewport experience */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-2 sm:py-4">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-1 sm:py-2">
                 {viewMode === 'cards' ? (
-                  <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
+                  <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
                     <DailyCardStack 
                       selectedCategory={selectedCategory}
                       searchQuery={searchQuery}
@@ -82,12 +82,12 @@ export default function HomePage() {
                     />
                   </Suspense>
                 ) : (
-            <div className="py-8 sm:py-16">
+            <div className="py-4 sm:py-8">
                   <Calendar 
                     topics={topicsList}
                     onDateSelect={handleDateSelect}
                     selectedDate={selectedDate}
-                className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-8"
+                className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-8"
               />
             </div>
           )}

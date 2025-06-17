@@ -1483,200 +1483,341 @@ export async function updateEnhancedProgress(
     // This creates better marketing opportunities and prevents data loss
     
     // 1. Update basic progress (existing system)
-    const { userProgressOperations } = await import('./database')
-    await userProgressOperations.updateAfterQuiz(userId, quizData.correctAnswers, quizData.totalQuestions)
+    try {
+      const { userProgressOperations } = await import('./database')
+      await userProgressOperations.updateAfterQuiz(userId, quizData.correctAnswers, quizData.totalQuestions)
+    } catch (error) {
+      console.error('Error updating basic progress:', error)
+      // Continue despite error
+    }
 
     // 2. Update weekly progress - TRACK FOR EVERYONE
-    await enhancedProgressOperations.updateWeeklyProgress(userId)
+    try {
+      await enhancedProgressOperations.updateWeeklyProgress(userId)
+    } catch (error) {
+      console.error('Error updating weekly progress:', error)
+      // Continue despite error
+    }
 
     // 3. ALWAYS save detailed analytics to user_quiz_analytics table
-    await saveDetailedQuizAnalytics(userId, quizData)
+    try {
+      await saveDetailedQuizAnalytics(userId, quizData)
+    } catch (error) {
+      console.error('Error saving detailed quiz analytics:', error)
+      // Continue despite error
+    }
 
     // 4. ALWAYS save progress history snapshot
-    await saveProgressHistorySnapshot(userId, 'daily')
+    try {
+      await saveProgressHistorySnapshot(userId, 'daily')
+    } catch (error) {
+      console.error('Error saving progress history snapshot:', error)
+      // Continue despite error
+    }
 
     // 5. Get comprehensive stats for achievement checking
-    const beforeStats = await enhancedProgressOperations.getComprehensiveStats(userId)
-    const afterStats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    let beforeStats: EnhancedUserProgress;
+    let afterStats: EnhancedUserProgress;
+    let xpResult: {
+      xpGained: number
+      levelUp: boolean
+      newLevel: number
+      newTotalXp: number
+      completionCount: number
+      xpMultiplier: number
+      reason: string
+      improvementBonus?: number
+    };
     
-    // 6. Check for achievements based on quiz completion
-    const isFirstQuiz = beforeStats.totalQuizzesCompleted === 0
-    const isPerfectScore = quizData.correctAnswers === quizData.totalQuestions
-    const isFastCompletion = quizData.timeSpentSeconds < 180 // 3 minutes
-    const isVeryFastCompletion = quizData.timeSpentSeconds < 120 // 2 minutes
-    const accuracyPercentage = (quizData.correctAnswers / quizData.totalQuestions) * 100
-    
-    // First quiz achievements
-    if (isFirstQuiz) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'first_quiz')
-      if (achievement) results.newAchievements.push(achievement)
+    try {
+      beforeStats = await enhancedProgressOperations.getComprehensiveStats(userId)
       
-      if (isPerfectScore) {
-        const perfectAchievement = await achievementOperations.checkAndAward(userId, 'first_perfect')
-        if (perfectAchievement) results.newAchievements.push(perfectAchievement)
-      }
-    }
-
-    // Quiz completion milestones
-    const totalCompleted = afterStats.totalQuizzesCompleted
-    const milestones = [5, 10, 25, 50, 100, 250]
-    for (const milestone of milestones) {
-      if (totalCompleted === milestone) {
-        const achievement = await achievementOperations.checkAndAward(userId, `quizzes_${milestone}`)
-        if (achievement) results.newAchievements.push(achievement)
-      }
-    }
-
-    // Streak achievements
-    const currentStreak = afterStats.currentStreak
-    const streakMilestones = [3, 7, 14, 30, 100]
-    for (const milestone of streakMilestones) {
-      if (currentStreak === milestone) {
-        const achievement = await achievementOperations.checkAndAward(userId, `streak_${milestone}`)
-        if (achievement) results.newAchievements.push(achievement)
-      }
-    }
-
-    // Performance achievements
-    if (isPerfectScore) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'perfect_quiz')
-      if (achievement) results.newAchievements.push(achievement)
-      
-      // Check for perfect streaks (would need to track consecutive perfect scores)
-      // This would require additional database tracking
-    }
-
-    // Speed achievements
-    if (isFastCompletion) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'speed_demon')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-    
-    if (isVeryFastCompletion) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'lightning_fast')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-    
-    if (isFastCompletion && isPerfectScore) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'speed_and_accuracy')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-
-    // Time-based achievements
-    const now = new Date()
-    const hour = now.getHours()
-    const isWeekend = now.getDay() === 0 || now.getDay() === 6
-    
-    if (hour < 8) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'early_bird')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-    
-    if (hour >= 22) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'night_owl')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-
-    // Special date achievements
-    const today = now.toISOString().split('T')[0]
-    const month = now.getMonth() + 1
-    const day = now.getDate()
-    
-    if (month === 7 && day === 4) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'independence_day')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-    
-    if (month === 9 && day === 17) { // Constitution Day
-      const hasConstitutionalCategory = quizData.questionResponses.some(q => 
-        q.category.toLowerCase().includes('constitutional') || 
-        q.category.toLowerCase().includes('constitution')
+      // Award XP based on quiz performance - 10 XP per correct answer
+      const baseXpAmount = quizData.correctAnswers * 10
+      const scorePercentage = (quizData.correctAnswers / quizData.totalQuestions) * 100
+      xpResult = await enhancedProgressOperations.awardXPWithAntifarming(
+        userId,
+        quizData.topicId,
+        baseXpAmount,
+        scorePercentage
       )
-      if (hasConstitutionalCategory) {
-        const achievement = await achievementOperations.checkAndAward(userId, 'constitution_day')
-        if (achievement) results.newAchievements.push(achievement)
+      console.log(`🎮 XP Awarded: +${xpResult.xpGained} XP (${xpResult.reason})`)
+      
+      // Get updated stats after XP award
+      afterStats = await enhancedProgressOperations.getComprehensiveStats(userId)
+      
+      // Set level up flag for result
+      results.levelUp = xpResult.levelUp
+    } catch (error) {
+      console.error('Error processing XP and stats:', error)
+      // Use fallback values if stats can't be fetched
+      beforeStats = {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalQuizzesCompleted: 0,
+        totalQuestionsAnswered: 0,
+        totalCorrectAnswers: 0,
+        totalXp: 0,
+        currentLevel: 1,
+        xpToNextLevel: 100,
+        weeklyGoal: 3,
+        weeklyCompleted: 0,
+        preferredCategories: [],
+        adaptiveDifficulty: true,
+        learningStyle: 'mixed',
+        accuracyPercentage: 0,
+        categoriesMastered: 0,
+        categoriesAttempted: 0,
+        activeGoals: 0,
+        customDecksCount: 0,
+        achievementsThisWeek: 0,
+        availableXpForBoosts: 0,
+        totalBoostsPurchased: 0,
+        activeBoosts: []
+      }
+      afterStats = { ...beforeStats }
+      xpResult = {
+        xpGained: 0,
+        levelUp: false,
+        newLevel: 1,
+        newTotalXp: 0,
+        completionCount: 0,
+        xpMultiplier: 1,
+        reason: "Error calculating XP"
       }
     }
 
-    // Level-based achievements
-    const currentLevel = afterStats.currentLevel
-    const levelMilestones = [5, 10, 20, 50]
-    for (const milestone of levelMilestones) {
-      if (currentLevel === milestone) {
-        const achievement = await achievementOperations.checkAndAward(userId, `level_${milestone}`)
-        if (achievement) results.newAchievements.push(achievement)
+    // 6. Check for achievements based on quiz completion
+    try {
+      const isFirstQuiz = beforeStats.totalQuizzesCompleted === 0
+      const isPerfectScore = quizData.correctAnswers === quizData.totalQuestions
+      const isFastCompletion = quizData.timeSpentSeconds < 180 // 3 minutes
+      const isVeryFastCompletion = quizData.timeSpentSeconds < 120 // 2 minutes
+      const accuracyPercentage = (quizData.correctAnswers / quizData.totalQuestions) * 100
+      
+      // First quiz achievements
+      if (isFirstQuiz) {
+        try {
+          const achievement = await achievementOperations.checkAndAward(userId, 'first_quiz')
+          if (achievement) results.newAchievements.push(achievement)
+          
+          if (isPerfectScore) {
+            const perfectAchievement = await achievementOperations.checkAndAward(userId, 'first_perfect')
+            if (perfectAchievement) results.newAchievements.push(perfectAchievement)
+          }
+        } catch (error) {
+          console.error('Error processing first quiz achievements:', error)
+        }
       }
+
+      // Quiz completion milestones
+      try {
+        const totalCompleted = afterStats.totalQuizzesCompleted
+        const milestones = [5, 10, 25, 50, 100, 250]
+        for (const milestone of milestones) {
+          if (totalCompleted === milestone) {
+            const achievement = await achievementOperations.checkAndAward(userId, `quizzes_${milestone}`)
+            if (achievement) results.newAchievements.push(achievement)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing quiz milestone achievements:', error)
+      }
+
+      // Streak achievements
+      try {
+        const currentStreak = afterStats.currentStreak
+        const streakMilestones = [3, 7, 14, 30, 100]
+        for (const milestone of streakMilestones) {
+          if (currentStreak === milestone) {
+            const achievement = await achievementOperations.checkAndAward(userId, `streak_${milestone}`)
+            if (achievement) results.newAchievements.push(achievement)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing streak achievements:', error)
+      }
+
+      // Performance achievements
+      try {
+        if (isPerfectScore) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'perfect_quiz')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+      } catch (error) {
+        console.error('Error processing performance achievements:', error)
+      }
+
+      // Speed achievements
+      try {
+        if (isFastCompletion) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'speed_demon')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+        
+        if (isVeryFastCompletion) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'lightning_fast')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+        
+        if (isFastCompletion && isPerfectScore) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'speed_and_accuracy')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+      } catch (error) {
+        console.error('Error processing speed achievements:', error)
+      }
+
+      // Time-based achievements
+      try {
+        const now = new Date()
+        const hour = now.getHours()
+        const isWeekend = now.getDay() === 0 || now.getDay() === 6
+        
+        if (hour < 8) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'early_bird')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+        
+        if (hour >= 22) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'night_owl')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+      } catch (error) {
+        console.error('Error processing time-based achievements:', error)
+      }
+
+      // Special date achievements
+      try {
+        const now = new Date()
+        const month = now.getMonth() + 1
+        const day = now.getDate()
+        
+        if (month === 7 && day === 4) {
+          const achievement = await achievementOperations.checkAndAward(userId, 'independence_day')
+          if (achievement) results.newAchievements.push(achievement)
+        }
+        
+        if (month === 9 && day === 17) { // Constitution Day
+          const hasConstitutionalCategory = quizData.questionResponses.some(q => 
+            q.category.toLowerCase().includes('constitutional') || 
+            q.category.toLowerCase().includes('constitution')
+          )
+          if (hasConstitutionalCategory) {
+            const achievement = await achievementOperations.checkAndAward(userId, 'constitution_day')
+            if (achievement) results.newAchievements.push(achievement)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing date-based achievements:', error)
+      }
+
+      // Level-based achievements
+      try {
+        const currentLevel = afterStats.currentLevel
+        const levelMilestones = [5, 10, 20, 50]
+        for (const milestone of levelMilestones) {
+          if (currentLevel === milestone) {
+            const achievement = await achievementOperations.checkAndAward(userId, `level_${milestone}`)
+            if (achievement) results.newAchievements.push(achievement)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing level-based achievements:', error)
+      }
+    } catch (error) {
+      console.error('Error processing achievements:', error)
     }
 
     // 7. ALWAYS update category skills and spaced repetition - track for everyone
-    const categoryUpdates = new Map<string, { correct: number; total: number }>()
-    const categoriesInQuiz = new Set<string>()
-    
-    for (const response of quizData.questionResponses) {
-      categoriesInQuiz.add(response.category)
+    try {
+      const categoryUpdates = new Map<string, { correct: number; total: number }>()
+      const categoriesInQuiz = new Set<string>()
       
-      // ALWAYS update spaced repetition for everyone
-      await spacedRepetitionOperations.updateQuestionMemory(
-        userId,
-        response.questionId,
-        response.isCorrect,
-        response.timeSpent * 1000 // Convert to milliseconds
-      )
+      // Process each question response
+      for (const response of quizData.questionResponses) {
+        categoriesInQuiz.add(response.category)
+        
+        // ALWAYS update spaced repetition for everyone
+        try {
+          await spacedRepetitionOperations.updateQuestionMemory(
+            userId,
+            response.questionId,
+            response.isCorrect,
+            response.timeSpent * 1000 // Convert to milliseconds
+          )
+        } catch (error) {
+          console.error(`Error updating question memory for question ${response.questionId}:`, error)
+        }
 
-      // Aggregate category performance
-      const current = categoryUpdates.get(response.category) || { correct: 0, total: 0 }
-      categoryUpdates.set(response.category, {
-        correct: current.correct + (response.isCorrect ? 1 : 0),
-        total: current.total + 1
-      })
-    }
+        // Aggregate category performance
+        const current = categoryUpdates.get(response.category) || { correct: 0, total: 0 }
+        categoryUpdates.set(response.category, {
+          correct: current.correct + (response.isCorrect ? 1 : 0),
+          total: current.total + 1
+        })
+      }
 
-    // ALWAYS update skills for each category - track for everyone
-    for (const [category, stats] of categoryUpdates) {
-      const isCorrect = stats.correct > stats.total / 2 // Majority correct
-      const skillUpdate = await skillTrackingOperations.updateCategorySkill(
-        userId,
-        category,
-        isCorrect
-      )
-      results.skillUpdates.push(skillUpdate)
-      
-      // Check for category mastery achievements
-      const masteryAchievements = {
-        'novice': 'category_novice',
-        'intermediate': 'category_intermediate', 
-        'advanced': 'category_advanced',
-        'expert': 'category_master'
+      // ALWAYS update skills for each category - track for everyone
+      for (const [category, stats] of categoryUpdates) {
+        try {
+          const isCorrect = stats.correct > stats.total / 2 // Majority correct
+          const skillUpdate = await skillTrackingOperations.updateCategorySkill(
+            userId,
+            category,
+            isCorrect
+          )
+          results.skillUpdates.push(skillUpdate)
+          
+          // Check for category mastery achievements
+          const masteryAchievements = {
+            'novice': 'category_novice',
+            'intermediate': 'category_intermediate', 
+            'advanced': 'category_advanced',
+            'expert': 'category_master'
+          }
+          
+          const achievementType = masteryAchievements[skillUpdate.masteryLevel as keyof typeof masteryAchievements]
+          if (achievementType) {
+            try {
+              const achievement = await achievementOperations.checkAndAward(userId, achievementType, { category })
+              if (achievement) results.newAchievements.push(achievement)
+            } catch (error) {
+              console.error(`Error awarding mastery achievement for ${category}:`, error)
+            }
+          }
+        } catch (error) {
+          console.error(`Error updating skill for category ${category}:`, error)
+        }
       }
-      
-      const achievementType = masteryAchievements[skillUpdate.masteryLevel as keyof typeof masteryAchievements]
-      if (achievementType) {
-        const achievement = await achievementOperations.checkAndAward(userId, achievementType, { category })
-        if (achievement) results.newAchievements.push(achievement)
-      }
+    } catch (error) {
+      console.error('Error updating category skills:', error)
     }
 
     // 8. ALWAYS generate learning insights for everyone
-    await generateLearningInsights(userId, quizData, afterStats)
+    try {
+      await generateLearningInsights(userId, quizData, afterStats)
+    } catch (error) {
+      console.error('Error generating learning insights:', error)
+    }
 
     // Check for exploration achievements
-    const allSkills = await skillTrackingOperations.getCategorySkills(userId)
-    const categoriesAttempted = allSkills.length
-    const expertCategories = allSkills.filter(skill => skill.masteryLevel === 'expert').length
-    
-    if (categoriesAttempted === 5) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'category_sampler')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-    
-    if (expertCategories === 3) {
-      const achievement = await achievementOperations.checkAndAward(userId, 'multi_category_master')
-      if (achievement) results.newAchievements.push(achievement)
-    }
-
-    // Check if user leveled up
-    if (afterStats.currentLevel > beforeStats.currentLevel) {
-      results.levelUp = true
+    try {
+      const allSkills = await skillTrackingOperations.getCategorySkills(userId)
+      const categoriesAttempted = allSkills.length
+      const expertCategories = allSkills.filter(skill => skill.masteryLevel === 'expert').length
+      
+      if (categoriesAttempted === 5) {
+        const achievement = await achievementOperations.checkAndAward(userId, 'category_sampler')
+        if (achievement) results.newAchievements.push(achievement)
+      }
+      
+      if (expertCategories === 3) {
+        const achievement = await achievementOperations.checkAndAward(userId, 'multi_category_master')
+        if (achievement) results.newAchievements.push(achievement)
+      }
+    } catch (error) {
+      console.error('Error processing exploration achievements:', error)
     }
 
     return results
@@ -1745,28 +1886,34 @@ async function saveDetailedQuizAnalytics(
     else optimalStudyTime = 'night'
 
     // Save to database
-    const { error } = await supabaseClient
-      .from('user_quiz_analytics')
-      .insert({
-        user_id: userId,
-        topic_id: quizData.topicId,
-        total_time_seconds: quizData.timeSpentSeconds,
-        average_time_per_question: averageTime,
-        fastest_question_time: fastestTime,
-        slowest_question_time: slowestTime,
-        time_distribution: timeDistribution,
-        category_performance: categoryPerformance,
-        optimal_study_time: optimalStudyTime,
-        completion_rate: 1.0, // They completed the quiz
-        consistency_score: calculateConsistencyScore(timeDistribution),
-        improvement_trend: 0.0 // Would need historical data to calculate
-      })
+    try {
+      const { error } = await supabaseClient
+        .from('user_quiz_analytics')
+        .insert({
+          user_id: userId,
+          topic_id: quizData.topicId,
+          total_time_seconds: quizData.timeSpentSeconds,
+          average_time_per_question: averageTime,
+          fastest_question_time: fastestTime,
+          slowest_question_time: slowestTime,
+          time_distribution: timeDistribution,
+          category_performance: categoryPerformance,
+          optimal_study_time: optimalStudyTime,
+          completion_rate: 1.0, // They completed the quiz
+          consistency_score: calculateConsistencyScore(timeDistribution),
+          improvement_trend: 0.0 // Would need historical data to calculate
+        })
 
-    if (error) {
-      console.error('Error saving quiz analytics:', error)
+      if (error) {
+        console.error('Error saving quiz analytics:', error.message, error.details, error.hint)
+      }
+    } catch (dbError) {
+      console.error('Database error in saveDetailedQuizAnalytics:', dbError)
+      // Continue execution despite database errors
     }
   } catch (error) {
     console.error('Error in saveDetailedQuizAnalytics:', error)
+    // Function will continue and return normally despite errors
   }
 }
 
@@ -1775,61 +1922,104 @@ async function saveDetailedQuizAnalytics(
  */
 async function saveProgressHistorySnapshot(userId: string, snapshotType: 'daily' | 'weekly' | 'monthly'): Promise<void> {
   try {
-    const stats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    let stats: EnhancedUserProgress;
+    
+    try {
+      stats = await enhancedProgressOperations.getComprehensiveStats(userId)
+    } catch (statsError) {
+      console.error('Error fetching user stats for progress snapshot:', statsError)
+      // Use default values if stats can't be fetched
+      stats = {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalQuizzesCompleted: 0,
+        totalQuestionsAnswered: 0,
+        totalCorrectAnswers: 0,
+        totalXp: 0,
+        currentLevel: 1,
+        xpToNextLevel: 100,
+        weeklyGoal: 3,
+        weeklyCompleted: 0,
+        preferredCategories: [],
+        adaptiveDifficulty: true,
+        learningStyle: 'mixed',
+        accuracyPercentage: 0,
+        categoriesMastered: 0,
+        categoriesAttempted: 0,
+        activeGoals: 0,
+        customDecksCount: 0,
+        achievementsThisWeek: 0,
+        availableXpForBoosts: 0,
+        totalBoostsPurchased: 0,
+        activeBoosts: []
+      }
+    }
+    
     const today = new Date().toISOString().split('T')[0]
 
     // Check if we already have a snapshot for today
-    const { data: existing } = await supabaseClient
-      .from('user_progress_history')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('snapshot_date', today)
-      .eq('snapshot_type', snapshotType)
-      .single()
-
-    if (existing) {
-      // Update existing snapshot
-      const { error } = await supabaseClient
+    try {
+      const { data: existing, error: selectError } = await supabaseClient
         .from('user_progress_history')
-        .update({
-          total_quizzes_completed: stats.totalQuizzesCompleted,
-          total_questions_answered: stats.totalQuestionsAnswered,
-          total_correct_answers: stats.totalCorrectAnswers,
-          current_streak: stats.currentStreak,
-          longest_streak: stats.longestStreak,
-          total_xp: stats.totalXp,
-          current_level: stats.currentLevel,
-          accuracy_percentage: stats.accuracyPercentage
-        })
-        .eq('id', existing.id)
+        .select('id')
+        .eq('user_id', userId)
+        .eq('snapshot_date', today)
+        .eq('snapshot_type', snapshotType)
+        .single()
 
-      if (error) {
-        console.error('Error updating progress history:', error)
+      if (selectError && selectError.code !== 'PGRST116') {
+        // Log error but continue (PGRST116 is "no rows returned" which is expected)
+        console.error('Error checking for existing progress snapshot:', selectError.message, selectError.details)
       }
-    } else {
-      // Create new snapshot
-      const { error } = await supabaseClient
-        .from('user_progress_history')
-        .insert({
-          user_id: userId,
-          snapshot_date: today,
-          snapshot_type: snapshotType,
-          total_quizzes_completed: stats.totalQuizzesCompleted,
-          total_questions_answered: stats.totalQuestionsAnswered,
-          total_correct_answers: stats.totalCorrectAnswers,
-          current_streak: stats.currentStreak,
-          longest_streak: stats.longestStreak,
-          total_xp: stats.totalXp,
-          current_level: stats.currentLevel,
-          accuracy_percentage: stats.accuracyPercentage
-        })
 
-      if (error) {
-        console.error('Error creating progress history:', error)
+      if (existing) {
+        // Update existing snapshot
+        const { error: updateError } = await supabaseClient
+          .from('user_progress_history')
+          .update({
+            total_quizzes_completed: stats.totalQuizzesCompleted,
+            total_questions_answered: stats.totalQuestionsAnswered,
+            total_correct_answers: stats.totalCorrectAnswers,
+            current_streak: stats.currentStreak,
+            longest_streak: stats.longestStreak,
+            total_xp: stats.totalXp,
+            current_level: stats.currentLevel,
+            accuracy_percentage: stats.accuracyPercentage
+          })
+          .eq('id', existing.id)
+
+        if (updateError) {
+          console.error('Error updating progress history:', updateError.message, updateError.details, updateError.hint)
+        }
+      } else {
+        // Create new snapshot
+        const { error: insertError } = await supabaseClient
+          .from('user_progress_history')
+          .insert({
+            user_id: userId,
+            snapshot_date: today,
+            snapshot_type: snapshotType,
+            total_quizzes_completed: stats.totalQuizzesCompleted,
+            total_questions_answered: stats.totalQuestionsAnswered,
+            total_correct_answers: stats.totalCorrectAnswers,
+            current_streak: stats.currentStreak,
+            longest_streak: stats.longestStreak,
+            total_xp: stats.totalXp,
+            current_level: stats.currentLevel,
+            accuracy_percentage: stats.accuracyPercentage
+          })
+
+        if (insertError) {
+          console.error('Error creating progress history:', insertError.message, insertError.details, insertError.hint)
+        }
       }
+    } catch (dbError) {
+      console.error('Database error in saveProgressHistorySnapshot:', dbError)
+      // Continue execution despite database errors
     }
   } catch (error) {
     console.error('Error in saveProgressHistorySnapshot:', error)
+    // Function will continue and return normally despite errors
   }
 }
 

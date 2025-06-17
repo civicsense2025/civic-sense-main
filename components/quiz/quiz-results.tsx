@@ -18,6 +18,9 @@ import { useGamification } from "@/hooks/useGamification"
 import { progressiveXpOperations } from "@/lib/enhanced-gamification"
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
+import { usePremium } from "@/hooks/usePremium"
+import { useAnalytics } from "@/utils/analytics"
+import { useTopicTitle } from "@/hooks/useTopicTitle"
 
 interface UserAnswer {
   questionId: number
@@ -31,6 +34,7 @@ interface QuizResultsProps {
   questions: QuizQuestion[]
   onFinish: () => void
   topicId: string
+  resumedAttemptId?: string | null
 }
 
 // Memoized components for performance
@@ -226,7 +230,7 @@ const MemoizedQuestionReview = memo(({
               {/* Sources using SourceMetadataCard */}
               {question.sources.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
+                  <p className="text-sm font-mono font-medium text-slate-900 dark:text-slate-50 mb-3">
                     📚 Learn more:
                   </p>
                   <div className="space-y-3">
@@ -271,10 +275,18 @@ const MemoizedQuestionReview = memo(({
 
 MemoizedQuestionReview.displayName = 'MemoizedQuestionReview'
 
-export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizResultsProps) {
+export function QuizResults({ 
+  userAnswers, 
+  questions, 
+  onFinish, 
+  topicId,
+  resumedAttemptId
+}: QuizResultsProps) {
   const { user } = useAuth()
+  const { isPremium, isPro } = usePremium()
+  const { trackQuiz } = useAnalytics()
+  const { topicTitle, setTopicTitle } = useTopicTitle(topicId)
   const { progress, refreshProgress } = useGamification()
-  const [topicTitle, setTopicTitle] = useState("Civic Quiz")
   const [showStats, setShowStats] = useState(false)
   const [animatedScore, setAnimatedScore] = useState(0)
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([])
@@ -399,7 +411,8 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
             answer: answer.answer,
             isCorrect: answer.isCorrect,
             timeSpent: answer.timeSpent
-          }))
+          })),
+          attemptId: resumedAttemptId // Add the attemptId if it exists
         }
 
         // Save to database
@@ -459,7 +472,7 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
       console.error('Error saving quiz results:', error)
       setProgressUpdated(true)
     }
-  }, [user, progressUpdated, topicId, topicTitle, totalQuestions, correctAnswers, score, totalTime, userAnswers, refreshProgress, progress])
+  }, [user, progressUpdated, topicId, topicTitle, totalQuestions, correctAnswers, score, totalTime, userAnswers, refreshProgress, progress, resumedAttemptId])
 
   // Save quiz results
   useEffect(() => {
@@ -616,7 +629,7 @@ export function QuizResults({ userAnswers, questions, onFinish, topicId }: QuizR
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-light text-slate-900 dark:text-slate-50">
               Question Review
-              <span className="ml-2 text-lg text-slate-500 dark:text-slate-400">
+              <span className="ml-2 text-sm font-mono text-slate-500 dark:text-slate-400">
                 ({correctAnswers}/{totalQuestions} correct)
               </span>
             </h3>

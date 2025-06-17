@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
             product_data: {
               name: productName,
               description: productDescription,
-              images: ['https://civicsense.app/logo.png'], // Add your logo URL
+              images: ['https://civicsense.one/images/logo.png'], // Add your logo URL
             },
             unit_amount: donationAmount,
           },

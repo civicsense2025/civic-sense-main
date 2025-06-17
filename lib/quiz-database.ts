@@ -17,6 +17,7 @@ export interface QuizAttemptData {
     isCorrect: boolean
     timeSpent: number
   }>
+  attemptId?: string | null  // Optional ID of an existing attempt to update
 }
 
 export interface SavedQuizAttempt {
@@ -61,30 +62,97 @@ export const quizDatabase = {
    */
   async saveQuizAttempt(attemptData: QuizAttemptData): Promise<SavedQuizAttempt> {
     try {
-      // 1. Create the quiz attempt record
-      const { data: attempt, error: attemptError } = await supabase
-        .from('user_quiz_attempts')
-        .insert({
-          user_id: attemptData.userId,
-          topic_id: attemptData.topicId,
-          total_questions: attemptData.totalQuestions,
-          correct_answers: attemptData.correctAnswers,
-          score: attemptData.score,
-          time_spent_seconds: attemptData.timeSpentSeconds,
-          started_at: new Date(Date.now() - attemptData.timeSpentSeconds * 1000).toISOString(),
-          completed_at: new Date().toISOString(),
-          is_completed: true
-        })
-        .select()
-        .single()
+      let existingAttempt = null;
+      
+      // If an attemptId is provided, use that directly
+      if (attemptData.attemptId) {
+        const { data, error } = await supabase
+          .from('user_quiz_attempts')
+          .select('*')
+          .eq('id', attemptData.attemptId)
+          .single();
+          
+        if (error) {
+          console.error(`Error finding attempt with id ${attemptData.attemptId}:`, error);
+        } else {
+          existingAttempt = data;
+        }
+      } else {
+        // Otherwise check for an incomplete attempt for this user and topic
+        const { data: incompleteAttempt, error: findError } = await supabase
+          .from('user_quiz_attempts')
+          .select('*')
+          .eq('user_id', attemptData.userId)
+          .eq('topic_id', attemptData.topicId)
+          .eq('is_completed', false)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+  
+        if (findError) {
+          console.error('Error finding existing attempt:', findError)
+        } else {
+          existingAttempt = incompleteAttempt;
+        }
+      }
+
+      let attempt;
+      let attemptError;
+
+      if (existingAttempt) {
+        // Update the existing attempt
+        console.log(`Updating attempt ${existingAttempt.id} for topic ${attemptData.topicId}`)
+        const { data, error } = await supabase
+          .from('user_quiz_attempts')
+          .update({
+            total_questions: attemptData.totalQuestions,
+            correct_answers: attemptData.correctAnswers,
+            score: attemptData.score,
+            time_spent_seconds: attemptData.timeSpentSeconds,
+            completed_at: new Date().toISOString(),
+            is_completed: true
+          })
+          .eq('id', existingAttempt.id)
+          .select()
+          .single()
+          
+        attempt = data
+        attemptError = error
+      } else {
+        // Create a new attempt record
+        console.log(`Creating new attempt for topic ${attemptData.topicId}`)
+        const { data, error } = await supabase
+          .from('user_quiz_attempts')
+          .insert({
+            user_id: attemptData.userId,
+            topic_id: attemptData.topicId,
+            total_questions: attemptData.totalQuestions,
+            correct_answers: attemptData.correctAnswers,
+            score: attemptData.score,
+            time_spent_seconds: attemptData.timeSpentSeconds,
+            started_at: new Date(Date.now() - attemptData.timeSpentSeconds * 1000).toISOString(),
+            completed_at: new Date().toISOString(),
+            is_completed: true
+          })
+          .select()
+          .single()
+          
+        attempt = data
+        attemptError = error
+      }
 
       if (attemptError) {
         console.error('Error saving quiz attempt:', attemptError)
         throw attemptError
       }
 
+      // Make sure attempt exists (for TypeScript)
+      if (!attempt) {
+        throw new Error('No attempt data returned from database operation')
+      }
+
       // 2. Save individual question responses
-      if (attempt && attemptData.userAnswers.length > 0) {
+      if (attemptData.userAnswers.length > 0) {
         // First, get the question IDs from the database
         const { data: questions, error: questionsError } = await supabase
           .from('questions')
@@ -113,6 +181,14 @@ export const quizDatabase = {
           }).filter((response): response is NonNullable<typeof response> => response !== null)
 
           if (questionResponses.length > 0) {
+            // Delete any existing responses for this attempt first (for the update case)
+            if (existingAttempt) {
+              await supabase
+                .from('user_question_responses')
+                .delete()
+                .eq('attempt_id', attempt.id)
+            }
+            
             const { error: responsesError } = await supabase
               .from('user_question_responses')
               .insert(questionResponses)

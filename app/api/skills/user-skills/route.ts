@@ -14,81 +14,15 @@ export async function GET(request: NextRequest) {
       userId = session.user.id;
     }
     
-    // Get user skills with progress information
+    // Get user skills with progress information - this now handles guest users internally
     const skills = await skillOperations.getUserSkills(userId);
-    
-    // If no skills were found, return mock data
-    if (!skills || skills.length === 0) {
-      const mockSkills = [
-        {
-          id: 'mock-skill-1',
-          skill_name: 'Understanding Government',
-          skill_slug: 'understanding-government',
-          category_name: 'Government',
-          description: 'Learn the basics of how government works',
-          difficulty_level: 1,
-          is_core_skill: true,
-          mastery_level: 'beginner',
-          progress_percentage: 25,
-          questions_attempted: 5,
-          questions_correct: 3,
-          last_practiced_at: new Date().toISOString()
-        },
-        {
-          id: 'mock-skill-2',
-          skill_name: 'Media Literacy',
-          skill_slug: 'media-literacy',
-          category_name: 'Media',
-          description: 'Learn to critically evaluate media sources',
-          difficulty_level: 2,
-          is_core_skill: true,
-          mastery_level: 'beginner',
-          progress_percentage: 10,
-          questions_attempted: 2,
-          questions_correct: 1,
-          last_practiced_at: new Date().toISOString()
-        }
-      ];
-      
-      return NextResponse.json({ data: mockSkills });
-    }
     
     return NextResponse.json({ data: skills });
   } catch (error) {
     console.error('Error fetching user skills:', error);
     
-    // Return fallback mock data in case of error
-    const mockSkills = [
-      {
-        id: 'mock-skill-1',
-        skill_name: 'Understanding Government',
-        skill_slug: 'understanding-government',
-        category_name: 'Government',
-        description: 'Learn the basics of how government works',
-        difficulty_level: 1,
-        is_core_skill: true,
-        mastery_level: 'beginner',
-        progress_percentage: 25,
-        questions_attempted: 5,
-        questions_correct: 3,
-        last_practiced_at: new Date().toISOString()
-      },
-      {
-        id: 'mock-skill-2',
-        skill_name: 'Media Literacy',
-        skill_slug: 'media-literacy',
-        category_name: 'Media',
-        description: 'Learn to critically evaluate media sources',
-        difficulty_level: 2,
-        is_core_skill: true,
-        mastery_level: 'beginner',
-        progress_percentage: 10,
-        questions_attempted: 2,
-        questions_correct: 1,
-        last_practiced_at: new Date().toISOString()
-      }
-    ];
-    
+    // Use the mock skills from skillOperations for consistency
+    const mockSkills = skillOperations.getMockSkills();
     return NextResponse.json({ data: mockSkills });
   }
 } 

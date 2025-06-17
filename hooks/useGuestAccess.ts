@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // Constants that can be easily modified
-const GUEST_DAILY_QUIZ_LIMIT = 3
+const GUEST_DAILY_QUIZ_LIMIT = 5
 const STORAGE_KEY_PREFIX = 'civicSense_guest_'
 // Disable IP tracking if Redis is not available
 const IP_TRACKING_ENABLED = false // Toggle IP tracking on/off
@@ -58,6 +58,23 @@ const safeLocalStorage = {
   }
 }
 
+// Helper to get today's date at midnight in Eastern Time (ET)
+// Using a simpler approach to avoid hydration mismatches
+const getTodayAtMidnightET = () => {
+  // If we're in a browser environment, we can use the local date
+  // This avoids hydration mismatches between server and client
+  if (typeof window !== 'undefined') {
+    const now = new Date()
+    // Simple approach: just use local date for client-side
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  } else {
+    // For server-side, just use UTC date
+    // This is a simplification to avoid hydration mismatches
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  }
+}
+
 export function useGuestAccess() {
   const [guestState, setGuestState] = useState<GuestAccessState>({
     quizAttemptsToday: 0,
@@ -72,9 +89,14 @@ export function useGuestAccess() {
   const [isMounted, setIsMounted] = useState(false)
   const [serverAvailable, setServerAvailable] = useState(true)
   
+  // Set mounted state to avoid hydration mismatches
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+  
   // Get user's IP address from server
   const fetchUserIP = useCallback(async (): Promise<string | null> => {
-    if (!IP_TRACKING_ENABLED) return null
+    if (!IP_TRACKING_ENABLED || !isMounted) return null
     
     try {
       const response = await fetch('/api/guest/get-ip', {
@@ -97,7 +119,7 @@ export function useGuestAccess() {
       setServerAvailable(false)
       return null
     }
-  }, [])
+  }, [isMounted])
   
   // Check server-side usage for this IP
   const checkServerUsage = useCallback(async (ip: string): Promise<IPTrackingResponse | null> => {
@@ -170,8 +192,8 @@ export function useGuestAccess() {
           return
         }
         
-        // Check if we need to reset based on date
-        const today = new Date().toISOString().split('T')[0]
+        // Check if we need to reset based on ET date
+        const todayET = getTodayAtMidnightET().toISOString().split('T')[0]
         const savedLastReset = safeLocalStorage.getItem(`${STORAGE_KEY_PREFIX}lastResetDate`)
         
         // Generate or retrieve guest token
@@ -209,16 +231,16 @@ export function useGuestAccess() {
           safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}completedTopics`, JSON.stringify(completedTopics))
         }
         
-        // Reset counter if it's a new day
-        if (!savedLastReset || savedLastReset !== today) {
+        // Reset counter if it's a new day in ET
+        if (!savedLastReset || savedLastReset !== todayET) {
           safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}quizAttemptsToday`, '0')
-          safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}lastResetDate`, today)
+          safeLocalStorage.setItem(`${STORAGE_KEY_PREFIX}lastResetDate`, todayET)
           // Don't reset completed topics - we want to remember those
           
           if (isMounted) {
             setGuestState({
               quizAttemptsToday: 0,
-              lastResetDate: today,
+              lastResetDate: todayET,
               guestToken,
               userIP,
               serverLimitReached: serverUsage?.limitReached || false,
@@ -269,13 +291,16 @@ export function useGuestAccess() {
       }
     }
     
-    loadGuestState()
+    // Only run client-side code after component has mounted
+    if (isMounted) {
+      loadGuestState()
+    }
     
     // Clean up function to handle unmounting
     return () => {
       setIsMounted(false)
     }
-  }, [])
+  }, [isMounted, fetchUserIP, checkServerUsage])
   
   // Check if a topic has been completed
   const hasCompletedTopic = useCallback((topicId: string): boolean => {

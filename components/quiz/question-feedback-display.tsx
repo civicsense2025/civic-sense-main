@@ -12,6 +12,7 @@ interface QuestionFeedbackDisplayProps {
   isLastQuestion: boolean
   onNextQuestion: () => void
   className?: string
+  xpGained?: number
 }
 
 export function QuestionFeedbackDisplay({
@@ -20,10 +21,12 @@ export function QuestionFeedbackDisplay({
   timeLeft,
   isLastQuestion,
   onNextQuestion,
-  className
+  className,
+  xpGained = 0
 }: QuestionFeedbackDisplayProps) {
   const [isMobile, setIsMobile] = useState(false)
   const { autoPlayEnabled, playText, stop } = useGlobalAudio()
+  const [showXpAnimation, setShowXpAnimation] = useState(false)
 
   // Mobile detection
   useEffect(() => {
@@ -35,6 +38,15 @@ export function QuestionFeedbackDisplay({
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Animate XP gained
+  useEffect(() => {
+    if (xpGained > 0) {
+      setTimeout(() => {
+        setShowXpAnimation(true)
+      }, 300)
+    }
+  }, [xpGained])
 
   // Determine if answer is correct using same logic as quiz engine
   const isCorrectAnswer = (() => {
@@ -108,6 +120,19 @@ export function QuestionFeedbackDisplay({
                 {feedback.title}
                 {feedback.showBonus && <span className="text-base ml-2">⚡</span>}
               </h2>
+              
+              {/* XP Gained Animation */}
+              {isCorrectAnswer && xpGained > 0 && (
+                <div className="mt-2">
+                  <div className={cn(
+                    "inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 font-medium transition-all duration-500",
+                    showXpAnimation ? "opacity-100 transform scale-100" : "opacity-0 transform scale-75"
+                  )}>
+                    <span className="mr-1">+{xpGained}</span>
+                    <span className="text-xs">XP</span>
+                  </div>
+                </div>
+              )}
               
               {/* Show correct answer if wrong */}
               {!isCorrectAnswer && selectedAnswer !== "skipped" && (

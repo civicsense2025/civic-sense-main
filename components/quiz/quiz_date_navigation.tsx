@@ -96,6 +96,7 @@ export function QuizDateNavigation({
     <div className={cn(
       "flex items-center justify-between w-full max-w-4xl mx-auto",
       "px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800",
+      "sticky top-0 z-20 backdrop-blur-sm bg-white/95 dark:bg-slate-900/95",
       className
     )}>
       {/* Previous Topic Button */}

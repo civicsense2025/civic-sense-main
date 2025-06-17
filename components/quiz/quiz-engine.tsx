@@ -27,8 +27,9 @@ import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from "@/hooks/useGamification"
 import type { BoostEffects } from "@/lib/game-boosts"
 import { BoostManager } from "@/lib/game-boosts"
-import { enhancedProgressOperations } from "@/lib/enhanced-gamification"
+import { enhancedProgressOperations, updateEnhancedProgress } from "@/lib/enhanced-gamification"
 import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
+import { supabase } from "@/lib/supabase"
 
 interface QuizTopic {
   id: string
@@ -651,92 +652,68 @@ export function QuizEngine({
     setShowFeedback(true)
   }
 
+  const [currentXpGained, setCurrentXpGained] = useState(0)
+
   function handleAnswerSelect(answer: string) {
-    if (isAnswerSubmitted) {
-      console.log('🚫 Answer selection blocked: already submitted')
-      return
-    }
-    console.log('✅ Selecting answer:', answer)
+    if (isAnswerSubmitted || !currentQuestion) return
+
     setSelectedAnswer(answer)
     
-    // Micro-animation: gentle scale effect on the submit button
-    if (isMobile) {
-      const answerButton = document.querySelector('[data-answer-button]')
-      if (answerButton) {
-        answerButton.classList.add('animate-gentle-scale')
-        setTimeout(() => {
-          answerButton.classList.remove('animate-gentle-scale')
-        }, 500)
+    // Stop the timer
+    stopTimer()
+    
+    // Calculate XP gained (10 XP per correct answer)
+    let xpGained = 0
+    const isCorrect = answer === currentQuestion.correct_answer
+    
+    if (isCorrect) {
+      // Base XP for correct answer
+      xpGained = 10
+      
+      // Time bonus (up to 5 extra XP for answering quickly)
+      if (timeLeft > 45) {
+        xpGained += 5
+      } else if (timeLeft > 30) {
+        xpGained += 3
+      } else if (timeLeft > 15) {
+        xpGained += 1
       }
+      
+      // Apply XP multiplier from boosts
+      xpGained = Math.round(xpGained * currentBoostEffects.xpMultiplier)
+      
+      setCurrentXpGained(xpGained)
     }
   }
 
   function handleInteractiveAnswer(answer: string, isCorrect: boolean) {
-    if (isAnswerSubmitted) {
-      console.log('🚫 Interactive answer blocked: already submitted')
-      return
-    }
-    
-    console.log('🎯 Interactive answer:', answer, 'Correct:', isCorrect)
+    if (isAnswerSubmitted || !currentQuestion) return
+
     setSelectedAnswer(answer)
+    
+    // Stop the timer
     stopTimer()
     
-    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000)
-    const newAnswer: UserAnswer = {
-      questionId: currentQuestion.question_number,
-      answer,
-      isCorrect,
-      timeSpent
-    }
+    // Calculate XP gained (10 XP per correct answer)
+    let xpGained = 0
     
-    // Track question answered event
-    trackQuiz.questionAnswered({
-      question_id: `${topicId}-${currentQuestion.question_number}`,
-      question_category: currentQuestion?.category || 'general',
-      answer_correct: isCorrect,
-      response_time_seconds: timeSpent,
-      attempt_number: 1,
-      hint_used: showHint,
-      boost_active: Object.keys(currentBoostEffects).find(key => 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] && 
-        currentBoostEffects[key as keyof typeof currentBoostEffects] !== 0
-      ) || null,
-      confidence_level: isCorrect ? (timeSpent < 10 ? 5 : timeSpent < 30 ? 4 : 3) : 2
-    })
-    
-    setUserAnswers(prev => [...prev, newAnswer])
-    setIsAnswerSubmitted(true)
-    setShowFeedback(true)
-    
-    // Update streak
     if (isCorrect) {
-      setStreak(prev => prev + 1)
-    } else {
-      setStreak(0)
-    }
-    
-    // Animate progress bar
-    setAnimateProgress(true)
-    setTimeout(() => setAnimateProgress(false), 1000)
-    
-    console.log('🎮 Question response:', {
-      questionId: currentQuestion.question_number,
-      category: currentQuestion.category,
-      isCorrect,
-      timeSpent,
-      difficulty: currentQuestion.tags?.includes('advanced') ? 3 : 
-                  currentQuestion.tags?.includes('intermediate') ? 2 : 1
-    })
-    
-    // Auto-play explanation if global autoplay is enabled
-    if (autoPlayEnabled && currentQuestion?.explanation) {
-      setTimeout(() => {
-        try {
-          playText(currentQuestion.explanation, { autoPlay: true })
-        } catch (error) {
-          console.warn('Auto-play explanation failed:', error)
-        }
-      }, 800)
+      // Base XP for correct answer
+      xpGained = 10
+      
+      // Time bonus (up to 5 extra XP for answering quickly)
+      if (timeLeft > 45) {
+        xpGained += 5
+      } else if (timeLeft > 30) {
+        xpGained += 3
+      } else if (timeLeft > 15) {
+        xpGained += 1
+      }
+      
+      // Apply XP multiplier from boosts
+      xpGained = Math.round(xpGained * currentBoostEffects.xpMultiplier)
+      
+      setCurrentXpGained(xpGained)
     }
   }
 
@@ -841,7 +818,7 @@ export function QuizEngine({
       user_level: currentLevel,
       active_boosts: activeBoosts,
       streak_count: currentStreak,
-      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier,
+      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier, // Base XP calculation (actual award happens in updateProgress)
       streak_maintained: correctAnswers > 0,
       new_level_reached: false,
       boosts_used: activeBoosts
@@ -910,6 +887,8 @@ export function QuizEngine({
       window.scrollTo({ top: 0, behavior: 'smooth' })
       setCurrentQuestionIndex(prev => prev + 1)
     }
+    
+    setCurrentXpGained(0)
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -1047,7 +1026,7 @@ export function QuizEngine({
       document.removeEventListener('keydown', handleKeyDownWrapper, { capture: true })
       console.log('🎹 Keyboard shortcuts disabled')
     }
-  }, [])
+  }, [isAnswerSubmitted, selectedAnswer, currentQuestionIndex]) // Add dependencies to re-register on state changes
 
   // Disable keyboard shortcuts when inputs are focused
   useEffect(() => {
@@ -1080,13 +1059,49 @@ export function QuizEngine({
     }
   }, [])
 
+  // Initialize quiz attempt in the database when the quiz starts
+  const [resumedAttemptId, setResumedAttemptId] = useState<string | null>(null)
+  useEffect(() => {
+    // Only create an attempt if the user is logged in and we haven't already set a resumed ID
+    const createAttempt = async () => {
+      if (user && !resumedAttemptId) {
+        try {
+          // Create an initial attempt record with is_completed = false
+          const { data: attempt, error } = await supabase
+            .from('user_quiz_attempts')
+            .insert({
+              user_id: user.id,
+              topic_id: topicId,
+              total_questions: randomizedQuestions.length,
+              started_at: new Date().toISOString(),
+              is_completed: false
+            })
+            .select()
+            .single()
+            
+          if (error) {
+            console.error('Error creating initial quiz attempt:', error)
+          } else if (attempt) {
+            console.log(`Created initial quiz attempt: ${attempt.id}`)
+            setResumedAttemptId(attempt.id)
+          }
+        } catch (err) {
+          console.error('Failed to create initial quiz attempt:', err)
+        }
+      }
+    }
+    
+    createAttempt()
+  }, [user, topicId, randomizedQuestions.length, resumedAttemptId])
+
   if (showResults) {
     return (
       <QuizResults
-        questions={randomizedQuestions}
         userAnswers={userAnswers}
+        questions={randomizedQuestions}
         onFinish={onComplete}
         topicId={topicId}
+        resumedAttemptId={resumedAttemptId}
       />
     )
   }
@@ -1166,6 +1181,29 @@ export function QuizEngine({
         "max-w-4xl mx-auto space-y-6",
         isMobile ? "px-3 py-4 pb-20" : "px-6 py-8 space-y-12"
       )}>
+        {/* Quiz title display */}
+        <div className="text-xs text-center mb-3 text-slate-500 dark:text-slate-400">
+          <span className="mr-1">{currentTopic.emoji}</span>
+          <span>{currentTopic.title}</span>
+        </div>
+        
+        {/* Question number and timer */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Question {currentQuestionIndex + 1}/{randomizedQuestions.length}
+            </span>
+          </div>
+          
+          {/* Timer - use key to force reset when question changes */}
+          <QuestionTimer
+            key={`timer-${currentQuestionIndex}`}
+            initialTime={60}
+            isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
+            onTimeUp={handleTimeUp}
+          />
+        </div>
+
         {/* Progress bar - enhanced with animation - hidden on mobile */}
         <div className={cn("relative", "hidden md:block")}>
           <Progress 
@@ -1189,14 +1227,6 @@ export function QuizEngine({
             
             {/* Timer and hint button */}
             <div className="flex items-center justify-center space-x-6 animate-in fade-in duration-300">
-              {/* Timer - use key to force reset when question changes */}
-              <QuestionTimer
-                key={`timer-${currentQuestionIndex}`}
-                initialTime={60}
-                isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
-                onTimeUp={handleTimeUp}
-              />
-              
               <Button 
                 variant="ghost" 
                 onClick={() => setShowHint(!showHint)} 
@@ -1225,6 +1255,7 @@ export function QuizEngine({
               timeLeft={timeLeft}
               isLastQuestion={isLastQuestion}
               onNextQuestion={handleNextQuestion}
+              xpGained={currentXpGained}
             />
           )}
         </div>

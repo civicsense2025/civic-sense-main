@@ -104,7 +104,7 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
             className="rounded-full h-12 px-7 py-0 text-base font-semibold tracking-tight bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-700/30 hover:text-amber-800 dark:hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-all duration-150"
           >
             <span className="text-amber-600 dark:text-amber-400 font-bold mr-2">★</span>
-            <span>Support Our Work</span>
+            <span>Support</span>
           </Button>
         </Link>
         {/* Unlock All Quizzes Button - Apple style strong ghost button with lighter font */}
@@ -146,157 +146,209 @@ export function UserMenu({ onSignInClick, searchQuery, onSearchChange }: UserMen
         onSearchChange={onSearchChange}
       />
       
-      {/* User Menu */}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className="relative h-12 w-auto rounded-full px-6 font-normal text-base bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center"
-        >
-          <User className="h-5 w-5" />
-          {(isPremium || isPro) && (
-            <Crown className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end"
-        side="bottom"
-        sideOffset={8}
-        className="w-80 bg-white dark:bg-black border border-slate-100 dark:border-slate-800 shadow-lg rounded-xl p-3"
-      >
-        <DropdownMenuLabel className="flex flex-col space-y-2 text-slate-900 dark:text-slate-50 px-3 py-3">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">My Account</span>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 ${tierBadge.color}`}>
-              {tierBadge.text}
-            </span>
-          </div>
-          <span className="text-sm font-light text-slate-500 dark:text-slate-400">{user.email}</span>
-        </DropdownMenuLabel>
-        
-        <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
-        
-        {/* User Stats - Clean and minimal */}
-        <div className="px-3 py-4 bg-slate-50 dark:bg-slate-900 mx-3 rounded-xl mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
-              Level {userStats?.currentLevel || 1}
-            </span>
-            <span className="text-xs font-light text-slate-500 dark:text-slate-400">
-              {getUserTitle()}
-            </span>
+      {/* Streak display with tooltip - Only for logged in users */}
+      {user && userStats && (
+        <div className="relative mr-1 group">
+          <div 
+            className="flex items-center px-3 py-1.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-help"
+            title="Your current streak"
+          >
+            <span className="text-orange-500 dark:text-orange-400 mr-1.5">🔥</span>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{userStats.currentStreak}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">streak</span>
           </div>
           
-          {statsLoading ? (
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="space-y-1">
-                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+          {/* Tooltip content */}
+          <div className="absolute z-50 top-full mt-2 right-0 w-64 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-3 text-sm hidden group-hover:block opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Current Streak:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{userStats.currentStreak} days</span>
               </div>
-              <div className="space-y-1">
-                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Longest Streak:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{userStats.longestStreak} days</span>
               </div>
-              <div className="space-y-1">
-                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Level:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{userStats.currentLevel}</span>
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="space-y-1">
-                <div className="text-lg font-light text-blue-600 dark:text-blue-400">
-                  {userStats?.totalXp?.toLocaleString() || 0}
-                </div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Total XP:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{userStats.totalXp}</span>
               </div>
-              <div className="space-y-1">
-                <div className="text-lg font-light text-green-600 dark:text-green-400">
-                  {userStats?.currentStreak || 0}
-                </div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-lg font-light text-slate-900 dark:text-slate-100">
-                  {userStats?.totalQuizzesCompleted || 0}
-                </div>
-                <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+              <div className="flex justify-between">
+                <span className="text-slate-600 dark:text-slate-400">Quizzes Completed:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{userStats.totalQuizzesCompleted}</span>
               </div>
             </div>
-          )}
+          </div>
         </div>
-        
-        <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
-        
-        {/* Quick Actions */}
-        <DropdownMenuLabel className="text-slate-900 dark:text-slate-50 font-light px-3 py-2">
-          Quick Actions
-        </DropdownMenuLabel>
-        
-        {/* Dashboard */}
-        <DropdownMenuItem asChild>
-          <Link 
-            href="/dashboard" 
-            className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+      )}
+      
+      {/* User Menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className="relative h-12 w-auto rounded-full px-6 font-normal text-base bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-none hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center"
           >
-            <BarChart3 className="mr-3 h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Donate */}
-        <DropdownMenuItem asChild>
-          <Link 
-            href="/donate" 
-            className="text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:bg-amber-50 dark:focus:bg-amber-900/30 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
-          >
-            <span className="mr-3 text-lg">★</span>
-            <span>Donate</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Theme Toggle */}
-        <DropdownMenuItem 
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-          className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors"
+            {/* Text Avatar */}
+            <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-100 font-bold text-base mr-2">
+              {(() => {
+                const name = user.user_metadata?.full_name || user.email || '';
+                const initials = name
+                  .split(' ')
+                  .map((n: string) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase();
+                return initials || (user.email ? user.email[0].toUpperCase() : '?');
+              })()}
+            </span>
+            {(isPremium || isPro) && (
+              <Crown className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end"
+          side="bottom"
+          sideOffset={8}
+          className="w-80 bg-white dark:bg-black border border-slate-100 dark:border-slate-800 shadow-lg rounded-xl p-3"
         >
-          {mounted && theme === 'dark' ? (
-            <>
-              <Sun className="mr-3 h-4 w-4" />
-              <span>Light Mode</span>
-            </>
-          ) : (
-            <>
-              <Moon className="mr-3 h-4 w-4" />
-              <span>Dark Mode</span>
-            </>
-          )}
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
-        
-        {/* Account Actions */}
-        <DropdownMenuItem asChild>
-          <Link 
-            href="/settings" 
-            className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+          <DropdownMenuLabel className="flex flex-col space-y-2 text-slate-900 dark:text-slate-50 px-3 py-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">My Account</span>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 ${tierBadge.color}`}>
+                {tierBadge.text}
+              </span>
+            </div>
+            <span className="text-sm font-light text-slate-500 dark:text-slate-400">{user.email}</span>
+          </DropdownMenuLabel>
+          
+          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
+          
+          {/* User Stats - Clean and minimal */}
+          <div className="px-3 py-4 bg-slate-50 dark:bg-slate-900 mx-3 rounded-xl mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                Level {userStats?.currentLevel || 1}
+              </span>
+              <span className="text-xs font-light text-slate-500 dark:text-slate-400">
+                {getUserTitle()}
+              </span>
+            </div>
+            
+            {statsLoading ? (
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="space-y-1">
+                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="space-y-1">
+                  <div className="text-lg font-light text-blue-600 dark:text-blue-400">
+                    {userStats?.totalXp?.toLocaleString() || 0}
+                  </div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">XP</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-lg font-light text-green-600 dark:text-green-400">
+                    {userStats?.currentStreak || 0}
+                  </div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">Streak</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-lg font-light text-slate-900 dark:text-slate-100">
+                    {userStats?.totalQuizzesCompleted || 0}
+                  </div>
+                  <div className="text-xs font-light text-slate-500 dark:text-slate-400">Complete</div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
+          
+          {/* Quick Actions */}
+          <DropdownMenuLabel className="text-slate-900 dark:text-slate-50 font-light px-3 py-2">
+            Quick Actions
+          </DropdownMenuLabel>
+          
+          {/* Dashboard */}
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/dashboard" 
+              className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+            >
+              <BarChart3 className="mr-3 h-4 w-4" />
+              <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+          
+          {/* Donate */}
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/donate" 
+              className="text-amber-700 dark:text-amber-400 hover:bg-amber-50 hover:text-amber-900 dark:hover:bg-amber-900/30 focus:bg-amber-50 dark:focus:bg-amber-900/30 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+            >
+              <span className="mr-3 text-lg">★</span>
+              <span>Donate</span>
+            </Link>
+          </DropdownMenuItem>
+          
+          {/* Theme Toggle */}
+          <DropdownMenuItem 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+            className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors"
           >
-            <Settings className="mr-3 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem 
-          onClick={() => signOut()} 
-          className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors"
-        >
-          <LogOut className="mr-3 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
+            {mounted && theme === 'dark' ? (
+              <>
+                <Sun className="mr-3 h-4 w-4" />
+                <span>Light Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="mr-3 h-4 w-4" />
+                <span>Dark Mode</span>
+              </>
+            )}
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-3" />
+          
+          {/* Account Actions */}
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/settings" 
+              className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors flex items-center"
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              <span>Settings</span>
+            </Link>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={() => signOut()} 
+            className="text-slate-700 dark:text-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 focus:bg-slate-50 dark:focus:bg-slate-900 rounded-lg mx-1 px-3 py-2 font-light transition-colors"
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            <span>Log out</span>
+          </DropdownMenuItem>
 
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }

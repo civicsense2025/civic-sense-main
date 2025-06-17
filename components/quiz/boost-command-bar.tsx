@@ -177,7 +177,7 @@ export function BoostCommandBar({ userXP, userLevel = 1, onXPChanged, onBoostAct
   if (!user) return null
 
   return (
-    <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+    <div className={cn("mt-6 mb-20", className)}>
       {/* Active Boosts Display */}
       {activeBoosts.length > 0 && (
         <div className="mb-2 space-y-1">
@@ -229,9 +229,11 @@ export function BoostCommandBar({ userXP, userLevel = 1, onXPChanged, onBoostAct
       <Dialog open={isStoreOpen} onOpenChange={setIsStoreOpen}>
         <DialogTrigger asChild>
           <Button 
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
+            className="relative border-2 border-transparent bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
             size="lg"
           >
+            <div className="absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 to-blue-600 -z-10"></div>
+            <div className="absolute inset-[2px] rounded-md bg-white dark:bg-slate-900 -z-[5]"></div>
             <ShoppingCart className="mr-2 h-4 w-4" />
             Boost Store
             <Badge variant="secondary" className="ml-2">

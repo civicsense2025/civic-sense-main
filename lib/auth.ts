@@ -4,8 +4,13 @@ import type { Database } from './database.types';
 
 // Create a server-side Supabase client for auth operations
 export async function getServerSession() {
-  const cookieStore = cookies();
-  const cookieString = await cookieStore.toString();
+  // Get cookies using the correct Next.js App Router approach
+  const cookieStore = await cookies();
+  
+  // Get cookie string for Supabase - avoid using toString()
+  const cookieString = cookieStore.getAll()
+    .map(cookie => `${cookie.name}=${cookie.value}`)
+    .join('; ');
   
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

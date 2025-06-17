@@ -27,7 +27,7 @@ export function CanonicalCategoryBadges({
       <div className={cn("flex flex-wrap gap-1", className)}>
         {Array.from({ length: Math.min(maxVisible, 3) }).map((_, i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           </div>
         ))}
       </div>
@@ -47,7 +47,7 @@ export function CanonicalCategoryBadges({
             key={category} 
             variant="outline" 
             className={cn(
-              "text-xs transition-all duration-300",
+              "text-sm font-mono transition-all duration-300",
               badgeClassName
             )}
           >
@@ -60,7 +60,7 @@ export function CanonicalCategoryBadges({
         <Badge 
           variant="outline" 
           className={cn(
-            "text-xs transition-all duration-300",
+            "text-sm font-mono transition-all duration-300",
             badgeClassName
           )}
         >

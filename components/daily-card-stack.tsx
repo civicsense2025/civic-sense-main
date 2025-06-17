@@ -150,7 +150,8 @@ const useTopicAccess = () => {
 
     // Guest access logic
     if (!user) {
-      if (!isToday) {
+      const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+      if (localTopicDate < oneWeekAgo) {
         return { accessible: false, reason: 'guest_wants_more' }
       }
       if (hasReachedDailyLimit() && !completedTopics.has(topic.topic_id)) {
@@ -252,12 +253,9 @@ function GuestAccessBanner({
           <p className="text-sm font-medium">
             {summary.hasReachedLimit 
               ? `Thanks for trying CivicSense! Support our mission to unlock unlimited quizzes`
-              : `Complete today's civic quizzes and stay informed`
+              : ``
             }
           </p>
-          {!summary.hasReachedLimit && (
-            <p className="text-xs mt-1">Love what we're doing? Consider a small donation to keep civic education free for everyone</p>
-          )}
           
           {IP_TRACKING_ENABLED && !summary.hasReachedLimit && (
             <div className="mt-2 w-full bg-green-100 dark:bg-green-900/30 rounded-full h-2">
@@ -692,7 +690,7 @@ export function DailyCardStack({
   }, [])
 
   // Add missing cardBaseHeight constant
-  const cardBaseHeight = "h-[500px]"
+  const cardBaseHeight = "min-h-[400px] sm:min-h-[500px]"
 
   // Ensure we land on the first accessible (non future-locked) topic when no explicit topic param
   useEffect(() => {
@@ -780,8 +778,8 @@ export function DailyCardStack({
 
       {/* Navigation - Simplified for readability */}
       {allFilteredTopics.length > 1 && (
-        <div className="mb-8 sm:mb-16">
-          <div className="flex items-center justify-between px-2 sm:px-8">
+        <div className="mb-6">
+          <div className="flex items-center justify-between px-2 sm:px-6">
             {/* Previous button */}
             <button
               onClick={handlePrevious}
@@ -797,7 +795,7 @@ export function DailyCardStack({
                     ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
-                    <span>{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                    <span className="text-xl">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
                     <span className="text-left max-w-[120px] truncate">
                       {allFilteredTopics[currentStackIndex - 1].topic_title}
                     </span>
@@ -878,14 +876,15 @@ export function DailyCardStack({
                             }
                           }}
                           className={cn(
-                            "flex items-center justify-between p-3",
+                            "flex items-center justify-between p-3 transition-colors",
                             isCurrent && "bg-primary/10 font-medium",
-                            !accessStatus.accessible && "opacity-50 cursor-not-allowed"
+                            !accessStatus.accessible && "opacity-50 cursor-not-allowed",
+                            "hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white"
                           )}
                           disabled={!accessStatus.accessible}
                         >
                           <div className="flex items-center space-x-3 flex-grow min-w-0">
-                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
+                            <span className="text-7xl flex-shrink-0">{topic.emoji}</span>
                             <div className="flex-grow min-w-0">
                               <div className="text-sm font-medium truncate">{topic.topic_title}</div>
                               <div className="text-xs text-slate-500 truncate">{topic.description}</div>
@@ -895,7 +894,7 @@ export function DailyCardStack({
                             </div>
                           </div>
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-amber-600">Coming Soon</span>}
+                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-slate-500 dark:text-slate-400">Coming Soon</span>}
                             {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
                             {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
                             {isCurrent && <span className="text-xs text-primary">●</span>}
@@ -940,8 +939,8 @@ export function DailyCardStack({
         </div>
       )}
 
-      {/* Single Card Display with slide-in animation */}
-      <div className="relative overflow-hidden">
+      {/* Single Topic Display - cleaner version without card style */}
+      <div className="relative">
         <div
           key={currentTopic.topic_id}
           className={cn(
@@ -949,24 +948,53 @@ export function DailyCardStack({
             currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4"
           )}
         >
-          <CivicCard
-            topic={currentTopic}
-            baseHeight={cardBaseHeight}
-            onExploreGame={handleExploreGame}
-            isCompleted={isTopicCompleted(currentTopic.topic_id)}
-            isLocked={!currentAccessStatus.accessible}
-            isComingSoon={currentAccessStatus.reason === 'coming_soon'}
-            showFloatingKeyboard={false}
-            guestLocked={!user && currentAccessStatus.reason?.startsWith('guest')}
-          />
+          <div className="max-w-3xl mx-auto px-4 py-12 sm:px-6">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">{currentTopic.emoji}</div>
+              <h2 className="text-6xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3">
+                {currentTopic.topic_title}
+              </h2>
+              {/* Topic categories */}
+              {currentTopic.categories && currentTopic.categories.length > 0 && (
+                <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-12">
+                  {currentTopic.categories.map((category) => (
+                    <Badge 
+                      key={category} 
+                      variant="secondary"
+                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    >
+                      {category}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-base sm:text-2xl md:text-3xl lg:text-2xl font-light text-slate-800 dark:text-slate-300 max-w-2xl mx-auto">
+                {currentTopic.description}
+              </p>
+              
+              {/* Status indicators */}
+              <div className="flex items-center justify-center gap-3 mt-6">
+                {isTopicCompleted(currentTopic.topic_id) && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    Completed
+                  </Badge>
+                )}
+                {!currentAccessStatus.accessible && (
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                    {currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon' : 'Premium Content'}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Start Quiz Button - larger and inline */}
-      <div className="flex justify-center mt-10">
+      <div className="flex justify-center mt-8">
         {currentAccessStatus.accessible ? (
           <StartQuizButton
-            label={isTopicCompleted(currentTopic.topic_id) ? 'Review Quiz' : 'Play Quiz'}
+            label={isTopicCompleted(currentTopic.topic_id) ? 'Review Quiz' : 'Start Quiz'}
             onClick={() => handleExploreGame(currentTopic.topic_id)}
           />
         ) : (

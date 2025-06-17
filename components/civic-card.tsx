@@ -248,80 +248,112 @@ export function CivicCard({
       data-topic-id={topic.topic_id}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
           handleClick()
         }
       }}
     >
-      <div className="h-full flex flex-col justify-center text-center space-y-8 px-4">
-        {/* Status indicators - Smaller, cleaner badges */}
-        <div className="flex justify-center">
-          {isCompleted && (
-            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-              <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-              <span className="text-xs font-medium text-green-700 dark:text-green-300">Completed</span>
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden h-full flex flex-col">
+        {/* Card Header */}
+        <div className="p-6 sm:p-8 flex-grow">
+          {/* Topic Categories */}
+          {topic.categories && topic.categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {topic.categories.slice(0, 3).map((category) => (
+                <Badge key={category} variant="secondary" className="text-xs">
+                  {category}
+                </Badge>
+              ))}
+              {topic.categories.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{topic.categories.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Topic Title */}
+          <div className="flex items-start gap-4 mb-4">
+            <div className="text-4xl sm:text-5xl">{topic.emoji}</div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 leading-tight">
+              {topic.topic_title}
+            </h2>
+          </div>
+
+          {/* Topic Description */}
+          <p className="text-slate-600 dark:text-slate-300 mb-6 text-base">
+            {topic.description}
+          </p>
+
+          {/* Completion Status */}
+          {isCompleted && !isComingSoon && (
+            <div className="flex items-center text-green-600 dark:text-green-500 mb-4">
+              <CheckCircle className="h-5 w-5 mr-2" />
+              <span className="text-sm font-medium">You've completed this quiz</span>
+            </div>
+          )}
+
+          {/* Countdown for date-locked content */}
+          {isDateLocked && !isComingSoon && (
+            <div className="mt-auto">
+              <Countdown targetDate={getUnlockDate()} />
+            </div>
+          )}
+
+          {/* Coming Soon Message */}
+          {isComingSoon && (
+            <div className="mt-auto text-center space-y-2">
+              <div className="inline-block px-4 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-full text-sm font-medium">
+                Coming Soon
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                We're working on this quiz. Check back soon!
+              </p>
             </div>
           )}
         </div>
 
-        {/* Emoji */}
-        <div className="text-8xl">{topic.emoji}</div>
+        {/* Card Footer */}
+        <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
+          <div className="flex items-center justify-between">
+            {/* Date Info */}
+            <div className="text-sm text-slate-500 dark:text-slate-400">
+              {new Date(topic.date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </div>
 
-        {/* Main Content */}
-        <div className="space-y-6">
-          <h1 className="text-3xl md:text-4xl font-light text-neutral-900 dark:text-neutral-100 leading-tight">
-            {topic.topic_title}
-          </h1>
-          
-          {/* Categories as badges with Space Mono font */}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {(topic.categories?.slice(0, 2) || ['Civic Education']).map((category, index) => (
-              <Badge 
-                key={index}
-                variant="outline" 
-                className="font-mono font-light text-xs px-3 py-1 rounded-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900"
-                style={{ fontFamily: 'Space Mono, monospace' }}
-              >
-                {category}
-              </Badge>
-            ))}
+            {/* Action Button */}
+            <div>
+              {isLocked ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                  disabled={!guestLocked}
+                >
+                  <Lock className="h-4 w-4 mr-1" />
+                  <span>{guestLocked ? 'Sign Up to Access' : isComingSoon ? 'Coming Soon' : 'Locked'}</span>
+                </Button>
+              ) : (
+                <Button
+                  variant={isCompleted ? "outline" : "default"}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  {isCompleted ? 'Review Quiz' : 'Start Quiz'}
+                </Button>
+              )}
+            </div>
           </div>
-          
-          {/* Description capped at 250 chars */}
-          <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-200 leading-relaxed max-w-4xl mx-auto font-light">
-            {topic.description && topic.description.length > 250
-              ? topic.description.slice(0, 247) + '...'
-              : topic.description}
-          </p>
-          
-          {/* Removed verbose unlock info; tip moved elsewhere */}
-        </div>
-
-        {/* Countdown or Actions - Simplified with cleaner styling */}
-        <div className="space-y-6">
-          {isComingSoon ? (
-            /* Coming Soon message for topics without questions - Simplified */
-            <div className="inline-block px-5 py-3 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
-              <div className="flex items-center space-x-2">
-                <div>🚧</div>
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                  Coming soon
-                </span>
-              </div>
-            </div>
-          ) : guestLocked ? null : isDateLocked ? (
-            /* Clean countdown for date-locked topics */
-            <div className="space-y-3">
-              <div className="inline-block px-5 py-3 rounded-full bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
-                <Countdown targetDate={getUnlockDate()} isComingSoon={isComingSoon} />
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
 
-      {/* Floating Keyboard Command Bar */}
-      {showFloatingKeyboard && <FloatingKeyboardBar isVisible={true} isComingSoon={isComingSoon || false} />}
+      {/* Floating Keyboard Bar */}
+      {showFloatingKeyboard && (
+        <FloatingKeyboardBar isVisible={true} isComingSoon={!!isComingSoon} />
+      )}
     </div>
   )
 }

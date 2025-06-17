@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ip,
       attemptsToday: usage.attempts,
-      limitReached: usage.attempts >= 3, // GUEST_DAILY_QUIZ_LIMIT
+      limitReached: usage.attempts >= 5, // GUEST_DAILY_QUIZ_LIMIT
       completedTopics: usage.completedTopics || [],
       success: true
     })
