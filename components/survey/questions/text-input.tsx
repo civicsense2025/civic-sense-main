@@ -78,21 +78,55 @@ export function TextInput({
   
   if (type === "textarea") {
     return (
-      <div className={cn("space-y-2", className)}>
-        <Textarea
-          id={questionId}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={getPlaceholder()}
-          required={required}
-          maxLength={maxLength}
-          rows={rows}
-          className="w-full text-base p-4 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 resize-none rounded-xl transition-all duration-200 focus:ring-2 focus:ring-blue-500/20"
-        />
+      <div className={cn("space-y-4", className)} data-audio-content="true">
+        <div className="relative">
+          <Textarea
+            id={questionId}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={getPlaceholder()}
+            required={required}
+            maxLength={maxLength}
+            rows={rows}
+            className={cn(
+              "w-full text-base p-6 border-2 resize-none rounded-2xl transition-all duration-300",
+              "bg-white dark:bg-slate-800/50 backdrop-blur-sm",
+              "border-slate-200 dark:border-slate-700",
+              "focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10",
+              "hover:border-slate-300 dark:hover:border-slate-600",
+              "placeholder:text-slate-400 dark:placeholder:text-slate-500",
+              value.length > 0 && "border-blue-300 dark:border-blue-600 shadow-sm shadow-blue-600/10"
+            )}
+          />
+          {value.length > 0 && (
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
+          )}
+        </div>
+        
         {maxLength && (
-          <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
-            <span>Share as much detail as you'd like</span>
-            <span>{value.length}/{maxLength}</span>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">
+              Share as much detail as you'd like
+            </span>
+            <div className="flex items-center space-x-2">
+              <div className={cn(
+                "h-2 w-16 rounded-full overflow-hidden",
+                "bg-slate-200 dark:bg-slate-700"
+              )}>
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((value.length / maxLength) * 100, 100)}%` }}
+                />
+              </div>
+              <span className={cn(
+                "text-sm font-medium",
+                value.length > maxLength * 0.9 ? "text-orange-600 dark:text-orange-400" : "text-slate-500 dark:text-slate-400"
+              )}>
+                {value.length}/{maxLength}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -100,10 +134,13 @@ export function TextInput({
   }
   
   return (
-    <div className={cn("space-y-2", className)}>
-      <div className="relative">
+    <div className={cn("space-y-3", className)} data-audio-content="true">
+      <div className="relative group">
         {hasIcon && (
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+          <div className={cn(
+            "absolute left-4 top-1/2 transform -translate-y-1/2 z-10 transition-colors",
+            value ? "text-blue-500" : "text-slate-400 group-focus-within:text-blue-500"
+          )}>
             {getIcon()}
           </div>
         )}
@@ -116,15 +153,35 @@ export function TextInput({
           required={required}
           maxLength={maxLength}
           className={cn(
-            "w-full text-base p-4 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-blue-500/20",
-            hasIcon && "pl-12"
+            "w-full text-base p-4 border-2 rounded-2xl transition-all duration-300",
+            "bg-white dark:bg-slate-800/50 backdrop-blur-sm",
+            "border-slate-200 dark:border-slate-700",
+            "focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10",
+            "hover:border-slate-300 dark:hover:border-slate-600",
+            "placeholder:text-slate-400 dark:placeholder:text-slate-500",
+            hasIcon && "pl-12",
+            value.length > 0 && "border-blue-300 dark:border-blue-600 shadow-sm shadow-blue-600/10"
           )}
         />
+        {value.length > 0 && (
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in-50 duration-200">
+            <div className="w-3 h-3 bg-white rounded-full"></div>
+          </div>
+        )}
       </div>
       
       {maxLength && (
-        <div className="text-right">
-          <span className="text-sm text-slate-500 dark:text-slate-400">
+        <div className="flex justify-between items-center">
+          <div className="w-20 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min((value.length / maxLength) * 100, 100)}%` }}
+            />
+          </div>
+          <span className={cn(
+            "text-sm font-medium",
+            value.length > maxLength * 0.9 ? "text-orange-600 dark:text-orange-400" : "text-slate-500 dark:text-slate-400"
+          )}>
             {value.length}/{maxLength}
           </span>
         </div>

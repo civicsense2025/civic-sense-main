@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useGlobalAudio } from "@/components/global-audio-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -78,6 +79,11 @@ export function SurveyForm({
   className 
 }: SurveyFormProps) {
   const { toast } = useToast()
+  const { 
+    readContentWithSettings, 
+    autoPlayEnabled,
+    playText 
+  } = useGlobalAudio()
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [responses, setResponses] = useState<Record<string, SurveyResponse>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -116,6 +122,24 @@ export function SurveyForm({
   const visibleQuestions = getVisibleQuestions()
   const currentQuestion = visibleQuestions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100
+
+  // Auto-read questions when they change (if audio is enabled)
+  useEffect(() => {
+    if (currentQuestion && autoPlayEnabled) {
+      const questionText = [
+        currentQuestion.question,
+        currentQuestion.description,
+        ...(currentQuestion.options || [])
+      ].filter(Boolean).join('. ')
+      
+      // Small delay to let the UI update
+      const timer = setTimeout(() => {
+        readContentWithSettings(questionText)
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentQuestionIndex, currentQuestion, autoPlayEnabled, readContentWithSettings])
 
   const updateResponse = (questionId: string, answer: string | string[] | number | Record<string, any>) => {
     const newResponse: SurveyResponse = {
@@ -715,61 +739,90 @@ export function SurveyForm({
   const answeredQuestions = visibleQuestions.filter(q => responses[q.id]).length
 
   return (
-    <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
-      {/* Progress header */}
-      <div className="space-y-4">
+    <div className={cn("max-w-5xl mx-auto space-y-8", className)} data-audio-content="true">
+      {/* Enhanced Progress header */}
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-light text-slate-900 dark:text-white">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight" data-question-content="true">
               {survey.title}
             </h1>
             {survey.description && (
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed" data-question-content="true">
                 {survey.description}
               </p>
             )}
           </div>
-          <div className="text-right">
-            <div className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="text-right space-y-1">
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Question {currentQuestionIndex + 1} of {visibleQuestions.length}
             </div>
             {survey.estimated_time && (
-              <div className="text-xs text-slate-500 dark:text-slate-500">
-                Est. {survey.estimated_time} minutes
+              <div className="text-xs text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
+                Est. {survey.estimated_time} min
               </div>
             )}
           </div>
         </div>
         
-        <div className="space-y-2">
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-500">
-            <span>{answeredQuestions} answered</span>
-            <span>{Math.round(progress)}% complete</span>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Progress
+            </span>
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {Math.round(progress)}%
+            </span>
+          </div>
+          <div className="relative">
+            <Progress value={progress} className="h-3" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse opacity-50 rounded-full"></div>
+          </div>
+          <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+            <span>{answeredQuestions} of {visibleQuestions.length} answered</span>
+            <span>{visibleQuestions.length - answeredQuestions} remaining</span>
           </div>
         </div>
       </div>
 
-      {/* Question card */}
-      <Card className="border border-slate-200 dark:border-slate-800">
-        <CardHeader className="pb-4">
+      {/* Enhanced Question card */}
+      <Card className="border-2 border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-900/5 dark:shadow-black/20 bg-white dark:bg-slate-900/50 backdrop-blur-sm">
+        <CardHeader className="pb-6 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-start justify-between">
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  {currentQuestion.type.replace('_', ' ')}
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center space-x-3">
+                <Badge variant="secondary" className="text-xs font-medium px-3 py-1">
+                  {currentQuestion.type.replace('_', ' ').toUpperCase()}
                 </Badge>
                 {currentQuestion.required && (
-                  <Badge variant="destructive" className="text-xs">
-                    Required
+                  <Badge variant="destructive" className="text-xs font-medium px-3 py-1">
+                    REQUIRED
                   </Badge>
                 )}
+                {/* Audio play button for current question */}
+                <button
+                  onClick={() => {
+                    const questionText = [
+                      currentQuestion.question,
+                      currentQuestion.description,
+                      ...(currentQuestion.options || [])
+                    ].filter(Boolean).join('. ')
+                    playText(questionText, { forcePlay: true })
+                  }}
+                  className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+                  title="Read question aloud"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.025 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.025l4.358-3.824a1 1 0 011-.1z" clipRule="evenodd" />
+                    <path d="M14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.414A3.983 3.983 0 0013 10a3.983 3.983 0 00-1.172-2.829 1 1 0 010-1.414z" />
+                  </svg>
+                </button>
               </div>
-              <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
+              <CardTitle className="text-2xl font-light text-slate-900 dark:text-white leading-relaxed" data-question-content="true">
                 {currentQuestion.question}
               </CardTitle>
               {currentQuestion.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-base text-slate-600 dark:text-slate-400 font-light leading-relaxed" data-question-content="true">
                   {currentQuestion.description}
                 </p>
               )}
@@ -777,51 +830,71 @@ export function SurveyForm({
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
-          {renderQuestion(currentQuestion)}
+        <CardContent className="p-8 space-y-8">
+          <div className="min-h-[300px]">
+            {renderQuestion(currentQuestion)}
+          </div>
           
-          {/* Navigation */}
-          <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex space-x-2">
+          {/* Enhanced Navigation */}
+          <div className="flex items-center justify-between pt-8 border-t-2 border-slate-100 dark:border-slate-800">
+            <div className="flex space-x-3">
               <Button
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={isFirstQuestion}
-                className="flex items-center space-x-2"
+                className={cn(
+                  "flex items-center space-x-2 px-6 py-3 rounded-xl border-2 transition-all duration-200",
+                  isFirstQuestion 
+                    ? "opacity-50 cursor-not-allowed" 
+                    : "hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
+                )}
               >
                 <ChevronLeft className="h-4 w-4" />
-                <span>Previous</span>
+                <span className="font-medium">Previous</span>
               </Button>
               
               {survey.allow_partial_responses && onSaveProgress && (
                 <Button
                   variant="ghost"
                   onClick={handleSaveProgress}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 px-6 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800"
                 >
                   <Save className="h-4 w-4" />
-                  <span>Save Progress</span>
+                  <span className="font-medium">Save Progress</span>
                 </Button>
               )}
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex space-x-3">
               {isLastQuestion ? (
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  className={cn(
+                    "flex items-center space-x-3 px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300",
+                    "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800",
+                    "text-white shadow-lg shadow-green-600/30 hover:shadow-xl hover:shadow-green-600/40",
+                    "hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  )}
                 >
-                  <Send className="h-4 w-4" />
-                  <span>{isSubmitting ? "Submitting..." : "Submit Survey"}</span>
+                  <Send className="h-5 w-5" />
+                  <span>{isSubmitting ? "Submitting..." : "Complete Survey"}</span>
+                  {!isSubmitting && (
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  )}
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
-                  className="flex items-center space-x-2"
+                  className={cn(
+                    "flex items-center space-x-2 px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300",
+                    "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800",
+                    "text-white shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40",
+                    "hover:scale-105"
+                  )}
                 >
-                  <span>Next</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <span>Continue</span>
+                  <ChevronRight className="h-5 w-5" />
                 </Button>
               )}
             </div>
@@ -829,14 +902,21 @@ export function SurveyForm({
         </CardContent>
       </Card>
 
-      {/* Survey info footer */}
-      {survey.allow_anonymous && (
-        <div className="text-center">
-          <p className="text-xs text-slate-500 dark:text-slate-500">
-            This survey is anonymous. Your responses will not be linked to your identity.
-          </p>
+      {/* Enhanced Survey info footer */}
+      <div className="text-center space-y-4 py-6">
+        {survey.allow_anonymous && (
+          <div className="inline-flex items-center space-x-2 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 px-4 py-2 rounded-full border border-green-200 dark:border-green-800">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm font-medium">Anonymous Survey - Your identity is protected</span>
+          </div>
+        )}
+        
+        <div className="flex justify-center space-x-6 text-xs text-slate-500 dark:text-slate-500">
+          <span>Time elapsed: {Math.floor((Date.now() - startTime.getTime()) / 60000)} minutes</span>
+          <span>•</span>
+          <span>Questions remaining: {visibleQuestions.length - currentQuestionIndex - 1}</span>
         </div>
-      )}
+      </div>
     </div>
   )
 } 

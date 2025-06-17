@@ -791,24 +791,27 @@ class GlobalAudioManager {
     })
   }
 
-  // Simplified and safe page content extraction
+  // Enhanced and safe page content extraction for surveys and quizzes
   private extractPageContent(): string {
     if (typeof window === 'undefined') return ''
     
     try {
-      // First try to find quiz-specific content with more targeted selectors
-      const quizContentSelectors = [
-        // Specific quiz content selectors
-        '.QuestionFeedbackDisplay',
+      // First try to find survey and quiz-specific content with more targeted selectors
+      const surveyAndQuizSelectors = [
+        // Survey content selectors
         '[data-audio-content="true"]',
         '[data-question-content="true"]',
+        '.survey-question',
+        '.survey-content',
+        // Quiz content selectors
+        '.QuestionFeedbackDisplay',
         '.quiz-content',
         '.question-text',
         '.question-explanation',
         '.question-feedback'
       ]
       
-      for (const selector of quizContentSelectors) {
+      for (const selector of surveyAndQuizSelectors) {
         const element = document.querySelector(selector)
         if (element) {
           const text = element.textContent || ''
