@@ -22,6 +22,7 @@ const config: Config = {
   		fontFamily: {
   			sans: ["var(--font-sans)", ...fontFamily.sans],
   			mono: ['Monaco', 'Menlo', 'Courier New', 'monospace'],
+  			'space-mono': ['var(--font-space-mono)', 'monospace'],
   		},
   		colors: {
   			border: "hsl(var(--border))",

@@ -1031,9 +1031,14 @@ export function QuizEngine({
 
   // Initialize quiz attempt in database
   const [resumedAttemptId, setResumedAttemptId] = useState<string | null>(null)
+  const attemptCreatedRef = useRef(false)
+  
   useEffect(() => {
+    if (attemptCreatedRef.current) return // Prevent duplicate attempts
+    
     const createAttempt = async () => {
-      if (user && !resumedAttemptId) {
+      if (user && !resumedAttemptId && randomizedQuestions.length > 0) {
+        attemptCreatedRef.current = true
         try {
           const { data: attempt, error } = await supabase
             .from('user_quiz_attempts')
@@ -1049,12 +1054,14 @@ export function QuizEngine({
             
           if (error) {
             console.error('Error creating enhanced quiz attempt:', error)
+            attemptCreatedRef.current = false // Allow retry on error
           } else if (attempt) {
             console.log(`✅ Created enhanced quiz attempt: ${attempt.id}`)
             setResumedAttemptId(attempt.id)
           }
         } catch (err) {
           console.error('Failed to create enhanced quiz attempt:', err)
+          attemptCreatedRef.current = false // Allow retry on error
         }
       }
     }

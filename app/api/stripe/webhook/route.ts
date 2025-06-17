@@ -66,6 +66,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return
   }
 
+  // Early validation to ensure userId is defined for non-donation types
+  if (!userId && productType !== 'donation') {
+    console.error('No user_id in checkout session metadata')
+    return
+  }
+
   if (session.payment_status === 'paid') {
     // Handle donation with premium access
     if (productType === 'donation' && accessTier) {
@@ -74,6 +80,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
     
     if (productType === 'premium_lifetime') {
+      // Type guard to ensure userId is string
+      if (!userId) {
+        console.error('No user_id in checkout session metadata for premium_lifetime')
+        return
+      }
+      
       // Create lifetime premium subscription record
       const subscriptionData = {
         user_id: userId,
@@ -101,6 +113,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         console.log(`Premium lifetime access granted to user ${userId}`)
       }
     } else if (productType === 'premium_lifetime_upgrade') {
+      // Type guard to ensure userId is string
+      if (!userId) {
+        console.error('No user_id in checkout session metadata for premium_lifetime_upgrade')
+        return
+      }
+      
       // Handle upgrade from existing subscription to lifetime
       const originalSubscriptionId = session.metadata?.original_subscription_id
       

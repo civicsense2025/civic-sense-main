@@ -192,21 +192,34 @@ export function TopicInfo({
 
   // Load questions when the sources tab is selected
   useEffect(() => {
+    let isCancelled = false
+
     const loadQuestions = async () => {
       if (activeTab === "sources-citations" && questions.length === 0 && !isLoadingSources) {
         setIsLoadingSources(true)
         try {
           const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
-          setQuestions(questionsData)
+          
+          if (!isCancelled) {
+            setQuestions(questionsData)
+          }
         } catch (error) {
-          console.error("Error loading questions for sources:", error)
+          if (!isCancelled) {
+            console.error("Error loading questions for sources:", error)
+          }
         } finally {
-          setIsLoadingSources(false)
+          if (!isCancelled) {
+            setIsLoadingSources(false)
+          }
         }
       }
     }
     
     loadQuestions()
+
+    return () => {
+      isCancelled = true
+    }
   }, [activeTab, questions.length, topicData.topic_id, isLoadingSources])
 
   // Extract all unique sources from questions

@@ -180,11 +180,16 @@ export function useGuestAccess() {
     }
   }, [guestState.guestToken, serverAvailable])
   
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true)
+    return () => {
+      setIsMounted(false)
+    }
+  }, [])
+
   // Initialize state from localStorage and server on mount
   useEffect(() => {
-    // Set mounted state
-    setIsMounted(true)
-    
     const loadGuestState = async () => {
       try {
         // Skip if we're not in a browser environment
@@ -294,11 +299,6 @@ export function useGuestAccess() {
     // Only run client-side code after component has mounted
     if (isMounted) {
       loadGuestState()
-    }
-    
-    // Clean up function to handle unmounting
-    return () => {
-      setIsMounted(false)
     }
   }, [isMounted, fetchUserIP, checkServerUsage])
   

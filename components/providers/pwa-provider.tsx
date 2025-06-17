@@ -17,7 +17,13 @@ export function PWAProvider({ children }: PWAProviderProps) {
   const [shouldLoadPWA, setShouldLoadPWA] = useState(false)
 
   useEffect(() => {
-    // Only load PWA components after the page is fully interactive
+    // Completely disable PWA in development to prevent caching issues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PWA: Disabled in development mode to prevent caching issues')
+      return
+    }
+
+    // Only load PWA components in production after the page is fully interactive
     const enablePWA = () => {
       // Wait for page to be fully loaded and then some
       setTimeout(() => {
@@ -40,8 +46,8 @@ export function PWAProvider({ children }: PWAProviderProps) {
       {/* Children are rendered immediately without any PWA interference */}
       {children}
       
-      {/* Only load PWA components after page is fully loaded */}
-      {shouldLoadPWA && (
+      {/* Only load PWA components in production after page is fully loaded */}
+      {shouldLoadPWA && process.env.NODE_ENV === 'production' && (
         <>
           <Suspense fallback={<EmptyFallback />}>
             <PWARegister />

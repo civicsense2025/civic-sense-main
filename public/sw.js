@@ -1,3 +1,43 @@
+// Check if we're in development mode and exit early
+if (typeof importScripts === 'function') {
+  // This runs in service worker context
+  // For development, we want to avoid caching completely
+  const isDevelopment = self.location.hostname === 'localhost' || 
+                       self.location.hostname === '127.0.0.1' ||
+                       self.location.port === '3000' ||
+                       self.location.search.includes('dev=true')
+  
+  if (isDevelopment) {
+    console.log('Service Worker: Development mode detected, disabling cache')
+    
+    // Clear all existing caches
+    self.addEventListener('activate', (event) => {
+      event.waitUntil(
+        caches.keys().then((cacheNames) => {
+          console.log('Service Worker: Clearing all caches in development mode')
+          return Promise.all(
+            cacheNames.map((cacheName) => {
+              console.log('Service Worker: Deleting cache:', cacheName)
+              return caches.delete(cacheName)
+            })
+          )
+        }).then(() => {
+          return self.clients.claim()
+        })
+      )
+    })
+    
+    // Pass through all requests without caching
+    self.addEventListener('fetch', (event) => {
+      // Just pass through to network without any caching
+      event.respondWith(fetch(event.request))
+    })
+    
+    // Exit early to prevent the rest of the service worker from running
+    return
+  }
+}
+
 const CACHE_NAME = 'civicsense-v1'
 const STATIC_CACHE_NAME = 'civicsense-static-v1'
 const DYNAMIC_CACHE_NAME = 'civicsense-dynamic-v1'
@@ -108,28 +148,33 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Handle page requests with stale-while-revalidate strategy
+  // Handle page requests with network-first strategy for better PWA performance
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        // Update cache in background
-        if (networkResponse.status === 200) {
-          const responseClone = networkResponse.clone()
-          caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone)
-          })
+    fetch(request).then((networkResponse) => {
+      // Update cache in background for successful responses
+      if (networkResponse.status === 200) {
+        const responseClone = networkResponse.clone()
+        caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+          cache.put(request, responseClone)
+        }).catch((error) => {
+          console.warn('Failed to cache response:', error)
+        })
+      }
+      return networkResponse
+    }).catch(() => {
+      // Fallback to cache only if network fails
+      return caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse
         }
-        return networkResponse
-      }).catch(() => {
-        // Return offline page if available
-        if (request.destination === 'document' && !cachedResponse) {
-          return caches.match('/offline.html')
+        // Return offline page if available for document requests
+        if (request.destination === 'document') {
+          return caches.match('/offline.html').then((offlinePage) => {
+            return offlinePage || new Response('Offline', { status: 503 })
+          })
         }
         throw new Error('Network failed and no cache available')
       })
-
-      // Return cached version immediately if available, otherwise wait for network
-      return cachedResponse || fetchPromise
     })
   )
 })

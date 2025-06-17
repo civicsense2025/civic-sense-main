@@ -41,20 +41,7 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       {/* Remove the duplicate DialogOverlay - it's already included in DialogContent */}
-      <DialogContent
-        className="w-[95vw] max-w-md max-h-[90vh] p-0 gap-0
-                   border border-slate-200 dark:border-slate-800 shadow-2xl
-                   bg-white dark:bg-slate-950 overflow-hidden rounded-xl
-                   focus:outline-none"
-        style={{
-          // Force proper centering with inline styles
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 50,
-        }}
-      >
+      <DialogContent className="sm:max-w-md">
         {/* Visually hidden DialogTitle for accessibility */}
         <span className="sr-only">
           <DialogTitle>
@@ -62,19 +49,19 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
              activeTab === "reset-password" ? "Reset Your Password" : "Join CivicSense"}
           </DialogTitle>
         </span>
-        <div className="px-8 py-12">
+        <div className="space-y-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 tracking-tight mb-3">
+          <div className="text-center space-y-3">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
               {activeTab === "donate" ? "Support CivicSense" : 
-               activeTab === "reset-password" ? "Reset Your Password" : "Join CivicSense"}
+               activeTab === "reset-password" ? "Reset Your Password" : "Keep power in check"}
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               {activeTab === "donate"
-                ? "Your support helps us provide quality civic education for all."
+                ? "Support the civic education politicians don't want you to have."
                 : activeTab === "reset-password"
-                ? "Enter your email and we'll send you a link to reset your password."
-                : "Start your civic education journey with unlimited access to quizzes and progress tracking."}
+                ? "Enter your email and we'll send you a reset link."
+                : "Track your civic knowledge. Hold democracy accountable."}
             </p>
           </div>
 

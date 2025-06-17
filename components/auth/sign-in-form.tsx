@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Lock, Mail } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { GoogleOAuthButton } from "./google-oauth-button"
 
@@ -18,8 +19,11 @@ interface SignInFormProps {
 export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showEmailTooltip, setShowEmailTooltip] = useState(false)
+  const [showPasswordTooltip, setShowPasswordTooltip] = useState(false)
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +60,11 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
     onSuccess()
   }
 
+  const handleRememberMeChange = (checked: boolean | string) => {
+    // Ensure we always get a boolean value
+    setRememberMe(checked === true)
+  }
+
   return (
     <div className="space-y-6">
       {error && (
@@ -65,8 +74,23 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
         </Alert>
       )}
 
+      <GoogleOAuthButton 
+        onSuccess={handleGoogleSuccess}
+        onError={setError}
+        variant="sign-in"
+      />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white dark:bg-slate-950 px-2 text-slate-500 dark:text-slate-400">Or continue with email</span>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
@@ -75,13 +99,23 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={() => setShowEmailTooltip(true)}
+            onBlur={() => setShowEmailTooltip(false)}
             required
             className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
             placeholder="you@example.com"
           />
+          {showEmailTooltip && (
+            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
+              <p className="text-xs font-space-mono font-light">
+                📧 Pro tip: That email you actually check. We're not sending spam, just the good stuff.
+              </p>
+              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+            </div>
+          )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Password
@@ -100,9 +134,34 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={() => setShowPasswordTooltip(true)}
+            onBlur={() => setShowPasswordTooltip(false)}
             required
             className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
           />
+          {showPasswordTooltip && (
+            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
+              <p className="text-xs font-space-mono font-light">
+                🔐 Welcome back! Hope you remembered that password you swore you'd never forget.
+              </p>
+              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-3 py-2">
+          <Checkbox
+            id="remember-me"
+            checked={rememberMe}
+            onCheckedChange={handleRememberMeChange}
+            className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 dark:data-[state=checked]:bg-white dark:data-[state=checked]:border-white"
+          />
+          <Label 
+            htmlFor="remember-me" 
+            className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+          >
+            Keep me signed in
+          </Label>
         </div>
 
         <Button
@@ -114,21 +173,6 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
           {isLoading ? "Signing in..." : "Sign in with email"}
         </Button>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white dark:bg-slate-950 px-2 text-slate-500 dark:text-slate-400">Or continue with</span>
-        </div>
-      </div>
-
-      <GoogleOAuthButton 
-        onSuccess={handleGoogleSuccess}
-        onError={setError}
-        variant="sign-in"
-      />
     </div>
   )
 }

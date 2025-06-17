@@ -100,9 +100,8 @@ export function QuizProgressDemo() {
         </p>
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
           <QuizXPIndicator
-            current={2}
-            limit={3}
-            xpGained={150}
+            currentXP={200}
+            nextLevelXP={500}
           />
         </div>
       </div>
@@ -115,14 +114,10 @@ export function QuizProgressDemo() {
         </p>
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg space-y-3">
           <QuizAchievementIndicator
-            current={2}
-            limit={3}
-            achievements={["Quick Learner", "Streak Master"]}
+            achievements={2}
           />
           <QuizAchievementIndicator
-            current={3}
-            limit={3}
-            achievements={["Daily Goal Complete!", "Perfect Score"]}
+            achievements={4}
           />
         </div>
       </div>

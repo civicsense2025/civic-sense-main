@@ -96,8 +96,17 @@ export function GameModal({ isOpen, onClose, topicId, onGameComplete }: GameModa
             </div>
           ) : !showQuiz ? (
             <TopicInfo topicData={topicData} onStartQuiz={handleStartQuiz} />
-          ) : questions.length > 0 ? (
-            <QuizEngine questions={questions} topicId={topicId} onComplete={handleQuizComplete} />
+          ) : questions.length > 0 && topicData ? (
+            <QuizEngine 
+              questions={questions} 
+              topicId={topicId} 
+              currentTopic={{
+                id: topicId,
+                title: topicData.topic_title,
+                ...topicData
+              }} 
+              onComplete={handleQuizComplete} 
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-center text-slate-600 dark:text-slate-400">No questions available for this topic.</p>

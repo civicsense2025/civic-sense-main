@@ -145,7 +145,7 @@ export const enhancedQuizDatabase = {
       existingAttempt = data;
     }
 
-    let attempt;
+    let attempt: any;
     if (existingAttempt) {
       // Update existing
       const { data, error } = await supabase

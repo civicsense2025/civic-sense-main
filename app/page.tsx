@@ -27,33 +27,81 @@ export default function HomePage() {
   const router = useRouter()
   const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([])
   const [incompleteTopics, setIncompleteTopics] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
+  const [hasLoadedTopics, setHasLoadedTopics] = useState(false)
 
+  // Set mounted state
   useEffect(() => {
-    const loadTopics = async () => {
-      try {
-        const allTopics = await dataService.getAllTopics()
-        setTopicsList(Object.values(allTopics))
-      } catch (error) {
-        console.error('Failed to load topics:', error)
-      }
-    }
-    loadTopics()
+    setIsMounted(true)
+    return () => setIsMounted(false)
   }, [])
 
   useEffect(() => {
-    const fetchIncompleteAttempts = async () => {
-      if (!user) return
-      const attempts = await enhancedQuizDatabase.getUserQuizAttempts(user.id)
-      const incomplete = attempts.filter(a => a.isPartial)
-      setIncompleteAttempts(incomplete)
-      // Fetch topic metadata for each incomplete attempt
-      const topics = await Promise.all(
-        incomplete.map(a => dataService.getTopicById(a.topicId))
-      )
-      setIncompleteTopics(topics)
+    let isCancelled = false
+
+    const loadTopics = async () => {
+      if (!isMounted || hasLoadedTopics) return
+      
+      try {
+        setIsLoading(true)
+        const allTopics = await dataService.getAllTopics()
+        if (!isCancelled) {
+          setTopicsList(Object.values(allTopics))
+          setHasLoadedTopics(true)
+        }
+      } catch (error) {
+        console.error('Failed to load topics:', error)
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false)
+        }
+      }
     }
-    fetchIncompleteAttempts()
-  }, [user])
+
+    if (isMounted) {
+      loadTopics()
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isMounted, hasLoadedTopics])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const fetchIncompleteAttempts = async () => {
+      if (!user || !isMounted) return
+      
+      try {
+        const attempts = await enhancedQuizDatabase.getUserQuizAttempts(user.id)
+        if (isCancelled) return
+        
+        const incomplete = attempts.filter(a => a.isPartial)
+        setIncompleteAttempts(incomplete)
+        
+        // Fetch topic metadata for each incomplete attempt
+        const topics = await Promise.all(
+          incomplete.map(a => dataService.getTopicById(a.topicId))
+        )
+        
+        if (!isCancelled) {
+          setIncompleteTopics(topics)
+        }
+      } catch (error) {
+        console.error('Failed to fetch incomplete attempts:', error)
+      }
+    }
+
+    if (isMounted) {
+      fetchIncompleteAttempts()
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [user, isMounted])
 
   const handleAuthSuccess = () => {
     setIsAuthDialogOpen(false)
@@ -63,37 +111,30 @@ export default function HomePage() {
     setSelectedDate(date)
   }
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
-      
-      {/* Civics Test CTA Banner */}
-      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-100 dark:border-blue-800/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-center sm:text-left">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">
-                Test Your Civic Knowledge
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 font-light">
-                Take our comprehensive civics assessment and discover your knowledge level
-              </p>
-            </div>
-            <Link
-              href="/civics-test"
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 py-3 rounded-full font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
-            >
-              Take Test
-              <span className="text-sm opacity-75">• Free • 10 min</span>
-            </Link>
-          </div>
+  // Don't render until mounted to prevent hydration issues
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
+    
       
       <main className="w-full py-8">
         {/* Main content - use full available width with responsive constraints */}
         <div className="w-full px-4 sm:px-8 py-1 sm:py-2">
-          {viewMode === 'cards' ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : viewMode === 'cards' ? (
             <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
               <DailyCardStack 
                 selectedCategory={selectedCategory}

@@ -112,19 +112,33 @@ const useTopicAccess = () => {
   const { hasReachedDailyLimit, GUEST_DAILY_QUIZ_LIMIT } = useGuestAccess()
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set())
   const [topicsWithoutQuestions, setTopicsWithoutQuestions] = useState<Set<string>>(new Set())
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Load completed topics from localStorage
   useEffect(() => {
-    const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
-    if (savedCompleted) {
-      setCompletedTopics(new Set(JSON.parse(savedCompleted)))
+    if (typeof window !== 'undefined' && !isInitialized) {
+      const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+      if (savedCompleted) {
+        try {
+          setCompletedTopics(new Set(JSON.parse(savedCompleted)))
+        } catch (error) {
+          console.warn('Failed to parse completed topics from localStorage:', error)
+        }
+      }
+      setIsInitialized(true)
     }
-  }, [])
+  }, [isInitialized])
 
   // Save completed topics to localStorage
   useEffect(() => {
-    localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(Array.from(completedTopics)))
-  }, [completedTopics])
+    if (typeof window !== 'undefined' && isInitialized && completedTopics.size > 0) {
+      try {
+        localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(Array.from(completedTopics)))
+      } catch (error) {
+        console.warn('Failed to save completed topics to localStorage:', error)
+      }
+    }
+  }, [completedTopics, isInitialized])
 
   const getTopicAccessStatus = useCallback((topic: TopicMetadata) => {
     const currentDate = getTodayAtMidnight()
@@ -411,9 +425,18 @@ export function DailyCardStack({
   const [visibleTopicsCount, setVisibleTopicsCount] = useState(20)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownSearch, setDropdownSearch] = useState("")
+  const [debouncedDropdownSearch, setDebouncedDropdownSearch] = useState("")
   const supabaseClientRef = useRef<any>(null)
   const [trendingQueries, setTrendingQueries] = useState<string[]>([])
   const prevIndexRef = useRef(0)
+
+  // Debounce dropdown search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedDropdownSearch(dropdownSearch)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [dropdownSearch])
 
   // Move all useMemo hooks here BEFORE useCallback hooks
   const organizedTopics = useMemo(() => {
@@ -555,28 +578,41 @@ export function DailyCardStack({
 
   // Enhance loadInitialTopics to load more data
   useEffect(() => {
+    let isCancelled = false
+
     const loadInitialTopics = async () => {
       try {
         setIsLoadingTopics(true)
         // Fetch all topics instead of limiting to a date range to ensure we include
         // the full catalog (400+ topics). We'll filter and categorize them later.
         const topicsData = await dataService.getAllTopics()
+        
+        if (isCancelled) return
+        
         const topicsArray = Object.values(topicsData)
         setTopicsList(topicsArray)
         
-        if (process.env.NODE_ENV !== 'development') {
+        if (process.env.NODE_ENV !== 'development' && !isCancelled) {
           await checkTopicsForQuestions(topicsArray)
         }
       } catch (error) {
-        console.error('Error loading initial topics:', error)
-        setTopicsList([])
+        if (!isCancelled) {
+          console.error('Error loading initial topics:', error)
+          setTopicsList([])
+        }
       } finally {
-        setIsLoadingTopics(false)
+        if (!isCancelled) {
+          setIsLoadingTopics(false)
+        }
       }
     }
 
     loadInitialTopics()
-  }, [checkTopicsForQuestions])
+
+    return () => {
+      isCancelled = true
+    }
+  }, []) // Remove checkTopicsForQuestions dependency to prevent infinite loops
 
   useEffect(() => {
     const topicParam = searchParams.get('topic')
@@ -594,12 +630,16 @@ export function DailyCardStack({
       if (currentTopic) {
         const readableContent = `${currentTopic.topic_title}. ${currentTopic.description || ''}`
         const timer = setTimeout(async () => {
-          await readContentWithSettings(readableContent)
+          try {
+            await readContentWithSettings(readableContent)
+          } catch (error) {
+            console.warn('Auto-play failed:', error)
+          }
         }, 300)
         return () => clearTimeout(timer)
       }
     }
-  }, [currentStackIndex, allFilteredTopics, autoPlayEnabled, readContentWithSettings])
+  }, [currentStackIndex, allFilteredTopics.length, autoPlayEnabled]) // Remove readContentWithSettings dependency
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -627,13 +667,13 @@ export function DailyCardStack({
       }
     }
     
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentStackIndex, allFilteredTopics, getTopicAccessStatus, handlePrevious, handleNext, handleExploreGame])
+  }, [currentStackIndex, allFilteredTopics.length]) // Minimize dependencies
 
   // Add scroll handler for dropdown
   const handleDropdownScroll = useCallback(() => {
-    if (dropdownSearch) return // no progressive loading while searching
+    if (debouncedDropdownSearch) return // no progressive loading while searching
     if (!dropdownRef.current) return
     
     const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current
@@ -643,7 +683,7 @@ export function DailyCardStack({
     if (scrollPosition > scrollHeight * 0.8 && visibleTopicsCount < allFilteredTopics.length) {
       setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
     }
-  }, [visibleTopicsCount, allFilteredTopics.length])
+  }, [debouncedDropdownSearch, visibleTopicsCount, allFilteredTopics.length])
 
   // Reset visible topics & search when dropdown opens and scroll to current item
   useEffect(() => {
@@ -666,8 +706,10 @@ export function DailyCardStack({
 
   // Fetch trending queries when dropdown opens
   useEffect(() => {
+    let isCancelled = false
+
     const fetchTrending = async () => {
-      if (!dropdownOpen || !supabaseClientRef.current) return
+      if (!dropdownOpen || !supabaseClientRef.current || trendingQueries.length > 0) return
       try {
         const { data, error } = await supabaseClientRef.current
           .from("trending_searches")
@@ -675,13 +717,24 @@ export function DailyCardStack({
           .order("count", { ascending: false })
           .limit(5)
         if (error) throw error
-        setTrendingQueries((data || []).map((d: any) => d.query))
+        if (!isCancelled) {
+          setTrendingQueries((data || []).map((d: any) => d.query))
+        }
       } catch (err) {
-        console.warn("Failed to load trending searches", err)
+        if (!isCancelled) {
+          console.warn("Failed to load trending searches", err)
+        }
       }
     }
-    fetchTrending()
-  }, [dropdownOpen])
+    
+    if (dropdownOpen) {
+      fetchTrending()
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [dropdownOpen, trendingQueries.length])
 
   // Helper to record the search query (fire and forget)
   const recordSearchQuery = useCallback(async (query: string) => {
@@ -859,10 +912,10 @@ export function DailyCardStack({
                   {/* Filter topics by search */}
                   {(() => {
                     const filtered = allFilteredTopics.filter(t =>
-                      t.topic_title.toLowerCase().includes(dropdownSearch.toLowerCase()) ||
-                      (t.description?.toLowerCase() || "").includes(dropdownSearch.toLowerCase())
+                      t.topic_title.toLowerCase().includes(debouncedDropdownSearch.toLowerCase()) ||
+                      (t.description?.toLowerCase() || "").includes(debouncedDropdownSearch.toLowerCase())
                     )
-                    const topicsToRender = dropdownSearch ? filtered : filtered.slice(0, visibleTopicsCount)
+                    const topicsToRender = debouncedDropdownSearch ? filtered : filtered.slice(0, visibleTopicsCount)
                     return topicsToRender.map((topic, idx) => {
                       const indexInAll = allFilteredTopics.findIndex(tt => tt.topic_id === topic.topic_id)
                       const accessStatus = getTopicAccessStatus(topic)
@@ -907,7 +960,7 @@ export function DailyCardStack({
                       )
                     })
                   })()}
-                  {!dropdownSearch && visibleTopicsCount < allFilteredTopics.length && (
+                  {!debouncedDropdownSearch && visibleTopicsCount < allFilteredTopics.length && (
                     <div className="text-center py-2 text-xs text-slate-500">
                       Scroll to load more topics ({visibleTopicsCount} of {allFilteredTopics.length})...
                     </div>

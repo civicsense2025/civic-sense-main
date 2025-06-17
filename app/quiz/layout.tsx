@@ -59,9 +59,7 @@ export default function QuizLayout({
             
             {/* Minimal user menu */}
             <UserMenu 
-              onSignInClick={() => setIsAuthDialogOpen(true)} 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              onSignInClick={() => setIsAuthDialogOpen(true)}
             />
           </div>
         </div>

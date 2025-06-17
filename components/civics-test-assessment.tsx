@@ -4,9 +4,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Check, X, ArrowRight, Loader2, Flame } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Check, X, ArrowRight, Loader2, Flame, RotateCcw, Clock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface AssessmentQuestion {
   id: string
@@ -23,9 +24,22 @@ interface AssessmentQuestion {
 interface CivicsTestAssessmentProps {
   onComplete: (data: any) => void
   onBack: () => void
-  testType: 'quick' | 'full'
+  testType?: 'quick' | 'full'
   userId?: string
   guestToken?: string
+}
+
+interface TestState {
+  sessionId: string
+  testType: 'quick' | 'full'
+  questions: AssessmentQuestion[]
+  currentQuestionIndex: number
+  answers: { [questionId: string]: string }
+  streak: number
+  maxStreak: number
+  startTime: number
+  responseTimes: { [questionId: string]: number }
+  categoryPerformance: Record<string, { correct: number; total: number }>
 }
 
 // Enhanced WordReveal with natural typing animation
@@ -104,42 +118,188 @@ function WordReveal({ text, speed = 100, className, onComplete }: { text: string
   )
 }
 
-export function CivicsTestAssessment({ onComplete, onBack, testType, userId, guestToken }: CivicsTestAssessmentProps) {
-  const [questions, setQuestions] = useState<AssessmentQuestion[]>([])
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<{ [questionId: string]: string }>({})
+// Animated Streak Display
+function StreakDisplay({ streak, isVisible }: { streak: number, isVisible: boolean }) {
+  return (
+    <AnimatePresence>
+      {isVisible && streak > 0 && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ 
+            type: "spring",
+            stiffness: 500,
+            damping: 30
+          }}
+          style={{ position: 'fixed', top: '5rem', right: '1.5rem', zIndex: 50 }}
+        >
+          <motion.div
+            animate={{ 
+              scale: [1, 1.1, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{ 
+              duration: 0.6,
+              repeat: streak > 2 ? Infinity : 0,
+              repeatType: "reverse"
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              borderRadius: '9999px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              border: '2px solid',
+              background: streak >= 5 
+                ? 'linear-gradient(to right, #f97316, #ef4444)' 
+                : streak >= 3 
+                ? 'linear-gradient(to right, #facc15, #f97316)'
+                : 'linear-gradient(to right, #4ade80, #3b82f6)',
+              borderColor: streak >= 5 
+                ? '#fed7aa' 
+                : streak >= 3 
+                ? '#fde047'
+                : '#86efac',
+              color: 'white'
+            }}
+          >
+            <motion.div
+              animate={{ 
+                rotate: 360,
+                scale: [1, 1.2, 1]
+              }}
+              transition={{ 
+                rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+                scale: { duration: 0.5, repeat: Infinity, repeatType: "reverse" }
+              }}
+            >
+              <Flame className="w-5 h-5" />
+            </motion.div>
+            <span className="font-bold text-lg">{streak}</span>
+            <span className="text-sm font-medium">streak!</span>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// Test Type Selection Screen
+function TestTypeSelection({ onSelect, onBack }: { onSelect: (type: 'quick' | 'full') => void, onBack: () => void }) {
+  return (
+    <div className="max-w-2xl mx-auto space-y-12">
+      <div className="text-center space-y-6">
+        <h2 className="text-3xl font-light text-slate-900 dark:text-white">
+          Choose Your Assessment
+        </h2>
+        <p className="text-lg text-slate-600 dark:text-slate-400 font-light">
+          How much time do you have to test your civic knowledge?
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-blue-200 dark:hover:border-blue-800">
+          <CardContent className="p-8 text-center space-y-6" onClick={() => onSelect('quick')}>
+            <div className="text-4xl">⚡</div>
+            <div className="space-y-3">
+              <h3 className="text-xl font-medium text-slate-900 dark:text-white">Quick Assessment</h3>
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">5-8 minutes</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">8-10 focused questions</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Core civic knowledge</p>
+              </div>
+            </div>
+            <Button className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-full">
+              Start Quick Test
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-purple-200 dark:hover:border-purple-800">
+          <CardContent className="p-8 text-center space-y-6" onClick={() => onSelect('full')}>
+            <div className="text-4xl">🎯</div>
+            <div className="space-y-3">
+              <h3 className="text-xl font-medium text-slate-900 dark:text-white">Full Assessment</h3>
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">12-15 minutes</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">20-25 comprehensive questions</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Deep knowledge analysis</p>
+              </div>
+            </div>
+            <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full">
+              Start Full Assessment
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="text-center">
+        <Button variant="ghost" onClick={onBack} className="text-slate-500 dark:text-slate-500">
+          ← Back to overview
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function CivicsTestAssessment({ onComplete, onBack, testType: initialTestType, userId, guestToken }: CivicsTestAssessmentProps) {
+  const [testState, setTestState] = useState<TestState | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [assessmentComplete, setAssessmentComplete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [streak, setStreak] = useState(0)
-  const [maxStreak, setMaxStreak] = useState(0)
-  const [categoryPerformance, setCategoryPerformance] = useState<Record<string, { correct: number; total: number }>>({})
-  const [startTime, setStartTime] = useState<number>(Date.now())
-  const responseTimes = useRef<{ [questionId: string]: number }>({})
+  const [showStreakAnimation, setShowStreakAnimation] = useState(false)
+  const [hasRestoredState, setHasRestoredState] = useState(false)
+  const [showTestTypeSelection, setShowTestTypeSelection] = useState(!initialTestType)
+  const [selectedTestType, setSelectedTestType] = useState<'quick' | 'full'>(initialTestType || 'full')
+  
   const autoAdvanceTimeout = useRef<NodeJS.Timeout | null>(null)
+  const streakTimeout = useRef<NodeJS.Timeout | null>(null)
+  const questionStartTime = useRef<number>(Date.now())
   const [canAdvance, setCanAdvance] = useState(false)
 
-  // Get dynamic headings based on test type and question count
-  const getAssessmentTitle = () => {
-    if (testType === 'full') {
-      return "The Civic Knowledge Test That Actually Matters"
-    } else {
-      return "Quick Civic Knowledge Check"
+  // Generate session ID for state persistence
+  const sessionId = useRef<string>(`civics-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+
+  // Save test state to localStorage
+  const saveTestState = (state: TestState) => {
+    try {
+      localStorage.setItem('civics-test-state', JSON.stringify(state))
+    } catch (error) {
+      console.warn('Could not save test state:', error)
     }
   }
 
-  const getAssessmentDescription = () => {
-    if (testType === 'full') {
-      return "We're about to test whether you understand how power actually works in America today. No memorized facts—just real-world knowledge."
-    } else {
-      return "A quick assessment of your civic knowledge. We'll focus on the most important questions about how democracy functions."
+  // Load test state from localStorage
+  const loadTestState = (): TestState | null => {
+    try {
+      const saved = localStorage.getItem('civics-test-state')
+      if (saved) {
+        const state = JSON.parse(saved)
+        // Only restore if the session is less than 2 hours old
+        if (Date.now() - state.startTime < 2 * 60 * 60 * 1000) {
+          return state
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load test state:', error)
+    }
+    return null
+  }
+
+  // Clear saved state
+  const clearSavedState = () => {
+    try {
+      localStorage.removeItem('civics-test-state')
+    } catch (error) {
+      console.warn('Could not clear test state:', error)
     }
   }
 
   // Normalize API question
   function normalizeQuestion(q: any): AssessmentQuestion {
-    // Options may be array of strings or array of objects
     let options: Array<{ id: string; text: string }> = []
     if (Array.isArray(q.options)) {
       if (typeof q.options[0] === 'string') {
@@ -162,45 +322,138 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
   }
 
   // Fetch questions based on test type
+  const fetchQuestions = async (testType: 'quick' | 'full') => {
+    setLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams()
+      params.set('balanced', 'true')
+      const count = testType === 'quick' ? 10 : 25 // Increased from 8/20 to 10/25
+      params.set('count', String(count))
+      
+      const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
+      const result = await res.json()
+      
+      if (result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
+        return result.questions.map(normalizeQuestion)
+      } else {
+        throw new Error('No questions returned')
+      }
+    } catch (err) {
+      setError('Failed to load assessment questions')
+      console.error('Error fetching questions:', err)
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initialize or restore test state
   useEffect(() => {
-    const fetchQuestions = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const params = new URLSearchParams()
-        params.set('balanced', 'true')
-        const count = testType === 'quick' ? 8 : 20 // 8 for quick, 20 for full
-        params.set('count', String(count))
+    const initializeTest = async () => {
+      // First, try to restore saved state
+      const savedState = loadTestState()
+      if (savedState && !hasRestoredState) {
+        setTestState(savedState)
+        setSelectedTestType(savedState.testType)
+        setShowTestTypeSelection(false)
+        setHasRestoredState(true)
+        setLoading(false)
         
-        const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
-        const result = await res.json()
+        // Track test resumption
+        fetch('/api/civics-test/analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'resumed',
+            session_id: savedState.sessionId,
+            user_id: userId || null,
+            guest_token: !userId ? guestToken : null,
+            metadata: { 
+              test_type: savedState.testType,
+              question_index: savedState.currentQuestionIndex
+            }
+          })
+        }).catch(console.error)
         
-        if (result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
-          setQuestions(result.questions.map(normalizeQuestion))
-        } else {
-          throw new Error('No questions returned')
+        return
+      }
+
+      // If no saved state and test type is selected, fetch questions
+      if (!showTestTypeSelection) {
+        const questions = await fetchQuestions(selectedTestType)
+        if (questions.length > 0) {
+          const newState: TestState = {
+            sessionId: sessionId.current,
+            testType: selectedTestType,
+            questions,
+            currentQuestionIndex: 0,
+            answers: {},
+            streak: 0,
+            maxStreak: 0,
+            startTime: Date.now(),
+            responseTimes: {},
+            categoryPerformance: {}
+          }
+          setTestState(newState)
+          saveTestState(newState)
+          
+          // Track test start
+          fetch('/api/civics-test/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'started',
+              session_id: sessionId.current,
+              user_id: userId || null,
+              guest_token: !userId ? guestToken : null,
+              metadata: { test_type: selectedTestType }
+            })
+          }).catch(console.error)
         }
-      } catch (err) {
-        setError('Failed to load assessment questions')
-        console.error('Error fetching questions:', err)
-      } finally {
+      } else {
         setLoading(false)
       }
     }
-    fetchQuestions()
-  }, [testType])
+
+    initializeTest()
+  }, [selectedTestType, showTestTypeSelection, hasRestoredState, userId, guestToken])
+
+  // Handle test type selection
+  const handleTestTypeSelection = (type: 'quick' | 'full') => {
+    setSelectedTestType(type)
+    setShowTestTypeSelection(false)
+  }
 
   // Track response time
   useEffect(() => {
-    setStartTime(Date.now())
-  }, [currentQuestionIndex])
+    questionStartTime.current = Date.now()
+  }, [testState?.currentQuestionIndex])
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0
+  const currentQuestion = testState?.questions[testState.currentQuestionIndex]
+  const progress = testState?.questions.length ? ((testState.currentQuestionIndex + 1) / testState.questions.length) * 100 : 0
+
+  // Show streak animation and hide after delay
+  const triggerStreakAnimation = (newStreak: number) => {
+    if (newStreak > 0) {
+      setShowStreakAnimation(true)
+      
+      // Clear existing timeout
+      if (streakTimeout.current) {
+        clearTimeout(streakTimeout.current)
+      }
+      
+      // Hide streak after 3 seconds, or 5 seconds if it's a big streak
+      const delay = newStreak >= 5 ? 5000 : 3000
+      streakTimeout.current = setTimeout(() => {
+        setShowStreakAnimation(false)
+      }, delay)
+    }
+  }
 
   // Handle answer selection
   const handleAnswer = async (optionId: string) => {
-    if (!currentQuestion) return
+    if (!currentQuestion || !testState) return
     
     // Find the correct option's id
     const correctOption = currentQuestion.options.find(
@@ -208,22 +461,31 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
     )
     const isCorrect = optionId === (correctOption?.id ?? currentQuestion.correctAnswer)
     
-    setAnswers(prev => ({ ...prev, [currentQuestion.id]: optionId }))
-    setStreak(prev => (isCorrect ? prev + 1 : 0))
-    setMaxStreak(prev => (isCorrect && prev + 1 > maxStreak ? prev + 1 : maxStreak))
-    responseTimes.current[currentQuestion.id] = Math.floor((Date.now() - startTime) / 1000)
+    const newStreak = isCorrect ? testState.streak + 1 : 0
+    const responseTime = Math.floor((Date.now() - questionStartTime.current) / 1000)
     
-    setCategoryPerformance(prev => {
-      const cat = currentQuestion.category
-      const prevStats = prev[cat] || { correct: 0, total: 0 }
-      return {
-        ...prev,
-        [cat]: {
-          correct: prevStats.correct + (isCorrect ? 1 : 0),
-          total: prevStats.total + 1
+    const newState = {
+      ...testState,
+      answers: { ...testState.answers, [currentQuestion.id]: optionId },
+      streak: newStreak,
+      maxStreak: Math.max(testState.maxStreak, newStreak),
+      responseTimes: { ...testState.responseTimes, [currentQuestion.id]: responseTime },
+      categoryPerformance: {
+        ...testState.categoryPerformance,
+        [currentQuestion.category]: {
+          correct: (testState.categoryPerformance[currentQuestion.category]?.correct || 0) + (isCorrect ? 1 : 0),
+          total: (testState.categoryPerformance[currentQuestion.category]?.total || 0) + 1
         }
       }
-    })
+    }
+    
+    setTestState(newState)
+    saveTestState(newState)
+    
+    // Trigger streak animation if correct
+    if (isCorrect) {
+      triggerStreakAnimation(newStreak)
+    }
     
     setShowResult(true)
     setCanAdvance(false)
@@ -240,6 +502,8 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
 
   // Manual advance handler
   function handleAdvance() {
+    if (!testState) return
+    
     setShowResult(false)
     setCanAdvance(false)
     
@@ -248,27 +512,36 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
       autoAdvanceTimeout.current = null
     }
     
-    if (currentQuestionIndex === questions.length - 1) {
+    if (testState.currentQuestionIndex === testState.questions.length - 1) {
       setAssessmentComplete(true)
+      clearSavedState() // Clear saved state when completing
     } else {
-      setCurrentQuestionIndex(prev => prev + 1)
+      const newState = {
+        ...testState,
+        currentQuestionIndex: testState.currentQuestionIndex + 1
+      }
+      setTestState(newState)
+      saveTestState(newState)
     }
   }
 
-  // Clean up timer on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
+      if (streakTimeout.current) clearTimeout(streakTimeout.current)
     }
   }, [])
 
   // Calculate results
   const calculateResults = () => {
+    if (!testState) return { score: 0, correct: 0, total: 0, level: 'beginner' as const, perCategory: {} }
+    
     let correct = 0
     let perCategory: Record<string, { correct: number; total: number }> = {}
     
-    questions.forEach(q => {
-      const userAnswer = answers[q.id]
+    testState.questions.forEach(q => {
+      const userAnswer = testState.answers[q.id]
       const correctOption = q.options.find(opt => opt.text === q.correctAnswer)
       
       if (!perCategory[q.category]) perCategory[q.category] = { correct: 0, total: 0 }
@@ -280,12 +553,12 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
       }
     })
     
-    const score = Math.round((correct / questions.length) * 100)
+    const score = Math.round((correct / testState.questions.length) * 100)
     let level: 'beginner' | 'intermediate' | 'advanced' = 'beginner'
     if (score >= 80) level = 'advanced'
     else if (score >= 60) level = 'intermediate'
     
-    return { score, correct, total: questions.length, level, perCategory }
+    return { score, correct, total: testState.questions.length, level, perCategory }
   }
 
   // Personalized message
@@ -299,13 +572,23 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
     return `You scored ${score}%, which puts you ahead of many Americans, but there's more to learn about how democracy actually functions.`
   }
 
+  // Show test type selection
+  if (showTestTypeSelection) {
+    return (
+      <TestTypeSelection 
+        onSelect={handleTestTypeSelection}
+        onBack={onBack}
+      />
+    )
+  }
+
   // Loading state
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
         <Loader2 className="h-8 w-8 animate-spin text-slate-700 dark:text-slate-300" />
         <p className="text-slate-600 dark:text-slate-400 font-light">
-          Preparing your civic knowledge assessment...
+          {hasRestoredState ? 'Restoring your test...' : 'Preparing your civic knowledge assessment...'}
         </p>
       </div>
     )
@@ -321,6 +604,18 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
         </h3>
         <div className="space-y-4 pt-4">
           <Button
+            onClick={() => {
+              clearSavedState()
+              setShowTestTypeSelection(true)
+              setHasRestoredState(false)
+            }}
+            variant="outline"
+            className="mr-4"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Start Over
+          </Button>
+          <Button
             onClick={onBack}
             className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 py-2 rounded-full font-light"
           >
@@ -331,7 +626,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
     )
   }
 
-  if (assessmentComplete) {
+  if (assessmentComplete && testState) {
     const results = calculateResults()
     return (
       <div className="max-w-2xl mx-auto space-y-12">
@@ -357,10 +652,16 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
             <div className="text-5xl font-light text-slate-900 dark:text-white">
               {results.score}%
             </div>
-            <div>
+            <div className="space-y-4">
               <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm px-4 py-1 font-light">
                 {results.level.charAt(0).toUpperCase() + results.level.slice(1)} Level
               </Badge>
+              {testState.maxStreak > 0 && (
+                <div className="flex items-center justify-center space-x-2 text-orange-600 dark:text-orange-400">
+                  <Flame className="w-4 h-4" />
+                  <span className="text-sm font-medium">Best Streak: {testState.maxStreak}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <h4 className="font-medium text-slate-900 dark:text-white">Knowledge Areas</h4>
@@ -378,13 +679,15 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
         <div className="text-center pt-4">
           <Button 
             onClick={() => {
+              clearSavedState()
               onComplete({
                 assessmentResults: results,
-                answers,
-                responseTimes: responseTimes.current,
+                answers: testState.answers,
+                responseTimes: testState.responseTimes,
                 completedAt: Date.now(),
-                streak: maxStreak,
-                testType
+                streak: testState.maxStreak,
+                testType: testState.testType,
+                sessionId: testState.sessionId
               })
             }}
             className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light group"
@@ -420,9 +723,29 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
     }
   }
 
+  // Get dynamic headings based on test type and question count
+  const getAssessmentTitle = () => {
+    if (testState?.testType === 'full') {
+      return "The Civic Knowledge Test That Actually Matters"
+    } else {
+      return "Quick Civic Knowledge Check"
+    }
+  }
+
+  const getAssessmentDescription = () => {
+    if (testState?.testType === 'full') {
+      return "We're about to test whether you understand how power actually works in America today. No memorized facts—just real-world knowledge."
+    } else {
+      return "A quick assessment of your civic knowledge. We'll focus on the most important questions about how democracy functions."
+    }
+  }
+
   // Main question UI
   return (
     <div className="max-w-2xl mx-auto space-y-12">
+      {/* Animated Streak Display */}
+      <StreakDisplay streak={testState?.streak || 0} isVisible={showStreakAnimation} />
+
       {/* Header */}
       <div className="space-y-4">
         <h2 className="text-3xl font-light text-slate-900 dark:text-white text-center">
@@ -431,19 +754,28 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
         <p className="text-lg text-slate-600 dark:text-slate-400 font-light text-center">
           {getAssessmentDescription()}
         </p>
-        <div className="text-center">
+        <div className="flex items-center justify-center space-x-4">
           <Badge variant="outline" className="text-sm">
-            Question {currentQuestionIndex + 1} of {questions.length}
+            Question {(testState?.currentQuestionIndex || 0) + 1} of {testState?.questions.length || 0}
           </Badge>
+          {hasRestoredState && (
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Resumed
+            </Badge>
+          )}
         </div>
       </div>
       
-      {/* Progress & Streak */}
-      <div className="flex items-center justify-between mb-2">
-        <Progress value={progress} className="h-1 w-3/4" />
-        <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-orange-500" />
-          <span className="text-xs text-orange-500">Streak: {streak}</span>
+      {/* Progress */}
+      <div className="space-y-2">
+        <Progress value={progress} className="h-2" />
+        <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+          <span>{Math.round(progress)}% complete</span>
+          <div className="flex items-center space-x-1">
+            <Clock className="w-3 h-3" />
+            <span>{Math.floor((Date.now() - (testState?.startTime || Date.now())) / 60000)}m</span>
+          </div>
         </div>
       </div>
       
@@ -481,7 +813,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
                     (opt) => opt.text === currentQuestion.correctAnswer
                   )
                   const isCorrect = option.id === (correctOption?.id ?? currentQuestion.correctAnswer)
-                  const isSelected = answers[currentQuestion.id] === option.id
+                  const isSelected = testState?.answers[currentQuestion.id] === option.id
                   
                   return (
                     <div 
@@ -509,7 +841,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
               
               <div className="text-center text-lg font-medium mt-2">
                 {getFeedback(
-                  answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
+                  testState?.answers[currentQuestion.id] === (currentQuestion.options.find(opt => opt.text === currentQuestion.correctAnswer)?.id ?? currentQuestion.correctAnswer)
                 )}
               </div>
               
@@ -527,7 +859,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
                     onClick={handleAdvance}
                     className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light"
                   >
-                    {currentQuestionIndex === questions.length - 1 ? 'See Results' : 'Next Question'}
+                    {(testState?.currentQuestionIndex || 0) === (testState?.questions.length || 1) - 1 ? 'See Results' : 'Next Question'}
                   </Button>
                 </div>
               )}
@@ -543,7 +875,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
       </div>
       
       {/* Back option */}
-      <div className="flex justify-center pt-8">
+      <div className="flex justify-center pt-8 space-x-4">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -551,6 +883,20 @@ export function CivicsTestAssessment({ onComplete, onBack, testType, userId, gue
         >
           ← Back to overview
         </Button>
+        {hasRestoredState && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              clearSavedState()
+              setShowTestTypeSelection(true)
+              setHasRestoredState(false)
+            }}
+            className="text-slate-600 dark:text-slate-400"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Start Over
+          </Button>
+        )}
       </div>
     </div>
   )

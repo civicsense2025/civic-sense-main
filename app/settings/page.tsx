@@ -243,9 +243,7 @@ export default function SettingsPage() {
             
             {/* User menu */}
             <UserMenu 
-              onSignInClick={() => {}} 
-              searchQuery=""
-              onSearchChange={() => {}}
+              onSignInClick={() => {}}
             />
           </div>
         </div>

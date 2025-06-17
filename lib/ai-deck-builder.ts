@@ -315,8 +315,8 @@ Focus on creating a deck that makes people think "I can actually use this" rathe
           difficulty: q.difficulty,
           tags: q.tags || [],
           reasoning: parsed.reasoning,
-          targetSkills: q.question_skills?.map(skill => skill.skill?.id) || [],
-          skillWeights: q.question_skills?.reduce((acc, skill) => {
+          targetSkills: q.question_skills?.map((skill: any) => skill.skill?.id) || [],
+          skillWeights: q.question_skills?.reduce((acc: any, skill: any) => {
             acc[skill.skill?.id] = skill.skill_weight
             return acc
           }, {} as Record<string, number>) || {}
@@ -393,8 +393,8 @@ Focus on creating a deck that makes people think "I can actually use this" rathe
         difficulty: q.difficulty,
         tags: q.tags || [],
         reasoning: 'Selected based on your learning profile and preferences',
-        targetSkills: q.question_skills?.map(skill => skill.skill?.id) || [],
-        skillWeights: q.question_skills?.reduce((acc, skill) => {
+        targetSkills: q.question_skills?.map((skill: any) => skill.skill?.id) || [],
+        skillWeights: q.question_skills?.reduce((acc: any, skill: any) => {
           acc[skill.skill?.id] = skill.skill_weight
           return acc
         }, {} as Record<string, number>) || {}
@@ -427,8 +427,8 @@ Focus on creating a deck that makes people think "I can actually use this" rathe
         difficulty: q.difficulty,
         tags: q.tags || [],
         reasoning: 'Randomly selected',
-        targetSkills: q.question_skills?.map(skill => skill.skill?.id) || [],
-        skillWeights: q.question_skills?.reduce((acc, skill) => {
+        targetSkills: q.question_skills?.map((skill: any) => skill.skill?.id) || [],
+        skillWeights: q.question_skills?.reduce((acc: any, skill: any) => {
           acc[skill.skill?.id] = skill.skill_weight
           return acc
         }, {} as Record<string, number>) || {}

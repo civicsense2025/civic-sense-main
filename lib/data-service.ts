@@ -372,7 +372,7 @@ export const dataService = {
     if (isDbAvailable) {
       try {
         const dbQuestions = await questionOperations.getByTopic(topicId)
-        const questions = dbQuestions.map(dbQuestion => questionOperations.toAppFormat(dbQuestion))
+        const questions = dbQuestions.map(dbQuestion => questionOperations.toQuestionAppFormat(dbQuestion))
         return cleanObjectContent(questions)
       } catch (error) {
         console.error('Error fetching questions from database:', error)

@@ -84,6 +84,8 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   }, [isMounted])
 
   useEffect(() => {
+    let isCancelled = false
+
     const loadQuizData = async () => {
       try {
         setIsLoading(true)
@@ -91,6 +93,9 @@ export default function QuizPageClient({ params }: QuizPageProps) {
 
         // Load topic metadata
         const topicData = await dataService.getTopicById(params.topicId)
+        
+        if (isCancelled) return // Prevent state update if component unmounted
+        
         if (!topicData) {
           setError("Quiz not found")
           return
@@ -100,14 +105,23 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         // Don't load questions yet - wait until user starts quiz
         setIsLoading(false)
       } catch (err) {
+        if (isCancelled) return // Prevent state update if component unmounted
+        
         console.error("Error loading quiz data:", err)
         setError("Failed to load quiz data")
         setIsLoading(false)
       }
     }
 
-    loadQuizData()
-  }, [params.topicId])
+    // Only load if we have a topicId and haven't loaded yet
+    if (params.topicId && !topic) {
+      loadQuizData()
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [params.topicId, topic])
 
   const handleStartQuiz = async () => {
     // Check quiz limits based on user tier

@@ -258,9 +258,7 @@ export default function PublicFigureDetailPage() {
             
             {/* Minimal user menu */}
             <UserMenu 
-              onSignInClick={() => {}} 
-              searchQuery=""
-              onSearchChange={() => {}}
+              onSignInClick={() => {}}
             />
           </div>
         </div>

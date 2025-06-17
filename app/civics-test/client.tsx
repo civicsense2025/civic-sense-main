@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { 
   ChevronDown,
   Play,
-  Share2,
   ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
@@ -92,6 +91,30 @@ const benefits = [
   }
 ]
 
+// Test info to replace dynamic stats
+const testInfo = [
+  {
+    emoji: "📚",
+    title: "Comprehensive Coverage",
+    description: "From local government mechanics to federal policy processes"
+  },
+  {
+    emoji: "🎯",
+    title: "Real-World Focus",
+    description: "Questions about how power actually works, not textbook theory"
+  },
+  {
+    emoji: "⏱️",
+    title: "10-12 Minutes",
+    description: "Just long enough to reveal what you actually know"
+  },
+  {
+    emoji: "🔍",
+    title: "Instant Analysis",
+    description: "Get detailed feedback on your civic knowledge gaps"
+  }
+]
+
 // FAQ data - updated to be more authoritative
 const faqs = [
   {
@@ -152,26 +175,6 @@ export default function CivicsTestLanding() {
     fetchAnalytics()
   }, [])
 
-  // Generate stats with real data when available - updated with more authoritative messaging
-  const dynamicStats = [
-    { 
-      label: "Americans tested", 
-      value: analyticsData && analyticsData.summary?.total_completions > 100 
-        ? `${(analyticsData.summary.total_completions).toLocaleString()}+`
-        : "50,000+", 
-      emoji: "👥" 
-    },
-    { 
-      label: "Pass our full assessment", 
-      value: analyticsData?.summary?.average_score 
-        ? `${Math.round((analyticsData.summary.average_score / 100) * 100)}%`
-        : "33%", 
-      emoji: "📊" 
-    },
-    { label: "Minutes to complete", value: "10-12", emoji: "⏱️" },
-    { label: "Most comprehensive test available", value: "THE", emoji: "📚" }
-  ]
-
   const handleStartTest = async (testType: 'quick' | 'full') => {
     setSelectedTestType(testType)
     setShowTest(true)
@@ -222,18 +225,6 @@ export default function CivicsTestLanding() {
         }
       })
     }).catch(console.error)
-  }
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'The Civic Knowledge Test That Actually Matters',
-        text: 'Test whether you understand how power actually works in America today',
-        url: window.location.href,
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-    }
   }
 
   const handleCreateAccount = () => {
@@ -311,7 +302,7 @@ export default function CivicsTestLanding() {
               }
             }, 100)
           }}
-          initialMode="sign-up"
+          initialMode="sign-in"
         />
       </div>
     )
@@ -329,14 +320,14 @@ export default function CivicsTestLanding() {
         <main className="w-full py-12">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             {/* Results */}
-            <div className="text-center space-y-6">
-              <div className="text-6xl">
+            <div className="text-center space-y-4 sm:space-y-6 px-2">
+              <div className="text-4xl sm:text-5xl lg:text-6xl">
                 {score >= 80 ? '🎯' : score >= 60 ? '👍' : '🌱'}
               </div>
-              <h1 className="text-4xl font-light text-slate-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white">
                 You scored {score}%
               </h1>
-              <p className="text-xl text-slate-600 dark:text-slate-400 font-light">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-400 font-light max-w-2xl mx-auto">
                 {level === 'advanced' 
                   ? "You understand how power actually works. Ready for the advanced challenges." 
                   : level === 'intermediate' 
@@ -347,31 +338,31 @@ export default function CivicsTestLanding() {
 
             {/* Guest conversion prompt */}
             <div className="max-w-2xl mx-auto">
-              <Card className="border-2 border-blue-100 dark:border-blue-900">
-                <CardContent className="p-8 text-center space-y-6">
-                  <div className="text-4xl">🎁</div>
-                  <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+              <Card className="border-2 border-blue-100 dark:border-blue-900 rounded-xl sm:rounded-2xl">
+                <CardContent className="p-4 sm:p-6 lg:p-8 text-center space-y-4 sm:space-y-6">
+                  <div className="text-3xl sm:text-4xl">🎁</div>
+                  <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-white px-2">
                     Ready to see what you're missing?
                   </h2>
-                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-light leading-relaxed px-2">
                     Create a free account to save your results, track your progress over time, 
                     and discover exactly which areas of civic knowledge you need to strengthen—and why they matter for your life.
                   </p>
                   
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                      <div className="space-y-2">
-                        <div className="text-2xl">📊</div>
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
+                      <div className="space-y-1 sm:space-y-2">
+                        <div className="text-xl sm:text-2xl">📊</div>
                         <div className="font-medium text-slate-900 dark:text-white">Track Progress</div>
                         <div className="text-slate-600 dark:text-slate-400">See your knowledge grow</div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="text-2xl">🎯</div>
+                      <div className="space-y-1 sm:space-y-2">
+                        <div className="text-xl sm:text-2xl">🎯</div>
                         <div className="font-medium text-slate-900 dark:text-white">Get Targeted Learning</div>
                         <div className="text-slate-600 dark:text-slate-400">Focus on what matters</div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="text-2xl">🏆</div>
+                      <div className="space-y-1 sm:space-y-2">
+                        <div className="text-xl sm:text-2xl">🏆</div>
                         <div className="font-medium text-slate-900 dark:text-white">Prove Your Knowledge</div>
                         <div className="text-slate-600 dark:text-slate-400">Join the informed minority</div>
                       </div>
@@ -380,7 +371,7 @@ export default function CivicsTestLanding() {
                     <Button
                       size="lg"
                       onClick={handleCreateAccount}
-                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 rounded-full"
+                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 sm:px-8 py-3 rounded-full w-full sm:w-auto"
                     >
                       Create Free Account
                     </Button>
@@ -391,7 +382,7 @@ export default function CivicsTestLanding() {
                         setShowResults(false)
                         setShowTest(false)
                       }}
-                      className="text-slate-600 dark:text-slate-400"
+                      className="text-slate-600 dark:text-slate-400 text-sm sm:text-base"
                     >
                       Maybe later
                     </Button>
@@ -433,7 +424,7 @@ export default function CivicsTestLanding() {
               window.location.href = '/dashboard?converted=true'
             }, 100)
           }}
-          initialMode="sign-up"
+          initialMode="sign-in"
         />
       </div>
     )
@@ -446,73 +437,51 @@ export default function CivicsTestLanding() {
       
       <main className="w-full">
         {/* Hero Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="space-y-6">
-              <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-0 px-4 py-1">
+        <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+            <div className="space-y-4 sm:space-y-6">
+              <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-0 px-3 sm:px-4 py-1 font-mono font-light text-xs sm:text-sm">
                 Free • No signup required • 10 minutes
               </Badge>
               
-              <h1 className="text-5xl md:text-6xl font-light text-slate-900 dark:text-white tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-slate-900 dark:text-white tracking-tight leading-tight px-2">
                 The civic knowledge test <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">that actually matters</span>
               </h1>
               
-              <div className="space-y-4 max-w-3xl mx-auto">
-                <p className="text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                  Most Americans can't name their representatives or explain how a bill becomes law. But here's what's worse: <strong>they don't know what they don't know.</strong>
+              <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto px-2">
+                <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                  67% of Americans can't pass basic civics tests—<strong>and don't realize what they're missing.</strong>
                 </p>
                 
-                <p className="text-lg text-slate-700 dark:text-slate-300 font-medium">
-                  This isn't your high school civics quiz. We test whether you understand how power actually works in America today.
+                <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-medium">
+                  We test how power actually works, not textbook theory.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex justify-center pt-2">
               <Button
                 size="lg"
                 onClick={() => handleStartTest('full')}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-4 rounded-full text-lg font-medium group"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium group w-full sm:w-auto max-w-sm"
               >
-                <Play className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:translate-x-1 transition-transform" />
                 Take the Assessment
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => handleStartTest('quick')}
-                className="px-8 py-4 rounded-full text-lg border-slate-200 dark:border-slate-700"
-              >
-                Quick Version
-              </Button>
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleShare}
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share This Test
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
+        {/* Test Info Section */}
+        <section className="py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {/* Force refresh - using dynamicStats */}
-              {dynamicStats.map((stat, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="text-3xl">{stat.emoji}</div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-light text-slate-900 dark:text-white">{stat.value}</div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">{stat.label}</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              {testInfo.map((info, index) => (
+                <div key={index} className="text-center space-y-2 sm:space-y-4">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl">{info.emoji}</div>
+                  <div className="space-y-1 sm:space-y-2">
+                    <div className="text-sm sm:text-base lg:text-lg font-medium text-slate-900 dark:text-white">{info.title}</div>
+                    <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed px-1">{info.description}</div>
                   </div>
                 </div>
               ))}
@@ -521,16 +490,16 @@ export default function CivicsTestLanding() {
         </section>
 
         {/* Why This Test Is Different Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h2 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white">
+        <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 rounded-2xl sm:rounded-3xl mx-2 sm:mx-4 my-6 sm:my-8">
+          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white px-2">
               Why this test is different
             </h2>
-            <div className="space-y-4 max-w-3xl mx-auto">
-              <p className="text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+            <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto px-2">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
                 We don't ask if you can recite the preamble. We ask if you understand why your vote for state legislature might matter more than your presidential vote. We test whether you know how lobbying actually works, not just that it exists.
               </p>
-              <p className="text-lg font-medium text-slate-800 dark:text-slate-200">
+              <p className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200">
                 Real questions. Real stakes. Real knowledge.
               </p>
             </div>
@@ -538,15 +507,15 @@ export default function CivicsTestLanding() {
         </section>
 
         {/* Benefits Section with Scroll Animations */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8">
+        <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <div className="space-y-12">
+            <div className="space-y-8 sm:space-y-12">
               {benefits.map((benefit, index) => (
                 <div 
                   key={index} 
                   ref={(el) => observeElement(el, index)}
                   className={cn(
-                    "border-b border-slate-100 dark:border-slate-800 last:border-0 pb-12 last:pb-0 transition-all duration-700 ease-out",
+                    "border-b border-slate-100 dark:border-slate-800 last:border-0 pb-8 sm:pb-12 last:pb-0 transition-all duration-700 ease-out",
                     visibleElements.has(index) 
                       ? "opacity-100 translate-y-0" 
                       : "opacity-0 translate-y-8"
@@ -555,16 +524,16 @@ export default function CivicsTestLanding() {
                     transitionDelay: `${index * 100}ms`
                   }}
                 >
-                  <div className="flex items-start gap-6">
-                    <div className="text-4xl flex-shrink-0 transform transition-transform duration-500 ease-out"
+                  <div className="flex items-start gap-4 sm:gap-6">
+                    <div className="text-3xl sm:text-4xl flex-shrink-0 transform transition-transform duration-500 ease-out"
                          style={{
                            transform: visibleElements.has(index) ? 'scale(1)' : 'scale(0.8)'
                          }}>
                       {benefit.emoji}
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-medium text-slate-900 dark:text-white">{benefit.title}</h3>
-                      <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-lg">
+                    <div className="space-y-1 sm:space-y-2">
+                      <h3 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-white">{benefit.title}</h3>
+                      <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-base sm:text-lg">
                         {benefit.description}
                       </p>
                     </div>
@@ -576,23 +545,23 @@ export default function CivicsTestLanding() {
         </section>
 
         {/* Truth Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h2 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white">
+        <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 rounded-2xl sm:rounded-3xl mx-2 sm:mx-4 my-6 sm:my-8">
+          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white px-2">
               The uncomfortable truth about civic knowledge
             </h2>
-            <div className="space-y-4 max-w-3xl mx-auto">
-              <p className="text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+            <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto px-2">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-400 font-light leading-relaxed">
                 67% of Americans can't pass a basic citizenship test. But knowing facts isn't enough anymore. In an age of misinformation and polarization, you need to understand how democracy actually works—not how we wish it worked.
               </p>
-              <p className="text-lg font-medium text-slate-800 dark:text-slate-200">
+              <p className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200">
                 This assessment will show you exactly where you stand.
               </p>
             </div>
             <Button
               size="lg"
               onClick={() => handleStartTest('full')}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-4 rounded-full text-lg font-medium"
+              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium w-full sm:w-auto max-w-sm"
             >
               Take the Full Assessment
             </Button>
@@ -600,82 +569,153 @@ export default function CivicsTestLanding() {
         </section>
 
         {/* What You'll Discover Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center space-y-12">
-            <h2 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white">
-              What you'll discover
-            </h2>
+        <section className="py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+          {/* Animated sparkles background */}
+          <div className="absolute inset-0 pointer-events-none hidden sm:block">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-pulse"
+                style={{
+                  left: `${10 + (i * 12)}%`,
+                  top: `${20 + (i % 3) * 25}%`,
+                  animationDelay: `${i * 0.3}s`,
+                  animationDuration: `${2 + (i % 3)}s`
+                }}
+              >
+                <span className="text-yellow-400 opacity-30 text-xl">✨</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="max-w-5xl mx-auto text-center space-y-12 sm:space-y-16 relative">
+            <div className="space-y-6 sm:space-y-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-white leading-tight px-2">
+                What you'll discover
+              </h2>
+              <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
+            </div>
             
-            <div className="grid md:grid-cols-2 gap-8 text-left">
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                  <span className="text-4xl">🔍</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 lg:gap-16 text-left max-w-4xl mx-auto">
+              <div 
+                className="space-y-4 sm:space-y-6 group hover:scale-105 transition-transform duration-300 ease-out"
+                ref={(el) => observeElement(el, 20)}
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl">🔍</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+                    <span className="text-lg animate-spin">✨</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Information literacy</h3>
-                <p className="text-slate-600 dark:text-slate-400 font-light">Whether you can distinguish between reliable and unreliable political information</p>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-white">Information literacy</h3>
+                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-sm sm:text-base lg:text-lg">
+                    Whether you can distinguish between reliable and unreliable political information in today's media landscape
+                  </p>
+                </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                  <span className="text-4xl">🏛️</span>
+              <div 
+                className="space-y-4 sm:space-y-6 group hover:scale-105 transition-transform duration-300 ease-out"
+                ref={(el) => observeElement(el, 21)}
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl">🏛️</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+                    <span className="text-lg animate-spin">✨</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Local vs. federal impact</h3>
-                <p className="text-slate-600 dark:text-slate-400 font-light">If you understand how your local government affects your daily life more than federal politics</p>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-white">Local vs. federal impact</h3>
+                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-sm sm:text-base lg:text-lg">
+                    If you understand how your local government affects your daily life more than federal politics
+                  </p>
+                </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                  <span className="text-4xl">⚡</span>
+              <div 
+                className="space-y-4 sm:space-y-6 group hover:scale-105 transition-transform duration-300 ease-out"
+                ref={(el) => observeElement(el, 22)}
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl">⚡</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+                    <span className="text-lg animate-spin">✨</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Power structures</h3>
-                <p className="text-slate-600 dark:text-slate-400 font-light">How well you grasp the actual power structures that shape American policy</p>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-white">Power structures</h3>
+                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-sm sm:text-base lg:text-lg">
+                    How well you grasp the actual power structures that shape American policy behind the scenes
+                  </p>
+                </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                  <span className="text-4xl">📈</span>
+              <div 
+                className="space-y-4 sm:space-y-6 group hover:scale-105 transition-transform duration-300 ease-out"
+                ref={(el) => observeElement(el, 23)}
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl">📈</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+                    <span className="text-lg animate-spin">✨</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Knowledge gaps</h3>
-                <p className="text-slate-600 dark:text-slate-400 font-light">Which areas of civic knowledge you're missing—and why they matter</p>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-white">Knowledge gaps</h3>
+                  <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-sm sm:text-base lg:text-lg">
+                    Which specific areas of civic knowledge you're missing—and why they matter for your life
+                  </p>
+                </div>
               </div>
             </div>
             
-            <p className="text-lg font-medium text-slate-800 dark:text-slate-200 max-w-2xl mx-auto">
-              No tricks. No gotcha questions. Just an honest assessment of what every American should know.
-            </p>
+            <div className="pt-6 sm:pt-8">
+              <p className="text-base sm:text-lg lg:text-xl font-medium text-slate-800 dark:text-slate-200 max-w-3xl mx-auto leading-relaxed px-2">
+                No tricks. No gotcha questions. Just an honest assessment of what every American should know.
+              </p>
+            </div>
           </div>
         </section>
 
         {/* FAQ Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-100 dark:border-slate-800">
+        <section className="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white">
+            <div className="text-center space-y-3 sm:space-y-4 mb-8 sm:mb-12 lg:mb-16">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white px-2">
                 Questions You Might Have
               </h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {faqs.map((faq, index) => (
                 <Card key={index} className="border border-slate-200 dark:border-slate-800">
                   <CardContent className="p-0">
                     <button
                       onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                      className="w-full p-6 text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                      className="w-full p-4 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                     >
-                      <h3 className="font-medium text-slate-900 dark:text-white pr-4">
+                      <h3 className="font-medium text-slate-900 dark:text-white pr-3 sm:pr-4 text-sm sm:text-base">
                         {faq.question}
                       </h3>
                       <ChevronDown 
                         className={cn(
-                          "h-5 w-5 text-slate-500 transition-transform flex-shrink-0",
+                          "h-4 w-4 sm:h-5 sm:w-5 text-slate-500 transition-transform flex-shrink-0",
                           expandedFaq === index && "rotate-180"
                         )} 
                       />
                     </button>
                     {expandedFaq === index && (
-                      <div className="px-6 pb-6 pt-4">
-                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2 sm:pt-4">
+                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed text-sm sm:text-base">
                           {faq.answer}
                         </p>
                       </div>
@@ -688,12 +728,12 @@ export default function CivicsTestLanding() {
         </section>
       </main>
       
-      <AuthDialog
-        isOpen={showAuthDialog}
-        onClose={() => setShowAuthDialog(false)}
-        onAuthSuccess={() => setShowAuthDialog(false)}
-        initialMode="sign-up"
-      />
+              <AuthDialog
+          isOpen={showAuthDialog}
+          onClose={() => setShowAuthDialog(false)}
+          onAuthSuccess={() => setShowAuthDialog(false)}
+          initialMode="sign-in"
+        />
     </div>
   )
 } 

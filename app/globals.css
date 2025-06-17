@@ -97,8 +97,8 @@ body {
   --popover: 0 0 0;                          /* Pure black */
   --popover-foreground: 255 255 255;         /* Pure white */
   
-  --primary: 234 179 8;                      /* yellow-500 (gold) - 8.35:1 ratio */
-  --primary-foreground: 0 0 0;               /* Pure black */
+  --primary: 30 64 175;                      /* blue-800 - same as light mode for consistency */
+  --primary-foreground: 255 255 255;         /* Pure white */
   
   --secondary: 0 0 0;                        /* Pure black */
   --secondary-foreground: 229 229 229;       /* Light gray */
@@ -120,7 +120,7 @@ body {
   
   --border: 64 64 64;                        /* Dark gray for subtle borders */
   --input: 32 32 32;                         /* Very dark gray for input backgrounds */
-  --ring: 234 179 8;                         /* yellow-500 (gold) */
+  --ring: 30 64 175;                         /* blue-800 - matches primary */
 }
 
 /* Clean base styles */
@@ -403,6 +403,13 @@ html {
   }
 }
 
+/* Ensure dialogs and modals have proper stacking context and prevent jumping */
+[data-radix-portal] {
+  z-index: 50;
+}
+
+
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -599,6 +606,8 @@ button, .card, .quiz-option {
   transition: all 0.2s ease-in-out;
 }
 
+
+
 .group:hover .group-hover\:scale-105 {
   transform: scale(1.05);
 }
@@ -666,11 +675,6 @@ button, .card, .quiz-option {
 
 /* Safari-specific fixed positioning fixes */
 @supports (-webkit-appearance: none) {
-  .fixed {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-  }
-  
   .safari-fixed-button {
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
@@ -805,16 +809,16 @@ button, .card, .quiz-option {
 /* Fixed button positioning for consistent UI across the app */
 .fixed-bottom-button {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 32px) + 64px); /* Increased from 16px to 48px to move higher */
+  bottom: calc(env(safe-area-inset-bottom, 32px) + 64px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 40; /* Lower than dialogs */
   will-change: transform;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  padding: 1rem 2.5rem; /* Added padding to make button larger */
-  min-width: 240px; /* Added min-width to make button wider */
-  font-size: 1.125rem; /* Slightly larger font */
+  padding: 1rem 2.5rem;
+  min-width: 240px;
+  font-size: 1.125rem;
 }
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -951,6 +955,8 @@ button, .card, .quiz-option {
 .reduced-motion .transition-opacity {
   transition: none !important;
 }
+
+
 
 /* Focus indicators for accessibility */
 .high-contrast button:focus,

@@ -278,7 +278,7 @@ export async function GET(request: NextRequest) {
     const balanced = searchParams.get('balanced') === 'true';
     const categories = searchParams.get('categories') ? JSON.parse(searchParams.get('categories')!) : [];
     
-    let questions = [];
+    let questions: any[] = [];
     
     try {
       // Try to fetch questions from the database first
@@ -403,7 +403,7 @@ export async function POST(request: NextRequest) {
       excludeQuestions = []
     } = body;
 
-    let questions = [];
+    let questions: any[] = [];
     
     try {
       // Try database first

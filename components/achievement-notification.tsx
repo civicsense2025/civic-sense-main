@@ -10,6 +10,13 @@ import confetti from "canvas-confetti"
 import { cn } from "@/lib/utils"
 import type { Achievement } from "@/lib/enhanced-gamification"
 
+// Type augmentation to fix framer-motion className issue
+declare module "framer-motion" {
+  interface AnimationProps {
+    className?: string;
+  }
+}
+
 interface AchievementNotificationProps {
   achievements: Achievement[]
   levelUpInfo?: { newLevel: number; xpGained: number }
@@ -138,20 +145,18 @@ export function AchievementNotification({
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                 onClick={(e: React.MouseEvent) => e.target === e.currentTarget && onClose()}
-      >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.8, opacity: 0, y: 20 }}
-          transition={{ type: "spring", duration: 0.5 }}
-          className="w-full max-w-md"
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e: React.MouseEvent) => e.target === e.currentTarget && onClose()}
         >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="w-full max-w-md"
+          >
           {/* Achievement Display */}
           {hasAchievements && !showLevelUp && (
             <Card className={cn(
@@ -178,6 +183,7 @@ export function AchievementNotification({
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                   className="relative mb-6"
+                  {...({} as any)}
                 >
                   <div className={cn(
                     "w-24 h-24 mx-auto rounded-full flex items-center justify-center text-6xl relative",
@@ -197,6 +203,7 @@ export function AchievementNotification({
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.5 }}
                       className="absolute -top-2 -right-2"
+                      {...({} as any)}
                     >
                       <Badge className="bg-yellow-500 text-white border-0 shadow-lg">
                         <Crown className="h-3 w-3 mr-1" />
@@ -353,8 +360,9 @@ export function AchievementNotification({
               </CardContent>
             </Card>
           )}
-        </motion.div>
-      </motion.div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   )
 } 

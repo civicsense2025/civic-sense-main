@@ -4,25 +4,19 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import {
   LogLevel,
   StatsigProvider as BaseStatsigProvider,
-  useStatsigClient,
+  useClientAsyncInit,
 } from '@statsig/react-bindings'
-import { runStatsigAutoCapture } from '@statsig/web-analytics'
+import { StatsigAutoCapturePlugin } from '@statsig/web-analytics'
 import { useAuth } from '@/components/auth/auth-provider'
 
-// Create a singleton instance
-let statsigSingleton: any = null;
-let isInitializing = false;
-
-// Create a context for Statsig initialization status
+// Create a context for Statsig status
 type StatsigContextType = {
   isReady: boolean;
-  client: any;
   error: Error | null;
 };
 
 const StatsigContext = createContext<StatsigContextType>({
   isReady: false,
-  client: null,
   error: null,
 });
 
@@ -33,11 +27,68 @@ interface StatsigWrapperProps {
   children: React.ReactNode;
 }
 
-export function StatsigProvider({ children }: StatsigWrapperProps) {
+function StatsigClientProvider({ children }: StatsigWrapperProps) {
   const { user } = useAuth();
-  const [client, setClient] = useState<any>(statsigSingleton);
-  const [isReady, setIsReady] = useState<boolean>(!!statsigSingleton);
+  const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Get client key
+  const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
+
+  // Create user object for Statsig
+  const statsigUser = user ? {
+    userID: user.id,
+    email: user.email || undefined,
+    custom: {
+      created_at: user.created_at,
+      full_name: user.user_metadata?.full_name || undefined,
+      avatar_url: user.user_metadata?.avatar_url || undefined
+    }
+  } : {
+    userID: 'anonymous'
+  };
+
+  // Initialize Statsig client only if we have a client key
+  const { client, isLoading } = useClientAsyncInit(
+    clientKey || 'dummy_key', // Provide dummy key to avoid hook issues
+    statsigUser,
+    {
+      environment: { 
+        tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' 
+      },
+      logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Warn,
+      plugins: clientKey ? [new StatsigAutoCapturePlugin()] : [],
+    }
+  );
+
+  // Update ready state when client is ready
+  useEffect(() => {
+    if (!clientKey) {
+      console.warn('[Statsig] NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.');
+      setError(new Error('Statsig client key not configured'));
+      return;
+    }
+
+    if (client && !isLoading) {
+      setIsReady(true);
+      setError(null);
+      console.log('[Statsig] Client initialized successfully');
+    } else if (!isLoading && !client) {
+      setError(new Error('Failed to initialize Statsig client'));
+    }
+  }, [client, isLoading, clientKey]);
+
+  // Provide context values
+  return (
+    <StatsigContext.Provider value={{ isReady, error }}>
+      <BaseStatsigProvider client={client}>
+        {children}
+      </BaseStatsigProvider>
+    </StatsigContext.Provider>
+  );
+}
+
+export function StatsigProvider({ children }: StatsigWrapperProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   // Set mounted state to avoid hydration issues
@@ -45,192 +96,98 @@ export function StatsigProvider({ children }: StatsigWrapperProps) {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    // Skip if not mounted yet
-    if (!isMounted) return;
-    
-    const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
-    
-    // Skip if no client key
-    if (!clientKey) {
-      console.warn('[Statsig] NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.');
-      return;
-    }
-    
-    // If we already have a singleton, use it
-    if (statsigSingleton) {
-      setClient(statsigSingleton);
-      setIsReady(true);
-      return;
-    }
-    
-    // Skip if already initializing
-    if (isInitializing) return;
-    
-    // Set initializing flag
-    isInitializing = true;
-    
-    // Create user object for Statsig
-    const statsigUser = user ? {
-      userID: user.id,
-      email: user.email || undefined,
-      custom: {
-        created_at: user.created_at,
-        full_name: user.user_metadata?.full_name || undefined,
-        avatar_url: user.user_metadata?.avatar_url || undefined
-      }
-    } : {
-      userID: 'anonymous'
-    };
-    
-    const options = {
-      environment: { 
-        tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' 
-      },
-      logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Error,
-    };
-    
-    // Load the Statsig client dynamically
-    const loadStatsig = async () => {
-      try {
-        // Use dynamic import
-        const { StatsigClient } = await import('@statsig/js-client');
-        
-        // Create client instance
-        const newClient = new StatsigClient(clientKey, statsigUser, options);
-        
-        // Initialize client
-        await newClient.initializeAsync();
-        
-        // Set the singleton
-        statsigSingleton = newClient;
-        
-        // Update state
-        setClient(newClient);
-        setIsReady(true);
-        
-        // Initialize auto-capture
-        if (typeof window !== 'undefined') {
-          runStatsigAutoCapture(newClient);
-        }
-        
-        console.log('[Statsig] Client initialized successfully (singleton)');
-      } catch (err) {
-        console.error('[Statsig] Failed to initialize client:', err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        isInitializing = false;
-      }
-    };
-    
-    // Start loading
-    loadStatsig();
-    
-    // Cleanup function
-    return () => {
-      // We don't cleanup the singleton on unmount
-    };
-  }, [user, isMounted]);
-
   // Don't render provider until mounted to avoid hydration issues
   if (!isMounted) {
-    return <>{children}</>;
+    return (
+      <StatsigContext.Provider value={{ isReady: false, error: null }}>
+        {children}
+      </StatsigContext.Provider>
+    );
   }
 
-  // Provide context values
   return (
-    <StatsigContext.Provider value={{ isReady, client, error }}>
-      {client ? (
-        <BaseStatsigProvider client={client}>
-          {children}
-        </BaseStatsigProvider>
-      ) : (
-        // Render children without Statsig provider if client isn't ready
-        children
-      )}
-    </StatsigContext.Provider>
+    <StatsigClientProvider>
+      {children}
+    </StatsigClientProvider>
   );
 }
 
-// Cleanup for hot module reloading
-if (typeof window !== 'undefined' && (module as any).hot) {
-  (module as any).hot.dispose(() => {
-    statsigSingleton = null;
-    isInitializing = false;
-    console.log('[Statsig] Cleaned up client due to HMR');
-  });
-}
-
-// Hook to safely use Statsig client with proper error handling
+// Hook to safely use Statsig with proper error handling
 export function useStatsig() {
-  const { client, isReady } = useStatsigStatus();
-  const statsigClient = useStatsigClient()?.client || client;
+  const { isReady, error } = useStatsigStatus();
   
-  return {
-    client: statsigClient,
-    isReady: !!statsigClient,
-    hasError: !statsigClient && isReady,
+  // Import hooks from react-bindings
+  let checkGate: (gateName: string) => boolean = () => false;
+  let getDynamicConfig: (configName: string) => any = () => ({});
+  let getExperiment: (experimentName: string) => any = () => ({});
+  let logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>) => void = () => {};
+
+  try {
+    // These hooks must be called unconditionally
+    const { useGate, useConfig, useExperiment, useStatsigClient } = require('@statsig/react-bindings');
     
-    // Feature Gates
-    checkGate: (gateName: string): boolean => {
-      if (!statsigClient) {
-        console.warn(`[Statsig] Cannot check gate "${gateName}" - client not ready`);
+    const gateHook = useGate;
+    const configHook = useConfig;
+    const experimentHook = useExperiment;
+    const clientHook = useStatsigClient;
+
+    checkGate = (gateName: string): boolean => {
+      try {
+        const gate = gateHook(gateName);
+        return gate?.value || false;
+      } catch (error) {
+        console.warn(`[Statsig] Error checking gate "${gateName}":`, error);
         return false;
       }
+    };
+
+    getDynamicConfig = (configName: string): any => {
       try {
-        return statsigClient.checkGate(gateName);
+        const config = configHook(configName);
+        return config?.config || {};
       } catch (error) {
-        console.error(`[Statsig] Error checking gate "${gateName}":`, error);
-        return false;
-      }
-    },
-    
-    // Dynamic Configs
-    getConfig: (configName: string): any => {
-      if (!statsigClient) {
-        console.warn(`[Statsig] Cannot get config "${configName}" - client not ready`);
+        console.warn(`[Statsig] Error getting config "${configName}":`, error);
         return {};
       }
+    };
+
+    getExperiment = (experimentName: string): any => {
       try {
-        return statsigClient.getDynamicConfig(configName);
+        const experiment = experimentHook(experimentName);
+        return experiment?.config || {};
       } catch (error) {
-        console.error(`[Statsig] Error getting config "${configName}":`, error);
+        console.warn(`[Statsig] Error getting experiment "${experimentName}":`, error);
         return {};
       }
-    },
-    
-    // Experiments
-    getExperiment: (experimentName: string): any => {
-      if (!statsigClient) {
-        console.warn(`[Statsig] Cannot get experiment "${experimentName}" - client not ready`);
-        return {};
-      }
+    };
+
+    logEvent = (eventName: string, value?: string | number, metadata?: Record<string, any>): void => {
       try {
-        return statsigClient.getExperiment(experimentName);
-      } catch (error) {
-        console.error(`[Statsig] Error getting experiment "${experimentName}":`, error);
-        return {};
-      }
-    },
-    
-    // Event Logging
-    logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>): void => {
-      if (!statsigClient) {
-        if (process.env.NODE_ENV === 'development') {
+        const client = clientHook();
+        if (client?.client) {
+          client.client.logEvent(eventName, value, metadata);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Statsig] Event logged: ${eventName}`, { value, metadata });
+          }
+        } else if (process.env.NODE_ENV === 'development') {
           console.log(`[Statsig] Event logged (no client): ${eventName}`, { value, metadata });
         }
-        return;
-      }
-      
-      try {
-        statsigClient.logEvent(eventName, value, metadata);
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[Statsig] Event logged: ${eventName}`, { value, metadata });
-        }
       } catch (error) {
-        console.error(`[Statsig] Error logging event "${eventName}":`, error);
+        console.warn(`[Statsig] Error logging event "${eventName}":`, error);
       }
-    }
+    };
+  } catch (error) {
+    console.warn('[Statsig] React bindings not available:', error);
+  }
+  
+  return {
+    isReady,
+    hasError: !!error,
+    error,
+    checkGate,
+    getConfig: getDynamicConfig,
+    getExperiment,
+    logEvent,
   };
 }
 

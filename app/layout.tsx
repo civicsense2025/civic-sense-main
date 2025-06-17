@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Space_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
@@ -13,6 +13,11 @@ import { Analytics } from "@vercel/analytics/next"
 import { PWAStatus } from "@/components/pwa-status"
 
 const inter = Inter({ subsets: ["latin"] })
+const spaceMono = Space_Mono({ 
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-space-mono"
+})
 
 const getBaseUrl = () => {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
@@ -104,7 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={inter.className + ' bg-white dark:bg-slate-950 min-h-screen antialiased'}>
+      <body className={`${inter.className} ${spaceMono.variable} bg-white dark:bg-slate-950 min-h-screen antialiased`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <ThemeProvider
             attribute="class"

@@ -35,24 +35,9 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          // Force centering with !important
-          "fixed z-50 grid w-full max-w-lg",
-          "bg-background border shadow-lg rounded-lg",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out",
-          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-          "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          "duration-200",
-          "max-h-[85vh] overflow-y-auto p-6",
+          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
           className
         )}
-        style={{
-          // Force centering with inline styles that can't be overridden
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 50,
-        }}
         {...props}
       >
         {children}

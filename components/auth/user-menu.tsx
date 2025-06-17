@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, Moon, Sun, BarChart3, Settings, Crown } from "lucide-react"
+import { User, LogOut, Moon, Sun, BarChart3, Settings, Crown, ChevronDown, FileText } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
@@ -121,13 +121,42 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
         <Link href="/donate" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           Support
         </Link>
-        <Button 
-          onClick={onSignInClick}
-          size="sm"
-          className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100"
-        >
-          Log In
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              size="sm"
+              className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100"
+            >
+              <span onClick={onSignInClick}>Log In</span>
+              <ChevronDown className="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <DropdownMenuItem 
+            onClick={onSignInClick} 
+            className="flex items-center space-x-2 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors text-slate-900 dark:text-slate-100"
+          >
+            <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            <div>
+              <div className="font-medium text-slate-900 dark:text-slate-100">Sign In</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">Access your dashboard and progress</div>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/civics-test" 
+              className="flex items-center space-x-2 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm text-slate-900 dark:text-slate-100"
+            >
+              <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <div>
+                <div className="font-medium text-slate-900 dark:text-slate-100">Take Full Civics Exam</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Test your civic knowledge</div>
+              </div>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     )
   }
@@ -220,14 +249,20 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
         {/* Menu Items */}
         <div className="py-2">
           <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="flex items-center space-x-2 px-4 py-2">
+            <Link 
+              href="/dashboard" 
+              className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+            >
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
             </Link>
           </DropdownMenuItem>
           
           <DropdownMenuItem asChild>
-            <Link href="/settings" className="flex items-center space-x-2 px-4 py-2">
+            <Link 
+              href="/settings" 
+              className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+            >
               <Settings className="w-4 h-4" />
               <span>Settings</span>
             </Link>
@@ -235,14 +270,20 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem onClick={toggleTheme} className="flex items-center space-x-2 px-4 py-2">
+          <DropdownMenuItem 
+            onClick={toggleTheme} 
+            className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors"
+          >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem onClick={handleSignOut} className="flex items-center space-x-2 px-4 py-2 text-red-600 dark:text-red-400">
+          <DropdownMenuItem 
+            onClick={handleSignOut} 
+            className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 text-red-600 dark:text-red-400 transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             <span>Sign Out</span>
           </DropdownMenuItem>

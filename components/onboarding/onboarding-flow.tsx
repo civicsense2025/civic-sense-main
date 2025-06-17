@@ -171,7 +171,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
       }
 
       // Fetch assessment data
-      const { data: assessmentData } = await supabase
+      const { data: assessmentData } = await (supabase as any)
         .from('user_onboarding_assessment')
         .select('*')
         .eq('user_id', userId)
@@ -320,7 +320,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
 
   const saveAssessment = async (assessmentData: any) => {
     // Insert or update user assessment data
-    await supabase
+    await (supabase as any)
       .from('user_onboarding_assessment')
       .upsert({
         user_id: userId,
