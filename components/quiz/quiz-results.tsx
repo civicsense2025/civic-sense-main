@@ -86,15 +86,6 @@ const MemoizedScoreDisplay = memo(({
           {animatedScore}%
         </div>
       </div>
-
-      <div className={cn(
-        "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg transition-all duration-500 hover:scale-105",
-        badge.color,
-        "animate-in slide-in-from-bottom-4 duration-700 delay-300"
-      )}>
-        <span className="text-2xl mr-3 animate-bounce">{badge.emoji}</span>
-        {badge.text}
-      </div>
     </>
   )
 })
@@ -294,6 +285,7 @@ export function QuizResults({
   const [showAchievements, setShowAchievements] = useState(false)
   const [progressUpdated, setProgressUpdated] = useState(false)
   const [showExplanations, setShowExplanations] = useState(true)
+  const [xpGained, setXpGained] = useState(0)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Memoized calculations
@@ -478,12 +470,15 @@ export function QuizResults({
   useEffect(() => {
     saveQuizResults()
     
+    // Simulate XP gained (10 XP per correct answer)
+    setXpGained(correctAnswers * 10)
+    
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [saveQuizResults])
+  }, [saveQuizResults, correctAnswers])
 
   // Optimized score animation with requestAnimationFrame
   useEffect(() => {
@@ -568,13 +563,22 @@ export function QuizResults({
     setLevelUpInfo(undefined)
   }, [])
 
+  // Get a witty completion message based on score
+  const getCompletionMessage = useCallback(() => {
+    if (score >= 90) return "Knowledge Unlocked! 🧠"
+    if (score >= 80) return "Civic Mission Accomplished! 🎯"
+    if (score >= 70) return "Democracy Defended! 🛡️"
+    if (score >= 60) return "Civic Journey Complete! 🚀"
+    return "Civic Quest Completed! 🔍"
+  }, [score])
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-16">
         {/* Clean header with lots of whitespace */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            Quiz Complete! 🎉
+            {getCompletionMessage()}
           </h1>
           <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
             {topicTitle}
@@ -588,6 +592,15 @@ export function QuizResults({
             score={score} 
             badge={badge} 
           />
+          
+          <div className={cn(
+            "inline-flex items-center px-6 py-3 rounded-full border-2 font-medium text-lg transition-all duration-500 hover:scale-105",
+            badge.color,
+            "animate-in slide-in-from-bottom-4 duration-700 delay-300"
+          )}>
+            <span className="text-2xl mr-3 animate-bounce">{badge.emoji}</span>
+            {badge.text}
+          </div>
 
           <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light">
             {getPerformanceMessage()}
@@ -616,9 +629,9 @@ export function QuizResults({
               delay={200}
             />
             <MemoizedStatCard 
-              icon="🎚️" 
-              label="Level" 
-              value={progress?.currentLevel || 1} 
+              icon="✨" 
+              label="XP Earned" 
+              value={`+${xpGained}`} 
               delay={300}
             />
           </div>
