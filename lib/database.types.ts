@@ -1519,6 +1519,7 @@ export type Database = {
           completed_at: string | null
           correct_answers: number
           final_rank: number | null
+          game_session_id: string | null
           id: string
           is_completed: boolean
           player_id: string
@@ -1534,6 +1535,7 @@ export type Database = {
           completed_at?: string | null
           correct_answers?: number
           final_rank?: number | null
+          game_session_id?: string | null
           id?: string
           is_completed?: boolean
           player_id: string
@@ -1549,6 +1551,7 @@ export type Database = {
           completed_at?: string | null
           correct_answers?: number
           final_rank?: number | null
+          game_session_id?: string | null
           id?: string
           is_completed?: boolean
           player_id?: string

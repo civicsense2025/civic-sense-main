@@ -233,6 +233,10 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
   // Show quiz engine when game is in progress
   if (questions.length > 0 && topic) {
     console.log('🎮 Showing multiplayer quiz engine - questionsLength:', questions.length, 'hasTopic:', !!topic)
+    console.log('🎮 Room status check:', {
+      gameStarted,
+      roomStatus: room?.room_status
+    })
     
     // Import the multiplayer router dynamically to avoid SSR issues
     const MultiplayerQuizRouter = React.lazy(() => 
@@ -240,6 +244,20 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
         default: module.MultiplayerQuizRouter
       }))
     )
+    
+    console.log('🎮 About to render MultiplayerQuizRouter with props:', {
+      questionsCount: questions.length,
+      topicId,
+      roomId,
+      playerId,
+      currentTopic: {
+        id: topic.topic_id || "",
+        title: topic.topic_title || "",
+        emoji: topic.emoji || "",
+        date: topic.date || "",
+        dayOfWeek: topic.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
+      }
+    })
     
     return (
       <React.Suspense fallback={

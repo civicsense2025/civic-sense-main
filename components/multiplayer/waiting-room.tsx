@@ -80,6 +80,8 @@ export function WaitingRoom({
   const [showNPCSelector, setShowNPCSelector] = useState(false)
   const [availableNPCs, setAvailableNPCs] = useState<NPCPersonality[]>([])
   const [loadingNPCs, setLoadingNPCs] = useState(true)
+  const [npcDisplayCount, setNpcDisplayCount] = useState(6)
+  const [npcSearchQuery, setNpcSearchQuery] = useState('')
 
   const currentPlayer = players.find(p => p.id === playerId)
   
@@ -439,35 +441,146 @@ export function WaitingRoom({
                         Add AI Player
                       </Button>
                     ) : (
-                      <div className="space-y-2 p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                        <Label className="text-sm font-medium">Choose AI Player</Label>
-                        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
-                          {availableNPCs.slice(0, 4).map((npc) => (
-                            <button
-                              key={npc.id}
-                              onClick={() => handleAddNPC(npc.id)}
-                              disabled={addingNPC}
-                              className={cn(
-                                "flex items-center gap-2 p-2 text-left rounded border transition-colors",
-                                "hover:bg-white dark:hover:bg-slate-800",
-                                selectedNPC === npc.id ? "border-primary bg-primary/5" : "border-border"
-                              )}
-                            >
-                              <span className="text-lg">{npc.emoji}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{npc.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {npc.skillLevel} • {npc.traits.specialties[0]}
-                                </p>
-                              </div>
-                            </button>
-                          ))}
+                      <div className="space-y-3 p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                        <Label className="text-sm font-medium">Choose AI Player ({availableNPCs.length} available)</Label>
+                        
+                        {/* Search Input */}
+                        {availableNPCs.length > 6 && (
+                          <div className="relative">
+                            <Input
+                              placeholder="Search AI players..."
+                              value={npcSearchQuery}
+                              onChange={(e) => {
+                                setNpcSearchQuery(e.target.value)
+                                setNpcDisplayCount(6) // Reset display count when searching
+                              }}
+                              className="h-8 text-xs pr-8"
+                            />
+                            {npcSearchQuery && (
+                              <button
+                                onClick={() => {
+                                  setNpcSearchQuery('')
+                                  setNpcDisplayCount(6)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                <span className="text-xs">✕</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="max-h-48 overflow-y-auto space-y-2">
+                          {(() => {
+                            // Filter NPCs based on search query
+                            const filteredNPCs = availableNPCs.filter(npc => {
+                              if (!npcSearchQuery.trim()) return true
+                              const query = npcSearchQuery.toLowerCase()
+                              const name = npc.name.toLowerCase()
+                              const specialties = npc.traits.specialties.join(' ').toLowerCase()
+                              const skillLevel = npc.skillLevel.toLowerCase()
+                              return name.includes(query) || specialties.includes(query) || skillLevel.includes(query)
+                            })
+                            
+                            // Show more NPCs when searching, or use display count
+                            const displayCount = npcSearchQuery.trim() 
+                              ? Math.min(20, filteredNPCs.length) 
+                              : npcDisplayCount
+                            const displayNPCs = filteredNPCs.slice(0, displayCount)
+                            
+                            if (loadingNPCs) {
+                              return (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                                  <div className="text-xs">Loading AI players...</div>
+                                </div>
+                              )
+                            }
+                            
+                            if (displayNPCs.length === 0) {
+                              return (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  <div className="text-xs">
+                                    {npcSearchQuery.trim() ? 'No AI players found' : 'No AI players available'}
+                                  </div>
+                                  {npcSearchQuery.trim() && (
+                                    <div className="text-xs mt-1">Try a different search term</div>
+                                  )}
+                                </div>
+                              )
+                            }
+                            
+                            return (
+                              <>
+                                {displayNPCs.map((npc) => (
+                                  <button
+                                    key={npc.id}
+                                    onClick={() => handleAddNPC(npc.id)}
+                                    disabled={addingNPC}
+                                    className={cn(
+                                      "flex items-center gap-3 p-3 text-left rounded-lg border transition-colors w-full",
+                                      "hover:bg-white dark:hover:bg-slate-800 hover:border-primary/50",
+                                      selectedNPC === npc.id ? "border-primary bg-primary/5" : "border-border",
+                                      addingNPC && "opacity-50 cursor-not-allowed"
+                                    )}
+                                  >
+                                    <span className="text-xl">{npc.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <p className="font-medium text-sm truncate">{npc.name}</p>
+                                        <Badge variant="outline" className="text-xs">
+                                          {npc.skillLevel}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground truncate">
+                                        {npc.traits.specialties.slice(0, 2).join(', ')}
+                                      </p>
+                                                                            <p className="text-xs text-muted-foreground/80 truncate mt-0.5">
+                                         Confidence: {npc.traits.confidenceLevel}% • Consistency: {npc.traits.consistency}%
+                                       </p>
+                                    </div>
+                                  </button>
+                                ))}
+                                
+                                {/* Load More Button */}
+                                {!npcSearchQuery.trim() && filteredNPCs.length > npcDisplayCount && (
+                                  <div className="text-center py-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setNpcDisplayCount(prev => prev + 6)}
+                                      className="text-xs h-8"
+                                    >
+                                      Load {Math.min(6, filteredNPCs.length - npcDisplayCount)} more AI players
+                                    </Button>
+                                  </div>
+                                )}
+                                
+                                {/* Search Results Summary */}
+                                {npcSearchQuery.trim() && (
+                                  <div className="text-center py-1 text-xs text-muted-foreground">
+                                    {filteredNPCs.length > displayCount && (
+                                      <>Showing {displayCount} of {filteredNPCs.length} matching AI players</>
+                                    )}
+                                    {filteredNPCs.length <= displayCount && filteredNPCs.length > 0 && (
+                                      <>Found {filteredNPCs.length} AI player{filteredNPCs.length !== 1 ? 's' : ''}</>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )
+                          })()}
                         </div>
-                        <div className="flex gap-2">
+                        
+                        <div className="flex gap-2 pt-2 border-t">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setShowNPCSelector(false)}
+                            onClick={() => {
+                              setShowNPCSelector(false)
+                              setNpcSearchQuery('')
+                              setNpcDisplayCount(6)
+                            }}
                             className="flex-1"
                           >
                             Cancel

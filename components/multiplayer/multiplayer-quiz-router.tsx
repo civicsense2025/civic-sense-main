@@ -5,7 +5,6 @@ import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type BaseMultiplayerEnginePro
 import { SpeedRoundEngine } from "./game-modes/speed-round-engine"
 import { EliminationEngine } from "./game-modes/elimination-engine"
 import { LearningLabEngine } from "./game-modes/learning-lab-engine"
-import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { useMultiplayerRoom } from "@/lib/multiplayer"
 import type { QuizQuestion } from "@/lib/quiz-data"
 
@@ -38,22 +37,44 @@ export function MultiplayerQuizRouter({
 }: MultiplayerQuizRouterProps) {
   const { room, isLoading, error } = useMultiplayerRoom(roomId)
 
-  // Determine game mode from room settings
-  const gameMode = useMemo(() => {
-    return room?.game_mode || 'classic'
-  }, [room?.game_mode])
-
-  // Prepare props for game mode engines
-  const engineProps: BaseMultiplayerEngineProps = useMemo(() => ({
-    questions,
+  console.log('🎯 MultiplayerQuizRouter - Initializing with:', {
+    questionsCount: questions.length,
     topicId,
     roomId,
     playerId,
-    gameMode,
-    onComplete,
-    config: GAME_MODE_CONFIGS[gameMode] || GAME_MODE_CONFIGS.classic,
-    currentTopic
-  }), [questions, topicId, roomId, playerId, gameMode, onComplete, currentTopic])
+    currentTopic,
+    room: room ? { id: room.id, game_mode: room.game_mode, room_status: room.room_status } : null,
+    isLoading,
+    error
+  })
+
+  // Determine game mode from room settings
+  const gameMode = useMemo(() => {
+    const mode = room?.game_mode || 'classic'
+    console.log('🎯 MultiplayerQuizRouter - Game mode determined:', mode)
+    return mode
+  }, [room?.game_mode])
+
+  // Prepare props for game mode engines
+  const engineProps: BaseMultiplayerEngineProps = useMemo(() => {
+    const props = {
+      questions,
+      topicId,
+      roomId,
+      playerId,
+      gameMode,
+      onComplete,
+      config: GAME_MODE_CONFIGS[gameMode] || GAME_MODE_CONFIGS.classic,
+      currentTopic
+    }
+    console.log('🎯 MultiplayerQuizRouter - Engine props prepared:', {
+      questionsCount: props.questions.length,
+      gameMode: props.gameMode,
+      config: props.config.name,
+      hasCurrentTopic: !!props.currentTopic
+    })
+    return props
+  }, [questions, topicId, roomId, playerId, gameMode, onComplete, currentTopic])
 
   // Loading state
   if (isLoading) {
@@ -93,16 +114,20 @@ export function MultiplayerQuizRouter({
   // Route to appropriate game mode engine
   switch (gameMode as string) {
     case 'speed_round':
+      console.log('🎯 MultiplayerQuizRouter - Routing to SpeedRoundEngine')
       return <SpeedRoundEngine {...engineProps} />
     
     case 'elimination':
+      console.log('🎯 MultiplayerQuizRouter - Routing to EliminationEngine')
       return <EliminationEngine {...engineProps} />
     
     case 'learning_lab':
+      console.log('🎯 MultiplayerQuizRouter - Routing to LearningLabEngine')
       return <LearningLabEngine {...engineProps} />
     
     case 'classic':
     default:
+      console.log('🎯 MultiplayerQuizRouter - Routing to BaseMultiplayerEngine (classic mode)')
       return <BaseMultiplayerEngine {...engineProps} />
   }
 }

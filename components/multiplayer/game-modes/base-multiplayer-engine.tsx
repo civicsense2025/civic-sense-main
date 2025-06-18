@@ -97,6 +97,15 @@ export function BaseMultiplayerEngine({
   const { isPremium } = usePremium()
   const { trackQuiz } = useAnalytics()
 
+  console.log('🎮 BaseMultiplayerEngine - Initializing with:', {
+    questionsCount: questions.length,
+    topicId,
+    roomId,
+    playerId,
+    gameMode,
+    config: config.name
+  })
+
   // Room state from multiplayer hook
   const { room, players } = useMultiplayerRoom(roomId)
 
@@ -122,9 +131,57 @@ export function BaseMultiplayerEngine({
   const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(config.timePerQuestion)
 
   // Current question
-  const currentQuestion = useMemo(() => questions[gameState.currentQuestionIndex], [questions, gameState.currentQuestionIndex])
+  const currentQuestion = useMemo(() => {
+    const question = questions[gameState.currentQuestionIndex]
+    console.log('🎮 BaseMultiplayerEngine - Current question:', {
+      index: gameState.currentQuestionIndex,
+      question: question ? question.question : 'NO QUESTION',
+      questionType: question?.question_type
+    })
+    return question
+  }, [questions, gameState.currentQuestionIndex])
+  
   const isLastQuestion = useMemo(() => gameState.currentQuestionIndex === questions.length - 1, [gameState.currentQuestionIndex, questions.length])
   const progress = useMemo(() => ((gameState.currentQuestionIndex + 1) / questions.length) * 100, [gameState.currentQuestionIndex, questions.length])
+
+  // Add validation for required data
+  if (!questions || questions.length === 0) {
+    console.error('🎮 BaseMultiplayerEngine - No questions provided!')
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">No Questions Available</h1>
+            <p className="text-muted-foreground mb-6">
+              This quiz doesn't have any questions yet.
+            </p>
+            <Button onClick={onComplete}>
+              Back to Lobby
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentQuestion) {
+    console.error('🎮 BaseMultiplayerEngine - Current question is undefined!')
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Question Loading Error</h1>
+            <p className="text-muted-foreground mb-6">
+              Unable to load the current question. Question index: {gameState.currentQuestionIndex}
+            </p>
+            <Button onClick={onComplete}>
+              Back to Lobby
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // =============================================================================
   // CORE MULTIPLAYER FUNCTIONALITY
