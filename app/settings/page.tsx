@@ -24,6 +24,7 @@ import {
   Accessibility, Volume2, Eye, Type, Headphones,
   RefreshCw, Play
 } from "lucide-react"
+import { EducationalAccessChecker } from "@/components/educational-access-checker"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 import Link from "next/link"
@@ -405,6 +406,9 @@ export default function SettingsPage() {
           {/* Subscription Tab */}
           <TabsContent value="subscription" className="space-y-6">
             <PremiumSubscriptionCard />
+            
+            {/* Educational Access Section */}
+            <EducationalAccessChecker />
           </TabsContent>
 
           {/* Preferences Tab */}

@@ -93,8 +93,11 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         setIsLoading(true)
         setError(null)
 
-        // Load topic metadata
-        const topicData = await dataService.getTopicById(params.topicId)
+        // Load topic metadata AND questions together for better UX
+        const [topicData, questionsData] = await Promise.all([
+          dataService.getTopicById(params.topicId),
+          dataService.getQuestionsByTopic(params.topicId)
+        ])
         
         if (isCancelled) return // Prevent state update if component unmounted
         
@@ -104,6 +107,14 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         }
         setTopic(topicData)
         
+        // Always load questions for sources display and better UX
+        if (questionsData && questionsData.length > 0) {
+          setQuestions(questionsData)
+          console.log(`✅ Pre-loaded ${questionsData.length} questions for topic ${params.topicId}`)
+        } else {
+          console.warn(`⚠️ No questions found for topic ${params.topicId}`)
+        }
+        
         // Check if this is a continue request
         const shouldContinue = searchParams.get('continue') === 'true'
         
@@ -111,21 +122,12 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           // Show the witty loading screen for 3 seconds
           setShowContinueLoading(true)
           
-          // Pre-load questions in the background
-          try {
-            const questionsData = await dataService.getQuestionsByTopic(params.topicId)
-            if (!isCancelled && questionsData && questionsData.length > 0) {
-              setQuestions(questionsData)
-              
-              // Record the quiz attempt
-              if (!user) {
-                recordQuizAttempt()
-              }
-              await recordQuizAttempt(params.topicId)
+          // Record the quiz attempt if questions are available
+          if (questionsData && questionsData.length > 0) {
+            if (!user) {
+              recordQuizAttempt()
             }
-          } catch (err) {
-            console.error("Error loading questions for continuation:", err)
-            // If loading questions fails, will fallback to topic info after loading screen
+            await recordQuizAttempt(params.topicId)
           }
         }
         
@@ -165,6 +167,12 @@ export default function QuizPageClient({ params }: QuizPageProps) {
     // Remove the premium user limit check
     // Premium users should have unlimited access to quizzes
 
+    // Check if questions are already loaded (they should be from useEffect)
+    if (!questions || questions.length === 0) {
+      setError("No questions available for this quiz")
+      return
+    }
+
     // Increment quiz attempts for guest users
     if (!user) {
       recordQuizAttempt()
@@ -172,21 +180,6 @@ export default function QuizPageClient({ params }: QuizPageProps) {
 
     // Show loading screen first
     setShowLoadingScreen(true)
-    
-    // Load questions now that the user has started the quiz
-    try {
-      const questionsData = await dataService.getQuestionsByTopic(params.topicId)
-      if (!questionsData || questionsData.length === 0) {
-        setError("No questions found for this quiz")
-        setShowLoadingScreen(false)
-        return
-      }
-      setQuestions(questionsData)
-    } catch (err) {
-      console.error("Error loading questions:", err)
-      setError("Failed to load quiz questions")
-      setShowLoadingScreen(false)
-    }
 
     // Record the quiz attempt with the topic ID
     await recordQuizAttempt(params.topicId)
@@ -316,6 +309,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           remainingQuizzes={remainingQuizzes}
           isPartiallyCompleted={isPartiallyCompleted}
           hasCompletedTopic={hasCompletedTopic(params.topicId)}
+          questions={questions}
         />
       ) : (
         <div className="bg-white dark:bg-slate-950 pb-4 sm:pb-8">

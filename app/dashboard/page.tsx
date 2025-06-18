@@ -42,6 +42,7 @@ import { ContinueLearning } from "@/components/continue-learning"
 import { RecommendedTopics } from "@/components/recommended-topics"
 import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
 import { GiftCreditsDashboard } from "@/components/gift-credits-dashboard"
+import { LearningPodsDashboard } from "@/components/learning-pods-dashboard"
 
 interface DashboardData {
   totalQuizzes: number
@@ -514,6 +515,19 @@ export default function DashboardPage() {
 
           {/* Enhanced Recent Activity */}
           {user && <EnhancedRecentActivity userId={user.id} />}
+
+          {/* Learning Pods Dashboard */}
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
+                Learning Pods
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 font-light">
+                Collaborative learning with family, friends, and organizations
+              </p>
+            </div>
+            <LearningPodsDashboard />
+          </div>
 
           {/* Gift Credits Dashboard */}
           <div className="space-y-4">

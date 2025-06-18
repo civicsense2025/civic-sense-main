@@ -306,6 +306,48 @@ export type Database = {
         }
         Relationships: []
       }
+      content_filtering_rules: {
+        Row: {
+          age_range: string
+          blocked_categories: string[] | null
+          blocked_keywords: string[] | null
+          blocked_topics: string[] | null
+          created_at: string | null
+          filter_level: string
+          id: string
+          is_active: boolean | null
+          max_difficulty_level: number | null
+          rule_name: string
+          sensitive_topics: Json | null
+        }
+        Insert: {
+          age_range: string
+          blocked_categories?: string[] | null
+          blocked_keywords?: string[] | null
+          blocked_topics?: string[] | null
+          created_at?: string | null
+          filter_level: string
+          id?: string
+          is_active?: boolean | null
+          max_difficulty_level?: number | null
+          rule_name: string
+          sensitive_topics?: Json | null
+        }
+        Update: {
+          age_range?: string
+          blocked_categories?: string[] | null
+          blocked_keywords?: string[] | null
+          blocked_topics?: string[] | null
+          created_at?: string | null
+          filter_level?: string
+          id?: string
+          is_active?: boolean | null
+          max_difficulty_level?: number | null
+          rule_name?: string
+          sensitive_topics?: Json | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           date: string
@@ -735,6 +777,154 @@ export type Database = {
           },
         ]
       }
+      friend_requests: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          message: string | null
+          parent_approved_at: string | null
+          pod_id: string | null
+          recipient_id: string
+          request_type: string | null
+          requester_id: string
+          requires_parental_approval: boolean | null
+          responded_at: string | null
+          status: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          parent_approved_at?: string | null
+          pod_id?: string | null
+          recipient_id: string
+          request_type?: string | null
+          requester_id: string
+          requires_parental_approval?: boolean | null
+          responded_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          parent_approved_at?: string | null
+          pod_id?: string | null
+          recipient_id?: string
+          request_type?: string | null
+          requester_id?: string
+          requires_parental_approval?: boolean | null
+          responded_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_credits: {
+        Row: {
+          created_at: string | null
+          credit_type: string
+          credits_available: number
+          credits_used: number
+          donor_user_id: string
+          id: string
+          source_donation_amount: number
+          source_stripe_session_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credit_type: string
+          credits_available?: number
+          credits_used?: number
+          donor_user_id: string
+          id?: string
+          source_donation_amount: number
+          source_stripe_session_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credit_type?: string
+          credits_available?: number
+          credits_used?: number
+          donor_user_id?: string
+          id?: string
+          source_donation_amount?: number
+          source_stripe_session_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gift_redemptions: {
+        Row: {
+          access_type: string
+          claimed_at: string | null
+          created_at: string | null
+          donor_user_id: string
+          expires_at: string | null
+          gift_credit_id: string
+          gift_message: string | null
+          id: string
+          recipient_email: string
+          recipient_user_id: string | null
+          redemption_code: string
+          redemption_status: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_type: string
+          claimed_at?: string | null
+          created_at?: string | null
+          donor_user_id: string
+          expires_at?: string | null
+          gift_credit_id: string
+          gift_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_user_id?: string | null
+          redemption_code: string
+          redemption_status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_type?: string
+          claimed_at?: string | null
+          created_at?: string | null
+          donor_user_id?: string
+          expires_at?: string | null
+          gift_credit_id?: string
+          gift_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_user_id?: string | null
+          redemption_code?: string
+          redemption_status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_redemptions_gift_credit_id_fkey"
+            columns: ["gift_credit_id"]
+            isOneToOne: false
+            referencedRelation: "gift_credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glossary_terms: {
         Row: {
           category: string | null
@@ -967,6 +1157,1015 @@ export type Database = {
           },
         ]
       }
+      learning_pods: {
+        Row: {
+          allow_sensitive_topics: boolean | null
+          allowed_age_range: string | null
+          blocked_categories: string[] | null
+          content_filter_level: string | null
+          created_at: string | null
+          created_by: string
+          family_name: string | null
+          id: string
+          is_private: boolean | null
+          join_code: string | null
+          max_members: number | null
+          parent_email: string | null
+          pod_description: string | null
+          pod_name: string
+          pod_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_sensitive_topics?: boolean | null
+          allowed_age_range?: string | null
+          blocked_categories?: string[] | null
+          content_filter_level?: string | null
+          created_at?: string | null
+          created_by: string
+          family_name?: string | null
+          id?: string
+          is_private?: boolean | null
+          join_code?: string | null
+          max_members?: number | null
+          parent_email?: string | null
+          pod_description?: string | null
+          pod_name: string
+          pod_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_sensitive_topics?: boolean | null
+          allowed_age_range?: string | null
+          blocked_categories?: string[] | null
+          content_filter_level?: string | null
+          created_at?: string | null
+          created_by?: string
+          family_name?: string | null
+          id?: string
+          is_private?: boolean | null
+          join_code?: string | null
+          max_members?: number | null
+          parent_email?: string | null
+          pod_description?: string | null
+          pod_name?: string
+          pod_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      multiplayer_chat_messages: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          educational_value: string | null
+          id: string
+          message_content: string
+          message_type: string
+          npc_id: string | null
+          npc_personality_traits: string[] | null
+          player_id: string | null
+          room_id: string
+          trigger_context: Json | null
+          trigger_type: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          educational_value?: string | null
+          id?: string
+          message_content: string
+          message_type?: string
+          npc_id?: string | null
+          npc_personality_traits?: string[] | null
+          player_id?: string | null
+          room_id: string
+          trigger_context?: Json | null
+          trigger_type?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          educational_value?: string | null
+          id?: string
+          message_content?: string
+          message_type?: string
+          npc_id?: string | null
+          npc_personality_traits?: string[] | null
+          player_id?: string | null
+          room_id?: string
+          trigger_context?: Json | null
+          trigger_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_chat_messages_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_chat_messages_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_conversation_context: {
+        Row: {
+          conflict_detected: boolean
+          current_topic_difficulty: string | null
+          dominant_players: string[] | null
+          engagement_level: string | null
+          id: string
+          intervention_cooldown_until: string | null
+          last_message_at: string
+          last_npc_intervention: string | null
+          room_id: string
+          room_mood: string | null
+          silence_duration_seconds: number
+          struggling_players: string[] | null
+          total_messages: number
+          updated_at: string
+        }
+        Insert: {
+          conflict_detected?: boolean
+          current_topic_difficulty?: string | null
+          dominant_players?: string[] | null
+          engagement_level?: string | null
+          id?: string
+          intervention_cooldown_until?: string | null
+          last_message_at?: string
+          last_npc_intervention?: string | null
+          room_id: string
+          room_mood?: string | null
+          silence_duration_seconds?: number
+          struggling_players?: string[] | null
+          total_messages?: number
+          updated_at?: string
+        }
+        Update: {
+          conflict_detected?: boolean
+          current_topic_difficulty?: string | null
+          dominant_players?: string[] | null
+          engagement_level?: string | null
+          id?: string
+          intervention_cooldown_until?: string | null
+          last_message_at?: string
+          last_npc_intervention?: string | null
+          room_id?: string
+          room_mood?: string | null
+          silence_duration_seconds?: number
+          struggling_players?: string[] | null
+          total_messages?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_conversation_context_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_game_events: {
+        Row: {
+          created_at: string
+          event_data: Json
+          event_type: string
+          id: string
+          room_id: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json
+          event_type: string
+          id?: string
+          room_id: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json
+          event_type?: string
+          id?: string
+          room_id?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_game_events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_game_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_room_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_npc_players: {
+        Row: {
+          conflict_interventions: number
+          conflict_resolution_active: boolean
+          conversation_frequency: number
+          created_at: string
+          educational_contributions: number
+          id: string
+          last_activity: string
+          messages_sent: number
+          npc_id: string
+          player_id: string
+          room_id: string
+          teaching_mode: boolean
+        }
+        Insert: {
+          conflict_interventions?: number
+          conflict_resolution_active?: boolean
+          conversation_frequency?: number
+          created_at?: string
+          educational_contributions?: number
+          id?: string
+          last_activity?: string
+          messages_sent?: number
+          npc_id: string
+          player_id: string
+          room_id: string
+          teaching_mode?: boolean
+        }
+        Update: {
+          conflict_interventions?: number
+          conflict_resolution_active?: boolean
+          conversation_frequency?: number
+          created_at?: string
+          educational_contributions?: number
+          id?: string
+          last_activity?: string
+          messages_sent?: number
+          npc_id?: string
+          player_id?: string
+          room_id?: string
+          teaching_mode?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_npc_players_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_npc_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_npc_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_question_responses: {
+        Row: {
+          answered_at: string
+          attempt_id: string
+          bonus_applied: string | null
+          id: string
+          is_correct: boolean
+          player_id: string
+          question_id: string
+          question_number: number
+          response_time_seconds: number
+          room_id: string
+          selected_answer: string | null
+        }
+        Insert: {
+          answered_at?: string
+          attempt_id: string
+          bonus_applied?: string | null
+          id?: string
+          is_correct: boolean
+          player_id: string
+          question_id: string
+          question_number: number
+          response_time_seconds: number
+          room_id: string
+          selected_answer?: string | null
+        }
+        Update: {
+          answered_at?: string
+          attempt_id?: string
+          bonus_applied?: string | null
+          id?: string
+          is_correct?: boolean
+          player_id?: string
+          question_id?: string
+          question_number?: number
+          response_time_seconds?: number
+          room_id?: string
+          selected_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_question_responses_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_question_responses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_question_responses_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_quiz_attempts: {
+        Row: {
+          bonus_points: number
+          completed_at: string | null
+          correct_answers: number
+          final_rank: number | null
+          id: string
+          is_completed: boolean
+          player_id: string
+          room_id: string
+          score: number
+          started_at: string
+          time_spent_seconds: number
+          topic_id: string
+          total_questions: number
+        }
+        Insert: {
+          bonus_points?: number
+          completed_at?: string | null
+          correct_answers?: number
+          final_rank?: number | null
+          id?: string
+          is_completed?: boolean
+          player_id: string
+          room_id: string
+          score?: number
+          started_at?: string
+          time_spent_seconds?: number
+          topic_id: string
+          total_questions: number
+        }
+        Update: {
+          bonus_points?: number
+          completed_at?: string | null
+          correct_answers?: number
+          final_rank?: number | null
+          id?: string
+          is_completed?: boolean
+          player_id?: string
+          room_id?: string
+          score?: number
+          started_at?: string
+          time_spent_seconds?: number
+          topic_id?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_quiz_attempts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_quiz_attempts_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_room_players: {
+        Row: {
+          boost_inventory: Json | null
+          created_at: string
+          guest_token: string | null
+          id: string
+          is_connected: boolean
+          is_host: boolean
+          is_ready: boolean
+          join_order: number
+          last_activity: string
+          player_emoji: string
+          player_name: string
+          room_id: string
+          user_id: string | null
+        }
+        Insert: {
+          boost_inventory?: Json | null
+          created_at?: string
+          guest_token?: string | null
+          id?: string
+          is_connected?: boolean
+          is_host?: boolean
+          is_ready?: boolean
+          join_order: number
+          last_activity?: string
+          player_emoji?: string
+          player_name: string
+          room_id: string
+          user_id?: string | null
+        }
+        Update: {
+          boost_inventory?: Json | null
+          created_at?: string
+          guest_token?: string | null
+          id?: string
+          is_connected?: boolean
+          is_host?: boolean
+          is_ready?: boolean
+          join_order?: number
+          last_activity?: string
+          player_emoji?: string
+          player_name?: string
+          room_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_rooms: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_players: number
+          expires_at: string
+          game_mode: string
+          host_user_id: string | null
+          id: string
+          max_players: number
+          room_code: string
+          room_name: string | null
+          room_status: string
+          settings: Json
+          started_at: string | null
+          topic_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_players?: number
+          expires_at?: string
+          game_mode?: string
+          host_user_id?: string | null
+          id?: string
+          max_players?: number
+          room_code: string
+          room_name?: string | null
+          room_status?: string
+          settings?: Json
+          started_at?: string | null
+          topic_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_players?: number
+          expires_at?: string
+          game_mode?: string
+          host_user_id?: string | null
+          id?: string
+          max_players?: number
+          room_code?: string
+          room_name?: string | null
+          room_status?: string
+          settings?: Json
+          started_at?: string | null
+          topic_id?: string
+        }
+        Relationships: []
+      }
+      npc_category_specializations: {
+        Row: {
+          category: string
+          confidence_modifier: number
+          created_at: string
+          id: string
+          modifier_percentage: number
+          npc_id: string
+          specialization_type: string
+        }
+        Insert: {
+          category: string
+          confidence_modifier?: number
+          created_at?: string
+          id?: string
+          modifier_percentage?: number
+          npc_id: string
+          specialization_type: string
+        }
+        Update: {
+          category?: string
+          confidence_modifier?: number
+          created_at?: string
+          id?: string
+          modifier_percentage?: number
+          npc_id?: string
+          specialization_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_category_specializations_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      npc_chat_templates: {
+        Row: {
+          context_filter: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          message_template: string
+          mood_tags: string[] | null
+          npc_id: string
+          skill_level_tags: string[] | null
+          trigger_type: string
+          usage_count: number
+          variables: Json | null
+        }
+        Insert: {
+          context_filter?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          message_template: string
+          mood_tags?: string[] | null
+          npc_id: string
+          skill_level_tags?: string[] | null
+          trigger_type: string
+          usage_count?: number
+          variables?: Json | null
+        }
+        Update: {
+          context_filter?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          message_template?: string
+          mood_tags?: string[] | null
+          npc_id?: string
+          skill_level_tags?: string[] | null
+          trigger_type?: string
+          usage_count?: number
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_chat_templates_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      npc_conversation_history: {
+        Row: {
+          context_data: Json | null
+          created_at: string
+          educational_value: string | null
+          follow_up_generated: boolean | null
+          id: string
+          message: string
+          npc_id: string
+          openai_metadata: Json | null
+          personality_traits: string[] | null
+          player_id: string | null
+          response_to_user_id: string | null
+          room_id: string | null
+          tone: string | null
+          trigger_type: string
+          user_reactions: Json | null
+        }
+        Insert: {
+          context_data?: Json | null
+          created_at?: string
+          educational_value?: string | null
+          follow_up_generated?: boolean | null
+          id?: string
+          message: string
+          npc_id: string
+          openai_metadata?: Json | null
+          personality_traits?: string[] | null
+          player_id?: string | null
+          response_to_user_id?: string | null
+          room_id?: string | null
+          tone?: string | null
+          trigger_type: string
+          user_reactions?: Json | null
+        }
+        Update: {
+          context_data?: Json | null
+          created_at?: string
+          educational_value?: string | null
+          follow_up_generated?: boolean | null
+          id?: string
+          message?: string
+          npc_id?: string
+          openai_metadata?: Json | null
+          personality_traits?: string[] | null
+          player_id?: string | null
+          response_to_user_id?: string | null
+          room_id?: string | null
+          tone?: string | null
+          trigger_type?: string
+          user_reactions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_conversation_history_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "npc_conversation_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      npc_learning_progression: {
+        Row: {
+          avg_human_accuracy: number | null
+          category: string
+          confidence_trend: number
+          correct_responses: number
+          current_accuracy: number
+          id: string
+          last_updated: string
+          learning_velocity: number
+          npc_id: string
+          percentile_rank: number | null
+          plateau_indicator: number
+          questions_seen: number
+          total_response_time: number
+          vs_humans_win_rate: number
+        }
+        Insert: {
+          avg_human_accuracy?: number | null
+          category: string
+          confidence_trend?: number
+          correct_responses?: number
+          current_accuracy?: number
+          id?: string
+          last_updated?: string
+          learning_velocity?: number
+          npc_id: string
+          percentile_rank?: number | null
+          plateau_indicator?: number
+          questions_seen?: number
+          total_response_time?: number
+          vs_humans_win_rate?: number
+        }
+        Update: {
+          avg_human_accuracy?: number | null
+          category?: string
+          confidence_trend?: number
+          correct_responses?: number
+          current_accuracy?: number
+          id?: string
+          last_updated?: string
+          learning_velocity?: number
+          npc_id?: string
+          percentile_rank?: number | null
+          plateau_indicator?: number
+          questions_seen?: number
+          total_response_time?: number
+          vs_humans_win_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_learning_progression_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      npc_personalities: {
+        Row: {
+          adaptation_rate: number
+          age_range: string | null
+          background_story: string | null
+          base_accuracy_max: number
+          base_accuracy_min: number
+          base_skill_level: string
+          byline: string | null
+          chattiness_level: number
+          communication_style: string | null
+          confidence_level: number
+          consistency_factor: number
+          created_at: string
+          description: string | null
+          display_name: string
+          emoji: string
+          encouragement_style: string
+          first_name: string | null
+          humor_level: number
+          id: string
+          is_active: boolean
+          last_name: string | null
+          learning_enabled: boolean
+          learning_motivation: string | null
+          location: string | null
+          max_skill_drift: number
+          npc_code: string
+          personality_type: string
+          political_engagement_level: string | null
+          preferred_topics: string[] | null
+          profession: string | null
+          response_time_max: number
+          response_time_min: number
+          updated_at: string
+        }
+        Insert: {
+          adaptation_rate?: number
+          age_range?: string | null
+          background_story?: string | null
+          base_accuracy_max?: number
+          base_accuracy_min?: number
+          base_skill_level?: string
+          byline?: string | null
+          chattiness_level?: number
+          communication_style?: string | null
+          confidence_level?: number
+          consistency_factor?: number
+          created_at?: string
+          description?: string | null
+          display_name: string
+          emoji?: string
+          encouragement_style?: string
+          first_name?: string | null
+          humor_level?: number
+          id?: string
+          is_active?: boolean
+          last_name?: string | null
+          learning_enabled?: boolean
+          learning_motivation?: string | null
+          location?: string | null
+          max_skill_drift?: number
+          npc_code: string
+          personality_type: string
+          political_engagement_level?: string | null
+          preferred_topics?: string[] | null
+          profession?: string | null
+          response_time_max?: number
+          response_time_min?: number
+          updated_at?: string
+        }
+        Update: {
+          adaptation_rate?: number
+          age_range?: string | null
+          background_story?: string | null
+          base_accuracy_max?: number
+          base_accuracy_min?: number
+          base_skill_level?: string
+          byline?: string | null
+          chattiness_level?: number
+          communication_style?: string | null
+          confidence_level?: number
+          consistency_factor?: number
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          emoji?: string
+          encouragement_style?: string
+          first_name?: string | null
+          humor_level?: number
+          id?: string
+          is_active?: boolean
+          last_name?: string | null
+          learning_enabled?: boolean
+          learning_motivation?: string | null
+          location?: string | null
+          max_skill_drift?: number
+          npc_code?: string
+          personality_type?: string
+          political_engagement_level?: string | null
+          preferred_topics?: string[] | null
+          profession?: string | null
+          response_time_max?: number
+          response_time_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      npc_question_responses: {
+        Row: {
+          answered_at: string
+          attempt_id: string
+          base_accuracy_used: number
+          category_modifier_applied: number
+          confidence_level: number
+          correct_answer: string
+          difficulty_modifier_applied: number
+          human_responses_seen: number
+          id: string
+          is_correct: boolean
+          learning_weight: number
+          npc_id: string
+          question_category: string | null
+          question_difficulty: number | null
+          question_id: string
+          random_variance_applied: number
+          response_time_seconds: number
+          selected_answer: string | null
+        }
+        Insert: {
+          answered_at?: string
+          attempt_id: string
+          base_accuracy_used: number
+          category_modifier_applied?: number
+          confidence_level?: number
+          correct_answer: string
+          difficulty_modifier_applied?: number
+          human_responses_seen?: number
+          id?: string
+          is_correct: boolean
+          learning_weight?: number
+          npc_id: string
+          question_category?: string | null
+          question_difficulty?: number | null
+          question_id: string
+          random_variance_applied?: number
+          response_time_seconds: number
+          selected_answer?: string | null
+        }
+        Update: {
+          answered_at?: string
+          attempt_id?: string
+          base_accuracy_used?: number
+          category_modifier_applied?: number
+          confidence_level?: number
+          correct_answer?: string
+          difficulty_modifier_applied?: number
+          human_responses_seen?: number
+          id?: string
+          is_correct?: boolean
+          learning_weight?: number
+          npc_id?: string
+          question_category?: string | null
+          question_difficulty?: number | null
+          question_id?: string
+          random_variance_applied?: number
+          response_time_seconds?: number
+          selected_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_question_responses_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "npc_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "npc_question_responses_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      npc_quiz_attempts: {
+        Row: {
+          accuracy_percentage: number | null
+          average_human_score: number | null
+          completed_at: string | null
+          confidence_average: number
+          correct_answers: number
+          difficulty_adjustment: number
+          human_opponents_count: number
+          id: string
+          is_completed: boolean
+          learning_points_gained: number
+          multiplayer_room_id: string | null
+          npc_id: string
+          placement_rank: number | null
+          score: number
+          started_at: string
+          time_spent_seconds: number
+          topic_id: string
+          total_questions: number
+        }
+        Insert: {
+          accuracy_percentage?: number | null
+          average_human_score?: number | null
+          completed_at?: string | null
+          confidence_average?: number
+          correct_answers?: number
+          difficulty_adjustment?: number
+          human_opponents_count?: number
+          id?: string
+          is_completed?: boolean
+          learning_points_gained?: number
+          multiplayer_room_id?: string | null
+          npc_id: string
+          placement_rank?: number | null
+          score?: number
+          started_at?: string
+          time_spent_seconds?: number
+          topic_id: string
+          total_questions: number
+        }
+        Update: {
+          accuracy_percentage?: number | null
+          average_human_score?: number | null
+          completed_at?: string | null
+          confidence_average?: number
+          correct_answers?: number
+          difficulty_adjustment?: number
+          human_opponents_count?: number
+          id?: string
+          is_completed?: boolean
+          learning_points_gained?: number
+          multiplayer_room_id?: string | null
+          npc_id?: string
+          placement_rank?: number | null
+          score?: number
+          started_at?: string
+          time_spent_seconds?: number
+          topic_id?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "npc_quiz_attempts_multiplayer_room_id_fkey"
+            columns: ["multiplayer_room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "npc_quiz_attempts_npc_id_fkey"
+            columns: ["npc_id"]
+            isOneToOne: false
+            referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           annual_budget: number | null
@@ -1042,6 +2241,92 @@ export type Database = {
         }
         Relationships: []
       }
+      parental_controls: {
+        Row: {
+          alert_on_inappropriate_content: boolean | null
+          allowed_days: number[] | null
+          allowed_difficulty_max: number | null
+          allowed_end_time: string | null
+          allowed_start_time: string | null
+          blocked_categories: string[] | null
+          blocked_topics: string[] | null
+          can_access_chat: boolean | null
+          can_access_multiplayer: boolean | null
+          can_share_progress: boolean | null
+          can_view_leaderboards: boolean | null
+          child_user_id: string
+          content_filter_level: string | null
+          created_at: string | null
+          daily_time_limit_minutes: number | null
+          id: string
+          is_active: boolean | null
+          parent_user_id: string
+          pod_id: string
+          report_frequency: string | null
+          require_parent_approval_for_friends: boolean | null
+          send_progress_reports: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_on_inappropriate_content?: boolean | null
+          allowed_days?: number[] | null
+          allowed_difficulty_max?: number | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          blocked_topics?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          child_user_id: string
+          content_filter_level?: string | null
+          created_at?: string | null
+          daily_time_limit_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          parent_user_id: string
+          pod_id: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          send_progress_reports?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_on_inappropriate_content?: boolean | null
+          allowed_days?: number[] | null
+          allowed_difficulty_max?: number | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          blocked_topics?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          child_user_id?: string
+          content_filter_level?: string | null
+          created_at?: string | null
+          daily_time_limit_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          parent_user_id?: string
+          pod_id?: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          send_progress_reports?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parental_controls_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pathway_skills: {
         Row: {
           created_at: string | null
@@ -1083,6 +2368,621 @@ export type Database = {
             columns: ["skill_id"]
             isOneToOne: false
             referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_activities: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string | null
+          id: string
+          is_shared_publicly: boolean | null
+          is_visible_to_pod: boolean | null
+          pod_id: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          is_shared_publicly?: boolean | null
+          is_visible_to_pod?: boolean | null
+          pod_id: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          is_shared_publicly?: boolean | null
+          is_visible_to_pod?: boolean | null
+          pod_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_analytics: {
+        Row: {
+          active_members_today: number | null
+          active_members_week: number | null
+          average_accuracy: number | null
+          average_session_length_minutes: number | null
+          category_performance: Json | null
+          created_at: string | null
+          date_recorded: string
+          difficulty_distribution: Json | null
+          friend_requests_sent: number | null
+          id: string
+          messages_sent: number | null
+          most_popular_topics: Json | null
+          multiplayer_sessions: number | null
+          new_members_today: number | null
+          pod_id: string
+          total_achievements_earned: number | null
+          total_correct_answers: number | null
+          total_members: number | null
+          total_questions_answered: number | null
+          total_quiz_attempts: number | null
+          total_streaks_started: number | null
+          total_time_spent_minutes: number | null
+        }
+        Insert: {
+          active_members_today?: number | null
+          active_members_week?: number | null
+          average_accuracy?: number | null
+          average_session_length_minutes?: number | null
+          category_performance?: Json | null
+          created_at?: string | null
+          date_recorded?: string
+          difficulty_distribution?: Json | null
+          friend_requests_sent?: number | null
+          id?: string
+          messages_sent?: number | null
+          most_popular_topics?: Json | null
+          multiplayer_sessions?: number | null
+          new_members_today?: number | null
+          pod_id: string
+          total_achievements_earned?: number | null
+          total_correct_answers?: number | null
+          total_members?: number | null
+          total_questions_answered?: number | null
+          total_quiz_attempts?: number | null
+          total_streaks_started?: number | null
+          total_time_spent_minutes?: number | null
+        }
+        Update: {
+          active_members_today?: number | null
+          active_members_week?: number | null
+          average_accuracy?: number | null
+          average_session_length_minutes?: number | null
+          category_performance?: Json | null
+          created_at?: string | null
+          date_recorded?: string
+          difficulty_distribution?: Json | null
+          friend_requests_sent?: number | null
+          id?: string
+          messages_sent?: number | null
+          most_popular_topics?: Json | null
+          multiplayer_sessions?: number | null
+          new_members_today?: number | null
+          pod_id?: string
+          total_achievements_earned?: number | null
+          total_correct_answers?: number | null
+          total_members?: number | null
+          total_questions_answered?: number | null
+          total_quiz_attempts?: number | null
+          total_streaks_started?: number | null
+          total_time_spent_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_challenge_participants: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          current_progress: Json | null
+          final_score: number | null
+          id: string
+          joined_at: string | null
+          rank_position: number | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          current_progress?: Json | null
+          final_score?: number | null
+          id?: string
+          joined_at?: string | null
+          rank_position?: number | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          current_progress?: Json | null
+          final_score?: number | null
+          id?: string
+          joined_at?: string | null
+          rank_position?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "pod_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_challenges: {
+        Row: {
+          challenge_description: string | null
+          challenge_name: string
+          challenge_type: string
+          created_at: string | null
+          created_by: string
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          pod_id: string
+          reward_data: Json | null
+          reward_type: string | null
+          start_date: string | null
+          target_metric: Json
+        }
+        Insert: {
+          challenge_description?: string | null
+          challenge_name: string
+          challenge_type: string
+          created_at?: string | null
+          created_by: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          pod_id: string
+          reward_data?: Json | null
+          reward_type?: string | null
+          start_date?: string | null
+          target_metric: Json
+        }
+        Update: {
+          challenge_description?: string | null
+          challenge_name?: string
+          challenge_type?: string
+          created_at?: string | null
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          pod_id?: string
+          reward_data?: Json | null
+          reward_type?: string | null
+          start_date?: string | null
+          target_metric?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_challenges_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_discovery: {
+        Row: {
+          activity_score: number | null
+          average_rating: number | null
+          banner_image_url: string | null
+          created_at: string | null
+          difficulty_level: number | null
+          display_name: string
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          learning_objectives: string[] | null
+          long_description: string | null
+          member_count: number | null
+          pod_id: string
+          search_tags: string[] | null
+          short_description: string | null
+          target_age_range: string | null
+          topics_covered: string[] | null
+          total_ratings: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          activity_score?: number | null
+          average_rating?: number | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          display_name: string
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          learning_objectives?: string[] | null
+          long_description?: string | null
+          member_count?: number | null
+          pod_id: string
+          search_tags?: string[] | null
+          short_description?: string | null
+          target_age_range?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          activity_score?: number | null
+          average_rating?: number | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          display_name?: string
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          learning_objectives?: string[] | null
+          long_description?: string | null
+          member_count?: number | null
+          pod_id?: string
+          search_tags?: string[] | null
+          short_description?: string | null
+          target_age_range?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_discovery_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_invite_links: {
+        Row: {
+          age_restrictions: Json | null
+          allowed_roles: string[] | null
+          created_at: string | null
+          created_by: string
+          current_uses: number | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_url: string
+          is_active: boolean | null
+          max_uses: number | null
+          pod_id: string
+          require_approval: boolean | null
+        }
+        Insert: {
+          age_restrictions?: Json | null
+          allowed_roles?: string[] | null
+          created_at?: string | null
+          created_by: string
+          current_uses?: number | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          invite_url: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          pod_id: string
+          require_approval?: boolean | null
+        }
+        Update: {
+          age_restrictions?: Json | null
+          allowed_roles?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          current_uses?: number | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invite_url?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          pod_id?: string
+          require_approval?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_invite_links_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_join_requests: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          invite_link_id: string | null
+          message: string | null
+          pod_id: string
+          requested_role: string | null
+          requester_age: number | null
+          requester_id: string
+          review_message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_link_id?: string | null
+          message?: string | null
+          pod_id: string
+          requested_role?: string | null
+          requester_age?: number | null
+          requester_id: string
+          review_message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_link_id?: string | null
+          message?: string | null
+          pod_id?: string
+          requested_role?: string | null
+          requester_age?: number | null
+          requester_id?: string
+          review_message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_join_requests_invite_link_id_fkey"
+            columns: ["invite_link_id"]
+            isOneToOne: false
+            referencedRelation: "pod_invite_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_join_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_member_analytics: {
+        Row: {
+          accuracy_rate: number | null
+          achievements_earned: number | null
+          average_difficulty: number | null
+          correct_answers: number | null
+          created_at: string | null
+          current_streak: number | null
+          date_recorded: string
+          difficulty_progression: Json | null
+          help_provided: number | null
+          help_requests_sent: number | null
+          id: string
+          longest_session_minutes: number | null
+          longest_streak: number | null
+          messages_sent: number | null
+          multiplayer_participations: number | null
+          pod_id: string
+          questions_answered: number | null
+          quiz_attempts: number | null
+          sessions_count: number | null
+          time_spent_minutes: number | null
+          topics_completed: number | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_rate?: number | null
+          achievements_earned?: number | null
+          average_difficulty?: number | null
+          correct_answers?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          date_recorded?: string
+          difficulty_progression?: Json | null
+          help_provided?: number | null
+          help_requests_sent?: number | null
+          id?: string
+          longest_session_minutes?: number | null
+          longest_streak?: number | null
+          messages_sent?: number | null
+          multiplayer_participations?: number | null
+          pod_id: string
+          questions_answered?: number | null
+          quiz_attempts?: number | null
+          sessions_count?: number | null
+          time_spent_minutes?: number | null
+          topics_completed?: number | null
+          user_id: string
+        }
+        Update: {
+          accuracy_rate?: number | null
+          achievements_earned?: number | null
+          average_difficulty?: number | null
+          correct_answers?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          date_recorded?: string
+          difficulty_progression?: Json | null
+          help_provided?: number | null
+          help_requests_sent?: number | null
+          id?: string
+          longest_session_minutes?: number | null
+          longest_streak?: number | null
+          messages_sent?: number | null
+          multiplayer_participations?: number | null
+          pod_id?: string
+          questions_answered?: number | null
+          quiz_attempts?: number | null
+          sessions_count?: number | null
+          time_spent_minutes?: number | null
+          topics_completed?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_member_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_memberships: {
+        Row: {
+          birth_date: string | null
+          can_invite_members: boolean | null
+          can_message: boolean | null
+          can_modify_settings: boolean | null
+          can_view_progress: boolean | null
+          created_at: string | null
+          grade_level: string | null
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          membership_status: string | null
+          parental_consent: boolean | null
+          pod_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          birth_date?: string | null
+          can_invite_members?: boolean | null
+          can_message?: boolean | null
+          can_modify_settings?: boolean | null
+          can_view_progress?: boolean | null
+          created_at?: string | null
+          grade_level?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          membership_status?: string | null
+          parental_consent?: boolean | null
+          pod_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          birth_date?: string | null
+          can_invite_members?: boolean | null
+          can_message?: boolean | null
+          can_modify_settings?: boolean | null
+          can_view_progress?: boolean | null
+          created_at?: string | null
+          grade_level?: string | null
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          membership_status?: string | null
+          parental_consent?: boolean | null
+          pod_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pod_ratings: {
+        Row: {
+          community_rating: number | null
+          content_quality_rating: number | null
+          created_at: string | null
+          id: string
+          is_anonymous: boolean | null
+          is_public: boolean | null
+          organization_rating: number | null
+          pod_id: string
+          rating: number
+          review: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          community_rating?: number | null
+          content_quality_rating?: number | null
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_public?: boolean | null
+          organization_rating?: number | null
+          pod_id: string
+          rating: number
+          review?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          community_rating?: number | null
+          content_quality_rating?: number | null
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_public?: boolean | null
+          organization_rating?: number | null
+          pod_id?: string
+          rating?: number
+          review?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_ratings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
         ]
@@ -1728,6 +3628,107 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      shareable_gift_links: {
+        Row: {
+          access_type: string
+          created_at: string | null
+          custom_slug: string | null
+          donor_user_id: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          link_code: string
+          max_uses_per_email: number | null
+          message: string | null
+          source_donation_amount: number | null
+          source_stripe_session_id: string | null
+          title: string | null
+          total_credits: number
+          updated_at: string | null
+          used_credits: number
+        }
+        Insert: {
+          access_type: string
+          created_at?: string | null
+          custom_slug?: string | null
+          donor_user_id: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          link_code: string
+          max_uses_per_email?: number | null
+          message?: string | null
+          source_donation_amount?: number | null
+          source_stripe_session_id?: string | null
+          title?: string | null
+          total_credits?: number
+          updated_at?: string | null
+          used_credits?: number
+        }
+        Update: {
+          access_type?: string
+          created_at?: string | null
+          custom_slug?: string | null
+          donor_user_id?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          link_code?: string
+          max_uses_per_email?: number | null
+          message?: string | null
+          source_donation_amount?: number | null
+          source_stripe_session_id?: string | null
+          title?: string | null
+          total_credits?: number
+          updated_at?: string | null
+          used_credits?: number
+        }
+        Relationships: []
+      }
+      shareable_link_claims: {
+        Row: {
+          access_type: string
+          claimed_at: string | null
+          claimer_email: string
+          claimer_user_id: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          shareable_link_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_type: string
+          claimed_at?: string | null
+          claimer_email: string
+          claimer_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          shareable_link_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_type?: string
+          claimed_at?: string | null
+          claimer_email?: string
+          claimer_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          shareable_link_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareable_link_claims_shareable_link_id_fkey"
+            columns: ["shareable_link_id"]
+            isOneToOne: false
+            referencedRelation: "shareable_gift_links"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3979,6 +5980,25 @@ export type Database = {
         }
         Relationships: []
       }
+      npc_vs_human_analytics: {
+        Row: {
+          accuracy_improvement: number | null
+          avg_accuracy: number | null
+          avg_human_opponent_score: number | null
+          avg_placement: number | null
+          avg_time_per_question: number | null
+          base_skill_level: string | null
+          consistency_score: number | null
+          display_name: string | null
+          human_win_rate: number | null
+          npc_code: string | null
+          personality_type: string | null
+          recent_accuracy: number | null
+          recent_quiz_count: number | null
+          total_quizzes: number | null
+        }
+        Relationships: []
+      }
       question_feedback_stats: {
         Row: {
           category: string | null
@@ -4302,6 +6322,35 @@ export type Database = {
       }
     }
     Functions: {
+      add_npc_to_multiplayer_room: {
+        Args: { p_room_code: string; p_npc_code: string }
+        Returns: {
+          success: boolean
+          message: string
+          npc_player_id: string
+          room_id: string
+        }[]
+      }
+      calculate_gift_credits: {
+        Args: { donation_amount_cents: number }
+        Returns: {
+          annual_credits: number
+          lifetime_credits: number
+          donor_access_type: string
+        }[]
+      }
+      calculate_pod_analytics: {
+        Args: { p_pod_id: string; p_date?: string }
+        Returns: undefined
+      }
+      can_join_pod_via_invite: {
+        Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
+        Returns: Json
+      }
+      check_all_players_ready: {
+        Args: { p_room_id: string }
+        Returns: boolean
+      }
       check_boost_cooldown: {
         Args: { target_user_id: string; target_boost_type: string }
         Returns: boolean
@@ -4310,7 +6359,35 @@ export type Database = {
         Args: { p_user_id: string; p_feature_name: string }
         Returns: boolean
       }
+      check_silence_intervention: {
+        Args: { p_room_id: string }
+        Returns: {
+          needs_intervention: boolean
+          silence_duration: number
+          last_message_at: string
+          participant_count: number
+        }[]
+      }
+      claim_shareable_gift_link: {
+        Args: {
+          p_link_code: string
+          p_claimer_email: string
+          p_claimer_user_id?: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: {
+          success: boolean
+          access_type: string
+          message: string
+          subscription_created: boolean
+        }[]
+      }
       cleanup_expired_boosts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_expired_rooms: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
@@ -4321,6 +6398,93 @@ export type Database = {
       convert_guest_civics_results: {
         Args: { p_guest_token: string; p_user_id: string }
         Returns: number
+      }
+      create_gift_redemption: {
+        Args: {
+          p_donor_user_id: string
+          p_recipient_email: string
+          p_access_type: string
+          p_gift_message?: string
+        }
+        Returns: {
+          redemption_id: string
+          redemption_code: string
+          success: boolean
+          error_message: string
+        }[]
+      }
+      create_learning_pod: {
+        Args: {
+          p_creator_id: string
+          p_pod_name: string
+          p_pod_type?: string
+          p_family_name?: string
+          p_content_filter_level?: string
+        }
+        Returns: string
+      }
+      create_multiplayer_room: {
+        Args:
+          | {
+              p_topic_id: string
+              p_host_user_id?: string
+              p_host_guest_token?: string
+              p_room_name?: string
+              p_max_players?: number
+              p_game_mode?: string
+            }
+          | {
+              p_topic_id: string
+              p_host_user_id?: string
+              p_room_name?: string
+              p_max_players?: number
+              p_game_mode?: string
+            }
+        Returns: {
+          room_id: string
+          room_code: string
+          created_at: string
+        }[]
+      }
+      create_pod_invite_link: {
+        Args: {
+          p_pod_id: string
+          p_creator_id: string
+          p_description?: string
+          p_max_uses?: number
+          p_expires_hours?: number
+          p_allowed_roles?: string[]
+          p_require_approval?: boolean
+        }
+        Returns: {
+          invite_code: string
+          invite_url: string
+          link_id: string
+        }[]
+      }
+      create_shareable_gift_link: {
+        Args: {
+          p_donor_user_id: string
+          p_access_type: string
+          p_credits_to_use: number
+          p_title?: string
+          p_message?: string
+          p_custom_slug?: string
+        }
+        Returns: {
+          link_id: string
+          link_code: string
+          success: boolean
+          error_message: string
+        }[]
+      }
+      generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_room_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_assessment_question_social_proof_stats: {
         Args: { p_question_id: string; p_assessment_type?: string }
@@ -4340,6 +6504,36 @@ export type Database = {
           tags: string[]
         }[]
       }
+      get_detailed_gift_credits: {
+        Args: { p_user_id: string }
+        Returns: {
+          credit_id: string
+          credit_type: string
+          credits_available: number
+          credits_used: number
+          source_donation_amount: number
+          source_stripe_session_id: string
+          created_at: string
+          individual_claims: Json
+          shareable_links: Json
+        }[]
+      }
+      get_gift_analytics_summary: {
+        Args: { p_user_id: string }
+        Returns: {
+          total_donated_amount: number
+          total_gift_credits_earned: number
+          total_gift_credits_used: number
+          total_people_helped: number
+          unique_emails_helped: number
+          active_shareable_links: number
+          expired_shareable_links: number
+          pending_individual_gifts: number
+          claimed_individual_gifts: number
+          most_recent_claim_date: string
+          conversion_rate: number
+        }[]
+      }
       get_guest_test_summary: {
         Args: { p_guest_token: string }
         Returns: {
@@ -4349,6 +6543,15 @@ export type Database = {
           latest_level: string
           has_converted: boolean
           converted_user_id: string
+        }[]
+      }
+      get_npc_category_performance: {
+        Args: { p_npc_id: string; p_category: string }
+        Returns: {
+          current_accuracy: number
+          questions_answered: number
+          vs_human_winrate: number
+          improvement_trend: number
         }[]
       }
       get_onboarding_categories: {
@@ -4394,6 +6597,23 @@ export type Database = {
             }
         Returns: string
       }
+      get_people_helped_by_donor: {
+        Args: { p_user_id: string }
+        Returns: {
+          email: string
+          access_type: string
+          claim_method: string
+          claimed_at: string
+          gift_message: string
+          redemption_code: string
+          link_title: string
+          ip_address: unknown
+        }[]
+      }
+      get_pod_analytics: {
+        Args: { p_pod_id: string; p_days?: number }
+        Returns: Json
+      }
       get_question_social_proof_stats: {
         Args: { p_question_id: string }
         Returns: Json
@@ -4406,6 +6626,21 @@ export type Database = {
           category_name: string
           recommendation_reason: string
           priority_score: number
+        }[]
+      }
+      get_shareable_link_info: {
+        Args: { p_link_code: string }
+        Returns: {
+          link_id: string
+          title: string
+          message: string
+          access_type: string
+          total_credits: number
+          used_credits: number
+          available_credits: number
+          expires_at: string
+          is_active: boolean
+          is_valid: boolean
         }[]
       }
       get_skills_needing_review: {
@@ -4462,6 +6697,16 @@ export type Database = {
           export_data: boolean
         }[]
       }
+      get_user_gift_credits: {
+        Args: { p_user_id: string }
+        Returns: {
+          credit_type: string
+          total_credits: number
+          used_credits: number
+          available_credits: number
+          total_donation_amount: number
+        }[]
+      }
       get_user_onboarding_progress: {
         Args: { target_user_id: string }
         Returns: {
@@ -4471,6 +6716,40 @@ export type Database = {
           selected_skills: Json
           platform_preferences: Json
           assessment_results: Json
+        }[]
+      }
+      get_user_pod_memberships: {
+        Args: { p_user_id: string }
+        Returns: {
+          pod_id: string
+          pod_name: string
+          pod_type: string
+          user_role: string
+          member_count: number
+          is_admin: boolean
+        }[]
+      }
+      get_user_rooms: {
+        Args: { p_user_id: string }
+        Returns: {
+          room_id: string
+        }[]
+      }
+      get_user_shareable_links: {
+        Args: { p_user_id: string }
+        Returns: {
+          link_id: string
+          link_code: string
+          title: string
+          message: string
+          access_type: string
+          total_credits: number
+          used_credits: number
+          available_credits: number
+          expires_at: string
+          is_active: boolean
+          created_at: string
+          claims_count: number
         }[]
       }
       gtrgm_compress: {
@@ -4493,9 +6772,44 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      is_content_appropriate_for_user: {
+        Args: {
+          p_user_id: string
+          p_topic_id: string
+          p_category: string
+          p_difficulty?: number
+          p_keywords?: string[]
+        }
+        Returns: boolean
+      }
       is_educational_email: {
         Args: { email_address: string }
         Returns: boolean
+      }
+      join_multiplayer_room: {
+        Args: {
+          p_room_code: string
+          p_player_name: string
+          p_user_id?: string
+          p_guest_token?: string
+          p_player_emoji?: string
+        }
+        Returns: {
+          success: boolean
+          message: string
+          room_id: string
+          player_id: string
+          join_order: number
+        }[]
+      }
+      join_pod_via_invite: {
+        Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
+        Returns: {
+          success: boolean
+          message: string
+          requires_approval: boolean
+          pod_id: string
+        }[]
       }
       link_question_to_source: {
         Args: {
@@ -4504,6 +6818,39 @@ export type Database = {
           p_source_name?: string
           p_source_type?: string
           p_is_primary?: boolean
+        }
+        Returns: string
+      }
+      process_donation_gift_credits: {
+        Args: {
+          p_user_id: string
+          p_donation_amount_cents: number
+          p_stripe_session_id: string
+        }
+        Returns: {
+          donor_access_type: string
+          annual_credits_granted: number
+          lifetime_credits_granted: number
+        }[]
+      }
+      redeem_gift_code: {
+        Args: { p_redemption_code: string; p_recipient_user_id: string }
+        Returns: {
+          success: boolean
+          access_type: string
+          error_message: string
+        }[]
+      }
+      send_npc_message: {
+        Args: {
+          p_room_id: string
+          p_npc_id: string
+          p_message_content: string
+          p_message_type?: string
+          p_trigger_type?: string
+          p_trigger_context?: Json
+          p_educational_value?: string
+          p_confidence_score?: number
         }
         Returns: string
       }
@@ -4519,8 +6866,35 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      start_multiplayer_game: {
+        Args: { p_room_id: string }
+        Returns: boolean
+      }
       track_feature_usage: {
         Args: { p_user_id: string; p_feature_name: string }
+        Returns: boolean
+      }
+      update_conversation_context: {
+        Args: {
+          p_room_id: string
+          p_player_message?: boolean
+          p_mood?: string
+          p_conflict_detected?: boolean
+        }
+        Returns: undefined
+      }
+      update_npc_learning: {
+        Args: {
+          p_npc_id: string
+          p_category: string
+          p_accuracy: number
+          p_response_time: number
+          p_vs_human_performance?: number
+        }
+        Returns: undefined
+      }
+      update_player_ready_status: {
+        Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
         Returns: boolean
       }
       update_user_skill_progress: {
@@ -4531,6 +6905,10 @@ export type Database = {
           p_time_spent?: number
         }
         Returns: undefined
+      }
+      user_is_in_room: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

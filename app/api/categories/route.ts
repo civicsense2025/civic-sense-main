@@ -1,68 +1,83 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 
-const supabase = createClient(
+const supabaseClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://example.supabase.co",
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "example-anon-key"
 )
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Check if we have valid environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.warn('Supabase environment variables not configured, returning mock data')
-      return NextResponse.json({ 
-        categories: [], 
-        synonyms: [],
-        error: 'Database not configured'
+    // Test direct access to question_topics table
+    console.log('🔍 Testing question_topics table access...')
+    
+    const { data: topicsTest, error: topicsError, count } = await supabase
+      .from('question_topics')
+      .select('topic_id, topic_title, emoji', { count: 'exact' })
+      .limit(5)
+
+    console.log('🔍 Topics test result:', { 
+      data: topicsTest, 
+      error: topicsError, 
+      count,
+      hasData: !!topicsTest,
+      dataLength: topicsTest?.length 
+    })
+
+    // Get categories as originally intended
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Categories error:', error)
+      // Return hardcoded categories as fallback
+      return NextResponse.json({
+        categories: [
+          { name: 'Government', emoji: '🏛️' },
+          { name: 'Elections', emoji: '🗳️' },
+          { name: 'Economy', emoji: '💰' },
+          { name: 'Civil Rights', emoji: '⚖️' },
+          { name: 'Environment', emoji: '🌍' },
+          { name: 'Foreign Policy', emoji: '🌐' },
+          { name: 'Media Literacy', emoji: '📰' },
+          { name: 'Local Issues', emoji: '🏘️' }
+        ],
+        debug: {
+          topicsTableAccess: {
+            hasData: !!topicsTest,
+            count,
+            error: topicsError?.message,
+            sampleData: topicsTest?.slice(0, 2)
+          }
+        }
       })
     }
 
-    const { searchParams } = new URL(request.url)
-    const trending = searchParams.get('trending') === 'true'
-
-    // Get canonical categories
-    const { data: categories, error: categoriesError } = await supabase
-      .from('categories')
-      .select('id, name, emoji, description, display_order')
-      .eq('is_active', true)
-      .order('display_order')
-
-    if (categoriesError) {
-      console.error('Error fetching categories:', categoriesError)
-      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
-    }
-
-    let sortedCategories = categories || []
-
-    if (trending && sortedCategories.length > 0) {
-      // Get trending categories based on recent quiz activity
-      const trendingCategories = await getTrendingCategories(sortedCategories)
-      
-      // Use trending categories if we have them, otherwise fall back to display order
-      if (trendingCategories.length > 0) {
-        sortedCategories = trendingCategories
+    return NextResponse.json({
+      categories: categories || [],
+      debug: {
+        topicsTableAccess: {
+          hasData: !!topicsTest,
+          count,
+          error: topicsError?.message,
+          sampleData: topicsTest?.slice(0, 2)
+        }
       }
-    }
-
-    // Get category synonyms
-    const { data: synonyms, error: synonymsError } = await supabase
-      .from('category_synonyms')
-      .select('alias, category_id')
-
-    if (synonymsError) {
-      console.error('Error fetching synonyms:', synonymsError)
-      return NextResponse.json({ error: 'Failed to fetch synonyms' }, { status: 500 })
-    }
-
-    return NextResponse.json({ 
-      categories: sortedCategories, 
-      synonyms: synonyms || [],
-      trending: trending 
     })
   } catch (error) {
-    console.error('Unexpected error in categories API:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('API error:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch categories',
+        debug: {
+          errorMessage: error instanceof Error ? error.message : String(error)
+        }
+      },
+      { status: 500 }
+    )
   }
 }
 
@@ -81,7 +96,7 @@ async function getTrendingCategories(allCategories: CategoryType[]): Promise<Cat
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
     // First get recent quiz attempts
-    const { data: recentAttempts, error: attemptsError } = await supabase
+    const { data: recentAttempts, error: attemptsError } = await supabaseClient
       .from('user_quiz_attempts')
       .select('topic_id, completed_at')
       .gte('completed_at', thirtyDaysAgo.toISOString())
@@ -100,7 +115,7 @@ async function getTrendingCategories(allCategories: CategoryType[]): Promise<Cat
     }
 
     // Get the categories for these topics
-    const { data: topics, error: topicsError } = await supabase
+    const { data: topics, error: topicsError } = await supabaseClient
       .from('question_topics')
       .select('topic_id, categories')
       .in('topic_id', topicIds)

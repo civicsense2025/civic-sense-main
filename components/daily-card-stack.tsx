@@ -417,6 +417,7 @@ export function DailyCardStack({
   // All useState hooks at the top
   const [currentDate, setCurrentDate] = useState(getTodayAtMidnight())
   const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
+  const [totalTopicsCount, setTotalTopicsCount] = useState<number>(0)
   const [isLoadingTopics, setIsLoadingTopics] = useState(true)
   const [isLoadingMoreTopics, setIsLoadingMoreTopics] = useState(false)
   const [showInlinePremiumPrompt, setShowInlinePremiumPrompt] = useState(false)
@@ -632,10 +633,45 @@ export function DailyCardStack({
       try {
         setIsLoadingTopics(true)
         
-        // Only load topics for current week (±3 days) for faster initial load
+        // First, get the total count of all topics to show correct pagination
+        try {
+          // Try to get count efficiently from database
+          if (!supabaseClientRef.current) {
+            supabaseClientRef.current = createSupabaseClient()
+          }
+          
+          const { count, error } = await supabaseClientRef.current
+            .from('question_topics')
+            .select('*', { count: 'exact', head: true })
+            .filter('date', 'not.is', null)
+            .eq('is_active', true)
+          
+          if (error) throw error
+          
+          const totalCount = count || 0
+          if (!isCancelled) {
+            setTotalTopicsCount(totalCount)
+            console.log(`📊 Total topics available: ${totalCount}`)
+          }
+        } catch (countError) {
+          console.warn('Could not get total topics count from database, falling back:', countError)
+          // Fallback to loading all topics for count
+          try {
+            const allTopicsData = await dataService.getAllTopics()
+            const totalCount = Object.keys(allTopicsData).length
+            if (!isCancelled) {
+              setTotalTopicsCount(totalCount)
+              console.log(`📊 Total topics available (fallback): ${totalCount}`)
+            }
+          } catch (fallbackError) {
+            console.warn('Could not get total topics count:', fallbackError)
+          }
+        }
+        
+        // Load topics for current month (±2 weeks) for better initial experience
         const today = getTodayAtMidnight()
-        const startDate = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
-        const endDate = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)   // 3 days ahead
+        const startDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000) // 2 weeks ago
+        const endDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)   // 2 weeks ahead
         
         const topicsData = await dataService.getTopicsInRange(startDate, endDate)
         
@@ -643,6 +679,8 @@ export function DailyCardStack({
         
         const topicsArray: TopicMetadata[] = Object.values(topicsData)
         setTopicsList(topicsArray)
+        
+        console.log(`📚 Initial load: ${topicsArray.length} topics from ${startDate.toDateString()} to ${endDate.toDateString()}`)
         
         // Mark initial range as loaded
         const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
@@ -661,12 +699,15 @@ export function DailyCardStack({
             if (!isCancelled) {
               const allTopicsArray: TopicMetadata[] = Object.values(allTopicsData)
               setTopicsList(allTopicsArray)
+              setTotalTopicsCount(allTopicsArray.length)
               // Mark as "all loaded" so we don't lazy load anymore
               setLoadedDateRanges(new Set(['all_topics_loaded']))
+              console.log(`📚 Fallback: Loaded all ${allTopicsArray.length} topics`)
             }
           } catch (fallbackError) {
             console.error('Fallback loading failed:', fallbackError)
             setTopicsList([])
+            setTotalTopicsCount(0)
           }
         }
       } finally {
@@ -889,7 +930,12 @@ export function DailyCardStack({
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg font-medium">Preparing your civic learning journey...</p>
-          <p className="text-sm text-slate-500 mt-2">Loading today's most important topics</p>
+          <p className="text-sm text-slate-500 mt-2">
+            {totalTopicsCount > 0 
+              ? `Loading from our catalog of ${totalTopicsCount} topics...`
+              : "Loading today's most important topics..."
+            }
+          </p>
         </div>
       </div>
     )
@@ -981,7 +1027,7 @@ export function DailyCardStack({
                       type="text"
                       value={dropdownSearch}
                       onChange={(e) => setDropdownSearch(e.target.value)}
-                      placeholder={`Search ${allFilteredTopics.length} topics...`}
+                      placeholder={`Search ${(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)} topics...`}
                       className="w-full bg-slate-100 dark:bg-slate-800 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400"
                     />
                   </div>
@@ -1101,7 +1147,7 @@ export function DailyCardStack({
 
             {/* Progress indicator */}
             <div className="text-xs text-slate-500 dark:text-slate-400 font-mono text-center flex-shrink-0">
-              {currentStackIndex + 1} of {allFilteredTopics.length}
+              {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
             </div>
 
             {/* Next button */}
@@ -1150,7 +1196,7 @@ export function DailyCardStack({
               </h2>
               {/* Topic categories */}
               {currentTopic.categories && currentTopic.categories.length > 0 && (
-                <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-12">
+                <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
                   {currentTopic.categories.map((category) => (
                     <Badge 
                       key={category} 
@@ -1174,6 +1220,49 @@ export function DailyCardStack({
                 {currentTopic.description}
               </p>
               
+              {/* Start Quiz Button - positioned close to description */}
+              <div className="flex justify-center mt-10">
+                {currentAccessStatus.accessible ? (
+                  <StartQuizButton
+                    label={isTopicCompleted(currentTopic.topic_id) ? 'Read Again' : 'Read More'}
+                    onClick={() => handleExploreGame(currentTopic.topic_id)}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center space-y-2">
+                    {currentAccessStatus.reason === 'future_locked' ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <StartQuizButton
+                                label="Available Soon"
+                                disabled
+                                variant="outline"
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            This quiz will unlock at 12:00&nbsp;AM&nbsp;ET on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <StartQuizButton
+                        label={currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon! 🚀' : 
+                               currentAccessStatus.reason?.startsWith('guest') ? 'Support CivicSense to Continue' :
+                               currentAccessStatus.reason === 'premium_required' ? 'Unlock with Donation' : 
+                               'Available Soon'}
+                        disabled
+                        variant="outline"
+                      />
+                    )}
+                    {currentAccessStatus.reason === 'future_locked' && (
+                      <div className="text-[10px] text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {/* Status indicators */}
               <div className="flex items-center justify-center gap-3 mt-6">
                 {isTopicCompleted(currentTopic.topic_id) && (
@@ -1190,49 +1279,6 @@ export function DailyCardStack({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Start Quiz Button - larger and inline */}
-      <div className="flex justify-center mt-8">
-        {currentAccessStatus.accessible ? (
-          <StartQuizButton
-            label={isTopicCompleted(currentTopic.topic_id) ? 'Read Again' : 'Read More'}
-            onClick={() => handleExploreGame(currentTopic.topic_id)}
-          />
-        ) : (
-          <div className="flex flex-col items-center space-y-2">
-            {currentAccessStatus.reason === 'future_locked' ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <StartQuizButton
-                        label="Available Soon"
-                        disabled
-                        variant="outline"
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    This quiz will unlock at 12:00&nbsp;AM&nbsp;ET on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <StartQuizButton
-                label={currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon! 🚀' : 
-                       currentAccessStatus.reason?.startsWith('guest') ? 'Support CivicSense to Continue' :
-                       currentAccessStatus.reason === 'premium_required' ? 'Unlock with Donation' : 
-                       'Available Soon'}
-                disabled
-                variant="outline"
-              />
-            )}
-            {currentAccessStatus.reason === 'future_locked' && (
-              <div className="text-[10px] text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   )

@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
-import { X } from "lucide-react"
+import { X, Copy } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -43,14 +43,43 @@ const toastVariants = cva(
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
-    VariantProps<typeof toastVariants>
->(({ className, variant, ...props }, ref) => {
+    VariantProps<typeof toastVariants> & {
+      copyText?: string
+    }
+>(({ className, variant, copyText, ...props }, ref) => {
+  const handleCopy = React.useCallback(async () => {
+    if (!copyText) return
+    
+    try {
+      await navigator.clipboard.writeText(copyText)
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = copyText
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    }
+  }, [copyText])
+
   return (
     <ToastPrimitives.Root
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
       {...props}
-    />
+    >
+      {props.children}
+      {variant === "destructive" && copyText && (
+        <button
+          onClick={handleCopy}
+          className="absolute right-8 top-2 rounded-md p-1 text-destructive-foreground/70 opacity-0 transition-opacity hover:text-destructive-foreground hover:bg-destructive-foreground/10 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive-foreground/20 group-hover:opacity-100"
+          title="Copy error message"
+        >
+          <Copy className="h-4 w-4" />
+        </button>
+      )}
+    </ToastPrimitives.Root>
   )
 })
 Toast.displayName = ToastPrimitives.Root.displayName

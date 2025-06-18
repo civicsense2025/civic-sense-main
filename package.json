@@ -18,6 +18,7 @@
     "test-20-questions": "npx tsx scripts/test-20-questions.ts",
     "import-quiz": "npx tsx scripts/import-quiz-data.ts import-csv",
     "optimize-questions": "npx tsx scripts/optimize-question-content.ts",
+    "check-integrity": "npx tsx scripts/check-question-integrity.ts",
     "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/post-generate-types.js"
   },
   "dependencies": {

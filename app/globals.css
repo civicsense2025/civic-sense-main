@@ -25,43 +25,43 @@ body {
 /* WCAG 2.2 AA Compliant Color System */
 :root {
   /* Light mode colors - All meet 4.5:1+ contrast ratio */
-  --background: 255 255 255;
-  --foreground: 15 23 42;                    /* slate-900 - 17.85:1 ratio */
-  --foreground-secondary: 51 65 85;          /* slate-700 - 10.35:1 ratio */
-  --foreground-tertiary: 71 85 105;          /* slate-600 - 7.58:1 ratio */
-  --foreground-muted: 100 116 139;           /* slate-500 - 4.83:1 ratio (large text only) */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --foreground-secondary: 210 40% 96%;
+  --foreground-tertiary: 215.4 16.3% 46.9%;
+  --foreground-muted: 210 40% 96%;
   
-  --card: 255 255 255;
-  --card-foreground: 15 23 42;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
   
-  --popover: 255 255 255;
-  --popover-foreground: 15 23 42;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
   
-  --primary: 30 64 175;                      /* blue-800 - 8.72:1 ratio */
-  --primary-foreground: 255 255 255;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
   
-  --secondary: 248 250 252;                  /* slate-50 */
-  --secondary-foreground: 51 65 85;          /* slate-700 */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
   
-  --muted: 248 250 252;                      /* slate-50 */
-  --muted-foreground: 71 85 105;             /* slate-600 - 7.58:1 ratio */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
   
-  --accent: 248 250 252;                     /* slate-50 */
-  --accent-foreground: 51 65 85;             /* slate-700 */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
   
-  --destructive: 220 38 38;                  /* red-600 - 4.83:1 ratio */
-  --destructive-foreground: 255 255 255;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
   
-  --success: 22 101 52;                      /* green-800 - 7.13:1 ratio */
-  --success-foreground: 255 255 255;
+  --success: 142.1 76.2% 36.3%;
+  --success-foreground: 210 40% 98%;
   
-  --warning: 161 98 7;                       /* yellow-700 - 4.92:1 ratio */
-  --warning-foreground: 255 255 255;
+  --warning: 38.9 100% 60%;
+  --warning-foreground: 210 40% 98%;
   
-  --border: 226 232 240;                     /* slate-200 */
-  --input: 226 232 240;                      /* slate-200 */
-  --ring: 30 64 175;                         /* blue-800 */
-  --radius: 0.75rem;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
 
   /* Apple-inspired spacing scale */
   --space-1: 0.25rem;
@@ -88,46 +88,74 @@ body {
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
   --text-6xl: 3.75rem;
+
+  /* Enhanced multiplayer theme variables */
+  --multiplayer-bg: 0 0% 98%;
+  --multiplayer-card: 0 0% 100%;
+  --multiplayer-card-hover: 210 40% 96%;
+  --multiplayer-border: 214.3 31.8% 85%;
+  --multiplayer-text: 222.2 84% 4.9%;
+  --multiplayer-text-muted: 215.4 16.3% 40%;
+  --multiplayer-accent: 221.2 83.2% 53.3%;
+  --multiplayer-accent-light: 221.2 83.2% 95%;
+  --multiplayer-success: 142.1 76.2% 36.3%;
+  --multiplayer-success-light: 142.1 76.2% 95%;
+  --multiplayer-warning: 38.9 100% 60%;
+  --multiplayer-warning-light: 38.9 100% 95%;
 }
 
 .dark {
   /* Dark mode colors - Pure black with varying opacity levels and gold accents */
-  --background: 0 0 0;                       /* Pure black */
-  --foreground: 255 255 255;                 /* Pure white - 21:1 ratio */
-  --foreground-secondary: 229 229 229;       /* Light gray - 16.75:1 ratio */
-  --foreground-tertiary: 212 212 212;        /* Medium gray - 13.28:1 ratio */
-  --foreground-muted: 163 163 163;           /* Dark gray - 5.74:1 ratio */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --foreground-secondary: 217.2 32.6% 17.5%;
+  --foreground-tertiary: 215 20.2% 65.1%;
+  --foreground-muted: 217.2 32.6% 17.5%;
   
-  --card: 0 0 0;                             /* Pure black (same as background) */
-  --card-foreground: 255 255 255;            /* Pure white */
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
   
-  --popover: 0 0 0;                          /* Pure black */
-  --popover-foreground: 255 255 255;         /* Pure white */
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
   
-  --primary: 30 64 175;                      /* blue-800 - same as light mode for consistency */
-  --primary-foreground: 255 255 255;         /* Pure white */
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
   
-  --secondary: 0 0 0;                        /* Pure black */
-  --secondary-foreground: 229 229 229;       /* Light gray */
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
   
-  --muted: 0 0 0;                            /* Pure black */
-  --muted-foreground: 212 212 212;           /* Medium gray - 13.28:1 ratio */
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
   
-  --accent: 0 0 0;                           /* Pure black */
-  --accent-foreground: 229 229 229;          /* Light gray */
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
   
-  --destructive: 248 113 113;                /* red-400 - 6.45:1 ratio */
-  --destructive-foreground: 0 0 0;           /* Pure black */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
   
-  --success: 74 222 128;                     /* green-400 - 10.25:1 ratio */
-  --success-foreground: 0 0 0;               /* Pure black */
+  --success: 142.1 76.2% 45%;
+  --success-foreground: 210 40% 98%;
   
-  --warning: 251 191 36;                     /* yellow-400 - 10.69:1 ratio */
-  --warning-foreground: 0 0 0;               /* Pure black */
+  --warning: 38.9 100% 65%;
+  --warning-foreground: 210 40% 98%;
   
-  --border: 64 64 64;                        /* Dark gray for subtle borders */
-  --input: 32 32 32;                         /* Very dark gray for input backgrounds */
-  --ring: 30 64 175;                         /* blue-800 - matches primary */
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
+
+  /* Enhanced dark mode multiplayer variables */
+  --multiplayer-bg: 222.2 84% 3%;
+  --multiplayer-card: 217.2 32.6% 8%;
+  --multiplayer-card-hover: 217.2 32.6% 12%;
+  --multiplayer-border: 217.2 32.6% 20%;
+  --multiplayer-text: 210 40% 95%;
+  --multiplayer-text-muted: 215 20.2% 60%;
+  --multiplayer-accent: 217.2 91.2% 59.8%;
+  --multiplayer-accent-light: 217.2 91.2% 15%;
+  --multiplayer-success: 142.1 76.2% 45%;
+  --multiplayer-success-light: 142.1 76.2% 12%;
+  --multiplayer-warning: 38.9 100% 65%;
+  --multiplayer-warning-light: 38.9 100% 12%;
 }
 
 /* Clean base styles */
@@ -1022,5 +1050,211 @@ button, .card, .quiz-option {
 
 .skip-to-content:focus {
   top: 6px;
+}
+
+/* Enhanced multiplayer-specific styles */
+@layer components {
+  .multiplayer-container {
+    @apply bg-[hsl(var(--multiplayer-bg))] text-[hsl(var(--multiplayer-text))];
+  }
+
+  .multiplayer-card {
+    @apply bg-[hsl(var(--multiplayer-card))] border-[hsl(var(--multiplayer-border))] text-[hsl(var(--multiplayer-text))];
+    @apply shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  .multiplayer-card:hover {
+    @apply bg-[hsl(var(--multiplayer-card-hover))];
+  }
+
+  .multiplayer-text-muted {
+    @apply text-[hsl(var(--multiplayer-text-muted))];
+  }
+
+  .multiplayer-accent {
+    @apply bg-[hsl(var(--multiplayer-accent))] text-white;
+  }
+
+  .multiplayer-accent-light {
+    @apply bg-[hsl(var(--multiplayer-accent-light))] text-[hsl(var(--multiplayer-accent))];
+  }
+
+  .multiplayer-success {
+    @apply bg-[hsl(var(--multiplayer-success))] text-white;
+  }
+
+  .multiplayer-success-light {
+    @apply bg-[hsl(var(--multiplayer-success-light))] text-[hsl(var(--multiplayer-success))];
+  }
+
+  .multiplayer-warning {
+    @apply bg-[hsl(var(--multiplayer-warning))] text-white;
+  }
+
+  .multiplayer-warning-light {
+    @apply bg-[hsl(var(--multiplayer-warning-light))] text-[hsl(var(--multiplayer-warning))];
+  }
+
+  /* Game mode cards */
+  .game-mode-card {
+    @apply multiplayer-card border-2 p-4 rounded-lg cursor-pointer transition-all;
+    @apply hover:border-[hsl(var(--multiplayer-accent))]/50 hover:shadow-lg;
+  }
+
+  .game-mode-card.selected {
+    @apply border-[hsl(var(--multiplayer-accent))] multiplayer-accent-light shadow-md;
+  }
+
+  /* Player cards */
+  .player-card {
+    @apply multiplayer-card p-3 rounded-lg transition-all;
+    @apply border-l-4 border-l-transparent;
+  }
+
+  .player-card.ready {
+    @apply border-l-[hsl(var(--multiplayer-success))] multiplayer-success-light;
+  }
+
+  .player-card.host {
+    @apply border-l-[hsl(var(--multiplayer-warning))] multiplayer-warning-light;
+  }
+
+  .player-card.npc {
+    @apply border-l-[hsl(var(--multiplayer-accent))] multiplayer-accent-light;
+  }
+
+  /* Chat messages */
+  .chat-message {
+    @apply multiplayer-card p-3 rounded-lg mb-2;
+  }
+
+  .chat-message.own {
+    @apply multiplayer-accent-light border-[hsl(var(--multiplayer-accent))]/30;
+  }
+
+  .chat-message.npc {
+    @apply border-l-4 border-l-[hsl(var(--multiplayer-accent))] multiplayer-accent-light;
+  }
+
+  .chat-message.system {
+    @apply bg-[hsl(var(--multiplayer-text-muted))]/10 text-[hsl(var(--multiplayer-text-muted))];
+  }
+
+  /* Buttons with enhanced contrast */
+  .multiplayer-button-primary {
+    @apply multiplayer-accent hover:opacity-90 focus:ring-2 focus:ring-[hsl(var(--multiplayer-accent))]/50;
+    @apply font-medium px-4 py-2 rounded-lg transition-all;
+  }
+
+  .multiplayer-button-secondary {
+    @apply multiplayer-card border-[hsl(var(--multiplayer-border))] hover:multiplayer-card-hover;
+    @apply font-medium px-4 py-2 rounded-lg transition-all;
+  }
+
+  /* Input fields with better contrast */
+  .multiplayer-input {
+    @apply multiplayer-card border-[hsl(var(--multiplayer-border))] text-[hsl(var(--multiplayer-text))];
+    @apply focus:border-[hsl(var(--multiplayer-accent))] focus:ring-2 focus:ring-[hsl(var(--multiplayer-accent))]/20;
+    @apply px-3 py-2 rounded-lg transition-all;
+  }
+
+  /* Status indicators */
+  .status-online {
+    @apply w-2 h-2 bg-[hsl(var(--multiplayer-success))] rounded-full;
+  }
+
+  .status-ready {
+    @apply multiplayer-success text-white px-2 py-1 rounded text-xs font-medium;
+  }
+
+  .status-waiting {
+    @apply bg-[hsl(var(--multiplayer-text-muted))]/20 text-[hsl(var(--multiplayer-text-muted))] px-2 py-1 rounded text-xs font-medium;
+  }
+
+  /* Responsive text sizing */
+  .multiplayer-title {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold text-[hsl(var(--multiplayer-text))];
+  }
+
+  .multiplayer-subtitle {
+    @apply text-base sm:text-lg text-[hsl(var(--multiplayer-text-muted))] max-w-2xl mx-auto;
+  }
+
+  .multiplayer-section-title {
+    @apply text-lg sm:text-xl font-semibold text-[hsl(var(--multiplayer-text))] mb-4;
+  }
+
+  /* Loading states */
+  .multiplayer-loading {
+    @apply animate-pulse bg-[hsl(var(--multiplayer-text-muted))]/20 rounded;
+  }
+
+  /* Animations for multiplayer interactions */
+  .multiplayer-fade-in {
+    @apply animate-in fade-in duration-300;
+  }
+
+  .multiplayer-slide-up {
+    @apply animate-in slide-in-from-bottom-4 duration-300;
+  }
+
+  .multiplayer-scale-in {
+    @apply animate-in zoom-in-95 duration-200;
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 640px) {
+    .multiplayer-container {
+      @apply px-3 py-4;
+    }
+
+    .game-mode-card {
+      @apply p-3;
+    }
+
+    .player-card {
+      @apply p-2;
+    }
+
+    .multiplayer-title {
+      @apply text-xl;
+    }
+
+    .multiplayer-subtitle {
+      @apply text-sm;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .multiplayer-card {
+      @apply border-2;
+    }
+
+    .multiplayer-text-muted {
+      @apply text-[hsl(var(--multiplayer-text))];
+    }
+
+    .game-mode-card:hover {
+      @apply border-[hsl(var(--multiplayer-accent))] border-[3px];
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .multiplayer-card,
+    .game-mode-card,
+    .player-card,
+    .multiplayer-button-primary,
+    .multiplayer-button-secondary {
+      @apply transition-none;
+    }
+
+    .multiplayer-fade-in,
+    .multiplayer-slide-up,
+    .multiplayer-scale-in {
+      @apply animate-none;
+    }
+  }
 }
 

@@ -19,7 +19,11 @@ export function PWAProvider({ children }: PWAProviderProps) {
   useEffect(() => {
     // Completely disable PWA in development to prevent caching issues
     if (process.env.NODE_ENV === 'development') {
-      console.log('PWA: Disabled in development mode to prevent caching issues')
+      // Only log once per session to reduce console noise
+      if (!window.sessionStorage.getItem('pwa-dev-logged')) {
+        console.log('PWA: Disabled in development mode to prevent caching issues')
+        window.sessionStorage.setItem('pwa-dev-logged', 'true')
+      }
       return
     }
 

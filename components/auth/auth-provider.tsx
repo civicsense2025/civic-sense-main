@@ -29,68 +29,14 @@ export function useAuth(): AuthContextType {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [educationalAccessChecked, setEducationalAccessChecked] = useState<Set<string>>(new Set())
   const [donationAccessChecked, setDonationAccessChecked] = useState<Set<string>>(new Set())
   const [showDonationThankYou, setShowDonationThankYou] = useState(false)
   const [donationDetails, setDonationDetails] = useState<{amount: number, accessTier: string} | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
-  // Helper function to check and grant educational access
-  const checkEducationalAccess = async (user: User, reason: string = 'auth') => {
-    if (!user?.email || !user.email_confirmed_at) {
-      console.log('Skipping educational access check: email not confirmed or missing')
-      return
-    }
-
-    // Create a unique key for this user's educational access check
-    const checkKey = `${user.id}-${user.email_confirmed_at}`
-    
-    // Skip if we've already checked for this user's confirmed email
-    if (educationalAccessChecked.has(checkKey)) {
-      console.log(`Educational access already checked for user ${user.email} (key: ${checkKey})`)
-      return
-    }
-
-    // Only check for .edu emails to reduce unnecessary calls
-    if (!user.email.toLowerCase().includes('.edu')) {
-      console.log(`Skipping educational access check for non-.edu email: ${user.email}`)
-      // Still mark as checked to prevent future attempts
-      setEducationalAccessChecked(prev => new Set([...prev, checkKey]))
-      return
-    }
-
-    try {
-      console.log(`🎓 Checking educational access for ${user.email} (reason: ${reason}, key: ${checkKey})`)
-      
-      const response = await fetch('/api/auth/grant-educational-access', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-          emailConfirmed: true
-        })
-      })
-
-      // Always mark as checked to prevent retries, regardless of response
-      setEducationalAccessChecked(prev => new Set([...prev, checkKey]))
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Educational access check completed:', result.message)
-      } else {
-        console.log(`⚠️ Educational access check failed with status ${response.status}`)
-        // Don't log this as an error since it might be expected (e.g., route not found in development)
-      }
-    } catch (error) {
-      console.error('❌ Error checking educational access:', error)
-      // Still mark as checked to prevent endless retries
-      setEducationalAccessChecked(prev => new Set([...prev, checkKey]))
-    }
-  }
+  // Note: Educational access checking has been moved to useEducationalAccess hook
+  // and is now only called from settings/upgrade areas to reduce unnecessary API calls.
 
   // Note: Donation access checking is now handled only in the Gift Credits Dashboard component
   // to reduce unnecessary API calls and improve performance. Users can manually check their
@@ -135,8 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         setUser(session.user)
-        // Check for educational access on initial load (only if email confirmed)
-        await checkEducationalAccess(session.user, 'initial_load')
         // Transfer any pending data on initial load
         await transferPendingData(session.user)
         
@@ -171,8 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
             setUser(session.user)
-            // Check for educational access after email confirmation or OAuth (this is important!)
-            await checkEducationalAccess(session.user, 'email_confirmation')
           }
         } catch (error) {
           console.error('Error handling auth callback:', error)
@@ -189,8 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
-          // Check for educational access when user signs in (important for new users)
-          await checkEducationalAccess(session.user, 'sign_in')
           // Transfer any pending data when user signs in
           await transferPendingData(session.user)
           
@@ -208,8 +148,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
-          // Clear educational access check cache when user signs out
-          setEducationalAccessChecked(new Set())
           // Clear donation access check cache when user signs out
           setDonationAccessChecked(new Set())
           // Clear donation thank you state when user signs out
@@ -219,9 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('donationDetails')
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setUser(session.user)
-          // Only check educational access on token refresh if email was recently confirmed
-          // (This helps catch cases where email was confirmed during the session)
-          await checkEducationalAccess(session.user, 'token_refresh')
           // Transfer pending data on token refresh (e.g., after email confirmation)
           await transferPendingData(session.user)
         }

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { GraduationCap, Check, X, User, Mail } from "lucide-react"
 import { premiumUtils } from "@/lib/premium"
+import { EducationalAccessChecker } from "@/components/educational-access-checker"
 
 export default function TestEducationalAccessPage() {
   const { user } = useAuth()
@@ -221,31 +222,8 @@ export default function TestEducationalAccessPage() {
           </CardContent>
         </Card>
 
-        {/* Educational Access Testing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <GraduationCap className="h-5 w-5" />
-              <span>Grant Educational Access</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-              <p className="text-sm text-amber-800 dark:text-amber-200">
-                <strong>Warning:</strong> This will attempt to grant educational premium access to the current user.
-                Use the test email field above to test with different email addresses.
-              </p>
-            </div>
-
-            <Button
-              onClick={handleTestEducationalAccess}
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isLoading ? 'Processing...' : 'Test Educational Access Grant'}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* New Educational Access Checker Component */}
+        <EducationalAccessChecker />
 
         {/* Results */}
         {(result || error) && (

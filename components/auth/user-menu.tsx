@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, Moon, Sun, BarChart3, Settings, Crown, ChevronDown, FileText } from "lucide-react"
+import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
+import { LearningPodsStats } from "@/components/learning-pods-stats"
 import Link from "next/link"
 
 interface UserMenuProps {
@@ -117,7 +118,7 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
 
   if (!user) {
     return (
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-4">
         <Link href="/donate" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           Support
         </Link>
@@ -134,7 +135,7 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
                   <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
           <DropdownMenuItem 
             onClick={onSignInClick} 
-            className="flex items-center space-x-2 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors text-slate-900 dark:text-slate-100"
+            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors text-slate-900 dark:text-slate-100"
           >
             <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             <div>
@@ -146,7 +147,7 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
           <DropdownMenuItem asChild>
             <Link 
               href="/civics-test" 
-              className="flex items-center space-x-2 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm text-slate-900 dark:text-slate-100"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm text-slate-900 dark:text-slate-100"
             >
               <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
               <div>
@@ -191,8 +192,8 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         {/* User Info Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center space-x-3">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center space-x-4">
             <div className={`w-12 h-12 rounded-full ${userProgress ? 'bg-blue-500' : 'bg-slate-400'} flex items-center justify-center text-white font-medium shadow-lg`}>
               {userEmail.split('@')[0].substring(0, 2).toUpperCase()}
             </div>
@@ -207,7 +208,7 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 {getUserTitle()}
               </p>
             </div>
@@ -216,8 +217,8 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
 
         {/* Stats Section */}
         {userProgress && !isLoading && (
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-            <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-3 gap-6 text-center">
               <div>
                 <div className="text-lg font-bold text-slate-900 dark:text-white">
                   {userProgress.currentStreak || 0}
@@ -246,12 +247,17 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
           </div>
         )}
 
+        {/* Learning Pods Section */}
+        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+          <LearningPodsStats compact={true} />
+        </div>
+
         {/* Menu Items */}
-        <div className="py-2">
+        <div className="py-3">
           <DropdownMenuItem asChild>
             <Link 
               href="/dashboard" 
-              className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
             >
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
@@ -260,8 +266,18 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
           
           <DropdownMenuItem asChild>
             <Link 
+              href="/learning-pods-demo" 
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+            >
+              <Users className="w-4 h-4" />
+              <span>Learning Pods</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link 
               href="/settings" 
-              className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
             >
               <Settings className="w-4 h-4" />
               <span>Settings</span>
@@ -272,9 +288,9 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
 
           <DropdownMenuItem 
             onClick={toggleTheme} 
-            className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors"
+            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <span className="text-base">{theme === 'dark' ? '☀️' : '🌙'}</span>
             <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </DropdownMenuItem>
 
@@ -282,7 +298,7 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
 
           <DropdownMenuItem 
             onClick={handleSignOut} 
-            className="flex items-center space-x-2 px-4 py-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 text-red-600 dark:text-red-400 transition-colors"
+            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 text-red-600 dark:text-red-400 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Sign Out</span>

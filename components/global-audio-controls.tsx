@@ -336,13 +336,14 @@ class GlobalAudioManager {
       return
     }
 
-    if (options?.autoPlay && !this.autoPlayEnabled) {
+    // Only block auto-play if it's not a forced play
+    if (options?.autoPlay && !options?.forcePlay && !this.autoPlayEnabled) {
       console.log('Auto-play blocked: disabled')
       return
     }
 
-    // Check if this is an auto-play attempt without recent user interaction
-    if (options?.autoPlay && !this.hasRecentUserInteraction()) {
+    // Check if this is an auto-play attempt without recent user interaction (unless forced)
+    if (options?.autoPlay && !options?.forcePlay && !this.hasRecentUserInteraction()) {
       console.log('Auto-play blocked: no recent user interaction')
       return
     }
@@ -413,6 +414,143 @@ class GlobalAudioManager {
     this.playSingleUtterance(cleanText, text, options)
   }
 
+  // Break long text into natural chunks for better pacing
+  private breakIntoChunks(text: string): string[] {
+    const maxChunkLength = 200 // Shorter chunks for better pacing
+    const chunks: string[] = []
+    
+    // First, split by major sentence breaks
+    const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z])/)
+    
+    let currentChunk = ''
+    
+    for (const sentence of sentences) {
+      // If adding this sentence would make the chunk too long, start a new chunk
+      if (currentChunk.length + sentence.length > maxChunkLength && currentChunk.length > 0) {
+        chunks.push(currentChunk.trim())
+        currentChunk = sentence
+      } else {
+        currentChunk += (currentChunk ? ' ' : '') + sentence
+      }
+    }
+    
+    // Add the last chunk if it has content
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim())
+    }
+    
+    return chunks.length > 0 ? chunks : [text]
+  }
+
+  // Play text in chunks with natural pauses between them
+  private playChunkedText(cleanText: string, originalText: string, options?: {
+    voice?: SpeechSynthesisVoice
+    rate?: number
+    pitch?: number
+    volume?: number
+    onStart?: () => void
+    onEnd?: () => void
+    autoPlay?: boolean
+  }) {
+    const chunks = this.breakIntoChunks(cleanText)
+    let currentChunkIndex = 0
+    let hasStarted = false
+    
+    const playNextChunk = () => {
+      if (currentChunkIndex >= chunks.length || this.isResetting) {
+        // All chunks played
+        this.isPlaying = false
+        this.isPaused = false
+        
+        if (options?.onEnd) {
+          options.onEnd()
+        }
+        
+        this.cleanupAfterEnd()
+        
+        // Handle looping
+        if (this.loopEnabled && !this.isResetting) {
+          const timeout = setTimeout(() => {
+            if (this.loopEnabled && !this.isResetting) {
+              this.playText(originalText, options)
+            }
+          }, 1000)
+          this.cleanupTimeouts.push(timeout)
+        }
+        return
+      }
+      
+      const chunk = chunks[currentChunkIndex]
+      const utterance = new SpeechSynthesisUtterance(chunk)
+      
+      // Set voice and options
+      if (options?.voice) {
+        utterance.voice = options.voice
+      } else {
+        try {
+          const voices = speechSynthesis.getVoices()
+          if (voices.length > 0) {
+            const selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0]
+            if (selectedVoice) {
+              utterance.voice = selectedVoice
+            }
+          }
+        } catch (e) {
+          console.warn('Error selecting voice for chunk:', e)
+        }
+      }
+      
+      utterance.rate = options?.rate ?? 0.9 // Slightly slower for better comprehension
+      utterance.pitch = options?.pitch ?? 1.0
+      utterance.volume = options?.volume ?? 1.0
+      
+      utterance.onstart = () => {
+        if (!hasStarted) {
+          hasStarted = true
+          this.isPlaying = true
+          this.isPaused = false
+          
+          if (this.highlightingEnabled) {
+            this.setupWordHighlighting(originalText, utterance)
+          }
+          
+          if (options?.onStart) {
+            options.onStart()
+          }
+          
+          this.notifyListeners()
+        }
+      }
+      
+      utterance.onend = () => {
+        currentChunkIndex++
+        
+        if (currentChunkIndex < chunks.length && !this.isResetting) {
+          // Add a natural pause between chunks
+          const pauseDuration = 800 // 0.8 second pause between chunks
+          const timeout = setTimeout(() => {
+            if (!this.isResetting) {
+              playNextChunk()
+            }
+          }, pauseDuration)
+          this.cleanupTimeouts.push(timeout)
+        } else {
+          playNextChunk() // This will trigger the end logic
+        }
+      }
+      
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error in chunk:', event)
+        this.cleanupAfterError()
+      }
+      
+      this.currentUtterance = utterance
+      speechSynthesis.speak(utterance)
+    }
+    
+    playNextChunk()
+  }
+
   private playSingleUtterance(cleanText: string, originalText: string, options?: {
     voice?: SpeechSynthesisVoice
     rate?: number
@@ -431,6 +569,12 @@ class GlobalAudioManager {
       
       // Reset speech synthesis to avoid issues
       this.resetSpeechSynthesis()
+      
+      // For longer texts, break into chunks for better pacing
+      if (cleanText.length > 300) {
+        this.playChunkedText(cleanText, originalText, options)
+        return
+      }
       
       const utterance = new SpeechSynthesisUtterance(cleanText)
       
@@ -455,8 +599,8 @@ class GlobalAudioManager {
         }
       }
       
-      // Set other options with defaults
-      utterance.rate = options?.rate ?? 1.0
+      // Set other options with defaults optimized for readability
+      utterance.rate = options?.rate ?? 0.9 // Slightly slower for better comprehension
       utterance.pitch = options?.pitch ?? 1.0
       utterance.volume = options?.volume ?? 1.0
       
@@ -735,7 +879,8 @@ class GlobalAudioManager {
   readCurrentPage() {
     const pageContent = this.extractPageContent()
     if (pageContent) {
-      this.playText(pageContent, { autoPlay: true })
+      // Force play the page content regardless of auto-play settings
+      this.playText(pageContent, { forcePlay: true })
     }
   }
 
@@ -796,7 +941,10 @@ class GlobalAudioManager {
         '.quiz-content',
         '.question-text',
         '.question-explanation',
-        '.question-feedback'
+        '.question-feedback',
+        // Topic info content
+        '.topic-info',
+        '.topic-description'
       ]
       
       for (const selector of surveyAndQuizSelectors) {
@@ -832,7 +980,9 @@ class GlobalAudioManager {
           'nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, ' +
           '.logo, .branding, .site-header, .site-footer, .nav-links, .user-menu, ' + 
           '[role="navigation"], [role="banner"], [role="contentinfo"], ' +
-          '.skip-link, .back-link, .auth-buttons, .theme-toggle'
+          '.skip-link, .back-link, .auth-buttons, .theme-toggle, .audio-controls, ' +
+          'button, .button, input, select, textarea, .form-control, .dropdown, ' +
+          '.tooltip, .popover, .modal, .overlay, .progress, .spinner, .loading'
         )
         
         elementsToRemove.forEach(el => {
@@ -849,24 +999,48 @@ class GlobalAudioManager {
         }
       }
       
-      // Fallback to headings and paragraphs (limited)
-      // but exclude those in navigation, header, footer
-      const elements = document.querySelectorAll('h1, h2, h3, p')
-      let text = ''
-      let count = 0
+      // Smart fallback: prioritize meaningful content elements
+      const meaningfulSelectors = [
+        'h1, h2, h3', // Headings first
+        'p', // Then paragraphs
+        '.description, .summary, .intro', // Content descriptions
+        'blockquote', // Quotes
+        'li' // List items
+      ]
       
-      for (const element of elements) {
-        if (count >= 15) break // Increased limit slightly
+      let text = ''
+      let elementCount = 0
+      const maxElements = 20
+      
+      for (const selectorGroup of meaningfulSelectors) {
+        if (elementCount >= maxElements) break
         
-        // Skip elements in navigation, header, footer, etc.
-        if (element.closest('nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, .logo, .branding, .site-header, .site-footer')) {
-          continue
-        }
+        const elements = document.querySelectorAll(selectorGroup)
         
-        const elementText = element.textContent?.trim() || ''
-        if (elementText.length > 10) {
-          text += elementText + '. '
-          count++
+        for (const element of elements) {
+          if (elementCount >= maxElements) break
+          
+          // Skip elements in navigation, header, footer, etc.
+          if (element.closest('nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, .logo, .branding, .site-header, .site-footer, .audio-controls')) {
+            continue
+          }
+          
+          const elementText = element.textContent?.trim() || ''
+          
+          // Filter out very short or UI-like text
+          if (elementText.length > 15 && 
+              !elementText.match(/^(click|tap|scroll|swipe|menu|button|link|home|back|next|previous|continue|skip|sign in|log in|register|subscribe|follow)$/i) &&
+              !elementText.match(/^\d+$/) && // Skip lone numbers
+              !elementText.match(/^[^\w\s]+$/) // Skip strings with only symbols
+          ) {
+            // Add appropriate punctuation if missing
+            const cleanText = elementText.endsWith('.') || elementText.endsWith('!') || elementText.endsWith('?') 
+              ? elementText 
+              : elementText + '.'
+            
+            text += cleanText + ' '
+            elementCount++
+          }
         }
       }
       
@@ -904,7 +1078,7 @@ class GlobalAudioManager {
     this.cloudTTSHandler = handler
   }
 
-  // Simplified text cleaning
+  // Enhanced text cleaning for more natural speech
   private cleanTextForSpeech(text: string): string {
     try {
       return text
@@ -913,25 +1087,70 @@ class GlobalAudioManager {
         .replace(/\*(.*?)\*/g, '$1')
         .replace(/`(.*?)`/g, '$1')
         .replace(/#{1,6}\s+/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
         
-        // Add basic pauses
-        .replace(/\.\s+/g, '. ')
-        .replace(/\?\s+/g, '? ')
-        .replace(/!\s+/g, '! ')
-        .replace(/:\s+/g, ': ')
-        .replace(/;\s+/g, '; ')
-        .replace(/,\s+/g, ', ')
+        // Remove common UI elements and navigation text
+        .replace(/\b(click|tap|scroll|swipe|navigate|menu|button|link)\b/gi, '')
+        .replace(/\b(home|back|next|previous|continue|skip)\s*(button|link)?\b/gi, '')
+        .replace(/\b(sign in|log in|register|subscribe|follow us)\b/gi, '')
         
-        // Handle common abbreviations
-        .replace(/\bU\.S\./g, 'United States')
+        // Handle numbers and dates more naturally
+        .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {
+          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                             'July', 'August', 'September', 'October', 'November', 'December']
+          return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}, ${year}`
+        })
+        .replace(/\b(\d+)%/g, '$1 percent')
+        .replace(/\$(\d+)/g, '$1 dollars')
+        
+        // Handle common abbreviations and acronyms
+        .replace(/\bU\.S\.A?\./g, 'United States')
         .replace(/\bU\.K\./g, 'United Kingdom')
+        .replace(/\bE\.U\./g, 'European Union')
+        .replace(/\bN\.A\.T\.O\./g, 'NATO')
+        .replace(/\bF\.B\.I\./g, 'F B I')
+        .replace(/\bC\.I\.A\./g, 'C I A')
+        .replace(/\bN\.S\.A\./g, 'N S A')
+        .replace(/\bG\.O\.P\./g, 'G O P')
         .replace(/\bDr\./g, 'Doctor')
         .replace(/\bMr\./g, 'Mister')
         .replace(/\bMrs\./g, 'Missus')
         .replace(/\bMs\./g, 'Miss')
+        .replace(/\bProf\./g, 'Professor')
+        .replace(/\bSen\./g, 'Senator')
+        .replace(/\bRep\./g, 'Representative')
+        .replace(/\bGov\./g, 'Governor')
+        .replace(/\bPres\./g, 'President')
+        .replace(/\bVP\b/g, 'Vice President')
+        .replace(/\bCEO\b/g, 'C E O')
+        .replace(/\bCFO\b/g, 'C F O')
+        .replace(/\bCTO\b/g, 'C T O')
         
-        // Clean up
+        // Add natural pauses with SSML-like markers for better pacing
+        .replace(/\.\s+([A-Z])/g, '. <break time="0.8s"/> $1') // Longer pause after sentences
+        .replace(/\?\s+([A-Z])/g, '? <break time="0.8s"/> $1')
+        .replace(/!\s+([A-Z])/g, '! <break time="0.8s"/> $1')
+        .replace(/:\s+/g, ': <break time="0.5s"/> ') // Medium pause after colons
+        .replace(/;\s+/g, '; <break time="0.4s"/> ') // Short pause after semicolons
+        .replace(/,\s+/g, ', <break time="0.3s"/> ') // Brief pause after commas
+        
+        // Add pauses around important transitions
+        .replace(/\b(however|therefore|furthermore|moreover|nevertheless|meanwhile|consequently)\b/gi, 
+                 '<break time="0.4s"/> $1 <break time="0.4s"/>')
+        .replace(/\b(first|second|third|fourth|fifth|finally|lastly|in conclusion)\b/gi, 
+                 '<break time="0.5s"/> $1, <break time="0.3s"/>')
+        
+        // Add emphasis to important civic terms
+        .replace(/\b(democracy|constitution|amendment|bill of rights|congress|senate|house|supreme court)\b/gi, 
+                 '<emphasis level="moderate">$1</emphasis>')
+        
+        // Handle lists better
+        .replace(/^\s*[-•]\s*/gm, '<break time="0.3s"/> • ')
+        .replace(/^\s*\d+\.\s*/gm, '<break time="0.3s"/> ')
+        
+        // Clean up multiple spaces and normalize punctuation
         .replace(/\s+/g, ' ')
+        .replace(/\s*<break[^>]*>\s*/g, ' $& ') // Ensure breaks have space around them
         .trim()
     } catch (e) {
       console.warn('Error cleaning text:', e)
@@ -1071,9 +1290,25 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
   const previousVolumeRef = useRef(0.8)
   const router = useRouter()
 
-  // Enhanced content change detection
+  // Enhanced content change detection with debouncing
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    let resetTimeout: NodeJS.Timeout | null = null
+    let hasInitialized = false
+
+    // Debounced reset function to prevent multiple rapid calls
+    const debouncedReset = (reason: string) => {
+      if (resetTimeout) {
+        clearTimeout(resetTimeout)
+      }
+      resetTimeout = setTimeout(() => {
+        if (hasInitialized && autoPlayEnabled) { // Only reset after initial mount and if autoplay is enabled
+          console.log(`${reason}, resetting audio`)
+          forceReset()
+        }
+      }, 150) // Small debounce delay
+    }
 
     // Enhanced DOM observer to detect content changes
     const observer = new MutationObserver((mutations) => {
@@ -1093,9 +1328,8 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
         return false;
       })
 
-      if (hasContentChanges && autoPlayEnabled) {
-        console.log('Content change detected, resetting audio')
-        forceReset() // Use the enhanced reset method
+      if (hasContentChanges) {
+        debouncedReset('Content change detected')
       }
     })
 
@@ -1111,15 +1345,21 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
 
     // Also listen for navigation changes
     const handleNavigation = () => {
-      console.log('Navigation detected, resetting audio')
-      forceReset()
+      debouncedReset('Navigation detected')
     }
 
     window.addEventListener('popstate', handleNavigation)
 
+    // Mark as initialized after a short delay to avoid initial reset
+    const initTimeout = setTimeout(() => {
+      hasInitialized = true
+    }, 1000)
+
     return () => {
       observer.disconnect()
       window.removeEventListener('popstate', handleNavigation)
+      if (resetTimeout) clearTimeout(resetTimeout)
+      if (initTimeout) clearTimeout(initTimeout)
     }
   }, [autoPlayEnabled, forceReset])
 
@@ -1723,18 +1963,18 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation() // Prevent container click
-                        if (currentText) {
-                          if (isPlaying) {
-                            if (isPaused) {
-                              resume()
-                            } else {
-                              pause()
-                            }
+                        manager.recordUserInteraction()
+                        // Always try to read current page first if no text is playing
+                        if (!currentText || (!isPlaying && !isPaused)) {
+                          readCurrentPage()
+                        } else if (isPlaying) {
+                          if (isPaused) {
+                            resume()
                           } else {
-                            restart()
+                            pause()
                           }
                         } else {
-                          readCurrentPage()
+                          restart()
                         }
                       }}
                       className="w-6 h-6 p-0 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-10"
@@ -1754,7 +1994,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                 </TooltipTrigger>
                 <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
                   <div className="text-center space-y-1">
-                    <div>{currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}</div>
+                    <div>{currentText && (isPlaying || isPaused) ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}</div>
                     <div className="text-xs opacity-75">Click anywhere to expand</div>
                   </div>
                 </TooltipContent>
@@ -1867,22 +2107,21 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       <Button
                         variant="ghost"
                         size="lg"
-                        onClick={() => {
-                          manager.recordUserInteraction()
-                          if (currentText) {
-                            if (isPlaying) {
-                              if (isPaused) {
-                                resume()
-                              } else {
-                                pause()
-                              }
-                            } else {
-                              restart()
-                            }
+                                              onClick={() => {
+                        manager.recordUserInteraction()
+                        // Always try to read current page first if no text is playing
+                        if (!currentText || (!isPlaying && !isPaused)) {
+                          readCurrentPage()
+                        } else if (isPlaying) {
+                          if (isPaused) {
+                            resume()
                           } else {
-                            readCurrentPage()
+                            pause()
                           }
-                        }}
+                        } else {
+                          restart()
+                        }
+                      }}
                         className="h-14 w-14 p-0 rounded-full bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
                       >
                         {isPlaying ? (
@@ -1895,7 +2134,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">
-                      {currentText ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
+                      {currentText && (isPlaying || isPaused) ? (isPlaying ? (isPaused ? "Resume" : "Pause") : "Play") : "Read current page"}
                     </TooltipContent>
                   </Tooltip>
 

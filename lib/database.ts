@@ -302,6 +302,44 @@ export const questionOperations = {
 
   // Convert DB question to app format
   toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
+    // Process sources with better validation
+    let processedSources: Array<{ name: string; url: string }> = []
+    
+    if (dbQuestion.sources) {
+      if (Array.isArray(dbQuestion.sources)) {
+        // Handle array of source objects
+        processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
+          source !== null &&
+          typeof source === 'object' && 
+          'name' in source &&
+          'url' in source &&
+          typeof (source as any).name === 'string' && 
+          typeof (source as any).url === 'string' &&
+          (source as any).name.trim() !== '' &&
+          (source as any).url.trim() !== ''
+        ) as Array<{ name: string; url: string }>
+      } else if (typeof dbQuestion.sources === 'string') {
+        // Handle JSON string
+        try {
+          const parsed = JSON.parse(dbQuestion.sources)
+          if (Array.isArray(parsed)) {
+            processedSources = parsed.filter((source): source is { name: string; url: string } => 
+              source !== null &&
+              typeof source === 'object' && 
+              'name' in source &&
+              'url' in source &&
+              typeof source.name === 'string' && 
+              typeof source.url === 'string' &&
+              source.name.trim() !== '' &&
+              source.url.trim() !== ''
+            )
+          }
+        } catch (error) {
+          console.warn('Failed to parse sources JSON:', error)
+        }
+      }
+    }
+    
     return {
       topic_id: dbQuestion.topic_id,
       question_number: dbQuestion.question_number,
@@ -316,7 +354,7 @@ export const questionOperations = {
       hint: dbQuestion.hint,
       explanation: dbQuestion.explanation,
       tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-      sources: Array.isArray(dbQuestion.sources) ? dbQuestion.sources as Array<{ name: string; url: string }> : [],
+      sources: processedSources,
     }
   }
 }
@@ -1082,6 +1120,44 @@ export function toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
 }
 
 export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
+  // Process sources with better validation
+  let processedSources: Array<{ name: string; url: string }> = []
+  
+  if (dbQuestion.sources) {
+    if (Array.isArray(dbQuestion.sources)) {
+      // Handle array of source objects
+      processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
+        source !== null &&
+        typeof source === 'object' && 
+        'name' in source &&
+        'url' in source &&
+        typeof (source as any).name === 'string' && 
+        typeof (source as any).url === 'string' &&
+        (source as any).name.trim() !== '' &&
+        (source as any).url.trim() !== ''
+      ) as Array<{ name: string; url: string }>
+    } else if (typeof dbQuestion.sources === 'string') {
+      // Handle JSON string
+      try {
+        const parsed = JSON.parse(dbQuestion.sources)
+        if (Array.isArray(parsed)) {
+          processedSources = parsed.filter((source): source is { name: string; url: string } => 
+            source !== null &&
+            typeof source === 'object' && 
+            'name' in source &&
+            'url' in source &&
+            typeof source.name === 'string' && 
+            typeof source.url === 'string' &&
+            source.name.trim() !== '' &&
+            source.url.trim() !== ''
+          )
+        }
+      } catch (error) {
+        console.warn('Failed to parse sources JSON:', error)
+      }
+    }
+  }
+  
   return {
     topic_id: dbQuestion.topic_id,
     question_number: dbQuestion.question_number,
@@ -1096,6 +1172,6 @@ export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
     hint: dbQuestion.hint,
     explanation: dbQuestion.explanation,
     tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-    sources: Array.isArray(dbQuestion.sources) ? dbQuestion.sources as Array<{ name: string; url: string }> : [],
+    sources: processedSources,
   }
 }

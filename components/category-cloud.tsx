@@ -167,8 +167,8 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
       </div>
 
       {/* Description text */}
-      <p className="text-sm text-slate-500 dark:text-slate-400 font-light text-center max-w-2xl mx-auto px-4 sm:px-0">
-        Explore civic education topics by category. Popular topics with recent activity are featured first.
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-light text-center max-w-2xl mx-auto px-4 sm:px-0 mb-8 py-4">
+        Master the topics that politicians don't want you to understand. Categories ranked by what's actually affecting your life right now.
       </p>
     </div>
   )

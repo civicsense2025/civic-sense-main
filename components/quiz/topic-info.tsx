@@ -4,7 +4,10 @@ import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { useMemo, useEffect, useState } from "react"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { StartQuizButton } from "@/components/start-quiz-button"
-import { HelpCircle, Info, BookOpen } from "lucide-react"
+import { CreateRoomDialog } from "@/components/multiplayer/create-room-dialog"
+import { JoinRoomDialog } from "@/components/multiplayer/join-room-dialog"
+import { HelpCircle, Info, BookOpen, Users, UserPlus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +24,7 @@ interface TopicInfoProps {
   remainingQuizzes?: number
   isPartiallyCompleted?: boolean
   hasCompletedTopic?: boolean
+  questions?: QuizQuestion[] // Optional pre-loaded questions
 }
 
 interface ParsedBlurb {
@@ -36,7 +40,8 @@ export function TopicInfo({
   onAuthRequired,
   remainingQuizzes,
   isPartiallyCompleted = false,
-  hasCompletedTopic = false
+  hasCompletedTopic = false,
+  questions: preloadedQuestions = []
 }: TopicInfoProps) {
   // Global audio integration
   const { autoPlayEnabled, playText } = useGlobalAudio()
@@ -190,18 +195,30 @@ export function TopicInfo({
     }
   }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
 
-  // Load questions immediately when component mounts to ensure sources are available
+  // Initialize questions with preloaded data or load them if not provided
   useEffect(() => {
+    // If we have preloaded questions, use them immediately
+    if (preloadedQuestions.length > 0) {
+      console.log(`🚀 TopicInfo: Using ${preloadedQuestions.length} preloaded questions for ${topicData.topic_id}`)
+      setQuestions(preloadedQuestions)
+      return
+    }
+
+    // Otherwise, load questions if we don't have any yet
     let isCancelled = false
 
     const loadQuestions = async () => {
       if (questions.length === 0 && !isLoadingSources && topicData.topic_id) {
+        console.log(`📥 TopicInfo: Loading questions for ${topicData.topic_id} (no preloaded questions available)`)
         setIsLoadingSources(true)
         try {
           const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
           
           if (!isCancelled) {
-            setQuestions(questionsData || [])
+            // Ensure we have valid questions data
+            const validQuestions = Array.isArray(questionsData) ? questionsData : []
+            setQuestions(validQuestions)
+            console.log(`✅ TopicInfo: Loaded ${validQuestions.length} questions for ${topicData.topic_id}`)
           }
         } catch (error) {
           if (!isCancelled) {
@@ -221,30 +238,112 @@ export function TopicInfo({
     return () => {
       isCancelled = true
     }
-  }, [topicData.topic_id, questions.length, isLoadingSources])
+  }, [topicData.topic_id, questions.length, isLoadingSources, preloadedQuestions])
 
-  // Extract all unique sources from questions
+  // Extract all unique sources from questions with improved deduplication
   const allSources = useMemo(() => {
     const sourceMap = new Map()
     
-    questions.forEach(question => {
-      if (question.sources && question.sources.length > 0) {
-        question.sources.forEach(source => {
-          const key = `${source.name}-${source.url}`
-          if (!sourceMap.has(key)) {
-            sourceMap.set(key, { ...source, questions: [question.question_number] })
-          } else {
-            const existingSource = sourceMap.get(key)
-            if (!existingSource.questions.includes(question.question_number)) {
-              existingSource.questions.push(question.question_number)
+    // Debug logging
+    console.log('🔍 TopicInfo: Processing questions for sources:', {
+      questionsCount: questions.length,
+      topicId: topicData.topic_id,
+      questionsWithSources: questions.filter(q => q.sources && Array.isArray(q.sources) && q.sources.length > 0).length
+    })
+    
+    questions.forEach((question) => {
+      if (question.sources && Array.isArray(question.sources) && question.sources.length > 0) {
+        console.log(`📚 Question ${question.question_number} has ${question.sources.length} sources:`, question.sources)
+        
+        question.sources.forEach((source: any) => {
+          // Handle different source formats more flexibly
+          if (source && typeof source === 'object') {
+            // Try multiple field combinations that might exist in the database
+            const name = source.name || source.title || source.source_name || ''
+            const url = source.url || source.link || source.href || ''
+            
+            console.log(`🔗 Processing source:`, { name, url, originalSource: source })
+            
+            // Accept sources that have at least a URL, even if name is missing
+            if (url && url.trim() !== '') {
+              // Normalize URL for better deduplication (remove trailing slashes, fragments, etc.)
+              const normalizedUrl = url.trim().replace(/\/$/, '').split('#')[0].split('?')[0]
+              
+              // Use normalized URL as the primary key for deduplication
+              const key = normalizedUrl
+              
+              const displayName = name && name.trim() !== '' ? name.trim() : normalizedUrl
+              
+              if (!sourceMap.has(key)) {
+                sourceMap.set(key, { 
+                  name: displayName,
+                  url: url, // Keep original URL for linking
+                  normalizedUrl: normalizedUrl,
+                  // Include any additional metadata without overwriting name/url
+                  ...(source.title && { title: source.title }),
+                  ...(source.description && { description: source.description }),
+                  ...(source.domain && { domain: source.domain }),
+                  questions: [question.question_number] 
+                })
+                console.log(`✅ Added source to map:`, { displayName, url: normalizedUrl })
+              } else {
+                const existingSource = sourceMap.get(key)
+                // Update with better name if current one is just a URL
+                if (existingSource.name === existingSource.normalizedUrl && displayName !== normalizedUrl) {
+                  existingSource.name = displayName
+                }
+                // Add question number if not already present
+                if (!existingSource.questions.includes(question.question_number)) {
+                  existingSource.questions.push(question.question_number)
+                }
+                console.log(`🔄 Updated existing source with question ${question.question_number}`)
+              }
+            } else {
+              console.log(`❌ Skipped source - missing URL:`, source)
             }
+          } else if (typeof source === 'string' && source.startsWith('http')) {
+            // Handle string URLs directly
+            const normalizedUrl = source.trim().replace(/\/$/, '').split('#')[0].split('?')[0]
+            const key = normalizedUrl
+            
+            if (!sourceMap.has(key)) {
+              sourceMap.set(key, { 
+                name: normalizedUrl,
+                url: source,
+                normalizedUrl: normalizedUrl,
+                questions: [question.question_number] 
+              })
+              console.log(`✅ Added string URL source:`, normalizedUrl)
+            } else {
+              const existingSource = sourceMap.get(key)
+              if (!existingSource.questions.includes(question.question_number)) {
+                existingSource.questions.push(question.question_number)
+              }
+              console.log(`🔄 Updated existing string URL source`)
+            }
+          } else {
+            console.log(`❌ Skipped invalid source:`, source)
           }
         })
+      } else {
+        console.log(`📝 Question ${question.question_number} has no sources`)
       }
     })
     
-    return Array.from(sourceMap.values())
-  }, [questions])
+    // Convert to array and sort by number of questions (most referenced first), then by name
+    const finalSources = Array.from(sourceMap.values()).sort((a: { questions: number[]; name: string }, b: { questions: number[]; name: string }) => {
+      // First sort by number of questions (descending)
+      if (b.questions.length !== a.questions.length) {
+        return b.questions.length - a.questions.length
+      }
+      // Then sort alphabetically by name
+      return a.name.localeCompare(b.name)
+    })
+    
+    console.log('🎯 Final sources extracted:', finalSources.length, finalSources)
+    
+    return finalSources
+  }, [questions, topicData.topic_id])
 
   // FAQ data with structured schema
   const faqSchema = {
@@ -290,8 +389,28 @@ export function TopicInfo({
 
   return (
     <div className="flex flex-col h-full px-4 sm:px-8 py-8">
-      {/* Quiz Button (positioned at the top right) */}
-      <div className="flex justify-end mb-6">
+      {/* Quiz Buttons (positioned at the top right) */}
+      <div className="flex justify-end gap-3 mb-6">
+        {/* Multiplayer Options */}
+        {hasQuestions && !isCheckingQuestions && (
+          <>
+            <CreateRoomDialog topicId={topicData.topic_id} topicTitle={topicData.topic_title}>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Create Room
+              </Button>
+            </CreateRoomDialog>
+            
+            <JoinRoomDialog>
+              <Button variant="outline" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Join Room
+              </Button>
+            </JoinRoomDialog>
+          </>
+        )}
+
+        {/* Single Player Quiz Button */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -410,17 +529,55 @@ export function TopicInfo({
                   </p>
                   
                   {allSources.map((source, index) => (
-                    <div key={index} className="space-y-1">
+                    <div key={index} className="space-y-2">
                       <SourceMetadataCard
                         source={source}
                         showThumbnail={true}
-                        className="mb-2"
+                        className="mb-1"
                       />
-                      <div className="text-xs text-slate-500 dark:text-slate-400 pl-4">
-                        Used in question{source.questions.length > 1 ? 's' : ''}: {source.questions.join(', ')}
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pl-4">
+                        <span>
+                          Used in question{source.questions.length > 1 ? 's' : ''}: {source.questions
+                            .slice()
+                            .sort((a: number, b: number) => a - b)
+                            .join(', ')}
+                        </span>
+                        {source.questions.length > 1 && (
+                          <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                            {source.questions.length} questions
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : questions.length > 0 ? (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-6 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="text-amber-600 dark:text-amber-400 mt-1">⚠️</div>
+                    <div>
+                      <p className="text-amber-800 dark:text-amber-200 font-medium mb-2">
+                        Sources temporarily unavailable
+                      </p>
+                      <p className="text-amber-700 dark:text-amber-300 text-sm">
+                        This quiz has {questions.length} question{questions.length !== 1 ? 's' : ''}, but source information is currently being processed. Sources & citations will appear here once available.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : hasQuestions ? (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="text-blue-600 dark:text-blue-400 mt-1">ℹ️</div>
+                    <div>
+                      <p className="text-blue-800 dark:text-blue-200 font-medium mb-2">
+                        Questions loading...
+                      </p>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm">
+                        This topic has questions available. Sources & citations will appear once the questions finish loading.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg text-center">

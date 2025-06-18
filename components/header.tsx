@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { UserMenu } from "./auth/user-menu"
+import { JoinRequestNotifications } from "./learning-pods/join-request-notifications"
+import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 
@@ -59,10 +61,12 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
             </div>
 
             {/* Right side - Essential controls */}
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-3 sm:space-x-5">
               {/* Desktop controls */}
-              <div className="hidden sm:flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-5">
+                <LearningPodsQuickActions variant="header" />
                 <ThemeToggle />
+                {user && <JoinRequestNotifications />}
                 <UserMenu onSignInClick={onSignInClick} />
               </div>
               
@@ -137,6 +141,22 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                   className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
                 >
                   Categories
+                </Link>
+
+                <Link 
+                  href="/multiplayer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  🎮 Multiplayer
+                </Link>
+
+                <Link 
+                  href="/learning-pods-demo"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  👥 Learning Pods
                 </Link>
 
                 <Link 
@@ -216,7 +236,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
       {showTopBar && !showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-3 sm:space-x-5">
               <ThemeToggle />
               <UserMenu onSignInClick={onSignInClick} />
             </div>
