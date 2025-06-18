@@ -379,6 +379,13 @@ export type Database = {
             foreignKeyName: "fact_check_logs_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "fact_check_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_sources_enhanced"
             referencedColumns: ["question_id"]
           },
@@ -1306,6 +1313,13 @@ export type Database = {
             foreignKeyName: "question_feedback_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_sources_enhanced"
             referencedColumns: ["question_id"]
           },
@@ -1356,6 +1370,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_skills_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
             referencedColumns: ["question_id"]
           },
           {
@@ -1431,6 +1452,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "question_source_links_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
             referencedColumns: ["question_id"]
           },
           {
@@ -2340,6 +2368,207 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_answers: {
+        Row: {
+          answer_data: Json
+          answered_at: string
+          id: string
+          question_id: string
+          response_id: string
+        }
+        Insert: {
+          answer_data: Json
+          answered_at?: string
+          id?: string
+          question_id: string
+          response_id: string
+        }
+        Update: {
+          answer_data?: Json
+          answered_at?: string
+          id?: string
+          question_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          conditional_logic: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          options: Json | null
+          question_order: number
+          question_text: string
+          question_type: string
+          required: boolean
+          scale_config: Json | null
+          survey_id: string
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          options?: Json | null
+          question_order: number
+          question_text: string
+          question_type: string
+          required?: boolean
+          scale_config?: Json | null
+          survey_id: string
+        }
+        Update: {
+          conditional_logic?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          options?: Json | null
+          question_order?: number
+          question_text?: string
+          question_type?: string
+          required?: boolean
+          scale_config?: Json | null
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          guest_token: string | null
+          id: string
+          ip_address: unknown | null
+          is_complete: boolean
+          session_id: string
+          started_at: string
+          survey_id: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_complete?: boolean
+          session_id: string
+          started_at?: string
+          survey_id: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_complete?: boolean
+          session_id?: string
+          started_at?: string
+          survey_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          allow_anonymous: boolean
+          allow_partial_responses: boolean
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_time: number | null
+          id: string
+          published_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allow_anonymous?: boolean
+          allow_partial_responses?: boolean
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_time?: number | null
+          id?: string
+          published_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allow_anonymous?: boolean
+          allow_partial_responses?: boolean
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_time?: number | null
+          id?: string
+          published_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_data: Json | null
@@ -2664,6 +2893,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
             referencedColumns: ["question_id"]
           },
           {
@@ -3199,6 +3435,13 @@ export type Database = {
             foreignKeyName: "user_question_memory_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_question_memory_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_sources_enhanced"
             referencedColumns: ["question_id"]
           },
@@ -3262,6 +3505,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "user_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
             referencedColumns: ["question_id"]
           },
           {
@@ -3704,6 +3954,17 @@ export type Database = {
       }
     }
     Views: {
+      assessment_question_stats: {
+        Row: {
+          category: string | null
+          difficulty: number | null
+          difficulty_level: string | null
+          last_attempted_at: string | null
+          question_id: string | null
+          total_users_attempted: number | null
+        }
+        Relationships: []
+      }
       civics_test_metrics: {
         Row: {
           abandonments: number | null
@@ -3732,6 +3993,46 @@ export type Database = {
           topic_id: string | null
           total_ratings: number | null
           total_reports: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_identifier"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      question_response_stats: {
+        Row: {
+          accuracy_rate: number | null
+          avg_time_spent: number | null
+          category: string | null
+          correct_attempts: number | null
+          difficulty_level: string | null
+          last_attempted_at: string | null
+          most_common_wrong_answer: string | null
+          question_id: string | null
+          question_number: number | null
+          question_type: string | null
+          topic_id: string | null
+          total_attempts: number | null
+          wrong_attempts: number | null
         }
         Relationships: [
           {
@@ -3849,6 +4150,25 @@ export type Database = {
           topic_title: string | null
           updated_at: string | null
           why_this_matters: string | null
+        }
+        Relationships: []
+      }
+      survey_summary: {
+        Row: {
+          allow_anonymous: boolean | null
+          allow_partial_responses: boolean | null
+          anonymous_responses: number | null
+          authenticated_responses: number | null
+          completed_responses: number | null
+          created_at: string | null
+          description: string | null
+          estimated_time: number | null
+          id: string | null
+          published_at: string | null
+          question_count: number | null
+          status: string | null
+          title: string | null
+          total_responses: number | null
         }
         Relationships: []
       }
@@ -4002,6 +4322,10 @@ export type Database = {
         Args: { p_guest_token: string; p_user_id: string }
         Returns: number
       }
+      get_assessment_question_social_proof_stats: {
+        Args: { p_question_id: string; p_assessment_type?: string }
+        Returns: Json
+      }
       get_available_boosts_for_user: {
         Args: { target_user_id: string; user_level?: number }
         Returns: {
@@ -4070,6 +4394,10 @@ export type Database = {
             }
         Returns: string
       }
+      get_question_social_proof_stats: {
+        Args: { p_question_id: string }
+        Returns: Json
+      }
       get_recommended_skills_for_user: {
         Args: { p_user_id: string; p_limit?: number }
         Returns: {
@@ -4095,6 +4423,14 @@ export type Database = {
           needs_practice: boolean
           priority_score: number
         }[]
+      }
+      get_social_proof_message: {
+        Args: {
+          p_accuracy_rate: number
+          p_total_attempts: number
+          p_difficulty_level: string
+        }
+        Returns: Json
       }
       get_user_boost_summary: {
         Args: { target_user_id: string }
@@ -4156,6 +4492,10 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      is_educational_email: {
+        Args: { email_address: string }
+        Returns: boolean
       }
       link_question_to_source: {
         Args: {

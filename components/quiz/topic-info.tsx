@@ -190,22 +190,23 @@ export function TopicInfo({
     }
   }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
 
-  // Load questions when the sources tab is selected
+  // Load questions immediately when component mounts to ensure sources are available
   useEffect(() => {
     let isCancelled = false
 
     const loadQuestions = async () => {
-      if (activeTab === "sources-citations" && questions.length === 0 && !isLoadingSources) {
+      if (questions.length === 0 && !isLoadingSources && topicData.topic_id) {
         setIsLoadingSources(true)
         try {
           const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
           
           if (!isCancelled) {
-            setQuestions(questionsData)
+            setQuestions(questionsData || [])
           }
         } catch (error) {
           if (!isCancelled) {
             console.error("Error loading questions for sources:", error)
+            setQuestions([]) // Set empty array on error
           }
         } finally {
           if (!isCancelled) {
@@ -220,7 +221,7 @@ export function TopicInfo({
     return () => {
       isCancelled = true
     }
-  }, [activeTab, questions.length, topicData.topic_id, isLoadingSources])
+  }, [topicData.topic_id, questions.length, isLoadingSources])
 
   // Extract all unique sources from questions
   const allSources = useMemo(() => {
@@ -440,37 +441,37 @@ export function TopicInfo({
           
           <Accordion type="single" collapsible className="w-full rounded-xl border border-slate-200 dark:border-slate-700">
             <AccordionItem value="item-1" className="border-slate-200 dark:border-slate-700">
-              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100">
+              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
                 How do I earn points in quizzes?
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4 text-slate-600 dark:text-slate-400">
+              <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
                 You earn points by answering questions correctly. Faster responses earn bonus points, and consecutive correct answers build combo multipliers.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-2" className="border-slate-200 dark:border-slate-700">
-              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100">
+              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
                 What are boosts and how do they work?
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4 text-slate-600 dark:text-slate-400">
+              <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
                 Boosts are special power-ups that can help you during quizzes. They include Time Extensions, Answer Hints, and Score Multipliers. Premium users get additional boost usage each day.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-3" className="border-slate-200 dark:border-slate-700">
-              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100">
+              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
                 How can I improve my civic knowledge skill rating?
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4 text-slate-600 dark:text-slate-400">
+              <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
                 Taking daily quizzes consistently, reviewing explanations for questions you miss, and focusing on specific skill areas will help improve your civic knowledge ratings over time.
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-4" className="border-slate-200 dark:border-slate-700">
-              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100">
+              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
                 Can I retake quizzes I've already completed?
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4 text-slate-600 dark:text-slate-400">
+              <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
                 Yes, you can retake quizzes, but your daily quiz limit applies to both new and repeated quizzes. Premium users have unlimited quiz attempts.
               </AccordionContent>
             </AccordionItem>

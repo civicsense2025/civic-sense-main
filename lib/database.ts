@@ -81,15 +81,38 @@ export const topicOperations = {
 
   // Get topics by category
   async getByCategory(category: string) {
-    const { data, error } = await supabase
-      .from('question_topics')
-      .select('*')
-      .contains('categories', [category])
-      .eq('is_active', true)
-      .order('date', { ascending: true })
+    try {
+      // Get all active topics and filter client-side to avoid JSON parsing issues
+      const { data, error } = await supabase
+        .from('question_topics')
+        .select('*')
+        .eq('is_active', true)
+        .order('date', { ascending: true })
 
-    if (error) throw error
-    return data as DbQuestionTopic[]
+      if (error) throw error
+      
+      // Filter client-side for matching category
+      const filteredData = (data || []).filter(topic => {
+        if (Array.isArray(topic.categories)) {
+          return topic.categories.includes(category)
+        }
+        // Handle case where categories might be stored as string
+        if (typeof topic.categories === 'string') {
+          try {
+            const parsed = JSON.parse(topic.categories)
+            return Array.isArray(parsed) && parsed.includes(category)
+          } catch {
+            return topic.categories === category
+          }
+        }
+        return false
+      })
+      
+      return filteredData as DbQuestionTopic[]
+    } catch (error) {
+      console.error(`Error getting topics by category '${category}':`, error)
+      return []
+    }
   },
 
   // Search topics

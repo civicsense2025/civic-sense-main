@@ -12,6 +12,11 @@ import Link from "next/link"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useRouter } from "next/navigation"
 import { Header } from '@/components/header'
+import { CategoryCloud } from '@/components/category-cloud'
+import { X } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 
 type ViewMode = 'cards' | 'calendar'
@@ -30,6 +35,8 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
   const [hasLoadedTopics, setHasLoadedTopics] = useState(false)
+  const [dismissModalOpen, setDismissModalOpen] = useState(false)
+  const [quizToDismiss, setQuizToDismiss] = useState<{attemptId: string, topicId: string, title: string} | null>(null)
 
   // Set mounted state
   useEffect(() => {
@@ -78,7 +85,11 @@ export default function HomePage() {
         const attempts = await enhancedQuizDatabase.getUserQuizAttempts(user.id)
         if (isCancelled) return
         
-        const incomplete = attempts.filter(a => a.isPartial)
+        // Get dismissed quiz IDs from localStorage
+        const dismissedQuizzes = JSON.parse(localStorage.getItem('dismissedQuizzes') || '[]')
+        
+        // Filter out dismissed quizzes
+        const incomplete = attempts.filter(a => a.isPartial && !dismissedQuizzes.includes(a.id))
         setIncompleteAttempts(incomplete)
         
         // Fetch topic metadata for each incomplete attempt
@@ -111,6 +122,42 @@ export default function HomePage() {
     setSelectedDate(date)
   }
 
+  const handleDismissClick = (attemptId: string, topicId: string, title: string) => {
+    setQuizToDismiss({ attemptId, topicId, title })
+    setDismissModalOpen(true)
+  }
+
+  const handleDismissConfirm = () => {
+    if (!quizToDismiss) return
+    
+    try {
+      // Store dismissed quiz IDs in localStorage (preserves progress but hides from view)
+      const dismissedQuizzes = JSON.parse(localStorage.getItem('dismissedQuizzes') || '[]')
+      dismissedQuizzes.push(quizToDismiss.attemptId)
+      localStorage.setItem('dismissedQuizzes', JSON.stringify(dismissedQuizzes))
+      
+      // Update local state to remove the dismissed item
+      setIncompleteAttempts(prev => prev.filter(attempt => attempt.id !== quizToDismiss.attemptId))
+      setIncompleteTopics(prev => {
+        const attemptIndex = incompleteAttempts.findIndex(a => a.id === quizToDismiss.attemptId)
+        if (attemptIndex >= 0) {
+          return prev.filter((_, index) => index !== attemptIndex)
+        }
+        return prev
+      })
+      
+      setDismissModalOpen(false)
+      setQuizToDismiss(null)
+    } catch (error) {
+      console.error('Failed to dismiss quiz:', error)
+    }
+  }
+
+  const handleDismissCancel = () => {
+    setDismissModalOpen(false)
+    setQuizToDismiss(null)
+  }
+
   // Don't render until mounted to prevent hydration issues
   if (!isMounted) {
     return (
@@ -126,6 +173,80 @@ export default function HomePage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
     
+            {/* Continue Where You Left Off - Fixed at top */}
+      {user && incompleteAttempts.length > 0 && (
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 sm:py-4">
+          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue Where You Left Off</h2>
+            
+            {/* Single quiz or horizontal scroll for multiple */}
+            {incompleteAttempts.length === 1 ? (
+              // Single quiz - full width
+              (() => {
+                const attempt = incompleteAttempts[0]
+                const topic = incompleteTopics[0]
+                if (!topic) return null
+                return (
+                  <div key={attempt.id} className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 shadow-sm">
+                    <span className="text-xl mr-3">{topic.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      <button
+                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
+                        onClick={() => router.push(`/quiz/${topic.topic_id}`)}
+                      >
+                        Continue
+                      </button>
+                      <button
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                        onClick={() => handleDismissClick(attempt.id, topic.topic_id, topic.topic_title)}
+                        title="Hide from continue list"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()
+            ) : (
+              // Multiple quizzes - horizontal scroll
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {incompleteAttempts.map((attempt, idx) => {
+                  const topic = incompleteTopics[idx]
+                  if (!topic) return null
+                  return (
+                    <div key={attempt.id} className="flex-shrink-0 w-80 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 shadow-sm">
+                      <span className="text-xl mr-3">{topic.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <button
+                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
+                          onClick={() => router.push(`/quiz/${topic.topic_id}`)}
+                        >
+                          Continue
+                        </button>
+                        <button
+                          className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                          onClick={() => handleDismissClick(attempt.id, topic.topic_id, topic.topic_title)}
+                          title="Hide from continue list"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <main className="w-full py-4 sm:py-6 lg:py-8">
         {/* Main content - use full available width with responsive constraints */}
@@ -155,33 +276,10 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Continue Where You Left Off Section */}
-          {user && incompleteAttempts.length > 0 && (
-            <div className="mt-6 sm:mt-8">
-              <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-slate-900 dark:text-slate-100">Continue Where You Left Off</h2>
-              <div className="flex flex-col gap-2 sm:gap-3">
-                {incompleteAttempts.map((attempt, idx) => {
-                  const topic = incompleteTopics[idx]
-                  if (!topic) return null
-                  return (
-                    <div key={attempt.id} className="flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 sm:px-4 py-2 sm:py-3 shadow-sm">
-                      <span className="text-2xl sm:text-3xl mr-3 sm:mr-4">{topic.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
-                      </div>
-                      <button
-                        className="ml-2 sm:ml-4 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700 transition"
-                        onClick={() => router.push(`/quiz/${topic.topic_id}`)}
-                      >
-                        Continue
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          {/* Categories Section */}
+          <div className="mt-8 sm:mt-12">
+            <CategoryCloud limit={6} showViewAll={true} />
+          </div>
         </div>
 
         <AuthDialog
@@ -191,6 +289,26 @@ export default function HomePage() {
           initialMode='sign-in'
         />
       </main>
+
+      {/* Dismiss Quiz Modal */}
+      <Dialog open={dismissModalOpen} onOpenChange={setDismissModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hide Quiz from Continue List?</DialogTitle>
+            <DialogDescription>
+              "{quizToDismiss?.title}" will be hidden from your continue list. Your progress will be saved and you can still access the quiz directly.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={handleDismissCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleDismissConfirm} className="bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900">
+              Hide Quiz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

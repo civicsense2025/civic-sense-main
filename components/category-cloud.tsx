@@ -1,95 +1,175 @@
 "use client"
 
-import type { CategoryType } from "@/lib/quiz-data"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+
+interface Category {
+  id: string
+  name: string
+  emoji: string
+  description: string | null
+  display_order: number | null
+}
 
 interface CategoryCloudProps {
-  onSelectCategory: (category: CategoryType | null) => void
-  selectedCategory: CategoryType | null
+  limit?: number
+  showViewAll?: boolean
   className?: string
 }
 
-// Simple category mapping
-const categoryInfo: Record<string, { emoji: string; name: string }> = {
-  Government: { emoji: "🏛️", name: "Government" },
-  Elections: { emoji: "🗳️", name: "Elections" },
-  Economy: { emoji: "💰", name: "Economy" },
-  "Foreign Policy": { emoji: "🌐", name: "Foreign Policy" },
-  Justice: { emoji: "⚖️", name: "Justice" },
-  "Civil Rights": { emoji: "✊", name: "Civil Rights" },
-  Environment: { emoji: "🌱", name: "Environment" },
-  "Local Issues": { emoji: "🏙️", name: "Local Issues" },
-  "Constitutional Law": { emoji: "📜", name: "Constitutional Law" },
-}
+export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }: CategoryCloudProps) {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export function CategoryCloud({ onSelectCategory, selectedCategory, className }: CategoryCloudProps) {
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true)
+        // Use trending categories to randomly surface popular categories as fallback
+        const response = await fetch('/api/categories?trending=true')
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories')
+        }
+        const data = await response.json()
+        
+        // Categories are already sorted by trending logic in the API
+        // Just take the first 'limit' categories
+        const selectedCategories = (data.categories || []).slice(0, limit)
+        
+        setCategories(selectedCategories)
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+        setError('Failed to load categories')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [limit])
+
+  if (loading) {
+    return (
+      <div className={`space-y-4 mt-16 ${className}`}>
+        <div className="flex items-center justify-between px-4 sm:px-0">
+          <h2 className="text-2xl font-medium text-slate-900 dark:text-white">
+            Explore by Category
+          </h2>
+        </div>
+        
+        {/* Desktop loading skeleton */}
+        <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {Array.from({ length: limit }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-slate-200 dark:bg-slate-800 rounded-xl h-24 w-full"></div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Mobile loading skeleton */}
+        <div className="flex gap-3 px-4 sm:hidden">
+          {Array.from({ length: limit }).map((_, i) => (
+            <div key={i} className="animate-pulse flex-shrink-0">
+              <div className="bg-slate-200 dark:bg-slate-800 rounded-xl h-24 w-32"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error || categories.length === 0) {
+    return (
+      <div className={`space-y-4 mt-16 ${className}`}>
+        <div className="flex items-center justify-between px-4 sm:px-0">
+          <h2 className="text-2xl font-medium text-slate-900 dark:text-white">
+            Explore by Category
+          </h2>
+        </div>
+        <div className="text-center py-8 text-slate-500 dark:text-slate-400 font-light">
+          {error || 'No categories available at the moment.'}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Apple-style section header */}
-      <div className="text-center space-y-2">
-        <h2 className="apple-headline">Explore Topics</h2>
-        <p className="apple-subheadline max-w-2xl mx-auto">
-          Choose a category to focus on or browse all topics
-        </p>
+    <div className={`space-y-6 mt-16 ${className}`}>
+      <div className="flex items-center justify-between px-4 sm:px-0">
+        <h2 className="text-2xl font-medium text-slate-900 dark:text-white">
+          Explore by Category
+        </h2>
+        {showViewAll && (
+          <Link href="/categories">
+            <Button variant="ghost" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+              View all
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </Link>
+        )}
       </div>
 
-      {/* Apple-inspired category grid */}
-      <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
-        {/* Clear filter option with Apple styling */}
-        {selectedCategory && (
-          <Button
-            onClick={() => onSelectCategory(null)}
-            variant="outline"
-            className="apple-button-secondary group inline-flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105"
-          >
-            <X className="w-4 h-4" />
-            <span className="text-sm font-mono font-medium">Clear Filter</span>
-          </Button>
-        )}
-
-        {/* Category buttons with Apple design */}
-        {Object.entries(categoryInfo).map(([key, category]) => {
-          const isSelected = selectedCategory === key
+      {/* Mobile: Horizontal scroll, Desktop: Grid layout */}
+      <div className="sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-4 hidden sm:block">
+        {categories.map((category) => {
+          const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-')
+          
           return (
-            <Button
-              key={key}
-              onClick={() => onSelectCategory(key as CategoryType)}
-              variant={isSelected ? "default" : "outline"}
-              className={`
-                group inline-flex items-center space-x-3 px-5 py-3 rounded-full
-                transition-all duration-200 hover:scale-105 transform
-                border backdrop-blur-sm
-                ${isSelected
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25'
-                  : 'bg-white/60 dark:bg-slate-900/60 hover:bg-white/80 dark:hover:bg-slate-900/80 text-slate-700 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300/60 dark:hover:border-slate-600/60'
-                }
-              `}
+            <Link
+              key={category.id}
+              href={`/categories/${categorySlug}`}
+              className="group"
             >
-              <span className="text-lg" role="img" aria-label={category.name}>
-                {category.emoji}
-              </span>
-              <span className="text-sm font-mono font-medium">
-                {category.name}
-              </span>
-            </Button>
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm group-hover:scale-105 duration-200">
+                <div className="text-center space-y-2">
+                  <div className="text-2xl" role="img" aria-label={category.name}>
+                    {category.emoji}
+                  </div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
+                    {category.name}
+                  </div>
+                </div>
+              </div>
+            </Link>
           )
         })}
       </div>
 
-      {/* Apple-style selected category indicator */}
-      {selectedCategory && categoryInfo[selectedCategory] && (
-        <div className="text-center apple-animate-in">
-          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800">
-            <span className="text-base">
-              {categoryInfo[selectedCategory].emoji}
-            </span>
-            <span className="text-sm font-mono text-blue-700 dark:text-blue-300 font-medium">
-              Filtering by {categoryInfo[selectedCategory].name}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Mobile horizontal scroll */}
+      <div className="flex overflow-x-auto gap-3 px-4 pb-2 sm:hidden scrollbar-hide">
+        {categories.map((category) => {
+          const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-')
+          
+          return (
+            <Link
+              key={category.id}
+              href={`/categories/${categorySlug}`}
+              className="group flex-shrink-0"
+            >
+              <div className="w-32 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm group-hover:scale-105 duration-200">
+                <div className="text-center space-y-2">
+                  <div className="text-2xl" role="img" aria-label={category.name}>
+                    {category.emoji}
+                  </div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
+                    {category.name}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Description text */}
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-light text-center max-w-2xl mx-auto px-4 sm:px-0">
+        Explore civic education topics by category. Popular topics with recent activity are featured first.
+      </p>
     </div>
   )
 }

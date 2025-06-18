@@ -31,6 +31,7 @@ import { BoostManager } from "@/lib/game-boosts"
 import { enhancedProgressOperations, updateEnhancedProgress } from "@/lib/enhanced-gamification"
 import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
 import { supabase } from "@/lib/supabase"
+import { SocialProofBubble } from "@/components/social-proof-bubble"
 
 interface QuizTopic {
   id: string
@@ -1248,6 +1249,22 @@ export function QuizEngine({
               </Button>
             </div>
           </div>
+
+          {/* Social Proof Bubble */}
+          {currentQuestion && !isAnswerSubmitted && (
+            <div className={cn(
+              "animate-in fade-in slide-in-from-bottom-2 duration-700",
+              isMobile ? "mt-3" : "mt-4"
+            )}>
+              <SocialProofBubble
+                questionId={`${currentQuestion.topic_id}-${currentQuestion.question_number}`}
+                showDelay={3000}
+                position="inline"
+                variant={isMobile ? "minimal" : "compact"}
+                className=""
+              />
+            </div>
+          )}
 
           {!isAnswerSubmitted && (
             <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -38,6 +38,9 @@ import { supabase } from '@/lib/supabase'
 import { DailyCardStack } from '@/components/daily-card-stack'
 import { PremiumUpgradeCard } from '@/components/premium-upgrade-card'
 import { Header } from "@/components/header"
+import { ContinueLearning } from "@/components/continue-learning"
+import { RecommendedTopics } from "@/components/recommended-topics"
+import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
 
 interface DashboardData {
   totalQuizzes: number
@@ -81,8 +84,6 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [enhancedProgress, setEnhancedProgress] = useState<EnhancedUserProgress | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
-  const [showAllAttempts, setShowAllAttempts] = useState(false)
-  const [allAttempts, setAllAttempts] = useState<DashboardData['recentActivity']>([])
 
   // Add state for onboarding status
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
@@ -176,28 +177,7 @@ export default function DashboardPage() {
             const dbRecentActivity = await Promise.race([activityPromise, activityTimeoutPromise])
             recentActivity = dbRecentActivity as DashboardData['recentActivity']
             
-            // Also fetch all attempts without deduplication
-            try {
-              const allAttemptsPromise = enhancedQuizDatabase.getUserQuizAttempts(user.id)
-              const allAttemptsData = await Promise.race([allAttemptsPromise, new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('All attempts timeout')), 5000)
-              )])
-              
-              // Map to same format as recentActivity
-              const formattedAllAttempts = (allAttemptsData as any[]).map((attempt: any) => ({
-                attemptId: attempt.id,
-                topicId: attempt.topicId,
-                topicTitle: allTopics[attempt.topicId]?.topic_title || 'Unknown Topic',
-                score: attempt.score,
-                completedAt: attempt.completedAt,
-                timeSpent: attempt.timeSpentSeconds,
-                isPartial: attempt.isPartial
-              })).slice(0, 50) // Limit to 50 to prevent performance issues
-              
-              setAllAttempts(formattedAllAttempts)
-            } catch (allAttemptsError) {
-              console.error('Failed to fetch all attempts:', allAttemptsError)
-            }
+
           } catch (error) {
             console.error('Error loading recent activity from database (using localStorage fallback):', error)
             
@@ -523,127 +503,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Continue Learning Section */}
+          {user && <ContinueLearning userId={user.id} />}
+
+          {/* Recommended Topics Section */}
+          {user && <RecommendedTopics userId={user.id} />}
 
 
-          {/* Recent activity - clean list */}
-          {dashboardData.recentActivity && dashboardData.recentActivity.length > 0 ? (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-white">Recent Activity</h2>
-                <div className="flex items-center gap-2 text-sm">
-                  <button 
-                    className={`px-3 py-1 rounded-full ${!showAllAttempts ? 'bg-slate-100 dark:bg-slate-800' : 'text-slate-500'}`}
-                    onClick={() => setShowAllAttempts(false)}
-                  >
-                    Unique Topics
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-full ${showAllAttempts ? 'bg-slate-100 dark:bg-slate-800' : 'text-slate-500'}`}
-                    onClick={() => setShowAllAttempts(true)}
-                  >
-                    All Attempts ({allAttempts.length})
-                  </button>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {(showAllAttempts ? allAttempts : dashboardData.recentActivity).slice(0, 10).map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 px-3 -mx-3 rounded-md transition-all">
-                    <Link
-                      href={activity.attemptId ? `/results/${activity.attemptId}` : '#'}
-                      className="flex-1 hover:bg-slate-50 dark:hover:bg-slate-900/50"
-                      aria-disabled={!activity.attemptId}
-                    >
-                      <div>
-                        <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                          {activity.topicTitle}
-                        </h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
-                            {new Date(activity.completedAt).toLocaleDateString()}
-                          </p>
-                          {activity.timeSpent && (
-                            <p className="text-sm text-slate-500 dark:text-slate-500 font-light flex items-center">
-                              <Clock className="h-3 w-3 mr-1 opacity-70" />
-                              {Math.round(activity.timeSpent / 60)}m
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className={cn(
-                          "text-lg font-light",
-                          activity.score >= 80 ? "text-green-600 dark:text-green-400" :
-                          activity.score >= 60 ? "text-blue-600 dark:text-blue-400" :
-                          "text-orange-600 dark:text-orange-400"
-                        )}>
-                          {activity.score}%
-                        </span>
-                      </div>
-                      
-                      {/* Add resume button for partial attempts */}
-                      {activity.isPartial && (
-                        <StartQuizButton
-                          label="Resume"
-                          onClick={() => router.push(`/quiz/${activity.topicId}`)}
-                          isPartiallyCompleted={true}
-                          variant="outline"
-                          className="text-sm py-2 px-4 h-auto"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                <div className="text-center py-2">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Showing {showAllAttempts ? 
-                      `${Math.min(allAttempts.length, 10)} of ${allAttempts.length} total attempts` : 
-                      `${Math.min(dashboardData.recentActivity.length, 10)} unique topics of ${dashboardData.completedQuizzes} completed quizzes`
-                    }
-                    <span className="inline-flex items-center ml-1 cursor-help group relative">
-                      <Info className="h-3 w-3 text-slate-400" />
-                      <span className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 w-64 bg-white dark:bg-slate-900 p-2 rounded shadow-lg text-xs text-left border border-slate-200 dark:border-slate-800 z-10">
-                        Your total quiz count ({dashboardData.completedQuizzes}) includes all completed quizzes. 
-                        "Unique Topics" shows only your most recent attempt for each topic, while "All Attempts" shows each individual quiz attempt.
-                      </span>
-                    </span>
-                  </p>
-                </div>
-                
-                {((showAllAttempts && allAttempts.length > 10) || (!showAllAttempts && dashboardData.recentActivity.length > 10)) && (
-                  <Button 
-                    variant="ghost" 
-                    className="w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    View More →
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <h2 className="text-2xl font-light text-slate-900 dark:text-white">Recent Activity</h2>
-              
-              <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-4">
-                <div className="text-4xl mb-2">📋</div>
-                <h3 className="text-xl font-light text-slate-900 dark:text-white">No Activity Yet</h3>
-                <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light">
-                  Complete your first quiz to see your activity history here.
-                </p>
-                <div className="pt-4">
-                  <Button 
-                    asChild
-                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 rounded-full px-6"
-                  >
-                    <Link href="/">Start a Quiz</Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+
+          {/* Enhanced Recent Activity */}
+          {user && <EnhancedRecentActivity userId={user.id} />}
 
           {/* Premium features teaser */}
           <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">

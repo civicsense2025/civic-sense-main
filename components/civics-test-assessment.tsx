@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { pendingUserAttribution } from '@/lib/pending-user-attribution'
 import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
+import { SocialProofBubble } from '@/components/social-proof-bubble'
 
 interface AssessmentQuestion {
   id: string
@@ -970,6 +971,20 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
               {currentQuestion.question}
             </h3>
           </div>
+
+          {/* Social Proof Bubble for Assessment */}
+          {!showResult && (
+            <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <SocialProofBubble
+                questionId={currentQuestion.id}
+                assessmentType="civics_test"
+                showDelay={4000}
+                position="inline"
+                variant="minimal"
+                className=""
+              />
+            </div>
+          )}
           
           {!showResult ? (
             <div className="space-y-3">

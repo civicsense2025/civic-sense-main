@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PWAStatus } from "@/components/pwa-status"
 
 // Import cache debug utilities in development
@@ -133,6 +134,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Toaster />
                 <GlobalAudioWrapper />
                 <Analytics />
+                <SpeedInsights />
                 {process.env.NODE_ENV === 'development' && <PWAStatus />}
               </PWAProvider>
             </StatsigProvider>

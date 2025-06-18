@@ -48,7 +48,11 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               <nav className="flex items-center space-x-6 lg:space-x-8">
                 {pathname !== '/' && (
                   <div className="text-sm sm:text-base text-slate-700 dark:text-slate-200 font-light">
-                    {pathname.includes('/quiz/') ? 'Quiz' : pathname === '/civics-test' ? 'Civics Test' : 'Home'}
+                    {pathname.includes('/quiz/') ? 'Quiz' : 
+                     pathname === '/civics-test' ? 'Civics Test' : 
+                     pathname.startsWith('/categories') ? 'Categories' :
+                     pathname === '/public-figures' || pathname.startsWith('/public-figures/') ? 'Public Figures' :
+                     'Home'}
                   </div>
                 )}
               </nav>
@@ -126,6 +130,22 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                     Home
                   </Link>
                 )}
+                
+                <Link 
+                  href="/categories"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  Categories
+                </Link>
+
+                <Link 
+                  href="/public-figures"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  Public Figures
+                </Link>
                 
                 <Link 
                   href="/donate"

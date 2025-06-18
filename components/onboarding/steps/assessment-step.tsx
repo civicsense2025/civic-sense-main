@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { useStatsig } from '@/components/providers/statsig-provider'
 import { pendingUserAttribution } from '@/lib/pending-user-attribution'
 import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
+import { SocialProofBubble } from '@/components/social-proof-bubble'
 
 interface AssessmentQuestion {
   id: string
@@ -738,6 +739,21 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
               {currentQuestion.question}
             </h3>
           </div>
+
+          {/* Social Proof Bubble for Onboarding Assessment */}
+          {!showResult && (
+            <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <SocialProofBubble
+                questionId={currentQuestion.id}
+                assessmentType="onboarding"
+                showDelay={3500}
+                position="inline"
+                variant="minimal"
+                className=""
+              />
+            </div>
+          )}
+
           {!showResult ? (
             <div className="space-y-3">
               {currentQuestion.options.map((option) => (

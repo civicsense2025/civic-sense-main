@@ -40,6 +40,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if user already has active premium subscription
+    const { data: existingSubscription } = await supabase
+      .from('user_subscriptions')
+      .select('subscription_status')
+      .eq('user_id', userId)
+      .eq('subscription_status', 'active')
+      .single()
+
+    if (existingSubscription) {
+      return NextResponse.json(
+        { message: 'User already has active premium subscription' },
+        { status: 200 }
+      )
+    }
+
     // Process educational access
     await educationalAccess.processNewUserEducationalAccess(userId, userEmail, emailConfirmed)
 
@@ -71,6 +86,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Check if user already has active premium subscription
+    const { data: existingSubscription } = await supabase
+      .from('user_subscriptions')
+      .select('subscription_status')
+      .eq('user_id', userId)
+      .eq('subscription_status', 'active')
+      .single()
+
+    if (existingSubscription) {
+      return NextResponse.json(
+        { message: 'User already has active premium subscription' },
+        { status: 200 }
+      )
+    }
+
     // For GET requests, assume email is confirmed (manual trigger)
     await educationalAccess.processNewUserEducationalAccess(userId, userEmail, true)
     

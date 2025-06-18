@@ -950,47 +950,23 @@ export function DailyCardStack({
         onAuthRequired={onAuthRequired}
       />
 
-      {/* Navigation - Simplified for readability */}
+      {/* Navigation - Mobile-friendly stacked layout */}
       {allFilteredTopics.length > 1 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
-            {/* Previous button */}
-            <button
-              onClick={handlePrevious}
-              disabled={currentStackIndex === 0}
-              className={cn(
-                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0",
-                currentStackIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
-              )}
-            >
-              {currentStackIndex > 0 && (
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </div>
-                  <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
-                    <span className="text-left max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 20)}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </button>
-
-            {/* Current date dropdown */}
+        <div className="mb-6 space-y-4">
+          {/* Current date selector - Full width on mobile, centered on desktop */}
+          <div className="flex justify-center px-4 sm:px-6 lg:px-8">
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity">
+                <button className="flex items-center space-x-2 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700">
                   <span className="flex items-center gap-2">
-                    <span className="text-base">{currentTopic.emoji}</span>
+                    <span className="text-lg">{currentTopic.emoji}</span>
                     <span>
                       {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
                         weekday: 'short', month: 'short', day: 'numeric' 
                       })}
                     </span>
                   </span>
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <ChevronDown className="h-3 w-3" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -1012,13 +988,13 @@ export function DailyCardStack({
                   {/* Trending searches */}
                   {dropdownSearch === "" && trendingQueries.length > 0 && (
                     <div className="mb-2 px-1">
-                      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Trending searches</div>
+                      <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Trending searches</div>
                       <div className="flex flex-wrap gap-2">
                         {trendingQueries.map((q) => (
                           <button
                             key={q}
                             onClick={() => setDropdownSearch(q)}
-                            className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full px-3 py-1 transition-colors"
+                            className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-full px-3 py-1 transition-colors"
                           >
                             {q}
                           </button>
@@ -1060,15 +1036,15 @@ export function DailyCardStack({
                           <div className="flex items-center space-x-3 flex-grow min-w-0">
                             <span className="text-lg flex-shrink-0">{topic.emoji}</span>
                             <div className="flex-grow min-w-0">
-                              <div className="text-sm font-medium truncate">{topic.topic_title}</div>
-                              <div className="text-xs text-slate-500 truncate">{topic.description}</div>
-                              <div className="text-xs text-slate-500 mt-0.5">
+                              <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
                                 {topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-slate-500 dark:text-slate-400">Coming Soon</span>}
+                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-slate-600 dark:text-slate-400">Coming Soon</span>}
                             {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
                             {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
                             {isCurrent && <span className="text-xs text-primary">●</span>}
@@ -1085,6 +1061,48 @@ export function DailyCardStack({
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+
+          {/* Previous/Next navigation */}
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
+            {/* Previous button - shows tomorrow when at first item */}
+            <button
+              onClick={currentStackIndex > 0 ? handlePrevious : undefined}
+              disabled={currentStackIndex === 0}
+              className={cn(
+                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0",
+                currentStackIndex === 0 ? "opacity-70 cursor-default" : "opacity-70 hover:opacity-100 cursor-pointer"
+              )}
+            >
+              {currentStackIndex > 0 ? (
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                    ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                  <div className="flex items-center gap-1 font-medium text-sm">
+                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                    <span className="text-left max-w-[100px] sm:max-w-[120px] truncate">
+                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 15)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                    ← {(() => {
+                      const tomorrow = new Date(getTodayAtMidnight().getTime() + 24 * 60 * 60 * 1000)
+                      return tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    })()}
+                  </div>
+                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Tomorrow</div>
+                </div>
+              )}
+            </button>
+
+            {/* Progress indicator */}
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              {currentStackIndex + 1} of {allFilteredTopics.length}
+            </div>
 
             {/* Next button */}
             <button
@@ -1095,18 +1113,20 @@ export function DailyCardStack({
                 currentStackIndex === allFilteredTopics.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
               )}
             >
-              {currentStackIndex < allFilteredTopics.length - 1 && (
+              {currentStackIndex < allFilteredTopics.length - 1 ? (
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
                     {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
-                    <span className="text-right max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 20)}
+                    <span className="text-right max-w-[100px] sm:max-w-[120px] truncate">
+                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 15)}
                     </span>
+                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
                   </div>
                 </div>
+              ) : (
+                <div className="text-sm font-medium text-slate-400">Next</div>
               )}
             </button>
           </div>

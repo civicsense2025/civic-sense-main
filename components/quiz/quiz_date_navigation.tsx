@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 interface QuizTopic {
@@ -228,40 +229,64 @@ export function QuizDateNavigation({
       </DropdownMenu>
 
       {/* Next Topic Button */}
-      <Button
-        variant="ghost"
-        onClick={() => onNavigate('next')}
-        disabled={!nextTopic}
-        className={cn(
-          "flex items-center gap-2 h-auto p-3 transition-all hover:scale-105",
-          "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100",
-          !nextTopic && "opacity-40 cursor-not-allowed hover:scale-100"
-        )}
-      >
-        <div className="flex flex-col items-end">
-          {nextTopic ? (
-            <>
-              <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}, {formatDate(nextTopic.date, nextTopic.dayOfWeek).year}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              onClick={() => nextTopic && onNavigate('next')}
+              disabled={!nextTopic}
+              className={cn(
+                "flex items-center gap-2 h-auto p-3 transition-all",
+                "text-slate-600 dark:text-slate-400",
+                nextTopic 
+                  ? "hover:scale-105 hover:text-slate-900 dark:hover:text-slate-100" 
+                  : "opacity-40 cursor-not-allowed"
+              )}
+            >
+              <div className="flex flex-col items-end">
+                {nextTopic ? (
+                  <>
+                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                      {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}, {formatDate(nextTopic.date, nextTopic.dayOfWeek).year}
+                    </div>
+                    <div className="flex items-center gap-1 font-medium text-sm">
+                      <span className={cn(
+                        "text-right max-w-[120px] truncate",
+                        isMobile && "max-w-[80px]"
+                      )}>
+                        {truncateTitleNav(nextTopic.title, 20)}
+                      </span>
+                      <span className="text-base">{nextTopic.emoji}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                      Coming soon...
+                    </div>
+                    <div className="flex items-center gap-1 font-medium text-sm">
+                      <span className="text-right">
+                        {isMobile ? "Next" : "Tomorrow's Politics"}
+                      </span>
+                      <span className="text-base">🔮</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="flex items-center gap-1 font-medium text-sm">
-                <span className={cn(
-                  "text-right max-w-[120px] truncate",
-                  isMobile && "max-w-[80px]"
-                )}>
-                  {truncateTitleNav(nextTopic.title, 20)}
-                </span>
-                <span className="text-base">{nextTopic.emoji}</span>
-              </div>
-            </>
-          ) : (
-            <div className="text-sm font-medium">
-              {isMobile ? "Next" : "Next"}
-            </div>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          {!nextTopic && (
+            <TooltipContent side="left" className="max-w-xs">
+              <p className="text-sm">
+                Democracy doesn't pause for anyone—new political developments drop every day. 
+                Check back tomorrow for fresh civic challenges that'll test what you really know.
+              </p>
+            </TooltipContent>
           )}
-        </div>
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   )
 }
