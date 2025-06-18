@@ -127,11 +127,11 @@ export const multiplayerOperations = {
 
     const roomData = data[0]
     
-    // Get the full room data using the returned room_id
+    // Get the full room data using the returned id (function returns 'id', not 'room_id')
     const { data: room, error: roomError } = await supabase
       .from('multiplayer_rooms')
       .select('*')
-      .eq('id', roomData.room_id)
+      .eq('id', roomData.id)
       .single()
 
     if (roomError) throw roomError

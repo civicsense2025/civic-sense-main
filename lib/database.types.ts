@@ -5980,6 +5980,36 @@ export type Database = {
         }
         Relationships: []
       }
+      function_type_validation: {
+        Row: {
+          column_types: string[] | null
+          function_name: string | null
+          validation_status: string | null
+        }
+        Relationships: []
+      }
+      function_validation_summary: {
+        Row: {
+          matching_columns: number | null
+          mismatched_columns: number | null
+          total_columns: number | null
+          validation_status: string | null
+          validation_target: string | null
+        }
+        Relationships: []
+      }
+      multiplayer_room_function_validation: {
+        Row: {
+          column_position: number | null
+          function_data_type: string | null
+          function_parameter_name: string | null
+          mismatch_details: string | null
+          table_column_name: string | null
+          table_data_type: string | null
+          types_match: boolean | null
+        }
+        Relationships: []
+      }
       npc_vs_human_analytics: {
         Row: {
           accuracy_improvement: number | null
@@ -6424,25 +6454,24 @@ export type Database = {
         Returns: string
       }
       create_multiplayer_room: {
-        Args:
-          | {
-              p_topic_id: string
-              p_host_user_id?: string
-              p_host_guest_token?: string
-              p_room_name?: string
-              p_max_players?: number
-              p_game_mode?: string
-            }
-          | {
-              p_topic_id: string
-              p_host_user_id?: string
-              p_room_name?: string
-              p_max_players?: number
-              p_game_mode?: string
-            }
+        Args: {
+          p_topic_id: string
+          p_host_user_id?: string
+          p_host_guest_token?: string
+          p_room_name?: string
+          p_max_players?: number
+          p_game_mode?: string
+        }
         Returns: {
-          room_id: string
+          id: string
           room_code: string
+          topic_id: string
+          room_name: string
+          max_players: number
+          current_players: number
+          game_mode: string
+          room_status: string
+          host_user_id: string
           created_at: string
         }[]
       }
@@ -6476,6 +6505,15 @@ export type Database = {
           link_code: string
           success: boolean
           error_message: string
+        }[]
+      }
+      detect_all_type_mismatches: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          function_name: string
+          table_name: string
+          mismatch_count: number
+          mismatch_details: string[]
         }[]
       }
       generate_invite_code: {
@@ -6516,6 +6554,14 @@ export type Database = {
           created_at: string
           individual_claims: Json
           shareable_links: Json
+        }[]
+      }
+      get_function_return_info: {
+        Args: { function_name_param: string }
+        Returns: {
+          parameter_name: string
+          data_type: string
+          ordinal_position: number
         }[]
       }
       get_gift_analytics_summary: {
@@ -6666,6 +6712,17 @@ export type Database = {
           p_difficulty_level: string
         }
         Returns: Json
+      }
+      get_table_column_info: {
+        Args: { table_name_param: string }
+        Returns: {
+          column_name: string
+          data_type: string
+          character_maximum_length: number
+          is_nullable: string
+          column_default: string
+          ordinal_position: number
+        }[]
       }
       get_user_boost_summary: {
         Args: { target_user_id: string }
@@ -6909,6 +6966,26 @@ export type Database = {
       user_is_in_room: {
         Args: { p_room_id: string; p_user_id: string }
         Returns: boolean
+      }
+      validate_function_table_types: {
+        Args: { function_name_param: string; table_name_param: string }
+        Returns: {
+          column_position: number
+          table_column_name: string
+          table_data_type: string
+          function_parameter_name: string
+          function_data_type: string
+          types_match: boolean
+          mismatch_details: string
+        }[]
+      }
+      validate_migration_safety: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_name: string
+          status: string
+          details: string
+        }[]
       }
     }
     Enums: {
