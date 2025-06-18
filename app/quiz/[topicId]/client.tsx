@@ -1,16 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { QuizEngine } from "@/components/quiz/quiz-engine"
+import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { TopicInfo } from "@/components/quiz/topic-info"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
-import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
@@ -25,6 +25,7 @@ interface QuizPageProps {
 
 export default function QuizPageClient({ params }: QuizPageProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
   const [topic, setTopic] = useState<TopicMetadata | null>(null)
@@ -37,6 +38,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   const [completedToday, setCompletedToday] = useState(0)
   const [streak, setStreak] = useState(0)
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
+  const [showContinueLoading, setShowContinueLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   
   // Use our new guest access hook
@@ -102,7 +104,31 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         }
         setTopic(topicData)
         
-        // Don't load questions yet - wait until user starts quiz
+        // Check if this is a continue request
+        const shouldContinue = searchParams.get('continue') === 'true'
+        
+        if (shouldContinue) {
+          // Show the witty loading screen for 3 seconds
+          setShowContinueLoading(true)
+          
+          // Pre-load questions in the background
+          try {
+            const questionsData = await dataService.getQuestionsByTopic(params.topicId)
+            if (!isCancelled && questionsData && questionsData.length > 0) {
+              setQuestions(questionsData)
+              
+              // Record the quiz attempt
+              if (!user) {
+                recordQuizAttempt()
+              }
+              await recordQuizAttempt(params.topicId)
+            }
+          } catch (err) {
+            console.error("Error loading questions for continuation:", err)
+            // If loading questions fails, will fallback to topic info after loading screen
+          }
+        }
+        
         setIsLoading(false)
       } catch (err) {
         if (isCancelled) return // Prevent state update if component unmounted
@@ -121,7 +147,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
     return () => {
       isCancelled = true
     }
-  }, [params.topicId, topic])
+  }, [params.topicId, topic, searchParams, user, recordQuizAttempt])
 
   const handleStartQuiz = async () => {
     // Check quiz limits based on user tier
@@ -201,6 +227,17 @@ export default function QuizPageClient({ params }: QuizPageProps) {
     setShowTopicInfo(false)
   }
 
+  const handleContinueLoadingComplete = () => {
+    setShowContinueLoading(false)
+    if (questions.length > 0) {
+      // Questions were pre-loaded, go directly to quiz
+      setShowTopicInfo(false)
+    } else {
+      // Questions failed to load, show topic info as fallback
+      setShowTopicInfo(true)
+    }
+  }
+
   // Update the guest access display
   const remainingQuizzes = user && (isPremium || isPro) 
     ? undefined // Premium users don't have a limit to display
@@ -253,7 +290,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-2 sm:py-4" data-quiz-active={!showTopicInfo}>
       {/* Minimal navigation - hide during loading */}
-      {!showLoadingScreen && (
+      {!showLoadingScreen && !showContinueLoading && (
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <button
             onClick={handleBackToHome}
@@ -266,7 +303,9 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         </div>
       )}
 
-      {showLoadingScreen ? (
+      {showContinueLoading ? (
+        <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
+      ) : showLoadingScreen ? (
         <QuizLoadingScreen onComplete={handleLoadingComplete} />
       ) : showTopicInfo ? (
         <TopicInfo

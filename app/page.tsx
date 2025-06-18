@@ -196,7 +196,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 ml-2">
                       <button
                         className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
-                        onClick={() => router.push(`/quiz/${topic.topic_id}`)}
+                        onClick={() => router.push(`/quiz/${topic.topic_id}?continue=true`)}
                       >
                         Continue
                       </button>
@@ -227,7 +227,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 ml-2">
                         <button
                           className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
-                          onClick={() => router.push(`/quiz/${topic.topic_id}`)}
+                          onClick={() => router.push(`/quiz/${topic.topic_id}?continue=true`)}
                         >
                           Continue
                         </button>

@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { pendingUserAttribution } from "@/lib/pending-user-attribution"
+import { DonationThankYouPopover } from "@/components/donation-thank-you-popover"
 
 interface AuthContextType {
   user: User | null
@@ -30,6 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [educationalAccessChecked, setEducationalAccessChecked] = useState<Set<string>>(new Set())
   const [donationAccessChecked, setDonationAccessChecked] = useState<Set<string>>(new Set())
+  const [showDonationThankYou, setShowDonationThankYou] = useState(false)
+  const [donationDetails, setDonationDetails] = useState<{amount: number, accessTier: string} | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -127,13 +130,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const result = await response.json()
         console.log('✅ Donation access check completed:', result.message)
         
-        // Show success toast if premium access was granted
+        // Store flag to show donation thank you popover if premium access was granted
         if (result.accessTier && result.donationAmount) {
-          toast({
-            title: "Premium Access Restored! 🎉",
-            description: `Your $${result.donationAmount} donation has been linked to your account. You now have ${result.accessTier} access!`,
-            variant: "default",
-          })
+          localStorage.setItem('showDonationThankYou', 'true')
+          localStorage.setItem('donationDetails', JSON.stringify({
+            amount: result.donationAmount,
+            accessTier: result.accessTier
+          }))
+          
+          // If this is initial load or sign in, show the popover immediately
+          if (reason === 'initial_load' || reason === 'sign_in') {
+            setDonationDetails({
+              amount: result.donationAmount,
+              accessTier: result.accessTier
+            })
+            setShowDonationThankYou(true)
+          }
         }
       } else {
         console.log(`⚠️ Donation access check failed with status ${response.status}`)
@@ -190,6 +202,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await checkDonationAccess(session.user, 'initial_load')
         // Transfer any pending data on initial load
         await transferPendingData(session.user)
+        
+        // Check if we should show donation thank you popover
+        const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
+        const savedDonationDetails = localStorage.getItem('donationDetails')
+        if (shouldShowThankYou === 'true' && savedDonationDetails) {
+          try {
+            const details = JSON.parse(savedDonationDetails)
+            setDonationDetails(details)
+            setShowDonationThankYou(true)
+          } catch (error) {
+            console.error('Error parsing donation details:', error)
+          }
+        }
       }
       
       setIsLoading(false)
@@ -235,12 +260,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await checkDonationAccess(session.user, 'sign_in')
           // Transfer any pending data when user signs in
           await transferPendingData(session.user)
+          
+          // Check if we should show donation thank you popover (for returning users)
+          const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
+          const savedDonationDetails = localStorage.getItem('donationDetails')
+          if (shouldShowThankYou === 'true' && savedDonationDetails) {
+            try {
+              const details = JSON.parse(savedDonationDetails)
+              setDonationDetails(details)
+              setShowDonationThankYou(true)
+            } catch (error) {
+              console.error('Error parsing donation details:', error)
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           // Clear educational access check cache when user signs out
           setEducationalAccessChecked(new Set())
           // Clear donation access check cache when user signs out
           setDonationAccessChecked(new Set())
+          // Clear donation thank you state when user signs out
+          setShowDonationThankYou(false)
+          setDonationDetails(null)
+          localStorage.removeItem('showDonationThankYou')
+          localStorage.removeItem('donationDetails')
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setUser(session.user)
           // Only check educational access on token refresh if email was recently confirmed
@@ -292,9 +335,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const handleCloseDonationThankYou = () => {
+    setShowDonationThankYou(false)
+    setDonationDetails(null)
+    // Clear localStorage flags
+    localStorage.removeItem('showDonationThankYou')
+    localStorage.removeItem('donationDetails')
+  }
+
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>
       {children}
+      
+      {/* Donation Thank You Popover */}
+      <DonationThankYouPopover
+        isVisible={showDonationThankYou}
+        onClose={handleCloseDonationThankYou}
+        donationAmount={donationDetails?.amount}
+        accessTier={donationDetails?.accessTier as 'annual' | 'lifetime'}
+      />
     </AuthContext.Provider>
   )
 }
