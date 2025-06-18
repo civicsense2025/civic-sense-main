@@ -119,12 +119,14 @@ export const enhancedQuizDatabase = {
   },
 
   /**
-   * Save basic quiz attempt (existing logic, but improved)
+   * Save basic quiz attempt (existing logic, but improved for session continuity)
    */
   async saveBasicQuizAttempt(attemptData: EnhancedQuizAttemptData) {
     let existingAttempt = null;
     
-    // Find existing attempt
+    console.log('🔍 Looking for existing attempt with ID:', attemptData.attemptId)
+    
+    // Find existing attempt - prioritize the specific attemptId if provided
     if (attemptData.attemptId) {
       const { data } = await supabase
         .from('user_quiz_attempts')
@@ -132,7 +134,11 @@ export const enhancedQuizDatabase = {
         .eq('id', attemptData.attemptId)
         .single();
       existingAttempt = data;
-    } else {
+      console.log('✅ Found existing attempt by ID:', existingAttempt?.id)
+    } 
+    
+    // If no specific attemptId provided or not found, look for any incomplete attempt for this topic
+    if (!existingAttempt) {
       const { data } = await supabase
         .from('user_quiz_attempts')
         .select('*')
@@ -143,6 +149,7 @@ export const enhancedQuizDatabase = {
         .limit(1)
         .maybeSingle()
       existingAttempt = data;
+      console.log('🔍 Found incomplete attempt for topic:', existingAttempt?.id)
     }
 
     let attempt: any;
@@ -577,10 +584,10 @@ export const enhancedQuizDatabase = {
     activityType?: 'quiz' | 'assessment'
   }>> {
     try {
-      // Fetch quiz attempts
+      // Fetch quiz attempts with proper deduplication by topic_id + completion status
       const { data: attempts, error } = await supabase
         .from('user_quiz_attempts')
-        .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed')
+        .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed, created_at')
         .eq('user_id', userId)
         .order('completed_at', { ascending: false })
       if (error) throw error
@@ -599,8 +606,26 @@ export const enhancedQuizDatabase = {
         .eq('user_id', userId)
         .order('completed_at', { ascending: false })
         .limit(limit * 2)
-      // Build activity list
-      const quizActivity = (attempts || []).map(attempt => ({
+      // Deduplicate attempts by topic_id + is_completed (keep most recent for each combination)
+      const deduplicatedAttempts = (attempts || []).reduce((acc: any[], attempt: any) => {
+        const key = `${attempt.topic_id}-${attempt.is_completed}`
+        const existingIndex = acc.findIndex(a => `${a.topic_id}-${a.is_completed}` === key)
+        
+        if (existingIndex >= 0) {
+          // Keep the more recent attempt
+          const existingDate = new Date(acc[existingIndex].completed_at || acc[existingIndex].created_at)
+          const currentDate = new Date(attempt.completed_at || attempt.created_at)
+          if (currentDate > existingDate) {
+            acc[existingIndex] = attempt
+          }
+        } else {
+          acc.push(attempt)
+        }
+        return acc
+      }, [])
+
+      // Build activity list from deduplicated attempts
+      const quizActivity = deduplicatedAttempts.map(attempt => ({
         attemptId: attempt.id,
         topicId: attempt.topic_id,
         topicTitle: topicMap[attempt.topic_id] || 'Unknown Topic',

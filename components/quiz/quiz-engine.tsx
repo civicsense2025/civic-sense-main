@@ -887,9 +887,30 @@ export function QuizEngine({
     }
   }
 
-  // Enhanced keyboard shortcuts
-  function handleKeyDown(event: KeyboardEvent) {
-    if (!keyboardEnabled) return
+  // Enhanced keyboard shortcuts - using refs to avoid stale closures
+  const keyboardStateRef = useRef({
+    keyboardEnabled: true,
+    isAnswerSubmitted: false,
+    selectedAnswer: null as string | null,
+    currentQuestion: null as any,
+    showHint: false
+  })
+
+  // Update refs when state changes
+  useEffect(() => {
+    keyboardStateRef.current = {
+      keyboardEnabled,
+      isAnswerSubmitted,
+      selectedAnswer,
+      currentQuestion,
+      showHint
+    }
+  }, [keyboardEnabled, isAnswerSubmitted, selectedAnswer, currentQuestion, showHint])
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const state = keyboardStateRef.current
+    
+    if (!state.keyboardEnabled) return
     
     const target = event.target as HTMLElement
     if (target && (
@@ -901,16 +922,16 @@ export function QuizEngine({
       return
     }
 
-    if (isAnswerSubmitted && event.key !== ' ') return
+    if (state.isAnswerSubmitted && event.key !== ' ') return
 
-    console.log('🎹 Enhanced key pressed:', event.key, 'Answer submitted:', isAnswerSubmitted, 'Selected answer:', selectedAnswer)
+    console.log('🎹 Enhanced key pressed:', event.key, 'Answer submitted:', state.isAnswerSubmitted, 'Selected answer:', state.selectedAnswer)
 
     switch (event.key.toLowerCase()) {
       case 'enter':
-        if (!isAnswerSubmitted && selectedAnswer) {
+        if (!state.isAnswerSubmitted && state.selectedAnswer) {
           event.preventDefault()
           event.stopPropagation()
-          console.log('⏎ Submitting answer via Enter key:', selectedAnswer)
+          console.log('⏎ Submitting answer via Enter key:', state.selectedAnswer)
           handleSubmitAnswer()
         }
         break
@@ -920,13 +941,8 @@ export function QuizEngine({
         event.stopPropagation()
         setShowHint(prev => {
           const newShowHint = !prev
-          if (newShowHint && currentQuestion) {
+          if (newShowHint && state.currentQuestion) {
             updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
-            trackQuiz.hintUsed(
-              `${topicId}-${currentQuestion.question_number}`,
-              'manual',
-              true
-            )
           }
           console.log('💡 Enhanced hint toggled via Space:', newShowHint ? 'shown' : 'hidden')
           return newShowHint
@@ -937,15 +953,15 @@ export function QuizEngine({
       case '2':
       case '3':
       case '4':
-        if (currentQuestion?.question_type === 'multiple_choice' && !isAnswerSubmitted) {
+        if (state.currentQuestion?.question_type === 'multiple_choice' && !state.isAnswerSubmitted) {
           event.preventDefault()
           event.stopPropagation()
           const optionIndex = parseInt(event.key) - 1
           const options = [
-            currentQuestion.option_a,
-            currentQuestion.option_b,
-            currentQuestion.option_c,
-            currentQuestion.option_d
+            state.currentQuestion.option_a,
+            state.currentQuestion.option_b,
+            state.currentQuestion.option_c,
+            state.currentQuestion.option_d
           ].filter(Boolean)
           
           if (optionIndex < options.length) {
@@ -957,7 +973,7 @@ export function QuizEngine({
         break
         
       case 't':
-        if (currentQuestion?.question_type === 'true_false' && !isAnswerSubmitted) {
+        if (state.currentQuestion?.question_type === 'true_false' && !state.isAnswerSubmitted) {
           event.preventDefault()
           event.stopPropagation()
           console.log('✅ Selecting True via keyboard')
@@ -966,7 +982,7 @@ export function QuizEngine({
         break
         
       case 'f':
-        if (currentQuestion?.question_type === 'true_false' && !isAnswerSubmitted) {
+        if (state.currentQuestion?.question_type === 'true_false' && !state.isAnswerSubmitted) {
           event.preventDefault()
           event.stopPropagation()
           console.log('❌ Selecting False via keyboard')
@@ -975,7 +991,7 @@ export function QuizEngine({
         break
         
       case 's':
-        if (!event.ctrlKey && !event.metaKey && !isAnswerSubmitted) {
+        if (!event.ctrlKey && !event.metaKey && !state.isAnswerSubmitted) {
           event.preventDefault()
           event.stopPropagation()
           console.log('⏭️ Skipping question via keyboard')
@@ -984,7 +1000,7 @@ export function QuizEngine({
         break
         
       case 'n':
-        if (isAnswerSubmitted) {
+        if (state.isAnswerSubmitted) {
           event.preventDefault()
           event.stopPropagation()
           console.log('➡️ Next question via keyboard')
@@ -992,7 +1008,7 @@ export function QuizEngine({
         }
         break
     }
-  }
+  }, [handleAnswerSelect, handleSubmitAnswer, handleSkipQuestion, handleNextQuestion, updateSessionAnalytics, sessionAnalytics.hintsUsed])
 
   // Keyboard event registration
   useEffect(() => {
@@ -1017,7 +1033,7 @@ export function QuizEngine({
       document.removeEventListener('keydown', handleKeyDownWrapper, { capture: true })
       console.log('🎹 Enhanced keyboard shortcuts disabled')
     }
-  }, [isAnswerSubmitted, selectedAnswer, currentQuestionIndex])
+  }, [handleKeyDown])
 
   // Input focus handlers
   useEffect(() => {
@@ -1056,38 +1072,66 @@ export function QuizEngine({
   useEffect(() => {
     if (attemptCreatedRef.current) return // Prevent duplicate attempts
     
-    const createAttempt = async () => {
-      if (user && !resumedAttemptId && randomizedQuestions.length > 0) {
+    const initializeAttempt = async () => {
+      if (user && randomizedQuestions.length > 0) {
         attemptCreatedRef.current = true
         try {
-          const { data: attempt, error } = await supabase
+          // First, check for existing incomplete attempt for this topic
+          const { data: existingAttempt } = await supabase
             .from('user_quiz_attempts')
-            .insert({
-              user_id: user.id,
-              topic_id: topicId,
-              total_questions: randomizedQuestions.length,
-              started_at: new Date().toISOString(),
-              is_completed: false
-            })
-            .select()
-            .single()
+            .select('id, started_at, created_at')
+            .eq('user_id', user.id)
+            .eq('topic_id', topicId)
+            .eq('is_completed', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (existingAttempt) {
+            // Resume existing attempt
+            console.log(`🔄 Resuming existing quiz attempt: ${existingAttempt.id}`)
+            setResumedAttemptId(existingAttempt.id)
             
-          if (error) {
-            console.error('Error creating enhanced quiz attempt:', error)
-            attemptCreatedRef.current = false // Allow retry on error
-          } else if (attempt) {
-            console.log(`✅ Created enhanced quiz attempt: ${attempt.id}`)
-            setResumedAttemptId(attempt.id)
+            // Update the attempt with current question count in case it changed
+            await supabase
+              .from('user_quiz_attempts')
+              .update({
+                total_questions: randomizedQuestions.length,
+                started_at: new Date().toISOString() // Update start time for session continuity
+              })
+              .eq('id', existingAttempt.id)
+              
+          } else {
+            // Create new attempt
+            const { data: newAttempt, error } = await supabase
+              .from('user_quiz_attempts')
+              .insert({
+                user_id: user.id,
+                topic_id: topicId,
+                total_questions: randomizedQuestions.length,
+                started_at: new Date().toISOString(),
+                is_completed: false
+              })
+              .select()
+              .single()
+              
+            if (error) {
+              console.error('Error creating enhanced quiz attempt:', error)
+              attemptCreatedRef.current = false // Allow retry on error
+            } else if (newAttempt) {
+              console.log(`✅ Created new enhanced quiz attempt: ${newAttempt.id}`)
+              setResumedAttemptId(newAttempt.id)
+            }
           }
         } catch (err) {
-          console.error('Failed to create enhanced quiz attempt:', err)
+          console.error('Failed to initialize enhanced quiz attempt:', err)
           attemptCreatedRef.current = false // Allow retry on error
         }
       }
     }
     
-    createAttempt()
-  }, [user, topicId, randomizedQuestions.length, resumedAttemptId])
+    initializeAttempt()
+  }, [user, topicId, randomizedQuestions.length])
 
   if (showResults) {
     return (
@@ -1250,7 +1294,7 @@ export function QuizEngine({
             </div>
           </div>
 
-          {/* Social Proof Bubble */}
+          {/* Social Proof Bubble - Only shows when real data is available */}
           {currentQuestion && !isAnswerSubmitted && (
             <div className={cn(
               "animate-in fade-in slide-in-from-bottom-2 duration-700",
@@ -1260,7 +1304,7 @@ export function QuizEngine({
                 questionId={`${currentQuestion.topic_id}-${currentQuestion.question_number}`}
                 showDelay={3000}
                 position="inline"
-                variant={isMobile ? "minimal" : "compact"}
+                variant="minimal"
                 className=""
               />
             </div>

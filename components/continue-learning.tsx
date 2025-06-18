@@ -39,14 +39,14 @@ export function ContinueLearning({ userId, className }: ContinueLearningProps) {
       try {
         setIsLoading(true)
         
-        // Get partial quiz attempts by checking incomplete attempts
+        // Get partial quiz attempts by checking incomplete attempts (with deduplication)
         const { data: partialAttempts, error } = await supabase
           .from('user_quiz_attempts')
           .select('*')
           .eq('user_id', userId)
           .eq('is_completed', false)
-          .order('updated_at', { ascending: false })
-          .limit(10)
+          .order('created_at', { ascending: false })
+          .limit(20) // Get more to account for duplicates
 
         if (error) {
           console.error('Error fetching partial attempts:', error)
@@ -55,7 +55,21 @@ export function ContinueLearning({ userId, className }: ContinueLearningProps) {
 
         const allTopics = await dataService.getAllTopics()
         
-        const quizItems: InProgressItem[] = (partialAttempts || []).map((attempt: any) => {
+        // Deduplicate attempts by topic_id (keep the most recent for each topic)
+        const deduplicatedAttempts = (partialAttempts || []).reduce((acc: any[], attempt: any) => {
+          const existingIndex = acc.findIndex(a => a.topic_id === attempt.topic_id)
+          if (existingIndex >= 0) {
+            // Keep the more recent attempt
+            if (new Date(attempt.created_at) > new Date(acc[existingIndex].created_at)) {
+              acc[existingIndex] = attempt
+            }
+          } else {
+            acc.push(attempt)
+          }
+          return acc
+        }, [])
+        
+        const quizItems: InProgressItem[] = deduplicatedAttempts.map((attempt: any) => {
           const topic = allTopics[attempt.topic_id]
           return {
             type: 'quiz' as const,
@@ -64,7 +78,7 @@ export function ContinueLearning({ userId, className }: ContinueLearningProps) {
             description: topic?.description ? (topic.description.substring(0, 120) + '...') : '',
             progress: Math.round(((attempt.correct_answers || 0) / (attempt.total_questions || 10)) * 100),
             timeSpent: attempt.time_spent_seconds,
-            lastAccessed: attempt.updated_at || attempt.created_at,
+            lastAccessed: attempt.created_at, // Use created_at since that's what we're ordering by
             category: topic?.categories?.[0] || 'General',
             estimatedTimeRemaining: Math.max(1, Math.round(((attempt.total_questions || 10) - (attempt.correct_answers || 0)) * 1.5)), // 1.5 min per question
             difficulty: 'intermediate' // Default since we don't have difficulty in topics

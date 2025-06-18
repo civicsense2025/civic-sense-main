@@ -935,7 +935,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
           {getAssessmentDescription()}
         </p>
         <div className="flex items-center justify-center space-x-4">
-          <Badge variant="outline" className="text-sm">
+          <Badge variant="outline" className="text-sm text-center">
             Question {(testState?.currentQuestionIndex || 0) + 1} of {testState?.questions.length || 0}
           </Badge>
           {hasRestoredState && (

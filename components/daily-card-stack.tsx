@@ -1100,7 +1100,7 @@ export function DailyCardStack({
             </button>
 
             {/* Progress indicator */}
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono text-center flex-shrink-0">
               {currentStackIndex + 1} of {allFilteredTopics.length}
             </div>
 

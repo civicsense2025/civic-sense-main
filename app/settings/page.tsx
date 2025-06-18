@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
+import { useLazyVoices } from "@/hooks/useLazyVoices"
 import { PremiumSubscriptionCard } from "@/components/premium-subscription-card"
 import { UserMenu } from "@/components/auth/user-menu"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,7 +21,8 @@ import {
   Mail, Calendar, CreditCard, Key, Trash2,
   ArrowLeft, Save, AlertCircle, CheckCircle,
   Moon, Sun, Globe, Smartphone, Lock,
-  Accessibility, Volume2, Eye, Type, Headphones
+  Accessibility, Volume2, Eye, Type, Headphones,
+  RefreshCw, Play
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -54,10 +56,11 @@ export default function SettingsPage() {
   const { user, signOut } = useAuth()
   const { subscription, isPremium, isPro, hasFeatureAccess } = usePremium()
   const { theme, setTheme } = useTheme()
+  const { voices, isLoaded: voicesLoaded, isLoading: voicesLoading, loadVoices, error: voicesError } = useLazyVoices()
   const [activeTab, setActiveTab] = useState("account")
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
   
   const [preferences, setPreferences] = useState<UserPreferences>({
     emailNotifications: true,
@@ -91,47 +94,7 @@ export default function SettingsPage() {
     confirmPassword: ''
   })
 
-  // Load available voices for text-to-speech (optimized)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      let voicesLoaded = false
-      
-      const loadVoices = () => {
-        if (voicesLoaded) return
-        
-        const availableVoices = speechSynthesis.getVoices()
-        if (availableVoices.length === 0) return
-        
-        voicesLoaded = true
-        
-        // Optimized voice selection for settings page
-        const qualityVoices = availableVoices
-          .filter(voice => voice.lang.startsWith('en'))
-          .filter(voice => {
-            const name = voice.name.toLowerCase()
-            return !['espeak', 'festival', 'flite', 'pico'].some(pattern => name.includes(pattern))
-          })
-          .slice(0, 8) // Limit to 8 voices for settings
-        
-        setVoices(qualityVoices)
-      }
-
-      loadVoices()
-      
-      // Only listen for voice changes if not loaded immediately
-      if (!voicesLoaded && speechSynthesis.getVoices().length === 0) {
-        speechSynthesis.addEventListener('voiceschanged', loadVoices)
-      }
-      
-      return () => {
-        try {
-          speechSynthesis.removeEventListener('voiceschanged', loadVoices)
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      }
-    }
-  }, [])
+  // Voices are now loaded lazily when user opens voice settings
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -631,6 +594,99 @@ export default function SettingsPage() {
                 {/* Text-to-Speech Settings */}
                 <div className="space-y-4">
                   <h4 className="font-semibold">Text-to-Speech</h4>
+                  
+                  {/* Voice Selection */}
+                  <div className="space-y-3">
+                    <Label>Voice Selection</Label>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Choose a voice for text-to-speech functionality
+                    </p>
+                    
+                    {!voicesLoaded ? (
+                      <div className="flex items-center gap-3">
+                        <Button
+                          onClick={loadVoices}
+                          disabled={voicesLoading}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {voicesLoading ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Loading Voices...
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-4 w-4 mr-2" />
+                              Load Available Voices
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-slate-500">
+                          Click to load speech synthesis voices
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {voicesError ? (
+                          <div className="text-sm text-red-600 dark:text-red-400">
+                            Error loading voices: {voicesError}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {voices.slice(0, 6).map((voiceOption, index) => (
+                                <Button
+                                  key={index}
+                                  variant={selectedVoice?.name === voiceOption.voice.name ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setSelectedVoice(voiceOption.voice)}
+                                  className="justify-start text-left h-auto p-3"
+                                >
+                                  <div className="flex flex-col items-start">
+                                    <span className="font-medium">{voiceOption.name}</span>
+                                    <span className="text-xs opacity-70">
+                                      {voiceOption.lang} • {voiceOption.quality}
+                                    </span>
+                                  </div>
+                                </Button>
+                              ))}
+                            </div>
+                            
+                            {selectedVoice && (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const utterance = new SpeechSynthesisUtterance(
+                                      "This is a test of the selected voice for CivicSense text-to-speech."
+                                    )
+                                    utterance.voice = selectedVoice
+                                    utterance.rate = preferences.speechRate
+                                    utterance.pitch = preferences.speechPitch
+                                    utterance.volume = preferences.speechVolume
+                                    speechSynthesis.speak(utterance)
+                                  }}
+                                >
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Test Voice
+                                </Button>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                  Selected: {selectedVoice.name}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <p className="text-xs text-slate-500">
+                              Showing {Math.min(voices.length, 6)} of {voices.length} available voices
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label>Speech Rate</Label>
@@ -638,13 +694,18 @@ export default function SettingsPage() {
                         Adjust the speed of text-to-speech
                       </p>
                     </div>
-                    <Slider
-                      value={[preferences.speechRate]}
-                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechRate: value[0] }))}
-                      max={2.0}
-                      min={0.5}
-                      step={0.1}
-                    />
+                    <div className="w-32">
+                      <Slider
+                        value={[preferences.speechRate]}
+                        onValueChange={(value) => setPreferences(prev => ({ ...prev, speechRate: value[0] }))}
+                        max={2.0}
+                        min={0.5}
+                        step={0.1}
+                      />
+                      <div className="text-xs text-center text-slate-500 mt-1">
+                        {preferences.speechRate.toFixed(1)}x
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -654,13 +715,18 @@ export default function SettingsPage() {
                         Adjust the pitch of text-to-speech
                       </p>
                     </div>
-                    <Slider
-                      value={[preferences.speechPitch]}
-                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechPitch: value[0] }))}
-                      max={2.0}
-                      min={0.5}
-                      step={0.1}
-                    />
+                    <div className="w-32">
+                      <Slider
+                        value={[preferences.speechPitch]}
+                        onValueChange={(value) => setPreferences(prev => ({ ...prev, speechPitch: value[0] }))}
+                        max={2.0}
+                        min={0.5}
+                        step={0.1}
+                      />
+                      <div className="text-xs text-center text-slate-500 mt-1">
+                        {preferences.speechPitch.toFixed(1)}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -670,13 +736,18 @@ export default function SettingsPage() {
                         Adjust the volume of text-to-speech
                       </p>
                     </div>
-                    <Slider
-                      value={[preferences.speechVolume]}
-                      onValueChange={(value) => setPreferences(prev => ({ ...prev, speechVolume: value[0] }))}
-                      max={1.0}
-                      min={0.0}
-                      step={0.1}
-                    />
+                    <div className="w-32">
+                      <Slider
+                        value={[preferences.speechVolume]}
+                        onValueChange={(value) => setPreferences(prev => ({ ...prev, speechVolume: value[0] }))}
+                        max={1.0}
+                        min={0.0}
+                        step={0.1}
+                      />
+                      <div className="text-xs text-center text-slate-500 mt-1">
+                        {Math.round(preferences.speechVolume * 100)}%
+                      </div>
+                    </div>
                   </div>
                 </div>
 

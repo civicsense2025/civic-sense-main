@@ -92,70 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Helper function to check and grant donation-based premium access
-  const checkDonationAccess = async (user: User, reason: string = 'auth') => {
-    if (!user?.email || !user.email_confirmed_at) {
-      console.log('Skipping donation access check: email not confirmed or missing')
-      return
-    }
-
-    // Create a unique key for this user's donation access check
-    const checkKey = `${user.id}-${user.email_confirmed_at}`
-    
-    // Skip if we've already checked for this user's confirmed email
-    if (donationAccessChecked.has(checkKey)) {
-      console.log(`Donation access already checked for user ${user.email} (key: ${checkKey})`)
-      return
-    }
-
-    try {
-      console.log(`💳 Checking donation access for ${user.email} (reason: ${reason}, key: ${checkKey})`)
-      
-      const response = await fetch('/api/auth/grant-donation-access', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-          emailConfirmed: true
-        })
-      })
-
-      // Always mark as checked to prevent retries, regardless of response
-      setDonationAccessChecked(prev => new Set([...prev, checkKey]))
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Donation access check completed:', result.message)
-        
-        // Store flag to show donation thank you popover if premium access was granted
-        if (result.accessTier && result.donationAmount) {
-          localStorage.setItem('showDonationThankYou', 'true')
-          localStorage.setItem('donationDetails', JSON.stringify({
-            amount: result.donationAmount,
-            accessTier: result.accessTier
-          }))
-          
-          // If this is initial load or sign in, show the popover immediately
-          if (reason === 'initial_load' || reason === 'sign_in') {
-            setDonationDetails({
-              amount: result.donationAmount,
-              accessTier: result.accessTier
-            })
-            setShowDonationThankYou(true)
-          }
-        }
-      } else {
-        console.log(`⚠️ Donation access check failed with status ${response.status}`)
-      }
-    } catch (error) {
-      console.error('❌ Error checking donation access:', error)
-      // Still mark as checked to prevent endless retries
-      setDonationAccessChecked(prev => new Set([...prev, checkKey]))
-    }
-  }
+  // Note: Donation access checking is now handled only in the Gift Credits Dashboard component
+  // to reduce unnecessary API calls and improve performance. Users can manually check their
+  // donation status when they want to create gift links.
 
   // Helper function to transfer pending data when user authenticates
   const transferPendingData = async (user: User) => {
@@ -198,8 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session.user)
         // Check for educational access on initial load (only if email confirmed)
         await checkEducationalAccess(session.user, 'initial_load')
-        // Check for donation access on initial load
-        await checkDonationAccess(session.user, 'initial_load')
         // Transfer any pending data on initial load
         await transferPendingData(session.user)
         
@@ -236,8 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(session.user)
             // Check for educational access after email confirmation or OAuth (this is important!)
             await checkEducationalAccess(session.user, 'email_confirmation')
-            // Check for donation access after email confirmation
-            await checkDonationAccess(session.user, 'email_confirmation')
           }
         } catch (error) {
           console.error('Error handling auth callback:', error)
@@ -256,8 +191,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session.user)
           // Check for educational access when user signs in (important for new users)
           await checkEducationalAccess(session.user, 'sign_in')
-          // Check for donation access when user signs in
-          await checkDonationAccess(session.user, 'sign_in')
           // Transfer any pending data when user signs in
           await transferPendingData(session.user)
           
@@ -289,8 +222,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Only check educational access on token refresh if email was recently confirmed
           // (This helps catch cases where email was confirmed during the session)
           await checkEducationalAccess(session.user, 'token_refresh')
-          // Also check donation access on token refresh
-          await checkDonationAccess(session.user, 'token_refresh')
           // Transfer pending data on token refresh (e.g., after email confirmation)
           await transferPendingData(session.user)
         }
@@ -348,12 +279,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
       
       {/* Donation Thank You Popover */}
-      <DonationThankYouPopover
-        isVisible={showDonationThankYou}
-        onClose={handleCloseDonationThankYou}
-        donationAmount={donationDetails?.amount}
-        accessTier={donationDetails?.accessTier as 'annual' | 'lifetime'}
-      />
+      {donationDetails && (
+        <DonationThankYouPopover
+          isOpen={showDonationThankYou}
+          onClose={handleCloseDonationThankYou}
+          amount={donationDetails.amount}
+          accessTier={donationDetails.accessTier as 'annual' | 'lifetime'}
+          userId={user?.id}
+        />
+      )}
     </AuthContext.Provider>
   )
 }

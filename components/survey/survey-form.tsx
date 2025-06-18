@@ -1180,8 +1180,8 @@ export function SurveyForm({
           </div>
           
           <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 pt-4">
-            <span>{answeredQuestions} of {visibleQuestions.length} answered</span>
-            <span>{visibleQuestions.length - answeredQuestions} remaining</span>
+            <span className="text-center">{answeredQuestions} of {visibleQuestions.length} answered</span>
+            <span className="text-center">{visibleQuestions.length - answeredQuestions} remaining</span>
           </div>
         </div>
       </div>

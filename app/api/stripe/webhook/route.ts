@@ -219,6 +219,37 @@ async function handleDonationWithAccess(
       console.log(`${accessTier.charAt(0).toUpperCase() + accessTier.slice(1)} access granted to user ${userId} from donation`)
     }
     
+    // Process gift credits if donation is large enough
+    if (session.amount_total && session.amount_total >= 7500) { // $75+ generates gift credits
+      try {
+        // Call our gift credits API to process the donation
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/gift-credits`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userId,
+            donationAmount: session.amount_total,
+            stripeSessionId: session.id
+          }),
+        })
+
+        if (response.ok) {
+          const giftResult = await response.json()
+          console.log(`Gift credits processed for user ${userId}:`, {
+            annualCredits: giftResult.annualCreditsGranted,
+            lifetimeCredits: giftResult.lifetimeCreditsGranted,
+            donorAccess: giftResult.donorAccessType
+          })
+        } else {
+          console.error('Failed to process gift credits:', await response.text())
+        }
+      } catch (error) {
+        console.error('Error processing gift credits:', error)
+      }
+    }
+    
     // Log donation in a more generic way without requiring a specific table
     console.log(`Donation recorded: User ${userId}, Amount: ${session.amount_total || 0} ${session.currency || 'usd'}, Access: ${accessTier}`)
     

@@ -41,6 +41,7 @@ import { Header } from "@/components/header"
 import { ContinueLearning } from "@/components/continue-learning"
 import { RecommendedTopics } from "@/components/recommended-topics"
 import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
+import { GiftCreditsDashboard } from "@/components/gift-credits-dashboard"
 
 interface DashboardData {
   totalQuizzes: number
@@ -513,6 +514,19 @@ export default function DashboardPage() {
 
           {/* Enhanced Recent Activity */}
           {user && <EnhancedRecentActivity userId={user.id} />}
+
+          {/* Gift Credits Dashboard */}
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
+                Gift CivicSense Access
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 font-light">
+                Share the power of civic education with others
+              </p>
+            </div>
+            <GiftCreditsDashboard />
+          </div>
 
           {/* Premium features teaser */}
           <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">

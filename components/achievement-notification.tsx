@@ -261,7 +261,7 @@ export function AchievementNotification({
                   transition={{ delay: 0.8 }}
                   className="flex items-center justify-between mt-8"
                 >
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground text-center">
                     {currentIndex + 1} of {achievements.length}
                     {levelUpInfo && " + Level Up!"}
                   </div>

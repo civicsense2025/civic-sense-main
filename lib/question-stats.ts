@@ -89,13 +89,13 @@ export const questionStatsService = {
         }
       }
 
-      // Fallback: create sample stats for demo purposes
-      return this.generateSampleStats(questionId)
+      // No real data available - don't show mock stats
+      return null
 
     } catch (error) {
       console.error('Error fetching question stats:', error)
-      // Return sample stats for demo
-      return this.generateSampleStats(questionId)
+      // No real data available - don't show mock stats
+      return null
     }
   },
 
@@ -157,13 +157,13 @@ export const questionStatsService = {
       // - user_assessments.answers for onboarding assessment questions
       // - guest_civics_test_results.answers for guest civics test data
 
-      // For now, generate realistic sample stats based on assessment type
-      return this.generateAssessmentSampleStats(questionId, assessmentType)
+      // No real assessment data available - don't show mock stats
+      return null
 
     } catch (error) {
       console.error('Error fetching assessment question stats:', error)
-      // Return sample stats for demo
-      return this.generateAssessmentSampleStats(questionId, assessmentType)
+      // No real assessment data available - don't show mock stats
+      return null
     }
   },
 

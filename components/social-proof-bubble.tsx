@@ -12,30 +12,30 @@ interface SocialProofBubbleProps {
   assessmentType?: 'onboarding' | 'civics_test'
   showDelay?: number // Delay before showing in ms
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'center' | 'inline'
-  variant?: 'compact' | 'detailed' | 'minimal'
+  variant?: 'minimal' | 'compact' | 'detailed' // minimal = simple text line, compact = card, detailed = full analytics
   onStatsLoaded?: (stats: QuestionStats | AssessmentQuestionStats) => void
   className?: string
 }
 
 interface SocialProofStatsProps {
   stats: QuestionStats | AssessmentQuestionStats
-  variant: 'compact' | 'detailed' | 'minimal'
+  variant: 'minimal' | 'compact' | 'detailed'
 }
 
 function SocialProofStats({ stats, variant }: SocialProofStatsProps) {
   if (variant === 'minimal') {
     return (
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        className="flex items-center space-x-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-full px-2 py-1.5 sm:px-3 sm:py-2 shadow-lg border border-slate-200 dark:border-slate-700 text-xs sm:text-sm max-w-fit mx-auto"
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -5 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="text-center"
       >
-        <span className="text-sm sm:text-lg">{stats.emoji}</span>
-        <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-          {stats.accuracyRate}% get this right
-        </span>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
+          <span className="mr-1">{stats.emoji}</span>
+          {stats.accuracyRate}% of {stats.totalAttempts.toLocaleString()} people get this right
+        </p>
       </motion.div>
     )
   }
@@ -179,7 +179,7 @@ export function SocialProofBubble({
   assessmentType,
   showDelay = 2000,
   position = 'top-right',
-  variant = 'compact',
+  variant = 'minimal',
   onStatsLoaded,
   className = ''
 }: SocialProofBubbleProps) {
@@ -245,7 +245,8 @@ export function SocialProofBubble({
     'inline': ''
   }
 
-  if (isLoading || error || !stats) {
+  // Don't show anything if we're loading, have an error, no stats, or if stats are mock/sample data
+  if (isLoading || error || !stats || !stats.totalAttempts || stats.totalAttempts === 0) {
     return null
   }
 
