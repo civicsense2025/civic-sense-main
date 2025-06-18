@@ -425,87 +425,250 @@ export async function addNPCToRoom(
   npcId: string
 ): Promise<{ success: boolean; playerId?: string; error?: string }> {
   try {
-    // Use the new database function for adding NPCs (with type assertion for now)
-    const { data, error } = await supabase.rpc('add_npc_to_multiplayer_room' as any, {
-      p_room_code: roomCode.toUpperCase(),
-      p_npc_code: npcId
-    })
-
-    if (error) {
-      console.error('Database error adding NPC:', error)
-      return { success: false, error: error.message }
-    }
-
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return { success: false, error: 'Failed to add NPC' }
-    }
-
-    const result = data[0] as any
-    if (!result.success) {
-      return { success: false, error: result.message }
-    }
-
-    // Get the NPC player data
-    const { data: npcPlayerData, error: playerError } = await supabase
-      .from('multiplayer_room_players')
-      .select('*')
-      .eq('guest_token', `npc_${npcId}`)
-      .single()
-
-    if (playerError) {
-      console.warn('Could not fetch NPC player data:', playerError)
-      return { success: false, error: 'Failed to get NPC player data' }
-    }
-
-    // Get room data
+    console.log(`🤖 Adding NPC ${npcId} to room ${roomCode}`)
+    
+    // First, verify the room exists and is accessible
     const { data: roomData, error: roomError } = await supabase
       .from('multiplayer_rooms')
-      .select('*')
+      .select('id, room_status, current_players, max_players')
       .eq('room_code', roomCode.toUpperCase())
       .single()
 
     if (roomError) {
-      console.warn('Could not fetch room data:', roomError)
+      console.error('Error fetching room:', roomError)
+      return { success: false, error: 'Room not found' }
     }
 
-    // Initialize NPC state
-    const context: NPCMultiplayerContext = {
-      roomId: roomData?.id || result.room_id,
-      npcId,
-      playerId: npcPlayerData.id,
-      roomState: {
-        players: [],
-        currentQuestionIndex: 0,
-        totalQuestions: 0,
-        averageScore: 0
-      },
-      userPerformance: {}
+    if (!roomData) {
+      return { success: false, error: 'Room not found' }
     }
 
-    // Send join message using the new database function
+    // Check room status and capacity
+    if (roomData.room_status !== 'waiting') {
+      return { success: false, error: 'Room is not accepting new players' }
+    }
+
+    if (roomData.current_players >= roomData.max_players) {
+      return { success: false, error: 'Room is full' }
+    }
+
+    // Get NPC data from database
+    let allNPCs: any[] = []
     try {
-      const npc = await enhancedNPCService.getAllNPCs().then(npcs => npcs.find(n => n.id === npcId))
-      if (npc) {
-        const joinMessages = npc.chatMessages.onJoin
-        const message = joinMessages[Math.floor(Math.random() * joinMessages.length)]
+      allNPCs = await enhancedNPCService.getAllNPCs()
+      console.log(`🤖 Found ${allNPCs.length} NPCs in database:`, allNPCs.map(n => n.id))
+    } catch (error) {
+      console.error('Failed to load NPCs from database:', error)
+      return { success: false, error: 'Failed to load NPCs from database. Please check the database connection.' }
+    }
+
+    const npc = allNPCs.find(n => n.id === npcId)
+    
+    if (!npc) {
+      console.error(`NPC "${npcId}" not found in database. Available NPCs:`, allNPCs.map(n => ({ id: n.id, name: n.name })))
+      return { success: false, error: `NPC "${npcId}" not found. Available NPCs: ${allNPCs.map(n => n.name).join(', ')}` }
+    }
+
+    console.log(`🤖 Found NPC: ${npc.name} (${npc.id})`)
+
+    // Get the NPC personality UUID from the database
+    const { data: npcPersonality, error: npcPersonalityError } = await supabase
+      .from('npc_personalities')
+      .select('id, npc_code, display_name, is_active')
+      .eq('npc_code', npcId)
+      .eq('is_active', true)
+      .single()
+
+    console.log(`🤖 Database lookup for npc_code "${npcId}":`, { npcPersonality, npcPersonalityError })
+
+    if (npcPersonalityError) {
+      console.error('Error fetching NPC personality:', npcPersonalityError)
+      
+      // If the NPC doesn't exist in the database, let's try to create a fallback approach
+      if (npcPersonalityError.code === 'PGRST116') {
+        // Try to find any active NPC as a fallback for testing
+        const { data: fallbackNPC, error: fallbackError } = await supabase
+          .from('npc_personalities')
+          .select('id, npc_code, display_name')
+          .eq('is_active', true)
+          .limit(1)
+          .single()
+
+        if (fallbackError || !fallbackNPC) {
+          console.error('No active NPCs found in database at all:', fallbackError)
+          return { success: false, error: 'No NPCs available in database. Please check the database setup.' }
+        }
+
+        console.log(`🤖 Using fallback NPC: ${fallbackNPC.display_name} (${fallbackNPC.npc_code})`)
         
-        await supabase.rpc('send_npc_message' as any, {
-          p_room_id: context.roomId,
-          p_npc_id: result.npc_player_id, // This should be the NPC personality ID
-          p_message_content: message,
-          p_message_type: 'chat',
-          p_trigger_type: 'on_join',
-          p_educational_value: 'low'
-        })
+        // Update the NPC data to use the fallback
+        const fallbackNPCData = allNPCs.find(n => n.id === fallbackNPC.npc_code) || npc
+        
+        // Use the fallback NPC personality
+        const finalNPCPersonality = { id: fallbackNPC.id }
+        const finalNPC = fallbackNPCData
+
+        // Get current join order for fallback
+        const { data: playersData, error: playersError } = await supabase
+          .from('multiplayer_room_players')
+          .select('join_order')
+          .eq('room_id', roomData.id)
+          .order('join_order', { ascending: false })
+          .limit(1)
+
+        if (playersError) {
+          console.error('Error getting join order:', playersError)
+          return { success: false, error: 'Database error' }
+        }
+
+        const fallbackJoinOrder = (playersData?.[0]?.join_order || 0) + 1
+
+        return await createNPCPlayer(roomData, finalNPC, finalNPCPersonality, fallbackJoinOrder)
       }
+      
+      return { success: false, error: 'NPC personality not found in database' }
+    }
+
+    if (!npcPersonality) {
+      return { success: false, error: 'NPC personality not found in database' }
+    }
+
+    console.log(`🤖 Successfully found NPC personality: ${npcPersonality.display_name} (UUID: ${npcPersonality.id})`)
+
+    // Check if NPC is already in the room
+    const { data: existingNPC, error: checkError } = await supabase
+      .from('multiplayer_room_players')
+      .select('id')
+      .eq('room_id', roomData.id)
+      .eq('guest_token', `npc_${npcId}`)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = not found, which is what we want
+      console.error('Error checking existing NPC:', checkError)
+      return { success: false, error: 'Database error checking for existing NPC' }
+    }
+
+    if (existingNPC) {
+      return { success: false, error: 'NPC already in room' }
+    }
+
+    // Get current join order
+    const { data: playersData, error: playersError } = await supabase
+      .from('multiplayer_room_players')
+      .select('join_order')
+      .eq('room_id', roomData.id)
+      .order('join_order', { ascending: false })
+      .limit(1)
+
+    if (playersError) {
+      console.error('Error getting join order:', playersError)
+      return { success: false, error: 'Database error' }
+    }
+
+    const nextJoinOrder = (playersData?.[0]?.join_order || 0) + 1
+
+    return await createNPCPlayer(roomData, npc, npcPersonality, nextJoinOrder)
+  } catch (error) {
+    console.error('Error adding NPC to room:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Internal error' 
+    }
+  }
+}
+
+/**
+ * Helper function to create the NPC player and related records
+ */
+async function createNPCPlayer(
+  roomData: any, 
+  npc: any, 
+  npcPersonality: any, 
+  nextJoinOrder: number
+): Promise<{ success: boolean; playerId?: string; error?: string }> {
+  try {
+    // Add NPC as a player first (this should work with the RLS policy)
+    const { data: newPlayerData, error: playerError } = await supabase
+      .from('multiplayer_room_players')
+      .insert({
+        room_id: roomData.id,
+        guest_token: `npc_${npc.id}`,
+        player_name: npc.name,
+        player_emoji: npc.emoji,
+        join_order: nextJoinOrder,
+        is_host: false,
+        is_ready: true, // NPCs are always ready
+        is_connected: true
+      })
+      .select('id')
+      .single()
+
+    if (playerError) {
+      console.error('Error creating NPC player:', playerError)
+      return { success: false, error: `Failed to create NPC player: ${playerError.message}` }
+    }
+
+    if (!newPlayerData) {
+      return { success: false, error: 'Failed to create NPC player' }
+    }
+
+    // Now try to create the NPC-specific record
+    const { data: npcPlayerData, error: npcError } = await supabase
+      .from('multiplayer_npc_players')
+      .insert({
+        room_id: roomData.id,
+        npc_id: npcPersonality.id, // Use the UUID from the database
+        player_id: newPlayerData.id
+      })
+      .select('id')
+      .single()
+
+    if (npcError) {
+      console.error('Error creating NPC record:', npcError)
+      
+      // Clean up the player record if NPC record creation fails
+      await supabase
+        .from('multiplayer_room_players')
+        .delete()
+        .eq('id', newPlayerData.id)
+      
+      return { success: false, error: `Failed to create NPC record: ${npcError.message}` }
+    }
+
+    // Update room player count
+    const { error: updateError } = await supabase
+      .from('multiplayer_rooms')
+      .update({ current_players: roomData.current_players + 1 })
+      .eq('id', roomData.id)
+
+    if (updateError) {
+      console.error('Error updating room player count:', updateError)
+      // Don't fail the operation for this, just log it
+    }
+
+    // Send welcome message
+    try {
+      const welcomeMessages = npc.chatMessages.onJoin
+      const message = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
+      
+      await supabase
+        .from('multiplayer_chat_messages')
+        .insert({
+          room_id: roomData.id,
+          npc_id: npcPersonality.id, // Use the UUID from the database
+          message_content: message,
+          message_type: 'chat',
+          educational_value: 'low'
+        })
     } catch (messageError) {
-      console.warn('Could not send NPC join message:', messageError)
+      console.warn('Could not send NPC welcome message:', messageError)
       // Don't fail the whole operation for a message error
     }
 
-    return { success: true, playerId: npcPlayerData.id }
+    console.log(`🤖 Successfully added NPC ${npc.name} to room`)
+    return { success: true, playerId: newPlayerData.id }
   } catch (error) {
-    console.error('Error adding NPC to room:', error)
+    console.error('Error creating NPC player:', error)
     return { success: false, error: 'Internal error' }
   }
 }
@@ -513,14 +676,14 @@ export async function addNPCToRoom(
 /**
  * Remove NPC from room and clean up
  */
- export async function removeNPCFromRoom(
-   roomId: string,
-   npcPlayerId: string
- ): Promise<void> {
-   try {
-     await multiplayerOperations.leaveRoom(roomId, npcPlayerId)
-     multiplayerNPCIntegration.clearRoomCache(roomId)
+export async function removeNPCFromRoom(
+  roomId: string,
+  npcPlayerId: string
+): Promise<void> {
+  try {
+    await multiplayerOperations.leaveRoom(roomId, npcPlayerId)
+    multiplayerNPCIntegration.clearRoomCache(roomId)
   } catch (error) {
-     console.error('Error removing NPC from room:', error)
+    console.error('Error removing NPC from room:', error)
   }
 } 

@@ -232,12 +232,30 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
 
   // Show quiz engine when game is in progress
   if (questions.length > 0 && topic) {
-    console.log('🎮 Showing quiz engine - questionsLength:', questions.length, 'hasTopic:', !!topic)
+    console.log('🎮 Showing multiplayer quiz engine - questionsLength:', questions.length, 'hasTopic:', !!topic)
+    
+    // Import the multiplayer router dynamically to avoid SSR issues
+    const MultiplayerQuizRouter = React.lazy(() => 
+      import('@/components/multiplayer/multiplayer-quiz-router').then(module => ({
+        default: module.MultiplayerQuizRouter
+      }))
+    )
+    
     return (
-      <div className="bg-white dark:bg-slate-950">
-        <QuizEngine
+      <React.Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg font-medium">Loading multiplayer quiz...</p>
+          </div>
+        </div>
+      }>
+        <MultiplayerQuizRouter
           questions={questions}
           topicId={topicId}
+          roomId={roomId}
+          playerId={playerId}
+          onComplete={handleQuizComplete}
           currentTopic={{
             id: topic.topic_id || "",
             title: topic.topic_title || "",
@@ -245,9 +263,8 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
             date: topic.date || "",
             dayOfWeek: topic.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
           }}
-          onComplete={handleQuizComplete}
         />
-      </div>
+      </React.Suspense>
     )
   }
 

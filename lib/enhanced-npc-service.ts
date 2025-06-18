@@ -414,21 +414,25 @@ Response format: Just the message content, no quotes or formatting.`
 
       if (error) {
         console.error('Error fetching NPCs from database:', error)
-        // Fallback to hardcoded NPCs if database fails
-        return NPC_PERSONALITIES
+        throw new Error(`Failed to fetch NPCs from database: ${error.message}`)
       }
 
       if (!npcs || npcs.length === 0) {
-        console.warn('No NPCs found in database, using fallback')
-        return NPC_PERSONALITIES
+        console.warn('No active NPCs found in database')
+        return []
       }
+
+      console.log(`📊 Loaded ${npcs.length} NPCs from database:`, npcs.map(npc => ({ 
+        code: npc.npc_code, 
+        name: npc.display_name,
+        active: npc.is_active 
+      })))
 
       // Convert database NPCs to NPCPersonality format
       return npcs.map(npc => this.convertDatabaseNPCToPersonality(npc))
     } catch (error) {
       console.error('Error in getAllNPCs:', error)
-      // Fallback to hardcoded NPCs if anything fails
-      return NPC_PERSONALITIES
+      throw error
     }
   }
 
@@ -531,44 +535,54 @@ Response format: Just the message content, no quotes or formatting.`
     personalityType?: string[]
     count?: number
   }): Promise<NPCPersonality[]> {
-    // Get NPCs from database instead of hardcoded array
-    const allNpcs = await this.getAllNPCs()
-    let filtered = allNpcs
+    try {
+      // Get NPCs from database
+      const allNpcs = await this.getAllNPCs()
+      let filtered = allNpcs
 
-    if (filters.skillLevel && filters.skillLevel.length > 0) {
-      filtered = filtered.filter(npc => filters.skillLevel!.includes(npc.skillLevel))
-    }
+      if (filters.skillLevel && filters.skillLevel.length > 0) {
+        filtered = filtered.filter(npc => filters.skillLevel!.includes(npc.skillLevel))
+      }
 
-    if (filters.personalityType && filters.personalityType.length > 0) {
-      filtered = filtered.filter(npc => 
-        filters.personalityType!.some(type => 
-          npc.description.toLowerCase().includes(type.toLowerCase())
+      if (filters.personalityType && filters.personalityType.length > 0) {
+        filtered = filtered.filter(npc => 
+          filters.personalityType!.some(type => 
+            npc.description.toLowerCase().includes(type.toLowerCase())
+          )
         )
-      )
-    }
+      }
 
-    if (filters.count) {
-      filtered = filtered.slice(0, filters.count)
-    }
+      if (filters.count) {
+        filtered = filtered.slice(0, filters.count)
+      }
 
-    return filtered
+      return filtered
+    } catch (error) {
+      console.error('Error in getNPCsByFilter:', error)
+      return []
+    }
   }
 
   async getBalancedNPCMix(
     count: number, 
     difficulty: 'easy' | 'mixed' | 'hard' = 'mixed'
   ): Promise<NPCPersonality[]> {
-    const filters: { skillLevel?: string[] } = {}
+    try {
+      const filters: { skillLevel?: string[] } = {}
 
-    if (difficulty === 'easy') {
-      filters.skillLevel = ['beginner', 'intermediate']
-    } else if (difficulty === 'hard') {
-      filters.skillLevel = ['advanced', 'expert']
+      if (difficulty === 'easy') {
+        filters.skillLevel = ['beginner', 'intermediate']
+      } else if (difficulty === 'hard') {
+        filters.skillLevel = ['advanced', 'expert']
+      }
+
+      const availableNPCs = await this.getNPCsByFilter(filters)
+      const shuffled = availableNPCs.sort(() => Math.random() - 0.5)
+      return shuffled.slice(0, Math.min(count, availableNPCs.length))
+    } catch (error) {
+      console.error('Error in getBalancedNPCMix:', error)
+      return []
     }
-
-    const availableNPCs = await this.getNPCsByFilter(filters)
-    const shuffled = availableNPCs.sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, Math.min(count, availableNPCs.length))
   }
 
   async generateNPCAnswer(
@@ -582,23 +596,28 @@ Response format: Just the message content, no quotes or formatting.`
     confidence: number
     reasoning: string
   }> {
-    // Get NPCs from database instead of hardcoded array
-    const allNpcs = await this.getAllNPCs()
-    const npc = allNpcs.find(n => n.id === npcId)
-    
-    if (!npc) {
-      throw new Error('NPC not found')
-    }
+    try {
+      // Get NPCs from database
+      const allNpcs = await this.getAllNPCs()
+      const npc = allNpcs.find(n => n.id === npcId)
+      
+      if (!npc) {
+        throw new Error(`NPC not found: ${npcId}. Available NPCs: ${allNpcs.map(n => n.id).join(', ')}`)
+      }
 
-    const engine = new NPCBehaviorEngine(npc)
-    const result = await engine.generateAnswer(question)
+      const engine = new NPCBehaviorEngine(npc)
+      const result = await engine.generateAnswer(question)
 
-    return {
-      answer: result.answer,
-      isCorrect: result.isCorrect,
-      responseTimeSeconds: result.responseTimeSeconds,
-      confidence: result.confidence,
-      reasoning: `${npc.name} analyzed this ${question.category} question with ${npc.skillLevel} expertise`
+      return {
+        answer: result.answer,
+        isCorrect: result.isCorrect,
+        responseTimeSeconds: result.responseTimeSeconds,
+        confidence: result.confidence,
+        reasoning: `${npc.name} analyzed this ${question.category} question with ${npc.skillLevel} expertise`
+      }
+    } catch (error) {
+      console.error('Error in generateNPCAnswer:', error)
+      throw error
     }
   }
 
@@ -646,21 +665,26 @@ Response format: Just the message content, no quotes or formatting.`
    * Get NPC vs Human analytics (simplified)
    */
   async getNPCVsHumanAnalytics(): Promise<NPCPerformanceStats[]> {
-    // Get NPCs from database instead of hardcoded array
-    const allNpcs = await this.getAllNPCs()
-    
-    // Return mock data for now
-    return allNpcs.map(npc => ({
-      npcCode: npc.id,
-      displayName: npc.name,
-      personalityType: npc.description.includes('scholar') ? 'scholar' : 
-                      npc.description.includes('news') ? 'enthusiast' : 'general',
-      skillLevel: npc.skillLevel,
-      totalQuizzes: Math.floor(Math.random() * 50) + 10,
-      avgAccuracy: (npc.accuracyRange[0] + npc.accuracyRange[1]) / 2,
-      avgTimePerQuestion: (npc.responseTimeRange[0] + npc.responseTimeRange[1]) / 2,
-      recentPerformance: Math.random() * 100
-    }))
+    try {
+      // Get NPCs from database
+      const allNpcs = await this.getAllNPCs()
+      
+      // Return mock data for now
+      return allNpcs.map(npc => ({
+        npcCode: npc.id,
+        displayName: npc.name,
+        personalityType: npc.description.includes('scholar') ? 'scholar' : 
+                        npc.description.includes('news') ? 'enthusiast' : 'general',
+        skillLevel: npc.skillLevel,
+        totalQuizzes: Math.floor(Math.random() * 50) + 10,
+        avgAccuracy: (npc.accuracyRange[0] + npc.accuracyRange[1]) / 2,
+        avgTimePerQuestion: (npc.responseTimeRange[0] + npc.responseTimeRange[1]) / 2,
+        recentPerformance: Math.random() * 100
+      }))
+    } catch (error) {
+      console.error('Error in getNPCVsHumanAnalytics:', error)
+      return []
+    }
   }
 
   /**
@@ -678,47 +702,55 @@ Response format: Just the message content, no quotes or formatting.`
       improvementSuggestion: string
     }[]>
   }> {
-    // Get NPCs from database instead of hardcoded array
-    const allNpcs = await this.getAllNPCs()
-    
-    // Return mock comparison data
-    const userStats: Record<string, { accuracy: number; totalQuizzes: number }> = {}
-    const npcComparisons: Record<string, any[]> = {}
+    try {
+      // Get NPCs from database
+      const allNpcs = await this.getAllNPCs()
+      
+      // Return mock comparison data
+      const userStats: Record<string, { accuracy: number; totalQuizzes: number }> = {}
+      const npcComparisons: Record<string, any[]> = {}
 
-    categories.forEach(category => {
-      userStats[category] = {
-        accuracy: Math.random() * 100,
-        totalQuizzes: Math.floor(Math.random() * 20) + 5
-      }
-
-      npcComparisons[category] = allNpcs.slice(0, 3).map(npc => {
-        const npcAccuracy = (npc.accuracyRange[0] + npc.accuracyRange[1]) / 2
-        const userAccuracy = userStats[category].accuracy
-        
-        let userRank: 'better' | 'similar' | 'worse'
-        let improvementSuggestion: string
-
-        if (userAccuracy > npcAccuracy + 5) {
-          userRank = 'better'
-          improvementSuggestion = `You're performing better than ${npc.name}! Try challenging yourself with harder questions.`
-        } else if (userAccuracy < npcAccuracy - 5) {
-          userRank = 'worse'
-          improvementSuggestion = `${npc.name} is stronger in this area. Focus on ${category} topics to improve.`
-        } else {
-          userRank = 'similar'
-          improvementSuggestion = `You're performing similarly to ${npc.name}. Keep practicing to pull ahead!`
+      categories.forEach(category => {
+        userStats[category] = {
+          accuracy: Math.random() * 100,
+          totalQuizzes: Math.floor(Math.random() * 20) + 5
         }
 
-        return {
-          npcName: npc.name,
-          npcAccuracy,
-          userRank,
-          improvementSuggestion
-        }
+        npcComparisons[category] = allNpcs.slice(0, 3).map(npc => {
+          const npcAccuracy = (npc.accuracyRange[0] + npc.accuracyRange[1]) / 2
+          const userAccuracy = userStats[category].accuracy
+          
+          let userRank: 'better' | 'similar' | 'worse'
+          let improvementSuggestion: string
+
+          if (userAccuracy > npcAccuracy + 5) {
+            userRank = 'better'
+            improvementSuggestion = `You're performing better than ${npc.name}! Try challenging yourself with harder questions.`
+          } else if (userAccuracy < npcAccuracy - 5) {
+            userRank = 'worse'
+            improvementSuggestion = `${npc.name} is stronger in this area. Focus on ${category} topics to improve.`
+          } else {
+            userRank = 'similar'
+            improvementSuggestion = `You're performing similarly to ${npc.name}. Keep practicing to pull ahead!`
+          }
+
+          return {
+            npcName: npc.name,
+            npcAccuracy,
+            userRank,
+            improvementSuggestion
+          }
+        })
       })
-    })
 
-    return { userStats, npcComparisons }
+      return { userStats, npcComparisons }
+    } catch (error) {
+      console.error('Error in getUserVsNPCComparison:', error)
+      return {
+        userStats: {},
+        npcComparisons: {}
+      }
+    }
   }
 }
 

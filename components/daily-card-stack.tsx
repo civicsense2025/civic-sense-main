@@ -434,6 +434,9 @@ export function DailyCardStack({
   // Touch/swipe handling for mobile
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
   const touchEndRef = useRef<{ x: number; y: number; time: number } | null>(null)
+  const [swipeOffset, setSwipeOffset] = useState(0)
+  const [isSwipeActive, setIsSwipeActive] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   // Debounce dropdown search
   useEffect(() => {
@@ -524,7 +527,7 @@ export function DailyCardStack({
     updateUrlWithTopic(index)
   }, [updateUrlWithTopic])
 
-  // Touch event handlers for mobile swiping
+  // Touch event handlers for mobile swiping with visual feedback
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]
     touchStartRef.current = {
@@ -532,7 +535,36 @@ export function DailyCardStack({
       y: touch.clientY,
       time: Date.now()
     }
+    setIsSwipeActive(true)
   }, [])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || !isSwipeActive) return
+    
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchStartRef.current.x
+    const deltaY = touch.clientY - touchStartRef.current.y
+    
+    // Only track horizontal movement
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // Prevent vertical scrolling when swiping horizontally
+      e.preventDefault()
+      
+      // Apply resistance at the edges - stronger resistance as you go further
+      const maxOffset = 100
+      const resistance = 0.6
+      let adjustedOffset = deltaX
+      
+      if (Math.abs(deltaX) > maxOffset) {
+        const excess = Math.abs(deltaX) - maxOffset
+        adjustedOffset = deltaX > 0 
+          ? maxOffset + (excess * resistance)
+          : -maxOffset - (excess * resistance)
+      }
+      
+      setSwipeOffset(adjustedOffset)
+    }
+  }, [isSwipeActive])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!touchStartRef.current) return
@@ -548,13 +580,17 @@ export function DailyCardStack({
     const deltaY = touchEndRef.current.y - touchStartRef.current.y
     const deltaTime = touchEndRef.current.time - touchStartRef.current.time
     
+    // Reset visual state
+    setIsSwipeActive(false)
+    setSwipeOffset(0)
+    
     // Only process swipes that are:
     // - Primarily horizontal (more horizontal than vertical movement)
     // - Fast enough (less than 500ms)
-    // - Long enough (at least 50px)
+    // - Long enough (at least 80px for better UX)
     const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY)
     const isFastEnough = deltaTime < 500
-    const isLongEnough = Math.abs(deltaX) > 50
+    const isLongEnough = Math.abs(deltaX) > 80
     
     if (isHorizontalSwipe && isFastEnough && isLongEnough) {
       if (deltaX > 0) {
@@ -1233,12 +1269,19 @@ export function DailyCardStack({
       {/* Single Topic Display - cleaner version without card style */}
       <div className="relative">
         <div
+          ref={cardRef}
           key={currentTopic.topic_id}
           className={cn(
-            "animate-in fade-in duration-500",
-            currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4"
+            "animate-in fade-in duration-500 transition-transform",
+            currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4",
+            isSwipeActive ? "duration-75" : "duration-300 ease-out"
           )}
+          style={{
+            transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.1}deg)`,
+            opacity: isSwipeActive ? Math.max(0.7, 1 - Math.abs(swipeOffset) / 200) : 1
+          }}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
