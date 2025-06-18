@@ -17,7 +17,8 @@ import {
   Zap,
   Globe
 } from 'lucide-react'
-import { LanguageSwitcher, Language, SUPPORTED_LANGUAGES } from './language-switcher'
+import { LanguageSwitcher } from './language-switcher'
+import { useLanguage, Language } from './providers/language-provider'
 import { cn } from '@/lib/utils'
 
 interface TranslationState {
@@ -65,11 +66,13 @@ export function PageTranslator({
     '[data-translate]'
   ]
 
+  const { supportedLanguages, currentLanguage, setLanguage } = useLanguage()
+
   useEffect(() => {
     // Load saved language preference
     const savedLanguage = localStorage.getItem('civicsense-language')
     if (savedLanguage && savedLanguage !== 'EN') {
-      const language = SUPPORTED_LANGUAGES.find(lang => lang.code === savedLanguage)
+      const language = supportedLanguages.find(lang => lang.code === savedLanguage)
       if (language) {
         setState(prev => ({ ...prev, targetLanguage: language }))
         if (autoTranslate) {
@@ -77,7 +80,7 @@ export function PageTranslator({
         }
       }
     }
-  }, [autoTranslate])
+  }, [autoTranslate, supportedLanguages])
 
   const getTranslatableElements = (): Element[] => {
     const elements: Element[] = []
@@ -287,8 +290,6 @@ export function PageTranslator({
           {/* Language Switcher */}
           <div className="space-y-2">
             <LanguageSwitcher
-              currentLanguage={state.targetLanguage?.code || 'EN'}
-              onLanguageChange={handleLanguageChange}
               variant="compact"
             />
           </div>

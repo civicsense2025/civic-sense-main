@@ -467,9 +467,11 @@ export default function SettingsPage() {
                 <Separator />
 
                 {/* Language Settings */}
-                <div className="space-y-4">
-                  <LanguageSwitcher variant="full" />
-                </div>
+                {process.env.NODE_ENV !== 'production' && (
+                  <div className="space-y-4">
+                    <LanguageSwitcher variant="default" />
+                  </div>
+                )}
 
                 <Separator />
 

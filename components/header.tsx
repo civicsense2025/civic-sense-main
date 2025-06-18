@@ -22,6 +22,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const isDevelopment = process.env.NODE_ENV !== 'production'
 
   return (
     <div className={className}>
@@ -67,7 +68,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               <div className="hidden sm:flex items-center space-x-5">
                 {/* Learning Pods Quick Actions - temporarily hidden until ready for public use */}
                 {/* <LearningPodsQuickActions variant="header" /> */}
-                <LanguageSwitcher variant="compact" />
+                {isDevelopment && <LanguageSwitcher variant="compact" />}
                 <ThemeToggle />
                 {user && <JoinRequestNotifications />}
                 <UserMenu onSignInClick={onSignInClick} />
@@ -188,14 +189,16 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               {/* Divider */}
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 {/* Language Switcher - Mobile */}
-                <div className="mb-4">
-                  <div className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Language
+                {isDevelopment && (
+                  <div className="mb-4">
+                    <div className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                      Language
+                    </div>
+                    <div className="px-3">
+                      <LanguageSwitcher variant="compact" />
+                    </div>
                   </div>
-                  <div className="px-3">
-                    <LanguageSwitcher variant="compact" />
-                  </div>
-                </div>
+                )}
                 
                 {/* Authentication Links - Mobile Only */}
                 <div className="space-y-3">

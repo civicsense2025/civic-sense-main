@@ -213,14 +213,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return uniqueElements
   }, [])
 
-  // Improved translatePage function with better efficiency and layout preservation
+  // Ultra-fast page translation - collect ALL text and translate in one shot
   const translatePage = useCallback(async (targetLanguage: string) => {
     if (targetLanguage === 'en' || isTranslating) return
     
     setIsTranslating(true)
-    console.log(`🌐 Starting efficient page translation to ${targetLanguage}...`)
+    console.log(`🚀 Starting ultra-fast page translation to ${targetLanguage}...`)
     
     try {
+      // Step 1: Collect ALL translatable text in one pass
       const elementsToTranslate = getTranslatableElements()
       
       if (elementsToTranslate.length === 0) {
@@ -229,28 +230,33 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         return
       }
       
-      console.log(`🌐 Found ${elementsToTranslate.length} translatable elements`)
+      console.log(`🌐 Found ${elementsToTranslate.length} elements to translate`)
       
       const cache = getPageCache(targetLanguage)
       const originalContentMap = new Map<Element, string>()
       const textsToTranslate: string[] = []
-      const elementMap = new Map<string, Element>()
+      const elementTextMap = new Map<string, Element[]>()
       
-      // Prepare texts for translation, checking cache first
+      // Step 2: Prepare all texts for translation, group identical texts
       elementsToTranslate.forEach(({ element, text }) => {
         originalContentMap.set(element, text)
         
-        // Check if we already have this translation cached
+        // Check cache first
         if (cache.has(text)) {
           const cachedTranslation = cache.get(text)!
           if (cachedTranslation !== text) {
             element.textContent = cachedTranslation
             element.setAttribute('data-translated', 'true')
           }
-        } else {
-          textsToTranslate.push(text)
-          elementMap.set(text, element)
+          return
         }
+        
+        // Group elements with identical text to avoid duplicate translations
+        if (!elementTextMap.has(text)) {
+          elementTextMap.set(text, [])
+          textsToTranslate.push(text)
+        }
+        elementTextMap.get(text)!.push(element)
       })
       
       setOriginalContent(originalContentMap)
@@ -262,49 +268,54 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         return
       }
       
-      console.log(`🌐 Need to translate ${textsToTranslate.length} new texts`)
+      console.log(`🚀 Translating ${textsToTranslate.length} unique texts in large batches...`)
       
-      // Translate in larger, more efficient batches
-      const batchSize = 10 // Larger batches for better efficiency
+      // Step 3: Translate in LARGE batches (up to 50 texts per request as per DeepL API)
+      const maxBatchSize = 50 // DeepL API limit
       const allTranslations: string[] = []
       
-      for (let i = 0; i < textsToTranslate.length; i += batchSize) {
-        const batch = textsToTranslate.slice(i, i + batchSize)
+      for (let i = 0; i < textsToTranslate.length; i += maxBatchSize) {
+        const batch = textsToTranslate.slice(i, i + maxBatchSize)
         
         try {
+          console.log(`🚀 Translating batch ${Math.floor(i/maxBatchSize) + 1}: ${batch.length} texts`)
           const translations = await hookTranslateBatch(batch, targetLanguage)
           allTranslations.push(...translations)
           
-          // Apply translations immediately and cache them
+          // Step 4: Apply translations immediately to ALL elements with the same text
           batch.forEach((originalText, index) => {
             const translatedText = translations[index]
-            const element = elementMap.get(originalText)
+            const elements = elementTextMap.get(originalText) || []
             
-            if (element && translatedText && translatedText !== originalText) {
-              element.textContent = translatedText
-              element.setAttribute('data-translated', 'true')
+            if (translatedText && translatedText !== originalText) {
+              // Apply to ALL elements with this text
+              elements.forEach(element => {
+                element.textContent = translatedText
+                element.setAttribute('data-translated', 'true')
+              })
               cache.set(originalText, translatedText)
             }
           })
           
-          // Shorter delay between batches since we're using larger batches
-          if (i + batchSize < textsToTranslate.length) {
-            await new Promise(resolve => setTimeout(resolve, 800))
+          // Much shorter delay between large batches
+          if (i + maxBatchSize < textsToTranslate.length) {
+            await new Promise(resolve => setTimeout(resolve, 200)) // Just 200ms between batches
           }
+          
         } catch (error) {
           console.error(`🌐 Translation batch failed:`, error)
           // Apply original text to failed elements
           batch.forEach(originalText => {
-            const element = elementMap.get(originalText)
-            if (element) {
-              cache.set(originalText, originalText) // Cache as untranslated to avoid retrying
-            }
+            const elements = elementTextMap.get(originalText) || []
+            elements.forEach(element => {
+              cache.set(originalText, originalText) // Cache as untranslated
+            })
           })
         }
       }
       
       setIsPageTranslated(true)
-      console.log(`🌐 Page translation completed. Cached ${allTranslations.length} new translations.`)
+      console.log(`🎉 Ultra-fast translation completed! Translated ${allTranslations.length} unique texts in ${Math.ceil(textsToTranslate.length / maxBatchSize)} API calls.`)
       
     } catch (error) {
       console.error('🌐 Page translation failed:', error)

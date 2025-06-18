@@ -500,68 +500,45 @@ html {
 .card-content {
   font-family: Helvetica, Arial, 'Courier New', monospace;
   font-weight: 400;
-  line-height: 1.6;
 }
 
-/* Enhanced prose styling for better readability with WCAG compliance */
+/* Additional animation classes */
 @layer components {
-  .prose ul {
-    @apply list-disc list-inside space-y-2 text-foreground-secondary;
-  }
-
-  .prose ul li {
-    @apply leading-relaxed;
-  }
-
-  .prose ol {
-    @apply list-decimal list-inside space-y-2 text-foreground-secondary;
-  }
-
-  .prose ol li {
-    @apply leading-relaxed;
-  }
-
-  .prose strong {
-    @apply font-semibold text-foreground;
-  }
-}
-
-/* Enhanced animations */
-@layer utilities {
   .animate-in {
-    animation: slide-in-from-bottom 0.5s ease-out;
+    animation-duration: 0.5s;
+    animation-fill-mode: both;
   }
 
   .slide-in-from-top-2 {
-    animation: slide-in-from-top-2 0.3s ease-out;
+    animation-name: slide-in-from-top-2;
   }
 
   .slide-in-from-bottom-4 {
-    animation: slide-in-from-bottom-4 0.4s ease-out;
+    animation-name: slide-in-from-bottom-4;
   }
 
   .slide-in-from-left {
-    animation: slide-in-from-left 0.3s ease-out;
+    animation-name: slide-in-from-left;
   }
 
   .slide-in-from-right {
-    animation: slide-in-from-right 0.3s ease-out;
+    animation-name: slide-in-from-right;
   }
 
   .slide-in-from-bottom {
-    animation: slide-in-from-bottom 0.4s ease-out;
+    animation-name: slide-in-from-bottom;
   }
 
   .slide-in-from-top {
-    animation: slide-in-from-top 0.3s ease-out;
+    animation-name: slide-in-from-top;
   }
 
   .fade-in {
-    animation: fade-in 0.5s ease-out;
+    animation-name: fade-in;
   }
 
   .zoom-in {
-    animation: zoom-in 0.3s ease-out;
+    animation-name: zoom-in;
   }
 
   .scale-102 {
@@ -663,318 +640,278 @@ html {
   }
 }
 
-/* Enhanced interactive elements */
+/* Enhanced button animations */
 button, .card, .quiz-option {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .group:hover .group-hover\:scale-105 {
   transform: scale(1.05);
 }
 
-/* Natural breathing glow animation for quiz buttons - Safari optimized */
+/* Breathing glow animation for special elements */
 @keyframes breathe-glow {
   0%, 100% {
-    box-shadow: 
-      0 0 0 0 hsla(var(--primary), 0.4), 
-      0 4px 16px hsla(var(--foreground), 0.1),
-      0 0 0 0 hsla(var(--accent), 0.3);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
   50% {
-    box-shadow: 
-      0 0 0 6px hsla(var(--primary), 0.3), 
-      0 6px 20px hsla(var(--primary), 0.2),
-      0 0 12px 2px hsla(var(--accent), 0.4);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3);
   }
 }
 
 .animate-breathe-glow {
   animation: breathe-glow 3s ease-in-out infinite;
-  /* Safari-specific fixes for stable positioning */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
 }
 
-/* Dark mode enhanced glow with better visibility */
+/* Dark mode glow adjustment */
 .dark .animate-breathe-glow {
   animation: breathe-glow-dark 3s ease-in-out infinite;
 }
 
 @keyframes breathe-glow-dark {
   0%, 100% {
-    box-shadow: 
-      0 0 0 0 hsla(var(--primary), 0.6), 
-      0 4px 16px hsla(var(--foreground), 0.4),
-      0 0 0 0 hsla(var(--accent), 0.5);
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
   }
   50% {
-    box-shadow: 
-      0 0 0 6px hsla(var(--primary), 0.5), 
-      0 6px 20px hsla(var(--primary), 0.4),
-      0 0 16px 3px hsla(var(--accent), 0.6);
+    box-shadow: 0 0 30px rgba(96, 165, 250, 0.7), 0 0 40px rgba(96, 165, 250, 0.4);
   }
 }
 
-/* Safari-specific fixed positioning fixes */
-@supports (-webkit-appearance: none) {
+/* Enhanced mobile experience */
+@media (max-width: 640px) {
   .safari-fixed-button {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    -webkit-perspective: 1000px;
-    perspective: 1000px;
-    /* Prevent Safari from moving the button during animations */
-    will-change: transform;
-    contain: layout style paint;
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 20px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    width: calc(100% - 2rem);
+    max-width: 400px;
   }
 }
 
-/* WCAG Compliant Utility Classes */
-@layer utilities {
-  /* Primary text hierarchy - all WCAG AA compliant */
+/* Enhanced typography with better contrast */
+@layer components {
   .text-primary {
     color: hsl(var(--foreground));
   }
-  
+
   .text-secondary {
     color: hsl(var(--foreground-secondary));
   }
-  
+
   .text-tertiary {
     color: hsl(var(--foreground-tertiary));
   }
-  
+
   .text-muted-accessible {
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--foreground-secondary));
+    opacity: 0.8;
   }
-  
-  /* Interactive states */
+
   .text-interactive {
     color: hsl(var(--primary));
   }
-  
+
   .text-interactive:hover {
-    opacity: 0.8;
+    color: hsl(var(--primary) / 0.8);
   }
-  
-  /* Status colors */
+
   .text-success {
     color: hsl(var(--success));
   }
-  
+
   .text-warning {
     color: hsl(var(--warning));
   }
-  
+
   .text-error {
     color: hsl(var(--destructive));
   }
 }
 
-/* Audio word highlighting styles */
+/* Audio highlighting styles */
 .audio-highlight-wrapper {
-  display: inline;
+  position: relative;
 }
 
 .audio-highlight-word {
-  display: inline;
   position: relative;
-  transition: all 0.2s ease;
-  border-radius: 4px;
-}
-
-.audio-highlight-word.highlighting {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
   padding: 2px 4px;
-  box-shadow: 0 2px 4px hsla(var(--primary), 0.3);
-  transform: scale(1.05);
-}
-
-/* Subtle pulse animation for currently highlighted word */
-@keyframes word-highlight-pulse {
-  0% { box-shadow: 0 2px 4px hsla(var(--primary), 0.3); }
-  50% { box-shadow: 0 4px 8px hsla(var(--primary), 0.5); }
-  100% { box-shadow: 0 2px 4px hsla(var(--primary), 0.3); }
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .audio-highlight-word.highlighting {
-  animation: word-highlight-pulse 2s ease-in-out infinite;
+  background-color: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
+  animation: word-highlight-pulse 0.6s ease-in-out;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
 }
 
-/* Smooth transition when highlighting is removed */
+@keyframes word-highlight-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.audio-highlight-word.highlighting {
+  font-weight: 600;
+}
+
 .audio-highlight-word:not(.highlighting) {
-  background-color: transparent;
-  color: inherit;
-  padding: 0;
-  transform: scale(1);
+  transition: all 0.2s ease-out;
 }
 
-/* Add these new animations for quiz enhancements */
+/* Enhanced button animations */
 @keyframes bounce-subtle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-2px); }
+  60% { transform: translateY(-1px); }
 }
 
 .animate-bounce-subtle {
-  animation: bounce-subtle 2s ease-in-out infinite;
+  animation: bounce-subtle 0.6s ease-in-out;
 }
 
-/* Gentle glow animation for answered state */
 @keyframes gentle-glow {
-  0%, 100% { box-shadow: 0 0 10px hsla(var(--success), 0.3); }
-  50% { box-shadow: 0 0 20px hsla(var(--success), 0.5); }
+  0%, 100% { box-shadow: 0 0 10px hsl(var(--primary) / 0.3); }
+  50% { box-shadow: 0 0 20px hsl(var(--primary) / 0.5); }
 }
 
 .animate-gentle-glow {
   animation: gentle-glow 2s ease-in-out infinite;
 }
 
-/* Subtle scale animation for answer selection */
 @keyframes gentle-scale {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 .animate-gentle-scale {
-  animation: gentle-scale 0.5s ease-in-out;
+  animation: gentle-scale 2s ease-in-out infinite;
 }
 
-/* Fixed button positioning for consistent UI across the app */
 .fixed-bottom-button {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 32px) + 64px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40; /* Lower than dialogs */
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  padding: 1rem 2.5rem;
-  min-width: 240px;
-  font-size: 1.125rem;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 50;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
+@media (max-width: 640px) {
   .fixed-bottom-button {
-    padding-bottom: env(safe-area-inset-bottom);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    right: 1rem;
+    width: 48px;
+    height: 48px;
   }
 }
 
-/* Accessibility Enhancement Styles */
-
-/* High Contrast Mode */
+/* Accessibility enhancements */
 .high-contrast {
   --background: 0 0% 100%;
   --foreground: 0 0% 0%;
-  --foreground-secondary: 0 0% 0%;
-  --foreground-tertiary: 0 0% 0%;
-  --foreground-muted: 0 0% 0%;
-  --primary: 240 100% 27%;                        /* Dark blue for maximum contrast */
+  --primary: 240 100% 50%;
   --primary-foreground: 0 0% 100%;
-  --border: 0 0% 0%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
+  --secondary: 0 0% 90%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 20%;
+  --border: 0 0% 50%;
 }
 
 .high-contrast.dark {
   --background: 0 0% 0%;
   --foreground: 0 0% 100%;
-  --foreground-secondary: 0 0% 100%;
-  --foreground-tertiary: 0 0% 100%;
-  --foreground-muted: 0 0% 100%;
-  --primary: 60 100% 50%;                      /* Bright yellow for maximum contrast */
+  --primary: 60 100% 50%;
   --primary-foreground: 0 0% 0%;
-  --border: 0 0% 100%;
-  --card: 0 0% 0%;
-  --card-foreground: 0 0% 100%;
+  --secondary: 0 0% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 80%;
+  --border: 0 0% 60%;
 }
 
 .high-contrast * {
   border-color: hsl(var(--border)) !important;
-  transition: none !important;
 }
 
 .high-contrast button,
-.high-contrast .card,
-.high-contrast input,
-.high-contrast select,
-.high-contrast textarea {
-  border: 2px solid hsl(var(--border)) !important;
-  background: hsl(var(--background)) !important;
-  color: hsl(var(--foreground)) !important;
+.high-contrast [role="button"],
+.high-contrast a {
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .high-contrast button:hover,
-.high-contrast button:focus {
-  background: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
+.high-contrast [role="button"]:hover,
+.high-contrast a:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
-/* Large Text Mode */
 .large-text {
-  font-size: 18px !important;
+  font-size: 1.25em;
 }
 
 .large-text h1 {
-  font-size: 3rem !important;
+  font-size: 3rem;
 }
 
 .large-text h2 {
-  font-size: 2.5rem !important;
+  font-size: 2.5rem;
 }
 
 .large-text h3 {
-  font-size: 2rem !important;
+  font-size: 2rem;
 }
 
 .large-text h4 {
-  font-size: 1.75rem !important;
+  font-size: 1.75rem;
 }
 
 .large-text h5 {
-  font-size: 1.5rem !important;
+  font-size: 1.5rem;
 }
 
 .large-text h6 {
-  font-size: 1.25rem !important;
+  font-size: 1.25rem;
 }
 
 .large-text .text-xs {
-  font-size: 1rem !important;
+  font-size: 1rem;
 }
 
 .large-text .text-sm {
-  font-size: 1.125rem !important;
+  font-size: 1.125rem;
 }
 
 .large-text .text-base {
-  font-size: 1.25rem !important;
+  font-size: 1.25rem;
 }
 
 .large-text .text-lg {
-  font-size: 1.5rem !important;
+  font-size: 1.5rem;
 }
 
 .large-text .text-xl {
-  font-size: 1.75rem !important;
+  font-size: 1.75rem;
 }
 
 .large-text button,
-.large-text input,
-.large-text select,
-.large-text textarea {
-  font-size: 1.25rem !important;
-  padding: 1rem 1.5rem !important;
+.large-text [role="button"] {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+  min-height: 48px;
+  min-width: 48px;
 }
 
-/* Reduced Motion Mode */
 .reduced-motion *,
 .reduced-motion *::before,
 .reduced-motion *::after {
@@ -991,22 +928,20 @@ button, .card, .quiz-option {
 }
 
 .reduced-motion .transition-all,
-.reduced-motion .transition-transform,
+.reduced-motion .transition-colors,
 .reduced-motion .transition-opacity {
   transition: none !important;
 }
 
-/* Focus indicators for accessibility */
 .high-contrast button:focus,
+.high-contrast [role="button"]:focus,
+.high-contrast a:focus,
 .high-contrast input:focus,
-.high-contrast select:focus,
-.high-contrast textarea:focus,
-.high-contrast [tabindex]:focus {
-  outline: 4px solid hsl(var(--primary)) !important;
-  outline-offset: 2px !important;
+.high-contrast textarea:focus {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
-/* Screen reader only content */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1019,7 +954,6 @@ button, .card, .quiz-option {
   border: 0;
 }
 
-/* Skip to content link */
 .skip-to-content {
   position: absolute;
   top: -40px;
@@ -1029,216 +963,266 @@ button, .card, .quiz-option {
   padding: 8px 16px;
   text-decoration: none;
   border-radius: 4px;
-  z-index: 1000;
-  font-weight: 600;
+  z-index: 100;
+  transition: top 0.3s;
 }
 
 .skip-to-content:focus {
   top: 6px;
 }
 
-/* Enhanced multiplayer-specific styles */
+/* Enhanced multiplayer styles */
 @layer components {
   .multiplayer-container {
-    @apply bg-[hsl(var(--multiplayer-bg))] text-[hsl(var(--multiplayer-text))];
+    background: hsl(var(--multiplayer-bg));
   }
 
   .multiplayer-card {
-    @apply bg-[hsl(var(--multiplayer-card))] border-[hsl(var(--multiplayer-border))] text-[hsl(var(--multiplayer-text))];
-    @apply shadow-sm hover:shadow-md transition-all duration-200;
+    background: hsl(var(--multiplayer-card));
+    border: 1px solid hsl(var(--multiplayer-border));
+    transition: all 0.2s ease;
   }
 
   .multiplayer-card:hover {
-    @apply bg-[hsl(var(--multiplayer-card-hover))];
+    background: hsl(var(--multiplayer-card-hover));
   }
 
   .multiplayer-text-muted {
-    @apply text-[hsl(var(--multiplayer-text-muted))];
+    color: hsl(var(--multiplayer-text-muted));
   }
 
   .multiplayer-accent {
-    @apply bg-[hsl(var(--multiplayer-accent))] text-white;
+    color: hsl(var(--multiplayer-accent));
   }
 
   .multiplayer-accent-light {
-    @apply bg-[hsl(var(--multiplayer-accent-light))] text-[hsl(var(--multiplayer-accent))];
+    background: hsl(var(--multiplayer-accent-light));
   }
 
   .multiplayer-success {
-    @apply bg-[hsl(var(--multiplayer-success))] text-white;
+    color: hsl(var(--multiplayer-success));
   }
 
   .multiplayer-success-light {
-    @apply bg-[hsl(var(--multiplayer-success-light))] text-[hsl(var(--multiplayer-success))];
+    background: hsl(var(--multiplayer-success-light));
   }
 
   .multiplayer-warning {
-    @apply bg-[hsl(var(--multiplayer-warning))] text-white;
+    color: hsl(var(--multiplayer-warning));
   }
 
   .multiplayer-warning-light {
-    @apply bg-[hsl(var(--multiplayer-warning-light))] text-[hsl(var(--multiplayer-warning))];
+    background: hsl(var(--multiplayer-warning-light));
   }
 
-  /* Game mode cards */
   .game-mode-card {
-    @apply multiplayer-card border-2 p-4 rounded-lg cursor-pointer transition-all;
-    @apply hover:border-[hsl(var(--multiplayer-accent))]/50 hover:shadow-lg;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
   }
 
   .game-mode-card.selected {
-    @apply border-[hsl(var(--multiplayer-accent))] multiplayer-accent-light shadow-md;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px hsl(var(--multiplayer-accent) / 0.25);
   }
 
-  /* Player cards */
   .player-card {
-    @apply multiplayer-card p-3 rounded-lg transition-all;
-    @apply border-l-4 border-l-transparent;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
   }
 
   .player-card.ready {
-    @apply border-l-[hsl(var(--multiplayer-success))] multiplayer-success-light;
+    border-left-color: hsl(var(--multiplayer-success));
   }
 
   .player-card.host {
-    @apply border-l-[hsl(var(--multiplayer-warning))] multiplayer-warning-light;
+    border-left-color: hsl(var(--multiplayer-accent));
   }
 
   .player-card.npc {
-    @apply border-l-[hsl(var(--multiplayer-accent))] multiplayer-accent-light;
+    border-left-color: hsl(var(--multiplayer-warning));
+    opacity: 0.8;
   }
 
-  /* Chat messages */
   .chat-message {
-    @apply multiplayer-card p-3 rounded-lg mb-2;
+    transition: all 0.2s ease;
   }
 
   .chat-message.own {
-    @apply multiplayer-accent-light border-[hsl(var(--multiplayer-accent))]/30;
+    background: hsl(var(--multiplayer-accent-light));
   }
 
   .chat-message.npc {
-    @apply border-l-4 border-l-[hsl(var(--multiplayer-accent))] multiplayer-accent-light;
+    background: hsl(var(--multiplayer-warning-light));
   }
 
   .chat-message.system {
-    @apply bg-[hsl(var(--multiplayer-text-muted))]/10 text-[hsl(var(--multiplayer-text-muted))];
+    background: hsl(var(--muted));
+    font-style: italic;
   }
 
-  /* Buttons with enhanced contrast */
   .multiplayer-button-primary {
-    @apply multiplayer-accent hover:opacity-90 focus:ring-2 focus:ring-[hsl(var(--multiplayer-accent))]/50;
-    @apply font-medium px-4 py-2 rounded-lg transition-all;
+    background: hsl(var(--multiplayer-accent));
+    color: white;
   }
 
   .multiplayer-button-secondary {
-    @apply multiplayer-card border-[hsl(var(--multiplayer-border))] hover:multiplayer-card-hover;
-    @apply font-medium px-4 py-2 rounded-lg transition-all;
+    background: hsl(var(--multiplayer-card));
+    border: 1px solid hsl(var(--multiplayer-border));
+    color: hsl(var(--multiplayer-text));
   }
 
-  /* Input fields with better contrast */
   .multiplayer-input {
-    @apply multiplayer-card border-[hsl(var(--multiplayer-border))] text-[hsl(var(--multiplayer-text))];
-    @apply focus:border-[hsl(var(--multiplayer-accent))] focus:ring-2 focus:ring-[hsl(var(--multiplayer-accent))]/20;
-    @apply px-3 py-2 rounded-lg transition-all;
+    background: hsl(var(--multiplayer-card));
+    border: 1px solid hsl(var(--multiplayer-border));
+    color: hsl(var(--multiplayer-text));
   }
 
-  /* Status indicators */
+  .multiplayer-input:focus {
+    border-color: hsl(var(--multiplayer-accent));
+  }
+
   .status-online {
-    @apply w-2 h-2 bg-[hsl(var(--multiplayer-success))] rounded-full;
+    color: hsl(var(--multiplayer-success));
   }
 
   .status-ready {
-    @apply multiplayer-success text-white px-2 py-1 rounded text-xs font-medium;
+    color: hsl(var(--multiplayer-success));
   }
 
   .status-waiting {
-    @apply bg-[hsl(var(--multiplayer-text-muted))]/20 text-[hsl(var(--multiplayer-text-muted))] px-2 py-1 rounded text-xs font-medium;
+    color: hsl(var(--multiplayer-warning));
   }
 
-  /* Responsive text sizing */
   .multiplayer-title {
-    @apply text-2xl sm:text-3xl lg:text-4xl font-bold text-[hsl(var(--multiplayer-text))];
+    color: hsl(var(--multiplayer-text));
   }
 
   .multiplayer-subtitle {
-    @apply text-base sm:text-lg text-[hsl(var(--multiplayer-text-muted))] max-w-2xl mx-auto;
+    color: hsl(var(--multiplayer-text-muted));
   }
 
   .multiplayer-section-title {
-    @apply text-lg sm:text-xl font-semibold text-[hsl(var(--multiplayer-text))] mb-4;
+    color: hsl(var(--multiplayer-text));
+    border-bottom: 1px solid hsl(var(--multiplayer-border));
   }
 
-  /* Loading states */
   .multiplayer-loading {
-    @apply animate-pulse bg-[hsl(var(--multiplayer-text-muted))]/20 rounded;
+    color: hsl(var(--multiplayer-text-muted));
   }
 
-  /* Animations for multiplayer interactions */
   .multiplayer-fade-in {
-    @apply animate-in fade-in duration-300;
+    animation: fade-in 0.5s ease-out;
   }
 
   .multiplayer-slide-up {
-    @apply animate-in slide-in-from-bottom-4 duration-300;
+    animation: slide-in-from-bottom 0.3s ease-out;
   }
 
   .multiplayer-scale-in {
-    @apply animate-in zoom-in-95 duration-200;
+    animation: zoom-in 0.2s ease-out;
   }
 
-  /* Mobile-specific improvements */
   @media (max-width: 640px) {
     .multiplayer-container {
-      @apply px-3 py-4;
+      padding: 1rem;
     }
 
     .game-mode-card {
-      @apply p-3;
+      padding: 1rem;
     }
 
     .player-card {
-      @apply p-2;
+      padding: 0.75rem;
     }
 
     .multiplayer-title {
-      @apply text-xl;
+      font-size: 1.5rem;
     }
 
     .multiplayer-subtitle {
-      @apply text-sm;
+      font-size: 0.875rem;
     }
   }
 
-  /* High contrast mode support */
   @media (prefers-contrast: high) {
     .multiplayer-card {
-      @apply border-2;
+      border-width: 2px;
     }
 
     .multiplayer-text-muted {
-      @apply text-[hsl(var(--multiplayer-text))];
+      color: hsl(var(--multiplayer-text));
     }
 
     .game-mode-card:hover {
-      @apply border-[hsl(var(--multiplayer-accent))] border-[3px];
+      border-color: hsl(var(--multiplayer-accent));
     }
   }
 
-  /* Reduced motion support */
   @media (prefers-reduced-motion: reduce) {
     .multiplayer-card,
     .game-mode-card,
     .player-card,
-    .multiplayer-button-primary,
-    .multiplayer-button-secondary {
-      @apply transition-none;
+    .chat-message {
+      transition: none;
     }
 
     .multiplayer-fade-in,
     .multiplayer-slide-up,
     .multiplayer-scale-in {
-      @apply animate-none;
+      animation: none;
     }
+  }
+}
+
+/* Translation stability styles - prevent layout breakage during translation */
+@layer components {
+  /* Ensure stable layout during translation */
+  [data-translated="true"] {
+    /* Preserve original dimensions and spacing */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  /* Prevent text reflow issues */
+  .translation-stable {
+    /* Maintain consistent line height */
+    line-height: 1.6;
+    /* Prevent sudden layout shifts */
+    min-height: 1.6em;
+    /* Smooth text changes */
+    transition: none !important;
+  }
+
+  /* Apply stable translation to common content elements */
+  h1, h2, h3, h4, h5, h6,
+  p, span, div, button, a, label, td, th, li {
+    @apply translation-stable;
+  }
+
+  /* Prevent icons and UI elements from being translated */
+  [class*="icon"],
+  [class*="emoji"],
+  [aria-hidden="true"],
+  .sr-only,
+  [data-no-translate] {
+    /* Mark as non-translatable */
+    translate: no;
+  }
+
+  /* Smooth transition when switching between languages */
+  body.translating {
+    /* Subtle visual indication that translation is happening */
+    cursor: wait;
+  }
+
+  body.translating * {
+    /* Prevent interactions during translation */
+    pointer-events: none;
+  }
+
+  body.translating .language-switcher {
+    /* Keep language switcher functional */
+    pointer-events: auto;
   }
 }

@@ -9,10 +9,8 @@ interface Language {
 
 interface TranslationCache {
   [key: string]: {
-    [targetLang: string]: {
-      text: string
-      timestamp: number
-    }
+    text: string
+    timestamp: number
   }
 }
 
@@ -29,234 +27,78 @@ interface TranslationResult {
   fromCache: boolean
   usage?: {
     charactersProcessed: number
-    charactersRemaining?: number
-  }
-}
-
-// Default language for the hook
-const DEFAULT_LANGUAGE: Language = {
-  code: 'en',
-  name: 'English',
-  nativeName: 'English',
-  emoji: '🇺🇸'
-}
-
-// Improved rate limiting constants
-const RATE_LIMIT_DELAY = 1200 // 1.2 seconds between requests (more conservative)
-const MAX_RETRIES = 2 // Reduced retries to avoid excessive API calls
-const RETRY_DELAY = 3000 // 3 seconds between retries
-
-// Global rate limiting state
-let lastRequestTime = 0
-let requestQueue: Array<() => void> = []
-let isProcessingQueue = false
-let activeRequests = 0
-const MAX_CONCURRENT_REQUESTS = 2 // Limit concurrent requests
-
-// Process request queue with improved rate limiting
-const processQueue = async () => {
-  if (isProcessingQueue || requestQueue.length === 0 || activeRequests >= MAX_CONCURRENT_REQUESTS) return
-  
-  isProcessingQueue = true
-  
-  while (requestQueue.length > 0 && activeRequests < MAX_CONCURRENT_REQUESTS) {
-    const now = Date.now()
-    const timeSinceLastRequest = now - lastRequestTime
-    
-    if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY - timeSinceLastRequest))
-    }
-    
-    const nextRequest = requestQueue.shift()
-    if (nextRequest) {
-      lastRequestTime = Date.now()
-      activeRequests++
-      nextRequest()
-    }
-  }
-  
-  isProcessingQueue = false
-}
-
-// Safe base64 encoding that handles Unicode characters
-const safeBase64Encode = (str: string): string => {
-  try {
-    // First encode as UTF-8, then to base64
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-      return String.fromCharCode(parseInt(p1, 16))
-    }))
-  } catch (error) {
-    // Fallback: use a simple hash for non-Latin characters
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36)
+    charactersRemaining: number | null
   }
 }
 
 // Global cache to persist across hook instances
 const globalTranslationCache: TranslationCache = {}
 
-export function useTranslation(options: UseTranslationOptions = {}) {
-  const {
-    cacheTimeout = 24 * 60 * 60 * 1000, // 24 hours
-    autoDetectLanguage = true,
-    preserveFormatting = true,
-    formality = 'default'
-  } = options
+// Rate limiting
+let lastRequestTime = 0
+const MIN_REQUEST_INTERVAL = 1200 // 1.2 seconds between requests
 
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(DEFAULT_LANGUAGE)
+function createSafeCacheKey(text: string, targetLanguage: string): string {
+  try {
+    // Create a simple hash-based key
+    const combined = `${text}|${targetLanguage}`
+    let hash = 0
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36)
+  } catch (error) {
+    // Fallback to simple concatenation
+    return `${text.slice(0, 50)}_${targetLanguage}`
+  }
+}
+
+async function rateLimiter() {
+  const now = Date.now()
+  const timeSinceLastRequest = now - lastRequestTime
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+  }
+  
+  lastRequestTime = Date.now()
+}
+
+export function useTranslation(options: UseTranslationOptions = {}) {
   const [isTranslating, setIsTranslating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Generate cache key safely
-  const getCacheKey = useCallback((text: string): string => {
-    return safeBase64Encode(text.trim().toLowerCase())
-  }, [])
-
-  // Get cached translation
-  const getCachedTranslation = useCallback((text: string, targetLanguage: string): string | null => {
-    const key = getCacheKey(text)
-    const cached = globalTranslationCache[key]?.[targetLanguage]
-    
-    if (cached && Date.now() - cached.timestamp < cacheTimeout) {
-      return cached.text
-    }
-    
-    return null
-  }, [cacheTimeout, getCacheKey])
-
-  // Store translation in cache
-  const setCachedTranslation = useCallback((text: string, targetLanguage: string, translatedText: string) => {
-    const key = getCacheKey(text)
-    if (!globalTranslationCache[key]) {
-      globalTranslationCache[key] = {}
-    }
-    globalTranslationCache[key][targetLanguage] = {
-      text: translatedText,
-      timestamp: Date.now()
-    }
-  }, [getCacheKey])
-
-  // Clean expired cache entries periodically
-  useEffect(() => {
-    const cleanup = () => {
-      const now = Date.now()
-      
-      Object.keys(globalTranslationCache).forEach(key => {
-        const languages = globalTranslationCache[key]
-        
-        Object.keys(languages).forEach(lang => {
-          if (now - languages[lang].timestamp >= cacheTimeout) {
-            delete languages[lang]
-          }
-        })
-        
-        if (Object.keys(languages).length === 0) {
-          delete globalTranslationCache[key]
-        }
-      })
-    }
-
-    const interval = setInterval(cleanup, 60 * 60 * 1000) // Clean every hour
-    return () => clearInterval(interval)
-  }, [cacheTimeout])
-
-  // Make API request with improved retry logic and request tracking
-  const makeTranslationRequest = useCallback(async (
+  // Simple single text translation
+  const translate = useCallback(async (
     text: string, 
-    targetLanguage: string, 
-    retryCount = 0
-  ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const makeRequest = async () => {
-        try {
-          const response = await fetch('/api/translate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              text,
-              targetLanguage,
-              preserveFormatting,
-              splitSentences: '1',
-              formality
-            }),
-          })
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-            
-            // Handle rate limiting with exponential backoff
-            if (response.status === 429 && retryCount < MAX_RETRIES) {
-              const delay = RETRY_DELAY * Math.pow(2, retryCount)
-              console.log(`🌐 Rate limited, retrying in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`)
-              setTimeout(() => {
-                makeTranslationRequest(text, targetLanguage, retryCount + 1)
-                  .then(resolve)
-                  .catch(reject)
-              }, delay)
-              return
-            }
-            
-            throw new Error(errorData.error || `HTTP ${response.status}`)
-          }
-
-          const data = await response.json()
-          resolve(data.translatedText || text)
-        } catch (error) {
-          if (retryCount < MAX_RETRIES && (error as Error).message.includes('429')) {
-            const delay = RETRY_DELAY * Math.pow(2, retryCount)
-            setTimeout(() => {
-              makeTranslationRequest(text, targetLanguage, retryCount + 1)
-                .then(resolve)
-                .catch(reject)
-            }, delay)
-          } else {
-            reject(error)
-          }
-        } finally {
-          activeRequests--
-          // Process any queued requests
-          if (requestQueue.length > 0) {
-            setTimeout(processQueue, 100)
-          }
-        }
+    targetLanguage: string = 'en'
+  ): Promise<TranslationResult> => {
+    if (!text || !text.trim()) {
+      return {
+        translatedText: text,
+        fromCache: false
       }
+    }
 
-      // Add to queue for rate limiting
-      requestQueue.push(makeRequest)
-      processQueue()
-    })
-  }, [preserveFormatting, formality])
+    // If target is English, return original
+    if (targetLanguage.toLowerCase() === 'en' || targetLanguage.toLowerCase() === 'english') {
+      return {
+        translatedText: text,
+        fromCache: false
+      }
+    }
 
-  // Single text translation with improved caching
-  const translate = useCallback(async (text: string, targetLanguage?: string): Promise<TranslationResult> => {
-    const target = targetLanguage || currentLanguage.code
+    const cacheTimeout = options.cacheTimeout || 24 * 60 * 60 * 1000 // 24 hours
+    const cacheKey = createSafeCacheKey(text, targetLanguage)
     
-    if (!text?.trim()) {
-      return {
-        translatedText: text,
-        fromCache: false
-      }
-    }
-
-    if (target === 'en') {
-      return {
-        translatedText: text,
-        fromCache: false
-      }
-    }
-
     // Check cache first
-    const cached = getCachedTranslation(text, target)
-    if (cached) {
+    const cached = globalTranslationCache[cacheKey]
+    if (cached && Date.now() - cached.timestamp < cacheTimeout) {
       return {
-        translatedText: cached,
+        translatedText: cached.text,
         fromCache: true
       }
     }
@@ -265,141 +107,211 @@ export function useTranslation(options: UseTranslationOptions = {}) {
     setError(null)
 
     try {
-      const translatedText = await makeTranslationRequest(text, target)
+      await rateLimiter()
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          targetLanguage,
+          preserveFormatting: options.preserveFormatting ?? true,
+          splitSentences: '1',
+          formality: options.formality || 'default'
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
       
-      // Cache the result
-      setCachedTranslation(text, target, translatedText)
-      
-      return {
-        translatedText,
-        fromCache: false
+      if (data.success && data.translatedText) {
+        // Cache the result
+        globalTranslationCache[cacheKey] = {
+          text: data.translatedText,
+          timestamp: Date.now()
+        }
+
+        return {
+          translatedText: data.translatedText,
+          detectedLanguage: data.detectedLanguage,
+          fromCache: false,
+          usage: data.usage
+        }
+      } else {
+        throw new Error(data.error || 'Translation failed')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Translation failed'
       setError(errorMessage)
-      console.error('🌐 Translation failed:', errorMessage)
-      
-      // Cache the original text to avoid retrying the same failed translation
-      setCachedTranslation(text, target, text)
+      console.error('Translation error:', errorMessage)
       
       return {
-        translatedText: text,
+        translatedText: text, // Return original on error
         fromCache: false
       }
     } finally {
       setIsTranslating(false)
     }
-  }, [currentLanguage.code, getCachedTranslation, setCachedTranslation, makeTranslationRequest])
+  }, [options.cacheTimeout, options.preserveFormatting, options.formality])
 
-  // Improved batch translation with better error handling and caching
-  const translateBatch = useCallback(async (texts: string[], targetLanguage?: string): Promise<string[]> => {
-    const target = targetLanguage || currentLanguage.code
+  // Batch translation - much more efficient
+  const translateBatch = useCallback(async (
+    texts: string[], 
+    targetLanguage: string = 'en',
+    batchOptions: UseTranslationOptions = {}
+  ): Promise<string[]> => {
+    if (texts.length === 0) return []
     
-    if (target === 'en') {
+    // If target is English, return original texts
+    if (targetLanguage.toLowerCase() === 'en' || targetLanguage.toLowerCase() === 'english') {
       return texts
     }
 
-    if (!texts.length) {
-      return []
-    }
+    const cacheTimeout = batchOptions.cacheTimeout || options.cacheTimeout || 24 * 60 * 60 * 1000
+    const results: string[] = []
+    const textsToTranslate: string[] = []
+    const indexMap: number[] = []
 
-    // Filter out empty texts and check cache first
-    const results: string[] = new Array(texts.length)
-    const uncachedIndices: number[] = []
-    const uncachedTexts: string[] = []
-
+    // Check cache for each text
     texts.forEach((text, index) => {
-      if (!text?.trim()) {
+      if (!text || !text.trim()) {
         results[index] = text
         return
       }
 
-      const cached = getCachedTranslation(text, target)
-      if (cached) {
-        results[index] = cached
+      const cacheKey = createSafeCacheKey(text, targetLanguage)
+      const cached = globalTranslationCache[cacheKey]
+      
+      if (cached && Date.now() - cached.timestamp < cacheTimeout) {
+        results[index] = cached.text
       } else {
-        uncachedIndices.push(index)
-        uncachedTexts.push(text)
+        textsToTranslate.push(text)
+        indexMap.push(index)
       }
     })
 
-    // If everything was cached, return immediately
-    if (uncachedTexts.length === 0) {
+    // If all texts were cached, return immediately
+    if (textsToTranslate.length === 0) {
       return results
     }
+
+    console.log(`🚀 Batch translating ${textsToTranslate.length} texts to ${targetLanguage}`)
 
     setIsTranslating(true)
     setError(null)
 
     try {
-      // Process uncached texts in smaller batches to avoid overwhelming the API
-      const batchSize = 5 // Smaller batches for better reliability
-      
-      for (let i = 0; i < uncachedTexts.length; i += batchSize) {
-        const batch = uncachedTexts.slice(i, i + batchSize)
-        const batchIndices = uncachedIndices.slice(i, i + batchSize)
+      // Use large batch size for efficiency - DeepL supports up to 50 texts per request
+      const maxBatchSize = 50
+      const allTranslations: string[] = []
+
+      for (let i = 0; i < textsToTranslate.length; i += maxBatchSize) {
+        const batch = textsToTranslate.slice(i, i + maxBatchSize)
         
+        // Apply rate limiting between batches only
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1200))
+        }
+
         try {
-          // Translate each text individually to avoid batch failures
-          const batchResults = await Promise.allSettled(
-            batch.map(text => makeTranslationRequest(text, target))
-          )
-          
-          batchResults.forEach((result, batchIndex) => {
-            const originalIndex = batchIndices[batchIndex]
-            const originalText = batch[batchIndex]
-            
-            if (result.status === 'fulfilled') {
-              results[originalIndex] = result.value
-              setCachedTranslation(originalText, target, result.value)
-            } else {
-              console.error(`🌐 Translation failed for text ${originalIndex}:`, result.reason)
-              results[originalIndex] = originalText
-              setCachedTranslation(originalText, target, originalText) // Cache as failed
-            }
+          const response = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              texts: batch, // Send all texts in one request
+              targetLanguage,
+              preserveFormatting: batchOptions.preserveFormatting ?? options.preserveFormatting ?? true,
+              splitSentences: '1',
+              formality: batchOptions.formality || options.formality || 'default'
+            }),
           })
+
+          if (!response.ok) {
+            if (response.status === 429) {
+              console.warn('Rate limited, waiting longer...')
+              await new Promise(resolve => setTimeout(resolve, 5000))
+              i -= maxBatchSize // Retry this batch
+              continue
+            }
+            throw new Error(`HTTP ${response.status}`)
+          }
+
+          const data = await response.json()
           
-          // Add delay between batches
-          if (i + batchSize < uncachedTexts.length) {
-            await new Promise(resolve => setTimeout(resolve, 1000))
+          if (data.success && data.translations) {
+            // Handle batch response
+            const batchTranslations = data.translations.map((t: any) => t.translatedText || t.text || '')
+            allTranslations.push(...batchTranslations)
+            
+            // Cache all translations from this batch
+            batch.forEach((originalText, batchIndex) => {
+              const translatedText = batchTranslations[batchIndex]
+              if (translatedText) {
+                const cacheKey = createSafeCacheKey(originalText, targetLanguage)
+                globalTranslationCache[cacheKey] = {
+                  text: translatedText,
+                  timestamp: Date.now()
+                }
+              }
+            })
+            
+            console.log(`✅ Batch ${Math.floor(i/maxBatchSize) + 1} completed: ${batchTranslations.length} translations`)
+          } else {
+            throw new Error(data.error || 'Translation failed')
           }
         } catch (error) {
-          console.error(`🌐 Batch translation failed:`, error)
-          // Fill remaining results with original texts
-          batchIndices.forEach((originalIndex, batchIndex) => {
-            results[originalIndex] = batch[batchIndex]
-          })
+          console.error(`Batch translation error for batch starting at ${i}:`, error)
+          
+          // For failed batches, use original text
+          const fallbackTranslations = batch.map(text => text)
+          allTranslations.push(...fallbackTranslations)
         }
       }
 
+      // Map translations back to original positions
+      allTranslations.forEach((translation, i) => {
+        const originalIndex = indexMap[i]
+        results[originalIndex] = translation
+      })
+
+      // Fill any remaining slots with original text
+      texts.forEach((text, index) => {
+        if (results[index] === undefined) {
+          results[index] = text
+        }
+      })
+
       return results
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Batch translation failed'
-      setError(errorMessage)
-      console.error('🌐 Batch translation failed:', errorMessage)
-      
-      // Return original texts on error
+      console.error('Batch translation failed:', error)
+      setError(error instanceof Error ? error.message : 'Batch translation failed')
+      // Return original texts on failure
       return texts
     } finally {
       setIsTranslating(false)
     }
-  }, [currentLanguage.code, getCachedTranslation, setCachedTranslation, makeTranslationRequest])
+  }, [options.cacheTimeout, options.preserveFormatting, options.formality])
+
+  // Clear cache function
+  const clearCache = useCallback(() => {
+    Object.keys(globalTranslationCache).forEach(key => {
+      delete globalTranslationCache[key]
+    })
+  }, [])
 
   return {
     translate,
     translateBatch,
     isTranslating,
     error,
-    currentLanguage,
-    setCurrentLanguage,
-    clearCache: () => {
-      Object.keys(globalTranslationCache).forEach(key => {
-        delete globalTranslationCache[key]
-      })
-    },
-    getCacheStats: () => ({
-      totalEntries: Object.keys(globalTranslationCache).length,
-      totalTranslations: Object.values(globalTranslationCache).reduce((sum, langs) => sum + Object.keys(langs).length, 0)
-    })
+    clearCache
   }
 } 

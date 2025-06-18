@@ -1110,7 +1110,7 @@ export function DailyCardStack({
           </div>
 
           {/* Previous/Next navigation */}
-          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="relative flex items-center px-4 sm:px-6 lg:px-8">
             {/* Previous button - shows tomorrow when at first item */}
             <button
               onClick={currentStackIndex > 0 ? handlePrevious : undefined}
@@ -1145,8 +1145,8 @@ export function DailyCardStack({
               )}
             </button>
 
-            {/* Progress indicator */}
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono text-center flex-shrink-0">
+            {/* Progress indicator - absolutely centered */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 text-xs text-slate-500 dark:text-slate-400 font-mono">
               {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
             </div>
 
@@ -1155,7 +1155,7 @@ export function DailyCardStack({
               onClick={handleNext}
               disabled={currentStackIndex === allFilteredTopics.length - 1}
               className={cn(
-                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0",
+                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0 ml-auto",
                 currentStackIndex === allFilteredTopics.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
               )}
             >

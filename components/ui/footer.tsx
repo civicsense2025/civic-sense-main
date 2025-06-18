@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  const isDevelopment = process.env.NODE_ENV !== 'production'
   
   return (
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
@@ -21,9 +22,11 @@ export function Footer() {
               </div>
             </div>
             
-            <div className="flex items-center">
-              <LanguageSwitcher variant="compact" />
-            </div>
+            {isDevelopment && (
+              <div className="flex items-center">
+                <LanguageSwitcher variant="compact" />
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-3 sm:space-y-0">
