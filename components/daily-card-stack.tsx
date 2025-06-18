@@ -1145,8 +1145,8 @@ export function DailyCardStack({
               )}
             </button>
 
-            {/* Progress indicator - absolutely centered */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 text-xs text-slate-500 dark:text-slate-400 font-mono">
+            {/* Progress indicator - absolutely centered, hidden on mobile */}
+            <div className="hidden sm:block absolute left-1/2 transform -translate-x-1/2 text-xs text-slate-500 dark:text-slate-400 font-mono">
               {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
             </div>
 

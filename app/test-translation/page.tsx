@@ -3,373 +3,369 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { PageTranslator } from '@/components/page-translator'
 import { LanguageSwitcher } from '@/components/language-switcher'
-import { useTranslation } from '@/hooks/useTranslation'
-import { 
-  Languages, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle,
-  Database,
-  Zap,
-  Globe,
-  MessageSquare
-} from 'lucide-react'
+import { useLanguage } from '@/components/providers/language-provider'
 
+// Hide this page in production
 export default function TestTranslationPage() {
-  const [testText, setTestText] = useState('Hello! This is a test of the DeepL translation system. How are you doing today?')
-  const [translationResult, setTranslationResult] = useState<any>(null)
-  const [batchTexts, setBatchTexts] = useState<string[]>([
-    'Welcome to CivicSense',
-    'Learn about democracy and civic engagement',
-    'Take quizzes to test your knowledge',
-    'Connect with other learners in pods'
-  ])
-  const [batchResults, setBatchResults] = useState<any[]>([])
-  
+  // Early return for production
+  if (process.env.NODE_ENV === 'production') {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Page Not Available</h1>
+          <p className="text-muted-foreground">This test page is only available in development mode.</p>
+        </div>
+      </div>
+    )
+  }
+
   const { 
     currentLanguage, 
     isTranslating, 
-    error, 
-    translate, 
-    translateBatch, 
-    changeLanguage,
-    clearCache,
-    getCacheStats
-  } = useTranslation()
+    isPageTranslated,
+    translate,
+    translateBatch,
+    translatePage,
+    restoreOriginalPage,
+    getLanguageInfo
+  } = useLanguage()
 
-  const handleSingleTranslation = async () => {
+  // Get the current language info object
+  const currentLanguageInfo = getLanguageInfo(currentLanguage)
+
+  const [singleText, setSingleText] = useState('Hello, this is a test sentence for translation.')
+  const [singleResult, setSingleResult] = useState('')
+  const [singleLoading, setSingleLoading] = useState(false)
+
+  const [batchTexts, setBatchTexts] = useState('Line 1: This is the first test sentence.\nLine 2: This is the second test sentence.\nLine 3: This is the third test sentence.')
+  const [batchResults, setBatchResults] = useState<string[]>([])
+  const [batchLoading, setBatchLoading] = useState(false)
+
+  const [translationStats, setTranslationStats] = useState({
+    singleTranslations: 0,
+    batchTranslations: 0,
+    pageTranslations: 0,
+    lastTranslationTime: null as Date | null
+  })
+
+  // Test single translation
+  const testSingleTranslation = async () => {
+    if (!singleText.trim()) return
+    
+    setSingleLoading(true)
+    setSingleResult('')
+    
     try {
-      const result = await translate(testText)
-      setTranslationResult(result)
+      const startTime = Date.now()
+      const result = await translate(singleText, currentLanguage)
+      const endTime = Date.now()
+      
+      setSingleResult(result)
+      setTranslationStats(prev => ({
+        ...prev,
+        singleTranslations: prev.singleTranslations + 1,
+        lastTranslationTime: new Date()
+      }))
+      
+      console.log(`Single translation took ${endTime - startTime}ms`)
     } catch (error) {
-      console.error('Translation failed:', error)
+      console.error('Single translation failed:', error)
+      setSingleResult('Translation failed')
+    } finally {
+      setSingleLoading(false)
     }
   }
 
-  const handleBatchTranslation = async () => {
+  // Test batch translation
+  const testBatchTranslation = async () => {
+    if (!batchTexts.trim()) return
+    
+    setBatchLoading(true)
+    setBatchResults([])
+    
     try {
-      const results = await translateBatch(batchTexts)
+      const texts = batchTexts.split('\n').filter(line => line.trim())
+      const startTime = Date.now()
+      const results = await translateBatch(texts, currentLanguage)
+      const endTime = Date.now()
+      
       setBatchResults(results)
+      setTranslationStats(prev => ({
+        ...prev,
+        batchTranslations: prev.batchTranslations + 1,
+        lastTranslationTime: new Date()
+      }))
+      
+      console.log(`Batch translation (${texts.length} texts) took ${endTime - startTime}ms`)
     } catch (error) {
       console.error('Batch translation failed:', error)
+      setBatchResults(['Translation failed'])
+    } finally {
+      setBatchLoading(false)
     }
   }
 
-  const cacheStats = getCacheStats()
+  // Test page translation
+  const testPageTranslation = async () => {
+    if (currentLanguage === 'en') {
+      alert('Please select a non-English language to test page translation')
+      return
+    }
+    
+    try {
+      const startTime = Date.now()
+      await translatePage(currentLanguage)
+      const endTime = Date.now()
+      
+      setTranslationStats(prev => ({
+        ...prev,
+        pageTranslations: prev.pageTranslations + 1,
+        lastTranslationTime: new Date()
+      }))
+      
+      console.log(`Page translation took ${endTime - startTime}ms`)
+    } catch (error) {
+      console.error('Page translation failed:', error)
+    }
+  }
+
+  // Loading state
+  if (!currentLanguageInfo) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading language information...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Header */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">
-                Translation System Test
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Test the DeepL API integration and page translation features
-              </p>
-            </div>
-            <Badge variant="secondary" className="flex items-center space-x-2">
-              <Globe className="h-4 w-4" />
-              <span>{currentLanguage.emoji} {currentLanguage.name}</span>
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold">Translation System Test</h1>
+        <p className="text-lg text-muted-foreground">
+          Test the DeepL translation integration with single text, batch processing, and full page translation
+        </p>
+        
+        {/* Language Info Display */}
+        <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
+          <div className="text-sm">
+            <strong>Current Language:</strong> {currentLanguageInfo.emoji} {currentLanguageInfo.name} ({currentLanguageInfo.code})
+          </div>
+          <LanguageSwitcher />
+        </div>
+        
+        {/* Translation Status */}
+        <div className="flex items-center justify-center gap-4">
+          {isTranslating && (
+            <Badge variant="secondary" className="animate-pulse">
+              🔄 Translating...
             </Badge>
-          </div>
+          )}
+          {isPageTranslated && (
+            <Badge variant="default">
+              ✅ Page Translated
+            </Badge>
+          )}
+          {currentLanguage === 'en' && (
+            <Badge variant="outline">
+              🇺🇸 Original Language
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Translation Tests */}
-          <div className="space-y-6">
-            {/* Language Selection */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Languages className="h-5 w-5" />
-                  <span>Language Selection</span>
-                </CardTitle>
-                <CardDescription>
-                  Choose the target language for translations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LanguageSwitcher 
-                  variant="full" 
-                  currentLanguage={currentLanguage.code}
-                  onLanguageChange={changeLanguage}
-                />
-              </CardContent>
-            </Card>
+      <Separator />
 
-            {/* Single Text Translation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5" />
-                  <span>Single Text Translation</span>
-                </CardTitle>
-                <CardDescription>
-                  Test translating a single piece of text
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Text to translate:</label>
-                  <Textarea
-                    value={testText}
-                    onChange={(e) => setTestText(e.target.value)}
-                    placeholder="Enter text to translate..."
-                    rows={3}
-                  />
-                </div>
-                
-                <Button 
-                  onClick={handleSingleTranslation}
-                  disabled={isTranslating || !testText.trim() || currentLanguage.code === 'EN'}
-                  className="w-full"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Translating...
-                    </>
-                  ) : (
-                    <>
-                      <Languages className="h-4 w-4 mr-2" />
-                      Translate to {currentLanguage.name}
-                    </>
-                  )}
-                </Button>
-
-                {translationResult && (
-                  <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">Translation Result</span>
-                      {translationResult.fromCache && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Database className="h-3 w-3 mr-1" />
-                          Cached
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-sm">
-                      <div className="font-medium mb-1">Translated Text:</div>
-                      <div className="p-3 bg-white dark:bg-slate-800 rounded border">
-                        {translationResult.translatedText}
-                      </div>
-                    </div>
-                    {translationResult.detectedLanguage && (
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        Detected source language: {translationResult.detectedLanguage}
-                      </div>
-                    )}
-                    {translationResult.usage && (
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        Characters processed: {translationResult.usage.charactersProcessed.toLocaleString()}
-                        {translationResult.usage.charactersRemaining && (
-                          <> • Remaining: {translationResult.usage.charactersRemaining.toLocaleString()}</>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Batch Translation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Zap className="h-5 w-5" />
-                  <span>Batch Translation</span>
-                </CardTitle>
-                <CardDescription>
-                  Test translating multiple texts at once
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Texts to translate:</label>
-                  {batchTexts.map((text, index) => (
-                    <Input
-                      key={index}
-                      value={text}
-                      onChange={(e) => {
-                        const newTexts = [...batchTexts]
-                        newTexts[index] = e.target.value
-                        setBatchTexts(newTexts)
-                      }}
-                      placeholder={`Text ${index + 1}...`}
-                    />
-                  ))}
-                </div>
-                
-                <Button 
-                  onClick={handleBatchTranslation}
-                  disabled={isTranslating || currentLanguage.code === 'EN'}
-                  className="w-full"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Translating Batch...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Translate All to {currentLanguage.name}
-                    </>
-                  )}
-                </Button>
-
-                {batchResults.length > 0 && (
-                  <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">Batch Translation Results</span>
-                    </div>
-                    {batchResults.map((result, index) => (
-                      <div key={index} className="text-sm space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">Text {index + 1}:</span>
-                          {result.fromCache && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Database className="h-3 w-3 mr-1" />
-                              Cached
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded border text-xs">
-                          {result.translatedText}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+      {/* Translation Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Translation Statistics</CardTitle>
+          <CardDescription>Track translation usage and performance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold">{translationStats.singleTranslations}</div>
+              <div className="text-sm text-muted-foreground">Single Translations</div>
+            </div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold">{translationStats.batchTranslations}</div>
+              <div className="text-sm text-muted-foreground">Batch Translations</div>
+            </div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold">{translationStats.pageTranslations}</div>
+              <div className="text-sm text-muted-foreground">Page Translations</div>
+            </div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold">
+                {translationStats.lastTranslationTime ? 
+                  translationStats.lastTranslationTime.toLocaleTimeString() : 
+                  'Never'
+                }
+              </div>
+              <div className="text-sm text-muted-foreground">Last Translation</div>
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Right Column - Demo Content & Stats */}
-          <div className="space-y-6">
-            {/* Demo Content for Page Translation */}
-            <Card data-translatable>
-              <CardHeader>
-                <CardTitle data-translate>
-                  Demo Content for Page Translation
-                </CardTitle>
-                <CardDescription data-translate>
-                  This content will be translated when using the page translator
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4" data-translatable>
-                <h3 className="text-lg font-semibold" data-translate>
-                  About CivicSense
-                </h3>
-                <p data-translate>
-                  CivicSense transforms passive observers into confident, informed participants in democracy. 
-                  We bridge the gap between civic knowledge and meaningful action through accessible, 
-                  engaging digital learning.
-                </p>
-                
-                <h4 className="font-medium" data-translate>
-                  Key Features
-                </h4>
-                <ul className="space-y-2 text-sm">
-                  <li data-translate>• Interactive quizzes on civic topics</li>
-                  <li data-translate>• Learning pods for collaborative education</li>
-                  <li data-translate>• Multiplayer civic games</li>
-                  <li data-translate>• Progress tracking and achievements</li>
-                </ul>
-
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription data-translate>
-                    This is a demonstration of how page content can be automatically translated 
-                    using the DeepL API integration.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-
-            {/* Cache Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Database className="h-5 w-5" />
-                  <span>Translation Cache</span>
-                </CardTitle>
-                <CardDescription>
-                  Performance statistics and cache management
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Cache Entries</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      {cacheStats.totalEntries}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Total Translations</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      {cacheStats.totalTranslations}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Cache Size</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      {cacheStats.cacheSizeKB} KB
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Current Language</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      {currentLanguage.emoji} {currentLanguage.code}
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <Button 
-                  onClick={clearCache}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Clear Translation Cache
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Error Display */}
-            {error && (
-              <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800 dark:text-red-200">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
+      {/* Single Text Translation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Single Text Translation</CardTitle>
+          <CardDescription>Test translating individual pieces of text</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Text to Translate:</label>
+            <Textarea
+              value={singleText}
+              onChange={(e) => setSingleText(e.target.value)}
+              placeholder="Enter text to translate..."
+              className="mt-1"
+            />
           </div>
-        </div>
-      </div>
+          
+          <Button 
+            onClick={testSingleTranslation}
+            disabled={singleLoading || !singleText.trim() || currentLanguage === 'en'}
+            className="w-full"
+          >
+            {singleLoading ? '🔄 Translating...' : `🌐 Translate to ${currentLanguageInfo.name}`}
+          </Button>
+          
+          {singleResult && (
+            <div>
+              <label className="text-sm font-medium">Translation Result:</label>
+              <div className="mt-1 p-3 bg-muted rounded-md">
+                {singleResult}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Page Translator Component */}
-      <PageTranslator showUsage={true} />
+      {/* Batch Translation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Batch Translation</CardTitle>
+          <CardDescription>Test translating multiple texts at once for better performance</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Texts to Translate (one per line):</label>
+            <Textarea
+              value={batchTexts}
+              onChange={(e) => setBatchTexts(e.target.value)}
+              placeholder="Enter multiple lines of text to translate..."
+              className="mt-1 min-h-[120px]"
+            />
+          </div>
+          
+          <Button 
+            onClick={testBatchTranslation}
+            disabled={batchLoading || !batchTexts.trim() || currentLanguage === 'en'}
+            className="w-full"
+          >
+            {batchLoading ? '🔄 Translating Batch...' : `🚀 Batch Translate to ${currentLanguageInfo.name}`}
+          </Button>
+          
+          {batchResults.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Batch Translation Results:</label>
+              <div className="mt-1 space-y-2">
+                {batchResults.map((result, index) => (
+                  <div key={index} className="p-3 bg-muted rounded-md">
+                    <div className="text-xs text-muted-foreground mb-1">Result {index + 1}:</div>
+                    {result}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Page Translation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Page Translation</CardTitle>
+          <CardDescription>Test translating the entire page content</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              Page translation will automatically translate all readable content on this page. 
+              {currentLanguage === 'en' ? 
+                ' Please select a non-English language to test this feature.' :
+                ` It will translate to ${currentLanguageInfo.name}.`
+              }
+            </AlertDescription>
+          </Alert>
+          
+          <div className="flex gap-4">
+            <Button 
+              onClick={testPageTranslation}
+              disabled={isTranslating || currentLanguage === 'en'}
+              className="flex-1"
+            >
+              {isTranslating ? '🔄 Translating Page...' : `🌍 Translate Page to ${currentLanguageInfo.name}`}
+            </Button>
+            
+            <Button 
+              onClick={restoreOriginalPage}
+              disabled={!isPageTranslated}
+              variant="outline"
+              className="flex-1"
+            >
+              🔄 Restore Original
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sample Content for Page Translation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sample Content for Translation Testing</CardTitle>
+          <CardDescription>This content will be translated when you use page translation</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <h3 className="text-xl font-semibold">About Civic Education</h3>
+          <p>
+            Civic education is the cornerstone of a healthy democracy. It empowers citizens with the knowledge 
+            and skills necessary to participate effectively in democratic processes and hold their representatives accountable.
+          </p>
+          
+          <h4 className="text-lg font-medium">Key Components:</h4>
+          <ul className="list-disc list-inside space-y-2">
+            <li>Understanding constitutional principles and the rule of law</li>
+            <li>Learning about government structure and political processes</li>
+            <li>Developing critical thinking skills for evaluating information</li>
+            <li>Practicing civic engagement and community participation</li>
+            <li>Building skills for constructive dialogue and debate</li>
+          </ul>
+          
+          <blockquote className="border-l-4 border-primary pl-4 italic">
+            "The best way to enhance freedom in other lands is to demonstrate here that our democratic 
+            system is worthy of emulation." - Jimmy Carter
+          </blockquote>
+          
+          <p>
+            Modern civic education must address contemporary challenges including misinformation, 
+            political polarization, and digital citizenship. Citizens need tools to navigate complex 
+            information landscapes and engage constructively in democratic discourse.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
-} 
+}

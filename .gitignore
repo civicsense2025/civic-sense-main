@@ -36,3 +36,4 @@ next-env.d.ts
 
 # database type backups
 lib/database.types.ts.backup.*
+/supabase/migrations/*

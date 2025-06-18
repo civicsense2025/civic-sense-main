@@ -78,9 +78,12 @@ export default function NotFound() {
             <Link href="/quiz/2025-trump-approval-rating-decline" className="hover:text-blue-600 dark:hover:text-blue-400">
               Today's Quiz
             </Link>
+            {/* Public Figures link - temporarily hidden until ready for public use */}
+            {/*
             <Link href="/public-figures" className="hover:text-blue-600 dark:hover:text-blue-400">
               Public Figures
             </Link>
+            */}
           </div>
         </div>
       </div>

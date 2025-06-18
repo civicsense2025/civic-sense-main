@@ -55,7 +55,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                     {pathname.includes('/quiz/') ? 'Quiz' : 
                      pathname === '/civics-test' ? 'Civics Test' : 
                      pathname.startsWith('/categories') ? 'Categories' :
-                     pathname === '/public-figures' || pathname.startsWith('/public-figures/') ? 'Public Figures' :
+                     /* pathname === '/public-figures' || pathname.startsWith('/public-figures/') ? 'Public Figures' : */
                      'Home'}
                   </div>
                 )}
@@ -169,6 +169,8 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 </Link>
                 */}
 
+                {/* Public Figures link - temporarily hidden until ready for public use */}
+                {/*
                 <Link 
                   href="/public-figures"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -176,7 +178,8 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 >
                   Public Figures
                 </Link>
-                
+                */}
+
                 <Link 
                   href="/donate"
                   onClick={() => setIsMobileMenuOpen(false)}
