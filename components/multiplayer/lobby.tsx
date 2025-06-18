@@ -685,9 +685,9 @@ export function MultiplayerLobby() {
                   id="roomCode"
                   value={state.roomCode}
                   onChange={(e) => setState(prev => ({ ...prev, roomCode: e.target.value.toUpperCase() }))}
-                  placeholder="ABCD123"
+                  placeholder="ABCD1234"
                   className="mt-1 text-center font-mono text-lg tracking-wider"
-                  maxLength={7}
+                  maxLength={8}
                 />
               </div>
               <Button

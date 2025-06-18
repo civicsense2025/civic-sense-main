@@ -516,7 +516,8 @@ export default function DashboardPage() {
           {/* Enhanced Recent Activity */}
           {user && <EnhancedRecentActivity userId={user.id} />}
 
-          {/* Learning Pods Dashboard */}
+          {/* Learning Pods Dashboard - temporarily hidden until ready for public use */}
+          {/*
           <div className="space-y-4">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
@@ -528,6 +529,7 @@ export default function DashboardPage() {
             </div>
             <LearningPodsDashboard />
           </div>
+          */}
 
           {/* Gift Credits Dashboard */}
           <div className="space-y-4">

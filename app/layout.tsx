@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { PWAProvider } from "@/components/providers/pwa-provider"
+import { LanguageProvider } from "@/components/providers/language-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
@@ -122,23 +123,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <StatsigProvider>
-              <PWAProvider>
-                <div className="min-h-screen flex flex-col w-full">
-                  <main className="flex-1 w-full">
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-                <Toaster />
-                <GlobalAudioWrapper />
-                <Analytics />
-                <SpeedInsights />
-                {process.env.NODE_ENV === 'development' && <PWAStatus />}
-              </PWAProvider>
-            </StatsigProvider>
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <StatsigProvider>
+                <PWAProvider>
+                  <div className="min-h-screen flex flex-col w-full">
+                    <main className="flex-1 w-full">
+                      {children}
+                    </main>
+                    <Footer />
+                  </div>
+                  <Toaster />
+                  <GlobalAudioWrapper />
+                  <Analytics />
+                  <SpeedInsights />
+                  {process.env.NODE_ENV === 'development' && <PWAStatus />}
+                </PWAProvider>
+              </StatsigProvider>
+            </AuthProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

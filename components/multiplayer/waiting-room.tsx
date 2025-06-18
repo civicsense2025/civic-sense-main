@@ -29,7 +29,6 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { usePremium } from '@/hooks/usePremium'
 import { 
-  useMultiplayerRoom, 
   multiplayerOperations,
   getPlayerEmojiOptions, 
   canUseBoosts,
@@ -37,32 +36,41 @@ import {
   type MultiplayerPlayer 
 } from '@/lib/multiplayer'
 import { addNPCToRoom } from '@/lib/multiplayer-npc-integration'
-import { NPC_PERSONALITIES } from '@/lib/multiplayer-npcs'
+import { enhancedNPCService } from '@/lib/enhanced-npc-service'
+import { type NPCPersonality } from '@/lib/multiplayer-npcs'
 import { useToast } from '@/hooks/use-toast'
 
 interface WaitingRoomProps {
   roomId: string
   playerId: string
+  room: MultiplayerRoom | null
+  players: MultiplayerPlayer[]
+  isLoading: boolean
+  error: string | null
+  updatePlayerReady: (playerId: string, isReady: boolean) => Promise<void>
+  startGame: () => Promise<boolean>
+  leaveRoom: (playerId: string) => Promise<void>
   onGameStart: () => void
 }
 
-export function WaitingRoom({ roomId, playerId, onGameStart }: WaitingRoomProps) {
+export function WaitingRoom({ 
+  roomId, 
+  playerId, 
+  room,
+  players,
+  isLoading,
+  error,
+  updatePlayerReady,
+  startGame,
+  leaveRoom,
+  onGameStart 
+}: WaitingRoomProps) {
   const router = useRouter()
   const { user } = useAuth()
   const { isPremium, isPro } = usePremium()
   const { hasReachedDailyLimit } = useGuestAccess()
   const { toast } = useToast()
   
-  const {
-    room,
-    players,
-    isLoading,
-    error,
-    updatePlayerReady,
-    startGame,
-    leaveRoom
-  } = useMultiplayerRoom(roomId)
-
   const [copiedCode, setCopiedCode] = useState(false)
   const [selectedEmoji, setSelectedEmoji] = useState('😊')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -70,17 +78,62 @@ export function WaitingRoom({ roomId, playerId, onGameStart }: WaitingRoomProps)
   const [addingNPC, setAddingNPC] = useState(false)
   const [selectedNPC, setSelectedNPC] = useState<string>('news_junkie')
   const [showNPCSelector, setShowNPCSelector] = useState(false)
+  const [availableNPCs, setAvailableNPCs] = useState<NPCPersonality[]>([])
+  const [loadingNPCs, setLoadingNPCs] = useState(true)
 
   const currentPlayer = players.find(p => p.id === playerId)
-  const isHost = currentPlayer?.is_host || false
-  const allPlayersReady = players.length > 1 && players.every(p => p.is_ready)
-  const canStart = isHost && allPlayersReady && !isStarting
   
-  // Get available NPCs for selection
-  const availableNPCs = NPC_PERSONALITIES.filter(npc => 
-    !players.some(p => p.guest_token === `npc_${npc.id}`)
-  )
+  // Check if user is host - either marked as host OR is the first player (fallback)
+  const isMarkedAsHost = currentPlayer?.is_host || false
+  const isFirstPlayer = players.length > 0 && players.sort((a, b) => a.join_order - b.join_order)[0]?.id === playerId
+  const isHost = isMarkedAsHost || isFirstPlayer
+  
+  const hasMinimumPlayers = players.length >= 2
+  const allPlayersReady = hasMinimumPlayers && players.every(p => p.is_ready)
+  const canStart = isHost && allPlayersReady && !isStarting
 
+  // Load NPCs from database
+  useEffect(() => {
+    const loadNPCs = async () => {
+      try {
+        setLoadingNPCs(true)
+        const allNPCs = await enhancedNPCService.getAllNPCs()
+        // Filter out NPCs that are already in the room
+        const filteredNPCs = allNPCs.filter(npc => 
+          !players.some(p => p.guest_token === `npc_${npc.id}`)
+        )
+        setAvailableNPCs(filteredNPCs)
+      } catch (error) {
+        console.error('Error loading NPCs:', error)
+        toast({
+          title: "Failed to load AI players",
+          description: "Using fallback AI players.",
+          variant: "destructive"
+        })
+        // Fallback to empty array if database fails
+        setAvailableNPCs([])
+      } finally {
+        setLoadingNPCs(false)
+      }
+    }
+
+    loadNPCs()
+  }, [players, toast])
+
+  // Debug logging
+  console.log('🚀 WaitingRoom Debug:', {
+    playerId,
+    currentPlayer,
+    isMarkedAsHost,
+    isFirstPlayer,
+    isHost,
+    hasMinimumPlayers,
+    allPlayersReady,
+    canStart,
+    playersCount: players.length,
+    players: players.map(p => ({ id: p.id, name: p.player_name, isHost: p.is_host, isReady: p.is_ready, joinOrder: p.join_order }))
+  })
+  
   // Handle game start
   useEffect(() => {
     if (room?.room_status === 'in_progress') {
@@ -173,7 +226,7 @@ export function WaitingRoom({ roomId, playerId, onGameStart }: WaitingRoomProps)
     if (!room || !isHost) return
     
     const npcToAdd = npcId || selectedNPC
-    const npcData = NPC_PERSONALITIES.find(n => n.id === npcToAdd)
+    const npcData = availableNPCs.find(npc => npc.id === npcToAdd)
     
     if (!npcData) {
       toast({

@@ -7,6 +7,7 @@ import { ThemeToggle } from "./theme-toggle"
 import { UserMenu } from "./auth/user-menu"
 import { JoinRequestNotifications } from "./learning-pods/join-request-notifications"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
+import { LanguageSwitcher } from "./language-switcher"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 
@@ -64,7 +65,9 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
             <div className="flex items-center space-x-3 sm:space-x-5">
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-5">
-                <LearningPodsQuickActions variant="header" />
+                {/* Learning Pods Quick Actions - temporarily hidden until ready for public use */}
+                {/* <LearningPodsQuickActions variant="header" /> */}
+                <LanguageSwitcher variant="compact" />
                 <ThemeToggle />
                 {user && <JoinRequestNotifications />}
                 <UserMenu onSignInClick={onSignInClick} />
@@ -143,6 +146,8 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                   Categories
                 </Link>
 
+                {/* Multiplayer link - temporarily hidden until ready for public use */}
+                {/*
                 <Link 
                   href="/multiplayer"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -150,14 +155,18 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 >
                   🎮 Multiplayer
                 </Link>
+                */}
 
+                {/* Learning Pods link - temporarily hidden until ready for public use */}
+                {/*
                 <Link 
-                  href="/learning-pods-demo"
+                  href="/learning-pods"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
                 >
                   👥 Learning Pods
                 </Link>
+                */}
 
                 <Link 
                   href="/public-figures"
@@ -178,6 +187,16 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               
               {/* Divider */}
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                {/* Language Switcher - Mobile */}
+                <div className="mb-4">
+                  <div className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Language
+                  </div>
+                  <div className="px-3">
+                    <LanguageSwitcher variant="compact" />
+                  </div>
+                </div>
+                
                 {/* Authentication Links - Mobile Only */}
                 <div className="space-y-3">
                   {!user ? (

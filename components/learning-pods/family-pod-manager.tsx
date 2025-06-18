@@ -78,7 +78,6 @@ export function LearningPodManager() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [copiedJoinCode, setCopiedJoinCode] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
 
   // Create pod form state
   const [createForm, setCreateForm] = useState({
@@ -363,383 +362,357 @@ export function LearningPodManager() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
-        {/* Clean header with lots of whitespace */}
-        <div className="text-center space-y-6">
-          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            Learning Pods
-          </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-            Create safe learning spaces for families, friends, classrooms, campaigns, and organizations
-          </p>
-          {user && !showCreateForm && (
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-full px-8 py-3 h-12 font-light"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Pod
-            </Button>
-          )}
-        </div>
-
-        {/* Create Pod Form - Clean design */}
-        {user && showCreateForm && (
-          <div className="max-w-2xl mx-auto">
-            <Card className="border-0 shadow-sm bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader className="text-center pb-8">
-                <CardTitle className="text-2xl font-light text-slate-900 dark:text-white">
-                  Create New Pod
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Name</Label>
-                    <Input
-                      value={createForm.podName}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, podName: e.target.value }))}
-                      placeholder="Smith Family Learning Pod"
-                      className="border-0 bg-white dark:bg-slate-800 h-12 text-lg font-light"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Type</Label>
-                      <Select 
-                        value={createForm.podType} 
-                        onValueChange={(value) => setCreateForm(prev => ({ ...prev, podType: value as any }))}
-                      >
-                        <SelectTrigger className="border-0 bg-white dark:bg-slate-800 h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="family">👨‍👩‍👧‍👦 Family</SelectItem>
-                          <SelectItem value="friends">👥 Friends</SelectItem>
-                          <SelectItem value="classroom">🏫 Classroom</SelectItem>
-                          <SelectItem value="study_group">📚 Study Group</SelectItem>
-                          <SelectItem value="campaign">🗳️ Political Campaign</SelectItem>
-                          <SelectItem value="organization">🏢 Organization</SelectItem>
-                          <SelectItem value="book_club">📖 Book Club</SelectItem>
-                          <SelectItem value="debate_team">⚖️ Debate Team</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300 font-light">Content Filter</Label>
-                      <Select 
-                        value={createForm.contentFilterLevel} 
-                        onValueChange={(value) => setCreateForm(prev => ({ ...prev, contentFilterLevel: value as any }))}
-                      >
-                        <SelectTrigger className="border-0 bg-white dark:bg-slate-800 h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">🔓 None</SelectItem>
-                          <SelectItem value="light">🟡 Light</SelectItem>
-                          <SelectItem value="moderate">🔵 Moderate</SelectItem>
-                          <SelectItem value="strict">🟢 Strict</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {createForm.podType === 'family' && (
-                    <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300 font-light">Family Name</Label>
-                      <Input
-                        value={createForm.familyName}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, familyName: e.target.value }))}
-                        placeholder="The Smith Family"
-                        className="border-0 bg-white dark:bg-slate-800 h-12 font-light"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <Button 
-                    onClick={createPod}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white h-12 font-light"
-                  >
-                    Create Pod
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowCreateForm(false)}
-                    className="flex-1 h-12 font-light border-slate-200 dark:border-slate-700"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Pods List - Clean grid layout */}
-        {!user ? (
-          <div className="text-center py-24">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Shield className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Sign in required</h3>
-            <p className="text-slate-500 dark:text-slate-400 font-light mb-8 max-w-md mx-auto">
-              Learning pods are only available to authenticated users. Please sign in to create and manage your learning pods.
-            </p>
-          </div>
-        ) : pods.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No pods yet</h3>
-            <p className="text-slate-500 dark:text-slate-400 font-light mb-8 max-w-md mx-auto">
-              Create your first learning pod to start learning together safely
-            </p>
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-8 py-3 h-12 font-light"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Pod
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {/* Pods Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {pods.map((pod) => (
-                <Card 
-                  key={pod.id}
-                  className={cn(
-                    "cursor-pointer transition-all duration-200 hover:shadow-lg border-0 bg-slate-50 dark:bg-slate-900/50",
-                    selectedPod?.id === pod.id && "ring-2 ring-slate-900 dark:ring-white shadow-lg"
-                  )}
-                  onClick={() => setSelectedPod(pod)}
-                >
-                  <CardContent className="p-8">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl">{getPodTypeIcon(pod.pod_type)}</span>
-                        {pod.is_admin && <Crown className="h-4 w-4 text-yellow-500" />}
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-medium text-slate-900 dark:text-white text-lg">
-                          {pod.pod_name}
-                        </h3>
-                        {pod.family_name && (
-                          <p className="text-slate-500 dark:text-slate-400 font-light">
-                            {pod.family_name}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 dark:text-slate-400 font-light">
-                          {pod.member_count} member{pod.member_count !== 1 ? 's' : ''}
-                        </span>
-                        <Badge className={cn(getFilterLevelColor(pod.content_filter_level), "border-0")}>
-                          {pod.content_filter_level}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Selected Pod Details */}
-            {selectedPod && (
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-12">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <span className="text-3xl">{getPodTypeIcon(selectedPod.pod_type)}</span>
-                    <h2 className="text-3xl font-light text-slate-900 dark:text-white">
-                      {selectedPod.pod_name}
-                    </h2>
-                  </div>
-                  {selectedPod.family_name && (
-                    <p className="text-lg text-slate-500 dark:text-slate-400 font-light">
-                      {selectedPod.family_name}
-                    </p>
-                  )}
-                </div>
-
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-12 bg-slate-100 dark:bg-slate-800 h-12">
-                    <TabsTrigger value="overview" className="font-light">Overview</TabsTrigger>
-                    <TabsTrigger value="analytics" className="font-light">Analytics</TabsTrigger>
-                    <TabsTrigger value="sharing" className="font-light">Sharing</TabsTrigger>
-                    <TabsTrigger value="settings" className="font-light">Settings</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="overview" className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                      <div className="space-y-2">
-                        <div className="text-3xl font-light text-slate-900 dark:text-white">
-                          {selectedPod.member_count}
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 font-light">Members</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="text-3xl font-light text-slate-900 dark:text-white">
-                          {selectedPod.content_filter_level}
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 font-light">Filter Level</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="text-3xl font-light text-slate-900 dark:text-white">
-                          {selectedPod.user_role}
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 font-light">Your Role</p>
-                      </div>
-                    </div>
-
-                    {selectedPod.is_admin && (
-                      <div className="text-center">
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label className="text-slate-700 dark:text-slate-300 font-light">Join Code</Label>
-                            <div className="flex items-center justify-center gap-4">
-                              <code className="px-6 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-lg tracking-wider">
-                                {selectedPod.join_code}
-                              </code>
-                              <Button
-                                variant="outline"
-                                onClick={() => copyToClipboard(selectedPod.join_code, 'Join code')}
-                                className="h-12 border-slate-200 dark:border-slate-700"
-                              >
-                                {copiedJoinCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                              </Button>
-                            </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
-                              Share this code to invite group members
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="analytics">
-                    <PodAnalytics podId={selectedPod.id} />
-                  </TabsContent>
-
-                  <TabsContent value="sharing" className="space-y-8">
-                    <div className="text-center space-y-6">
-                      <h3 className="text-2xl font-light text-slate-900 dark:text-white">
-                        Share Your Pod
-                      </h3>
-                      <p className="text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-                        Invite friends and family to join your learning pod
-                      </p>
-                    </div>
-
-                    {selectedPod.is_admin && (
-                      <div className="space-y-8">
-                        {/* Create Invite Link */}
-                        <div className="text-center">
-                          <Button
-                            onClick={createInviteLink}
-                            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-8 py-3 h-12 font-light"
-                          >
-                            <LinkIcon className="h-4 w-4 mr-2" />
-                            Create Invite Link
-                          </Button>
-                        </div>
-
-                        {/* Existing Invite Links */}
-                        {inviteLinks.length > 0 && (
-                          <div className="space-y-6">
-                            <h4 className="text-lg font-light text-slate-900 dark:text-white text-center">
-                              Active Invite Links
-                            </h4>
-                            <div className="space-y-4">
-                              {inviteLinks.map((link) => (
-                                <Card key={link.id} className="border-0 bg-slate-50 dark:bg-slate-900/50">
-                                  <CardContent className="p-6">
-                                    <div className="space-y-4">
-                                      <div className="flex items-center justify-between">
-                                        <div>
-                                          <p className="font-medium text-slate-900 dark:text-white">
-                                            {link.description}
-                                          </p>
-                                          <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
-                                            {link.current_uses} uses • Expires {new Date(link.expires_at).toLocaleDateString()}
-                                          </p>
-                                        </div>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => copyToClipboard(link.invite_url, 'Invite link')}
-                                          className="border-slate-200 dark:border-slate-700"
-                                        >
-                                          <Copy className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-
-                                      {/* Social Sharing Buttons */}
-                                      <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => shareViaEmail(link.invite_url, selectedPod.pod_name)}
-                                          className="border-slate-200 dark:border-slate-700"
-                                        >
-                                          <Mail className="h-4 w-4 mr-1" />
-                                          Email
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => shareViaTwitter(link.invite_url, selectedPod.pod_name)}
-                                          className="border-slate-200 dark:border-slate-700"
-                                        >
-                                          <Twitter className="h-4 w-4 mr-1" />
-                                          Twitter
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => shareViaFacebook(link.invite_url)}
-                                          className="border-slate-200 dark:border-slate-700"
-                                        >
-                                          <Facebook className="h-4 w-4 mr-1" />
-                                          Facebook
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="settings" className="space-y-8">
-                    <div className="text-center py-12">
-                      <Settings className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-500 dark:text-slate-400 font-light">
-                        Pod settings coming soon!
-                      </p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-          </div>
+    <div className="space-y-12">
+      {/* Clean header with lots of whitespace */}
+      <div className="text-center space-y-6">
+        <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
+          My Learning Pods
+        </h2>
+        <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+          Create and manage safe learning spaces for families, friends, classrooms, and organizations
+        </p>
+        {user && !showCreateForm && (
+          <Button 
+            onClick={() => setShowCreateForm(true)}
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-full px-8 py-3 h-12 font-light"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Pod
+          </Button>
         )}
       </div>
+
+      {/* Create Pod Form - Clean design */}
+      {user && showCreateForm && (
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-0 shadow-sm bg-slate-50 dark:bg-slate-900/50">
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-2xl font-light text-slate-900 dark:text-white">
+                Create New Pod
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Name</Label>
+                  <Input
+                    value={createForm.podName}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, podName: e.target.value }))}
+                    placeholder="Smith Family Learning Pod"
+                    className="border-0 bg-white dark:bg-slate-800 h-12 text-lg font-light"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Type</Label>
+                    <Select 
+                      value={createForm.podType} 
+                      onValueChange={(value) => setCreateForm(prev => ({ ...prev, podType: value as any }))}
+                    >
+                      <SelectTrigger className="border-0 bg-white dark:bg-slate-800 h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="family">👨‍👩‍👧‍👦 Family</SelectItem>
+                        <SelectItem value="friends">👥 Friends</SelectItem>
+                        <SelectItem value="classroom">🏫 Classroom</SelectItem>
+                        <SelectItem value="study_group">📚 Study Group</SelectItem>
+                        <SelectItem value="campaign">🗳️ Political Campaign</SelectItem>
+                        <SelectItem value="organization">🏢 Organization</SelectItem>
+                        <SelectItem value="book_club">📖 Book Club</SelectItem>
+                        <SelectItem value="debate_team">⚖️ Debate Team</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 dark:text-slate-300 font-light">Content Filter</Label>
+                    <Select 
+                      value={createForm.contentFilterLevel} 
+                      onValueChange={(value) => setCreateForm(prev => ({ ...prev, contentFilterLevel: value as any }))}
+                    >
+                      <SelectTrigger className="border-0 bg-white dark:bg-slate-800 h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">🔓 None</SelectItem>
+                        <SelectItem value="light">🟡 Light</SelectItem>
+                        <SelectItem value="moderate">🔵 Moderate</SelectItem>
+                        <SelectItem value="strict">🟢 Strict</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {createForm.podType === 'family' && (
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 dark:text-slate-300 font-light">Family Name</Label>
+                    <Input
+                      value={createForm.familyName}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, familyName: e.target.value }))}
+                      placeholder="The Smith Family"
+                      className="border-0 bg-white dark:bg-slate-800 h-12 font-light"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button 
+                  onClick={createPod}
+                  className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white h-12 font-light"
+                >
+                  Create Pod
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 h-12 font-light border-slate-200 dark:border-slate-700"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Pods List - Clean grid layout */}
+      {!user ? (
+        <div className="text-center py-24">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="h-8 w-8 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Sign in required</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-light mb-8 max-w-md mx-auto">
+            Learning pods are only available to authenticated users. Please sign in to create and manage your learning pods.
+          </p>
+        </div>
+      ) : pods.length === 0 ? (
+        <div className="text-center py-24">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Users className="h-8 w-8 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No pods yet</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-light mb-8 max-w-md mx-auto">
+            Create your first learning pod to start learning together safely
+          </p>
+          <Button 
+            onClick={() => setShowCreateForm(true)}
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-8 py-3 h-12 font-light"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Your First Pod
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-12">
+          {/* Pods Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {pods.map((pod) => (
+              <Card 
+                key={pod.id}
+                className={cn(
+                  "cursor-pointer transition-all duration-200 hover:shadow-lg border-0 bg-slate-50 dark:bg-slate-900/50",
+                  selectedPod?.id === pod.id && "ring-2 ring-slate-900 dark:ring-white shadow-lg"
+                )}
+                onClick={() => setSelectedPod(pod)}
+              >
+                <CardContent className="p-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl">{getPodTypeIcon(pod.pod_type)}</span>
+                      {pod.is_admin && <Crown className="h-4 w-4 text-yellow-500" />}
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium text-slate-900 dark:text-white text-lg">
+                        {pod.pod_name}
+                      </h3>
+                      {pod.family_name && (
+                        <p className="text-slate-500 dark:text-slate-400 font-light">
+                          {pod.family_name}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400 font-light">
+                        {pod.member_count} member{pod.member_count !== 1 ? 's' : ''}
+                      </span>
+                      <Badge className={cn(getFilterLevelColor(pod.content_filter_level), "border-0")}>
+                        {pod.content_filter_level}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Selected Pod Details */}
+          {selectedPod && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <span className="text-3xl">{getPodTypeIcon(selectedPod.pod_type)}</span>
+                  <h2 className="text-3xl font-light text-slate-900 dark:text-white">
+                    {selectedPod.pod_name}
+                  </h2>
+                </div>
+                {selectedPod.family_name && (
+                  <p className="text-lg text-slate-500 dark:text-slate-400 font-light">
+                    {selectedPod.family_name}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                  <div className="space-y-2">
+                    <div className="text-3xl font-light text-slate-900 dark:text-white">
+                      {selectedPod.member_count}
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-light">Members</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-3xl font-light text-slate-900 dark:text-white">
+                      {selectedPod.content_filter_level}
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-light">Filter Level</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-3xl font-light text-slate-900 dark:text-white">
+                      {selectedPod.user_role}
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-light">Your Role</p>
+                  </div>
+                </div>
+
+                {selectedPod.is_admin && (
+                  <div className="text-center">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-slate-700 dark:text-slate-300 font-light">Join Code</Label>
+                        <div className="flex items-center justify-center gap-4">
+                          <code className="px-6 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-lg tracking-wider">
+                            {selectedPod.join_code}
+                          </code>
+                          <Button
+                            variant="outline"
+                            onClick={() => copyToClipboard(selectedPod.join_code, 'Join code')}
+                            className="h-12 border-slate-200 dark:border-slate-700"
+                          >
+                            {copiedJoinCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
+                          Share this code to invite group members
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center space-y-6">
+                  <h3 className="text-2xl font-light text-slate-900 dark:text-white">
+                    Share Your Pod
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+                    Invite friends and family to join your learning pod
+                  </p>
+                </div>
+
+                {selectedPod.is_admin && (
+                  <div className="space-y-8">
+                    {/* Create Invite Link */}
+                    <div className="text-center">
+                      <Button
+                        onClick={createInviteLink}
+                        className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-8 py-3 h-12 font-light"
+                      >
+                        <LinkIcon className="h-4 w-4 mr-2" />
+                        Create Invite Link
+                      </Button>
+                    </div>
+
+                    {/* Existing Invite Links */}
+                    {inviteLinks.length > 0 && (
+                      <div className="space-y-6">
+                        <h4 className="text-lg font-light text-slate-900 dark:text-white text-center">
+                          Active Invite Links
+                        </h4>
+                        <div className="space-y-4">
+                          {inviteLinks.map((link) => (
+                            <Card key={link.id} className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                              <CardContent className="p-6">
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium text-slate-900 dark:text-white">
+                                        {link.description}
+                                      </p>
+                                      <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
+                                        {link.current_uses} uses • Expires {new Date(link.expires_at).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => copyToClipboard(link.invite_url, 'Invite link')}
+                                      className="border-slate-200 dark:border-slate-700"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+
+                                  {/* Social Sharing Buttons */}
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => shareViaEmail(link.invite_url, selectedPod.pod_name)}
+                                      className="border-slate-200 dark:border-slate-700"
+                                    >
+                                      <Mail className="h-4 w-4 mr-1" />
+                                      Email
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => shareViaTwitter(link.invite_url, selectedPod.pod_name)}
+                                      className="border-slate-200 dark:border-slate-700"
+                                    >
+                                      <Twitter className="h-4 w-4 mr-1" />
+                                      Twitter
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => shareViaFacebook(link.invite_url)}
+                                      className="border-slate-200 dark:border-slate-700"
+                                    >
+                                      <Facebook className="h-4 w-4 mr-1" />
+                                      Facebook
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 } 

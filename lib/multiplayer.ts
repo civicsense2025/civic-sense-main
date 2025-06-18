@@ -321,67 +321,120 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
   const [room, setRoom] = useState<MultiplayerRoom | null>(null)
   const [players, setPlayers] = useState<MultiplayerPlayer[]>([])
   const [gameEvents, setGameEvents] = useState<MultiplayerGameEvent[]>([])
-  const [isLoading, setIsLoading] = useState(!!roomIdOrCode) // Start loading if we have a room code/ID
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
   const [actualRoomId, setActualRoomId] = useState<string | null>(null)
 
-  // Load initial room data
-  useEffect(() => {
-    if (!roomIdOrCode) return
+  console.log('🏠 useMultiplayerRoom - Hook called with roomIdOrCode:', roomIdOrCode)
+  console.log('🏠 useMultiplayerRoom - Current state:', { isLoading, room: !!room, error })
 
-    const loadRoomData = async () => {
+  // Memoize the room loading function to prevent infinite calls
+  const loadRoomData = useCallback(async (roomCode: string) => {
+    console.log('🏠 useMultiplayerRoom - Starting to load room data...')
+    
+    try {
       setIsLoading(true)
       setError(null)
+      
+      console.log('🏠 useMultiplayerRoom - Querying for room:', roomCode)
+      
+      let roomResult: any
+      let roomId: string
 
-      try {
-        let roomResult: any
-        let roomId: string
-
-        // Check if input looks like a UUID (36 chars with dashes) or room code (shorter)
-        if (roomIdOrCode.length === 36 && roomIdOrCode.includes('-')) {
-          // It's a UUID room ID
-          roomId = roomIdOrCode
-          roomResult = await supabase.from('multiplayer_rooms').select('*').eq('id', roomId).single()
+      // Check if it's a UUID or room code
+      if (roomCode.length === 36 && roomCode.includes('-')) {
+        console.log('🏠 useMultiplayerRoom - Querying by room ID (UUID)')
+        roomId = roomCode
+        roomResult = await supabase.from('multiplayer_rooms').select('*').eq('id', roomId).single()
+      } else {
+        console.log('🏠 useMultiplayerRoom - Querying by room code')
+        roomResult = await supabase.from('multiplayer_rooms').select('*').eq('room_code', roomCode.toUpperCase()).single()
+        if (roomResult.data) {
+          roomId = roomResult.data.id
         } else {
-          // It's a room code
-          roomResult = await supabase.from('multiplayer_rooms').select('*').eq('room_code', roomIdOrCode.toUpperCase()).single()
-          if (roomResult.data) {
-            roomId = roomResult.data.id
-          } else {
-            throw new Error('Room not found')
-          }
+          throw new Error('Room not found')
         }
-
-        if (roomResult.error) throw roomResult.error
-
-        setActualRoomId(roomId)
-        setRoom(roomResult.data as MultiplayerRoom)
-
-        // Load players using the actual room ID
-        const playersResult = await supabase
-          .from('multiplayer_room_players')
-          .select('*')
-          .eq('room_id', roomId)
-          .order('join_order')
-
-        if (playersResult.error) throw playersResult.error
-        setPlayers(playersResult.data as MultiplayerPlayer[])
-
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load room data')
-      } finally {
-        setIsLoading(false)
       }
+
+      if (roomResult.error) {
+        console.error('🏠 useMultiplayerRoom - Room query failed:', roomResult.error)
+        throw roomResult.error
+      }
+
+      console.log('🏠 useMultiplayerRoom - Room found:', {
+        id: roomResult.data.id,
+        code: roomResult.data.room_code,
+        status: roomResult.data.room_status
+      })
+
+      // Load players
+      console.log('🏠 useMultiplayerRoom - Loading players...')
+      const playersResult = await supabase
+        .from('multiplayer_room_players')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('join_order')
+
+      if (playersResult.error) {
+        console.error('🏠 useMultiplayerRoom - Players query failed:', playersResult.error)
+        throw playersResult.error
+      }
+
+      console.log('🏠 useMultiplayerRoom - Players loaded:', playersResult.data.length)
+
+      // Update state
+      setActualRoomId(roomId)
+      setRoom(roomResult.data as MultiplayerRoom)
+      setPlayers(playersResult.data as MultiplayerPlayer[])
+      setError(null)
+      console.log('🏠 useMultiplayerRoom - ✅ Room data loaded successfully!')
+      
+    } catch (err) {
+      console.error('🏠 useMultiplayerRoom - ❌ Error loading room:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load room')
+      setRoom(null)
+      setPlayers([])
+      setActualRoomId(null)
+    } finally {
+      console.log('🏠 useMultiplayerRoom - Setting isLoading to false')
+      setIsLoading(false)
+    }
+  }, []) // Empty dependency array - this function should be stable
+
+  // Load initial room data - with proper dependency management
+  useEffect(() => {
+    console.log('🏠 useMultiplayerRoom - ✅ useEffect TRIGGERED!!! roomIdOrCode:', roomIdOrCode)
+    
+    // If no room code, reset everything
+    if (!roomIdOrCode) {
+      console.log('🏠 useMultiplayerRoom - No roomIdOrCode, resetting state')
+      setRoom(null)
+      setPlayers([])
+      setError(null)
+      setActualRoomId(null)
+      setIsLoading(false)
+      return
     }
 
-    loadRoomData()
-  }, [roomIdOrCode])
+    // Call the memoized function
+    loadRoomData(roomIdOrCode)
+  }, [roomIdOrCode, loadRoomData]) // Only depend on roomIdOrCode and the memoized function
 
-  // Set up real-time subscriptions
+  console.log('🏠 useMultiplayerRoom - After useEffect setup, current state:', { 
+    room: room ? 'loaded' : 'null', 
+    isLoading, 
+    error
+  })
+
+  // Set up real-time subscriptions - separate effect with proper cleanup
   useEffect(() => {
-    if (!actualRoomId) return
+    if (!actualRoomId) {
+      console.log('🏠 useMultiplayerRoom - No actual room ID, skipping realtime setup')
+      return
+    }
 
+    console.log('🏠 useMultiplayerRoom - Setting up realtime subscriptions for room:', actualRoomId)
     const newChannel = supabase.channel(`multiplayer_room:${actualRoomId}`)
 
     // Subscribe to room changes
@@ -394,6 +447,7 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `id=eq.${actualRoomId}`
       },
       (payload) => {
+        console.log('🏠 useMultiplayerRoom - Room change received:', payload.eventType)
         if (payload.eventType === 'UPDATE') {
           setRoom(payload.new as MultiplayerRoom)
         }
@@ -410,6 +464,7 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `room_id=eq.${actualRoomId}`
       },
       (payload) => {
+        console.log('🏠 useMultiplayerRoom - Player change received:', payload.eventType)
         if (payload.eventType === 'INSERT') {
           setPlayers(prev => [...prev, payload.new as MultiplayerPlayer].sort((a, b) => a.join_order - b.join_order))
         } else if (payload.eventType === 'UPDATE') {
@@ -430,6 +485,7 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `room_id=eq.${actualRoomId}`
       },
       (payload) => {
+        console.log('🏠 useMultiplayerRoom - Game event received:', payload.new)
         setGameEvents(prev => [...prev, payload.new as MultiplayerGameEvent])
       }
     )
@@ -438,9 +494,10 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
     setChannel(newChannel)
 
     return () => {
+      console.log('🏠 useMultiplayerRoom - Cleaning up realtime subscriptions')
       newChannel.unsubscribe()
     }
-  }, [actualRoomId])
+  }, [actualRoomId]) // Only depend on actualRoomId
 
   const updatePlayerReady = useCallback(async (playerId: string, isReady: boolean) => {
     if (!actualRoomId) return
@@ -561,7 +618,7 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Avoid confusing characters
   let result = ''
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result

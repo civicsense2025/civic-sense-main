@@ -13,6 +13,12 @@ export default async function MultiplayerQuizPage({ params, searchParams }: Page
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
   
+  console.log('🏗️ MultiplayerQuizPage - Server resolved params:', {
+    topicId: resolvedParams.topicId,
+    room: resolvedSearchParams.room,
+    player: resolvedSearchParams.player
+  })
+  
   return (
     <Suspense fallback={
       <div className="flex justify-center items-center min-h-[50vh] p-4">

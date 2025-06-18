@@ -219,13 +219,13 @@ export function LearningPodsDashboard() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white">
-              <Link href="/learning-pods-demo">
+              <Link href="/learning-pods">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Pod
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/learning-pods-demo">
+              <Link href="/learning-pods">
                 Discover Pods
               </Link>
             </Button>
@@ -308,7 +308,7 @@ export function LearningPodsDashboard() {
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-light text-slate-900 dark:text-white">Your Learning Pods</h3>
           <Button asChild variant="outline" size="sm">
-            <Link href="/learning-pods-demo">
+            <Link href="/learning-pods">
               <Settings className="h-4 w-4 mr-2" />
               Manage All
             </Link>
@@ -363,7 +363,7 @@ export function LearningPodsDashboard() {
                         </Badge>
                       )}
                       <Button size="sm" variant="ghost" asChild>
-                        <Link href="/learning-pods-demo">
+                        <Link href="/learning-pods">
                           <ArrowRight className="h-3 w-3" />
                         </Link>
                       </Button>
@@ -378,7 +378,7 @@ export function LearningPodsDashboard() {
         {pods.length > 4 && (
           <div className="text-center">
             <Button variant="outline" asChild>
-              <Link href="/learning-pods-demo">
+              <Link href="/learning-pods">
                 View All {pods.length} Pods
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
@@ -401,19 +401,19 @@ export function LearningPodsDashboard() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white">
-                <Link href="/learning-pods-demo">
+                <Link href="/learning-pods">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Pod
                 </Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/learning-pods-demo">
+                <Link href="/learning-pods">
                   <Share2 className="h-4 w-4 mr-2" />
                   Discover Pods
                 </Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/learning-pods-demo">
+                <Link href="/learning-pods">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   View Analytics
                 </Link>

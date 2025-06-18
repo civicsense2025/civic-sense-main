@@ -95,7 +95,10 @@ export class EnhancedNPCService {
    * Generate dynamic NPC conversation using OpenAI 4o
    */
   async generateNPCMessage(context: NPCConversationContext): Promise<NPCResponse> {
-    const npc = NPC_PERSONALITIES.find(n => n.id === context.npcId)
+    // Get NPCs from database instead of hardcoded array
+    const allNpcs = await this.getAllNPCs()
+    const npc = allNpcs.find(n => n.id === context.npcId)
+    
     if (!npc) {
       throw new Error(`NPC not found: ${context.npcId}`)
     }
@@ -391,8 +394,136 @@ Response format: Just the message content, no quotes or formatting.`
   // EXISTING METHODS (Updated for compatibility)
   // =============================================================================
 
+  /**
+   * Get all NPCs from database instead of hardcoded array
+   */
   async getAllNPCs(): Promise<NPCPersonality[]> {
-    return NPC_PERSONALITIES
+    try {
+      const { data: npcs, error } = await supabase
+        .from('npc_personalities')
+        .select(`
+          *,
+          npc_category_specializations (
+            category,
+            specialization_type,
+            modifier_percentage,
+            confidence_modifier
+          )
+        `)
+        .eq('is_active', true)
+
+      if (error) {
+        console.error('Error fetching NPCs from database:', error)
+        // Fallback to hardcoded NPCs if database fails
+        return NPC_PERSONALITIES
+      }
+
+      if (!npcs || npcs.length === 0) {
+        console.warn('No NPCs found in database, using fallback')
+        return NPC_PERSONALITIES
+      }
+
+      // Convert database NPCs to NPCPersonality format
+      return npcs.map(npc => this.convertDatabaseNPCToPersonality(npc))
+    } catch (error) {
+      console.error('Error in getAllNPCs:', error)
+      // Fallback to hardcoded NPCs if anything fails
+      return NPC_PERSONALITIES
+    }
+  }
+
+  /**
+   * Convert database NPC record to NPCPersonality format
+   */
+  private convertDatabaseNPCToPersonality(dbNpc: any): NPCPersonality {
+    // Convert specializations to the expected format
+    const specialties: string[] = []
+    const weaknesses: string[] = []
+    
+    if (dbNpc.npc_category_specializations) {
+      dbNpc.npc_category_specializations.forEach((spec: any) => {
+        if (spec.specialization_type === 'strength') {
+          specialties.push(spec.category)
+        } else if (spec.specialization_type === 'weakness') {
+          weaknesses.push(spec.category)
+        }
+      })
+    }
+
+    // Generate chat messages based on personality
+    const chatMessages = this.generateChatMessagesForNPC(dbNpc)
+
+    return {
+      id: dbNpc.npc_code,
+      name: dbNpc.display_name,
+      emoji: dbNpc.emoji || '🤖',
+      description: dbNpc.description || 'A helpful civic learning companion',
+      skillLevel: dbNpc.base_skill_level as 'beginner' | 'intermediate' | 'advanced' | 'expert',
+      accuracyRange: [dbNpc.base_accuracy_min, dbNpc.base_accuracy_max],
+      responseTimeRange: [dbNpc.response_time_min, dbNpc.response_time_max],
+      traits: {
+        confidenceLevel: dbNpc.confidence_level,
+        consistency: dbNpc.consistency_factor,
+        specialties,
+        weaknesses
+      },
+      chatMessages
+    }
+  }
+
+  /**
+   * Generate appropriate chat messages based on NPC personality
+   */
+  private generateChatMessagesForNPC(dbNpc: any): NPCPersonality['chatMessages'] {
+    const name = dbNpc.first_name || dbNpc.display_name
+    const profession = dbNpc.profession || 'civic learner'
+    const style = dbNpc.communication_style || 'conversational'
+    
+    // Base messages that work for any NPC
+    const baseMessages = {
+      onJoin: [
+        `Hi everyone! ${name} here, ready to learn some civics! ${dbNpc.emoji}`,
+        `Hey! Looking forward to this quiz - ${profession} perspective here!`,
+        `${name} joining in! Let's see what we can learn together.`
+      ],
+      onCorrect: [
+        `Nice work! That's exactly right.`,
+        `Great answer! I learned something too.`,
+        `Excellent! You really know your stuff.`
+      ],
+      onIncorrect: [
+        `No worries, that's a tricky one!`,
+        `I've gotten that wrong before too.`,
+        `These questions can be really challenging.`
+      ],
+      onGameStart: [
+        `Let's do this! Ready to learn.`,
+        `Game time! May the best civic knowledge win.`,
+        `Here we go! Good luck everyone.`
+      ],
+      onGameEnd: [
+        `Great game everyone! Learned a lot.`,
+        `Thanks for playing! That was educational.`,
+        `Fun quiz! Always good to brush up on civics.`
+      ]
+    }
+
+    // Customize based on personality traits
+    if (style === 'formal' || dbNpc.profession?.includes('Judge') || dbNpc.profession?.includes('Professor')) {
+      baseMessages.onJoin = [
+        `Good day. ${name} here, pleased to participate in this educational exercise.`,
+        `Greetings. I look forward to a substantive discussion of civic matters.`,
+        `Hello everyone. ${name}, ${profession}. Shall we begin?`
+      ]
+    } else if (style === 'casual' || dbNpc.age_range?.startsWith('18-') || dbNpc.profession?.includes('Student')) {
+      baseMessages.onJoin = [
+        `Hey everyone! ${name} here - let's crush this quiz! ${dbNpc.emoji}`,
+        `What's up! Ready to learn some cool civic stuff!`,
+        `Hi hi! ${name} in the house! This is gonna be fun!`
+      ]
+    }
+
+    return baseMessages
   }
 
   async getNPCsByFilter(filters: {
@@ -400,7 +531,9 @@ Response format: Just the message content, no quotes or formatting.`
     personalityType?: string[]
     count?: number
   }): Promise<NPCPersonality[]> {
-    let filtered = NPC_PERSONALITIES
+    // Get NPCs from database instead of hardcoded array
+    const allNpcs = await this.getAllNPCs()
+    let filtered = allNpcs
 
     if (filters.skillLevel && filters.skillLevel.length > 0) {
       filtered = filtered.filter(npc => filters.skillLevel!.includes(npc.skillLevel))
@@ -449,7 +582,10 @@ Response format: Just the message content, no quotes or formatting.`
     confidence: number
     reasoning: string
   }> {
-    const npc = NPC_PERSONALITIES.find(n => n.id === npcId)
+    // Get NPCs from database instead of hardcoded array
+    const allNpcs = await this.getAllNPCs()
+    const npc = allNpcs.find(n => n.id === npcId)
+    
     if (!npc) {
       throw new Error('NPC not found')
     }
@@ -510,8 +646,11 @@ Response format: Just the message content, no quotes or formatting.`
    * Get NPC vs Human analytics (simplified)
    */
   async getNPCVsHumanAnalytics(): Promise<NPCPerformanceStats[]> {
+    // Get NPCs from database instead of hardcoded array
+    const allNpcs = await this.getAllNPCs()
+    
     // Return mock data for now
-    return NPC_PERSONALITIES.map(npc => ({
+    return allNpcs.map(npc => ({
       npcCode: npc.id,
       displayName: npc.name,
       personalityType: npc.description.includes('scholar') ? 'scholar' : 
@@ -539,6 +678,9 @@ Response format: Just the message content, no quotes or formatting.`
       improvementSuggestion: string
     }[]>
   }> {
+    // Get NPCs from database instead of hardcoded array
+    const allNpcs = await this.getAllNPCs()
+    
     // Return mock comparison data
     const userStats: Record<string, { accuracy: number; totalQuizzes: number }> = {}
     const npcComparisons: Record<string, any[]> = {}
@@ -549,7 +691,7 @@ Response format: Just the message content, no quotes or formatting.`
         totalQuizzes: Math.floor(Math.random() * 20) + 5
       }
 
-      npcComparisons[category] = NPC_PERSONALITIES.slice(0, 3).map(npc => {
+      npcComparisons[category] = allNpcs.slice(0, 3).map(npc => {
         const npcAccuracy = (npc.accuracyRange[0] + npc.accuracyRange[1]) / 2
         const userAccuracy = userStats[category].accuracy
         

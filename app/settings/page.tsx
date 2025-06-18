@@ -25,6 +25,7 @@ import {
   RefreshCw, Play
 } from "lucide-react"
 import { EducationalAccessChecker } from "@/components/educational-access-checker"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 import Link from "next/link"
@@ -461,6 +462,13 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   </div>
+                </div>
+
+                <Separator />
+
+                {/* Language Settings */}
+                <div className="space-y-4">
+                  <LanguageSwitcher variant="full" />
                 </div>
 
                 <Separator />

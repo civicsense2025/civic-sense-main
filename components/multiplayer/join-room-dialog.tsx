@@ -121,7 +121,7 @@ export function JoinRoomDialog({ children }: JoinRoomDialogProps) {
               id="roomCode"
               value={roomCode}
               onChange={(e) => handleRoomCodeChange(e.target.value)}
-              placeholder="Enter 6-8 character room code"
+              placeholder="Enter 8-character room code"
               className="mt-1 text-center text-lg font-mono tracking-wider uppercase"
               maxLength={8}
             />

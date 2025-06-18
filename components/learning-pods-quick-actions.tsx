@@ -92,7 +92,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
     return (
       <div className={cn("flex items-center", className)}>
         <Button asChild variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-          <Link href="/learning-pods-demo">
+          <Link href="/learning-pods">
             <Users className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Pods</span>
           </Link>
@@ -106,7 +106,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
       <div className={cn("flex items-center space-x-2", className)}>
         {/* Pods Button with Count */}
         <Button asChild variant="ghost" size="sm" className="relative text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-          <Link href="/learning-pods-demo">
+          <Link href="/learning-pods">
             <Users className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Pods</span>
             {stats.totalPods > 0 && (
@@ -132,7 +132,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
         {/* Quick Create (Admin Only) */}
         {stats.userRole === 'admin' && (
           <Button asChild variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-            <Link href="/learning-pods-demo">
+            <Link href="/learning-pods">
               <Plus className="h-4 w-4" />
               <span className="sr-only">Create Pod</span>
             </Link>
@@ -192,7 +192,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
       {/* Quick Actions */}
       <div className="flex space-x-2">
         <Button asChild size="sm" className="flex-1">
-          <Link href="/learning-pods-demo">
+          <Link href="/learning-pods">
             <Search className="h-4 w-4 mr-2" />
             Discover
           </Link>
@@ -200,7 +200,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
         
         {stats.userRole === 'admin' && (
           <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link href="/learning-pods-demo">
+            <Link href="/learning-pods">
               <Plus className="h-4 w-4 mr-2" />
               Create
             </Link>

@@ -391,8 +391,8 @@ export function TopicInfo({
     <div className="flex flex-col h-full px-4 sm:px-8 py-8">
       {/* Quiz Buttons (positioned at the top right) */}
       <div className="flex justify-end gap-3 mb-6">
-        {/* Multiplayer Options */}
-        {hasQuestions && !isCheckingQuestions && (
+        {/* Multiplayer Options - Temporarily hidden until ready for public use */}
+        {/* {hasQuestions && !isCheckingQuestions && (
           <>
             <CreateRoomDialog topicId={topicData.topic_id} topicTitle={topicData.topic_title}>
               <Button variant="outline" className="flex items-center gap-2">
@@ -408,7 +408,7 @@ export function TopicInfo({
               </Button>
             </JoinRoomDialog>
           </>
-        )}
+        )} */}
 
         {/* Single Player Quiz Button */}
         <TooltipProvider>

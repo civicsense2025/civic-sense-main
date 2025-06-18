@@ -247,10 +247,12 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
           </div>
         )}
 
-        {/* Learning Pods Section */}
+        {/* Learning Pods Section - temporarily hidden until ready for public use */}
+        {/*
         <div className="p-5 border-b border-slate-200 dark:border-slate-700">
           <LearningPodsStats compact={true} />
         </div>
+        */}
 
         {/* Menu Items */}
         <div className="py-3">
@@ -264,15 +266,18 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
             </Link>
           </DropdownMenuItem>
           
+          {/* Learning Pods menu item - temporarily hidden until ready for public use */}
+          {/*
           <DropdownMenuItem asChild>
             <Link 
-              href="/learning-pods-demo" 
+              href="/learning-pods" 
               className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
             >
               <Users className="w-4 h-4" />
               <span>Learning Pods</span>
             </Link>
           </DropdownMenuItem>
+          */}
 
           <DropdownMenuItem asChild>
             <Link 

@@ -206,6 +206,11 @@ export function SocialProofBubble({
         const response = await fetch(`/api/question-stats/${questionId}?${params.toString()}`)
         
         if (!response.ok) {
+          // If it's a 404, that just means no stats are available yet (which is normal)
+          if (response.status === 404) {
+            setStats(null)
+            return
+          }
           throw new Error('Failed to fetch question stats')
         }
 
@@ -295,6 +300,11 @@ export function useSocialProofStats(questionId: string, assessmentType?: 'onboar
         const response = await fetch(`/api/question-stats/${questionId}?${params.toString()}`)
         
         if (!response.ok) {
+          // If it's a 404, that just means no stats are available yet (which is normal)
+          if (response.status === 404) {
+            setStats(null)
+            return
+          }
           throw new Error('Failed to fetch question stats')
         }
 
