@@ -430,6 +430,10 @@ export function DailyCardStack({
   const supabaseClientRef = useRef<any>(null)
   const [trendingQueries, setTrendingQueries] = useState<string[]>([])
   const prevIndexRef = useRef(0)
+  
+  // Touch/swipe handling for mobile
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+  const touchEndRef = useRef<{ x: number; y: number; time: number } | null>(null)
 
   // Debounce dropdown search
   useEffect(() => {
@@ -519,6 +523,53 @@ export function DailyCardStack({
     setCurrentStackIndex(index)
     updateUrlWithTopic(index)
   }, [updateUrlWithTopic])
+
+  // Touch event handlers for mobile swiping
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return
+    
+    const touch = e.changedTouches[0]
+    touchEndRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    }
+    
+    const deltaX = touchEndRef.current.x - touchStartRef.current.x
+    const deltaY = touchEndRef.current.y - touchStartRef.current.y
+    const deltaTime = touchEndRef.current.time - touchStartRef.current.time
+    
+    // Only process swipes that are:
+    // - Primarily horizontal (more horizontal than vertical movement)
+    // - Fast enough (less than 500ms)
+    // - Long enough (at least 50px)
+    const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY)
+    const isFastEnough = deltaTime < 500
+    const isLongEnough = Math.abs(deltaX) > 50
+    
+    if (isHorizontalSwipe && isFastEnough && isLongEnough) {
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        handlePrevious()
+      } else {
+        // Swipe left - go to next
+        handleNext()
+      }
+    }
+    
+    // Reset touch tracking
+    touchStartRef.current = null
+    touchEndRef.current = null
+  }, [handlePrevious, handleNext])
 
   const handleExploreGame = useCallback(async (topicId: string) => {
     const topic = topicsList.find(t => t.topic_id === topicId)
@@ -1187,6 +1238,8 @@ export function DailyCardStack({
             "animate-in fade-in duration-500",
             currentStackIndex > prevIndexRef.current ? "slide-in-from-right-4" : "slide-in-from-left-4"
           )}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">

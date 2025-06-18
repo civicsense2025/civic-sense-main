@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { PWAInstallButton } from "@/components/pwa-install-button"
-import { LanguageSwitcher } from "@/components/language-switcher"
+import { LanguageSwitcher } from "../language-switcher"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()

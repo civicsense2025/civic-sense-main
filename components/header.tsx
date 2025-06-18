@@ -191,7 +191,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
               
               {/* Divider */}
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                {/* Language Switcher - Mobile */}
+                {/* Language Switcher - Mobile - Only in development */}
                 {isDevelopment && (
                   <div className="mb-4">
                     <div className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
