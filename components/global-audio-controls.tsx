@@ -1988,8 +1988,7 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
                       )}
                     </Button>
                     
-                    {/* Subtle expand indicator */}
-                    <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-60 group-hover:opacity-100 group-hover:scale-125 transition-all duration-200"></div>
+
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-white dark:bg-black border border-slate-100 dark:border-slate-900 text-slate-900 dark:text-white">

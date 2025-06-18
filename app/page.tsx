@@ -13,7 +13,7 @@ import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useRouter } from "next/navigation"
 import { Header } from '@/components/header'
 import { CategoryCloud } from '@/components/category-cloud'
-import { X } from "lucide-react"
+import { ContinueQuizCard } from '@/components/continue-quiz-card'
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -177,7 +177,7 @@ export default function HomePage() {
       {user && incompleteAttempts.length > 0 && (
         <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 sm:py-4">
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue Where You Left Off</h2>
+            <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue where you left off</h2>
             
             {/* Single quiz or horizontal scroll for multiple */}
             {incompleteAttempts.length === 1 ? (
@@ -186,29 +186,17 @@ export default function HomePage() {
                 const attempt = incompleteAttempts[0]
                 const topic = incompleteTopics[0]
                 if (!topic) return null
+                
                 return (
-                  <div key={attempt.id} className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 shadow-sm">
-                    <span className="text-xl mr-3">{topic.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-2">
-                      <button
-                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
-                        onClick={() => router.push(`/quiz/${topic.topic_id}?continue=true`)}
-                      >
-                        Continue
-                      </button>
-                      <button
-                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                        onClick={() => handleDismissClick(attempt.id, topic.topic_id, topic.topic_title)}
-                        title="Hide from continue list"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                  <ContinueQuizCard
+                    key={attempt.id}
+                    attemptId={attempt.id}
+                    topicId={topic.topic_id}
+                    title={topic.topic_title}
+                    description={topic.description}
+                    emoji={topic.emoji}
+                    onDismiss={handleDismissClick}
+                  />
                 )
               })()
             ) : (
@@ -217,29 +205,18 @@ export default function HomePage() {
                 {incompleteAttempts.map((attempt, idx) => {
                   const topic = incompleteTopics[idx]
                   if (!topic) return null
+                  
                   return (
-                    <div key={attempt.id} className="flex-shrink-0 w-80 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 shadow-sm">
-                      <span className="text-xl mr-3">{topic.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{topic.topic_title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{topic.description}</div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-2">
-                        <button
-                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-md text-sm font-medium transition"
-                          onClick={() => router.push(`/quiz/${topic.topic_id}?continue=true`)}
-                        >
-                          Continue
-                        </button>
-                        <button
-                          className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                          onClick={() => handleDismissClick(attempt.id, topic.topic_id, topic.topic_title)}
-                          title="Hide from continue list"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    <ContinueQuizCard
+                      key={attempt.id}
+                      attemptId={attempt.id}
+                      topicId={topic.topic_id}
+                      title={topic.topic_title}
+                      description={topic.description}
+                      emoji={topic.emoji}
+                      onDismiss={handleDismissClick}
+                      className="flex-shrink-0 w-80"
+                    />
                   )
                 })}
               </div>

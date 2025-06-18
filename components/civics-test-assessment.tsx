@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { pendingUserAttribution } from '@/lib/pending-user-attribution'
 import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
 import { SocialProofBubble } from '@/components/social-proof-bubble'
+import { createCivicsTestProgress, type BaseQuizState } from '@/lib/progress-storage'
 
 interface AssessmentQuestion {
   id: string
@@ -46,64 +47,51 @@ interface TestState {
 }
 
 // Enhanced WordReveal with natural typing animation
-function WordReveal({ text, speed = 100, className, onComplete }: { text: string, speed?: number, className?: string, onComplete?: () => void }) {
+function WordReveal({ text, speed = 60, className, onComplete }: { text: string, speed?: number, className?: string, onComplete?: () => void }) {
   const words = text.split(' ')
   const [visibleWords, setVisibleWords] = useState<string[]>([])
-  const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setVisibleWords([])
-    setCurrentWordIndex(0)
     setIsComplete(false)
     
-    if (!text) return
-
-    let cancelled = false
-    
-    function revealNextWord() {
-      if (cancelled) return
-      
-      setCurrentWordIndex(prevIndex => {
-        if (prevIndex < words.length) {
-          setVisibleWords(prev => [...prev, words[prevIndex]])
-          
-          // Schedule next word with slight variation in timing for natural feel
-          const nextDelay = speed + (Math.random() * 40 - 20) // ±20ms variation
-          setTimeout(revealNextWord, nextDelay)
-          
-          return prevIndex + 1
-        } else {
-          setIsComplete(true)
-          onComplete?.()
-          return prevIndex
-        }
-      })
+    if (!text) {
+      setIsComplete(true)
+      onComplete?.()
+      return
     }
 
-    // Small initial delay before starting
-    setTimeout(revealNextWord, 300)
+    let currentIndex = 0
+
+    function revealNextWord() {
+      if (currentIndex < words.length) {
+        setVisibleWords(words.slice(0, currentIndex + 1))
+        currentIndex += 1
+        
+        // Schedule next word
+        timeoutRef.current = setTimeout(revealNextWord, speed)
+      } else {
+        setIsComplete(true)
+        onComplete?.()
+      }
+    }
+
+    // Start revealing immediately with first word
+    timeoutRef.current = setTimeout(revealNextWord, 100)
     
-    return () => { cancelled = true }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
   }, [text, speed, onComplete])
 
   return (
     <span className={className}>
-      {visibleWords.map((word, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ 
-            duration: 0.3,
-            ease: "easeOut"
-          }}
-          style={{ display: 'inline-block', marginRight: '0.25rem' }}
-        >
-          {word}
-        </motion.span>
-      ))}
-      {!isComplete && (
+      {visibleWords.join(' ')}
+      {!isComplete && visibleWords.length > 0 && (
         <motion.span
           animate={{ opacity: [1, 0] }}
           transition={{ 
@@ -262,43 +250,59 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
   const streakTimeout = useRef<NodeJS.Timeout | null>(null)
   const questionStartTime = useRef<number>(Date.now())
   const [canAdvance, setCanAdvance] = useState(false)
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState(0)
 
   // Generate session ID for state persistence
   const sessionId = useRef<string>(`civics-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
 
-  // Save test state to localStorage
+  // Initialize progress manager
+  const progressManager = createCivicsTestProgress(userId, guestToken)
+
+  // Convert TestState to BaseQuizState
+  const convertToBaseQuizState = (state: TestState): BaseQuizState => ({
+    sessionId: state.sessionId,
+    quizType: 'civics_test',
+    questions: state.questions,
+    currentQuestionIndex: state.currentQuestionIndex,
+    answers: state.answers,
+    streak: state.streak,
+    maxStreak: state.maxStreak,
+    startTime: state.startTime,
+    responseTimes: state.responseTimes,
+    savedAt: Date.now(),
+    testType: state.testType,
+    categoryPerformance: state.categoryPerformance
+  })
+
+  // Convert BaseQuizState to TestState
+  const convertFromBaseQuizState = (baseState: BaseQuizState): TestState => ({
+    sessionId: baseState.sessionId,
+    testType: (baseState.testType || 'full') as 'quick' | 'full',
+    questions: baseState.questions,
+    currentQuestionIndex: baseState.currentQuestionIndex,
+    answers: baseState.answers,
+    streak: baseState.streak,
+    maxStreak: baseState.maxStreak,
+    startTime: baseState.startTime,
+    responseTimes: baseState.responseTimes,
+    categoryPerformance: baseState.categoryPerformance || {}
+  })
+
+  // Save test state using the utility
   const saveTestState = (state: TestState) => {
-    try {
-      localStorage.setItem('civics-test-state', JSON.stringify(state))
-    } catch (error) {
-      console.warn('Could not save test state:', error)
-    }
+    const baseState = convertToBaseQuizState(state)
+    progressManager.save(baseState)
   }
 
-  // Load test state from localStorage
+  // Load test state using the utility
   const loadTestState = (): TestState | null => {
-    try {
-      const saved = localStorage.getItem('civics-test-state')
-      if (saved) {
-        const state = JSON.parse(saved)
-        // Only restore if the session is less than 2 hours old
-        if (Date.now() - state.startTime < 2 * 60 * 60 * 1000) {
-          return state
-        }
-      }
-    } catch (error) {
-      console.warn('Could not load test state:', error)
-    }
-    return null
+    const baseState = progressManager.load()
+    return baseState ? convertFromBaseQuizState(baseState) : null
   }
 
-  // Clear saved state
+  // Clear saved state using the utility
   const clearSavedState = () => {
-    try {
-      localStorage.removeItem('civics-test-state')
-    } catch (error) {
-      console.warn('Could not clear test state:', error)
-    }
+    progressManager.clear()
   }
 
   // Normalize API question
@@ -331,7 +335,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     try {
       const params = new URLSearchParams()
       params.set('balanced', 'true')
-      const count = testType === 'quick' ? 10 : 25 // Increased from 8/20 to 10/25
+      const count = testType === 'quick' ? 10 : 100 // Use all available questions for full test
       params.set('count', String(count))
       
       const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
@@ -354,36 +358,57 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
   // Initialize or restore test state
   useEffect(() => {
     const initializeTest = async () => {
-      // First, try to restore saved state
-      const savedState = loadTestState()
-      if (savedState && !hasRestoredState) {
-        setTestState(savedState)
-        setSelectedTestType(savedState.testType)
-        setShowTestTypeSelection(false)
-        setHasRestoredState(true)
-        setLoading(false)
-        
-        // Track test resumption
-        fetch('/api/civics-test/analytics', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event_type: 'resumed',
-            session_id: savedState.sessionId,
-            user_id: userId || null,
-            guest_token: !userId ? guestToken : null,
-            metadata: { 
-              test_type: savedState.testType,
-              question_index: savedState.currentQuestionIndex
-            }
-          })
-        }).catch(console.error)
-        
-        return
+      console.log('🔄 Initializing test...', { 
+        hasRestoredState, 
+        showTestTypeSelection, 
+        selectedTestType,
+        userId: userId || 'guest',
+        guestToken: guestToken || 'none'
+      })
+      
+      // First, try to restore saved state (only once)
+      if (!hasRestoredState) {
+        const savedState = loadTestState()
+        if (savedState) {
+          console.log('✅ Restoring saved state')
+          setTestState(savedState)
+          setSelectedTestType(savedState.testType)
+          setShowTestTypeSelection(false)
+          setHasRestoredState(true)
+          setLoading(false)
+          
+          // Reset UI state for restored session
+          setShowResult(false)
+          setCanAdvance(false)
+          setAutoAdvanceCountdown(0)
+          setAssessmentComplete(false)
+          
+          // Track test resumption
+          fetch('/api/civics-test/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'resumed',
+              session_id: savedState.sessionId,
+              user_id: userId || null,
+              guest_token: !userId ? guestToken : null,
+              metadata: { 
+                test_type: savedState.testType,
+                question_index: savedState.currentQuestionIndex
+              }
+            })
+          }).catch(console.error)
+          
+          return
+        } else {
+          console.log('❌ No valid saved state found')
+          setHasRestoredState(true) // Mark as checked to prevent re-checking
+        }
       }
 
       // If no saved state and test type is selected, fetch questions
-      if (!showTestTypeSelection) {
+      if (!showTestTypeSelection && !testState) {
+        console.log('🔍 Fetching new questions for:', selectedTestType)
         const questions = await fetchQuestions(selectedTestType)
         if (questions.length > 0) {
           const newState: TestState = {
@@ -414,7 +439,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
             })
           }).catch(console.error)
         }
-      } else {
+      } else if (showTestTypeSelection) {
         setLoading(false)
       }
     }
@@ -525,14 +550,32 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     setShowResult(true)
     setCanAdvance(false)
     
-    // Start 10s timer for auto-advance
+    // Start 15s timer for auto-advance with countdown
     if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
-    autoAdvanceTimeout.current = setTimeout(() => {
-      handleAdvance()
-    }, 10000)
     
-    // Allow manual advance after 2s (give time to read explanation)
-    setTimeout(() => setCanAdvance(true), 2000)
+    // Start countdown after manual advance is allowed
+    setTimeout(() => {
+      setCanAdvance(true)
+      setAutoAdvanceCountdown(12) // 12 seconds countdown after 3s delay
+      
+      // Update countdown every second
+      const countdownInterval = setInterval(() => {
+        setAutoAdvanceCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      
+      // Auto advance after full 15s
+      autoAdvanceTimeout.current = setTimeout(() => {
+        clearInterval(countdownInterval)
+        setAutoAdvanceCountdown(0)
+        handleAdvance()
+      }, 12000) // 12 more seconds after the 3s delay
+    }, 3000)
   }
 
   // Manual advance handler
@@ -541,6 +584,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     
     setShowResult(false)
     setCanAdvance(false)
+    setAutoAdvanceCountdown(0)
     
     if (autoAdvanceTimeout.current) {
       clearTimeout(autoAdvanceTimeout.current)
@@ -880,8 +924,10 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     )
   }
 
-  // Friendly feedback
+  // Friendly feedback - deterministic based on question index
   const getFeedback = (isCorrect: boolean) => {
+    const questionIndex = testState?.currentQuestionIndex || 0
+    
     if (isCorrect) {
       const messages = [
         "That's right!",
@@ -890,7 +936,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
         "Exactly!",
         "Well done!"
       ]
-      return messages[Math.floor(Math.random() * messages.length)]
+      return messages[questionIndex % messages.length]
     } else {
       const messages = [
         "Not quite—here's why:",
@@ -899,7 +945,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
         "That's a common misconception. Here's the truth:",
         "Here's what's really happening:"
       ]
-      return messages[Math.floor(Math.random() * messages.length)]
+      return messages[questionIndex % messages.length]
     }
   }
 
@@ -1084,13 +1130,26 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
               </div>
               
               {canAdvance && (
-                <div className="flex justify-center pt-4">
+                <div className="flex flex-col items-center pt-4 space-y-3">
                   <Button
                     onClick={handleAdvance}
                     className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-3 h-auto rounded-full font-light"
                   >
                     {(testState?.currentQuestionIndex || 0) === (testState?.questions.length || 1) - 1 ? 'See Results' : 'Next Question'}
                   </Button>
+                  {autoAdvanceCountdown > 0 && (
+                    <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="w-3 h-3 border border-slate-300 dark:border-slate-600 rounded-full flex items-center justify-center">
+                        <div 
+                          className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse"
+                          style={{
+                            animationDuration: '1s'
+                          }}
+                        />
+                      </div>
+                      <span>Auto-advancing in {autoAdvanceCountdown}s</span>
+                    </div>
+                  )}
                 </div>
               )}
               

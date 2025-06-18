@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
+import { Button } from "./ui/button"
 import { ThemeToggle } from "./theme-toggle"
 import { UserMenu } from "./auth/user-menu"
 import { JoinRequestNotifications } from "./learning-pods/join-request-notifications"
@@ -12,13 +13,18 @@ import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 
 interface HeaderProps {
-  onSignInClick: () => void
+  onSignInClick?: () => void
   className?: string
   showTopBar?: boolean
   showMainHeader?: boolean
 }
 
-export function Header({ onSignInClick, className, showTopBar = true, showMainHeader = true }: HeaderProps) {
+export function Header({
+  onSignInClick,
+  className,
+  showTopBar = true,
+  showMainHeader = true
+}: HeaderProps) {
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -63,15 +69,40 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
             </div>
 
             {/* Right side - Essential controls */}
-            <div className="flex items-center space-x-3 sm:space-x-5">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Desktop controls */}
-              <div className="hidden sm:flex items-center space-x-5">
+              <div className="hidden sm:flex items-center space-x-4">
                 {/* Learning Pods Quick Actions - temporarily hidden until ready for public use */}
                 {/* <LearningPodsQuickActions variant="header" /> */}
                 {isDevelopment && <LanguageSwitcher variant="compact" />}
                 <ThemeToggle />
                 {user && <JoinRequestNotifications />}
-                <UserMenu onSignInClick={onSignInClick} />
+                
+                {/* Login button for non-authenticated users */}
+                {!user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onSignInClick}
+                    className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                  >
+                    Log In
+                  </Button>
+                )}
+                
+                {/* Main CTA - Take A Civics Test */}
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-4 py-2"
+                >
+                  <Link href="/civics-test">
+                    Take A Civics Test
+                  </Link>
+                </Button>
+                
+                {/* User menu for authenticated users */}
+                {user && <UserMenu onSignInClick={() => {}} />}
               </div>
               
               {/* Mobile-only theme toggle */}
@@ -127,6 +158,17 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
             
             {/* Menu content */}
             <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
+              {/* Main CTA at top of mobile menu */}
+              <div className="pb-4 border-b border-slate-200 dark:border-slate-700">
+                <Link 
+                  href="/civics-test"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-3 px-4 rounded-md font-medium transition-colors"
+                >
+                  Take A Civics Test
+                </Link>
+              </div>
+
               {/* Navigation Links */}
               <div className="space-y-3">
                 {pathname !== '/' && (
@@ -169,17 +211,6 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                 </Link>
                 */}
 
-                {/* Public Figures link - temporarily hidden until ready for public use */}
-                {/*
-                <Link 
-                  href="/public-figures"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                >
-                  Public Figures
-                </Link>
-                */}
-
                 <Link 
                   href="/donate"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -210,7 +241,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
                       <button
                         onClick={() => {
                           setIsMobileMenuOpen(false)
-                          onSignInClick()
+                          onSignInClick && onSignInClick()
                         }}
                         className="block w-full text-left text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
                       >
@@ -263,7 +294,7 @@ export function Header({ onSignInClick, className, showTopBar = true, showMainHe
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-3 sm:space-x-5">
               <ThemeToggle />
-              <UserMenu onSignInClick={onSignInClick} />
+              <UserMenu onSignInClick={() => {}} />
             </div>
           </div>
         </div>

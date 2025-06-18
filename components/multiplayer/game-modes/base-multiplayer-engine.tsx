@@ -1,67 +1,87 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { QuizResults } from "@/components/quiz/quiz-results"
-import { QuestionFeedbackDisplay } from "@/components/quiz/question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "@/components/quiz/question-timer"
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
+import { PlayerPanel } from "@/components/multiplayer/player-panel"
+import { HostSettingsMenu } from "@/components/multiplayer/host-settings-menu"
+import { ChatSidebar } from "@/components/multiplayer/chat-sidebar"
+import { Leaderboard } from "@/components/multiplayer/leaderboard"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Clock, Users, Trophy, Zap } from "lucide-react"
+import { Trophy, Zap, MessageCircle, Crown, Settings, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
-import { useMultiplayerRoom, multiplayerOperations } from "@/lib/multiplayer"
-import { usePremium } from "@/hooks/usePremium"
-import { useAnalytics } from "@/utils/analytics"
+import { 
+  useMultiplayerRoom, 
+  useMultiplayerQuiz
+} from "@/lib/multiplayer"
+
+// Development-only logging utility
+const devLog = (component: string, action: string, data?: any) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🎮 [${component}] ${action}`, data ? data : '')
+  }
+}
 
 // =============================================================================
-// BASE MULTIPLAYER ENGINE TYPES
+// GAME MODE CONFIGURATION
 // =============================================================================
-
-export interface MultiplayerGameState {
-  currentQuestionIndex: number
-  userAnswers: MultiplayerUserAnswer[]
-  showResults: boolean
-  gamePhase: 'waiting' | 'active' | 'between_questions' | 'completed'
-  timeRemaining: number
-  playerScores: Record<string, PlayerScore>
-  eliminatedPlayers?: string[]
-  currentRound?: number
-}
-
-export interface MultiplayerUserAnswer {
-  questionId: number
-  answer: string
-  isCorrect: boolean
-  timeSpent: number
-  submittedAt: number
-  playerId: string
-}
-
-export interface PlayerScore {
-  playerId: string
-  playerName: string
-  score: number
-  correctAnswers: number
-  totalAnswered: number
-  averageTime: number
-  isEliminated?: boolean
-  rank?: number
-}
 
 export interface GameModeConfig {
-  id: string
   name: string
   timePerQuestion: number
-  showRealTimeScores: boolean
-  allowHints: boolean
   showExplanations: boolean
-  eliminationEnabled: boolean
-  speedBonusEnabled: boolean
-  collaborativeFeatures: boolean
+  allowHints: boolean
+  allowBoosts: boolean
+  showRealTimeScores?: boolean
+  speedBonusEnabled?: boolean
+  eliminationMode?: boolean
+  collaborativeMode?: boolean
 }
+
+export const GAME_MODE_CONFIGS: Record<string, GameModeConfig> = {
+  classic: {
+    name: "Classic Quiz",
+    timePerQuestion: 45000,
+    showExplanations: true,
+    allowHints: true,
+    allowBoosts: true,
+    showRealTimeScores: true
+  },
+  speed_round: {
+    name: "Speed Round",
+    timePerQuestion: 15000,
+    showExplanations: false,
+    allowHints: false,
+    allowBoosts: false,
+    speedBonusEnabled: true,
+    showRealTimeScores: true
+  },
+  elimination: {
+    name: "Elimination",
+    timePerQuestion: 30000,
+    showExplanations: true,
+    allowHints: false,
+    allowBoosts: false,
+    eliminationMode: true,
+    showRealTimeScores: true
+  },
+  learning_lab: {
+    name: "Learning Lab",
+    timePerQuestion: 60000,
+    showExplanations: true,
+    allowHints: true,
+    allowBoosts: true,
+    collaborativeMode: true,
+    showRealTimeScores: false
+  }
+}
+
+// =============================================================================
+// COMPONENT PROPS INTERFACE
+// =============================================================================
 
 export interface BaseMultiplayerEngineProps {
   questions: QuizQuestion[]
@@ -71,7 +91,7 @@ export interface BaseMultiplayerEngineProps {
   gameMode: string
   onComplete: () => void
   config: GameModeConfig
-  currentTopic?: {
+  currentTopic: {
     id: string
     title: string
     emoji: string
@@ -81,7 +101,33 @@ export interface BaseMultiplayerEngineProps {
 }
 
 // =============================================================================
-// BASE MULTIPLAYER ENGINE COMPONENT
+// GAME STATE INTERFACE
+// =============================================================================
+
+interface GameState {
+  currentQuestionIndex: number
+  gamePhase: 'waiting' | 'active' | 'between_questions' | 'completed'
+  showFeedback: boolean
+  selectedAnswer: string | null
+  isAnswerSubmitted: boolean
+  score: number
+  correctAnswers: number
+  timeSpentSeconds: number
+  startTime: number | null
+  questionStartTime: number | null
+}
+
+interface HostSettings {
+  allowNewPlayers: boolean
+  allowBoosts: boolean
+  allowHints: boolean
+  autoAdvanceQuestions: boolean
+  showRealTimeScores: boolean
+  chatEnabled: boolean
+}
+
+// =============================================================================
+// MAIN COMPONENT
 // =============================================================================
 
 export function BaseMultiplayerEngine({
@@ -91,195 +137,189 @@ export function BaseMultiplayerEngine({
   playerId,
   gameMode,
   onComplete,
-  config
+  config,
+  currentTopic
 }: BaseMultiplayerEngineProps) {
-  const { user } = useAuth()
-  const { isPremium } = usePremium()
-  const { trackQuiz } = useAnalytics()
-
-  console.log('🎮 BaseMultiplayerEngine - Initializing with:', {
-    questionsCount: questions.length,
-    topicId,
-    roomId,
-    playerId,
-    gameMode,
-    config: config.name
+  devLog('BaseMultiplayerEngine', 'Component mounted', { 
+    questionsCount: questions.length, 
+    topicId, 
+    roomId, 
+    playerId, 
+    gameMode 
   })
 
+  // =============================================================================
+  // HOOKS AND STATE
+  // =============================================================================
+
+  const { user } = useAuth()
+  
   // Room state from multiplayer hook
   const { room, players } = useMultiplayerRoom(roomId)
+  
+  // Quiz responses from multiplayer quiz hook
+  const { responses, submitResponse } = useMultiplayerQuiz(roomId, playerId)
 
   // Game state
-  const [gameState, setGameState] = useState<MultiplayerGameState>({
+  const [gameState, setGameState] = useState<GameState>({
     currentQuestionIndex: 0,
-    userAnswers: [],
-    showResults: false,
     gamePhase: 'active',
-    timeRemaining: config.timePerQuestion,
-    playerScores: {},
-    eliminatedPlayers: [],
-    currentRound: 1
+    showFeedback: false,
+    selectedAnswer: null,
+    isAnswerSubmitted: false,
+    score: 0,
+    correctAnswers: 0,
+    timeSpentSeconds: 0,
+    startTime: null,
+    questionStartTime: null
   })
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
-  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false)
-  const [showHint, setShowHint] = useState(false)
-  const [showFeedback, setShowFeedback] = useState(false)
-  const [questionStartTime] = useState(Date.now())
+  // Host settings state
+  const [hostSettings, setHostSettings] = useState<HostSettings>({
+    allowNewPlayers: true,
+    allowBoosts: config.allowBoosts ?? true,
+    allowHints: config.allowHints,
+    autoAdvanceQuestions: true,
+    showRealTimeScores: config.showRealTimeScores ?? true,
+    chatEnabled: true
+  })
 
-  // Timer integration
-  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(config.timePerQuestion)
+  // UI state
+  const [chatOpen, setChatOpen] = useState(false)
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+  const [showHostSettings, setShowHostSettings] = useState(false)
 
-  // Current question
+  // Timer hook
+  const { timeLeft, isActive: isTimerActive, startTimer, stopTimer } = useQuestionTimer(config.timePerQuestion / 1000)
+
+  // =============================================================================
+  // COMPUTED VALUES
+  // =============================================================================
+
   const currentQuestion = useMemo(() => {
     const question = questions[gameState.currentQuestionIndex]
-    console.log('🎮 BaseMultiplayerEngine - Current question:', {
-      index: gameState.currentQuestionIndex,
-      question: question ? question.question : 'NO QUESTION',
-      questionType: question?.question_type
+    devLog('BaseMultiplayerEngine', 'Current question computed', { 
+      index: gameState.currentQuestionIndex, 
+      question: question?.question 
     })
     return question
   }, [questions, gameState.currentQuestionIndex])
-  
-  const isLastQuestion = useMemo(() => gameState.currentQuestionIndex === questions.length - 1, [gameState.currentQuestionIndex, questions.length])
-  const progress = useMemo(() => ((gameState.currentQuestionIndex + 1) / questions.length) * 100, [gameState.currentQuestionIndex, questions.length])
 
-  // Add validation for required data
-  if (!questions || questions.length === 0) {
-    console.error('🎮 BaseMultiplayerEngine - No questions provided!')
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">No Questions Available</h1>
-            <p className="text-muted-foreground mb-6">
-              This quiz doesn't have any questions yet.
-            </p>
-            <Button onClick={onComplete}>
-              Back to Lobby
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const progress = useMemo(() => {
+    const prog = ((gameState.currentQuestionIndex + 1) / questions.length) * 100
+    devLog('BaseMultiplayerEngine', 'Progress calculated', { progress: prog })
+    return prog
+  }, [gameState.currentQuestionIndex, questions.length])
 
-  if (!currentQuestion) {
-    console.error('🎮 BaseMultiplayerEngine - Current question is undefined!')
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Question Loading Error</h1>
-            <p className="text-muted-foreground mb-6">
-              Unable to load the current question. Question index: {gameState.currentQuestionIndex}
-            </p>
-            <Button onClick={onComplete}>
-              Back to Lobby
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const isHost = useMemo(() => {
+    const host = players.find(p => p.id === playerId)?.is_host ?? false
+    devLog('BaseMultiplayerEngine', 'Host status checked', { isHost: host, playerId })
+    return host
+  }, [players, playerId])
+
+  const isAnswerSubmitted = gameState.isAnswerSubmitted
 
   // =============================================================================
-  // CORE MULTIPLAYER FUNCTIONALITY
+  // ANSWER SUBMISSION
   // =============================================================================
 
-  // Submit answer to multiplayer system
-  const submitMultiplayerAnswer = useCallback(async (
-    answer: string,
-    isCorrect: boolean,
-    timeSpent: number
-  ) => {
+  const submitMultiplayerAnswer = useCallback(async (answer: string) => {
+    if (!currentQuestion || isAnswerSubmitted) {
+      devLog('BaseMultiplayerEngine', 'Answer submission blocked', { 
+        hasQuestion: !!currentQuestion, 
+        isAnswerSubmitted 
+      })
+      return
+    }
+
     try {
-      // Create attempt if not exists
-      const attemptId = `attempt_${playerId}_${Date.now()}`
-      
-      // Submit to multiplayer system
-      await multiplayerOperations.submitQuestionResponse({
-        room_id: roomId,
-        player_id: playerId,
-        attempt_id: attemptId,
-        question_number: gameState.currentQuestionIndex + 1,
-        question_id: currentQuestion.question_number.toString(),
-        selected_answer: answer,
-        is_correct: isCorrect,
-        response_time_seconds: timeSpent
+      devLog('BaseMultiplayerEngine', 'Submitting multiplayer answer', { 
+        answer, 
+        correctAnswer: currentQuestion.correct_answer,
+        questionNumber: currentQuestion.question_number
       })
 
-      // Update local game state
-      const newAnswer: MultiplayerUserAnswer = {
-        questionId: currentQuestion.question_number,
+      const isCorrect = answer === currentQuestion.correct_answer
+      const responseTime = gameState.questionStartTime 
+        ? Math.round((Date.now() - gameState.questionStartTime) / 1000)
+        : 30
+
+      // Create attempt ID
+      const attemptId = `attempt_${playerId}_${Date.now()}`
+
+      devLog('BaseMultiplayerEngine', 'Calling submitResponse', { 
+        questionNumber: currentQuestion.question_number,
+        questionId: currentQuestion.question_number.toString(),
+        selectedAnswer: answer,
+        isCorrect,
+        responseTime,
+        attemptId
+      })
+
+      await submitResponse(
+        currentQuestion.question_number,
+        currentQuestion.question_number.toString(),
         answer,
         isCorrect,
-        timeSpent,
-        submittedAt: Date.now(),
-        playerId
-      }
+        responseTime,
+        attemptId
+      )
 
+      devLog('BaseMultiplayerEngine', 'Answer submitted successfully', { 
+        isCorrect, 
+        responseTime, 
+        attemptId 
+      })
+
+      // Update local state
       setGameState(prev => ({
         ...prev,
-        userAnswers: [...prev.userAnswers, newAnswer]
+        selectedAnswer: answer,
+        isAnswerSubmitted: true,
+        correctAnswers: prev.correctAnswers + (isCorrect ? 1 : 0),
+        score: prev.score + (isCorrect ? 100 : 0)
       }))
+
+      // Stop timer
+      stopTimer()
 
     } catch (error) {
+      devLog('BaseMultiplayerEngine', 'Failed to submit answer', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorDetails: error
+      })
       console.error('Failed to submit multiplayer answer:', error)
     }
-  }, [roomId, playerId, gameState.currentQuestionIndex, currentQuestion])
+  }, [currentQuestion, isAnswerSubmitted, gameState.questionStartTime, playerId, submitResponse, stopTimer])
 
-  // Handle answer selection
-  const handleAnswerSelect = useCallback((answer: string) => {
-    if (isAnswerSubmitted) return
-    setSelectedAnswer(answer)
-  }, [isAnswerSubmitted])
-
-  // Handle answer submission
-  const handleSubmitAnswer = useCallback(async () => {
-    if (!selectedAnswer || isAnswerSubmitted) return
-
-    setIsAnswerSubmitted(true)
-    stopTimer()
-
-    const isCorrect = selectedAnswer.toLowerCase().trim() === currentQuestion.correct_answer.toLowerCase().trim()
-    const timeSpent = Math.max(1, config.timePerQuestion - timeLeft)
-
-    await submitMultiplayerAnswer(selectedAnswer, isCorrect, timeSpent)
-
-    if (config.showExplanations) {
-      setShowFeedback(true)
-    } else {
-      // Move to next question immediately for speed modes
-      setTimeout(() => handleNextQuestion(), 1000)
+  const handleSubmitAnswer = useCallback(async (answer: string) => {
+    devLog('BaseMultiplayerEngine', 'Handle submit answer called', { answer })
+    
+    if (gameState.isAnswerSubmitted) {
+      devLog('BaseMultiplayerEngine', 'Answer already submitted, ignoring')
+      return
     }
-  }, [selectedAnswer, isAnswerSubmitted, currentQuestion.correct_answer, config.timePerQuestion, timeLeft, config.showExplanations, submitMultiplayerAnswer, stopTimer])
 
-  // Handle next question
-  const handleNextQuestion = useCallback(() => {
-    if (isLastQuestion) {
-      setGameState(prev => ({ ...prev, showResults: true, gamePhase: 'completed' }))
-      onComplete()
-    } else {
-      setGameState(prev => ({
-        ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex + 1,
-        gamePhase: 'active'
-      }))
-      setSelectedAnswer(null)
-      setIsAnswerSubmitted(false)
-      setShowHint(false)
-      setShowFeedback(false)
-      resetTimer()
+    try {
+      await submitMultiplayerAnswer(answer)
+    } catch (error) {
+      devLog('BaseMultiplayerEngine', 'Error in handleSubmitAnswer', { error })
+      console.error('Error submitting answer:', error)
     }
-  }, [isLastQuestion, onComplete, resetTimer])
+  }, [gameState.isAnswerSubmitted, submitMultiplayerAnswer])
 
-  // Handle time up
   const handleTimeUp = useCallback(() => {
-    if (!isAnswerSubmitted) {
-      handleSubmitAnswer()
+    devLog('BaseMultiplayerEngine', 'Time up triggered')
+    
+    if (!gameState.isAnswerSubmitted && currentQuestion) {
+      devLog('BaseMultiplayerEngine', 'Auto-submitting empty answer due to timeout')
+      handleSubmitAnswer('')
     }
-  }, [isAnswerSubmitted, handleSubmitAnswer])
+  }, [gameState.isAnswerSubmitted, currentQuestion, handleSubmitAnswer])
+
+  // =============================================================================
+  // EFFECTS
+  // =============================================================================
 
   // Timer effect
   useEffect(() => {
@@ -288,225 +328,233 @@ export function BaseMultiplayerEngine({
     }
   }, [timeLeft, isTimerActive, handleTimeUp])
 
+  // Start question timer when question becomes active
+  useEffect(() => {
+    if (gameState.gamePhase === 'active' && currentQuestion && !isAnswerSubmitted) {
+      devLog('BaseMultiplayerEngine', 'Starting question timer')
+      setGameState(prev => ({ ...prev, questionStartTime: Date.now() }))
+      startTimer()
+    }
+  }, [gameState.gamePhase, currentQuestion, isAnswerSubmitted, startTimer])
+
   // =============================================================================
   // RENDER HELPERS
   // =============================================================================
 
   const renderGameModeHeader = () => (
     <div className="flex items-center justify-between mb-6">
-      <div className="flex items-center gap-3">
-        <Badge variant="outline" className="flex items-center gap-2">
-          {gameMode === 'speed_round' && <Zap className="h-4 w-4" />}
-          {gameMode === 'elimination' && <Trophy className="h-4 w-4" />}
-          {gameMode === 'classic' && <Users className="h-4 w-4" />}
-          {config.name}
-        </Badge>
-        <span className="text-sm text-muted-foreground">
-          Question {gameState.currentQuestionIndex + 1} of {questions.length}
-        </span>
-      </div>
-      
       <div className="flex items-center gap-4">
-        {config.showRealTimeScores && (
-          <div className="text-sm font-medium">
-            Your Score: {gameState.playerScores[playerId]?.score || 0}
-          </div>
-        )}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          {timeLeft}s
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderQuestion = () => (
-    <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto">
-        <GlossaryLinkText text={currentQuestion.question} />
-      </h1>
-
-      {showHint && config.allowHints && currentQuestion.hint && (
-        <div className="max-w-2xl mx-auto">
-          <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
-            <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-              💡 <GlossaryLinkText text={currentQuestion.hint} />
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{currentTopic.emoji}</span>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              {currentTopic.title}
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {config.name} • Question {gameState.currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Question type rendering will be handled by extending components */}
-      {renderQuestionContent()}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLeaderboardOpen(!leaderboardOpen)}
+          className="flex items-center gap-2"
+        >
+          <Trophy className="h-4 w-4" />
+          Leaderboard
+        </Button>
+
+                  <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setChatOpen(!chatOpen)}
+            className="flex items-center gap-2"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Chat
+          </Button>
+
+          {/* Host Settings */}
+          {isHost && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHostSettings(!showHostSettings)}
+              className="flex items-center gap-2"
+            >
+              <Crown className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
+              Host Settings
+            </Button>
+          )}
+      </div>
     </div>
   )
 
-  // This will be overridden by extending components
   const renderQuestionContent = () => {
-    // Default multiple choice rendering
-    if (currentQuestion.question_type === 'multiple_choice') {
-      const options = [
-        currentQuestion.option_a,
-        currentQuestion.option_b,
-        currentQuestion.option_c,
-        currentQuestion.option_d
-      ].filter((option): option is string => Boolean(option))
-
-      return (
-        <div className="space-y-3 max-w-2xl mx-auto">
-          {options.map((option, index) => (
-            <Button
-              key={index}
-              variant={selectedAnswer === option ? "default" : "outline"}
-              className="w-full text-left justify-start p-6 h-auto"
-              onClick={() => handleAnswerSelect(option)}
-              disabled={isAnswerSubmitted}
-            >
-              <span className="font-medium mr-3">
-                {String.fromCharCode(65 + index)}.
-              </span>
-              <GlossaryLinkText text={option} />
-            </Button>
-          ))}
-        </div>
-      )
+    if (!currentQuestion) {
+      devLog('BaseMultiplayerEngine', 'No current question to render')
+      return null
     }
 
-    return <div>Unsupported question type: {currentQuestion.question_type}</div>
+    devLog('BaseMultiplayerEngine', 'Rendering question content', { 
+      questionType: currentQuestion.question_type,
+      question: currentQuestion.question
+    })
+
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-8 shadow-lg border">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white leading-relaxed">
+              <GlossaryLinkText text={currentQuestion.question} />
+            </h2>
+
+            {hostSettings.allowHints && currentQuestion.hint && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mt-0.5">
+                    <Zap className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Hint:</strong> {currentQuestion.hint}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {currentQuestion.question_type === 'multiple_choice' && (
+            <div className="grid gap-3">
+              {[
+                { key: 'A', text: currentQuestion.option_a },
+                { key: 'B', text: currentQuestion.option_b },
+                { key: 'C', text: currentQuestion.option_c },
+                { key: 'D', text: currentQuestion.option_d }
+              ].filter(option => option.text).map((option) => {
+                const isSelected = gameState.selectedAnswer === option.text
+                const isCorrect = option.text === currentQuestion.correct_answer
+                const showResult = gameState.showFeedback
+
+                return (
+                  <button
+                    key={option.key}
+                    onClick={() => !isAnswerSubmitted && handleSubmitAnswer(option.text!)}
+                    disabled={isAnswerSubmitted}
+                    className={cn(
+                      "w-full text-left p-4 rounded-lg border-2 transition-all duration-200",
+                      "hover:border-blue-300 dark:hover:border-blue-600",
+                      "disabled:cursor-not-allowed",
+                      {
+                        "border-blue-500 bg-blue-50 dark:bg-blue-950/30": isSelected && !showResult,
+                        "border-green-500 bg-green-50 dark:bg-green-950/30": showResult && isCorrect,
+                        "border-red-500 bg-red-50 dark:bg-red-950/30": showResult && isSelected && !isCorrect,
+                        "border-slate-200 dark:border-slate-700": !isSelected && (!showResult || !isCorrect)
+                      }
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-semibold",
+                        {
+                          "border-blue-500 bg-blue-500 text-white": isSelected && !showResult,
+                          "border-green-500 bg-green-500 text-white": showResult && isCorrect,
+                          "border-red-500 bg-red-500 text-white": showResult && isSelected && !isCorrect,
+                          "border-slate-300 dark:border-slate-600": !isSelected && (!showResult || !isCorrect)
+                        }
+                      )}>
+                        {option.key}
+                      </div>
+                      <span className="text-slate-900 dark:text-white">
+                        <GlossaryLinkText text={option.text!} />
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   // =============================================================================
   // MAIN RENDER
   // =============================================================================
 
-  if (gameState.showResults) {
-    return (
-      <QuizResults
-        questions={questions}
-        userAnswers={gameState.userAnswers.map(a => ({
-          questionId: a.questionId,
-          answer: a.answer,
-          isCorrect: a.isCorrect,
-          timeSpent: a.timeSpent
-        }))}
-        topicId={topicId}
-        onFinish={onComplete}
-      />
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-4 py-8">
-        {renderGameModeHeader()}
-        
-        <div className="mb-8">
-          <Progress value={progress} className="h-2" />
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex flex-col">
+      {/* Main Content Area */}
+      <div className="flex-1 flex">
+        {/* Game Content */}
+        <div className={cn("flex-1 p-6 pb-32", chatOpen ? "mr-80" : "")}>
+          {renderGameModeHeader()}
+          
+          <div className="mb-8">
+            <Progress value={progress} className="h-2" />
+          </div>
 
-        <div className="mb-8">
-          <QuestionTimer
-            initialTime={config.timePerQuestion}
-            isActive={isTimerActive}
-            onTimeUp={handleTimeUp}
-          />
-        </div>
-
-        {renderQuestion()}
-
-        {showFeedback && config.showExplanations && (
-          <div className="mt-8">
-            <QuestionFeedbackDisplay
-              question={currentQuestion}
-              selectedAnswer={selectedAnswer}
-              timeLeft={timeLeft}
-              isLastQuestion={isLastQuestion}
-              onNextQuestion={handleNextQuestion}
+          <div className="mb-8">
+            <QuestionTimer
+              initialTime={config.timePerQuestion / 1000}
+              isActive={isTimerActive}
+              onTimeUp={handleTimeUp}
             />
           </div>
-        )}
 
-        <div className="mt-8 flex justify-center gap-4">
-          {config.allowHints && !showHint && !isAnswerSubmitted && (
-            <Button
-              variant="outline"
-              onClick={() => setShowHint(true)}
-              className="flex items-center gap-2"
-            >
-              💡 Show Hint
-            </Button>
-          )}
-
-          {selectedAnswer && !isAnswerSubmitted && (
-            <Button
-              onClick={handleSubmitAnswer}
-              className="px-8"
-            >
-              Submit Answer
-            </Button>
-          )}
-
-          {isAnswerSubmitted && showFeedback && (
-            <Button
-              onClick={handleNextQuestion}
-              className="px-8"
-            >
-              {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
-            </Button>
-          )}
+          {renderQuestionContent()}
         </div>
+
+        {/* Chat Sidebar */}
+        {chatOpen && hostSettings.chatEnabled && (
+          <ChatSidebar
+            roomId={roomId}
+            playerId={playerId}
+            players={players}
+            isHost={isHost}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
       </div>
+
+      {/* Fixed Player Panel at Bottom - Compact Design */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 p-3 z-40">
+        <PlayerPanel
+          players={players}
+          currentPlayerId={playerId}
+          questionResponses={responses.filter(r => r.question_number === currentQuestion?.question_number)}
+          showAnswerStatus={true}
+          gamePhase={gameState.gamePhase}
+          className="max-w-5xl mx-auto"
+        />
+      </div>
+
+      {/* Host Settings Modal */}
+      {showHostSettings && isHost && (
+        <HostSettingsMenu
+          settings={hostSettings}
+          onSettingsChange={setHostSettings}
+          onClose={() => setShowHostSettings(false)}
+          playerCount={players.length}
+          maxPlayers={6}
+          gameMode={config.name}
+        />
+      )}
+
+      {/* Leaderboard Modal */}
+      {leaderboardOpen && (
+        <Leaderboard
+          players={players}
+          responses={responses}
+          currentPlayerId={playerId}
+          onClose={() => setLeaderboardOpen(false)}
+        />
+      )}
     </div>
   )
-}
-
-// =============================================================================
-// GAME MODE CONFIGS
-// =============================================================================
-
-export const GAME_MODE_CONFIGS: Record<string, GameModeConfig> = {
-  classic: {
-    id: 'classic',
-    name: 'Classic Quiz',
-    timePerQuestion: 60,
-    showRealTimeScores: false,
-    allowHints: true,
-    showExplanations: true,
-    eliminationEnabled: false,
-    speedBonusEnabled: false,
-    collaborativeFeatures: false
-  },
-  speed_round: {
-    id: 'speed_round',
-    name: 'Speed Round',
-    timePerQuestion: 20,
-    showRealTimeScores: true,
-    allowHints: false,
-    showExplanations: false,
-    eliminationEnabled: false,
-    speedBonusEnabled: true,
-    collaborativeFeatures: false
-  },
-  elimination: {
-    id: 'elimination',
-    name: 'Elimination',
-    timePerQuestion: 30,
-    showRealTimeScores: true,
-    allowHints: false,
-    showExplanations: false,
-    eliminationEnabled: true,
-    speedBonusEnabled: false,
-    collaborativeFeatures: false
-  },
-  learning_lab: {
-    id: 'learning_lab',
-    name: 'Learning Lab',
-    timePerQuestion: 90,
-    showRealTimeScores: false,
-    allowHints: true,
-    showExplanations: true,
-    eliminationEnabled: false,
-    speedBonusEnabled: false,
-    collaborativeFeatures: true
-  }
 } 

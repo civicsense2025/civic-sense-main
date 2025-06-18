@@ -1,11 +1,31 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { AutoReadPage } from '@/components/auto-read-page'
+import { ServerHeader } from '@/components/server-header'
+import { TableOfContents } from '@/components/ui/table-of-contents'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | CivicSense',
   description: 'Terms and conditions for using CivicSense.',
 }
+
+// Define TOC items
+const tocItems = [
+  { id: 'using-civicsense', text: 'Using CivicSense', level: 2 },
+  { id: 'community-standards', text: 'Community Standards & Zero Tolerance', level: 2 },
+  { id: 'ai-features', text: 'AI Features & Technology', level: 2 },
+  { id: 'multiplayer-social', text: 'Multiplayer & Learning Pods', level: 2 },
+  { id: 'your-account', text: 'Your Account', level: 2 },
+  { id: 'premium-services', text: 'Premium Services', level: 2 },
+  { id: 'content-ip', text: 'Content & Intellectual Property', level: 2 },
+  { id: 'privacy-data', text: 'Privacy & Data', level: 2 },
+  { id: 'disclaimers', text: 'Important Disclaimers', level: 2 },
+  { id: 'limitation-liability', text: 'Limitation of Liability', level: 2 },
+  { id: 'indemnification', text: 'Indemnification', level: 2 },
+  { id: 'dispute-resolution', text: 'Dispute Resolution', level: 2 },
+  { id: 'changes-terms', text: 'Changes to These Terms', level: 2 },
+  { id: 'contact', text: 'Contact Us', level: 2 },
+]
 
 export default function TermsPage() {
   return (
@@ -13,257 +33,491 @@ export default function TermsPage() {
       <AutoReadPage />
       
       {/* Header */}
-      <div className="border-b border-slate-100 dark:border-slate-900 mb-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <Link 
-            href="/" 
-            className="group hover:opacity-70 transition-opacity"
-          >
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-              CivicSense
-            </h1>
-          </Link>
-        </div>
-      </div>
+      <ServerHeader />
 
       <div className="apple-container py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-16 apple-animate-in">
-            <div className="text-6xl mb-6">📋</div>
-            <h1 className="text-4xl sm:text-5xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6">
-              Terms of Service
-            </h1>
-            <p className="text-xl sm:text-2xl font-light text-slate-700 dark:text-slate-300 leading-relaxed">
-              Clear terms for using CivicSense
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-4">
-              <strong>Last updated:</strong> January 2025
-            </p>
-          </div>
-
-          {/* Introduction */}
-          <div className="relative mb-12 apple-slide-up">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
-            <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-              <p className="text-base text-slate-700 dark:text-slate-300">
-                Welcome to CivicSense! These terms explain your rights and responsibilities when using our civic education platform. 
-                By using CivicSense, you agree to these terms.
-              </p>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="space-y-12">
-            {/* Using CivicSense */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Using CivicSense</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">What You Can Do</h3>
-                    <div className="prose">
-                      <ul>
-                        <li>Take quizzes and learn about civic topics</li>
-                        <li>Track your progress and earn achievements</li>
-                        <li>Create an account to save your progress</li>
-                        <li>Subscribe to premium features for enhanced learning</li>
-                        <li>Share your achievements (but not other users' data)</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">What You Can't Do</h3>
-                    <div className="prose">
-                      <ul>
-                        <li>Copy, redistribute, or sell our content</li>
-                        <li>Use automated tools to scrape or access our service</li>
-                        <li>Create multiple accounts to abuse free trials</li>
-                        <li>Share your premium account with others</li>
-                        <li>Use the service for any illegal or harmful purposes</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Your Account */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Your Account</h2>
-                <div className="prose">
-                  <ul>
-                    <li><strong>Account security:</strong> You're responsible for keeping your login information secure</li>
-                    <li><strong>Accurate information:</strong> Please provide accurate information when creating your account</li>
-                    <li><strong>One account per person:</strong> Each person should have only one account</li>
-                    <li><strong>Account termination:</strong> We may suspend accounts that violate these terms</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Premium Services */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Premium Services</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">Billing</h3>
-                    <div className="prose">
-                      <ul>
-                        <li>Premium subscriptions are billed monthly or annually</li>
-                        <li>Lifetime subscriptions are one-time payments</li>
-                        <li>All payments are processed securely through Stripe</li>
-                        <li>Prices may change with 30 days notice to existing subscribers</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">Cancellation & Refunds</h3>
-                    <div className="prose">
-                      <ul>
-                        <li>You can cancel your subscription anytime from your account settings</li>
-                        <li>Cancellation takes effect at the end of your current billing period</li>
-                        <li>Refunds are available within 30 days of purchase for annual subscriptions</li>
-                        <li>Lifetime subscriptions are final sale after 30 days</li>
-                        <li>We may offer prorated refunds at our discretion</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Content & Intellectual Property */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Content & Intellectual Property</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">Our Content</h3>
-                    <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
-                      All quizzes, explanations, and educational materials on CivicSense are our intellectual property or used with permission. 
-                      This includes:
-                    </p>
-                    <div className="prose">
-                      <ul>
-                        <li>Quiz questions and answers</li>
-                        <li>Explanations and educational content</li>
-                        <li>Progress tracking algorithms</li>
-                        <li>User interface and design</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-50 mb-3">Fair Use</h3>
-                    <p className="text-base text-slate-700 dark:text-slate-300">
-                      You may reference our content for educational purposes, but please cite CivicSense as the source. 
-                      Commercial use requires written permission.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Privacy & Data */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Privacy & Data</h2>
-                <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
-                  Your privacy is important to us. Our <Link href="/privacy" className="text-interactive hover:text-interactive">Privacy Policy</Link> explains 
-                  how we collect, use, and protect your information.
+        <div className="max-w-6xl mx-auto">
+          <div className="relative flex gap-12">
+            {/* Main Content */}
+            <div className="flex-1 max-w-4xl">
+              {/* Header */}
+              <div className="text-center mb-16 apple-animate-in">
+                <div className="text-6xl mb-6">📋</div>
+                <h1 className="text-4xl sm:text-5xl font-light text-slate-900 dark:text-slate-100 leading-tight tracking-tight mb-6">
+                  Terms of Service
+                </h1>
+                <p className="text-xl sm:text-2xl font-light text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Clear terms for using CivicSense
                 </p>
-                <div className="prose">
-                  <ul>
-                    <li>We collect only what's necessary to provide our service</li>
-                    <li>We never sell your personal information</li>
-                    <li>You can request deletion of your data at any time</li>
-                    <li>AI features use anonymized data only</li>
-                  </ul>
-                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-500 mt-4">
+                  <strong>Last updated:</strong> June 18, 2025 | <strong>Effective date:</strong> June 18, 2025
+                </p>
               </div>
-            </section>
 
-            {/* Disclaimers */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Important Disclaimers</h2>
-                
-                <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
-                  <p className="text-base text-amber-900 dark:text-amber-100">
-                    <strong>Educational Purpose:</strong> CivicSense is for educational purposes only and should not be considered legal or political advice.
+              {/* Introduction */}
+              <div className="relative mb-12 apple-slide-up">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
+                <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                  <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">
+                    Welcome to CivicSense! These terms ("Terms") constitute a legally binding agreement between you and CivicSense, Inc. ("we," "us," or "our") 
+                    governing your use of our civic education platform, including our website, mobile applications, and all related services (collectively, the "Service"). 
+                    By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
                   </p>
                 </div>
+              </div>
 
-                <div className="prose">
-                  <ul>
-                    <li><strong>Accuracy:</strong> We strive for accuracy but cannot guarantee all information is error-free</li>
-                    <li><strong>Updates:</strong> Civic information changes frequently; we update content regularly but some may be outdated</li>
-                    <li><strong>Bias:</strong> We aim for balanced, non-partisan content but acknowledge that complete objectivity is challenging</li>
-                    <li><strong>Sources:</strong> We cite reliable sources but encourage you to verify important information independently</li>
-                  </ul>
+              {/* Main Content */}
+              <div className="space-y-12">
+                {/* Using CivicSense */}
+                <section id="using-civicsense" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Using CivicSense</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Eligibility & Access</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li>You must be at least 13 years old to use the Service</li>
+                            <li>Users under 18 require parental or guardian consent</li>
+                            <li>You must provide accurate and complete registration information</li>
+                            <li>You are responsible for maintaining the confidentiality of your account credentials</li>
+                            <li>You must notify us immediately of any unauthorized access to your account</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Permitted Use</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li>Access educational content and take quizzes for personal learning</li>
+                            <li>Track your progress and earn achievements through our gamification system</li>
+                            <li>Participate in multiplayer quiz games and learning competitions</li>
+                            <li>Join or create learning pods for collaborative education</li>
+                            <li>Interact with our AI-powered learning assistant for educational purposes</li>
+                            <li>Subscribe to premium features for enhanced learning experiences</li>
+                            <li>Share your achievements and progress (but not other users' data)</li>
+                            <li>Use accessibility features including text-to-speech and translations</li>
+                            <li>Provide feedback to help improve our Service</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Prohibited Conduct</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li>Violate any applicable laws or regulations</li>
+                            <li>Copy, distribute, or modify our content without written permission</li>
+                            <li>Use automated systems or software to extract data from the Service</li>
+                            <li>Create multiple accounts or share account credentials</li>
+                            <li>Circumvent any content protection or access restriction measures</li>
+                            <li>Interfere with or disrupt the Service or servers</li>
+                            <li>Attempt to gain unauthorized access to any portion of the Service</li>
+                            <li>Engage in any activity that could damage our reputation or business</li>
+                            <li>Use the Service for commercial purposes without our consent</li>
+                            <li>Reverse engineer or attempt to extract source code</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Community Standards */}
+                <section id="community-standards" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-red-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Community Standards & Zero Tolerance Policy</h2>
+                    
+                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                      <p className="text-base text-red-900 dark:text-red-200">
+                        <strong>Zero Tolerance:</strong> We maintain a zero tolerance policy for harassment, discrimination, hate speech, or any behavior 
+                        that creates an unsafe or unwelcoming environment. Violations result in immediate account suspension or termination.
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Prohibited Behavior</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Harassment or bullying:</strong> Intimidation, threats, stalking, or persistent unwanted contact</li>
+                            <li><strong>Discrimination:</strong> Targeting individuals based on protected characteristics</li>
+                            <li><strong>Hate speech:</strong> Content promoting violence or hatred against any group</li>
+                            <li><strong>Doxxing:</strong> Sharing private information without consent</li>
+                            <li><strong>Impersonation:</strong> Pretending to be another person or entity</li>
+                            <li><strong>Spam:</strong> Repetitive, irrelevant, or unsolicited content</li>
+                            <li><strong>Misinformation:</strong> Deliberately spreading false civic information</li>
+                            <li><strong>Sexual content:</strong> Any sexually explicit or suggestive material</li>
+                            <li><strong>Violence:</strong> Threats of violence or content glorifying violence</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Enforcement & Consequences</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Immediate suspension:</strong> For severe violations pending investigation</li>
+                            <li><strong>Content removal:</strong> Violating content removed without notice</li>
+                            <li><strong>Account termination:</strong> Permanent ban for serious or repeated violations</li>
+                            <li><strong>Legal action:</strong> We reserve the right to pursue legal remedies</li>
+                            <li><strong>Law enforcement:</strong> Illegal activities will be reported to authorities</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* AI Features */}
+                <section id="ai-features" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">AI Features & Technology</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">AI Usage Guidelines</h3>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                          <p className="text-base text-blue-900 dark:text-blue-200">
+                            <strong>Educational Purpose:</strong> Our AI features are designed solely for civic education and must not be used for 
+                            political campaigning, spreading misinformation, or any non-educational purposes.
+                          </p>
+                        </div>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Accuracy disclaimer:</strong> AI responses may contain errors; verify important information</li>
+                            <li><strong>No professional advice:</strong> AI guidance is educational only, not legal or professional advice</li>
+                            <li><strong>Content generation:</strong> AI-generated content remains our intellectual property</li>
+                            <li><strong>Privacy:</strong> AI interactions are processed with data anonymization</li>
+                            <li><strong>Prohibited uses:</strong> Do not attempt to extract training data or manipulate AI systems</li>
+                            <li><strong>Feedback:</strong> Report any concerning AI behavior immediately</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Multiplayer & Social */}
+                <section id="multiplayer-social" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-teal-500/10 to-cyan-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Multiplayer & Learning Pods</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Fair Play Policy</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>No cheating:</strong> Compete honestly without external assistance or exploits</li>
+                            <li><strong>Respectful competition:</strong> Maintain sportsmanship in all interactions</li>
+                            <li><strong>No manipulation:</strong> Do not exploit bugs or game mechanics</li>
+                            <li><strong>Account sharing:</strong> Each player must use their own account</li>
+                            <li><strong>Communication:</strong> Keep all chat appropriate and constructive</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Learning Pod Guidelines</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Educational focus:</strong> Pods must maintain focus on civic learning</li>
+                            <li><strong>Moderator responsibility:</strong> Pod creators must enforce community standards</li>
+                            <li><strong>Privacy:</strong> Respect members' privacy and learning progress</li>
+                            <li><strong>Inclusive environment:</strong> Welcome all learners regardless of skill level</li>
+                            <li><strong>Content sharing:</strong> Only share appropriate educational materials</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Your Account */}
+                <section id="your-account" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Your Account</h2>
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li><strong>Account security:</strong> You are solely responsible for maintaining account security</li>
+                        <li><strong>Accurate information:</strong> Provide and maintain accurate account information</li>
+                        <li><strong>Age requirements:</strong> Users under 18 must have parental consent on file</li>
+                        <li><strong>Account transfer:</strong> Accounts are non-transferable and non-assignable</li>
+                        <li><strong>Termination:</strong> We may terminate accounts that violate these Terms</li>
+                        <li><strong>Data retention:</strong> Account data is retained per our Privacy Policy</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Premium Services */}
+                <section id="premium-services" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Premium Services</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Subscription Terms</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Billing:</strong> Subscriptions auto-renew unless cancelled before renewal date</li>
+                            <li><strong>Price changes:</strong> We'll provide 30 days notice of price increases</li>
+                            <li><strong>Cancellation:</strong> Cancel anytime; access continues until end of billing period</li>
+                            <li><strong>No sharing:</strong> Premium accounts are for individual use only</li>
+                            <li><strong>Payment processing:</strong> All payments processed securely through Stripe</li>
+                            <li><strong>Taxes:</strong> You're responsible for applicable taxes</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Refund Policy</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>30-day guarantee:</strong> Full refund within 30 days of initial purchase</li>
+                            <li><strong>Annual plans:</strong> Prorated refunds may be available at our discretion</li>
+                            <li><strong>Lifetime access:</strong> Non-refundable after 30 days</li>
+                            <li><strong>Donations:</strong> Generally non-refundable but grant access benefits</li>
+                            <li><strong>Disputes:</strong> Contact support before initiating chargebacks</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Content & IP */}
+                <section id="content-ip" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Content & Intellectual Property</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Our Intellectual Property</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
+                          All content on the Service, including text, graphics, logos, images, audio, video, data compilations, 
+                          and software, is owned by us or our licensors and protected by intellectual property laws.
+                        </p>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li>Quiz questions, answers, and explanations</li>
+                            <li>Learning algorithms and gamification systems</li>
+                            <li>User interface design and experience</li>
+                            <li>AI models and generated content</li>
+                            <li>All trademarks and service marks</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Limited License</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300">
+                          We grant you a limited, non-exclusive, non-transferable license to access and use the Service 
+                          for personal, non-commercial educational purposes only. This license does not include rights to:
+                          copy, modify, distribute, sell, or lease any part of our Service or content.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">User Content</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300">
+                          By submitting content to the Service, you grant us a worldwide, non-exclusive, royalty-free license 
+                          to use, reproduce, modify, and distribute your content for the purpose of operating and improving the Service.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Privacy & Data */}
+                <section id="privacy-data" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Privacy & Data</h2>
+                    <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
+                      Your use of the Service is also governed by our <Link href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</Link>, 
+                      which is incorporated into these Terms by reference.
+                    </p>
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li>We collect and process data as described in our Privacy Policy</li>
+                        <li>You consent to such collection and processing by using the Service</li>
+                        <li>We implement reasonable security measures to protect your data</li>
+                        <li>You can request data deletion per our Privacy Policy</li>
+                        <li>We comply with applicable data protection laws</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Disclaimers */}
+                <section id="disclaimers" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Important Disclaimers</h2>
+                    
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+                      <p className="text-base text-amber-900 dark:text-amber-200">
+                        <strong>Educational Purpose Only:</strong> The Service provides civic education and should not be considered 
+                        legal, financial, or professional advice. Always consult qualified professionals for specific situations.
+                      </p>
+                    </div>
+
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li><strong>"AS IS" BASIS:</strong> The Service is provided without warranties of any kind</li>
+                        <li><strong>Accuracy:</strong> We strive for accuracy but cannot guarantee error-free content</li>
+                        <li><strong>Availability:</strong> We don't guarantee uninterrupted access to the Service</li>
+                        <li><strong>Third-party content:</strong> We're not responsible for third-party content or links</li>
+                        <li><strong>User content:</strong> We don't endorse or verify user-generated content</li>
+                        <li><strong>Results:</strong> We don't guarantee specific learning outcomes or results</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Limitation of Liability */}
+                <section id="limitation-liability" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 via-slate-500/10 to-gray-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Limitation of Liability</h2>
+                    
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <p className="text-slate-700 dark:text-slate-300 mb-4">
+                        TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CIVICSENSE, ITS OFFICERS, DIRECTORS, 
+                        EMPLOYEES, OR AGENTS BE LIABLE FOR:
+                      </p>
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li>Any indirect, incidental, special, consequential, or punitive damages</li>
+                        <li>Loss of profits, data, use, goodwill, or other intangible losses</li>
+                        <li>Damages exceeding $100 or the amount paid to us in the past 12 months</li>
+                        <li>Any matter beyond our reasonable control</li>
+                      </ul>
+                      <p className="text-slate-700 dark:text-slate-300 mt-4">
+                        This limitation applies regardless of the legal theory on which the claim is based.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Indemnification */}
+                <section id="indemnification" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Indemnification</h2>
+                    
+                    <p className="text-base text-slate-700 dark:text-slate-300">
+                      You agree to indemnify, defend, and hold harmless CivicSense and its officers, directors, employees, 
+                      and agents from any claims, liabilities, damages, losses, and expenses (including reasonable attorney fees) 
+                      arising from: (i) your use of the Service; (ii) your violation of these Terms; (iii) your violation of any 
+                      third-party rights; or (iv) any content you submit to the Service.
+                    </p>
+                  </div>
+                </section>
+
+                {/* Dispute Resolution */}
+                <section id="dispute-resolution" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Dispute Resolution</h2>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Informal Resolution</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300">
+                          Before filing a formal dispute, you agree to try to resolve the dispute informally by contacting us 
+                          at legal@civicsense.com. We'll try to resolve the dispute informally for 60 days.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Binding Arbitration</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
+                          If informal resolution fails, disputes will be resolved through binding arbitration under the 
+                          American Arbitration Association rules, except you may assert claims in small claims court.
+                        </p>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <p className="text-sm text-blue-900 dark:text-blue-200">
+                            <strong>Class Action Waiver:</strong> You agree to resolve disputes individually and waive any right 
+                            to participate in class actions, class arbitrations, or representative actions.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Governing Law</h3>
+                        <p className="text-base text-slate-700 dark:text-slate-300">
+                          These Terms are governed by the laws of Delaware, USA, without regard to conflict of law principles.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Changes to Terms */}
+                <section id="changes-terms" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Changes to These Terms</h2>
+                    <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
+                      We may modify these Terms at any time. When we do:
+                    </p>
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li>We'll notify you via email and/or prominent notice on the Service</li>
+                        <li>Changes become effective 30 days after posting unless urgent</li>
+                        <li>Your continued use constitutes acceptance of the new Terms</li>
+                        <li>If you disagree, you must stop using the Service and may close your account</li>
+                        <li>We'll maintain an archive of previous versions upon request</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Contact */}
+                <section id="contact" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 via-gray-500/10 to-slate-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Contact Us</h2>
+                    <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
+                      For questions about these Terms or the Service:
+                    </p>
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="text-slate-700 dark:text-slate-300">
+                        <li><strong>Email:</strong> legal@civicsense.com</li>
+                        <li><strong>Support:</strong> support@civicsense.com</li>
+                        <li><strong>Address:</strong> CivicSense, Inc., [Address]</li>
+                        <li><strong>Response time:</strong> We typically respond within 2-3 business days</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Bottom Line */}
+              <div className="relative mt-12 text-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl blur-lg"></div>
+                <div className="relative bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm px-8 py-6 rounded-2xl">
+                  <p className="text-base text-slate-700 dark:text-slate-300">
+                    <strong>Thank you for using CivicSense!</strong> We're committed to providing a safe, effective, and enjoyable 
+                    civic education experience. By following these Terms, you help us maintain a positive learning community for everyone.
+                  </p>
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* Changes to Terms */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-rose-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Changes to These Terms</h2>
-                <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
-                  We may update these terms occasionally. When we do:
-                </p>
-                <div className="prose">
-                  <ul>
-                    <li>We'll notify you via email or in-app notification</li>
-                    <li>Changes take effect 30 days after notification</li>
-                    <li>Continued use of CivicSense means you accept the new terms</li>
-                    <li>If you don't agree, you can cancel your account</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Contact */}
-            <section className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 via-gray-500/10 to-slate-500/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                <h2 className="text-2xl font-light text-slate-900 dark:text-slate-50 mb-6">Questions?</h2>
-                <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
-                  If you have questions about these terms, please contact us:
-                </p>
-                <div className="prose">
-                  <ul>
-                    <li>Email: legal@civicsense.com</li>
-                    <li>Use the contact form in your account settings</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          {/* Bottom Line */}
-          <div className="relative mt-12 text-center">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl blur-lg"></div>
-            <div className="relative bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm px-8 py-6 rounded-2xl">
-              <p className="text-base text-slate-700 dark:text-slate-300">
-                <strong>In simple terms:</strong> Use CivicSense to learn about civic topics, respect our content and other users, 
-                and we'll provide you with a great educational experience while protecting your privacy.
-              </p>
+            {/* Table of Contents - Desktop Only */}
+            <div className="hidden lg:block flex-shrink-0 w-64 ml-12">
+              <TableOfContents items={tocItems} />
             </div>
           </div>
         </div>

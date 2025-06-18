@@ -347,41 +347,106 @@ export const dataService = {
    * Get topic by ID
    */
   async getTopicById(topicId: string): Promise<TopicMetadata | null> {
+    console.log('📊 dataService.getTopicById - Called with:', topicId)
+    
     const isDbAvailable = await checkDatabaseAvailability()
+    console.log('📊 dataService.getTopicById - Database available:', isDbAvailable)
     
     if (isDbAvailable) {
       try {
+        console.log('📊 dataService.getTopicById - Querying database for topic:', topicId)
         const dbTopic = await topicOperations.getById(topicId)
-        return dbTopic ? dbTopicToAppFormat(dbTopic) : null
+        console.log('📊 dataService.getTopicById - Database result:', {
+          found: !!dbTopic,
+          topicData: dbTopic ? {
+            topic_id: dbTopic.topic_id,
+            topic_title: dbTopic.topic_title,
+            emoji: dbTopic.emoji,
+            date: dbTopic.date
+          } : null
+        })
+        
+        const result = dbTopic ? dbTopicToAppFormat(dbTopic) : null
+        console.log('📊 dataService.getTopicById - Returning from database:', !!result)
+        return result
       } catch (error) {
-        console.error('Error fetching topic from database:', error)
+        console.error('📊 dataService.getTopicById - Database error:', error)
       }
     }
     
     // Fallback to mock data
+    console.log('📊 dataService.getTopicById - Falling back to mock data')
     const validMockTopics = getValidMockTopics()
-    return validMockTopics[topicId] || null
+    const result = validMockTopics[topicId] || null
+    console.log('📊 dataService.getTopicById - Mock data result:', {
+      found: !!result,
+      topicData: result ? {
+        topic_id: result.topic_id,
+        topic_title: result.topic_title,
+        emoji: result.emoji,
+        date: result.date
+      } : null
+    })
+    return result
   },
 
   /**
    * Get questions for a topic
    */
   async getQuestionsByTopic(topicId: string): Promise<QuizQuestion[]> {
+    console.log('📊 dataService.getQuestionsByTopic - Called with:', topicId)
+    
     const isDbAvailable = await checkDatabaseAvailability()
+    console.log('📊 dataService.getQuestionsByTopic - Database available:', isDbAvailable)
     
     if (isDbAvailable) {
       try {
+        console.log('📊 dataService.getQuestionsByTopic - Querying database for questions:', topicId)
         const dbQuestions = await questionOperations.getByTopic(topicId)
+        console.log('📊 dataService.getQuestionsByTopic - Database questions result:', {
+          count: dbQuestions.length,
+          firstQuestion: dbQuestions[0] ? {
+            question_number: dbQuestions[0].question_number,
+            question_type: dbQuestions[0].question_type,
+            hasOptions: !!(dbQuestions[0].option_a && dbQuestions[0].option_b),
+            question: dbQuestions[0].question.substring(0, 100) + '...'
+          } : null
+        })
+        
         const questions = dbQuestions.map(dbQuestion => questionOperations.toQuestionAppFormat(dbQuestion))
-        return cleanObjectContent(questions)
+        console.log('📊 dataService.getQuestionsByTopic - Transformed questions:', {
+          count: questions.length,
+          firstTransformed: questions[0] ? {
+            question_number: questions[0].question_number,
+            question_type: questions[0].question_type,
+            hasOptions: !!(questions[0].option_a && questions[0].option_b),
+            correct_answer: questions[0].correct_answer
+          } : null
+        })
+        
+        const result = cleanObjectContent(questions)
+        console.log('📊 dataService.getQuestionsByTopic - Returning from database, count:', result.length)
+        return result
       } catch (error) {
-        console.error('Error fetching questions from database:', error)
+        console.error('📊 dataService.getQuestionsByTopic - Database error:', error)
       }
     }
     
     // Fallback to mock data
+    console.log('📊 dataService.getQuestionsByTopic - Falling back to mock data')
     const questions = mockQuestionsData[topicId] || []
-    return cleanObjectContent(questions)
+    console.log('📊 dataService.getQuestionsByTopic - Mock data result:', {
+      count: questions.length,
+      firstQuestion: questions[0] ? {
+        question_number: questions[0].question_number,
+        question_type: questions[0].question_type,
+        hasOptions: !!(questions[0].option_a && questions[0].option_b)
+      } : null
+    })
+    
+    const result = cleanObjectContent(questions)
+    console.log('📊 dataService.getQuestionsByTopic - Returning from mock data, count:', result.length)
+    return result
   },
 
   /**

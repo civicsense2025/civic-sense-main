@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type MultiplayerGameState, type BaseMultiplayerEngineProps } from "./base-multiplayer-engine"
+import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type MultiplayerGameState, type BaseMultiplayerEngineProps, type MultiplayerUserAnswer } from "./base-multiplayer-engine"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -53,7 +53,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
 
   // Speed Round specific state
   const [speedState, setSpeedState] = useState<SpeedRoundState>({
-    ...({} as MultiplayerGameState),
+    currentQuestionIndex: 0,
+    userAnswers: [],
+    showResults: false,
+    gamePhase: 'active',
+    timeRemaining: config.timePerQuestion,
+    playerScores: {},
+    eliminatedPlayers: [],
+    currentRound: 1,
     speedBonus: 0,
     consecutiveCorrect: 0,
     leaderboard: [],
@@ -142,9 +149,20 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     const timeSpent = Math.max(1, (Date.now() - answerStartTime) / 1000)
     const speedBonusData = calculateSpeedBonus(timeSpent, isCorrect)
 
+    // Create answer record
+    const newAnswer: MultiplayerUserAnswer = {
+      questionId: props.questions[speedState.currentQuestionIndex].question_number,
+      answer,
+      isCorrect,
+      timeSpent,
+      submittedAt: Date.now(),
+      playerId: props.playerId
+    }
+
     // Update speed state
     setSpeedState(prev => ({
       ...prev,
+      userAnswers: [...prev.userAnswers, newAnswer],
       speedBonus: prev.speedBonus + speedBonusData.bonus,
       consecutiveCorrect: isCorrect ? prev.consecutiveCorrect + 1 : 0,
       lastAnswerSpeed: timeSpent,
@@ -180,7 +198,35 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     setPulseEffect(true)
     setTimeout(() => setPulseEffect(false), 300)
 
-  }, [answerStartTime, calculateSpeedBonus])
+    // Move to next question automatically after a short delay
+    setTimeout(() => {
+      handleNextQuestion()
+    }, 1500)
+
+  }, [answerStartTime, calculateSpeedBonus, speedState.currentQuestionIndex, props.questions, props.playerId])
+
+  // Handle next question navigation
+  const handleNextQuestion = useCallback(() => {
+    const isLastQuestion = speedState.currentQuestionIndex >= props.questions.length - 1
+    
+    if (isLastQuestion) {
+      // Quiz completed
+      setSpeedState(prev => ({ 
+        ...prev, 
+        showResults: true, 
+        gamePhase: 'completed' 
+      }))
+      props.onComplete()
+    } else {
+      // Move to next question
+      setSpeedState(prev => ({
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex + 1
+      }))
+      // Reset timer for next question
+      setAnswerStartTime(Date.now())
+    }
+  }, [speedState.currentQuestionIndex, props.questions.length, props.onComplete])
 
   // =============================================================================
   // REAL-TIME LEADERBOARD
@@ -347,6 +393,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     const currentQuestion = props.questions[speedState.currentQuestionIndex || 0]
     if (!currentQuestion) return null
 
+    console.log('🎮 SpeedRoundEngine - Rendering question:', {
+      index: speedState.currentQuestionIndex,
+      questionNumber: currentQuestion.question_number,
+      questionType: currentQuestion.question_type,
+      hasOptions: !!(currentQuestion.option_a && currentQuestion.option_b),
+      correctAnswer: currentQuestion.correct_answer
+    })
+
     return (
       <div className="space-y-6">
         <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -394,6 +448,47 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   // =============================================================================
   // MAIN RENDER
   // =============================================================================
+
+  // Show results if quiz is completed
+  if (speedState.showResults) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4 text-orange-600">Speed Round Complete! ⚡</h1>
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-8 max-w-2xl mx-auto mb-8">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {speedState.speedBonus + speedState.userAnswers.filter(a => a.isCorrect).length * 10}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Score</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-green-600">
+                    {speedState.userAnswers.filter(a => a.isCorrect).length}/{speedState.userAnswers.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Correct Answers</div>
+                </div>
+              </div>
+              
+              {speedState.consecutiveCorrect > 2 && (
+                <div className="mb-4 p-4 bg-orange-100 dark:bg-orange-950/20 rounded-lg">
+                  <div className="text-lg font-bold text-orange-700 dark:text-orange-300">
+                    🔥 Best Streak: {speedState.consecutiveCorrect} questions!
+                  </div>
+                </div>
+              )}
+              
+              <Button onClick={props.onComplete} className="w-full bg-orange-600 hover:bg-orange-700">
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">

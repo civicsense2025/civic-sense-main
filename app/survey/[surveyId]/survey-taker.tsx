@@ -200,6 +200,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
             onComplete={handleComplete}
             onSaveProgress={survey.allow_partial_responses ? handleSaveProgress : undefined}
             existingResponses={existingResponses}
+            sessionId={sessionId}
             className="px-4 sm:px-6 lg:px-8"
           />
         </main>

@@ -22,7 +22,8 @@ import {
   Zap,
   Shield,
   Star,
-  Bot
+  Bot,
+  Target
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -313,448 +314,496 @@ export function WaitingRoom({
   }
 
   return (
-    <div className="multiplayer-container max-w-4xl mx-auto px-4 sm:px-8 py-4">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="multiplayer-title">
-          {room.room_name || 'Multiplayer Quiz'}
-        </h1>
-        <p className="multiplayer-text-muted">
-          Get ready to test your civic knowledge together!
-        </p>
-      </div>
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      {/* Main Content */}
+      <div className="min-h-screen flex flex-col">
+        {/* Clean Header */}
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">
+                  {room.game_mode === 'speed_round' && '⚡'}
+                  {room.game_mode === 'elimination' && '🏆'}
+                  {(!['speed_round', 'elimination'].includes(room.game_mode)) && '📚'}
+                </div>
+                <div>
+                  <h1 className="text-xl font-medium text-slate-900 dark:text-white">
+                    {room.room_name || 'Multiplayer Quiz'}
+                  </h1>
+                  <p className="text-sm font-light text-slate-500 dark:text-slate-500">Room {room.room_code}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                  {room.game_mode.replace('_', ' ')}
+                </Badge>
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500">
+                  <Users className="h-4 w-4" />
+                  <span>{room.current_players}/{room.max_players}</span>
+                </div>
+              </div>
+            </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Room Info */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gamepad2 className="h-5 w-5" />
-                Room Info
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Room Code */}
-              <div>
-                <Label className="text-sm font-medium">Room Code</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-lg font-mono tracking-wider">
+            {/* Room Code Display */}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-500 uppercase tracking-wide">Share Code</p>
+                <div className="flex items-center gap-2">
+                  <code className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-lg font-mono tracking-wider text-slate-900 dark:text-white">
                     {room.room_code}
                   </code>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={handleCopyRoomCode}
-                    className="px-3"
+                    className="text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   >
                     {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
-
-              {/* Game Mode */}
-              <div>
-                <Label className="text-sm font-medium">Game Mode</Label>
-                <div className="mt-1">
-                  <Badge variant="outline" className="capitalize">
-                    {room.game_mode.replace('_', ' ')}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Player Count */}
-              <div>
-                <Label className="text-sm font-medium">Players</Label>
-                <div className="mt-1 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{room.current_players} / {room.max_players}</span>
-                </div>
-              </div>
-
-              {/* Topic Info */}
-              <div>
-                <Label className="text-sm font-medium">Topic</Label>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {room.topic_id}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                <Button
-                  onClick={handleToggleReady}
-                  className={cn(
-                    "w-full",
-                    currentPlayer?.is_ready 
-                      ? "bg-green-600 hover:bg-green-700" 
-                      : "bg-blue-600 hover:bg-blue-700"
-                  )}
-                  disabled={!currentPlayer}
-                >
-                  {currentPlayer?.is_ready ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Ready!
-                    </>
-                  ) : (
-                    <>
-                      <Timer className="mr-2 h-4 w-4" />
-                      Ready Up
-                    </>
-                  )}
-                </Button>
-
-                {isHost && (
-                  <Button
-                    onClick={handleStartGame}
-                    disabled={!canStart}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {isStarting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="mr-2 h-4 w-4" />
-                        Start Game
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {/* Add AI Player Section (Host Only) */}
-                {isHost && room && room.current_players < room.max_players && availableNPCs.length > 0 && (
-                  <div className="space-y-2">
-                    {!showNPCSelector ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowNPCSelector(true)}
-                        disabled={addingNPC}
-                        className="w-full"
-                      >
-                        <Bot className="mr-2 h-4 w-4" />
-                        Add AI Player
-                      </Button>
-                    ) : (
-                      <div className="space-y-3 p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                        <Label className="text-sm font-medium">Choose AI Player ({availableNPCs.length} available)</Label>
-                        
-                        {/* Search Input */}
-                        {availableNPCs.length > 6 && (
-                          <div className="relative">
-                            <Input
-                              placeholder="Search AI players..."
-                              value={npcSearchQuery}
-                              onChange={(e) => {
-                                setNpcSearchQuery(e.target.value)
-                                setNpcDisplayCount(6) // Reset display count when searching
-                              }}
-                              className="h-8 text-xs pr-8"
-                            />
-                            {npcSearchQuery && (
-                              <button
-                                onClick={() => {
-                                  setNpcSearchQuery('')
-                                  setNpcDisplayCount(6)
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                              >
-                                <span className="text-xs">✕</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className="max-h-48 overflow-y-auto space-y-2">
-                          {(() => {
-                            // Filter NPCs based on search query
-                            const filteredNPCs = availableNPCs.filter(npc => {
-                              if (!npcSearchQuery.trim()) return true
-                              const query = npcSearchQuery.toLowerCase()
-                              const name = npc.name.toLowerCase()
-                              const specialties = npc.traits.specialties.join(' ').toLowerCase()
-                              const skillLevel = npc.skillLevel.toLowerCase()
-                              return name.includes(query) || specialties.includes(query) || skillLevel.includes(query)
-                            })
-                            
-                            // Show more NPCs when searching, or use display count
-                            const displayCount = npcSearchQuery.trim() 
-                              ? Math.min(20, filteredNPCs.length) 
-                              : npcDisplayCount
-                            const displayNPCs = filteredNPCs.slice(0, displayCount)
-                            
-                            if (loadingNPCs) {
-                              return (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                                  <div className="text-xs">Loading AI players...</div>
-                                </div>
-                              )
-                            }
-                            
-                            if (displayNPCs.length === 0) {
-                              return (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  <div className="text-xs">
-                                    {npcSearchQuery.trim() ? 'No AI players found' : 'No AI players available'}
-                                  </div>
-                                  {npcSearchQuery.trim() && (
-                                    <div className="text-xs mt-1">Try a different search term</div>
-                                  )}
-                                </div>
-                              )
-                            }
-                            
-                            return (
-                              <>
-                                {displayNPCs.map((npc) => (
-                                  <button
-                                    key={npc.id}
-                                    onClick={() => handleAddNPC(npc.id)}
-                                    disabled={addingNPC}
-                                    className={cn(
-                                      "flex items-center gap-3 p-3 text-left rounded-lg border transition-colors w-full",
-                                      "hover:bg-white dark:hover:bg-slate-800 hover:border-primary/50",
-                                      selectedNPC === npc.id ? "border-primary bg-primary/5" : "border-border",
-                                      addingNPC && "opacity-50 cursor-not-allowed"
-                                    )}
-                                  >
-                                    <span className="text-xl">{npc.emoji}</span>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <p className="font-medium text-sm truncate">{npc.name}</p>
-                                        <Badge variant="outline" className="text-xs">
-                                          {npc.skillLevel}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {npc.traits.specialties.slice(0, 2).join(', ')}
-                                      </p>
-                                                                            <p className="text-xs text-muted-foreground/80 truncate mt-0.5">
-                                         Confidence: {npc.traits.confidenceLevel}% • Consistency: {npc.traits.consistency}%
-                                       </p>
-                                    </div>
-                                  </button>
-                                ))}
-                                
-                                {/* Load More Button */}
-                                {!npcSearchQuery.trim() && filteredNPCs.length > npcDisplayCount && (
-                                  <div className="text-center py-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setNpcDisplayCount(prev => prev + 6)}
-                                      className="text-xs h-8"
-                                    >
-                                      Load {Math.min(6, filteredNPCs.length - npcDisplayCount)} more AI players
-                                    </Button>
-                                  </div>
-                                )}
-                                
-                                {/* Search Results Summary */}
-                                {npcSearchQuery.trim() && (
-                                  <div className="text-center py-1 text-xs text-muted-foreground">
-                                    {filteredNPCs.length > displayCount && (
-                                      <>Showing {displayCount} of {filteredNPCs.length} matching AI players</>
-                                    )}
-                                    {filteredNPCs.length <= displayCount && filteredNPCs.length > 0 && (
-                                      <>Found {filteredNPCs.length} AI player{filteredNPCs.length !== 1 ? 's' : ''}</>
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            )
-                          })()}
-                        </div>
-                        
-                        <div className="flex gap-2 pt-2 border-t">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setShowNPCSelector(false)
-                              setNpcSearchQuery('')
-                              setNpcDisplayCount(6)
-                            }}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={handleLeaveRoom}
-                  className="w-full"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Leave Room
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              
+              <Button
+                variant="ghost"
+                onClick={handleLeaveRoom}
+                className="text-slate-500 dark:text-slate-500 hover:text-red-500"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Leave
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Players List */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Players ({players.length})
-                </div>
-                {!allPlayersReady && (
-                  <Badge variant="outline" className="text-xs">
-                    Waiting for players...
-                  </Badge>
-                )}
-                {allPlayersReady && (
-                  <Badge className="text-xs bg-green-600">
-                    All Ready!
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                      player.is_ready 
-                        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" 
-                        : "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800",
-                      player.id === playerId && "ring-2 ring-primary ring-offset-2"
-                    )}
-                  >
-                    {/* Player Emoji */}
-                    <div className="text-2xl">
-                      {player.player_emoji}
-                    </div>
-
-                    {/* Player Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">
-                          {player.player_name}
-                          {player.id === playerId && (
-                            <span className="text-xs text-muted-foreground ml-1">(You)</span>
-                          )}
-                        </p>
-                        {getPlayerStatusIcon(player)}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge 
-                          variant={getPlayerBadgeVariant(player)}
-                          className="text-xs"
-                        >
-                          {getPlayerStatusText(player)}
-                        </Badge>
-                        
-                        {/* Premium/Pro indicators */}
-                        {player.user_id && (
-                          <div className="flex items-center gap-1">
-                            {canUseBoosts(player, isPremium) && (
-                              <Zap className="h-3 w-3 text-yellow-500" />
-                            )}
-                            {isPro && (
-                              <Star className="h-3 w-3 text-purple-500" />
-                            )}
-                          </div>
-                        )}
-
-                        {/* Guest/AI indicator */}
-                        {!player.user_id && (
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              player.guest_token?.startsWith('npc_') 
-                                ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' 
-                                : ''
-                            }`}
-                          >
-                            {player.guest_token?.startsWith('npc_') ? '🤖 AI' : 'Guest'}
+        {/* Main Game Lobby */}
+        <div className="flex-1 p-6">
+          <div className="max-w-6xl mx-auto h-full">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-12 h-full">
+              
+              {/* Players Area - Takes most space */}
+              <div className="xl:col-span-3">
+                <div className="h-full space-y-8">
+                  <div className="text-center space-y-4">
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
+                        Players
+                      </h2>
+                      <div className="flex items-center justify-center gap-2">
+                        {!allPlayersReady ? (
+                          <Badge variant="outline" className="border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20">
+                            <Timer className="h-3 w-3 mr-1" />
+                            Waiting for players...
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+                            <Check className="h-3 w-3 mr-1" />
+                            All Ready!
                           </Badge>
                         )}
                       </div>
                     </div>
+                    
+                    <p className="text-sm font-light text-slate-500 dark:text-slate-500">
+                      {players.length} of {room.max_players} players
+                    </p>
                   </div>
-                ))}
 
-                {/* Empty slots */}
-                {Array.from({ length: room.max_players - players.length }).map((_, index) => (
-                  <div
-                    key={`empty-${index}`}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/25"
-                  >
-                    <div className="text-2xl text-slate-400">
-                      👤
+                  {/* Players Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {players.map((player, index) => (
+                      <div
+                        key={player.id}
+                        className={cn(
+                          "relative p-8 rounded-2xl border transition-all duration-300",
+                          player.is_ready 
+                            ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-900/50 shadow-sm" 
+                            : "border-slate-200 dark:border-slate-800",
+                          player.id === playerId && "ring-2 ring-slate-400 dark:ring-slate-600 ring-offset-2 ring-offset-white dark:ring-offset-slate-950",
+                          "hover:scale-[1.02]"
+                        )}
+                      >
+                        {/* Player Status Indicator */}
+                        <div className="absolute -top-2 -right-2">
+                          {player.is_ready ? (
+                            <div className="w-6 h-6 bg-slate-900 dark:bg-white rounded-full flex items-center justify-center">
+                              <Check className="h-3 w-3 text-white dark:text-slate-900" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                              <Timer className="h-3 w-3 text-slate-500 dark:text-slate-500" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Host Crown */}
+                        {player.is_host && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <div className="bg-slate-900 dark:bg-white rounded-full p-1">
+                              <Crown className="h-4 w-4 text-white dark:text-slate-900" />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Player Info */}
+                        <div className="text-center space-y-3">
+                          <div className="text-4xl">{player.player_emoji}</div>
+                          <h3 className="font-medium text-slate-900 dark:text-white">
+                            {player.player_name}
+                            {player.id === playerId && (
+                              <span className="block text-xs text-slate-500 dark:text-slate-500 font-light">(You)</span>
+                            )}
+                          </h3>
+                          
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {player.is_host && (
+                              <Badge className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs">
+                                Host
+                              </Badge>
+                            )}
+                            
+                            {!player.user_id && (
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs border-slate-200 dark:border-slate-800",
+                                  player.guest_token?.startsWith('npc_') 
+                                    ? 'text-slate-600 dark:text-slate-400' 
+                                    : 'text-slate-500 dark:text-slate-500'
+                                )}
+                              >
+                                {player.guest_token?.startsWith('npc_') ? '🤖 AI' : 'Guest'}
+                              </Badge>
+                            )}
+
+                            {canUseBoosts(player, isPremium) && (
+                              <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs">
+                                <Zap className="h-3 w-3 mr-1" />
+                                Premium
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Empty Slots */}
+                    {Array.from({ length: room.max_players - players.length }).map((_, index) => (
+                      <div
+                        key={`empty-${index}`}
+                        className="p-8 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700"
+                      >
+                        <div className="text-4xl text-slate-300 dark:text-slate-700 mb-3">👤</div>
+                        <p className="text-sm font-light text-slate-500 dark:text-slate-500 mb-2">Waiting for player...</p>
+                        <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-600">
+                          <UserPlus className="h-3 w-3" />
+                          <span>Share room code</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Game Status Messages */}
+                  {allPlayersReady && isHost && (
+                    <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center">
+                      <div className="space-y-3">
+                        <div className="w-12 h-12 bg-slate-900 dark:bg-white rounded-full flex items-center justify-center mx-auto">
+                          <Play className="h-6 w-6 text-white dark:text-slate-900" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-slate-900 dark:text-white">Ready to Launch!</h3>
+                          <p className="text-sm font-light text-slate-600 dark:text-slate-400">All players are ready. Start the quiz when you're ready.</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">
-                        Waiting for player...
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <UserPlus className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          Share room code to invite
-                        </span>
+                  )}
+
+                  {allPlayersReady && !isHost && (
+                    <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center">
+                      <div className="space-y-3">
+                        <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                          <Timer className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-slate-900 dark:text-white">Waiting for Host</h3>
+                          <p className="text-sm font-light text-slate-600 dark:text-slate-400">All players are ready. The host will start the game.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Topic Info */}
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                        <Target className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-slate-900 dark:text-white">Quiz Topic</h4>
+                        <p className="text-sm font-light text-slate-500 dark:text-slate-500">{room.topic_id}</p>
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
 
-              {/* Game Start Instructions */}
-              {allPlayersReady && isHost && (
-                <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                    <Play className="h-4 w-4" />
-                    <p className="font-medium">Ready to start!</p>
-                  </div>
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
-                    All players are ready. Click "Start Game" to begin the quiz.
-                  </p>
+              {/* Control Panel */}
+              <div className="xl:col-span-1 space-y-8">
+                {/* Ready Button */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Player Status</h3>
+                  
+                  <Button
+                    onClick={handleToggleReady}
+                    className={cn(
+                      "w-full h-14 text-lg font-light transition-all duration-300 rounded-xl",
+                      currentPlayer?.is_ready 
+                        ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 text-white shadow-lg" 
+                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800"
+                    )}
+                    disabled={!currentPlayer}
+                  >
+                    {currentPlayer?.is_ready ? (
+                      <>
+                        <Check className="mr-3 h-5 w-5" />
+                        Ready!
+                      </>
+                    ) : (
+                      <>
+                        <Timer className="mr-3 h-5 w-5" />
+                        Ready Up
+                      </>
+                    )}
+                  </Button>
                 </div>
-              )}
 
-              {allPlayersReady && !isHost && (
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                    <Timer className="h-4 w-4" />
-                    <p className="font-medium">Waiting for host</p>
-                  </div>
-                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                    All players are ready. Waiting for the host to start the game.
-                  </p>
-                </div>
-              )}
+                {/* Host Controls */}
+                {isHost && (
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white">Host Controls</h3>
+                    
+                    <div className="space-y-4">
+                      {/* Start Game Button */}
+                      <Button
+                        onClick={handleStartGame}
+                        disabled={!canStart}
+                        className={cn(
+                          "w-full h-12 font-light transition-all duration-300 rounded-xl",
+                          canStart 
+                            ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 text-white shadow-lg"
+                            : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-900 dark:text-slate-600"
+                        )}
+                      >
+                        {isStarting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-slate-900 mr-2" />
+                            Starting...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Start Game
+                          </>
+                        )}
+                      </Button>
 
-              {/* Guest Limits Warning */}
-              {!user && hasReachedDailyLimit() && (
-                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
-                    <Shield className="h-4 w-4" />
-                    <p className="font-medium">Daily limit reached</p>
+                      {/* Add AI Player */}
+                      {room && room.current_players < room.max_players && availableNPCs.length > 0 && (
+                        <div>
+                          {!showNPCSelector ? (
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowNPCSelector(true)}
+                              disabled={addingNPC}
+                              className="w-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                            >
+                              <Bot className="mr-2 h-4 w-4" />
+                              Add AI Player
+                            </Button>
+                          ) : (
+                            <div className="space-y-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium text-slate-900 dark:text-white">Choose AI Player</Label>
+                                <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500">
+                                  {availableNPCs.length} available
+                                </Badge>
+                              </div>
+                              
+                              {/* Search Input */}
+                              {availableNPCs.length > 6 && (
+                                <div className="relative">
+                                  <Input
+                                    placeholder="Search AI players..."
+                                    value={npcSearchQuery}
+                                    onChange={(e) => {
+                                      setNpcSearchQuery(e.target.value)
+                                      setNpcDisplayCount(6)
+                                    }}
+                                    className="h-8 text-xs border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950"
+                                  />
+                                  {npcSearchQuery && (
+                                    <button
+                                      onClick={() => {
+                                        setNpcSearchQuery('')
+                                        setNpcDisplayCount(6)
+                                      }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                    >
+                                      <span className="text-xs">✕</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div className="max-h-48 overflow-y-auto space-y-2">
+                                {(() => {
+                                  const filteredNPCs = availableNPCs.filter(npc => {
+                                    if (!npcSearchQuery.trim()) return true
+                                    const query = npcSearchQuery.toLowerCase()
+                                    const name = npc.name.toLowerCase()
+                                    const specialties = npc.traits.specialties.join(' ').toLowerCase()
+                                    const skillLevel = npc.skillLevel.toLowerCase()
+                                    return name.includes(query) || specialties.includes(query) || skillLevel.includes(query)
+                                  })
+                                  
+                                  const displayCount = npcSearchQuery.trim() 
+                                    ? Math.min(20, filteredNPCs.length) 
+                                    : npcDisplayCount
+                                  const displayNPCs = filteredNPCs.slice(0, displayCount)
+                                  
+                                  if (loadingNPCs) {
+                                    return (
+                                      <div className="text-center py-4 text-slate-500 dark:text-slate-500">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400 mx-auto mb-2"></div>
+                                        <div className="text-xs">Loading AI players...</div>
+                                      </div>
+                                    )
+                                  }
+                                  
+                                  if (displayNPCs.length === 0) {
+                                    return (
+                                      <div className="text-center py-4 text-slate-500 dark:text-slate-500">
+                                        <div className="text-xs">
+                                          {npcSearchQuery.trim() ? 'No AI players found' : 'No AI players available'}
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                  
+                                  return (
+                                    <>
+                                      {displayNPCs.map((npc) => (
+                                        <button
+                                          key={npc.id}
+                                          onClick={() => handleAddNPC(npc.id)}
+                                          disabled={addingNPC}
+                                          className={cn(
+                                            "flex items-center gap-3 p-3 text-left rounded-lg border transition-all duration-200 w-full",
+                                            "hover:border-slate-300 dark:hover:border-slate-700",
+                                            "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950",
+                                            addingNPC && "opacity-50 cursor-not-allowed"
+                                          )}
+                                        >
+                                          <span className="text-xl">{npc.emoji}</span>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{npc.name}</p>
+                                              <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500">
+                                                {npc.skillLevel}
+                                              </Badge>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-500 truncate">
+                                              {npc.traits.specialties.slice(0, 2).join(', ')}
+                                            </p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                      
+                                      {/* Load More Button */}
+                                      {!npcSearchQuery.trim() && filteredNPCs.length > npcDisplayCount && (
+                                        <div className="text-center py-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setNpcDisplayCount(prev => prev + 6)}
+                                            className="text-xs h-8 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                          >
+                                            Load {Math.min(6, filteredNPCs.length - npcDisplayCount)} more
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </>
+                                  )
+                                })()}
+                              </div>
+                              
+                              <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowNPCSelector(false)
+                                    setNpcSearchQuery('')
+                                    setNpcDisplayCount(6)
+                                  }}
+                                  className="flex-1 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                    You've reached your daily quiz limit as a guest. Sign up for unlimited access!
-                  </p>
+                )}
+
+                {/* Game Info */}
+                <div className="space-y-4 pt-8 border-t border-slate-100 dark:border-slate-800">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Game Info</h3>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-500">Mode:</span>
+                      <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                        {room.game_mode.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-500">Players:</span>
+                      <span className="text-slate-900 dark:text-white font-medium">{room.current_players}/{room.max_players}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-500">Status:</span>
+                      <span className={cn(
+                        "font-medium",
+                        allPlayersReady ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-400"
+                      )}>
+                        {allPlayersReady ? "Ready to Start" : "Waiting"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {/* Warning Messages */}
+                {!user && hasReachedDailyLimit() && (
+                  <div className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+                      <Shield className="h-5 w-5" />
+                      <h4 className="font-medium">Daily Limit Reached</h4>
+                    </div>
+                    <p className="text-sm font-light text-amber-600 dark:text-amber-400">
+                      You've reached your daily quiz limit as a guest. Sign up for unlimited access!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ import { LearningPodsStats } from "@/components/learning-pods-stats"
 import Link from "next/link"
 
 interface UserMenuProps {
-  onSignInClick: () => void
+  onSignInClick?: () => void
 }
 
 // Custom Avatar Button Component
@@ -37,18 +37,8 @@ function AvatarButton({
   }
 
   const getAvatarColor = (email: string) => {
-    // Generate a consistent color based on email
-    const hash = email.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0)
-      return a & a
-    }, 0)
-    
-    const colors = [
-      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 
-      'bg-indigo-500', 'bg-yellow-500', 'bg-red-500', 'bg-teal-500'
-    ]
-    
-    return colors[Math.abs(hash) % colors.length]
+    // Use a neutral color instead of generating based on email
+    return 'bg-slate-500 dark:bg-slate-600'
   }
 
   const userEmail = user.email || 'user@example.com'
@@ -62,21 +52,11 @@ function AvatarButton({
       <div className={`w-10 h-10 rounded-full ${getAvatarColor(userEmail)} flex items-center justify-center text-white font-medium text-sm shadow-lg`}>
         {getInitials(userEmail)}
       </div>
-      
-      {/* Level Badge */}
-      {userProgress && userProgress.currentLevel > 1 && (
-        <div className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
-          {userProgress.currentLevel}
-        </div>
-      )}
-      
-      {/* Online Indicator */}
-      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm"></div>
     </button>
   )
 }
 
-export function UserMenu({ onSignInClick }: UserMenuProps) {
+export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuProps) {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
@@ -116,50 +96,9 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
+  // Only show user menu if user is authenticated
   if (!user) {
-    return (
-      <div className="flex items-center space-x-4">
-        <Link href="/donate" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-          Support
-        </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              size="sm"
-              className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100"
-            >
-              <span onClick={onSignInClick}>Log In</span>
-              <ChevronDown className="w-4 h-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-          <DropdownMenuItem 
-            onClick={onSignInClick} 
-            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors text-slate-900 dark:text-slate-100"
-          >
-            <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-            <div>
-              <div className="font-medium text-slate-900 dark:text-slate-100">Sign In</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Access your dashboard and progress</div>
-            </div>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/civics-test" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm text-slate-900 dark:text-slate-100"
-            >
-              <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-              <div>
-                <div className="font-medium text-slate-900 dark:text-slate-100">Take Full Civics Exam</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">Test your civic knowledge</div>
-              </div>
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    )
+    return null
   }
 
   const getUserTitle = () => {

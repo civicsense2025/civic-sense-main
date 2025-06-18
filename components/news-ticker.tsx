@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,8 +25,38 @@ import {
   User,
   Globe,
   Shield,
-  Star
+  Star,
+  RefreshCw,
+  TrendingUp,
+  Eye,
+  Share2,
+  Bookmark,
+  Filter,
+  Search,
+  ChevronDown,
+  X
 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { NewsQuizGenerator } from '@/components/admin/news-quiz-generator'
+import { useToast } from '@/hooks/use-toast'
+import {
+  getOrCreateMediaOrganization,
+  analyzeArticleBias,
+  getMediaOrganizationByDomain,
+  getBiasDimensions,
+  formatBiasScore,
+  getBiasColor,
+  getCredibilityLevel,
+  getArticleBiasAnalysis,
+  BIAS_DIMENSIONS,
+  type MediaOrganizationWithScores,
+  type BiasDimension,
+  type ArticleBiasAnalysis
+} from '@/lib/media-bias-engine'
+import { BiasAnalysisCard } from '@/components/news-ticker/bias-analysis-card'
 
 interface NewsArticle {
   id: string
@@ -46,6 +76,31 @@ interface NewsArticle {
   biasRating?: string
   domain?: string
   author?: string
+  readTime?: number
+  tags?: string[]
+  engagement?: {
+    views: number
+    shares: number
+    bookmarks: number
+  }
+  civicImpact?: {
+    powerLevel: 'local' | 'state' | 'federal' | 'international'
+    actionable: boolean
+    urgency: 'low' | 'medium' | 'high' | 'critical'
+  }
+  organization?: MediaOrganizationWithScores
+  database_id?: string | null
+}
+
+interface NewsFilters {
+  search: string
+  sources: string[]
+  categories: string[]
+  credibilityMin: number
+  biasRating: string[]
+  timeRange: '1h' | '6h' | '24h' | '7d' | 'all'
+  sortBy: 'relevance' | 'date' | 'credibility' | 'engagement'
+  civicImpact: string[]
 }
 
 interface NewsTickerProps {
@@ -55,6 +110,12 @@ interface NewsTickerProps {
   autoScroll?: boolean
   scrollSpeed?: number
   maxArticles?: number
+  onArticleClick?: (article: NewsArticle) => void
+  compact?: boolean
+  showFilters?: boolean
+  enableBookmarks?: boolean
+  enableSharing?: boolean
+  adminMode?: boolean
 }
 
 const aiDeckBuilder = new AIDeckBuilder()
@@ -130,209 +191,753 @@ function getBiasBadge(rating?: string) {
   return biasMap[rating] || null
 }
 
-// Compact News Article Card (styled like SourceMetadataCard with CivicSense design)
-function CompactNewsCard({ article, onClick }: { article: NewsArticle, onClick: () => void }) {
-  const credibilityBadge = getCredibilityBadge(article.credibilityScore)
-  const biasBadge = getBiasBadge(article.biasRating)
-  const relativeTime = getRelativeTime(article.publishedAt)
+// Get bias indicator for compact display
+function getBiasIndicator(organization?: MediaOrganizationWithScores, dimensionSlug?: string) {
+  if (!organization?.bias_scores || organization.bias_scores.length === 0) return null
   
+  const targetDimension = dimensionSlug || BIAS_DIMENSIONS.POLITICAL_LEAN
+  const score = organization.bias_scores.find(s => s.dimension?.dimension_slug === targetDimension)
+  
+  if (!score?.dimension) return null
+  
+  return {
+    score: score.current_score,
+    label: formatBiasScore(score.current_score, score.dimension),
+    color: getBiasColor(score.dimension, score.current_score),
+    confidence: score.confidence_level
+  }
+}
+
+// Enhanced article card with more metadata and actions
+function EnhancedNewsCard({ 
+  article, 
+  onClick, 
+  onBookmark, 
+  onShare, 
+  showAdminControls = false,
+  dimensions 
+}: { 
+  article: NewsArticle
+  onClick: () => void
+  onBookmark?: (article: NewsArticle) => void
+  onShare?: (article: NewsArticle) => void
+  showAdminControls?: boolean
+  dimensions?: BiasDimension[]
+}) {
+  const { toast } = useToast()
+  const credibilityBadge = getCredibilityBadge(article.credibilityScore || article.organization?.transparency_score || undefined)
+  const biasBadge = getBiasBadge(article.biasRating)
+  const biasIndicator = getBiasIndicator(article.organization)
+  const relativeTime = getRelativeTime(article.publishedAt)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysis, setAnalysis] = useState<ArticleBiasAnalysis | null>(null)
+  const [showAnalysis, setShowAnalysis] = useState(false)
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsBookmarked(!isBookmarked)
+    onBookmark?.(article)
+    toast({
+      title: isBookmarked ? "Bookmark removed" : "Article bookmarked",
+      description: isBookmarked ? "Removed from your reading list" : "Added to your reading list"
+    })
+  }
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (navigator.share) {
+      navigator.share({
+        title: article.title,
+        text: article.description,
+        url: article.url
+      })
+    } else {
+      navigator.clipboard.writeText(article.url)
+      toast({
+        title: "Link copied",
+        description: "Article URL copied to clipboard"
+      })
+    }
+    onShare?.(article)
+  }
+
+  const handleAnalyze = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!article.organization || !article.database_id) {
+      toast({
+        title: "Unable to analyze",
+        description: "Missing article metadata",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    setIsAnalyzing(true)
+    try {
+      const result = await analyzeArticleBias(
+        article.url, 
+        article.organization.id, 
+        article.database_id
+      )
+      
+      if (result) {
+        setAnalysis(result)
+        setShowAnalysis(true)
+        toast({
+          title: "Analysis complete",
+          description: "Here's what we found..."
+        })
+      } else {
+        throw new Error("No analysis returned")
+      }
+    } catch (error) {
+      console.error('Error analyzing article:', error)
+      toast({
+        title: "Analysis failed",
+        description: "Could not analyze this article",
+        variant: "destructive"
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const getCivicImpactBadge = (impact?: NewsArticle['civicImpact']) => {
+    if (!impact) return null
+    
+    const colors = {
+      local: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      state: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      federal: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      international: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+    }
+    
+    const urgencyColors = {
+      low: 'border-gray-300',
+      medium: 'border-yellow-400',
+      high: 'border-orange-400',
+      critical: 'border-red-500'
+    }
+    
+    return (
+      <div className="flex items-center gap-1">
+        <Badge 
+          className={`text-xs px-2 py-0.5 ${colors[impact.powerLevel]} border ${urgencyColors[impact.urgency]}`}
+        >
+          {impact.powerLevel} • {impact.urgency}
+        </Badge>
+        {impact.actionable && (
+          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+            <ArrowRight className="w-2 h-2 mr-1" />
+            Action
+          </Badge>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div
-      className="flex-shrink-0 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-4 transition-all duration-200 min-w-[360px] max-w-[360px] border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20 bg-white dark:bg-gray-800"
+    <div 
+      className="flex-shrink-0 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-4 transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20 bg-white dark:bg-gray-800"
+      style={{ 
+        width: showAnalysis ? '600px' : '380px', 
+        minWidth: showAnalysis ? '600px' : '380px', 
+        maxWidth: showAnalysis ? '600px' : '380px',
+        height: 'auto',
+        minHeight: '300px'
+      }}
       onClick={onClick}
     >
-      <div className="flex items-start gap-3">
-        {/* Article thumbnail/favicon area */}
-        <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-          {article.urlToImage ? (
-            <img
-              src={article.urlToImage}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-              <Newspaper className="w-6 h-6" />
-            </div>
+      {/* Enhanced thumbnail */}
+      <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 relative mb-3">
+        {article.urlToImage ? (
+          <img
+            src={article.urlToImage}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+            <Newspaper className="w-8 h-8" />
+          </div>
+        )}
+        
+        {/* Urgency indicator */}
+        {article.civicImpact?.urgency === 'critical' && (
+          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+        )}
+      </div>
+
+      {/* Header with source and actions */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+            {article.source.name}
+          </Badge>
+          {/* Bias indicator */}
+          {biasIndicator && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-2 py-1"
+                    style={{ 
+                      borderColor: biasIndicator.color,
+                      color: biasIndicator.color
+                    }}
+                  >
+                    {biasIndicator.label.split(' ')[0]}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Political Lean: {biasIndicator.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Confidence: {(biasIndicator.confidence * 100).toFixed(0)}%
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {relativeTime && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {relativeTime}
+            </span>
           )}
         </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0 text-left">
-          {/* Source and time header */}
-          <div className="flex items-center justify-between mb-2">
-            <Badge variant="outline" className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
-              {article.source.name}
-            </Badge>
-            {relativeTime && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                {relativeTime}
-              </span>
+        
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleBookmark}
+          >
+            <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-current' : ''}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleShare}
+          >
+            <Share2 className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !article.organization}
+            title="Analyze for bias"
+          >
+            {isAnalyzing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Shield className="w-3 h-3" />
             )}
-          </div>
-          
-          {/* Title */}
-          <h4 className="font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-2 mb-2">
-            {article.title}
-          </h4>
-          
-          {/* Description */}
-          <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-2 mb-3">
-            {article.description}
-          </p>
-          
-          {/* Author if available */}
-          {article.author && (
-            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-2">
-              <User className="w-3 h-3 mr-1" />
-              <span className="font-medium">By {article.author}</span>
-            </div>
-          )}
-          
-          {/* Metadata badges */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {/* Category badge */}
-              <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                {article.category || 'News'}
-              </Badge>
-              
-              {/* Credibility badge */}
-              {credibilityBadge && (
-                <Badge variant={credibilityBadge.variant} className="text-xs px-2 py-0.5">
-                  <credibilityBadge.icon className="w-3 h-3 mr-1" />
-                  {article.credibilityScore}
-                </Badge>
-              )}
-              
-              {/* Bias badge */}
-              {biasBadge && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${biasBadge.color}`}>
-                  {biasBadge.text}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Footer with domain and AI quiz hint */}
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <Globe className="w-3 h-3" />
-              <span className="truncate max-w-[120px]">{article.domain || new URL(article.url).hostname}</span>
-            </div>
-            
-            {/* AI Quiz indicator */}
-            <div className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-70 group-hover:opacity-100 transition-opacity">
-              <Sparkles className="h-3 w-3" />
-              <span>Quiz</span>
-            </div>
-          </div>
+          </Button>
         </div>
       </div>
+      
+      {/* Title with reading time */}
+      <div className="flex items-start justify-between mb-3">
+        <h4 className="font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-3 flex-1">
+          {article.title}
+        </h4>
+        {article.readTime && (
+          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
+            {article.readTime}m
+          </span>
+        )}
+      </div>
+      
+      {/* Description */}
+      <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3 mb-3">
+        {article.description}
+      </p>
+
+      {/* Civic impact indicator */}
+      {article.civicImpact && (
+        <div className="mb-3">
+          {getCivicImpactBadge(article.civicImpact)}
+        </div>
+      )}
+      
+      {/* Author and engagement */}
+      <div className="flex items-center justify-between mb-3">
+        {article.author && (
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <User className="w-3 h-3 mr-1" />
+            <span className="font-medium truncate max-w-[120px]">By {article.author}</span>
+          </div>
+        )}
+        
+        {article.engagement && (
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              <span>{article.engagement.views.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" />
+              <span>{article.engagement.shares}</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Quality indicators */}
+      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+          {article.category || 'News'}
+        </Badge>
+        
+        {credibilityBadge && (
+          <Badge variant={credibilityBadge.variant} className="text-xs px-2 py-0.5">
+            <credibilityBadge.icon className="w-3 h-3 mr-1" />
+            {article.credibilityScore || article.organization?.transparency_score || 0}
+          </Badge>
+        )}
+        
+        {/* Legacy bias badge (if not using new system) */}
+        {!biasIndicator && biasBadge && (
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${biasBadge.color}`}>
+            {biasBadge.text}
+          </span>
+        )}
+      </div>
+
+      {/* Tags */}
+      {article.tags && article.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {article.tags.slice(0, 3).map((tag, index) => (
+            <Badge key={index} variant="outline" className="text-xs px-1.5 py-0.5">
+              {tag}
+            </Badge>
+          ))}
+          {article.tags.length > 3 && (
+            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+              +{article.tags.length - 3}
+            </Badge>
+          )}
+        </div>
+      )}
+      
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <Globe className="w-3 h-3" />
+          <span className="truncate max-w-[120px]">{article.domain || new URL(article.url).hostname}</span>
+        </div>
+        
+        <div className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+          <Sparkles className="h-3 w-3" />
+          <span>Quiz</span>
+        </div>
+      </div>
+      
+      {/* Admin controls */}
+      {showAdminControls && (
+        <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+          <NewsQuizGenerator article={article} />
+        </div>
+      )}
+      
+      {/* Bias Analysis */}
+      {showAnalysis && analysis && dimensions && (
+        <div className="mt-4">
+          <BiasAnalysisCard 
+            analysis={analysis} 
+            dimensions={dimensions}
+            onClose={() => setShowAnalysis(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
-// Mock news sources for demo - in production, these would come from actual news APIs
-const MOCK_NEWS_SOURCES = [
-  { id: 'reuters', name: 'Reuters', category: 'general' },
-  { id: 'ap-news', name: 'Associated Press', category: 'general' },
-  { id: 'politico', name: 'Politico', category: 'politics' },
-  { id: 'npr', name: 'NPR', category: 'politics' },
-  { id: 'cnn', name: 'CNN', category: 'general' },
-  { id: 'bbc-news', name: 'BBC News', category: 'world' }
-]
+// Enhanced filters component
+function NewsFilters({ 
+  filters, 
+  onFiltersChange, 
+  availableSources, 
+  availableCategories 
+}: {
+  filters: NewsFilters
+  onFiltersChange: (filters: NewsFilters) => void
+  availableSources: string[]
+  availableCategories: string[]
+}) {
+  const [isExpanded, setIsExpanded] = useState(false)
 
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </Button>
+        </div>
+      </CardHeader>
+      
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          {/* Search */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Search</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search articles..."
+                value={filters.search}
+                onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Time Range */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Time Range</label>
+              <Select
+                value={filters.timeRange}
+                onValueChange={(value: NewsFilters['timeRange']) => 
+                  onFiltersChange({ ...filters, timeRange: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1h">Last Hour</SelectItem>
+                  <SelectItem value="6h">Last 6 Hours</SelectItem>
+                  <SelectItem value="24h">Last 24 Hours</SelectItem>
+                  <SelectItem value="7d">Last Week</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Sort By</label>
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value: NewsFilters['sortBy']) => 
+                  onFiltersChange({ ...filters, sortBy: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="credibility">Credibility</SelectItem>
+                  <SelectItem value="engagement">Engagement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Credibility Minimum */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Min Credibility: {filters.credibilityMin}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={filters.credibilityMin}
+                onChange={(e) => onFiltersChange({ ...filters, credibilityMin: parseInt(e.target.value) })}
+                className="w-full"
+              />
+            </div>
+
+            {/* Civic Impact */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Civic Impact</label>
+              <div className="space-y-2">
+                {['local', 'state', 'federal', 'international'].map((level) => (
+                  <div key={level} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={level}
+                      checked={filters.civicImpact.includes(level)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          onFiltersChange({
+                            ...filters,
+                            civicImpact: [...filters.civicImpact, level]
+                          })
+                        } else {
+                          onFiltersChange({
+                            ...filters,
+                            civicImpact: filters.civicImpact.filter(l => l !== level)
+                          })
+                        }
+                      }}
+                    />
+                    <label htmlFor={level} className="text-sm capitalize">
+                      {level}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Active filters display */}
+          <div className="flex flex-wrap gap-2 pt-4 border-t">
+            {filters.search && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                Search: {filters.search}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => onFiltersChange({ ...filters, search: '' })}
+                />
+              </Badge>
+            )}
+            {filters.credibilityMin > 0 && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                Min Credibility: {filters.credibilityMin}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => onFiltersChange({ ...filters, credibilityMin: 0 })}
+                />
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
+}
+
+// Main component with all enhancements
 export function NewsTicker({ 
   className, 
   sources = ['reuters', 'ap-news', 'politico'], 
   categories = ['politics', 'government'],
   autoScroll = true,
   scrollSpeed = 50,
-  maxArticles = 20
+  maxArticles = 20,
+  onArticleClick,
+  compact = false,
+  showFilters = false,
+  enableBookmarks = true,
+  enableSharing = true,
+  adminMode = false
 }: NewsTickerProps) {
   const { user } = useAuth()
   const { hasFeatureAccess } = usePremium()
+  const { toast } = useToast()
   
   const [articles, setArticles] = useState<NewsArticle[]>([])
+  const [filteredArticles, setFilteredArticles] = useState<NewsArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isScrolling, setIsScrolling] = useState(autoScroll)
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
-  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false)
-  const [generationStatus, setGenerationStatus] = useState<'idle' | 'analyzing' | 'generating' | 'complete' | 'error'>('idle')
-  const [generatedQuizId, setGeneratedQuizId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [newsSource, setNewsSource] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [dimensions, setDimensions] = useState<BiasDimension[]>([])
+  const [filters, setFilters] = useState<NewsFilters>({
+    search: '',
+    sources: [],
+    categories: [],
+    credibilityMin: 0,
+    biasRating: [],
+    timeRange: '24h',
+    sortBy: 'relevance',
+    civicImpact: []
+  })
   
   const tickerRef = useRef<HTMLDivElement>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch news data from API
+  // Load bias dimensions
   useEffect(() => {
-    const loadNews = async () => {
-      setIsLoading(true)
-      try {
-        const params = new URLSearchParams({
-          sources: sources.join(','),
-          categories: categories.join(','),
-          maxArticles: maxArticles.toString()
-        })
-        
-        const response = await fetch(`/api/news/headlines?${params}`)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch news: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        const articlesData = data.articles || []
-        
-        // Enhance articles with domain extraction for display
-        const enhancedArticles = articlesData.map((article: NewsArticle) => ({
-          ...article,
-          domain: article.domain || new URL(article.url).hostname.replace('www.', '')
-        }))
-        
-        setArticles(enhancedArticles)
-        setNewsSource(data.source || null)
-        
-        // Show informational message about news source
-        if (data.source && data.message) {
-          console.log(`📰 News Ticker using ${data.source}:`, data.message)
-          
-          // Show special badge for OpenAI-generated content
-          if (data.source.includes('openai')) {
-            console.log('✨ Live news powered by OpenAI web search')
-          }
-        }
-      } catch (err) {
-        setError('Failed to load news articles')
-        console.error('Error loading news:', err)
-        
-        // Fallback to basic mock data
-        const fallbackArticles: NewsArticle[] = [
-          {
-            id: 'fallback-1',
-            title: 'Unable to Load Live News - Demo Mode',
-            description: 'The news ticker is currently in demo mode. Please check your network connection or news API configuration.',
-            url: '#',
-            publishedAt: new Date().toISOString(),
-            source: { id: 'system', name: 'CivicSense' },
-            category: 'system',
-            content: 'This is a fallback message displayed when news cannot be loaded.',
-            domain: 'civicsense.org'
-          }
-        ]
-        setArticles(fallbackArticles)
-      } finally {
-        setIsLoading(false)
+    getBiasDimensions().then(setDimensions)
+  }, [])
+
+  // Helper function to calculate credibility score based on source reputation
+  const calculateCredibilityScore = (sourceName: string): number => {
+    const credibilityMap: Record<string, number> = {
+      'Reuters': 95,
+      'Associated Press': 95,
+      'AP News': 95,
+      'BBC': 90,
+      'NPR': 88,
+      'Politico': 85,
+      'The Hill': 82,
+      'Washington Post': 80,
+      'New York Times': 80,
+      'CNN': 75,
+      'Fox News': 70,
+      'NBC': 78,
+      'Axios': 83,
+      'USA Today': 75,
+      'Rolling Stone': 72
+    }
+    
+    // Find closest match
+    for (const [source, score] of Object.entries(credibilityMap)) {
+      if (sourceName.toLowerCase().includes(source.toLowerCase())) {
+        return score
       }
     }
+    
+    return 70 // Default for unknown sources
+  }
 
-    loadNews()
-  }, [sources, categories, maxArticles])
+  // Enhanced news loading with bias information
+  const loadNews = useCallback(async () => {
+    const wasRefreshing = isRefreshing
+    if (!wasRefreshing) setIsLoading(true)
+    
+    try {
+      const params = new URLSearchParams({
+        sources: sources.join(','),
+        categories: categories.join(','),
+        maxArticles: maxArticles.toString(),
+        enhancedMetadata: 'true' // Request enhanced metadata
+      })
+      
+      const response = await fetch(`/api/news/headlines?${params}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch news: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const articlesData = data.articles || []
+      
+      // Enhanced articles with additional metadata and bias info
+      const enhancedArticles = await Promise.all(articlesData.map(async (article: NewsArticle) => {
+        const domain = article.domain || new URL(article.url).hostname.replace('www.', '')
+        
+        // Try to get organization info
+        let organization: MediaOrganizationWithScores | null = null
+        try {
+          organization = await getMediaOrganizationByDomain(domain)
+        } catch (err) {
+          console.error('Error fetching organization info:', err)
+        }
+        
+        return {
+          ...article,
+          domain,
+          readTime: estimateReadTime(article.description + ' ' + (article.content || '')),
+          engagement: article.engagement || {
+            views: Math.floor(Math.random() * 10000),
+            shares: Math.floor(Math.random() * 500),
+            bookmarks: Math.floor(Math.random() * 100)
+          },
+          civicImpact: article.civicImpact || generateCivicImpact(article.title + ' ' + article.description),
+          organization,
+          // Update credibility score from organization if available
+          credibilityScore: article.credibilityScore || organization?.transparency_score || calculateCredibilityScore(article.source.name)
+        }
+      }))
+      
+      setArticles(enhancedArticles)
+      setNewsSource(data.source || null)
+      setError(null)
+      
+      toast({
+        title: "News updated",
+        description: `Loaded ${enhancedArticles.length} articles from ${data.source || 'multiple sources'}`
+      })
+      
+    } catch (err) {
+      setError('Failed to load news articles')
+      console.error('Error loading news:', err)
+      toast({
+        title: "Error loading news",
+        description: "Please check your connection and try again",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }, [sources, categories, maxArticles, isRefreshing, toast])
+
+  // Filter articles based on current filters
+  useEffect(() => {
+    let filtered = [...articles]
+
+    // Search filter
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase()
+      filtered = filtered.filter(article => 
+        article.title.toLowerCase().includes(searchTerm) ||
+        article.description.toLowerCase().includes(searchTerm) ||
+        article.source.name.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    // Credibility filter
+    if (filters.credibilityMin > 0) {
+      filtered = filtered.filter(article => 
+        (article.credibilityScore || 0) >= filters.credibilityMin
+      )
+    }
+
+    // Civic impact filter
+    if (filters.civicImpact.length > 0) {
+      filtered = filtered.filter(article => 
+        article.civicImpact?.powerLevel && filters.civicImpact.includes(article.civicImpact.powerLevel)
+      )
+    }
+
+    // Time range filter
+    if (filters.timeRange !== 'all') {
+      const now = new Date()
+      const timeRanges = {
+        '1h': 60 * 60 * 1000,
+        '6h': 6 * 60 * 60 * 1000,
+        '24h': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000
+      }
+      
+      const cutoff = new Date(now.getTime() - timeRanges[filters.timeRange])
+      filtered = filtered.filter(article => 
+        new Date(article.publishedAt) >= cutoff
+      )
+    }
+
+    // Sort articles
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'date':
+          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        case 'credibility':
+          return (b.credibilityScore || 0) - (a.credibilityScore || 0)
+        case 'engagement':
+          return (b.engagement?.views || 0) - (a.engagement?.views || 0)
+        case 'relevance':
+        default:
+          return (b.relevanceScore || 0) - (a.relevanceScore || 0)
+      }
+    })
+
+    setFilteredArticles(filtered)
+  }, [articles, filters])
 
   // Auto-scroll functionality
   useEffect(() => {
@@ -341,7 +946,6 @@ export function NewsTicker({
         if (tickerRef.current) {
           tickerRef.current.scrollLeft += 1
           
-          // Reset scroll when reaching the end
           if (tickerRef.current.scrollLeft >= tickerRef.current.scrollWidth - tickerRef.current.clientWidth) {
             tickerRef.current.scrollLeft = 0
           }
@@ -356,78 +960,74 @@ export function NewsTicker({
     }
   }, [isScrolling, scrollSpeed])
 
+  useEffect(() => {
+    loadNews()
+  }, [loadNews])
+
+  // Helper functions
+  const estimateReadTime = (text: string): number => {
+    const wordsPerMinute = 200
+    const words = text.split(' ').length
+    return Math.ceil(words / wordsPerMinute)
+  }
+
+  const generateCivicImpact = (text: string): NewsArticle['civicImpact'] => {
+    const lowerText = text.toLowerCase()
+    
+    let powerLevel: 'local' | 'state' | 'federal' | 'international' = 'local'
+    if (lowerText.includes('federal') || lowerText.includes('congress') || lowerText.includes('supreme court')) {
+      powerLevel = 'federal'
+    } else if (lowerText.includes('state') || lowerText.includes('governor')) {
+      powerLevel = 'state'
+    } else if (lowerText.includes('international') || lowerText.includes('foreign')) {
+      powerLevel = 'international'
+    }
+
+    const urgency: 'low' | 'medium' | 'high' | 'critical' = 
+      lowerText.includes('urgent') || lowerText.includes('crisis') ? 'critical' :
+      lowerText.includes('important') || lowerText.includes('significant') ? 'high' :
+      lowerText.includes('concern') || lowerText.includes('issue') ? 'medium' : 'low'
+
+    const actionable = lowerText.includes('vote') || lowerText.includes('contact') || 
+                      lowerText.includes('petition') || lowerText.includes('action')
+
+    return { powerLevel, urgency, actionable }
+  }
+
+  const handleBookmark = (article: NewsArticle) => {
+    // Implement bookmark functionality
+    console.log('Bookmarked:', article.title)
+  }
+
+  const handleShare = (article: NewsArticle) => {
+    // Implement sharing analytics
+    console.log('Shared:', article.title)
+  }
+
+  const handleArticleClick = (article: NewsArticle) => {
+    onArticleClick?.(article)
+  }
+
   const toggleScrolling = () => {
     setIsScrolling(!isScrolling)
   }
 
-  const handleArticleClick = (article: NewsArticle) => {
-    setSelectedArticle(article)
-    setGenerationStatus('idle')
-    setGeneratedQuizId(null)
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    loadNews()
   }
 
-  const generateQuizFromArticle = async () => {
-    if (!selectedArticle || !user) return
-
-    if (!hasFeatureAccess('custom_decks')) {
-      setError('AI quiz generation requires a Premium subscription')
-      return
-    }
-
-    setIsGeneratingQuiz(true)
-    setGenerationStatus('analyzing')
-    setError(null)
-
-    try {
-      // Step 1: Analyze the article content
-      setGenerationStatus('analyzing')
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate analysis
-
-      // Step 2: Generate quiz content using existing AI system
-      setGenerationStatus('generating')
-      
-      const deckRequest = {
-        name: `News Quiz: ${selectedArticle.title.substring(0, 50)}...`,
-        description: `AI-generated quiz based on: ${selectedArticle.description}`,
-        targetQuestionCount: 10,
-        categories: [selectedArticle.category || 'Current Events'],
-        difficultyRange: [2, 4] as [number, number],
-        learningObjective: 'Understand current events and their civic implications',
-        timeConstraint: 15,
-        focusAreas: ['Current Events', 'Policy Analysis', 'Government'],
-        newsContext: {
-          title: selectedArticle.title,
-          content: selectedArticle.content || selectedArticle.description,
-          source: selectedArticle.source.name,
-          publishedAt: selectedArticle.publishedAt,
-          credibilityScore: selectedArticle.credibilityScore,
-          biasRating: selectedArticle.biasRating
-        }
-      }
-
-      // Use the existing AI deck builder but with news content
-      const aiDeck = await aiDeckBuilder.generateAIEnhancedDeck(user.id, deckRequest)
-      
-      // In a real implementation, you would save this as a question_topic and generate actual questions
-      setGeneratedQuizId('mock-quiz-id-' + Date.now())
-      setGenerationStatus('complete')
-      
-    } catch (err) {
-      console.error('Error generating quiz:', err)
-      setError('Failed to generate quiz. Please try again.')
-      setGenerationStatus('error')
-    } finally {
-      setIsGeneratingQuiz(false)
-    }
-  }
+  // Get unique sources and categories for filters
+  const availableSources = [...new Set(articles.map(a => a.source.name))]
+  const availableCategories = [...new Set(articles.map(a => a.category).filter((cat): cat is string => Boolean(cat)))]
 
   if (isLoading) {
     return (
-      <Card className={cn("border-gray-200 dark:border-gray-700 shadow-sm", className)}>
+      <Card className={cn("border-slate-200 dark:border-slate-700 shadow-sm", className)}>
         <CardContent className="p-8">
           <div className="flex items-center justify-center space-x-3">
             <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-            <span className="text-gray-600 dark:text-gray-400 font-medium">Loading latest politics news...</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Loading latest politics news...</span>
           </div>
         </CardContent>
       </Card>
@@ -447,259 +1047,186 @@ export function NewsTicker({
     )
   }
 
+  if (compact) {
+    return (
+      <div className={cn("space-y-4", className)}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Latest News</h3>
+          <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600">
+            {filteredArticles.length} articles
+          </Badge>
+        </div>
+        <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
+          {filteredArticles.slice(0, 6).map((article) => (
+            <EnhancedNewsCard
+              key={article.id}
+              article={article}
+              onClick={() => handleArticleClick(article)}
+              onBookmark={enableBookmarks ? handleBookmark : undefined}
+              onShare={enableSharing ? handleShare : undefined}
+              showAdminControls={adminMode}
+              dimensions={dimensions}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* News Ticker Header */}
-      <Card className="border-gray-200 dark:border-gray-700 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                <Newspaper className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Live Politics Ticker</span>
-                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600">
-                  {articles.length} articles
-                </Badge>
-                {newsSource?.includes('openai') && (
-                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white text-xs font-medium shadow-sm">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    AI Powered
+    <TooltipProvider>
+      <div className={cn("space-y-6", className)}>
+        {/* Filters */}
+        {showFilters && (
+          <NewsFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            availableSources={availableSources}
+            availableCategories={availableCategories}
+          />
+        )}
+
+        {/* Main ticker */}
+        <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
+          {/* Enhanced header */}
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <Newspaper className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-xl font-bold text-slate-900 dark:text-slate-100">Live Politics Ticker</span>
+                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600">
+                    {filteredArticles.length} articles
                   </Badge>
-                )}
-                {newsSource?.includes('rss') && (
-                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium shadow-sm">
-                    <Globe className="h-3 w-3 mr-1" />
-                    Live RSS
-                  </Badge>
-                )}
-              </div>
-            </CardTitle>
-            
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleScrolling}
-                className="flex items-center space-x-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                {isScrolling ? (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    <span className="font-medium">Pause</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4" />
-                    <span className="font-medium">Play</span>
-                  </>
-                )}
-              </Button>
+                  {newsSource?.includes('rss') && (
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-medium shadow-sm">
+                      <Globe className="h-3 w-3 mr-1" />
+                      Live RSS
+                    </Badge>
+                  )}
+                </div>
+              </CardTitle>
               
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <Settings className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex items-center space-x-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="font-medium">Refresh</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleScrolling}
+                  className="flex items-center space-x-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  {isScrolling ? (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      <span className="font-medium">Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      <span className="font-medium">Play</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
+            
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Real-time US politics news from vetted sources • Updated continuously</span>
+              {filters.search && (
+                <Badge variant="secondary" className="ml-2">
+                  Filtered by: {filters.search}
+                </Badge>
+              )}
+            </p>
+          </CardHeader>
+
+          {/* Content */}
+          <CardContent className="p-0 pb-6">
+            <div 
+              ref={tickerRef}
+              className="flex gap-4 overflow-x-auto scrollbar-hide py-4 px-6 bg-gradient-to-r from-slate-50/50 to-blue-50/30 dark:from-slate-900/50 dark:to-blue-950/30"
+              style={{ 
+                scrollBehavior: 'smooth',
+                minHeight: '400px'
+              }}
+            >
+              {filteredArticles.map((article) => (
+                <EnhancedNewsCard
+                  key={article.id}
+                  article={article}
+                  onClick={() => handleArticleClick(article)}
+                  onBookmark={enableBookmarks ? handleBookmark : undefined}
+                  onShare={enableSharing ? handleShare : undefined}
+                  showAdminControls={adminMode}
+                  dimensions={dimensions}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-2">
+              <Newspaper className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Total Articles</p>
+                <p className="text-2xl font-bold">{articles.length}</p>
+              </div>
+            </div>
+          </Card>
           
-          {/* Subtitle with source info */}
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span>Real-time US politics news from vetted sources • Updated continuously</span>
-          </p>
-        </CardHeader>
-
-        {/* Scrolling Ticker */}
-        <CardContent className="p-0 pb-6">
-          <div 
-            ref={tickerRef}
-            className="flex space-x-6 overflow-x-auto scrollbar-hide py-4 px-6 bg-gradient-to-r from-gray-50/50 to-blue-50/30 dark:from-gray-900/50 dark:to-blue-950/30"
-            style={{ scrollBehavior: 'smooth' }}
-          >
-            {articles.map((article) => (
-              <Dialog key={article.id}>
-                <DialogTrigger asChild>
-                  <div>
-                    <CompactNewsCard 
-                      article={article} 
-                      onClick={() => handleArticleClick(article)} 
-                    />
-                  </div>
-                </DialogTrigger>
-
-                {/* Article Detail Dialog - Enhanced with metadata */}
-                <DialogContent className="max-w-3xl max-h-[85vh] border-gray-200 dark:border-gray-700">
-                  <DialogHeader className="pb-4">
-                    <DialogTitle className="text-left leading-tight text-xl font-bold text-gray-900 dark:text-gray-100 pr-8">
-                      {article.title}
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  <div className="max-h-[65vh] overflow-y-auto">
-                    <div className="space-y-6">
-                      {/* Enhanced article metadata */}
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center space-x-4">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800 font-medium">
-                            {article.source.name}
-                          </Badge>
-                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            {getRelativeTime(article.publishedAt)}
-                          </span>
-                          {/* Credibility indicator */}
-                          {article.credibilityScore && (
-                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                              <Shield className="w-3 h-3 mr-1" />
-                              {article.credibilityScore}% credible
-                            </Badge>
-                          )}
-                        </div>
-                        <Button variant="outline" size="sm" asChild className="hover:bg-blue-50 dark:hover:bg-blue-950">
-                          <a href={article.url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Read Full Article
-                          </a>
-                        </Button>
-                      </div>
-
-                      {/* Author and bias information */}
-                      {(article.author || article.biasRating) && (
-                        <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400 px-4">
-                          {article.author && (
-                            <div className="flex items-center">
-                              <User className="w-4 h-4 mr-2" />
-                              <span className="font-medium">By {article.author}</span>
-                            </div>
-                          )}
-                          {article.biasRating && getBiasBadge(article.biasRating) && (
-                            <div className="flex items-center">
-                              <span className={`text-sm px-3 py-1 rounded-full font-medium ${getBiasBadge(article.biasRating)?.color}`}>
-                                {getBiasBadge(article.biasRating)?.text}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <Separator className="border-gray-200 dark:border-gray-700" />
-
-                      {/* Article description */}
-                      <div className="px-4">
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base">
-                          {article.description}
-                        </p>
-                      </div>
-
-                      {/* AI Quiz Generation Section */}
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-xl p-6 border border-blue-200 dark:border-blue-800 mx-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                              <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 dark:text-gray-100">AI Quiz Generator</h4>
-                              <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white text-xs font-medium mt-1">
-                                Premium Feature
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                            Transform this news article into an interactive civic education quiz with AI-generated questions that test understanding of political processes and implications.
-                          </p>
-
-                          {/* Generation Status */}
-                          {generationStatus !== 'idle' && (
-                            <div className="space-y-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                              <div className="flex items-center space-x-3">
-                                {generationStatus === 'analyzing' && (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                                    <span className="text-sm font-medium">Analyzing article content...</span>
-                                  </>
-                                )}
-                                {generationStatus === 'generating' && (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                                    <span className="text-sm font-medium">Generating civic education questions...</span>
-                                  </>
-                                )}
-                                {generationStatus === 'complete' && (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                    <span className="text-sm font-medium">Quiz generated successfully!</span>
-                                  </>
-                                )}
-                                {generationStatus === 'error' && (
-                                  <>
-                                    <AlertCircle className="h-4 w-4 text-red-500" />
-                                    <span className="text-sm font-medium">Generation failed. Please try again.</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Action Buttons */}
-                          <div className="flex space-x-3">
-                            {generationStatus === 'complete' && generatedQuizId ? (
-                              <Button size="sm" className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium">
-                                <ArrowRight className="h-4 w-4 mr-2" />
-                                Start Quiz
-                              </Button>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                onClick={generateQuizFromArticle}
-                                disabled={isGeneratingQuiz || !hasFeatureAccess('custom_decks')}
-                                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium disabled:opacity-50"
-                              >
-                                {isGeneratingQuiz ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Generating...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="h-4 w-4 mr-2" />
-                                    Generate Quiz
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                            
-                            <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-600">
-                              <Clock className="h-4 w-4 mr-2" />
-                              ~10 min
-                            </Button>
-                          </div>
-
-                          {!hasFeatureAccess('custom_decks') && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                              AI quiz generation requires a Premium subscription. 
-                              <Button variant="link" className="p-0 h-auto text-xs text-blue-600 dark:text-blue-400 underline ml-1 font-medium">
-                                Upgrade now
-                              </Button>
-                            </p>
-                          )}
-
-                          {error && (
-                            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 p-3 rounded-lg border border-red-200 dark:border-red-800">
-                              {error}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Card className="p-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Avg Credibility</p>
+                <p className="text-2xl font-bold">
+                  {Math.round(articles.reduce((acc, a) => acc + (a.credibilityScore || 0), 0) / articles.length) || 0}
+                </p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium">High Impact</p>
+                <p className="text-2xl font-bold">
+                  {articles.filter(a => a.civicImpact?.urgency === 'high' || a.civicImpact?.urgency === 'critical').length}
+                </p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-2">
+              <ArrowRight className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Actionable</p>
+                <p className="text-2xl font-bold">
+                  {articles.filter(a => a.civicImpact?.actionable).length}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 } 

@@ -17,6 +17,12 @@ import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail } from "lucide-react"
+import { 
+  useProgressStorage, 
+  convertSurveyStateToBaseSurvey, 
+  convertBaseSurveyStateToSurvey,
+  type SurveyResponse as StorageSurveyResponse 
+} from "@/lib/progress-storage"
 
 // Survey Types
 export interface SurveyQuestion {
@@ -69,6 +75,7 @@ interface SurveyFormProps {
   onComplete: (responses: SurveyResponse[]) => void
   onSaveProgress?: (responses: SurveyResponse[]) => void
   existingResponses?: SurveyResponse[]
+  sessionId?: string
   className?: string
 }
 
@@ -77,6 +84,7 @@ export function SurveyForm({
   onComplete, 
   onSaveProgress,
   existingResponses = [],
+  sessionId,
   className 
 }: SurveyFormProps) {
   const { toast } = useToast()
@@ -85,19 +93,52 @@ export function SurveyForm({
     autoPlayEnabled,
     playText 
   } = useGlobalAudio()
+  const progressStorage = useProgressStorage()
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [responses, setResponses] = useState<Record<string, SurveyResponse>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startTime] = useState(new Date())
+  const [hasRestoredProgress, setHasRestoredProgress] = useState(false)
 
-  // Initialize responses from existing data
+  // Generate sessionId if not provided
+  const effectiveSessionId = sessionId || `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+  // Initialize responses from existing data or localStorage
   useEffect(() => {
-    const initialResponses: Record<string, SurveyResponse> = {}
-    existingResponses.forEach(response => {
-      initialResponses[response.question_id] = response
-    })
-    setResponses(initialResponses)
-  }, [existingResponses])
+    if (hasRestoredProgress) return
+
+    // First try to restore from localStorage
+    const progressManager = progressStorage.createSurveyProgress(survey.id, effectiveSessionId)
+    const savedState = progressManager.load()
+
+    if (savedState) {
+      console.log('🔄 Restoring survey progress from localStorage')
+      const surveyState = convertBaseSurveyStateToSurvey(savedState)
+      setResponses(surveyState.responses)
+      setCurrentQuestionIndex(surveyState.currentQuestionIndex)
+      setHasRestoredProgress(true)
+      
+      toast({
+        title: "Progress restored",
+        description: "Continuing where you left off.",
+        duration: 3000
+      })
+      return
+    }
+
+    // Fallback to existing responses from API
+    if (existingResponses.length > 0) {
+      console.log('🔄 Loading existing responses from API')
+      const initialResponses: Record<string, SurveyResponse> = {}
+      existingResponses.forEach(response => {
+        initialResponses[response.question_id] = response
+      })
+      setResponses(initialResponses)
+    }
+
+    setHasRestoredProgress(true)
+  }, [survey.id, effectiveSessionId, existingResponses, hasRestoredProgress, progressStorage, toast])
 
   // Filter questions based on conditional logic
   const getVisibleQuestions = useCallback(() => {
@@ -123,6 +164,25 @@ export function SurveyForm({
   const visibleQuestions = getVisibleQuestions()
   const currentQuestion = visibleQuestions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100
+
+  // Save progress to localStorage whenever responses change
+  useEffect(() => {
+    if (!hasRestoredProgress || Object.keys(responses).length === 0) return
+
+    const surveyState = {
+      currentQuestionIndex,
+      responses,
+      questions: visibleQuestions,
+      startTime: startTime.getTime(),
+      sessionId: effectiveSessionId
+    }
+
+    const baseSurveyState = convertSurveyStateToBaseSurvey(surveyState)
+    const progressManager = progressStorage.createSurveyProgress(survey.id, effectiveSessionId)
+    progressManager.save(baseSurveyState)
+
+    console.log('💾 Auto-saved survey progress to localStorage')
+  }, [responses, currentQuestionIndex, visibleQuestions, startTime, effectiveSessionId, survey.id, hasRestoredProgress, progressStorage])
 
   // Helper function to format answer display for popover
   const formatAnswerForDisplay = (question: SurveyQuestion, response: SurveyResponse) => {
@@ -266,6 +326,11 @@ export function SurveyForm({
     try {
       const responseArray = Object.values(responses)
       await onComplete(responseArray)
+      
+      // Clear localStorage progress on successful completion
+      const progressManager = progressStorage.createSurveyProgress(survey.id, effectiveSessionId)
+      progressManager.clear()
+      console.log('🗑️ Cleared survey progress after completion')
     } catch (error) {
       console.error('Error submitting survey:', error)
       toast({

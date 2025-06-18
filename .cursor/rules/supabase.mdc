@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Supabase migrations should be targeted patches, always learning from the previous, and not overriding past fixes. This causes us to revert back into a loop of mismatched fixes and worsens the problem and mental load.
+
+Supabase scripts should be idempotent where it makes sense, and use update/alter to add additional columns/schema to existing tables if a full rewrite is not needed. 
+
+When creating table schema, try not to use ambiguous field names. 
+
+Make sure all RLS policies build off one another and do not lead to infinite incursions.

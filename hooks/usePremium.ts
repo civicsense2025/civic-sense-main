@@ -34,6 +34,26 @@ interface UsePremiumReturn {
   openCustomerPortal: () => Promise<void>
 }
 
+// ============================================================================
+// SIMPLE IN-MEMORY CACHE TO PREVENT DUPLICATE NETWORK REQUESTS
+// This avoids fetching the same subscription information multiple times when
+// many components call usePremium(). A lightweight cache is sufficient because
+// subscription data changes infrequently and can be refreshed manually.
+// ============================================================================
+
+type CacheEntry = {
+  subscription: UserSubscription | null
+  limits: FeatureLimits | null
+  featureAccess: Record<PremiumFeature, boolean>
+  fetchedAt: number
+}
+
+// Cache keyed by userId (undefined for guests)
+const subscriptionCache: Map<string | undefined, CacheEntry> = new Map()
+
+// Cache validity duration (in milliseconds) – 5 minutes is plenty
+const CACHE_TTL = 5 * 60 * 1000
+
 export function usePremium(): UsePremiumReturn {
   const { user } = useAuth()
   const [subscription, setSubscription] = useState<UserSubscription | null>(null)
@@ -59,6 +79,17 @@ export function usePremium(): UsePremiumReturn {
       return
     }
 
+    // Attempt to serve from cache first
+    const cacheKey = user?.id
+    const cacheEntry = subscriptionCache.get(cacheKey)
+    if (cacheEntry && Date.now() - cacheEntry.fetchedAt < CACHE_TTL) {
+      setSubscription(cacheEntry.subscription)
+      setLimits(cacheEntry.limits)
+      setFeatureAccess(cacheEntry.featureAccess)
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     try {
       const [subscriptionData, limitsData, accessData] = await Promise.all([
@@ -70,6 +101,14 @@ export function usePremium(): UsePremiumReturn {
       setSubscription(subscriptionData)
       setLimits(limitsData)
       setFeatureAccess(accessData)
+
+      // Update cache
+      subscriptionCache.set(cacheKey, {
+        subscription: subscriptionData,
+        limits: limitsData,
+        featureAccess: accessData,
+        fetchedAt: Date.now()
+      })
     } catch (error) {
       console.error('Error loading subscription data:', error)
     } finally {

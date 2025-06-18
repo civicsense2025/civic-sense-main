@@ -32,6 +32,7 @@ import { enhancedProgressOperations, updateEnhancedProgress } from "@/lib/enhanc
 import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
 import { supabase } from "@/lib/supabase"
 import { SocialProofBubble } from "@/components/social-proof-bubble"
+import { createRegularQuizProgress, type BaseQuizState } from "@/lib/progress-storage"
 
 interface QuizTopic {
   id: string
@@ -254,9 +255,73 @@ export function QuizEngine({
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false)
   const [questionStartTime, setQuestionStartTime] = useState(Date.now())
   const [showFeedback, setShowFeedback] = useState(false)
+  const [hasRestoredState, setHasRestoredState] = useState(false)
 
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
+
+  // Initialize progress manager for regular quizzes
+  const progressManager = createRegularQuizProgress(user?.id, undefined, topicId)
+
+  // Generate session ID for state persistence
+  const sessionId = useRef<string>(`quiz-${topicId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+
+  // Convert quiz state to BaseQuizState
+  const convertToBaseQuizState = (): BaseQuizState => ({
+    sessionId: sessionId.current,
+    quizType: 'regular_quiz',
+    topicId,
+    questions: randomizedQuestions,
+    currentQuestionIndex,
+    answers: userAnswers.reduce((acc, answer) => {
+      acc[answer.questionId.toString()] = answer.answer
+      return acc
+    }, {} as { [questionId: string]: string }),
+    streak: 0, // Regular quiz doesn't track streak in same way
+    maxStreak: 0,
+    startTime: quizStartTime,
+    responseTimes: userAnswers.reduce((acc, answer) => {
+      acc[answer.questionId.toString()] = answer.timeSpent
+      return acc
+    }, {} as { [questionId: string]: number }),
+    savedAt: Date.now()
+  })
+
+  // Save quiz state
+  const saveQuizState = () => {
+    if (randomizedQuestions.length > 0 && userAnswers.length > 0) {
+      const baseState = convertToBaseQuizState()
+      progressManager.save(baseState)
+    }
+  }
+
+  // Load quiz state
+  const loadQuizState = (): boolean => {
+    const baseState = progressManager.load()
+    if (baseState && baseState.questions.length > 0) {
+      setCurrentQuestionIndex(baseState.currentQuestionIndex)
+      
+      // Convert answers back to EnhancedUserAnswer format
+      const restoredAnswers: EnhancedUserAnswer[] = Object.entries(baseState.answers).map(([questionId, answer]) => ({
+        questionId: parseInt(questionId),
+        answer,
+        isCorrect: false, // Will be recalculated
+        timeSpent: baseState.responseTimes[questionId] || 30,
+        hintUsed: false,
+        boostUsed: null
+      }))
+      
+      setUserAnswers(restoredAnswers)
+      sessionId.current = baseState.sessionId
+      return true
+    }
+    return false
+  }
+
+  // Clear quiz state
+  const clearQuizState = () => {
+    progressManager.clear()
+  }
   
   // Enhanced analytics tracking
   const [sessionAnalytics, setSessionAnalytics] = useState({
@@ -372,39 +437,71 @@ export function QuizEngine({
     }
   }, [randomizedQuestions.length, topicId, trackQuiz, currentBoostEffects, currentLevel, currentStreak])
 
-  // Load partial quiz state and initialize boost system
+  // Initialize quiz state and restore progress
   useEffect(() => {
-    if (!user) return
-
-    // Load partial state from enhanced database
-    const loadPartialState = async () => {
-      try {
-        // Check for existing incomplete attempt
-        const { data: incompleteAttempt } = await supabase
-          .from('user_quiz_attempts')
-          .select('id, created_at')
-          .eq('user_id', user.id)
-          .eq('topic_id', topicId)
-          .eq('is_completed', false)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (incompleteAttempt) {
-          console.log('📋 Found incomplete quiz attempt:', incompleteAttempt.id)
-          // Could load partial state here if implemented
+    const initializeQuiz = async () => {
+      console.log('🔄 Initializing quiz...', { 
+        hasRestoredState, 
+        topicId,
+        userId: user?.id || 'guest',
+        questionsLength: randomizedQuestions.length
+      })
+      
+      // First, try to restore saved state (only once)
+      if (!hasRestoredState && randomizedQuestions.length > 0) {
+        const restored = loadQuizState()
+        if (restored) {
+          console.log('✅ Restored quiz state')
+          setHasRestoredState(true)
+          
+          // Reset UI state for restored session
+          setShowFeedback(false)
+          setIsAnswerSubmitted(false)
+          setSelectedAnswer(null)
+          setShowHint(false)
+          
+          return
+        } else {
+          console.log('❌ No valid saved quiz state found')
+          setHasRestoredState(true) // Mark as checked to prevent re-checking
         }
-      } catch (error) {
-        console.error('Error loading partial state:', error)
+      }
+
+      // Initialize boost system and load user XP for authenticated users
+      if (user) {
+        // Load partial state from enhanced database
+        const loadPartialState = async () => {
+          try {
+            // Check for existing incomplete attempt
+            const { data: incompleteAttempt } = await supabase
+              .from('user_quiz_attempts')
+              .select('id, created_at')
+              .eq('user_id', user.id)
+              .eq('topic_id', topicId)
+              .eq('is_completed', false)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (incompleteAttempt) {
+              console.log('📋 Found incomplete quiz attempt:', incompleteAttempt.id)
+              // Could load partial state here if implemented
+            }
+          } catch (error) {
+            console.error('Error loading partial state:', error)
+          }
+        }
+
+        loadPartialState()
+        
+        // Initialize boost system and load user XP
+        boostManager.initialize(user.id)
+        loadUserXP()
       }
     }
 
-    loadPartialState()
-    
-    // Initialize boost system and load user XP
-    boostManager.initialize(user.id)
-    loadUserXP()
-  }, [user, topicId, boostManager])
+    initializeQuiz()
+  }, [user, topicId, boostManager, hasRestoredState, randomizedQuestions.length])
 
   // Load user XP from gamification system
   const loadUserXP = useCallback(async () => {
@@ -702,6 +799,9 @@ export function QuizEngine({
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
     
+    // Save state after answering
+    setTimeout(() => saveQuizState(), 100)
+    
     // Note: Streak is now managed by the gamification system
     // The actual streak update will happen when the quiz is completed
     
@@ -744,6 +844,9 @@ export function QuizEngine({
   }
 
   async function handleFinishQuiz() {
+    // Clear saved state on completion
+    clearQuizState()
+    
     // Enhanced quiz completion with analytics
     const totalQuestions = randomizedQuestions.length
     const correctAnswers = userAnswers.filter(a => a.isCorrect).length

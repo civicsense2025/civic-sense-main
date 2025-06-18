@@ -55,6 +55,16 @@ const safeLocalStorage = {
       console.error(`Error accessing localStorage.setItem for key "${key}":`, error)
       return false
     }
+  },
+  removeItem: (key: string): boolean => {
+    if (typeof window === 'undefined') return false
+    try {
+      localStorage.removeItem(key)
+      return true
+    } catch (error) {
+      console.error(`Error accessing localStorage.removeItem for key "${key}":`, error)
+      return false
+    }
   }
 }
 
@@ -88,6 +98,12 @@ export function useGuestAccess() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [serverAvailable, setServerAvailable] = useState(true)
+  
+  const [guestToken, setGuestToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasReachedLimit, setHasReachedLimit] = useState(false)
+  const [usageCount, setUsageCount] = useState(0)
+  const [resetTime, setResetTime] = useState<Date | null>(null)
   
   // Set mounted state to avoid hydration mismatches
   useEffect(() => {
@@ -502,10 +518,40 @@ export function useGuestAccess() {
     return { suspicious: false, reason: null }
   }, [guestState.userIP, guestState.quizAttemptsToday, checkServerUsage])
   
+  // Get or create guest token for multiplayer
+  const getOrCreateGuestToken = useCallback((): string | undefined => {
+    if (guestToken) {
+      return guestToken
+    }
+
+    // Skip if we're not in a browser environment
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    // Check if we have a stored guest token
+    let storedToken = safeLocalStorage.getItem('civicsense_guest_token')
+    
+    if (!storedToken) {
+      // Create a new guest token
+      storedToken = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      safeLocalStorage.setItem('civicsense_guest_token', storedToken)
+    }
+
+    setGuestToken(storedToken)
+    return storedToken
+  }, [guestToken])
+
+  // Clear guest token (for logout)
+  const clearGuestToken = useCallback(() => {
+    safeLocalStorage.removeItem('civicsense_guest_token')
+    setGuestToken(null)
+  }, [])
+  
   return {
     // State
     quizAttemptsToday: guestState.quizAttemptsToday,
-    guestToken: guestState.guestToken,
+    guestToken: getOrCreateGuestToken(),
     lastResetDate: guestState.lastResetDate,
     userIP: guestState.userIP,
     serverLimitReached: guestState.serverLimitReached,
@@ -531,6 +577,10 @@ export function useGuestAccess() {
     
     // Constants
     GUEST_DAILY_QUIZ_LIMIT,
-    IP_TRACKING_ENABLED
+    IP_TRACKING_ENABLED,
+    
+    // Multiplayer guest token functionality
+    getOrCreateGuestToken,
+    clearGuestToken
   }
 }

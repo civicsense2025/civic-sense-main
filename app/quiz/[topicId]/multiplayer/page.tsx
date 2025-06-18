@@ -1,36 +1,50 @@
 import { Suspense } from 'react'
+import { Metadata } from 'next'
 import MultiplayerQuizClient from './client'
 
-// Define the correct type for params
-type PageParams = {
-  params: Promise<{ topicId: string }>
-  searchParams: Promise<{ room?: string; player?: string }>
+export const metadata: Metadata = {
+  title: 'Multiplayer Quiz | CivicSense',
+  description: 'Join a multiplayer civic knowledge quiz and compete with friends',
 }
 
-// Server Component that handles async parameter resolution
-export default async function MultiplayerQuizPage({ params, searchParams }: PageParams) {
-  // Resolve the params and searchParams on the server
-  const resolvedParams = await params
-  const resolvedSearchParams = await searchParams
-  
-  console.log('🏗️ MultiplayerQuizPage - Server resolved params:', {
-    topicId: resolvedParams.topicId,
-    room: resolvedSearchParams.room,
-    player: resolvedSearchParams.player
+// Development-only logging utility
+const devLog = (component: string, action: string, data?: any) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🎮 [${component}] ${action}`, data ? data : '')
+  }
+}
+
+interface PageProps {
+  params: { topicId: string }
+  searchParams: { 
+    room?: string
+    mode?: string
+    player?: string 
+  }
+}
+
+export default function MultiplayerQuizPage({
+  params,
+  searchParams,
+}: PageProps) {
+  devLog('MultiplayerQuizPage', 'Page loaded', { 
+    topicId: params.topicId, 
+    room: searchParams.room, 
+    mode: searchParams.mode 
   })
-  
+
   return (
     <Suspense fallback={
-      <div className="flex justify-center items-center min-h-[50vh] p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Loading multiplayer quiz...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading multiplayer quiz...</p>
         </div>
       </div>
     }>
-      <MultiplayerQuizClient 
-        params={resolvedParams} 
-        searchParams={resolvedSearchParams}
+      <MultiplayerQuizClient
+        params={params}
+        searchParams={searchParams}
       />
     </Suspense>
   )

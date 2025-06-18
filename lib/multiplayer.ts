@@ -3,84 +3,28 @@
 import { supabase } from './supabase'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import type {
+  DbMultiplayerRoom,
+  DbMultiplayerRoomPlayer,
+  DbMultiplayerQuizAttempt,
+  DbMultiplayerQuestionResponse,
+  DbMultiplayerGameEvent,
+  DbMultiplayerRoomInsert,
+  DbMultiplayerRoomPlayerInsert,
+  DbMultiplayerQuestionResponseInsert
+} from './database.types'
 
 // =============================================================================
-// MULTIPLAYER TYPES
+// MULTIPLAYER TYPES (Re-exported for backward compatibility)
 // =============================================================================
 
-export interface MultiplayerRoom {
-  id: string
-  room_code: string
-  host_user_id: string | null
-  topic_id: string
-  room_name?: string
-  max_players: number
-  current_players: number
-  room_status: 'waiting' | 'starting' | 'in_progress' | 'completed' | 'cancelled'
-  game_mode: 'classic' | 'speed_round' | 'elimination' | 'team_battle'
-  settings: Record<string, any>
-  created_at: string
-  started_at?: string
-  completed_at?: string
-  expires_at: string
-}
-
-export interface MultiplayerPlayer {
-  id: string
-  room_id: string
-  user_id?: string
-  guest_token?: string
-  player_name: string
-  player_emoji: string
-  is_ready: boolean
-  is_host: boolean
-  is_connected: boolean
-  join_order: number
-  boost_inventory: Record<string, any>
-  created_at: string
-  last_activity: string
-}
-
-export interface MultiplayerQuizAttempt {
-  id: string
-  room_id: string
-  player_id: string
-  topic_id: string
-  total_questions: number
-  correct_answers: number
-  score: number
-  time_spent_seconds: number
-  bonus_points: number
-  final_rank?: number
-  started_at: string
-  completed_at?: string
-  is_completed: boolean
-}
-
-export interface MultiplayerQuestionResponse {
-  id: string
-  room_id: string
-  player_id: string
-  attempt_id: string
-  question_number: number
-  question_id: string
-  selected_answer?: string
-  is_correct: boolean
-  response_time_seconds: number
-  bonus_applied?: string
-  answered_at: string
-}
-
-export interface MultiplayerGameEvent {
-  id: string
-  room_id: string
-  event_type: string
-  event_data: Record<string, any>
-  triggered_by?: string
-  created_at: string
-}
+export type MultiplayerRoom = DbMultiplayerRoom
+export type MultiplayerPlayer = DbMultiplayerRoomPlayer
+export type MultiplayerQuizAttempt = DbMultiplayerQuizAttempt
+export type MultiplayerQuestionResponse = DbMultiplayerQuestionResponse
+export type MultiplayerGameEvent = DbMultiplayerGameEvent
 
 export interface CreateRoomOptions {
   topicId: string
@@ -120,10 +64,37 @@ export const multiplayerOperations = {
     })
 
     if (error) {
-      console.error('Database error in createRoom:', error)
-      throw error
+      console.error('Database error in createRoom:', {
+        error,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      
+      // The error might be a string if it's from the RPC function
+      if (typeof error === 'string') {
+        throw new Error(`Failed to create room: ${error}`)
+      }
+      
+      // Check for specific error codes
+      if (error.code === '42702') {
+        throw new Error('Database configuration error: Ambiguous column reference. This may be caused by a database function issue. Please check the latest migrations.')
+      } else if (error.code === '42703') {
+        throw new Error('Database error: Column does not exist. Please check if all migrations have been run.')
+      } else if (error.code === '23505') {
+        throw new Error('A room with this code already exists. Please try again.')
+      } else if (error.code === '23503') {
+        throw new Error('Invalid topic ID provided.')
+      } else if (error.message) {
+        throw new Error(`Failed to create room: ${error.message}`)
+      } else {
+        throw new Error(`Failed to create room due to a database error: ${JSON.stringify(error)}`)
+      }
     }
-    if (!data || data.length === 0) throw new Error('Failed to create room')
+    if (!data || data.length === 0) {
+      throw new Error('Failed to create room: No data returned from database.')
+    }
 
     const roomData = data[0]
     
@@ -221,6 +192,209 @@ export const multiplayerOperations = {
   },
 
   /**
+   * Get user's active rooms (rooms they created or joined)
+   */
+  async getUserRooms(userId?: string, guestToken?: string): Promise<Array<{
+    room: MultiplayerRoom
+    player: MultiplayerPlayer
+    topic?: { topic_title: string; emoji: string }
+  }>> {
+    if (!userId && !guestToken) {
+      return []
+    }
+
+    // Build the query to get rooms where user is a player
+    let query = supabase
+      .from('multiplayer_room_players')
+      .select(`
+        id,
+        room_id,
+        player_name,
+        is_host,
+        is_ready,
+        is_connected,
+        join_order,
+        created_at,
+        multiplayer_rooms!inner (
+          id,
+          room_code,
+          room_name,
+          room_status,
+          topic_id,
+          game_mode,
+          max_players,
+          current_players,
+          created_at,
+          expires_at
+        )
+      `)
+
+    // Filter by user ID or guest token
+    if (userId) {
+      query = query.eq('user_id', userId)
+    } else if (guestToken) {
+      query = query.eq('guest_token', guestToken)
+    }
+
+    // Only get active rooms (not completed or cancelled)
+    query = query
+      .in('multiplayer_rooms.room_status', ['waiting', 'starting', 'in_progress'])
+      .order('created_at', { referencedTable: 'multiplayer_rooms', ascending: false })
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Error fetching user rooms:', error)
+      throw error
+    }
+
+    if (!data || data.length === 0) {
+      return []
+    }
+
+    // Get topic information for each room
+    const topicIds = [...new Set(data.map(item => (item as any).multiplayer_rooms.topic_id))]
+    const { data: topicsData } = await supabase
+      .from('question_topics')
+      .select('topic_id, topic_title, emoji')
+      .in('topic_id', topicIds)
+
+    const topicsMap = new Map(topicsData?.map(t => [t.topic_id, t]) || [])
+
+    return data.map(item => {
+      const roomData = (item as any).multiplayer_rooms
+      const topic = topicsMap.get(roomData.topic_id)
+      
+      return {
+        room: {
+          id: roomData.id,
+          room_code: roomData.room_code,
+          host_user_id: roomData.host_user_id,
+          topic_id: roomData.topic_id,
+          room_name: roomData.room_name,
+          max_players: roomData.max_players,
+          current_players: roomData.current_players,
+          room_status: roomData.room_status,
+          game_mode: roomData.game_mode,
+          settings: roomData.settings || {},
+          created_at: roomData.created_at,
+          started_at: roomData.started_at,
+          completed_at: roomData.completed_at,
+          expires_at: roomData.expires_at
+        } as MultiplayerRoom,
+        player: {
+          id: item.id,
+          room_id: item.room_id,
+          user_id: userId,
+          guest_token: guestToken,
+          player_name: item.player_name,
+          player_emoji: '😊', // Default emoji
+          is_ready: item.is_ready,
+          is_host: item.is_host,
+          is_connected: item.is_connected,
+          join_order: item.join_order,
+          boost_inventory: {},
+          created_at: item.created_at,
+          last_activity: item.created_at
+        } as MultiplayerPlayer,
+        topic: topic ? {
+          topic_title: topic.topic_title,
+          emoji: topic.emoji
+        } : undefined
+      }
+    })
+  },
+
+  /**
+   * Clean up expired rooms
+   */
+  async cleanupExpiredRooms(): Promise<{ cleanedRooms: number; cleanedPlayers: number }> {
+    try {
+      // Get expired rooms
+      const { data: expiredRooms, error: fetchError } = await supabase
+        .from('multiplayer_rooms')
+        .select('id, room_code, created_at, host_user_id')
+        .lt('expires_at', new Date().toISOString())
+        .in('room_status', ['waiting', 'starting']) // Don't clean up active games
+
+      if (fetchError) {
+        console.error('Error fetching expired rooms:', fetchError)
+        throw fetchError
+      }
+
+      if (!expiredRooms || expiredRooms.length === 0) {
+        return { cleanedRooms: 0, cleanedPlayers: 0 }
+      }
+
+      console.log(`🧹 Cleaning up ${expiredRooms.length} expired rooms`)
+
+      // Delete players from expired rooms
+      const roomIds = expiredRooms.map(room => room.id)
+      const { error: playersError } = await supabase
+        .from('multiplayer_room_players')
+        .delete()
+        .in('room_id', roomIds)
+
+      if (playersError) {
+        console.error('Error cleaning up room players:', playersError)
+        throw playersError
+      }
+
+      // Delete the expired rooms
+      const { error: roomsError } = await supabase
+        .from('multiplayer_rooms')
+        .delete()
+        .in('id', roomIds)
+
+      if (roomsError) {
+        console.error('Error cleaning up rooms:', roomsError)
+        throw roomsError
+      }
+
+      console.log(`✅ Cleaned up ${expiredRooms.length} expired rooms`)
+      return { cleanedRooms: expiredRooms.length, cleanedPlayers: roomIds.length }
+
+    } catch (error) {
+      console.error('Room cleanup failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Check if a room is expired and should be cleaned up
+   */
+  async isRoomExpired(roomId: string): Promise<boolean> {
+    const { data: room, error } = await supabase
+      .from('multiplayer_rooms')
+      .select('expires_at, room_status, created_at, host_user_id')
+      .eq('id', roomId)
+      .single()
+
+    if (error || !room) {
+      return true // Treat missing rooms as expired
+    }
+
+    const now = new Date()
+    const expiresAt = new Date(room.expires_at)
+    const createdAt = new Date(room.created_at)
+
+    // Check if room has passed its expiration time
+    if (now > expiresAt) {
+      return true
+    }
+
+    // Additional check for guest rooms: 1 hour of inactivity
+    if (!room.host_user_id && room.room_status === 'waiting') {
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+      if (createdAt < oneHourAgo) {
+        return true
+      }
+    }
+
+    return false
+  },
+
+  /**
    * Update player ready status
    */
   async updatePlayerReady(roomId: string, playerId: string, isReady: boolean): Promise<void> {
@@ -246,9 +420,52 @@ export const multiplayerOperations = {
   },
 
   /**
-   * Leave a room
+   * Leave a room with automatic host reassignment
    */
-  async leaveRoom(roomId: string, playerId: string): Promise<void> {
+  async leaveRoom(roomId: string, playerId: string): Promise<{ newHostPlayerId?: string }> {
+    // Check if the leaving player is the host
+    const { data: playerData, error: playerError } = await supabase
+      .from('multiplayer_room_players')
+      .select('is_host')
+      .eq('id', playerId)
+      .eq('room_id', roomId)
+      .single()
+
+    if (playerError) throw playerError
+
+    let newHostPlayerId: string | undefined
+
+    // If the leaving player is the host, reassign host to next player
+    if (playerData?.is_host) {
+      // Find the next player to become host (earliest join_order, excluding leaving player)
+      const { data: nextHostData, error: nextHostError } = await supabase
+        .from('multiplayer_room_players')
+        .select('id')
+        .eq('room_id', roomId)
+        .eq('is_connected', true)
+        .neq('id', playerId)
+        .order('join_order', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (!nextHostError && nextHostData) {
+        newHostPlayerId = nextHostData.id
+
+        // Remove host status from current host
+        await supabase
+          .from('multiplayer_room_players')
+          .update({ is_host: false })
+          .eq('room_id', roomId)
+          .eq('is_host', true)
+
+        // Assign host status to new host
+        await supabase
+          .from('multiplayer_room_players')
+          .update({ is_host: true })
+          .eq('id', newHostPlayerId)
+      }
+    }
+
     // Remove player from room
     const { error: deleteError } = await supabase
       .from('multiplayer_room_players')
@@ -273,20 +490,59 @@ export const multiplayerOperations = {
       .eq('id', roomId)
 
     if (updateError) throw updateError
+
+    return { newHostPlayerId }
   },
 
   /**
    * Submit a question response in multiplayer
    */
-  async submitQuestionResponse(response: Omit<MultiplayerQuestionResponse, 'id' | 'answered_at'>): Promise<void> {
+  async submitQuestionResponse(response: Omit<DbMultiplayerQuestionResponseInsert, 'id' | 'answered_at'>): Promise<void> {
+    // Development-only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💾 [multiplayerOperations] submitQuestionResponse called', {
+        roomId: response.room_id,
+        playerId: response.player_id,
+        questionNumber: response.question_number,
+        selectedAnswer: response.selected_answer,
+        isCorrect: response.is_correct,
+        responseTime: response.response_time_seconds,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    const responseWithTimestamp: DbMultiplayerQuestionResponseInsert = {
+      ...response,
+      answered_at: new Date().toISOString()
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💾 [multiplayerOperations] Inserting into multiplayer_question_responses', responseWithTimestamp)
+    }
+
     const { error } = await supabase
       .from('multiplayer_question_responses')
-      .insert({
-        ...response,
-        answered_at: new Date().toISOString()
-      })
+      .insert(responseWithTimestamp)
 
-    if (error) throw error
+    if (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('💾 [multiplayerOperations] ❌ Database insert failed', {
+          error: error.message,
+          errorCode: error.code,
+          errorDetails: error.details,
+          errorHint: error.hint,
+          responseData: responseWithTimestamp
+        })
+      }
+      throw error
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('💾 [multiplayerOperations] ✅ Response inserted successfully', {
+        questionNumber: response.question_number,
+        isCorrect: response.is_correct
+      })
+    }
   },
 
   /**
@@ -313,6 +569,13 @@ export const multiplayerOperations = {
 // REALTIME HOOKS
 // =============================================================================
 
+// Development-only logging utility
+const devLog = (message: string, data?: any) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🏠 [useMultiplayerRoom] ${message}`, data || '')
+  }
+}
+
 /**
  * Hook for managing multiplayer room state with real-time updates
  * Accepts either room ID (UUID) or room code (8-char string)
@@ -323,32 +586,41 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
   const [gameEvents, setGameEvents] = useState<MultiplayerGameEvent[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null)
   const [actualRoomId, setActualRoomId] = useState<string | null>(null)
+  
+  // Track loading state via ref to avoid changing dependencies in callbacks
+  const loadingRef = useRef(false)
+  // Track current channel via ref to avoid dependency issues
+  const channelRef = useRef<RealtimeChannel | null>(null)
+  // Track if we've already loaded data to prevent duplicate calls
+  const hasLoadedRef = useRef(false)
+  // Track the current roomIdOrCode to detect changes
+  const currentRoomIdOrCodeRef = useRef<string | undefined>(undefined)
 
-  console.log('🏠 useMultiplayerRoom - Hook called with roomIdOrCode:', roomIdOrCode)
-  console.log('🏠 useMultiplayerRoom - Current state:', { isLoading, room: !!room, error })
-
-  // Memoize the room loading function to prevent infinite calls
+  // Stable function to load room data
   const loadRoomData = useCallback(async (roomCode: string) => {
-    console.log('🏠 useMultiplayerRoom - Starting to load room data...')
+    if (loadingRef.current) {
+      devLog('Already loading, skipping duplicate call')
+      return
+    }
+    
+    loadingRef.current = true
+    setIsLoading(true)
+    setError(null)
     
     try {
-      setIsLoading(true)
-      setError(null)
-      
-      console.log('🏠 useMultiplayerRoom - Querying for room:', roomCode)
+      devLog('Loading room data', { roomCode })
       
       let roomResult: any
       let roomId: string
 
       // Check if it's a UUID or room code
-      if (roomCode.length === 36 && roomCode.includes('-')) {
-        console.log('🏠 useMultiplayerRoom - Querying by room ID (UUID)')
+      const isUUID = roomCode.length === 36 && roomCode.includes('-')
+      
+      if (isUUID) {
         roomId = roomCode
         roomResult = await supabase.from('multiplayer_rooms').select('*').eq('id', roomId).single()
       } else {
-        console.log('🏠 useMultiplayerRoom - Querying by room code')
         roomResult = await supabase.from('multiplayer_rooms').select('*').eq('room_code', roomCode.toUpperCase()).single()
         if (roomResult.data) {
           roomId = roomResult.data.id
@@ -358,18 +630,10 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
       }
 
       if (roomResult.error) {
-        console.error('🏠 useMultiplayerRoom - Room query failed:', roomResult.error)
         throw roomResult.error
       }
 
-      console.log('🏠 useMultiplayerRoom - Room found:', {
-        id: roomResult.data.id,
-        code: roomResult.data.room_code,
-        status: roomResult.data.room_status
-      })
-
       // Load players
-      console.log('🏠 useMultiplayerRoom - Loading players...')
       const playersResult = await supabase
         .from('multiplayer_room_players')
         .select('*')
@@ -377,65 +641,78 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         .order('join_order')
 
       if (playersResult.error) {
-        console.error('🏠 useMultiplayerRoom - Players query failed:', playersResult.error)
         throw playersResult.error
       }
-
-      console.log('🏠 useMultiplayerRoom - Players loaded:', playersResult.data.length)
 
       // Update state
       setActualRoomId(roomId)
       setRoom(roomResult.data as MultiplayerRoom)
       setPlayers(playersResult.data as MultiplayerPlayer[])
-      setError(null)
-      console.log('🏠 useMultiplayerRoom - ✅ Room data loaded successfully!')
+      hasLoadedRef.current = true
+      devLog('Room data loaded successfully', { roomId, playerCount: playersResult.data?.length })
       
     } catch (err) {
-      console.error('🏠 useMultiplayerRoom - ❌ Error loading room:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load room')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load room'
+      devLog('Error loading room', { error: errorMessage })
+      setError(errorMessage)
       setRoom(null)
       setPlayers([])
       setActualRoomId(null)
     } finally {
-      console.log('🏠 useMultiplayerRoom - Setting isLoading to false')
       setIsLoading(false)
+      loadingRef.current = false
     }
-  }, []) // Empty dependency array - this function should be stable
+  }, [])
 
   // Load initial room data - with proper dependency management
   useEffect(() => {
-    console.log('🏠 useMultiplayerRoom - ✅ useEffect TRIGGERED!!! roomIdOrCode:', roomIdOrCode)
+    // If roomIdOrCode hasn't changed, don't reload
+    if (currentRoomIdOrCodeRef.current === roomIdOrCode && hasLoadedRef.current) {
+      return
+    }
+    
+    currentRoomIdOrCodeRef.current = roomIdOrCode
+    hasLoadedRef.current = false
     
     // If no room code, reset everything
     if (!roomIdOrCode) {
-      console.log('🏠 useMultiplayerRoom - No roomIdOrCode, resetting state')
+      devLog('No roomIdOrCode provided, resetting state')
       setRoom(null)
       setPlayers([])
+      setGameEvents([])
       setError(null)
       setActualRoomId(null)
       setIsLoading(false)
+      
+      // Clean up channel if exists
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
+        channelRef.current = null
+      }
       return
     }
 
-    // Call the memoized function
+    // Load room data
     loadRoomData(roomIdOrCode)
-  }, [roomIdOrCode, loadRoomData]) // Only depend on roomIdOrCode and the memoized function
-
-  console.log('🏠 useMultiplayerRoom - After useEffect setup, current state:', { 
-    room: room ? 'loaded' : 'null', 
-    isLoading, 
-    error
-  })
+  }, [roomIdOrCode, loadRoomData])
 
   // Set up real-time subscriptions - separate effect with proper cleanup
   useEffect(() => {
     if (!actualRoomId) {
-      console.log('🏠 useMultiplayerRoom - No actual room ID, skipping realtime setup')
       return
     }
 
-    console.log('🏠 useMultiplayerRoom - Setting up realtime subscriptions for room:', actualRoomId)
-    const newChannel = supabase.channel(`multiplayer_room:${actualRoomId}`)
+    devLog('Setting up realtime subscriptions', { actualRoomId })
+    
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      channelRef.current.unsubscribe()
+      channelRef.current = null
+    }
+
+    // Create a unique channel name with timestamp to avoid conflicts
+    const channelName = `multiplayer_room:${actualRoomId}:${Date.now()}`
+    const newChannel = supabase.channel(channelName)
 
     // Subscribe to room changes
     newChannel.on(
@@ -447,7 +724,7 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `id=eq.${actualRoomId}`
       },
       (payload) => {
-        console.log('🏠 useMultiplayerRoom - Room change received:', payload.eventType)
+        devLog('Room change received', { eventType: payload.eventType })
         if (payload.eventType === 'UPDATE') {
           setRoom(payload.new as MultiplayerRoom)
         }
@@ -464,7 +741,7 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `room_id=eq.${actualRoomId}`
       },
       (payload) => {
-        console.log('🏠 useMultiplayerRoom - Player change received:', payload.eventType)
+        devLog('Player change received', { eventType: payload.eventType })
         if (payload.eventType === 'INSERT') {
           setPlayers(prev => [...prev, payload.new as MultiplayerPlayer].sort((a, b) => a.join_order - b.join_order))
         } else if (payload.eventType === 'UPDATE') {
@@ -485,45 +762,79 @@ export function useMultiplayerRoom(roomIdOrCode?: string) {
         filter: `room_id=eq.${actualRoomId}`
       },
       (payload) => {
-        console.log('🏠 useMultiplayerRoom - Game event received:', payload.new)
+        devLog('Game event received', { eventType: (payload.new as any).event_type })
         setGameEvents(prev => [...prev, payload.new as MultiplayerGameEvent])
       }
     )
-
-    newChannel.subscribe()
-    setChannel(newChannel)
+    
+    // Subscribe and handle potential errors
+    newChannel.subscribe((status) => {
+      devLog('Channel subscription status', { status })
+      if (status === 'CHANNEL_ERROR') {
+        setError('Real-time connection failed')
+      }
+    })
+    
+    // Store in ref
+    channelRef.current = newChannel
 
     return () => {
-      console.log('🏠 useMultiplayerRoom - Cleaning up realtime subscriptions')
+      devLog('Cleaning up realtime subscriptions')
       newChannel.unsubscribe()
+      channelRef.current = null
     }
-  }, [actualRoomId]) // Only depend on actualRoomId
+  }, [actualRoomId])
 
   const updatePlayerReady = useCallback(async (playerId: string, isReady: boolean) => {
-    if (!actualRoomId) return
+    if (!actualRoomId) {
+      devLog('Cannot update player ready - no room ID')
+      return
+    }
+    
     try {
+      devLog('Updating player ready status', { playerId, isReady })
       await multiplayerOperations.updatePlayerReady(actualRoomId, playerId, isReady)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update ready status')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update ready status'
+      devLog('Error updating player ready', { error: errorMessage })
+      setError(errorMessage)
+      throw err
     }
   }, [actualRoomId])
 
   const startGame = useCallback(async () => {
-    if (!actualRoomId) return false
+    if (!actualRoomId) {
+      devLog('Cannot start game - no room ID')
+      return false
+    }
+    
     try {
-      return await multiplayerOperations.startGame(actualRoomId)
+      devLog('Starting game', { actualRoomId })
+      const result = await multiplayerOperations.startGame(actualRoomId)
+      devLog('Game start result', { success: result })
+      return result
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start game')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start game'
+      devLog('Error starting game', { error: errorMessage })
+      setError(errorMessage)
       return false
     }
   }, [actualRoomId])
 
   const leaveRoom = useCallback(async (playerId: string) => {
-    if (!actualRoomId) return
+    if (!actualRoomId) {
+      devLog('Cannot leave room - no room ID')
+      return
+    }
+    
     try {
+      devLog('Player leaving room', { playerId, actualRoomId })
       await multiplayerOperations.leaveRoom(actualRoomId, playerId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to leave room')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to leave room'
+      devLog('Error leaving room', { error: errorMessage })
+      setError(errorMessage)
+      throw err
     }
   }, [actualRoomId])
 
@@ -547,12 +858,21 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
   const [currentQuestion, setCurrentQuestion] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const channelRef = useRef<RealtimeChannel | null>(null)
 
   // Subscribe to question responses
   useEffect(() => {
     if (!roomId) return
 
-    const channel = supabase.channel(`multiplayer_quiz:${roomId}`)
+    // Clean up existing channel
+    if (channelRef.current) {
+      channelRef.current.unsubscribe()
+      channelRef.current = null
+    }
+
+    // Create unique channel name
+    const channelName = `multiplayer_quiz:${roomId}:${Date.now()}`
+    const channel = supabase.channel(channelName)
 
     channel.on(
       'postgres_changes',
@@ -568,9 +888,11 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
     )
 
     channel.subscribe()
+    channelRef.current = channel
 
     return () => {
       channel.unsubscribe()
+      channelRef.current = null
     }
   }, [roomId])
 
@@ -582,8 +904,23 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
     responseTimeSeconds: number,
     attemptId: string
   ) => {
+    // Development-only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 [useMultiplayerQuiz] submitResponse called', {
+        roomId,
+        playerId,
+        questionNumber,
+        questionId,
+        selectedAnswer,
+        isCorrect,
+        responseTimeSeconds,
+        attemptId,
+        timestamp: new Date().toISOString()
+      })
+    }
+
     try {
-      await multiplayerOperations.submitQuestionResponse({
+      const responseData = {
         room_id: roomId,
         player_id: playerId,
         attempt_id: attemptId,
@@ -591,10 +928,39 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
         question_id: questionId,
         selected_answer: selectedAnswer,
         is_correct: isCorrect,
-        response_time_seconds: responseTimeSeconds
-      })
+        response_time_seconds: responseTimeSeconds,
+        bonus_applied: null // No bonus for now, can be enhanced later
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 [useMultiplayerQuiz] Calling multiplayerOperations.submitQuestionResponse', responseData)
+      }
+
+      await multiplayerOperations.submitQuestionResponse(responseData)
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 [useMultiplayerQuiz] ✅ Response submitted successfully', {
+          questionNumber,
+          isCorrect,
+          responseTime: responseTimeSeconds
+        })
+      }
     } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🎯 [useMultiplayerQuiz] ❌ Failed to submit response', {
+          error: err instanceof Error ? err.message : 'Unknown error',
+          errorDetails: err,
+          responseData: {
+            roomId,
+            playerId,
+            questionNumber,
+            selectedAnswer,
+            isCorrect
+          }
+        })
+      }
       setError(err instanceof Error ? err.message : 'Failed to submit response')
+      throw err // Re-throw to allow calling code to handle
     }
   }, [roomId, playerId])
 

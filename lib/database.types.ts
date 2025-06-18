@@ -9,6 +9,106 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      article_bias_analysis: {
+        Row: {
+          ai_analysis_version: string | null
+          ai_confidence: number | null
+          ai_reasoning: string | null
+          analysis_method: string | null
+          analyzed_at: string | null
+          analyzer_id: string | null
+          article_author: string | null
+          article_title: string | null
+          article_url: string
+          confidence_level: number | null
+          created_at: string | null
+          detected_techniques: Json | null
+          dimension_scores: Json
+          emotional_language_score: number | null
+          emotional_manipulation_score: number | null
+          factual_accuracy_score: number | null
+          factual_claims: Json | null
+          id: string
+          organization_id: string | null
+          overall_bias_score: number | null
+          published_at: string | null
+          source_diversity_score: number | null
+          source_metadata_id: string | null
+        }
+        Insert: {
+          ai_analysis_version?: string | null
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          analysis_method?: string | null
+          analyzed_at?: string | null
+          analyzer_id?: string | null
+          article_author?: string | null
+          article_title?: string | null
+          article_url: string
+          confidence_level?: number | null
+          created_at?: string | null
+          detected_techniques?: Json | null
+          dimension_scores?: Json
+          emotional_language_score?: number | null
+          emotional_manipulation_score?: number | null
+          factual_accuracy_score?: number | null
+          factual_claims?: Json | null
+          id?: string
+          organization_id?: string | null
+          overall_bias_score?: number | null
+          published_at?: string | null
+          source_diversity_score?: number | null
+          source_metadata_id?: string | null
+        }
+        Update: {
+          ai_analysis_version?: string | null
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          analysis_method?: string | null
+          analyzed_at?: string | null
+          analyzer_id?: string | null
+          article_author?: string | null
+          article_title?: string | null
+          article_url?: string
+          confidence_level?: number | null
+          created_at?: string | null
+          detected_techniques?: Json | null
+          dimension_scores?: Json
+          emotional_language_score?: number | null
+          emotional_manipulation_score?: number | null
+          factual_accuracy_score?: number | null
+          factual_claims?: Json | null
+          id?: string
+          organization_id?: string | null
+          overall_bias_score?: number | null
+          published_at?: string | null
+          source_diversity_score?: number | null
+          source_metadata_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_bias_analysis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_bias_analysis_source_metadata_id_fkey"
+            columns: ["source_metadata_id"]
+            isOneToOne: false
+            referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["source_id"]
+          },
+          {
+            foreignKeyName: "article_bias_analysis_source_metadata_id_fkey"
+            columns: ["source_metadata_id"]
+            isOneToOne: false
+            referencedRelation: "source_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_analytics: {
         Row: {
           event_type: string | null
@@ -49,6 +149,7 @@ export type Database = {
           options: Json
           question: string
           skill_id: string | null
+          translations: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -63,6 +164,7 @@ export type Database = {
           options: Json
           question: string
           skill_id?: string | null
+          translations?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -77,6 +179,7 @@ export type Database = {
           options?: Json
           question?: string
           skill_id?: string | null
+          translations?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -157,6 +260,544 @@ export type Database = {
           },
         ]
       }
+      bias_detection_patterns: {
+        Row: {
+          created_at: string | null
+          dimension_id: string | null
+          false_positive_rate: number | null
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          last_updated: string | null
+          pattern_name: string
+          pattern_regex: string | null
+          pattern_type: string
+          phrase_patterns: Json | null
+          severity_weight: number | null
+          times_detected: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          dimension_id?: string | null
+          false_positive_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          last_updated?: string | null
+          pattern_name: string
+          pattern_regex?: string | null
+          pattern_type: string
+          phrase_patterns?: Json | null
+          severity_weight?: number | null
+          times_detected?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          dimension_id?: string | null
+          false_positive_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          last_updated?: string | null
+          pattern_name?: string
+          pattern_regex?: string | null
+          pattern_type?: string
+          phrase_patterns?: Json | null
+          severity_weight?: number | null
+          times_detected?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bias_detection_patterns_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "bias_dimensions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bias_dimensions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          dimension_name: string
+          dimension_slug: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          scale_type: string
+          scale_values: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          dimension_name: string
+          dimension_slug: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          scale_type?: string
+          scale_values: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          dimension_name?: string
+          dimension_slug?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          scale_type?: string
+          scale_values?: Json
+        }
+        Relationships: []
+      }
+      bias_feedback: {
+        Row: {
+          agrees_with_assessment: boolean | null
+          article_analysis_id: string | null
+          created_at: string | null
+          dimension_id: string | null
+          evidence_urls: string[] | null
+          feedback_text: string | null
+          feedback_type: string
+          guest_token: string | null
+          helpfulness_score: number | null
+          id: string
+          ip_address: unknown | null
+          is_spam: boolean | null
+          is_verified: boolean | null
+          organization_id: string | null
+          suggested_score: number | null
+          updated_at: string | null
+          user_agent: string | null
+          user_expertise_areas: string[] | null
+          user_expertise_level: string | null
+          user_id: string | null
+          verification_notes: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          agrees_with_assessment?: boolean | null
+          article_analysis_id?: string | null
+          created_at?: string | null
+          dimension_id?: string | null
+          evidence_urls?: string[] | null
+          feedback_text?: string | null
+          feedback_type: string
+          guest_token?: string | null
+          helpfulness_score?: number | null
+          id?: string
+          ip_address?: unknown | null
+          is_spam?: boolean | null
+          is_verified?: boolean | null
+          organization_id?: string | null
+          suggested_score?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_expertise_areas?: string[] | null
+          user_expertise_level?: string | null
+          user_id?: string | null
+          verification_notes?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          agrees_with_assessment?: boolean | null
+          article_analysis_id?: string | null
+          created_at?: string | null
+          dimension_id?: string | null
+          evidence_urls?: string[] | null
+          feedback_text?: string | null
+          feedback_type?: string
+          guest_token?: string | null
+          helpfulness_score?: number | null
+          id?: string
+          ip_address?: unknown | null
+          is_spam?: boolean | null
+          is_verified?: boolean | null
+          organization_id?: string | null
+          suggested_score?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_expertise_areas?: string[] | null
+          user_expertise_level?: string | null
+          user_id?: string | null
+          verification_notes?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bias_feedback_article_analysis_id_fkey"
+            columns: ["article_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "article_bias_analysis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bias_feedback_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "bias_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bias_feedback_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bias_learning_events: {
+        Row: {
+          article_count: number | null
+          confidence_change: number | null
+          consensus_strength: number | null
+          created_at: string | null
+          dimension_id: string | null
+          event_type: string
+          feedback_count: number | null
+          id: string
+          learning_algorithm_version: string | null
+          new_score: number | null
+          old_score: number | null
+          organization_id: string | null
+          trigger_id: string | null
+          trigger_type: string | null
+        }
+        Insert: {
+          article_count?: number | null
+          confidence_change?: number | null
+          consensus_strength?: number | null
+          created_at?: string | null
+          dimension_id?: string | null
+          event_type: string
+          feedback_count?: number | null
+          id?: string
+          learning_algorithm_version?: string | null
+          new_score?: number | null
+          old_score?: number | null
+          organization_id?: string | null
+          trigger_id?: string | null
+          trigger_type?: string | null
+        }
+        Update: {
+          article_count?: number | null
+          confidence_change?: number | null
+          consensus_strength?: number | null
+          created_at?: string | null
+          dimension_id?: string | null
+          event_type?: string
+          feedback_count?: number | null
+          id?: string
+          learning_algorithm_version?: string | null
+          new_score?: number | null
+          old_score?: number | null
+          organization_id?: string | null
+          trigger_id?: string | null
+          trigger_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bias_learning_events_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "bias_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bias_learning_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookmark_analytics: {
+        Row: {
+          bookmark_id: string | null
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          snippet_id: string | null
+          user_id: string
+        }
+        Insert: {
+          bookmark_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          snippet_id?: string | null
+          user_id: string
+        }
+        Update: {
+          bookmark_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          snippet_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmark_analytics_bookmark_id_fkey"
+            columns: ["bookmark_id"]
+            isOneToOne: false
+            referencedRelation: "bookmarks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmark_analytics_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookmark_collections: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          emoji: string | null
+          id: string
+          is_public: boolean | null
+          is_smart: boolean | null
+          name: string
+          parent_collection_id: string | null
+          smart_criteria: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_smart?: boolean | null
+          name: string
+          parent_collection_id?: string | null
+          smart_criteria?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_smart?: boolean | null
+          name?: string
+          parent_collection_id?: string | null
+          smart_criteria?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmark_collections_parent_collection_id_fkey"
+            columns: ["parent_collection_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookmark_snippets: {
+        Row: {
+          ai_summary: string | null
+          ai_tags: string[] | null
+          bookmark_id: string | null
+          collection_id: string | null
+          created_at: string
+          full_context: string | null
+          highlight_color: string | null
+          id: string
+          paragraph_index: number | null
+          selection_end: number | null
+          selection_start: number | null
+          snippet_text: string
+          source_id: string | null
+          source_title: string | null
+          source_type: string | null
+          source_url: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          user_notes: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          bookmark_id?: string | null
+          collection_id?: string | null
+          created_at?: string
+          full_context?: string | null
+          highlight_color?: string | null
+          id?: string
+          paragraph_index?: number | null
+          selection_end?: number | null
+          selection_start?: number | null
+          snippet_text: string
+          source_id?: string | null
+          source_title?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          user_notes?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          bookmark_id?: string | null
+          collection_id?: string | null
+          created_at?: string
+          full_context?: string | null
+          highlight_color?: string | null
+          id?: string
+          paragraph_index?: number | null
+          selection_end?: number | null
+          selection_start?: number | null
+          snippet_text?: string
+          source_id?: string | null
+          source_title?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          user_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmark_snippets_bookmark_id_fkey"
+            columns: ["bookmark_id"]
+            isOneToOne: false
+            referencedRelation: "bookmarks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmark_snippets_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookmark_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          tag_name: string
+          tag_slug: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          tag_name: string
+          tag_slug: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          tag_name?: string
+          tag_slug?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bookmarks: {
+        Row: {
+          access_count: number | null
+          collection_id: string | null
+          content_id: string | null
+          content_type: string
+          content_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_favorite: boolean | null
+          last_accessed_at: string | null
+          source_domain: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          user_notes: string | null
+        }
+        Insert: {
+          access_count?: number | null
+          collection_id?: string | null
+          content_id?: string | null
+          content_type: string
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_accessed_at?: string | null
+          source_domain?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          user_notes?: string | null
+        }
+        Update: {
+          access_count?: number | null
+          collection_id?: string | null
+          content_id?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_accessed_at?: string | null
+          source_domain?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          user_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boost_definitions: {
         Row: {
           boost_type: string
@@ -223,6 +864,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          translations: Json | null
         }
         Insert: {
           created_at?: string | null
@@ -232,6 +874,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          translations?: Json | null
         }
         Update: {
           created_at?: string | null
@@ -241,6 +884,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          translations?: Json | null
         }
         Relationships: []
       }
@@ -1214,6 +1858,89 @@ export type Database = {
         }
         Relationships: []
       }
+      media_organizations: {
+        Row: {
+          alternate_domains: string[] | null
+          corrections_policy: string | null
+          created_at: string | null
+          credibility_rating: number | null
+          description: string | null
+          domain: string | null
+          editorial_stance: string | null
+          fact_checking_methodology: string | null
+          founding_year: number | null
+          funding_sources: Json | null
+          headquarters_location: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          organization_type: string
+          ownership_structure: string | null
+          parent_organization_id: string | null
+          social_media_links: Json | null
+          stated_values: string[] | null
+          transparency_score: number | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          alternate_domains?: string[] | null
+          corrections_policy?: string | null
+          created_at?: string | null
+          credibility_rating?: number | null
+          description?: string | null
+          domain?: string | null
+          editorial_stance?: string | null
+          fact_checking_methodology?: string | null
+          founding_year?: number | null
+          funding_sources?: Json | null
+          headquarters_location?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          organization_type?: string
+          ownership_structure?: string | null
+          parent_organization_id?: string | null
+          social_media_links?: Json | null
+          stated_values?: string[] | null
+          transparency_score?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          alternate_domains?: string[] | null
+          corrections_policy?: string | null
+          created_at?: string | null
+          credibility_rating?: number | null
+          description?: string | null
+          domain?: string | null
+          editorial_stance?: string | null
+          fact_checking_methodology?: string | null
+          founding_year?: number | null
+          funding_sources?: Json | null
+          headquarters_location?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          organization_type?: string
+          ownership_structure?: string | null
+          parent_organization_id?: string | null
+          social_media_links?: Json | null
+          stated_values?: string[] | null
+          transparency_score?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_organizations_parent_organization_id_fkey"
+            columns: ["parent_organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multiplayer_chat_messages: {
         Row: {
           confidence_score: number | null
@@ -2169,6 +2896,63 @@ export type Database = {
           },
         ]
       }
+      organization_bias_scores: {
+        Row: {
+          calculation_method: string | null
+          confidence_level: number
+          created_at: string | null
+          current_score: number
+          dimension_id: string
+          id: string
+          last_calculated_at: string | null
+          organization_id: string
+          sample_size: number
+          score_history: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          calculation_method?: string | null
+          confidence_level?: number
+          created_at?: string | null
+          current_score: number
+          dimension_id: string
+          id?: string
+          last_calculated_at?: string | null
+          organization_id: string
+          sample_size?: number
+          score_history?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          calculation_method?: string | null
+          confidence_level?: number
+          created_at?: string | null
+          current_score?: number
+          dimension_id?: string
+          id?: string
+          last_calculated_at?: string | null
+          organization_id?: string
+          sample_size?: number
+          score_history?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_bias_scores_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "bias_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_bias_scores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           annual_budget: number | null
@@ -2995,6 +3779,7 @@ export type Database = {
           avatar_url: string | null
           full_name: string | null
           id: string
+          is_admin: boolean | null
           updated_at: string | null
           username: string | null
           website: string | null
@@ -3003,6 +3788,7 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id: string
+          is_admin?: boolean | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -3011,6 +3797,7 @@ export type Database = {
           avatar_url?: string | null
           full_name?: string | null
           id?: string
+          is_admin?: boolean | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -3414,6 +4201,7 @@ export type Database = {
           is_breaking: boolean | null
           topic_id: string
           topic_title: string
+          translations: Json | null
           updated_at: string | null
           why_this_matters: string
         }
@@ -3429,6 +4217,7 @@ export type Database = {
           is_breaking?: boolean | null
           topic_id: string
           topic_title: string
+          translations?: Json | null
           updated_at?: string | null
           why_this_matters: string
         }
@@ -3444,6 +4233,7 @@ export type Database = {
           is_breaking?: boolean | null
           topic_id?: string
           topic_title?: string
+          translations?: Json | null
           updated_at?: string | null
           why_this_matters?: string
         }
@@ -3472,6 +4262,7 @@ export type Database = {
           sources: Json | null
           tags: Json | null
           topic_id: string
+          translations: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -3496,6 +4287,7 @@ export type Database = {
           sources?: Json | null
           tags?: Json | null
           topic_id: string
+          translations?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -3520,6 +4312,7 @@ export type Database = {
           sources?: Json | null
           tags?: Json | null
           topic_id?: string
+          translations?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3731,6 +4524,50 @@ export type Database = {
             columns: ["shareable_link_id"]
             isOneToOne: false
             referencedRelation: "shareable_gift_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_collection_access: {
+        Row: {
+          collection_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          permission_level: string
+          share_code: string | null
+          shared_by_user_id: string
+          shared_with_email: string | null
+          shared_with_user_id: string | null
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          permission_level?: string
+          share_code?: string | null
+          shared_by_user_id: string
+          shared_with_email?: string | null
+          shared_with_user_id?: string | null
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          permission_level?: string
+          share_code?: string | null
+          shared_by_user_id?: string
+          shared_with_email?: string | null
+          shared_with_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_collection_access_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_collections"
             referencedColumns: ["id"]
           },
         ]
@@ -4148,6 +4985,62 @@ export type Database = {
           },
         ]
       }
+      source_credibility_indicators: {
+        Row: {
+          created_at: string | null
+          fabrication_scandals_count: number | null
+          fact_checking_partnerships: string[] | null
+          id: string
+          major_corrections_count: number | null
+          major_misreporting_incidents: Json | null
+          organization_id: string | null
+          press_associations: string[] | null
+          press_freedom_score: number | null
+          pulitzer_prizes: number | null
+          transparency_report_url: string | null
+          updated_at: string | null
+          verified_scoops_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fabrication_scandals_count?: number | null
+          fact_checking_partnerships?: string[] | null
+          id?: string
+          major_corrections_count?: number | null
+          major_misreporting_incidents?: Json | null
+          organization_id?: string | null
+          press_associations?: string[] | null
+          press_freedom_score?: number | null
+          pulitzer_prizes?: number | null
+          transparency_report_url?: string | null
+          updated_at?: string | null
+          verified_scoops_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fabrication_scandals_count?: number | null
+          fact_checking_partnerships?: string[] | null
+          id?: string
+          major_corrections_count?: number | null
+          major_misreporting_incidents?: Json | null
+          organization_id?: string | null
+          press_associations?: string[] | null
+          press_freedom_score?: number | null
+          pulitzer_prizes?: number | null
+          transparency_report_url?: string | null
+          updated_at?: string | null
+          verified_scoops_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_credibility_indicators_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "media_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       source_fetch_queue: {
         Row: {
           created_at: string | null
@@ -4424,6 +5317,7 @@ export type Database = {
           required: boolean
           scale_config: Json | null
           survey_id: string
+          translations: Json | null
         }
         Insert: {
           conditional_logic?: Json | null
@@ -4437,6 +5331,7 @@ export type Database = {
           required?: boolean
           scale_config?: Json | null
           survey_id: string
+          translations?: Json | null
         }
         Update: {
           conditional_logic?: Json | null
@@ -4450,6 +5345,7 @@ export type Database = {
           required?: boolean
           scale_config?: Json | null
           survey_id?: string
+          translations?: Json | null
         }
         Relationships: [
           {
@@ -4541,6 +5437,7 @@ export type Database = {
           published_at: string | null
           status: string
           title: string
+          translations: Json | null
           updated_at: string
         }
         Insert: {
@@ -4555,6 +5452,7 @@ export type Database = {
           published_at?: string | null
           status?: string
           title: string
+          translations?: Json | null
           updated_at?: string
         }
         Update: {
@@ -4569,6 +5467,7 @@ export type Database = {
           published_at?: string | null
           status?: string
           title?: string
+          translations?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -6364,6 +7263,19 @@ export type Database = {
           room_id: string
         }[]
       }
+      calculate_bias_consensus: {
+        Args: {
+          p_organization_id: string
+          p_dimension_id: string
+          p_time_window?: unknown
+        }
+        Returns: {
+          consensus_score: number
+          confidence_level: number
+          sample_size: number
+          agreement_rate: number
+        }[]
+      }
       calculate_gift_credits: {
         Args: { donation_amount_cents: number }
         Returns: {
@@ -6468,14 +7380,8 @@ export type Database = {
         Returns: {
           id: string
           room_code: string
-          topic_id: string
-          room_name: string
-          max_players: number
-          current_players: number
-          game_mode: string
-          room_status: string
-          host_user_id: string
-          created_at: string
+          message: string
+          success: boolean
         }[]
       }
       create_pod_invite_link: {
@@ -6627,6 +7533,10 @@ export type Database = {
           is_core_skill: boolean
         }[]
       }
+      get_or_create_media_organization: {
+        Args: { p_domain: string; p_name?: string }
+        Returns: string
+      }
       get_or_create_source_metadata: {
         Args:
           | {
@@ -6644,6 +7554,10 @@ export type Database = {
               p_published_time?: string
               p_modified_time?: string
             }
+        Returns: string
+      }
+      get_or_create_tag: {
+        Args: { p_user_id: string; p_tag_name: string }
         Returns: string
       }
       get_people_helped_by_donor: {
@@ -6726,6 +7640,15 @@ export type Database = {
           column_default: string
           ordinal_position: number
         }[]
+      }
+      get_translation: {
+        Args: {
+          translations: Json
+          field_name: string
+          language_code: string
+          fallback_language?: string
+        }
+        Returns: string
       }
       get_user_boost_summary: {
         Args: { target_user_id: string }
@@ -6832,6 +7755,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       is_content_appropriate_for_user: {
         Args: {
           p_user_id: string
@@ -6871,6 +7798,14 @@ export type Database = {
           pod_id: string
         }[]
       }
+      leave_multiplayer_room: {
+        Args: { p_room_id: string; p_player_id: string }
+        Returns: {
+          success: boolean
+          message: string
+          new_host_player_id: string
+        }[]
+      }
       link_question_to_source: {
         Args: {
           p_question_id: string
@@ -6893,12 +7828,48 @@ export type Database = {
           lifetime_credits_granted: number
         }[]
       }
+      reassign_room_host: {
+        Args: { p_room_id: string; p_leaving_player_id?: string }
+        Returns: {
+          success: boolean
+          message: string
+          new_host_player_id: string
+        }[]
+      }
       redeem_gift_code: {
         Args: { p_redemption_code: string; p_recipient_user_id: string }
         Returns: {
           success: boolean
           access_type: string
           error_message: string
+        }[]
+      }
+      repair_rooms_without_hosts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          room_id: string
+          room_code: string
+          action_taken: string
+          new_host_player_id: string
+        }[]
+      }
+      search_bookmarks: {
+        Args: {
+          p_user_id: string
+          p_query: string
+          p_content_types?: string[]
+          p_tags?: string[]
+          p_collection_id?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          bookmark_id: string
+          title: string
+          description: string
+          content_type: string
+          tags: string[]
+          relevance_score: number
         }[]
       }
       send_npc_message: {
@@ -6918,6 +7889,17 @@ export type Database = {
         Args: { "": number }
         Returns: number
       }
+      set_translation: {
+        Args: {
+          translations: Json
+          field_name: string
+          language_code: string
+          translation_text: string
+          auto_translated?: boolean
+          reviewed_by?: string
+        }
+        Returns: Json
+      }
       show_limit: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -6933,6 +7915,10 @@ export type Database = {
       track_feature_usage: {
         Args: { p_user_id: string; p_feature_name: string }
         Returns: boolean
+      }
+      update_bookmark_access: {
+        Args: { p_bookmark_id: string; p_user_id: string }
+        Returns: undefined
       }
       update_conversation_context: {
         Args: {
@@ -6951,6 +7937,10 @@ export type Database = {
           p_response_time: number
           p_vs_human_performance?: number
         }
+        Returns: undefined
+      }
+      update_organization_bias_from_articles: {
+        Args: { p_organization_id: string }
         Returns: undefined
       }
       update_player_ready_status: {
@@ -6989,6 +7979,19 @@ export type Database = {
           status: string
           details: string
         }[]
+      }
+      validate_multiplayer_host_assignments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_rooms: number
+          rooms_without_hosts: number
+          rooms_with_multiple_hosts: number
+          success_rate: number
+        }[]
+      }
+      validate_translation_structure: {
+        Args: { translations: Json }
+        Returns: boolean
       }
     }
     Enums: {
@@ -7209,3 +8212,52 @@ export type DbUserSubscriptionUpdate = TablesUpdate<'user_subscriptions'>
 // Enum types (add as needed)
 // Example: export type DbUserRole = Database['public']['Enums']['user_role']
 // Example: export type DbQuestionType = Database['public']['Enums']['question_type']
+
+// Multiplayer Types
+export type DbMultiplayerRoom = Tables<'multiplayer_rooms'>
+export type DbMultiplayerRoomPlayer = Tables<'multiplayer_room_players'>
+export type DbMultiplayerQuizAttempt = Tables<'multiplayer_quiz_attempts'>
+export type DbMultiplayerQuestionResponse = Tables<'multiplayer_question_responses'>
+export type DbMultiplayerGameEvent = Tables<'multiplayer_game_events'>
+export type DbMultiplayerChatMessage = Tables<'multiplayer_chat_messages'>
+export type DbMultiplayerConversationContext = Tables<'multiplayer_conversation_context'>
+export type DbMultiplayerNpcPlayer = Tables<'multiplayer_npc_players'>
+
+// Multiplayer Insert Types
+export type DbMultiplayerRoomInsert = TablesInsert<'multiplayer_rooms'>
+export type DbMultiplayerRoomPlayerInsert = TablesInsert<'multiplayer_room_players'>
+export type DbMultiplayerQuizAttemptInsert = TablesInsert<'multiplayer_quiz_attempts'>
+export type DbMultiplayerQuestionResponseInsert = TablesInsert<'multiplayer_question_responses'>
+export type DbMultiplayerGameEventInsert = TablesInsert<'multiplayer_game_events'>
+export type DbMultiplayerChatMessageInsert = TablesInsert<'multiplayer_chat_messages'>
+export type DbMultiplayerConversationContextInsert = TablesInsert<'multiplayer_conversation_context'>
+export type DbMultiplayerNpcPlayerInsert = TablesInsert<'multiplayer_npc_players'>
+
+// Multiplayer Update Types
+export type DbMultiplayerRoomUpdate = TablesUpdate<'multiplayer_rooms'>
+export type DbMultiplayerRoomPlayerUpdate = TablesUpdate<'multiplayer_room_players'>
+export type DbMultiplayerQuizAttemptUpdate = TablesUpdate<'multiplayer_quiz_attempts'>
+export type DbMultiplayerQuestionResponseUpdate = TablesUpdate<'multiplayer_question_responses'>
+export type DbMultiplayerGameEventUpdate = TablesUpdate<'multiplayer_game_events'>
+export type DbMultiplayerChatMessageUpdate = TablesUpdate<'multiplayer_chat_messages'>
+export type DbMultiplayerConversationContextUpdate = TablesUpdate<'multiplayer_conversation_context'>
+export type DbMultiplayerNpcPlayerUpdate = TablesUpdate<'multiplayer_npc_players'>
+
+// Bookmark Types
+export type DbBookmark = Tables<'bookmarks'>
+export type DbBookmarkCollection = Tables<'bookmark_collections'>
+export type DbBookmarkSnippet = Tables<'bookmark_snippets'>
+export type DbBookmarkTag = Tables<'bookmark_tags'>
+export type DbBookmarkAnalytics = Tables<'bookmark_analytics'>
+
+export type DbBookmarkInsert = TablesInsert<'bookmarks'>
+export type DbBookmarkCollectionInsert = TablesInsert<'bookmark_collections'>
+export type DbBookmarkSnippetInsert = TablesInsert<'bookmark_snippets'>
+export type DbBookmarkTagInsert = TablesInsert<'bookmark_tags'>
+export type DbBookmarkAnalyticsInsert = TablesInsert<'bookmark_analytics'>
+
+export type DbBookmarkUpdate = TablesUpdate<'bookmarks'>
+export type DbBookmarkCollectionUpdate = TablesUpdate<'bookmark_collections'>
+export type DbBookmarkSnippetUpdate = TablesUpdate<'bookmark_snippets'>
+export type DbBookmarkTagUpdate = TablesUpdate<'bookmark_tags'>
+export type DbBookmarkAnalyticsUpdate = TablesUpdate<'bookmark_analytics'>

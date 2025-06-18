@@ -11,6 +11,7 @@ import { useStatsig } from '@/components/providers/statsig-provider'
 import { pendingUserAttribution } from '@/lib/pending-user-attribution'
 import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
 import { SocialProofBubble } from '@/components/social-proof-bubble'
+import { createOnboardingAssessmentProgress, type BaseQuizState } from '@/lib/progress-storage'
 
 interface AssessmentQuestion {
   id: string
@@ -33,68 +34,51 @@ interface AssessmentStepProps {
 }
 
 // Enhanced WordReveal with natural typing animation
-function WordReveal({ text, speed = 100, className, onComplete }: { text: string, speed?: number, className?: string, onComplete?: () => void }) {
+function WordReveal({ text, speed = 80, className, onComplete }: { text: string, speed?: number, className?: string, onComplete?: () => void }) {
   const words = text.split(' ')
   const [visibleWords, setVisibleWords] = useState<string[]>([])
-  const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const indexRef = useRef(0)
 
   useEffect(() => {
     setVisibleWords([])
-    setCurrentWordIndex(0)
     setIsComplete(false)
+    indexRef.current = 0
     
     if (!text) return
 
-    let cancelled = false
-    
     function revealNextWord() {
-      if (cancelled) return
-      
-      setCurrentWordIndex(prevIndex => {
-        if (prevIndex < words.length) {
-          setVisibleWords(prev => [...prev, words[prevIndex]])
-          
-          // Schedule next word with slight variation in timing for natural feel
-          const nextDelay = speed + (Math.random() * 40 - 20) // ±20ms variation
-          setTimeout(revealNextWord, nextDelay)
-          
-          return prevIndex + 1
-        } else {
-          setIsComplete(true)
-          onComplete?.()
-          return prevIndex
-        }
-      })
+      if (indexRef.current < words.length) {
+        setVisibleWords(prev => [...prev, words[indexRef.current]])
+        indexRef.current += 1
+        
+        // Schedule next word with consistent timing
+        timeoutRef.current = setTimeout(revealNextWord, speed)
+      } else {
+        setIsComplete(true)
+        onComplete?.()
+      }
     }
 
-    // Small initial delay before starting
-    setTimeout(revealNextWord, 300)
+    // Start revealing words after a short delay
+    timeoutRef.current = setTimeout(revealNextWord, 200)
     
-    return () => { cancelled = true }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
   }, [text, speed, onComplete])
 
   return (
     <span className={className}>
-      {visibleWords.map((word, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ 
-            duration: 0.3,
-            ease: "easeOut"
-          }}
-          style={{ display: 'inline-block', marginRight: '0.25rem' }}
-        >
-          {word}
-        </motion.span>
-      ))}
+      {visibleWords.join(' ')}
       {!isComplete && (
         <motion.span
           animate={{ opacity: [1, 0] }}
           transition={{ 
-            duration: 0.8,
+            duration: 0.6,
             repeat: Infinity,
             repeatType: "reverse",
             ease: "easeInOut"
@@ -133,6 +117,64 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
   const [xpAlreadyAwarded, setXpAlreadyAwarded] = useState(false)
   const [hasCompletedQuick, setHasCompletedQuick] = useState(false)
   const [hasCompletedFull, setHasCompletedFull] = useState(false)
+  const [hasRestoredState, setHasRestoredState] = useState(false)
+
+  // Initialize progress manager
+  const progressManager = createOnboardingAssessmentProgress(
+    userId || onboardingState?.userId || onboardingState?.user_id || onboardingState?.user?.id,
+    undefined // No guest token for onboarding
+  )
+
+  // Generate session ID for state persistence
+  const sessionId = useRef<string>(`onboarding-assessment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+
+  // Convert assessment state to BaseQuizState
+  const convertToBaseQuizState = (): BaseQuizState => ({
+    sessionId: sessionId.current,
+    quizType: 'onboarding_assessment',
+    questions,
+    currentQuestionIndex,
+    answers,
+    streak,
+    maxStreak,
+    startTime,
+    responseTimes: responseTimes.current,
+    savedAt: Date.now(),
+    assessmentMode,
+    categoryPerformance
+  })
+
+  // Save assessment state
+  const saveAssessmentState = () => {
+    if (questions.length > 0) {
+      const baseState = convertToBaseQuizState()
+      progressManager.save(baseState)
+    }
+  }
+
+  // Load assessment state
+  const loadAssessmentState = (): boolean => {
+    const baseState = progressManager.load()
+    if (baseState) {
+      setQuestions(baseState.questions)
+      setCurrentQuestionIndex(baseState.currentQuestionIndex)
+      setAnswers(baseState.answers)
+      setStreak(baseState.streak)
+      setMaxStreak(baseState.maxStreak)
+      setStartTime(baseState.startTime)
+      responseTimes.current = baseState.responseTimes
+      setAssessmentMode((baseState.assessmentMode || 'quick') as 'quick' | 'full')
+      setCategoryPerformance(baseState.categoryPerformance || {})
+      sessionId.current = baseState.sessionId
+      return true
+    }
+    return false
+  }
+
+  // Clear assessment state
+  const clearAssessmentState = () => {
+    progressManager.clear()
+  }
 
   // Get dynamic headings based on assessment mode and question count
   const getAssessmentTitle = () => {
@@ -179,36 +221,69 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     }
   }
 
-  // Fetch initial questions
+  // Initialize or restore assessment state
   useEffect(() => {
-    const fetchQuestions = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const selectedCategories = onboardingState?.categories?.categories || []
-        const categoryIds = selectedCategories.map((cat: any) => cat.id).filter(Boolean)
-        const params = new URLSearchParams()
-        params.set('balanced', 'true')
-        const count = assessmentMode === 'quick' ? 8 : 100 // 8 for quick, 100 for full (or all)
-        params.set('count', String(count))
-        if (categoryIds.length > 0) {
-          params.set('categories', JSON.stringify(categoryIds))
-        }
-        const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
-        const result = await res.json()
-        if (result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
-          setQuestions(result.questions.map(normalizeQuestion))
+    const initializeAssessment = async () => {
+      console.log('🔄 Initializing onboarding assessment...', { 
+        hasRestoredState, 
+        assessmentMode,
+        userId: userId || onboardingState?.userId || 'none'
+      })
+      
+      // First, try to restore saved state (only once)
+      if (!hasRestoredState) {
+        const restored = loadAssessmentState()
+        if (restored) {
+          console.log('✅ Restored onboarding assessment state')
+          setHasRestoredState(true)
+          setLoading(false)
+          
+          // Reset UI state for restored session
+          setShowResult(false)
+          setCanAdvance(false)
+          setAssessmentComplete(false)
+          
+          return
         } else {
-          throw new Error('No questions returned')
+          console.log('❌ No valid saved assessment state found')
+          setHasRestoredState(true) // Mark as checked to prevent re-checking
         }
-      } catch (err) {
-        setError('Failed to load assessment questions')
-      } finally {
+      }
+
+      // If no saved state, fetch new questions
+      if (questions.length === 0) {
+        console.log('🔍 Fetching new questions for:', assessmentMode)
+        setLoading(true)
+        setError(null)
+        try {
+          const selectedCategories = onboardingState?.categories?.categories || []
+          const categoryIds = selectedCategories.map((cat: any) => cat.id).filter(Boolean)
+          const params = new URLSearchParams()
+          params.set('balanced', 'true')
+          const count = assessmentMode === 'quick' ? 8 : 200 // 8 for quick, 200 for full (get all available)
+          params.set('count', String(count))
+          if (categoryIds.length > 0) {
+            params.set('categories', JSON.stringify(categoryIds))
+          }
+          const res = await fetch(`/api/onboarding/assessment-questions?${params.toString()}`)
+          const result = await res.json()
+          if (result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
+            setQuestions(result.questions.map(normalizeQuestion))
+          } else {
+            throw new Error('No questions returned')
+          }
+        } catch (err) {
+          setError('Failed to load assessment questions')
+        } finally {
+          setLoading(false)
+        }
+      } else {
         setLoading(false)
       }
     }
-    fetchQuestions()
-  }, [onboardingState, assessmentMode])
+
+    initializeAssessment()
+  }, [onboardingState, assessmentMode, hasRestoredState, questions.length])
 
   // Track response time
   useEffect(() => {
@@ -263,15 +338,18 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         }
       }
     })
+    
+    // Save state after answering
+    setTimeout(() => saveAssessmentState(), 100)
     setShowResult(true)
     setCanAdvance(false)
-    // Start 10s timer for auto-advance
+    // Start 15s timer for auto-advance
     if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current)
     autoAdvanceTimeout.current = setTimeout(() => {
       handleAdvance()
-    }, 10000)
-    // Allow manual advance after 2s (give time to read explanation)
-    setTimeout(() => setCanAdvance(true), 2000)
+    }, 15000)
+    // Allow manual advance after 3s (give time to read explanation)
+    setTimeout(() => setCanAdvance(true), 3000)
   }
 
   // Manual advance handler
@@ -654,6 +732,9 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
                 }
               }
               
+              // Clear saved state on completion
+              clearAssessmentState()
+              
               onComplete({
                 assessmentResults: results,
                 answers,
@@ -677,8 +758,10 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
     )
   }
 
-  // Friendly feedback
+  // Friendly feedback - deterministic based on question index
   const getFeedback = (isCorrect: boolean) => {
+    const questionIndex = currentQuestionIndex
+    
     if (isCorrect) {
       const messages = [
         "Nice! That's correct.",
@@ -687,7 +770,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         "Well done!",
         "That's right!"
       ]
-      return messages[Math.floor(Math.random() * messages.length)]
+      return messages[questionIndex % messages.length]
     } else {
       const messages = [
         "Not quite, but that's okay!",
@@ -696,7 +779,7 @@ export function AssessmentStep({ onComplete, onSkip, onboardingState, userId }: 
         "Don't worry, you'll get the next one.",
         "Let's see the explanation."
       ]
-      return messages[Math.floor(Math.random() * messages.length)]
+      return messages[questionIndex % messages.length]
     }
   }
 

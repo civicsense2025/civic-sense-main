@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AutoReadPage } from '@/components/auto-read-page'
 import { FeedbackButton } from '@/components/feedback'
 import { useEffect, useState, useRef } from 'react'
+import { ServerHeader } from '@/components/server-header'
 
 export default function AboutPage() {
   const [visibleElements, setVisibleElements] = useState<Set<number>>(new Set())
@@ -44,6 +45,9 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <AutoReadPage />
+      
+      {/* Header */}
+      <ServerHeader />
       
       {/* Custom Styles */}
       <style jsx global>{`
@@ -200,20 +204,6 @@ export default function AboutPage() {
           transform: translateY(0) translateX(0);
         }
       `}</style>
-      
-      {/* Header */}
-      <div className="border-b border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4">
-          <Link 
-            href="/" 
-            className="group hover:opacity-70 transition-opacity"
-          >
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-              CivicSense
-            </h1>
-          </Link>
-        </div>
-      </div>
       
       <div className="space-y-0">
         {/* Hero section */}
