@@ -18,21 +18,21 @@ INSERT INTO question_topics (
 (
     'israel_iran_conflict_us_response_june_2025',
     'Israel-Iran Conflict and U.S. Military Response',
-    'Israel and Iran started shooting at each other on June 13, 2025. Israel hit Iranian nuclear sites, Iran fired back, and now Trump has sent the USS Nimitz carrier group plus 30+ refueling planes to the region. Trump posted on Truth Social demanding Iran''s "unconditional surrender" while gas prices jumped because oil markets are freaking out.',
-    '<ul><li><strong>Your president can start wars without asking Congress</strong> - and this crisis shows exactly how that power gets used when things get hot</li><li><strong>Middle East conflicts hit your wallet immediately</strong> - oil prices spiked, which means you''re paying more at the gas pump right now</li><li><strong>The Constitution says Congress declares war, but presidents ignore that</strong> - Trump is making military moves that could drag us into another Middle East war</li><li><strong>America''s promises to allies can force us into fights we didn''t choose</strong> - our support for Israel means we get pulled into their conflicts whether we want to or not</li><li><strong>Emergency powers let presidents do almost anything</strong> - and once they use those powers, they rarely give them back</li></ul>',
+    'Israel and Iran began exchanging missile strikes on June 13, 2025, with Israel hitting Iranian nuclear and military facilities. The U.S. deployed the USS Nimitz carrier group and over 30 aerial refueling tankers to support Israel. Trump posted on Truth Social demanding Iran''s "unconditional surrender" while oil prices spiked due to regional tensions.',
+    '<ul><li><strong>Your president can deploy military forces without asking Congress first</strong> - and this crisis shows exactly how that power gets used when international tensions escalate</li><li><strong>Middle East conflicts directly affect your wallet</strong> - oil prices jumped immediately, which means you''re paying more at the gas pump right now</li><li><strong>The Constitution gives Congress war powers, but presidents often ignore that</strong> - Trump is making military moves that could pull us into another Middle East conflict</li><li><strong>America''s alliance commitments can force us into conflicts we didn''t choose</strong> - our military support for Israel means we get involved in their fights whether we want to or not</li><li><strong>Emergency powers allow presidents to expand their authority quickly</strong> - and once they use those powers, they rarely give them back voluntarily</li></ul>',
     '⚔️',
-    '2025-06-18',
-    'Wednesday',
+    '2025-06-13',
+    'Friday',
     '["Foreign Policy", "Presidential Powers", "Military", "Constitutional Law", "Congress"]',
     true
 ),
 
--- Topic 2: Congressional War Powers Pushback - VERIFIED
+-- Topic 2: Congressional War Powers Pushback - VERIFIED (June 17, 2025)
 (
     'congress_war_powers_limitation_trump_2025',
-    'Congress Tries to Stop Trump from Starting Another War',
-    'Republican Thomas Massie and Democrat Ro Khanna are teaming up to block Trump from dragging America into the Israel-Iran fight without Congress voting first. Yeah, you read that right - a libertarian Republican and a progressive Democrat actually agree on something: presidents shouldn''t be able to start wars by themselves.',
-    '<ul><li><strong>This is Congress finally fighting back against presidential war powers</strong> - something they should have done decades ago but were too scared to try</li><li><strong>Your representatives might actually do their constitutional job for once</strong> - the Constitution gives Congress the power to declare war, not the president</li><li><strong>Strange political alliances reveal what politicians really care about</strong> - when libertarians and progressives team up, it means the issue cuts deeper than party politics</li><li><strong>War costs you money whether you support it or not</strong> - every military intervention comes out of your tax dollars and adds to the national debt</li><li><strong>If Congress doesn''t use their war powers, they lose them forever</strong> - this might be their last chance to reclaim constitutional authority</li></ul>',
+    'Congress Tries to Block Trump from Starting War with Iran',
+    'On June 17, 2025, Republican Thomas Massie and Democrat Ro Khanna introduced a bipartisan war powers resolution to prevent Trump from involving the U.S. in the Israel-Iran conflict without congressional approval. This unusual alliance between a libertarian Republican and progressive Democrat reflects growing concern about presidential war powers.',
+    '<ul><li><strong>This is Congress finally pushing back against decades of presidential war powers</strong> - something they should have done years ago but were too politically scared to try</li><li><strong>Your representatives might actually do their constitutional job for once</strong> - the Constitution gives Congress, not the president, the power to declare war</li><li><strong>Strange political alliances reveal what politicians really care about</strong> - when libertarians and progressives team up, it means the issue cuts deeper than normal party politics</li><li><strong>War spending comes directly from your tax dollars</strong> - every military intervention adds billions to the national debt that you and your children will pay for</li><li><strong>If Congress doesn''t use their war powers now, they lose them forever</strong> - this might be their last real chance to reclaim constitutional authority over military action</li></ul>',
     '⚖️',
     '2025-06-17',
     'Tuesday',
@@ -40,25 +40,25 @@ INSERT INTO question_topics (
     true
 ),
 
--- Topic 3: Defense Secretary Hegseth Under Congressional Fire - VERIFIED
+-- Topic 3: Defense Secretary Hegseth Confirmation Hearings - CORRECTED (January 14, 2025)
 (
-    'hegseth_congressional_hearings_pentagon_june_2025',
-    'Congress Grills Defense Secretary Over Signal App Security Mess',
-    'Pete Hegseth is getting roasted by Congress for sharing military secrets on Signal, focusing on transgender troops while Iran builds nukes, and asking for more defense money. Lawmakers are pissed that he''s treating national security like a culture war battleground instead of, you know, actually securing the nation.',
-    '<ul><li><strong>Your Defense Secretary is sharing military secrets on an app</strong> - the same Signal app you use to text friends is how he's handling classified information</li><li><strong>Culture war politics are distracting from actual threats</strong> - while Hegseth fights about bathroom policies, Iran is building nuclear weapons</li><li><strong>Defense spending increases mean less money for everything else</strong> - more Pentagon budget means fewer resources for schools, healthcare, and infrastructure</li><li><strong>Congressional hearings are political theater, but they sometimes work</strong> - this is one of the few ways to make Cabinet officials explain their screw-ups in public</li><li><strong>Military leaders who prioritize politics over strategy put you at risk</strong> - when ideology drives defense policy, America becomes less safe</li></ul>',
+    'hegseth_confirmation_hearings_january_2025',
+    'Defense Secretary Hegseth Faces Tough Senate Confirmation Hearing',
+    'On January 14, 2025, Pete Hegseth faced intense Senate questioning during his confirmation hearing for Defense Secretary. Senators grilled him about sexual assault allegations, alcohol abuse claims, his views on women in combat, and his qualifications to manage the Pentagon''s massive budget and workforce.',
+    '<ul><li><strong>Your Defense Secretary controls an $850 billion budget and 2.9 million people</strong> - that''s bigger than most countries'' entire governments, and senators are questioning if he can handle it</li><li><strong>Personal conduct matters when you''re in charge of national security</strong> - allegations about drinking and sexual assault raise questions about judgment and leadership</li><li><strong>Senate confirmation hearings are political theater, but they sometimes work</strong> - this is one of the few ways to make Cabinet nominees explain their backgrounds and views in public</li><li><strong>Military culture wars affect real troops and real missions</strong> - debates about women in combat and "woke" policies impact actual soldiers serving overseas</li><li><strong>Cabinet appointments shape policy for years</strong> - whoever runs the Pentagon makes decisions that affect military readiness, troop safety, and your tax dollars</li></ul>',
     '🏛️',
-    '2025-06-18',
-    'Wednesday',
+    '2025-01-14',
+    'Tuesday',
     '["Government", "Congressional Oversight", "Defense Policy", "Executive Accountability", "National Security"]',
     true
 ),
 
--- Topic 4: White House National Security Staff Purge - VERIFIED
+-- Topic 4: White House National Security Staff Changes - CORRECTED (May 2025)
 (
-    'white_house_nsc_staff_shakeup_crisis_2025',
-    'Trump Fires Most National Security Experts During Iran Crisis',
-    'Trump just cut the National Security Council from 400 people down to 50 - right in the middle of a potential war with Iran. Marco Rubio now has two jobs: Secretary of State AND National Security Advisor, because apparently one person can handle both roles during an international crisis. Mike Waltz got demoted to UN Ambassador after the Signal messaging scandal.',
-    '<ul><li><strong>Trump fired the people who know how foreign policy actually works</strong> - career experts who've managed crises for decades just got shown the door</li><li><strong>One person now controls both diplomacy and military strategy</strong> - Rubio wearing two hats means no checks and balances on national security decisions</li><li><strong>Loyalty matters more than expertise in this White House</strong> - knowing how to do the job is less important than supporting Trump personally</li><li><strong>America looks weak when we can't staff our own government</strong> - other countries notice when we fire our experts during international crises</li><li><strong>Career civil servants keep the government running between elections</strong> - but only if politicians let them do their jobs instead of firing them for political reasons</li></ul>',
+    'white_house_nsc_staff_changes_may_2025',
+    'Trump Reshuffles National Security Team During Iran Crisis',
+    'In May 2025, Trump dramatically reduced National Security Council staff from nearly 400 to about 50 people. Marco Rubio now serves dual roles as both Secretary of State and National Security Advisor after Mike Waltz was reassigned following internal disagreements about Iran policy and military strategy.',
+    '<ul><li><strong>Trump replaced the people who know how foreign policy actually works</strong> - career experts who managed previous crises for decades just got shown the door during an international crisis</li><li><strong>One person now controls both diplomacy and military strategy</strong> - Rubio wearing two hats means fewer checks and balances on crucial national security decisions</li><li><strong>Loyalty trumps expertise in this White House</strong> - knowing how to do the job matters less than personally supporting Trump''s political agenda</li><li><strong>America looks weak when we can''t properly staff our own government</strong> - other countries notice when we fire our experts right in the middle of international crises</li><li><strong>Career civil servants provide continuity between different administrations</strong> - but only if politicians let them do their jobs instead of firing them for political reasons</li></ul>',
     '🔄',
     '2025-05-23',
     'Friday',
