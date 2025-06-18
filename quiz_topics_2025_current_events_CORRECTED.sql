@@ -40,20 +40,7 @@ INSERT INTO question_topics (
     true
 ),
 
--- Topic 3: Defense Secretary Hegseth Confirmation Hearings - CORRECTED (January 14, 2025)
-(
-    'hegseth_confirmation_hearings_january_2025',
-    'Defense Secretary Hegseth Faces Tough Senate Confirmation Hearing',
-    'On January 14, 2025, Pete Hegseth faced intense Senate questioning during his confirmation hearing for Defense Secretary. Senators grilled him about sexual assault allegations, alcohol abuse claims, his views on women in combat, and his qualifications to manage the Pentagon''s massive budget and workforce.',
-    '<ul><li><strong>Your Defense Secretary controls an $850 billion budget and 2.9 million people</strong> - that''s bigger than most countries'' entire governments, and senators are questioning if he can handle it</li><li><strong>Personal conduct matters when you''re in charge of national security</strong> - allegations about drinking and sexual assault raise questions about judgment and leadership</li><li><strong>Senate confirmation hearings are political theater, but they sometimes work</strong> - this is one of the few ways to make Cabinet nominees explain their backgrounds and views in public</li><li><strong>Military culture wars affect real troops and real missions</strong> - debates about women in combat and "woke" policies impact actual soldiers serving overseas</li><li><strong>Cabinet appointments shape policy for years</strong> - whoever runs the Pentagon makes decisions that affect military readiness, troop safety, and your tax dollars</li></ul>',
-    '🏛️',
-    '2025-01-14',
-    'Tuesday',
-    '["Government", "Congressional Oversight", "Defense Policy", "Executive Accountability", "National Security"]',
-    true
-),
-
--- Topic 4: White House National Security Staff Changes - CORRECTED (May 2025)
+-- Topic 3: White House National Security Staff Changes - CORRECTED (May 2025)
 (
     'white_house_nsc_staff_changes_may_2025',
     'Trump Reshuffles National Security Team During Iran Crisis',
