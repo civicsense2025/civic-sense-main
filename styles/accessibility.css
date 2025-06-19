@@ -276,20 +276,26 @@ select:focus,
 
 /* Skip links */
 .skip-link {
-  position: absolute;
-  top: -40px;
-  left: 6px;
+  position: fixed;
+  top: -100px;
+  left: 8px;
   background: #2563eb;
   color: white;
-  padding: 8px;
+  padding: 8px 16px;
   text-decoration: none;
-  z-index: 100;
+  z-index: 9999;
   border-radius: 0 0 4px 4px;
-  transition: top 0.3s;
+  font-size: 14px;
+  font-weight: 500;
+  transition: top 0.3s ease-in-out;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .skip-link:focus {
-  top: 0;
+  top: 8px;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Screen reader improvements */

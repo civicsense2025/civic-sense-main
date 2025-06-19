@@ -39,12 +39,10 @@ export async function GET(request: NextRequest) {
         activity_score,
         average_rating,
         total_ratings,
-        learning_pods!inner(
-          pod_type,
-          created_at
-        )
+        is_featured,
+        pod_type,
+        created_at
       `)
-      .eq('is_public', true)
 
     // Apply filters
     if (featured) {
@@ -52,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (podType) {
-      query = query.eq('learning_pods.pod_type', podType)
+      query = query.eq('pod_type', podType)
     }
 
     if (ageRange) {
@@ -86,7 +84,6 @@ export async function GET(request: NextRequest) {
     const { count } = await supabaseAdmin
       .from('pod_discovery')
       .select('*', { count: 'exact', head: true })
-      .eq('is_public', true)
 
     return NextResponse.json({ 
       pods: pods || [],

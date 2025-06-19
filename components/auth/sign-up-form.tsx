@@ -189,31 +189,33 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2 relative">
+        <div className="space-y-2">
           <Label htmlFor="signup-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
-          <Input
-            id="signup-email"
-            type="email"
-            value={email}
-            onChange={handleEmailChange}
-            onFocus={() => setShowEmailTooltip(true)}
-            onBlur={() => setShowEmailTooltip(false)}
-            required
-            className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
-              emailError ? 'border-red-300 dark:border-red-700' : ''
-            }`}
-            placeholder="you@example.com"
-          />
-          {showEmailTooltip && !emailError && (
-            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
-              <p className="text-xs font-space-mono font-light">
-                ✨ Pick the email you actually check. We'll need it for verification (and the occasional "hey, democracy is happening" reminder).
-              </p>
-              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              id="signup-email"
+              type="email"
+              value={email}
+              onChange={handleEmailChange}
+              onFocus={() => setShowEmailTooltip(true)}
+              onBlur={() => setShowEmailTooltip(false)}
+              required
+              className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
+                emailError ? 'border-red-300 dark:border-red-700' : ''
+              }`}
+              placeholder="you@example.com"
+            />
+            {showEmailTooltip && !emailError && (
+              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                <p className="text-xs font-space-mono font-light">
+                  ✨ Pick the email you actually check. We'll need it for verification (and the occasional "hey, democracy is happening" reminder).
+                </p>
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+              </div>
+            )}
+          </div>
           {emailError && (
             <p className="text-xs text-red-600 dark:text-red-400 flex items-center mt-1">
               <X className="w-3 h-3 mr-1" />
@@ -222,31 +224,33 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
           )}
         </div>
 
-        <div className="space-y-2 relative">
+        <div className="space-y-2">
           <Label htmlFor="signup-password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Password
           </Label>
-          <Input
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={handlePasswordChange}
-            onFocus={() => setShowPasswordTooltip(true)}
-            onBlur={() => setShowPasswordTooltip(false)}
-            required
-            className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
-              passwordError ? 'border-red-300 dark:border-red-700' : ''
-            }`}
-            placeholder="Strong password required"
-          />
-          {showPasswordTooltip && !password && (
-            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-sm animate-in slide-in-from-bottom-2 duration-200">
-              <p className="text-xs font-space-mono font-light">
-                🛡️ Time for a password that's harder to crack than your civic knowledge will be. Mix it up: letters, numbers, symbols—make hackers weep.
-              </p>
-              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              id="signup-password"
+              type="password"
+              value={password}
+              onChange={handlePasswordChange}
+              onFocus={() => setShowPasswordTooltip(true)}
+              onBlur={() => setShowPasswordTooltip(false)}
+              required
+              className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
+                passwordError ? 'border-red-300 dark:border-red-700' : ''
+              }`}
+              placeholder="Strong password required"
+            />
+            {showPasswordTooltip && !password && (
+              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-sm animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                <p className="text-xs font-space-mono font-light">
+                  🛡️ Time for a password that's harder to crack than your civic knowledge will be. Mix it up: letters, numbers, symbols—make hackers weep.
+                </p>
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+              </div>
+            )}
+          </div>
           {password && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -313,27 +317,29 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
             <Label htmlFor="confirm-password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Confirm Password
             </Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              onFocus={() => setShowConfirmTooltip(true)}
-              onBlur={() => setShowConfirmTooltip(false)}
-              required={showConfirmPassword}
-              className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
-                confirmPassword && password !== confirmPassword ? 'border-red-300 dark:border-red-700' : ''
-              }`}
-              placeholder="Confirm your password"
-            />
-            {showConfirmTooltip && !confirmPassword && (
-              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-space-mono font-light">
-                  🔄 Type it again, exactly. Yes, we're being extra cautious—democracy is worth the double-check.
-                </p>
-                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-              </div>
-            )}
+            <div className="relative">
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={() => setShowConfirmTooltip(true)}
+                onBlur={() => setShowConfirmTooltip(false)}
+                required={showConfirmPassword}
+                className={`h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 ${
+                  confirmPassword && password !== confirmPassword ? 'border-red-300 dark:border-red-700' : ''
+                }`}
+                placeholder="Confirm your password"
+              />
+              {showConfirmTooltip && !confirmPassword && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                  <p className="text-xs font-space-mono font-light">
+                    🔄 Type it again, exactly. Yes, we're being extra cautious—democracy is worth the double-check.
+                  </p>
+                  <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+                </div>
+              )}
+            </div>
             {confirmPassword && password !== confirmPassword && (
               <p className="text-xs text-red-600 dark:text-red-400 flex items-center mt-1 animate-in slide-in-from-bottom-2">
                 <X className="w-3 h-3 mr-1" />
@@ -368,6 +374,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              tabIndex={-1}
             >
               Terms of Service
             </a>
@@ -377,6 +384,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              tabIndex={-1}
             >
               Privacy Policy
             </a>

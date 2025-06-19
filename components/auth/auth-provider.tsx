@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { supabase, authHelpers } from "@/lib/supabase"
+import { supabase, authHelpers } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"

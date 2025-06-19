@@ -43,7 +43,9 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
         setIsLoading(true)
         
         // Load basic pod stats
-        const response = await fetch('/api/learning-pods')
+        const response = await fetch('/api/learning-pods', {
+      credentials: 'include' // Include authentication cookies
+    })
         
         if (response.ok) {
           const data = await response.json()
@@ -92,7 +94,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
     return (
       <div className={cn("flex items-center", className)}>
         <Button asChild variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-          <Link href="/learning-pods">
+          <Link href="/pods">
             <Users className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Pods</span>
           </Link>
@@ -106,7 +108,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
       <div className={cn("flex items-center space-x-2", className)}>
         {/* Pods Button with Count */}
         <Button asChild variant="ghost" size="sm" className="relative text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-          <Link href="/learning-pods">
+          <Link href="/pods">
             <Users className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Pods</span>
             {stats.totalPods > 0 && (
@@ -117,22 +119,12 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
           </Link>
         </Button>
 
-        {/* Notifications Bell */}
-        {(stats.pendingInvites > 0 || stats.recentActivity > 0) && (
-          <Button variant="ghost" size="sm" className="relative text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-            <Bell className="h-4 w-4" />
-            {stats.pendingInvites > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500 text-white border-0">
-                {stats.pendingInvites}
-              </Badge>
-            )}
-          </Button>
-        )}
+
 
         {/* Quick Create (Admin Only) */}
         {stats.userRole === 'admin' && (
           <Button asChild variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-            <Link href="/learning-pods">
+            <Link href="/pods">
               <Plus className="h-4 w-4" />
               <span className="sr-only">Create Pod</span>
             </Link>
@@ -192,7 +184,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
       {/* Quick Actions */}
       <div className="flex space-x-2">
         <Button asChild size="sm" className="flex-1">
-          <Link href="/learning-pods">
+          <Link href="/pods">
             <Search className="h-4 w-4 mr-2" />
             Discover
           </Link>
@@ -200,7 +192,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
         
         {stats.userRole === 'admin' && (
           <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link href="/learning-pods">
+            <Link href="/pods">
               <Plus className="h-4 w-4 mr-2" />
               Create
             </Link>

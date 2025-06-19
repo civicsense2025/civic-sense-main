@@ -17,6 +17,7 @@ import { useGuestAccess } from "@/hooks/useGuestAccess"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { cn } from "@/lib/utils"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
+import { CleverShareButton } from "@/components/integrations/clever-share-button"
 import { UserRole } from "@/lib/types/user"
 
 interface QuizPageProps {
@@ -349,7 +350,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         description="Upgrade to Premium for unlimited daily quizzes and advanced learning features"
       />
 
-      {/* Share to Google Classroom (teachers / parents / admins) */}
+      {/* Share to LMS (Google Classroom & Clever) - for educators only */}
       {(() => {
         const role = (user?.user_metadata?.role || '') as string
         const allowed = [
@@ -361,14 +362,27 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         if (!role || !allowed.includes(role)) return null
 
         const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`
+        const quizTitle = `CivicSense Quiz: ${topic?.topic_title ?? ''}`
+        const quizDescription = topic?.description || "Bite-sized civic knowledge from CivicSense"
+        
         return (
-          <div className="fixed bottom-6 right-6 z-40">
+          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+            {/* Google Classroom Share */}
             <ClassroomShareButton
               url={shareUrl}
-              title={`CivicSense Quiz: ${topic?.topic_title ?? ''}`}
-              body="Bite-sized civic knowledge from CivicSense"
+              title={quizTitle}
+              body={quizDescription}
               itemType="assignment"
               size={56}
+            />
+            
+            {/* Clever Share */}
+            <CleverShareButton
+              topicId={params.topicId}
+              topicTitle={topic?.topic_title ?? ''}
+              description={quizDescription}
+              size="lg"
+              className="shadow-lg"
             />
           </div>
         )

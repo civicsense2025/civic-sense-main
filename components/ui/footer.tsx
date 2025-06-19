@@ -42,6 +42,12 @@ export function Footer() {
                 What's New
               </Link>
               <Link 
+                href="/schools" 
+                className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors font-medium"
+              >
+                For Schools
+              </Link>
+              <Link 
                 href="/privacy" 
                 className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
               >

@@ -14,6 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { requestId } = await params
     const body = await request.json()
     const { action } = body
 
@@ -31,7 +32,7 @@ export async function PATCH(
         status,
         learning_pods!inner(pod_name)
       `)
-      .eq('id', params.requestId)
+      .eq('id', requestId)
       .eq('status', 'pending')
       .single()
 
@@ -48,7 +49,7 @@ export async function PATCH(
       .eq('membership_status', 'active')
       .single()
 
-    if (!membership || !['admin', 'parent', 'organizer'].includes(membership.role)) {
+    if (!membership || !['admin', 'parent', 'organizer', 'teacher'].includes(membership.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -62,7 +63,7 @@ export async function PATCH(
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString()
       })
-      .eq('id', params.requestId)
+      .eq('id', requestId)
 
     if (updateError) {
       console.error('Error updating join request:', updateError)
@@ -86,7 +87,7 @@ export async function PATCH(
         await supabase
           .from('pod_join_requests')
           .update({ status: 'pending' })
-          .eq('id', params.requestId)
+          .eq('id', requestId)
         
         return NextResponse.json({ error: 'Failed to add user to pod' }, { status: 500 })
       }

@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
 import { useAnalytics } from "@/utils/analytics"
+import { uiStrings } from "@/lib/ui-strings"
 
 interface VoiceOption {
   voice: SpeechSynthesisVoice
@@ -38,6 +39,71 @@ interface VoiceOption {
 
 interface GlobalAudioControlsProps {
   className?: string
+}
+
+// Extract all UI strings for filtering
+function extractAllUIStrings(): Set<string> {
+  const uiStringSet = new Set<string>()
+  
+  function addStringsRecursively(obj: any) {
+    if (typeof obj === 'string') {
+      // Add the string and common variations
+      const cleanString = obj.toLowerCase().trim()
+      if (cleanString.length > 0) {
+        uiStringSet.add(cleanString)
+        // Add without punctuation
+        uiStringSet.add(cleanString.replace(/[.,!?;:]/g, ''))
+        // Add without "..." 
+        uiStringSet.add(cleanString.replace(/\.{3}/g, ''))
+      }
+    } else if (typeof obj === 'object' && obj !== null) {
+      Object.values(obj).forEach(addStringsRecursively)
+    }
+  }
+  
+  addStringsRecursively(uiStrings)
+  
+  // Add common UI patterns not in uiStrings
+  const additionalUIText = [
+    'skip to main content', 'table of contents', 'on this page', 
+    'breadcrumb', 'navigation', 'menu', 'search', 'filter', 'sort',
+    'view all', 'show more', 'hide', 'collapse', 'expand', 'toggle',
+    'minimize', 'maximize', 'close', 'open', 'loading', 'error',
+    'success', 'warning', 'pending', 'complete', 'active', 'inactive',
+    'enabled', 'disabled', 'on', 'off'
+  ]
+  
+  additionalUIText.forEach(text => uiStringSet.add(text.toLowerCase()))
+  
+  return uiStringSet
+}
+
+// Cache the UI strings set for performance
+const UI_STRINGS_SET = extractAllUIStrings()
+
+// Check if text matches known UI strings
+function isUIText(text: string): boolean {
+  const cleanText = text.toLowerCase().trim()
+  
+  // Direct match
+  if (UI_STRINGS_SET.has(cleanText)) {
+    return true
+  }
+  
+  // Check without punctuation
+  const noPunctuation = cleanText.replace(/[.,!?;:]/g, '')
+  if (UI_STRINGS_SET.has(noPunctuation)) {
+    return true
+  }
+  
+  // Check if text starts with any UI string (for longer phrases)
+  for (const uiString of UI_STRINGS_SET) {
+    if (uiString.length > 3 && cleanText.startsWith(uiString)) {
+      return true
+    }
+  }
+  
+  return false
 }
 
 // Enhanced Word highlighting functionality
@@ -977,12 +1043,37 @@ class GlobalAudioManager {
         
         // Remove navigation, header, footer, and other UI elements from clone
         const elementsToRemove = clone.querySelectorAll(
-          'nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, ' +
+          // Core navigation and structural elements
+          'nav, header, footer, aside, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, ' +
           '.logo, .branding, .site-header, .site-footer, .nav-links, .user-menu, ' + 
-          '[role="navigation"], [role="banner"], [role="contentinfo"], ' +
-          '.skip-link, .back-link, .auth-buttons, .theme-toggle, .audio-controls, ' +
+          '[role="navigation"], [role="banner"], [role="contentinfo"], [role="complementary"], ' +
+          
+          // Skip links and accessibility elements
+          '.skip-link, .back-link, .sr-only, .screen-reader-only, [aria-hidden="true"], ' +
+          
+          // Interactive UI elements
+          '.auth-buttons, .theme-toggle, .audio-controls, .table-of-contents, .toc, ' +
           'button, .button, input, select, textarea, .form-control, .dropdown, ' +
-          '.tooltip, .popover, .modal, .overlay, .progress, .spinner, .loading'
+          
+          // Overlays and popups
+          '.tooltip, .popover, .modal, .overlay, .dialog, .alert, .notification, ' +
+          '.progress, .spinner, .loading, .loader, ' +
+          
+          // Code and technical elements
+          'script, style, code, pre, .code-block, .syntax-highlight, ' +
+          
+          // Social and tracking
+          '.social-share, .analytics, .tracking, .ads, .advertisement, ' +
+          
+          // Hidden and utility elements
+          '[style*="display: none"], [style*="visibility: hidden"], ' +
+          '[hidden], .hidden, .invisible, .collapse, ' +
+          
+          // Navigation and pagination
+          '.pagination, .page-nav, .next-prev, .breadcrumb-nav, ' +
+          
+          // Metadata and timestamps
+          '.metadata, .timestamp, .date-published, .byline, .author-info'
         )
         
         elementsToRemove.forEach(el => {
@@ -1021,17 +1112,27 @@ class GlobalAudioManager {
           if (elementCount >= maxElements) break
           
           // Skip elements in navigation, header, footer, etc.
-          if (element.closest('nav, header, footer, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, .logo, .branding, .site-header, .site-footer, .audio-controls')) {
+          if (element.closest('nav, header, footer, aside, .breadcrumb, .breadcrumbs, .navigation, .menu, .controls, .logo, .branding, .site-header, .site-footer, .audio-controls, .skip-link, .sr-only, .table-of-contents, .toc, [aria-hidden="true"]')) {
             continue
           }
           
           const elementText = element.textContent?.trim() || ''
           
-          // Filter out very short or UI-like text
+          // Use our centralized UI strings for filtering
           if (elementText.length > 15 && 
-              !elementText.match(/^(click|tap|scroll|swipe|menu|button|link|home|back|next|previous|continue|skip|sign in|log in|register|subscribe|follow)$/i) &&
-              !elementText.match(/^\d+$/) && // Skip lone numbers
-              !elementText.match(/^[^\w\s]+$/) // Skip strings with only symbols
+              // Check against our UI strings set
+              !isUIText(elementText) &&
+              // Skip pure numbers, timestamps, and version info
+              !elementText.match(/^\d+$/) && 
+              !elementText.match(/^v?\d+\.\d+/) && // Version numbers
+              !elementText.match(/^\d{1,2}:\d{2}/) && // Times
+              !elementText.match(/^\d{1,2}\/\d{1,2}\/\d{2,4}/) && // Dates
+              // Skip strings with only symbols or very short words
+              !elementText.match(/^[^\w\s]+$/) &&
+              // Skip single character or very generic text
+              !elementText.match(/^[a-z]$/i) &&
+              // Skip copyright and legal text patterns
+              !elementText.match(/^(©|copyright|\(c\)|all rights reserved|privacy|terms|cookies?)$/i)
           ) {
             // Add appropriate punctuation if missing
             const cleanText = elementText.endsWith('.') || elementText.endsWith('!') || elementText.endsWith('?') 
@@ -1089,10 +1190,12 @@ class GlobalAudioManager {
         .replace(/#{1,6}\s+/g, '')
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
         
-        // Remove common UI elements and navigation text
-        .replace(/\b(click|tap|scroll|swipe|navigate|menu|button|link)\b/gi, '')
-        .replace(/\b(home|back|next|previous|continue|skip)\s*(button|link)?\b/gi, '')
-        .replace(/\b(sign in|log in|register|subscribe|follow us)\b/gi, '')
+        // Remove UI strings and common interface text
+        .replace(new RegExp(`\\b(${Array.from(UI_STRINGS_SET).join('|')})\\b`, 'gi'), '')
+        
+        // Remove remaining UI patterns that might not be in our strings
+        .replace(/\b(loading|error|success|warning|pending|complete|active|inactive)\b/gi, '')
+        .replace(/\b(enabled|disabled|on|off|open|close|toggle|minimize|maximize)\b/gi, '')
         
         // Handle numbers and dates more naturally
         .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {

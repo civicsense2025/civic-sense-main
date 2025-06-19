@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get pods where user is admin/parent/organizer
+    // Get pods where user is admin/parent/organizer/teacher
     const { data: adminPods } = await supabase
       .from('pod_memberships')
       .select('pod_id')
       .eq('user_id', user.id)
-      .in('role', ['admin', 'parent', 'organizer'])
+      .in('role', ['admin', 'parent', 'organizer', 'teacher'])
       .eq('membership_status', 'active')
 
     if (!adminPods || adminPods.length === 0) {

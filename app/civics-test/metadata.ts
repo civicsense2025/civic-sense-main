@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     title: 'Free 2025 Civics Test | Test Your Political Knowledge',
     description: 'Think you know how American politics really works? Take our free 10-minute test covering today\'s government, current events, and real scenarios. Get instant results.',
     type: 'website',
-    url: 'https://civicsense.app/civics-test',
+    url: 'https://civicsense.one/civics-test',
     images: [
       {
         url: '/placeholder.jpg',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     images: ['/placeholder.jpg'],
   },
   alternates: {
-    canonical: 'https://civicsense.app/civics-test',
+    canonical: 'https://civicsense.one/civics-test',
   },
   robots: {
     index: true,
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
       provider: {
         '@type': 'Organization',
         name: 'CivicSense',
-        url: 'https://civicsense.app'
+        url: 'https://civicsense.one'
       },
       educationalLevel: 'All Levels',
       competencyRequired: 'Basic reading comprehension',

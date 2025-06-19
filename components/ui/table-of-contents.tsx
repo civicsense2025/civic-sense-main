@@ -174,7 +174,7 @@ export function TableOfContents({ items, className }: TableOfContentsProps) {
   return (
     <nav
       className={cn(
-        "sticky top-24 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto",
+        "h-fit max-h-[calc(100vh-6rem)] overflow-y-auto",
         "w-64 p-4 rounded-xl",
         "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm",
         "border border-slate-200 dark:border-slate-800",

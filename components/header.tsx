@@ -5,7 +5,6 @@ import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "./ui/button"
 import { UserMenu } from "./auth/user-menu"
-import { JoinRequestNotifications } from "./learning-pods/join-request-notifications"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
@@ -51,28 +50,17 @@ export function Header({
               </Link>
             </div>
 
-            {/* Center - Navigation (hidden on small screens) */}
+            {/* Center - Empty space for cleaner header */}
             <div className="hidden sm:flex flex-1 justify-center">
-              <nav className="flex items-center space-x-6 lg:space-x-8">
-                {pathname !== '/' && (
-                  <div className="text-sm sm:text-base text-slate-700 dark:text-slate-200 font-light">
-                    {pathname.includes('/quiz/') ? 'Quiz' : 
-                     pathname === '/civics-test' ? 'Civics Test' : 
-                     pathname.startsWith('/categories') ? 'Categories' :
-                     /* pathname === '/public-figures' || pathname.startsWith('/public-figures/') ? 'Public Figures' : */
-                     'Home'}
-                  </div>
-                )}
-              </nav>
+              {/* Clean header without page titles */}
             </div>
 
             {/* Right side - Essential controls */}
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-4">
-                {/* Learning Pods Quick Actions - temporarily hidden until ready for public use */}
-                {/* <LearningPodsQuickActions variant="header" /> */}
-                {user && <JoinRequestNotifications />}
+                {/* Learning Pods Quick Actions */}
+                <LearningPodsQuickActions variant="header" />
                 
                 {/* Login button for non-authenticated users */}
                 {!user && (
@@ -150,7 +138,7 @@ export function Header({
             {/* Menu content */}
             <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
               {/* Main CTA at top of mobile menu */}
-              <div className="pb-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="pb-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
                 <Link 
                   href="/civics-test"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -191,16 +179,13 @@ export function Header({
                 </Link>
                 */}
 
-                {/* Learning Pods link - temporarily hidden until ready for public use */}
-                {/*
                 <Link 
-                  href="/learning-pods"
+                  href="/pods"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
                 >
                   👥 Learning Pods
                 </Link>
-                */}
 
                 <Link 
                   href="/donate"

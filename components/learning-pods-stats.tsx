@@ -45,7 +45,9 @@ export function LearningPodsStats({ className, compact = false }: LearningPodsSt
         setIsLoading(true)
         
         // Load user's pods
-        const response = await fetch('/api/learning-pods')
+        const response = await fetch('/api/learning-pods', {
+      credentials: 'include' // Include authentication cookies
+    })
         
         if (response.ok) {
           const data = await response.json()

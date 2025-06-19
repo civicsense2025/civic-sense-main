@@ -36,9 +36,9 @@ export default function PrivacyPage() {
 
       <div className="apple-container py-16">
         <div className="max-w-6xl mx-auto">
-          <div className="relative flex gap-12">
+          <div className="relative flex gap-12 items-start">
             {/* Main Content */}
-            <div className="flex-1 max-w-4xl">
+            <div className="flex-1 max-w-4xl min-w-0">
               {/* Header */}
               <div className="text-center mb-16 apple-animate-in">
                 <div className="text-6xl mb-6">🔒</div>
@@ -57,12 +57,13 @@ export default function PrivacyPage() {
               <div className="relative mb-12 apple-slide-up">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
                 <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
-                  <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">
-                    At CivicSense, we believe in being transparent about how we collect, use, and protect your information. 
-                    This policy explains our practices in plain English, covering all our features including AI assistance, 
-                    multiplayer games, and learning pods. We are committed to protecting your privacy and giving you control 
-                    over your personal information.
-                  </p>
+                                      <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">
+                      CivicSense Labs Inc. ("we", "us") provides a civics-education platform for K-12 learners and general users. 
+                      This policy explains our practices in plain English, covering all our features including AI assistance, 
+                      multiplayer games, and learning pods. We are committed to protecting your privacy and giving you control 
+                      over your personal information. <strong>We are FERPA and COPPA compliant and have signed the Student Data Privacy Consortium 
+                      (SDPC) National Data Privacy Agreement v2.0.</strong>
+                    </p>
                 </div>
               </div>
 
@@ -84,6 +85,26 @@ export default function PrivacyPage() {
                             <li>Profile preferences (theme, notification settings, accessibility options)</li>
                             <li>Educational status (for educational access verification)</li>
                             <li>Language preferences and accessibility settings</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Educational Records (FERPA Protected)</h3>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                          <p className="text-base text-blue-900 dark:text-blue-200">
+                            <strong>FERPA Compliance:</strong> We act as a School Official with a legitimate educational interest when handling student data. 
+                            Educational records are isolated in our school schema with enhanced protections.
+                          </p>
+                        </div>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li>Student names, grades, and school identification numbers</li>
+                            <li>Course enrollments and teacher assignments</li>
+                            <li>Quiz scores and educational progress tracking</li>
+                            <li>Learning pod memberships and classroom integrations</li>
+                            <li>Parent/guardian contact information (when applicable)</li>
+                            <li>Google Classroom or other LMS integration data</li>
                           </ul>
                         </div>
                       </div>
@@ -264,29 +285,53 @@ export default function PrivacyPage() {
                       </div>
 
                       <div>
-                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Supabase (Database & Authentication)</h3>
-                        <p className="text-base text-slate-700 dark:text-slate-300 mb-4">
-                          We use Supabase for secure data storage and user authentication. All data is encrypted in transit and at rest.
-                        </p>
-                        <div className="prose prose-slate dark:prose-invert max-w-none">
-                          <ul className="text-slate-700 dark:text-slate-300">
-                            <li>User account management and authentication</li>
-                            <li>Learning progress and quiz data storage</li>
-                            <li>Multiplayer and learning pod data</li>
-                            <li>Analytics and performance metrics</li>
-                          </ul>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Sub-Processors (Required for Educational Compliance)</h3>
+                        <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                          <p className="text-base text-green-900 dark:text-green-200">
+                            <strong>Full Transparency:</strong> Below are all third-party services that may access your data, as required by the SDPC National Data Privacy Agreement.
+                          </p>
                         </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Analytics & Performance</h3>
-                        <div className="prose prose-slate dark:prose-invert max-w-none">
-                          <ul className="text-slate-700 dark:text-slate-300">
-                            <li><strong>Vercel Analytics:</strong> Website performance and user experience metrics (anonymized)</li>
-                            <li><strong>Error tracking:</strong> Crash reports and error logs to improve app stability</li>
-                            <li><strong>Feature usage:</strong> Understanding which features are most helpful to users</li>
-                            <li><strong>A/B testing:</strong> Testing new features with anonymized user groups</li>
-                          </ul>
+                        <div className="space-y-4">
+                          <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Supabase (Database & Authentication)</h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Location: AWS us-east-1 | Compliance: SOC 2 Type II</p>
+                            <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                              <li>• User account management and authentication</li>
+                              <li>• Educational records storage with encryption at rest</li>
+                              <li>• Learning progress and quiz data storage</li>
+                              <li>• Multiplayer and learning pod data</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Vercel (Front-end Hosting)</h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Location: USA & EU PoPs | Compliance: ISO 27001, TLS 1.2+</p>
+                            <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                              <li>• Front-end hosting and edge network</li>
+                              <li>• Performance metrics (anonymized)</li>
+                              <li>• CDN for educational content delivery</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Sentry (Error Monitoring)</h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Location: USA | Compliance: DSF signed, Error payloads scrubbed</p>
+                            <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                              <li>• Error logging (non-PII only)</li>
+                              <li>• Application stability monitoring</li>
+                              <li>• Crash reports with personal data removed</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Statsig (Product Analytics)</h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Location: USA | Data Retention: 12 months maximum</p>
+                            <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                              <li>• Event tracking and user analytics (anonymized)</li>
+                              <li>• Feature usage metrics and A/B testing</li>
+                              <li>• Product performance monitoring</li>
+                            </ul>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -423,12 +468,14 @@ export default function PrivacyPage() {
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <ul className="text-slate-700 dark:text-slate-300">
                         <li><strong>Active accounts:</strong> Data is retained while your account is active</li>
+                        <li><strong>Educational contracts:</strong> Educational records deleted within 30 days of contract termination (FERPA requirement)</li>
+                        <li><strong>Individual accounts:</strong> Personal data deleted within 30 days of account deletion request</li>
                         <li><strong>Inactive accounts:</strong> Data may be deleted after 3 years of inactivity (with prior notice)</li>
-                        <li><strong>Account deletion:</strong> Most data is deleted within 30 days of account deletion request</li>
                         <li><strong>Legal requirements:</strong> Some data may be retained longer for legal compliance</li>
                         <li><strong>Anonymized analytics:</strong> Anonymized usage data may be retained indefinitely for research</li>
                         <li><strong>AI training data:</strong> Anonymized interactions may be used to improve our AI systems</li>
                         <li><strong>Backup retention:</strong> Encrypted backups are retained for 90 days for disaster recovery</li>
+                        <li><strong>Educational backups:</strong> Rolling 7-day backups align with database backup policy</li>
                       </ul>
                     </div>
                   </div>
@@ -529,11 +576,14 @@ export default function PrivacyPage() {
                     
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <ul className="text-slate-700 dark:text-slate-300">
-                        <li><strong>Prompt notification:</strong> We'll notify affected users within 72 hours of discovery</li>
+                        <li><strong>Initial notification:</strong> 24-hour initial email to affected users and district CISOs</li>
+                        <li><strong>Full report:</strong> Comprehensive 72-hour report with complete details</li>
+                        <li><strong>Educational institutions:</strong> Direct notification to district administrators and IT security teams</li>
                         <li><strong>Detailed information:</strong> We'll explain what happened, what data was affected, and steps taken</li>
                         <li><strong>Remediation:</strong> We'll provide guidance on protecting yourself</li>
-                        <li><strong>Support:</strong> Dedicated support for affected users</li>
+                        <li><strong>Support:</strong> Dedicated phone hotline and support for affected users</li>
                         <li><strong>Transparency:</strong> Public disclosure when appropriate</li>
+                        <li><strong>Legal compliance:</strong> All notifications will meet FERPA and state educational data laws</li>
                       </ul>
                     </div>
                   </div>
@@ -549,12 +599,14 @@ export default function PrivacyPage() {
                     </p>
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <ul className="text-slate-700 dark:text-slate-300">
-                        <li><strong>Email:</strong> privacy@civicsense.com</li>
+                        <li><strong>Privacy inquiries:</strong> privacy@civicsense.com</li>
                         <li><strong>Data Protection Officer:</strong> dpo@civicsense.com</li>
-                        <li><strong>Account settings:</strong> Use the contact form in your account settings</li>
+                        <li><strong>Educational compliance:</strong> schools@civicsense.com</li>
+                        <li><strong>Security concerns:</strong> security@civicsense.com</li>
+                        <li><strong>Legal matters:</strong> legal@civicsense.com</li>
                         <li><strong>Data requests:</strong> Submit requests for data access, correction, or deletion through your account</li>
-                        <li><strong>Security concerns:</strong> Report security issues to security@civicsense.com</li>
-                        <li><strong>Response time:</strong> We respond to privacy requests within 30 days</li>
+                        <li><strong>Response time:</strong> We respond to privacy requests within 30 days (educational institutions within 15 days)</li>
+                        <li><strong>FERPA requests:</strong> Educational data requests processed within FERPA-required timeframes</li>
                       </ul>
                     </div>
                   </div>
@@ -596,7 +648,9 @@ export default function PrivacyPage() {
 
             {/* Table of Contents - Desktop Only */}
             <div className="hidden lg:block flex-shrink-0 w-64 ml-12">
-              <TableOfContents items={tocItems} />
+              <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
+                <TableOfContents items={tocItems} />
+              </div>
             </div>
           </div>
         </div>

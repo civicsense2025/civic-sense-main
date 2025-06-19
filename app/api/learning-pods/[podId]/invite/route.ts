@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/learning-pods/[podId]/invite - Get invite links for a pod
 export async function GET(
@@ -7,22 +7,25 @@ export async function GET(
   { params }: { params: { podId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { podId } = await params
+
     // Check if user has permission to view invite links for this pod
     const { data: membership } = await supabase
       .from('pod_memberships')
       .select('role')
-      .eq('pod_id', params.podId)
+      .eq('pod_id', podId)
       .eq('user_id', user.id)
       .eq('membership_status', 'active')
       .single()
 
-    if (!membership || !['admin', 'parent', 'organizer'].includes(membership.role)) {
+    if (!membership || !['admin', 'parent', 'organizer', 'teacher'].includes(membership.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -43,7 +46,7 @@ export async function GET(
         is_active,
         created_at
       `)
-      .eq('pod_id', params.podId)
+      .eq('pod_id', podId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -64,13 +67,14 @@ export async function POST(
   { params }: { params: { podId: string } }
 ) {
   try {
-
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { podId } = await params
     const body = await request.json()
     const {
       description,
@@ -85,12 +89,12 @@ export async function POST(
     const { data: membership } = await supabase
       .from('pod_memberships')
       .select('role')
-      .eq('pod_id', params.podId)
+      .eq('pod_id', podId)
       .eq('user_id', user.id)
       .eq('membership_status', 'active')
       .single()
 
-    if (!membership || !['admin', 'parent', 'organizer'].includes(membership.role)) {
+    if (!membership || !['admin', 'parent', 'organizer', 'teacher'].includes(membership.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -124,7 +128,7 @@ export async function POST(
     const { data: inviteLink, error } = await supabase
       .from('pod_invite_links')
       .insert({
-        pod_id: params.podId,
+        pod_id: podId,
         created_by: user.id,
         invite_code: inviteCode,
         invite_url: inviteUrl,

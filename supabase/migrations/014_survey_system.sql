@@ -115,7 +115,7 @@ CREATE POLICY "Admin can do everything on surveys" ON surveys
         EXISTS (
             SELECT 1 FROM auth.users 
             WHERE auth.users.id = auth.uid() 
-            AND auth.users.email = 'admin@civicsense.app'
+            AND auth.users.email = 'admin@civicsense.one'
         )
     );
 
@@ -143,7 +143,7 @@ CREATE POLICY "Admin can do everything on survey questions" ON survey_questions
         EXISTS (
             SELECT 1 FROM auth.users 
             WHERE auth.users.id = auth.uid() 
-            AND auth.users.email = 'admin@civicsense.app'
+            AND auth.users.email = 'admin@civicsense.one'
         )
     );
 
@@ -174,7 +174,7 @@ CREATE POLICY "Admin can view all responses" ON survey_responses FOR SELECT
         EXISTS (
             SELECT 1 FROM auth.users 
             WHERE auth.users.id = auth.uid() 
-            AND auth.users.email = 'admin@civicsense.app'
+            AND auth.users.email = 'admin@civicsense.one'
         )
     );
 
@@ -218,7 +218,7 @@ CREATE POLICY "Admin can view all answers" ON survey_answers FOR SELECT
         EXISTS (
             SELECT 1 FROM auth.users 
             WHERE auth.users.id = auth.uid() 
-            AND auth.users.email = 'admin@civicsense.app'
+            AND auth.users.email = 'admin@civicsense.one'
         )
     );
 

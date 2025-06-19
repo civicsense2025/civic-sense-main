@@ -65,7 +65,9 @@ export function LearningPodsDashboard() {
     try {
       setIsLoading(true)
       
-      const response = await fetch('/api/learning-pods')
+      const response = await fetch('/api/learning-pods', {
+      credentials: 'include' // Include authentication cookies
+    })
       
       if (!response.ok) {
         // Show mock data if API fails

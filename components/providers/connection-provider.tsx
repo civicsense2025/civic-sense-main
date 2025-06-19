@@ -112,15 +112,28 @@ export function ConnectionProvider({ children }: { children: React.ReactNode }) 
     let heartbeatInterval: NodeJS.Timeout
     let qualityCheckInterval: NodeJS.Timeout
     
+    // Only enable connection monitoring in multiplayer contexts
+    // Check if we're in a multiplayer route or have active real-time connections
+    const isMultiplayerContext = window.location.pathname.includes('/multiplayer') || 
+                                window.location.pathname.includes('/quiz/') && window.location.search.includes('room=')
+    
+    if (!isMultiplayerContext) {
+      // For non-multiplayer contexts, just do an initial connection check without continuous monitoring
+      ping().then(() => {
+        // Set status without starting intervals
+      })
+      return
+    }
+    
     const startMonitoring = () => {
-      // Heartbeat every 30 seconds
+      // Heartbeat every 30 seconds - only for multiplayer contexts
       heartbeatInterval = setInterval(async () => {
         if (connection.status === 'online') {
           await ping()
         }
       }, 30000)
       
-      // Quality check every 5 minutes
+      // Quality check every 5 minutes - only for multiplayer contexts  
       qualityCheckInterval = setInterval(async () => {
         if (navigator.onLine) {
           await ping()

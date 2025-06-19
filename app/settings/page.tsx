@@ -52,6 +52,21 @@ interface UserPreferences {
   keyboardShortcuts: boolean
   extendedTimeouts: boolean
   confirmActions: boolean
+  // Platform preferences
+  emailDeliveryFrequency: 'immediate' | 'daily' | 'weekly' | 'monthly' | 'never'
+  emailFormat: 'html' | 'text' | 'mixed'
+  socialSharingEnabled: boolean
+  autoShareAchievements: boolean
+  allowDataAnalytics: boolean
+  allowPersonalization: boolean
+  exportFormat: 'json' | 'csv' | 'pdf'
+  integrationSync: boolean
+  notificationChannels: string[]
+  dataRetentionPeriod: '1year' | '2years' | '5years' | 'forever'
+  marketingEmails: boolean
+  productUpdates: boolean
+  communityDigest: boolean
+  surveyInvitations: boolean
 }
 
 export default function SettingsPage() {
@@ -85,7 +100,22 @@ export default function SettingsPage() {
     reducedMotion: false,
     keyboardShortcuts: true,
     extendedTimeouts: false,
-    confirmActions: false
+    confirmActions: false,
+    // Platform defaults
+    emailDeliveryFrequency: 'immediate',
+    emailFormat: 'html',
+    socialSharingEnabled: true,
+    autoShareAchievements: true,
+    allowDataAnalytics: true,
+    allowPersonalization: true,
+    exportFormat: 'json',
+    integrationSync: true,
+    notificationChannels: [],
+    dataRetentionPeriod: 'forever',
+    marketingEmails: true,
+    productUpdates: true,
+    communityDigest: true,
+    surveyInvitations: true
   })
 
   const [accountData, setAccountData] = useState({

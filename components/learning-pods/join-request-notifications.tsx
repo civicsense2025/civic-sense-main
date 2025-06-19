@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -42,18 +42,27 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
   const [requests, setRequests] = useState<JoinRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (user) {
       loadJoinRequests()
-      // Poll for new requests every 30 seconds
-      const interval = setInterval(loadJoinRequests, 30000)
-      return () => clearInterval(interval)
+      
+      // Remove continuous polling - only refresh when dropdown opens
+      // No background intervals
     } else {
       setIsLoading(false)
       setRequests([])
     }
-  }, [user])
+    
+    // Clean up any existing intervals
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [user]) // Remove showNotifications dependency
 
   const loadJoinRequests = async () => {
     if (!user) {
@@ -131,7 +140,13 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setShowNotifications(!showNotifications)}
+        onClick={() => {
+          setShowNotifications(!showNotifications)
+          // Refresh when opening
+          if (!showNotifications) {
+            loadJoinRequests()
+          }
+        }}
         className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
       >
         <Bell className="h-5 w-5 text-slate-600 dark:text-slate-400" />

@@ -348,7 +348,7 @@ CREATE OR REPLACE FUNCTION create_pod_invite_link(
 DECLARE
     new_code TEXT;
     new_link_id UUID;
-    base_url TEXT := 'https://civicsense.app/join/';
+    base_url TEXT := 'https://civicsense.one/join/';
 BEGIN
     -- Verify user has permission to create invite links
     IF NOT EXISTS (

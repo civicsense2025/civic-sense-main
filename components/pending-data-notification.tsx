@@ -162,13 +162,12 @@ export function usePendingDataStatus() {
       setPendingSummary(summary)
     }
 
-    // Initial load
+    // Initial load only - no continuous polling
     updateSummary()
 
-    // Set up interval to check periodically (in case data is added)
-    const interval = setInterval(updateSummary, 30000) // Check every 30 seconds
-
-    return () => clearInterval(interval)
+    // Remove continuous polling to prevent unnecessary server load
+    // Only update when component mounts or when explicitly triggered
+    
   }, [])
 
   return pendingSummary

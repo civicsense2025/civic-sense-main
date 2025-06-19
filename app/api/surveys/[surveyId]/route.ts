@@ -32,7 +32,7 @@ export async function GET(
     if (surveyOverview.status !== 'active' && !surveyOverview.allow_anonymous) {
       const { data: { user } } = await supabase.auth.getUser()
       const isOwner = user && surveyOverview.created_by === user.id
-      const isAdmin = user?.email === 'admin@civicsense.app'
+      const isAdmin = user?.email === 'admin@civicsense.one'
       
       if (!isOwner && !isAdmin) {
         return NextResponse.json({ error: 'Survey not accessible' }, { status: 403 })
@@ -116,7 +116,7 @@ export async function PUT(
     }
 
     const isOwner = survey.created_by === user.id
-    const isAdmin = user.email === 'admin@civicsense.app'
+    const isAdmin = user.email === 'admin@civicsense.one'
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -191,7 +191,7 @@ export async function DELETE(
     }
 
     const isOwner = survey.created_by === user.id
-    const isAdmin = user.email === 'admin@civicsense.app'
+    const isAdmin = user.email === 'admin@civicsense.one'
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

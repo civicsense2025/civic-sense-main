@@ -8,10 +8,13 @@ import { CreateRoomDialog } from "@/components/multiplayer/create-room-dialog"
 import { JoinRoomDialog } from "@/components/multiplayer/join-room-dialog"
 import { HelpCircle, Info, BookOpen, Users, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
+import { EnhancedSocialShare } from "@/components/enhanced-social-share"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { dataService } from "@/lib/data-service"
 import { questionOperations } from "@/lib/database"
@@ -454,6 +457,16 @@ export function TopicInfo({
               {topicData.description}
             </p>
           )}
+          
+          {/* Social Sharing Section */}
+          <div className="mt-6">
+            <EnhancedSocialShare
+              title={topicData.topic_title}
+              description={topicData.description || "Test your civic knowledge with this important topic"}
+              emoji={topicData.emoji || "🏛️"}
+              type="topic"
+            />
+          </div>
         </div>
 
         {/* Tabbed interface for "Why This Matters" and "Sources & Citations" */}

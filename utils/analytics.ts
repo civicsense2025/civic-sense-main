@@ -16,6 +16,10 @@ const ANALYTICS_CONFIG = {
     'level_up',
     'subscription_started',
     'subscription_cancelled',
+    'email_sent',
+    'email_delivered',
+    'email_clicked',
+    'email_conversion',
     'error_occurred' // Always track errors
   ],
   
@@ -25,7 +29,11 @@ const ANALYTICS_CONFIG = {
       'quiz_started',
       'page_view',
       'boost_activated',
-      'feature_discovered'
+      'feature_discovered',
+      'email_opened',
+      'email_bounced',
+      'email_unsubscribed',
+      'email_driven_engagement'
     ],
     sampleRate: 0.3 // Track 30% of these events
   },

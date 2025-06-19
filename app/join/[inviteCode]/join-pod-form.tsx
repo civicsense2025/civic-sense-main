@@ -126,7 +126,7 @@ export function JoinPodForm({ inviteCode }: JoinPodFormProps) {
             title: "Successfully joined!",
             description: data.message,
           })
-          router.push(`/learning-pods/${data.podId}`)
+          router.push(`/pods/${data.podId}`)
         }
       } else {
         toast({

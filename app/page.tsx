@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { Header } from '@/components/header'
 import { CategoryCloud } from '@/components/category-cloud'
 import { ContinueQuizCard } from '@/components/continue-quiz-card'
+import { NewsTicker } from '@/components/news-ticker'
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -252,6 +253,18 @@ export default function HomePage() {
               />
             </div>
           )}
+
+          {/* News Ticker Section */}
+          <div className="mt-8 sm:mt-12">
+            <NewsTicker 
+              sources={['reuters', 'ap-news', 'politico', 'bbc-news']}
+              categories={['politics', 'government']}
+              maxArticles={15}
+              autoScroll={true}
+              scrollSpeed={40}
+              className="w-full"
+            />
+          </div>
 
           {/* Categories Section */}
           <div className="mt-8 sm:mt-12">

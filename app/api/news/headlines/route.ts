@@ -9,6 +9,209 @@ const supabase = createClient(
 )
 
 /**
+ * CivicSense News Ticker API with Multi-Layer Caching
+ * 
+ * Caching Strategy:
+ * 1. In-memory cache (immediate) - 15 minutes
+ * 2. Database cache (persistent) - 30 minutes
+ * 3. Fallback to RSS feeds when cache expires
+ * 
+ * This prevents hitting RSS feeds repeatedly when multiple users access the site
+ */
+
+// In-memory cache for immediate requests
+interface CachedNewsData {
+  articles: ProcessedArticle[]
+  timestamp: number
+  source: string
+}
+
+const NEWS_CACHE: Map<string, CachedNewsData> = new Map()
+const CACHE_DURATION = 15 * 60 * 1000 // 15 minutes in memory
+const DB_CACHE_DURATION = 30 * 60 * 1000 // 30 minutes in database
+
+/**
+ * Get cache key for request parameters
+ */
+function getCacheKey(params: { sources?: string, categories?: string, maxArticles?: number }): string {
+  return `news-${params.sources || 'default'}-${params.categories || 'default'}-${params.maxArticles || 20}`
+}
+
+/**
+ * Check in-memory cache first
+ */
+function getMemoryCache(cacheKey: string): CachedNewsData | null {
+  const cached = NEWS_CACHE.get(cacheKey)
+  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+    console.log('✅ Using in-memory cache for news')
+    return cached
+  }
+  
+  // Clean up expired cache entries
+  if (cached) {
+    NEWS_CACHE.delete(cacheKey)
+  }
+  
+  return null
+}
+
+/**
+ * Set in-memory cache
+ */
+function setMemoryCache(cacheKey: string, data: ProcessedArticle[], source: string): void {
+  NEWS_CACHE.set(cacheKey, {
+    articles: data,
+    timestamp: Date.now(),
+    source
+  })
+  
+  // Clean up old cache entries (keep only last 10 entries)
+  if (NEWS_CACHE.size > 10) {
+    const firstKey = NEWS_CACHE.keys().next().value
+    if (firstKey) {
+      NEWS_CACHE.delete(firstKey)
+    }
+  }
+}
+
+/**
+ * Check database cache for persistent caching across server restarts
+ */
+async function getDatabaseCache(cacheKey: string): Promise<CachedNewsData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('news_cache')
+      .select('*')
+      .eq('cache_key', cacheKey)
+      .gte('created_at', new Date(Date.now() - DB_CACHE_DURATION).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    
+    if (error || !data) {
+      return null
+    }
+    
+    console.log('✅ Using database cache for news')
+    return {
+      articles: data.articles_data,
+      timestamp: new Date(data.created_at).getTime(),
+      source: data.source_info || 'database_cache'
+    }
+  } catch (error) {
+    console.error('Error reading from database cache:', error)
+    return null
+  }
+}
+
+/**
+ * Set database cache
+ */
+async function setDatabaseCache(cacheKey: string, data: ProcessedArticle[], source: string): Promise<void> {
+  try {
+    // First, clean up old cache entries for this key
+    await supabase
+      .from('news_cache')
+      .delete()
+      .eq('cache_key', cacheKey)
+    
+    // Insert new cache entry
+    const { error } = await supabase
+      .from('news_cache')
+      .insert({
+        cache_key: cacheKey,
+        articles_data: data,
+        source_info: source,
+        created_at: new Date().toISOString()
+      })
+    
+    if (error) {
+      console.error('Error setting database cache:', error)
+    } else {
+      console.log('✅ Saved news to database cache')
+    }
+  } catch (error) {
+    console.error('Error setting database cache:', error)
+  }
+}
+
+/**
+ * Clean up old cache entries (called periodically)
+ */
+async function cleanupDatabaseCache(): Promise<void> {
+  try {
+    const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 hours ago
+    
+    await supabase
+      .from('news_cache')
+      .delete()
+      .lt('created_at', cutoffTime.toISOString())
+    
+    console.log('🧹 Cleaned up old news cache entries')
+  } catch (error) {
+    console.error('Error cleaning up cache:', error)
+  }
+}
+
+/**
+ * Get cached news with fallback to fresh fetch
+ */
+async function getCachedNews(params: { sources?: string, categories?: string, maxArticles?: number }): Promise<{
+  articles: ProcessedArticle[]
+  source: string
+  fromCache: boolean
+}> {
+  const cacheKey = getCacheKey(params)
+  
+  // 1. Check in-memory cache first
+  const memoryCache = getMemoryCache(cacheKey)
+  if (memoryCache) {
+    return {
+      articles: memoryCache.articles.slice(0, params.maxArticles || 20),
+      source: memoryCache.source,
+      fromCache: true
+    }
+  }
+  
+  // 2. Check database cache
+  const dbCache = await getDatabaseCache(cacheKey)
+  if (dbCache) {
+    // Update in-memory cache with database data
+    setMemoryCache(cacheKey, dbCache.articles, dbCache.source)
+    
+    return {
+      articles: dbCache.articles.slice(0, params.maxArticles || 20),
+      source: dbCache.source,
+      fromCache: true
+    }
+  }
+  
+  // 3. Fetch fresh data and cache it
+  console.log('🔄 No valid cache found, fetching fresh news...')
+  const freshArticles = await fetchRealTimeNews()
+  
+  if (freshArticles.length > 0) {
+    // Cache the results
+    setMemoryCache(cacheKey, freshArticles, 'rss_feeds')
+    await setDatabaseCache(cacheKey, freshArticles, 'rss_feeds')
+    
+    return {
+      articles: freshArticles.slice(0, params.maxArticles || 20),
+      source: 'rss_feeds',
+      fromCache: false
+    }
+  }
+  
+  // Fallback to mock data
+  const mockArticles = getMockUSPoliticsNews()
+  return {
+    articles: mockArticles.slice(0, params.maxArticles || 20),
+    source: 'mock_fallback',
+    fromCache: false
+  }
+}
+
+/**
  * CivicSense News Ticker API
  * 
  * This endpoint provides real-time civic news using:
@@ -893,30 +1096,33 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const maxArticles = parseInt(searchParams.get('maxArticles') || '20')
+    const sources = searchParams.get('sources') || undefined
+    const categories = searchParams.get('categories') || undefined
 
-    // Fetch real-time news from RSS feeds
-    const rssArticles = await fetchRealTimeNews()
-    
-    if (rssArticles.length > 0) {
-      console.log(`✅ Using ${rssArticles.length} real-time RSS news articles`)
-      return NextResponse.json({
-        articles: rssArticles.slice(0, maxArticles),
-        totalResults: rssArticles.length,
-        status: 'ok',
-        source: 'rss_feeds',
-        message: 'Live US politics news from vetted sources (Rolling Stone, Politico, NPR, Reuters, The Hill, etc.)'
-      })
+    // Clean up database cache periodically (every 10th request)
+    if (Math.random() < 0.1) {
+      cleanupDatabaseCache().catch(console.error)
     }
 
-    // Fallback to mock data if RSS fails
-    console.log('📰 RSS feeds failed, falling back to mock data')
-    const mockArticles = getMockUSPoliticsNews()
+    // Use cached news with intelligent fallback
+    const result = await getCachedNews({
+      sources,
+      categories,
+      maxArticles
+    })
+    
+    const cacheStatus = result.fromCache ? 'cached' : 'fresh'
+    console.log(`🔔 Serving ${result.articles.length} articles (${cacheStatus}) from ${result.source}`)
+    
     return NextResponse.json({
-      articles: mockArticles.slice(0, maxArticles),
-      totalResults: mockArticles.length,
+      articles: result.articles,
+      totalResults: result.articles.length,
       status: 'ok',
-      source: 'mock_fallback',
-      message: 'Using demo data - RSS feeds temporarily unavailable'
+      source: result.source,
+      fromCache: result.fromCache,
+      message: result.fromCache 
+        ? `Using cached US politics news (${cacheStatus})`
+        : 'Live US politics news from vetted sources (Rolling Stone, Politico, NPR, Reuters, The Hill, etc.)'
     })
 
   } catch (error) {
@@ -929,6 +1135,7 @@ export async function GET(request: NextRequest) {
       totalResults: mockArticles.length,
       status: 'error',
       source: 'mock_error',
+      fromCache: false,
       message: 'Error occurred - using demo data'
     }, { status: 500 })
   }

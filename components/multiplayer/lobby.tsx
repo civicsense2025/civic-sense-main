@@ -161,9 +161,21 @@ export function MultiplayerLobby() {
 
     loadUserRooms()
     
-    // Refresh rooms every 30 seconds to catch status changes
-    const interval = setInterval(loadUserRooms, 30000)
-    return () => clearInterval(interval)
+    // Remove continuous polling - only refresh on user interaction or page visibility change
+    // The 30-second interval was causing unnecessary server load
+    
+    // Optional: refresh when page becomes visible (user returns to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadUserRooms()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [user?.id, getOrCreateGuestToken])
 
   const selectedMode = GAME_MODES.find(mode => mode.id === state.selectedGameMode)

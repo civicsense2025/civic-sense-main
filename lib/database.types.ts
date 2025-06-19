@@ -950,6 +950,42 @@ export type Database = {
         }
         Relationships: []
       }
+      clever_user_mapping: {
+        Row: {
+          civicsense_user_id: string | null
+          clever_email: string | null
+          clever_user_id: string
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string | null
+          school_id: string | null
+        }
+        Insert: {
+          civicsense_user_id?: string | null
+          clever_email?: string | null
+          clever_user_id: string
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string | null
+          school_id?: string | null
+        }
+        Update: {
+          civicsense_user_id?: string | null
+          clever_email?: string | null
+          clever_user_id?: string
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string | null
+          school_id?: string | null
+        }
+        Relationships: []
+      }
       content_filtering_rules: {
         Row: {
           age_range: string
@@ -989,6 +1025,126 @@ export type Database = {
           max_difficulty_level?: number | null
           rule_name?: string
           sensitive_topics?: Json | null
+        }
+        Relationships: []
+      }
+      content_generation_queue: {
+        Row: {
+          assigned_worker: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          estimated_duration_ms: number | null
+          execution_log_id: string | null
+          expires_at: string
+          generation_params: Json
+          generation_type: string
+          id: string
+          max_retries: number
+          priority: number
+          process_after: string
+          result_data: Json | null
+          retry_count: number
+          scheduled_job_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_worker?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_duration_ms?: number | null
+          execution_log_id?: string | null
+          expires_at?: string
+          generation_params: Json
+          generation_type: string
+          id?: string
+          max_retries?: number
+          priority?: number
+          process_after?: string
+          result_data?: Json | null
+          retry_count?: number
+          scheduled_job_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_worker?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_duration_ms?: number | null
+          execution_log_id?: string | null
+          expires_at?: string
+          generation_params?: Json
+          generation_type?: string
+          id?: string
+          max_retries?: number
+          priority?: number
+          process_after?: string
+          result_data?: Json | null
+          retry_count?: number
+          scheduled_job_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_generation_queue_execution_log_id_fkey"
+            columns: ["execution_log_id"]
+            isOneToOne: false
+            referencedRelation: "job_execution_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_generation_queue_scheduled_job_id_fkey"
+            columns: ["scheduled_job_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_content_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_preview_cache: {
+        Row: {
+          access_count: number
+          cache_key: string
+          cache_type: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          generation_settings: Json
+          id: string
+          last_accessed_at: string
+          preview_data: Json
+        }
+        Insert: {
+          access_count?: number
+          cache_key: string
+          cache_type: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          generation_settings: Json
+          id?: string
+          last_accessed_at?: string
+          preview_data: Json
+        }
+        Update: {
+          access_count?: number
+          cache_key?: string
+          cache_type?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          generation_settings?: Json
+          id?: string
+          last_accessed_at?: string
+          preview_data?: Json
         }
         Relationships: []
       }
@@ -1475,6 +1631,20 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "friend_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
         ]
       }
       gift_credits: {
@@ -1719,6 +1889,151 @@ export type Database = {
         }
         Relationships: []
       }
+      image_ab_test_results: {
+        Row: {
+          created_at: string
+          engagement_type: string | null
+          engagement_value: number | null
+          id: string
+          image_id: string | null
+          session_id: string | null
+          test_name: string
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          engagement_type?: string | null
+          engagement_value?: number | null
+          id?: string
+          image_id?: string | null
+          session_id?: string | null
+          test_name: string
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          engagement_type?: string | null
+          engagement_value?: number | null
+          id?: string
+          image_id?: string | null
+          session_id?: string | null
+          test_name?: string
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_ab_test_results_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "image_generation_analytics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_generation_analytics: {
+        Row: {
+          content_type: string
+          created_at: string
+          error_message: string | null
+          generation_time_ms: number
+          id: string
+          session_id: string | null
+          success: boolean
+          template: string
+          theme: string
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          error_message?: string | null
+          generation_time_ms: number
+          id?: string
+          session_id?: string | null
+          success?: boolean
+          template: string
+          theme?: string
+          user_id?: string | null
+          variant?: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          error_message?: string | null
+          generation_time_ms?: number
+          id?: string
+          session_id?: string | null
+          success?: boolean
+          template?: string
+          theme?: string
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
+      job_execution_logs: {
+        Row: {
+          completed_at: string | null
+          content_generated: number | null
+          created_at: string
+          error_details: Json | null
+          error_message: string | null
+          execution_metadata: Json | null
+          execution_time_ms: number | null
+          id: string
+          job_id: string
+          questions_created: number | null
+          stack_trace: string | null
+          started_at: string
+          status: string
+          topics_created: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          content_generated?: number | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          execution_metadata?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          job_id: string
+          questions_created?: number | null
+          stack_trace?: string | null
+          started_at?: string
+          status?: string
+          topics_created?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          content_generated?: number | null
+          created_at?: string
+          error_details?: Json | null
+          error_message?: string | null
+          execution_metadata?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          job_id?: string
+          questions_created?: number | null
+          stack_trace?: string | null
+          started_at?: string
+          status?: string
+          topics_created?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_execution_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_content_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_policy_positions: {
         Row: {
           category_id: string
@@ -1803,60 +2118,209 @@ export type Database = {
       }
       learning_pods: {
         Row: {
+          accessibility_mode: string | null
+          activity_score: number | null
+          alert_on_inappropriate_content: boolean | null
           allow_sensitive_topics: boolean | null
           allowed_age_range: string | null
+          allowed_days: number[] | null
+          allowed_end_time: string | null
+          allowed_start_time: string | null
+          average_rating: number | null
+          banner_image_url: string | null
           blocked_categories: string[] | null
+          can_access_chat: boolean | null
+          can_access_multiplayer: boolean | null
+          can_share_progress: boolean | null
+          can_view_leaderboards: boolean | null
+          challenge_participation: Json | null
+          classroom_course_id: string | null
+          classroom_integration_enabled: boolean | null
+          clever_last_sync: string | null
+          clever_section_id: string | null
+          clever_sync_enabled: boolean
+          clever_sync_errors: Json | null
           content_filter_level: string | null
           created_at: string | null
           created_by: string
+          custom_type_label: string | null
+          daily_time_limit_minutes: number | null
+          description: string | null
+          display_name: string | null
           family_name: string | null
+          grade_passback_enabled: boolean | null
           id: string
+          is_featured: boolean | null
           is_private: boolean | null
+          is_public: boolean | null
           join_code: string | null
+          lms_platform: "google_classroom" | "clever" | null
+          max_difficulty_level: number | null
           max_members: number | null
+          milestone_data: Json | null
           parent_email: string | null
+          partnership_status: string | null
+          personality_type: string | null
+          pod_color: string | null
           pod_description: string | null
+          pod_emoji: string | null
+          pod_motto: string | null
           pod_name: string
+          pod_slug: string | null
           pod_type: string
+          report_frequency: string | null
+          require_parent_approval_for_friends: boolean | null
+          roster_last_synced: string | null
+          search_tags: string[] | null
+          send_progress_reports: boolean | null
+          short_description: string | null
+          target_age_range: string | null
+          theme_id: string | null
+          topics_covered: string[] | null
+          total_ratings: number | null
+          track_detailed_activity: boolean | null
+          unlocked_features: Json | null
           updated_at: string | null
         }
         Insert: {
+          accessibility_mode?: string | null
+          activity_score?: number | null
+          alert_on_inappropriate_content?: boolean | null
           allow_sensitive_topics?: boolean | null
           allowed_age_range?: string | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          average_rating?: number | null
+          banner_image_url?: string | null
           blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          challenge_participation?: Json | null
+          classroom_course_id?: string | null
+          classroom_integration_enabled?: boolean | null
+          clever_last_sync?: string | null
+          clever_section_id?: string | null
+          clever_sync_enabled?: boolean
+          clever_sync_errors?: Json | null
           content_filter_level?: string | null
           created_at?: string | null
           created_by: string
+          custom_type_label?: string | null
+          daily_time_limit_minutes?: number | null
+          description?: string | null
+          display_name?: string | null
           family_name?: string | null
+          grade_passback_enabled?: boolean | null
           id?: string
+          is_featured?: boolean | null
           is_private?: boolean | null
+          is_public?: boolean | null
           join_code?: string | null
+          lms_platform?: "google_classroom" | "clever" | null
+          max_difficulty_level?: number | null
           max_members?: number | null
+          milestone_data?: Json | null
           parent_email?: string | null
+          partnership_status?: string | null
+          personality_type?: string | null
+          pod_color?: string | null
           pod_description?: string | null
+          pod_emoji?: string | null
+          pod_motto?: string | null
           pod_name: string
+          pod_slug?: string | null
           pod_type?: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          roster_last_synced?: string | null
+          search_tags?: string[] | null
+          send_progress_reports?: boolean | null
+          short_description?: string | null
+          target_age_range?: string | null
+          theme_id?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
+          track_detailed_activity?: boolean | null
+          unlocked_features?: Json | null
           updated_at?: string | null
         }
         Update: {
+          accessibility_mode?: string | null
+          activity_score?: number | null
+          alert_on_inappropriate_content?: boolean | null
           allow_sensitive_topics?: boolean | null
           allowed_age_range?: string | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          average_rating?: number | null
+          banner_image_url?: string | null
           blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          challenge_participation?: Json | null
+          classroom_course_id?: string | null
+          classroom_integration_enabled?: boolean | null
+          clever_last_sync?: string | null
+          clever_section_id?: string | null
+          clever_sync_enabled?: boolean
+          clever_sync_errors?: Json | null
           content_filter_level?: string | null
           created_at?: string | null
           created_by?: string
+          custom_type_label?: string | null
+          daily_time_limit_minutes?: number | null
+          description?: string | null
+          display_name?: string | null
           family_name?: string | null
+          grade_passback_enabled?: boolean | null
           id?: string
+          is_featured?: boolean | null
           is_private?: boolean | null
+          is_public?: boolean | null
           join_code?: string | null
+          lms_platform?: "google_classroom" | "clever" | null
+          max_difficulty_level?: number | null
           max_members?: number | null
+          milestone_data?: Json | null
           parent_email?: string | null
+          partnership_status?: string | null
+          personality_type?: string | null
+          pod_color?: string | null
           pod_description?: string | null
+          pod_emoji?: string | null
+          pod_motto?: string | null
           pod_name?: string
+          pod_slug?: string | null
           pod_type?: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          roster_last_synced?: string | null
+          search_tags?: string[] | null
+          send_progress_reports?: boolean | null
+          short_description?: string | null
+          target_age_range?: string | null
+          theme_id?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
+          track_detailed_activity?: boolean | null
+          unlocked_features?: Json | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "learning_pods_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "pod_themes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_organizations: {
         Row: {
@@ -1941,6 +2405,113 @@ export type Database = {
           },
         ]
       }
+      member_individual_settings: {
+        Row: {
+          alert_on_inappropriate_content: boolean | null
+          allowed_days: number[] | null
+          allowed_end_time: string | null
+          allowed_start_time: string | null
+          blocked_categories: string[] | null
+          can_access_chat: boolean | null
+          can_access_multiplayer: boolean | null
+          can_share_progress: boolean | null
+          can_view_leaderboards: boolean | null
+          content_filter_level: string | null
+          created_at: string
+          daily_time_limit_minutes: number | null
+          id: string
+          max_difficulty_level: number | null
+          override_content_filter: boolean | null
+          override_feature_access: boolean | null
+          override_monitoring: boolean | null
+          override_time_limits: boolean | null
+          pod_id: string
+          report_frequency: string | null
+          send_progress_reports: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_on_inappropriate_content?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          content_filter_level?: string | null
+          created_at?: string
+          daily_time_limit_minutes?: number | null
+          id?: string
+          max_difficulty_level?: number | null
+          override_content_filter?: boolean | null
+          override_feature_access?: boolean | null
+          override_monitoring?: boolean | null
+          override_time_limits?: boolean | null
+          pod_id: string
+          report_frequency?: string | null
+          send_progress_reports?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_on_inappropriate_content?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          content_filter_level?: string | null
+          created_at?: string
+          daily_time_limit_minutes?: number | null
+          id?: string
+          max_difficulty_level?: number | null
+          override_content_filter?: boolean | null
+          override_feature_access?: boolean | null
+          override_monitoring?: boolean | null
+          override_time_limits?: boolean | null
+          pod_id?: string
+          report_frequency?: string | null
+          send_progress_reports?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_individual_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_individual_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_individual_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "member_settings_membership_fkey"
+            columns: ["pod_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "pod_memberships"
+            referencedColumns: ["pod_id", "user_id"]
+          },
+        ]
+      }
       multiplayer_chat_messages: {
         Row: {
           confidence_score: number | null
@@ -1990,6 +2561,13 @@ export type Database = {
             columns: ["npc_id"]
             isOneToOne: false
             referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_chat_messages_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "active_room_players"
             referencedColumns: ["id"]
           },
           {
@@ -2104,6 +2682,13 @@ export type Database = {
             foreignKeyName: "multiplayer_game_events_triggered_by_fkey"
             columns: ["triggered_by"]
             isOneToOne: false
+            referencedRelation: "active_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_game_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
             referencedRelation: "multiplayer_room_players"
             referencedColumns: ["id"]
           },
@@ -2158,6 +2743,13 @@ export type Database = {
             columns: ["npc_id"]
             isOneToOne: false
             referencedRelation: "npc_personalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_npc_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "active_room_players"
             referencedColumns: ["id"]
           },
           {
@@ -2222,6 +2814,13 @@ export type Database = {
             columns: ["attempt_id"]
             isOneToOne: false
             referencedRelation: "multiplayer_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_question_responses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "active_room_players"
             referencedColumns: ["id"]
           },
           {
@@ -2294,6 +2893,13 @@ export type Database = {
             foreignKeyName: "multiplayer_quiz_attempts_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "active_room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_quiz_attempts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "multiplayer_room_players"
             referencedColumns: ["id"]
           },
@@ -2309,6 +2915,8 @@ export type Database = {
       multiplayer_room_players: {
         Row: {
           boost_inventory: Json | null
+          connection_latency: number | null
+          connection_quality: string | null
           created_at: string
           guest_token: string | null
           id: string
@@ -2324,6 +2932,8 @@ export type Database = {
         }
         Insert: {
           boost_inventory?: Json | null
+          connection_latency?: number | null
+          connection_quality?: string | null
           created_at?: string
           guest_token?: string | null
           id?: string
@@ -2339,6 +2949,8 @@ export type Database = {
         }
         Update: {
           boost_inventory?: Json | null
+          connection_latency?: number | null
+          connection_quality?: string | null
           created_at?: string
           guest_token?: string | null
           id?: string
@@ -2410,6 +3022,30 @@ export type Database = {
           settings?: Json
           started_at?: string | null
           topic_id?: string
+        }
+        Relationships: []
+      }
+      news_cache: {
+        Row: {
+          articles_data: Json
+          cache_key: string
+          created_at: string
+          id: string
+          source_info: string | null
+        }
+        Insert: {
+          articles_data: Json
+          cache_key: string
+          created_at?: string
+          id?: string
+          source_info?: string | null
+        }
+        Update: {
+          articles_data?: Json
+          cache_key?: string
+          created_at?: string
+          id?: string
+          source_info?: string | null
         }
         Relationships: []
       }
@@ -3112,6 +3748,20 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "parental_controls_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parental_controls_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
         ]
       }
       pathway_skills: {
@@ -3159,6 +3809,45 @@ export type Database = {
           },
         ]
       }
+      pod_achievements: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          emoji: string
+          id: string
+          name: string
+          rarity: string | null
+          reward_data: Json | null
+          reward_type: string | null
+          unlock_condition: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          emoji: string
+          id?: string
+          name: string
+          rarity?: string | null
+          reward_data?: Json | null
+          reward_type?: string | null
+          unlock_condition: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          emoji?: string
+          id?: string
+          name?: string
+          rarity?: string | null
+          reward_data?: Json | null
+          reward_type?: string | null
+          unlock_condition?: Json
+        }
+        Relationships: []
+      }
       pod_activities: {
         Row: {
           activity_data: Json | null
@@ -3197,6 +3886,78 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
+      }
+      pod_activity_log: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          pod_id: string
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          pod_id: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          pod_id?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_activity_log_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activity_log_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activity_log_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
           },
         ]
       }
@@ -3280,6 +4041,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
           },
         ]
       }
@@ -3378,79 +4153,19 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      pod_discovery: {
-        Row: {
-          activity_score: number | null
-          average_rating: number | null
-          banner_image_url: string | null
-          created_at: string | null
-          difficulty_level: number | null
-          display_name: string
-          id: string
-          is_featured: boolean | null
-          is_public: boolean | null
-          learning_objectives: string[] | null
-          long_description: string | null
-          member_count: number | null
-          pod_id: string
-          search_tags: string[] | null
-          short_description: string | null
-          target_age_range: string | null
-          topics_covered: string[] | null
-          total_ratings: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          activity_score?: number | null
-          average_rating?: number | null
-          banner_image_url?: string | null
-          created_at?: string | null
-          difficulty_level?: number | null
-          display_name: string
-          id?: string
-          is_featured?: boolean | null
-          is_public?: boolean | null
-          learning_objectives?: string[] | null
-          long_description?: string | null
-          member_count?: number | null
-          pod_id: string
-          search_tags?: string[] | null
-          short_description?: string | null
-          target_age_range?: string | null
-          topics_covered?: string[] | null
-          total_ratings?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          activity_score?: number | null
-          average_rating?: number | null
-          banner_image_url?: string | null
-          created_at?: string | null
-          difficulty_level?: number | null
-          display_name?: string
-          id?: string
-          is_featured?: boolean | null
-          is_public?: boolean | null
-          learning_objectives?: string[] | null
-          long_description?: string | null
-          member_count?: number | null
-          pod_id?: string
-          search_tags?: string[] | null
-          short_description?: string | null
-          target_age_range?: string | null
-          topics_covered?: string[] | null
-          total_ratings?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "pod_discovery_pod_id_fkey"
+            foreignKeyName: "pod_challenges_pod_id_fkey"
             columns: ["pod_id"]
             isOneToOne: false
-            referencedRelation: "learning_pods"
+            referencedRelation: "pod_discovery"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_challenges_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
           },
         ]
       }
@@ -3510,6 +4225,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_invite_links_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_invite_links_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
           },
         ]
       }
@@ -3573,6 +4302,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_join_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_join_requests_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
           },
         ]
       }
@@ -3657,6 +4400,126 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pod_member_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_member_analytics_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
+      }
+      pod_member_settings: {
+        Row: {
+          alert_on_inappropriate_content: boolean | null
+          allow_sensitive_topics: boolean | null
+          allowed_days: number[] | null
+          allowed_end_time: string | null
+          allowed_start_time: string | null
+          blocked_categories: string[] | null
+          can_access_chat: boolean | null
+          can_access_multiplayer: boolean | null
+          can_share_progress: boolean | null
+          can_view_leaderboards: boolean | null
+          content_filter_level: string | null
+          created_at: string | null
+          daily_time_limit_minutes: number | null
+          id: string
+          max_difficulty_level: number | null
+          override_content_filter: boolean | null
+          override_feature_access: boolean | null
+          override_monitoring: boolean | null
+          override_time_limits: boolean | null
+          pod_id: string
+          report_frequency: string | null
+          send_progress_reports: boolean | null
+          track_detailed_activity: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_on_inappropriate_content?: boolean | null
+          allow_sensitive_topics?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          content_filter_level?: string | null
+          created_at?: string | null
+          daily_time_limit_minutes?: number | null
+          id?: string
+          max_difficulty_level?: number | null
+          override_content_filter?: boolean | null
+          override_feature_access?: boolean | null
+          override_monitoring?: boolean | null
+          override_time_limits?: boolean | null
+          pod_id: string
+          report_frequency?: string | null
+          send_progress_reports?: boolean | null
+          track_detailed_activity?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_on_inappropriate_content?: boolean | null
+          allow_sensitive_topics?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          content_filter_level?: string | null
+          created_at?: string | null
+          daily_time_limit_minutes?: number | null
+          id?: string
+          max_difficulty_level?: number | null
+          override_content_filter?: boolean | null
+          override_feature_access?: boolean | null
+          override_monitoring?: boolean | null
+          override_time_limits?: boolean | null
+          pod_id?: string
+          report_frequency?: string | null
+          send_progress_reports?: boolean | null
+          track_detailed_activity?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_member_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_member_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_member_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
         ]
       }
       pod_memberships: {
@@ -3719,6 +4582,99 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
+      }
+      pod_partnerships: {
+        Row: {
+          created_at: string | null
+          id: string
+          initiated_by: string
+          partnership_data: Json | null
+          partnership_type: string | null
+          pod_1_id: string
+          pod_2_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          initiated_by: string
+          partnership_data?: Json | null
+          partnership_type?: string | null
+          pod_1_id: string
+          pod_2_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          initiated_by?: string
+          partnership_data?: Json | null
+          partnership_type?: string | null
+          pod_1_id?: string
+          pod_2_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_partnerships_pod_1_id_fkey"
+            columns: ["pod_1_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_partnerships_pod_1_id_fkey"
+            columns: ["pod_1_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_partnerships_pod_1_id_fkey"
+            columns: ["pod_1_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "pod_partnerships_pod_2_id_fkey"
+            columns: ["pod_2_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_partnerships_pod_2_id_fkey"
+            columns: ["pod_2_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_partnerships_pod_2_id_fkey"
+            columns: ["pod_2_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
         ]
       }
       pod_ratings: {
@@ -3772,32 +4728,215 @@ export type Database = {
             referencedRelation: "learning_pods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pod_ratings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_ratings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
         ]
+      }
+      pod_settings: {
+        Row: {
+          alert_on_inappropriate_content: boolean | null
+          allow_sensitive_topics: boolean | null
+          allowed_days: number[] | null
+          allowed_end_time: string | null
+          allowed_start_time: string | null
+          blocked_categories: string[] | null
+          can_access_chat: boolean | null
+          can_access_multiplayer: boolean | null
+          can_share_progress: boolean | null
+          can_view_leaderboards: boolean | null
+          created_at: string
+          daily_time_limit_minutes: number | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          max_difficulty_level: number | null
+          pod_id: string
+          report_frequency: string | null
+          require_parent_approval_for_friends: boolean | null
+          send_progress_reports: boolean | null
+          track_detailed_activity: boolean | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          alert_on_inappropriate_content?: boolean | null
+          allow_sensitive_topics?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          created_at?: string
+          daily_time_limit_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          max_difficulty_level?: number | null
+          pod_id: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          send_progress_reports?: boolean | null
+          track_detailed_activity?: boolean | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          alert_on_inappropriate_content?: boolean | null
+          allow_sensitive_topics?: boolean | null
+          allowed_days?: number[] | null
+          allowed_end_time?: string | null
+          allowed_start_time?: string | null
+          blocked_categories?: string[] | null
+          can_access_chat?: boolean | null
+          can_access_multiplayer?: boolean | null
+          can_share_progress?: boolean | null
+          can_view_leaderboards?: boolean | null
+          created_at?: string
+          daily_time_limit_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          max_difficulty_level?: number | null
+          pod_id?: string
+          report_frequency?: string | null
+          require_parent_approval_for_friends?: boolean | null
+          send_progress_reports?: boolean | null
+          track_detailed_activity?: boolean | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: true
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: true
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_settings_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: true
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
+      }
+      pod_themes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          emoji: string
+          id: string
+          is_seasonal: boolean | null
+          name: string
+          primary_color: string
+          season_end: string | null
+          season_start: string | null
+          secondary_color: string | null
+          unlock_condition: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          emoji: string
+          id?: string
+          is_seasonal?: boolean | null
+          name: string
+          primary_color: string
+          season_end?: string | null
+          season_start?: string | null
+          secondary_color?: string | null
+          unlock_condition?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          emoji?: string
+          id?: string
+          is_seasonal?: boolean | null
+          name?: string
+          primary_color?: string
+          season_end?: string | null
+          season_start?: string | null
+          secondary_color?: string | null
+          unlock_condition?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
+          achievement_badges: Json | null
           avatar_url: string | null
+          engagement_level: string | null
+          focus_areas: string[] | null
           full_name: string | null
+          high_contrast_mode: boolean | null
           id: string
           is_admin: boolean | null
+          preferred_language: string | null
+          preferred_pod_personality: string | null
+          sensory_friendly_mode: boolean | null
+          total_achievements: number | null
           updated_at: string | null
           username: string | null
           website: string | null
         }
         Insert: {
+          achievement_badges?: Json | null
           avatar_url?: string | null
+          engagement_level?: string | null
+          focus_areas?: string[] | null
           full_name?: string | null
+          high_contrast_mode?: boolean | null
           id: string
           is_admin?: boolean | null
+          preferred_language?: string | null
+          preferred_pod_personality?: string | null
+          sensory_friendly_mode?: boolean | null
+          total_achievements?: number | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
         }
         Update: {
+          achievement_badges?: Json | null
           avatar_url?: string | null
+          engagement_level?: string | null
+          focus_areas?: string[] | null
           full_name?: string | null
+          high_contrast_mode?: boolean | null
           id?: string
           is_admin?: boolean | null
+          preferred_language?: string | null
+          preferred_pod_personality?: string | null
+          sensory_friendly_mode?: boolean | null
+          total_achievements?: number | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -4426,6 +5565,78 @@ export type Database = {
             referencedColumns: ["topic_id"]
           },
         ]
+      }
+      scheduled_content_jobs: {
+        Row: {
+          avg_execution_time_ms: number | null
+          consecutive_failures: number
+          created_at: string
+          created_by: string
+          description: string | null
+          generation_settings: Json
+          id: string
+          is_active: boolean
+          job_type: string
+          last_run_at: string | null
+          last_run_result: Json | null
+          last_run_status: string | null
+          max_failures: number
+          name: string
+          next_run_at: string
+          schedule_config: Json
+          successful_runs: number
+          total_content_generated: number
+          total_runs: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          avg_execution_time_ms?: number | null
+          consecutive_failures?: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          generation_settings: Json
+          id?: string
+          is_active?: boolean
+          job_type?: string
+          last_run_at?: string | null
+          last_run_result?: Json | null
+          last_run_status?: string | null
+          max_failures?: number
+          name: string
+          next_run_at: string
+          schedule_config: Json
+          successful_runs?: number
+          total_content_generated?: number
+          total_runs?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          avg_execution_time_ms?: number | null
+          consecutive_failures?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          generation_settings?: Json
+          id?: string
+          is_active?: boolean
+          job_type?: string
+          last_run_at?: string | null
+          last_run_result?: Json | null
+          last_run_status?: string | null
+          max_failures?: number
+          name?: string
+          next_run_at?: string
+          schedule_config?: Json
+          successful_runs?: number
+          total_content_generated?: number
+          total_runs?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       shareable_gift_links: {
         Row: {
@@ -5304,6 +6515,55 @@ export type Database = {
           },
         ]
       }
+      survey_learning_goals: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_mappings: Json | null
+          skill_id: string | null
+          survey_id: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_mappings?: Json | null
+          skill_id?: string | null
+          survey_id?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_mappings?: Json | null
+          skill_id?: string | null
+          survey_id?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_learning_goals_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_learning_goals_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_learning_goals_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_questions: {
         Row: {
           conditional_logic: Json | null
@@ -5357,6 +6617,57 @@ export type Database = {
           },
           {
             foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_recommendations: {
+        Row: {
+          based_on_responses: Json
+          clicked_items: Json | null
+          generated_at: string | null
+          guest_token: string | null
+          id: string
+          recommended_content: Json
+          survey_id: string | null
+          user_id: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          based_on_responses: Json
+          clicked_items?: Json | null
+          generated_at?: string | null
+          guest_token?: string | null
+          id?: string
+          recommended_content: Json
+          survey_id?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          based_on_responses?: Json
+          clicked_items?: Json | null
+          generated_at?: string | null
+          guest_token?: string | null
+          id?: string
+          recommended_content?: Json
+          survey_id?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_recommendations_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_recommendations_survey_id_fkey"
             columns: ["survey_id"]
             isOneToOne: false
             referencedRelation: "surveys"
@@ -5434,6 +6745,7 @@ export type Database = {
           description: string | null
           estimated_time: number | null
           id: string
+          post_completion_config: Json | null
           published_at: string | null
           status: string
           title: string
@@ -5449,6 +6761,7 @@ export type Database = {
           description?: string | null
           estimated_time?: number | null
           id?: string
+          post_completion_config?: Json | null
           published_at?: string | null
           status?: string
           title: string
@@ -5464,10 +6777,101 @@ export type Database = {
           description?: string | null
           estimated_time?: number | null
           id?: string
+          post_completion_config?: Json | null
           published_at?: string | null
           status?: string
           title?: string
           translations?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
+      translation_jobs: {
+        Row: {
+          character_count: number | null
+          completed_at: string | null
+          content_id: string
+          content_type: string
+          created_at: string
+          error: string | null
+          estimated_completion: string | null
+          id: string
+          priority: string
+          progress: number
+          queue_for_review: boolean
+          retry_count: number
+          started_at: string | null
+          status: string
+          target_language: string
+          updated_at: string
+        }
+        Insert: {
+          character_count?: number | null
+          completed_at?: string | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          error?: string | null
+          estimated_completion?: string | null
+          id?: string
+          priority?: string
+          progress?: number
+          queue_for_review?: boolean
+          retry_count?: number
+          started_at?: string | null
+          status?: string
+          target_language: string
+          updated_at?: string
+        }
+        Update: {
+          character_count?: number | null
+          completed_at?: string | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          error?: string | null
+          estimated_completion?: string | null
+          id?: string
+          priority?: string
+          progress?: number
+          queue_for_review?: boolean
+          retry_count?: number
+          started_at?: string | null
+          status?: string
+          target_language?: string
           updated_at?: string
         }
         Relationships: []
@@ -6537,9 +7941,14 @@ export type Database = {
       }
       user_quiz_attempts: {
         Row: {
+          clever_assignment_id: string | null
+          clever_section_id: string | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string | null
+          grade_post_error: string | null
+          grade_post_timestamp: string | null
+          grade_posted_to_lms: boolean | null
           id: string
           is_completed: boolean | null
           score: number | null
@@ -6550,9 +7959,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          clever_assignment_id?: string | null
+          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
+          grade_post_error?: string | null
+          grade_post_timestamp?: string | null
+          grade_posted_to_lms?: boolean | null
           id?: string
           is_completed?: boolean | null
           score?: number | null
@@ -6563,9 +7977,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          clever_assignment_id?: string | null
+          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
+          grade_post_error?: string | null
+          grade_post_timestamp?: string | null
+          grade_posted_to_lms?: boolean | null
           id?: string
           is_completed?: boolean | null
           score?: number | null
@@ -6855,8 +8274,140 @@ export type Database = {
         }
         Relationships: []
       }
+      user_survey_completions: {
+        Row: {
+          completed_at: string
+          completion_time_seconds: number | null
+          created_at: string | null
+          guest_token: string | null
+          id: string
+          questions_answered: number
+          response_id: string | null
+          survey_id: string | null
+          total_questions: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string
+          completion_time_seconds?: number | null
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string
+          questions_answered: number
+          response_id?: string | null
+          survey_id?: string | null
+          total_questions: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string
+          completion_time_seconds?: number | null
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string
+          questions_answered?: number
+          response_id?: string | null
+          survey_id?: string | null
+          total_questions?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_survey_completions_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_survey_completions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_survey_completions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
+      active_room_players: {
+        Row: {
+          boost_inventory: Json | null
+          connection_latency: number | null
+          connection_quality: string | null
+          created_at: string | null
+          guest_token: string | null
+          id: string | null
+          is_connected: boolean | null
+          is_host: boolean | null
+          is_ready: boolean | null
+          join_order: number | null
+          last_activity: string | null
+          player_emoji: string | null
+          player_name: string | null
+          presence_status: string | null
+          room_id: string | null
+          seconds_since_activity: number | null
+          user_id: string | null
+        }
+        Insert: {
+          boost_inventory?: Json | null
+          connection_latency?: number | null
+          connection_quality?: string | null
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          join_order?: number | null
+          last_activity?: string | null
+          player_emoji?: string | null
+          player_name?: string | null
+          presence_status?: never
+          room_id?: string | null
+          seconds_since_activity?: never
+          user_id?: string | null
+        }
+        Update: {
+          boost_inventory?: Json | null
+          connection_latency?: number | null
+          connection_quality?: string | null
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          join_order?: number | null
+          last_activity?: string | null
+          player_emoji?: string | null
+          player_name?: string | null
+          presence_status?: never
+          room_id?: string | null
+          seconds_since_activity?: never
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_question_stats: {
         Row: {
           category: string | null
@@ -6928,6 +8479,66 @@ export type Database = {
           recent_accuracy: number | null
           recent_quiz_count: number | null
           total_quizzes: number | null
+        }
+        Relationships: []
+      }
+      pod_discovery: {
+        Row: {
+          activity_score: number | null
+          average_rating: number | null
+          banner_image_url: string | null
+          created_at: string | null
+          difficulty_level: number | null
+          difficulty_level_numeric: string | null
+          display_name: string | null
+          id: string | null
+          is_featured: boolean | null
+          member_count: number | null
+          pod_id: string | null
+          pod_type: string | null
+          search_tags: string[] | null
+          short_description: string | null
+          target_age_range: string | null
+          topics_covered: string[] | null
+          total_ratings: number | null
+        }
+        Insert: {
+          activity_score?: number | null
+          average_rating?: number | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          difficulty_level?: never
+          difficulty_level_numeric?: string | null
+          display_name?: never
+          id?: string | null
+          is_featured?: boolean | null
+          member_count?: never
+          pod_id?: string | null
+          pod_type?: string | null
+          search_tags?: string[] | null
+          short_description?: never
+          target_age_range?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
+        }
+        Update: {
+          activity_score?: number | null
+          average_rating?: number | null
+          banner_image_url?: string | null
+          created_at?: string | null
+          difficulty_level?: never
+          difficulty_level_numeric?: string | null
+          display_name?: never
+          id?: string | null
+          is_featured?: boolean | null
+          member_count?: never
+          pod_id?: string | null
+          pod_type?: string | null
+          search_tags?: string[] | null
+          short_description?: never
+          target_age_range?: string | null
+          topics_covered?: string[] | null
+          total_ratings?: number | null
         }
         Relationships: []
       }
@@ -7112,15 +8723,30 @@ export type Database = {
           anonymous_responses: number | null
           authenticated_responses: number | null
           completed_responses: number | null
+          completion_rate: number | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           estimated_time: number | null
           id: string | null
+          post_completion_config: Json | null
           published_at: string | null
           question_count: number | null
           status: string | null
           title: string | null
           total_responses: number | null
+        }
+        Relationships: []
+      }
+      translation_job_stats: {
+        Row: {
+          avg_progress: number | null
+          content_type: string | null
+          job_count: number | null
+          latest_update: string | null
+          oldest_job: string | null
+          status: string | null
+          target_language: string | null
         }
         Relationships: []
       }
@@ -7263,6 +8889,16 @@ export type Database = {
           room_id: string
         }[]
       }
+      analyze_image_ab_test: {
+        Args: { test_name_param: string }
+        Returns: {
+          variant: string
+          total_views: number
+          total_engagements: number
+          engagement_rate: number
+          avg_generation_time: number
+        }[]
+      }
       calculate_bias_consensus: {
         Args: {
           p_organization_id: string
@@ -7284,6 +8920,10 @@ export type Database = {
           donor_access_type: string
         }[]
       }
+      calculate_next_run_time: {
+        Args: { schedule_config: Json; from_time?: string }
+        Returns: string
+      }
       calculate_pod_analytics: {
         Args: { p_pod_id: string; p_date?: string }
         Returns: undefined
@@ -7296,9 +8936,22 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: boolean
       }
+      check_and_award_achievements: {
+        Args: {
+          p_user_id: string
+          p_pod_id: string
+          p_trigger_type: string
+          p_trigger_data?: Json
+        }
+        Returns: number
+      }
       check_boost_cooldown: {
         Args: { target_user_id: string; target_boost_type: string }
         Returns: boolean
+      }
+      check_image_generation_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       check_premium_feature_access: {
         Args: { p_user_id: string; p_feature_name: string }
@@ -7334,6 +8987,22 @@ export type Database = {
       }
       cleanup_expired_rooms: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_inactive_players: {
+        Args: { inactive_threshold_minutes?: number; dry_run?: boolean }
+        Returns: {
+          room_id: string
+          player_count: number
+          action: string
+        }[]
+      }
+      cleanup_old_job_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_translation_jobs: {
+        Args: { days_old?: number }
         Returns: number
       }
       complete_onboarding_step: {
@@ -7445,6 +9114,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_pod_slug: {
+        Args: { pod_name: string; pod_id?: string }
+        Returns: string
+      }
       generate_room_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -7467,6 +9140,17 @@ export type Database = {
           tags: string[]
         }[]
       }
+      get_content_translation_stats: {
+        Args: { content_type_param: string }
+        Returns: {
+          content_type: string
+          total_items: number
+          translated_items: Json
+          pending_items: Json
+          in_progress_items: Json
+          error_items: Json
+        }[]
+      }
       get_detailed_gift_credits: {
         Args: { p_user_id: string }
         Returns: {
@@ -7480,6 +9164,10 @@ export type Database = {
           individual_claims: Json
           shareable_links: Json
         }[]
+      }
+      get_effective_member_settings: {
+        Args: { p_pod_id: string; p_user_id: string }
+        Returns: Json
       }
       get_function_return_info: {
         Args: { function_name_param: string }
@@ -7514,6 +9202,15 @@ export type Database = {
           latest_level: string
           has_converted: boolean
           converted_user_id: string
+        }[]
+      }
+      get_jobs_ready_for_execution: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          generation_settings: Json
+          created_by: string
         }[]
       }
       get_npc_category_performance: {
@@ -7655,6 +9352,24 @@ export type Database = {
           is_nullable: string
           column_default: string
           ordinal_position: number
+        }[]
+      }
+      get_translatable_content_summary: {
+        Args: {
+          search_term?: string
+          status_filter?: string
+          language_filter?: string
+          limit_count?: number
+        }
+        Returns: {
+          id: string
+          title: string
+          type: string
+          word_count: number
+          languages: string[]
+          last_updated: string
+          priority: string
+          status: string
         }[]
       }
       get_translation: {
@@ -7856,6 +9571,19 @@ export type Database = {
         }
         Returns: string
       }
+      log_pod_activity: {
+        Args: {
+          p_pod_id: string
+          p_user_id: string
+          p_activity_type: string
+          p_activity_data?: Json
+        }
+        Returns: string
+      }
+      populate_historical_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       process_donation_gift_credits: {
         Args: {
           p_user_id: string
@@ -7973,6 +9701,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_job_after_execution: {
+        Args: {
+          job_id: string
+          execution_success: boolean
+          execution_result?: Json
+          content_generated?: number
+        }
+        Returns: undefined
+      }
+      update_member_analytics: {
+        Args: { pod_uuid: string; member_user_id: string }
+        Returns: undefined
+      }
       update_npc_learning: {
         Args: {
           p_npc_id: string
@@ -7994,6 +9735,10 @@ export type Database = {
       update_player_ready_status_v2: {
         Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
         Returns: boolean
+      }
+      update_pod_analytics: {
+        Args: { pod_uuid: string }
+        Returns: undefined
       }
       update_user_skill_progress: {
         Args: {
@@ -8043,7 +9788,26 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      course_role: "student" | "teacher" | "teaching_assistant" | "observer"
+      enrollment_status: "active" | "dropped" | "completed" | "transferred"
+      school_user_role:
+        | "student"
+        | "teacher"
+        | "administrator"
+        | "counselor"
+        | "parent"
+        | "district_admin"
+      sync_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      sync_type:
+        | "roster_import"
+        | "grade_export"
+        | "assignment_create"
+        | "enrollment_sync"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8158,10 +9922,33 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      course_role: ["student", "teacher", "teaching_assistant", "observer"],
+      enrollment_status: ["active", "dropped", "completed", "transferred"],
+      school_user_role: [
+        "student",
+        "teacher",
+        "administrator",
+        "counselor",
+        "parent",
+        "district_admin",
+      ],
+      sync_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      sync_type: [
+        "roster_import",
+        "grade_export",
+        "assignment_create",
+        "enrollment_sync",
+      ],
+    },
   },
 } as const
-
 
 // Convenient type exports for easier usage
 export type DbQuestionTopic = Tables<'question_topics'>

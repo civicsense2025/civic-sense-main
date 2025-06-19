@@ -19,7 +19,8 @@
     "import-quiz": "npx tsx scripts/import-quiz-data.ts import-csv",
     "optimize-questions": "npx tsx scripts/optimize-question-content.ts",
     "check-integrity": "npx tsx scripts/check-question-integrity.ts",
-    "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/post-generate-types.js"
+    "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/generate-enum-exports.js",
+    "gen:types": "npm run generate-types"
   },
   "dependencies": {
     "@flags-sdk/statsig": "^0.2.2",
@@ -61,6 +62,7 @@
     "@supabase/supabase-js": "latest",
     "@types/dotenv": "^6.1.1",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/og": "^0.6.8",
     "@vercel/speed-insights": "^1.2.0",
     "autoprefixer": "^10.4.20",
     "canvas-confetti": "latest",
@@ -85,6 +87,7 @@
     "npm": "^11.4.2",
     "openai": "^5.5.0",
     "pg": "^8.16.0",
+    "plunk": "^0.6.0",
     "react": "^19.1.0",
     "react-day-picker": "8.10.1",
     "react-dom": "^19.1.0",

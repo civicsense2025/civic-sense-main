@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/client"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Lock, Mail } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -90,32 +90,34 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2 relative">
+        <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onFocus={() => setShowEmailTooltip(true)}
-            onBlur={() => setShowEmailTooltip(false)}
-            required
-            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
-            placeholder="you@example.com"
-          />
-          {showEmailTooltip && (
-            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
-              <p className="text-xs font-space-mono font-light">
-                📧 Pro tip: That email you actually check. We're not sending spam, just the good stuff.
-              </p>
-              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setShowEmailTooltip(true)}
+              onBlur={() => setShowEmailTooltip(false)}
+              required
+              className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+              placeholder="you@example.com"
+            />
+            {showEmailTooltip && (
+              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                <p className="text-xs font-space-mono font-light">
+                  📧 Pro tip: That email you actually check. We're not sending spam, just the good stuff.
+                </p>
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-2 relative">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Password
@@ -125,28 +127,31 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
               variant="link" 
               onClick={onResetPassword}
               className="text-xs text-blue-600 dark:text-blue-400 p-0 h-auto font-normal"
+              tabIndex={-1}
             >
               Forgot password?
             </Button>
           </div>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onFocus={() => setShowPasswordTooltip(true)}
-            onBlur={() => setShowPasswordTooltip(false)}
-            required
-            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
-          />
-          {showPasswordTooltip && (
-            <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-10 max-w-xs animate-in slide-in-from-bottom-2 duration-200">
-              <p className="text-xs font-space-mono font-light">
-                🔐 Welcome back! Hope you remembered that password you swore you'd never forget.
-              </p>
-              <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setShowPasswordTooltip(true)}
+              onBlur={() => setShowPasswordTooltip(false)}
+              required
+              className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+            />
+            {showPasswordTooltip && (
+              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                <p className="text-xs font-space-mono font-light">
+                  🔐 Welcome back! Hope you remembered that password you swore you'd never forget.
+                </p>
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center space-x-3 py-2">

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 // Define TOC items
 const tocItems = [
+  { id: 'educational-use', text: 'Educational Use & FERPA Compliance', level: 2 },
   { id: 'using-civicsense', text: 'Using CivicSense', level: 2 },
   { id: 'community-standards', text: 'Community Standards & Zero Tolerance', level: 2 },
   { id: 'ai-features', text: 'AI Features & Technology', level: 2 },
@@ -37,9 +38,9 @@ export default function TermsPage() {
 
       <div className="apple-container py-16">
         <div className="max-w-6xl mx-auto">
-          <div className="relative flex gap-12">
+          <div className="relative flex gap-12 items-start">
             {/* Main Content */}
-            <div className="flex-1 max-w-4xl">
+            <div className="flex-1 max-w-4xl min-w-0">
               {/* Header */}
               <div className="text-center mb-16 apple-animate-in">
                 <div className="text-6xl mb-6">📋</div>
@@ -59,8 +60,9 @@ export default function TermsPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
                 <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
                   <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">
-                    Welcome to CivicSense! These terms ("Terms") constitute a legally binding agreement between you and CivicSense, Inc. ("we," "us," or "our") 
+                    Welcome to CivicSense! These terms ("Terms") constitute a legally binding agreement between you and CivicSense Labs Inc. ("we," "us," or "our") 
                     governing your use of our civic education platform, including our website, mobile applications, and all related services (collectively, the "Service"). 
+                    <strong>For educational institutions, we act as a School Official with a legitimate educational interest under FERPA.</strong> 
                     By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
                   </p>
                 </div>
@@ -68,6 +70,51 @@ export default function TermsPage() {
 
               {/* Main Content */}
               <div className="space-y-12">
+                {/* Educational Use */}
+                <section id="educational-use" className="relative scroll-mt-24">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-500/10 rounded-3xl blur-xl"></div>
+                  <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-8 rounded-3xl">
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-6">Educational Use & FERPA Compliance</h2>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                      <p className="text-base text-blue-900 dark:text-blue-200">
+                        <strong>School Official Status:</strong> When serving educational institutions, CivicSense acts as a School Official 
+                        with a legitimate educational interest under FERPA and complies with all applicable educational privacy laws.
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Educational Institution Terms</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>FERPA compliance:</strong> We maintain compliance with Family Educational Rights and Privacy Act requirements</li>
+                            <li><strong>COPPA protections:</strong> Enhanced protections for students under 13 with parental consent requirements</li>
+                            <li><strong>Data minimization:</strong> We collect only educational data necessary for providing our service</li>
+                            <li><strong>No advertising:</strong> Educational data is never used for advertising or commercial purposes</li>
+                            <li><strong>Google Classroom integration:</strong> Seamless integration with existing educational workflows</li>
+                            <li><strong>Teacher controls:</strong> Comprehensive classroom management and content filtering tools</li>
+                            <li><strong>Data retention:</strong> Educational records deleted within 30 days of contract termination</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Service Level Agreement</h3>
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ul className="text-slate-700 dark:text-slate-300">
+                            <li><strong>Uptime guarantee:</strong> 99.5% monthly uptime for all services</li>
+                            <li><strong>Educational support:</strong> Priority support for educational institutions during school hours</li>
+                            <li><strong>Data backup:</strong> Automated daily backups with 90-day retention for disaster recovery</li>
+                            <li><strong>Security monitoring:</strong> 24/7 security monitoring and incident response</li>
+                            <li><strong>Maintenance windows:</strong> Scheduled maintenance outside educational hours when possible</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 {/* Using CivicSense */}
                 <section id="using-civicsense" className="relative scroll-mt-24">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-3xl blur-xl"></div>
@@ -399,11 +446,13 @@ export default function TermsPage() {
                       <ul className="text-slate-700 dark:text-slate-300">
                         <li>Any indirect, incidental, special, consequential, or punitive damages</li>
                         <li>Loss of profits, data, use, goodwill, or other intangible losses</li>
-                        <li>Damages exceeding $100 or the amount paid to us in the past 12 months</li>
+                        <li><strong>Individual users:</strong> Damages exceeding $100 or the amount paid to us in the past 12 months</li>
+                        <li><strong>Educational institutions:</strong> Damages exceeding the annual license fee paid to us</li>
                         <li>Any matter beyond our reasonable control</li>
                       </ul>
                       <p className="text-slate-700 dark:text-slate-300 mt-4">
-                        This limitation applies regardless of the legal theory on which the claim is based.
+                        This limitation applies regardless of the legal theory on which the claim is based. For educational institutions,
+                        liability is specifically capped at the annual license fee as defined in your executed contract.
                       </p>
                     </div>
                   </div>
@@ -456,7 +505,9 @@ export default function TermsPage() {
                       <div>
                         <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">Governing Law</h3>
                         <p className="text-base text-slate-700 dark:text-slate-300">
-                          These Terms are governed by the laws of Delaware, USA, without regard to conflict of law principles.
+                          These Terms are governed by the laws of Delaware, USA (our state of incorporation), without regard to conflict of law principles. 
+                          For educational institutions, any applicable state educational data privacy laws will also apply and will not be superseded by Delaware law 
+                          where such state laws provide greater protection.
                         </p>
                       </div>
                     </div>
@@ -493,10 +544,13 @@ export default function TermsPage() {
                     </p>
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <ul className="text-slate-700 dark:text-slate-300">
-                        <li><strong>Email:</strong> legal@civicsense.com</li>
-                        <li><strong>Support:</strong> support@civicsense.com</li>
-                        <li><strong>Address:</strong> CivicSense, Inc., [Address]</li>
-                        <li><strong>Response time:</strong> We typically respond within 2-3 business days</li>
+                        <li><strong>Legal matters:</strong> legal@civicsense.com</li>
+                        <li><strong>General support:</strong> support@civicsense.com</li>
+                        <li><strong>Educational institutions:</strong> schools@civicsense.com</li>
+                        <li><strong>Privacy concerns:</strong> privacy@civicsense.com</li>
+                        <li><strong>Security issues:</strong> security@civicsense.com</li>
+                        <li><strong>Company:</strong> CivicSense Labs Inc.</li>
+                        <li><strong>Response time:</strong> Legal matters within 2-3 business days, educational institutions within 1 business day</li>
                       </ul>
                     </div>
                   </div>
@@ -517,7 +571,9 @@ export default function TermsPage() {
 
             {/* Table of Contents - Desktop Only */}
             <div className="hidden lg:block flex-shrink-0 w-64 ml-12">
-              <TableOfContents items={tocItems} />
+              <div className="sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
+                <TableOfContents items={tocItems} />
+              </div>
             </div>
           </div>
         </div>

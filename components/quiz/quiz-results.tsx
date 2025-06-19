@@ -6,6 +6,7 @@ import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, Ey
 import confetti from "canvas-confetti"
 import { useEffect, useState, useMemo, useCallback, memo, useRef } from "react"
 import { SocialShare } from "@/components/social-share"
+import { EnhancedSocialShare } from "@/components/enhanced-social-share"
 import { dataService } from "@/lib/data-service"
 import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
@@ -831,7 +832,14 @@ export function QuizResults({
         {/* Actions */}
         <div className="space-y-6">
           <div className="flex justify-center">
-            <SocialShare title={topicTitle} score={score} totalQuestions={totalQuestions} />
+            <EnhancedSocialShare 
+              title={topicTitle} 
+              score={score} 
+              totalQuestions={totalQuestions}
+              type="result"
+              emoji="🏛️"
+              showImageOptions={true}
+            />
           </div>
 
           <Button 

@@ -213,7 +213,7 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           {/*
           <DropdownMenuItem asChild>
             <Link 
-              href="/learning-pods" 
+                                    href="/pods" 
               className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
             >
               <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
