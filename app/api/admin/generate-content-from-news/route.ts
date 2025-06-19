@@ -9,6 +9,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Validate OpenAI API key exists
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ OPENAI_API_KEY environment variable is not set')
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
@@ -21,7 +26,7 @@ const GenerationRequestSchema = z.object({
   userId: z.string(),
   
   // Content generation controls
-  questionsPerTopic: z.number().min(3).max(12).default(6),
+  questionsPerTopic: z.number().min(3).max(50).default(6),
   questionTypeDistribution: z.object({
     multipleChoice: z.number().min(0).max(100).default(60),
     trueFalse: z.number().min(0).max(100).default(25),
@@ -111,6 +116,15 @@ interface GeneratedContent {
 
 export async function POST(request: NextRequest) {
   try {
+    // Early validation of required environment variables
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({
+        success: false,
+        error: 'OpenAI API key not configured',
+        details: 'Please set the OPENAI_API_KEY environment variable'
+      }, { status: 500 })
+    }
+
     const body = await request.json()
     const { 
       maxArticles, 
@@ -129,6 +143,7 @@ export async function POST(request: NextRequest) {
     } = GenerationRequestSchema.parse(body)
 
     console.log('🚀 Starting content generation from news articles...')
+    console.log('🔑 OpenAI API Key configured:', process.env.OPENAI_API_KEY ? 'Yes' : 'No')
 
     // Step 1: Fetch recent news articles from source_metadata
     const cutoffDate = new Date()
@@ -445,21 +460,35 @@ Return JSON in this exact format:
   ]
 }`
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      {
-        role: "system", 
-        content: "You are an expert civic educator who creates content that reveals how power actually works in American government. You write in a direct, engaging style that connects current events to fundamental democratic processes and citizen action."
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.7
-  })
+  let completion
+  try {
+    completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system", 
+          content: "You are an expert civic educator who creates content that reveals how power actually works in American government. You write in a direct, engaging style that connects current events to fundamental democratic processes and citizen action."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7
+    })
+  } catch (error: any) {
+    // Handle OpenAI API errors specifically
+    if (error?.status === 401) {
+      throw new Error('OpenAI API authentication failed - please check your API key')
+    } else if (error?.status === 429) {
+      throw new Error('OpenAI API rate limit exceeded - please try again later')
+    } else if (error?.status === 500) {
+      throw new Error('OpenAI API server error - please try again later')
+    } else {
+      throw new Error(`OpenAI API error: ${error?.message || 'Unknown error'}`)
+    }
+  }
 
   const content = completion.choices[0].message.content
   if (!content) {

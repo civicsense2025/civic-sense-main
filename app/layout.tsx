@@ -2,8 +2,10 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter, Space_Mono } from "next/font/google"
 import "./globals.css"
+import "../styles/accessibility.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
+import { AccessibilityProvider } from "@/components/accessibility/accessibility-provider"
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { PWAProvider } from "@/components/providers/pwa-provider"
 import { LanguageProvider } from "@/components/providers/language-provider"
@@ -126,22 +128,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <LanguageProvider>
             <AuthProvider>
-              <StatsigProvider>
-                <PWAProvider>
-                  <div className="min-h-screen flex flex-col w-full">
-                    <main className="flex-1 w-full">
-                      {children}
-                    </main>
-                    <Footer />
-                  </div>
-                  <Toaster />
-                  <GlobalAudioWrapper />
-                  <Analytics />
-                  <SpeedInsights />
-                  {process.env.NODE_ENV === 'development' && <PWAStatus />}
-                  <DebugSettingsPanel />
-                </PWAProvider>
-              </StatsigProvider>
+              <AccessibilityProvider>
+                <StatsigProvider>
+                  <PWAProvider>
+                    {/* Skip link for keyboard users */}
+                    <a href="#main-content" className="skip-link">
+                      Skip to main content
+                    </a>
+                    <div className="min-h-screen flex flex-col w-full">
+                      <main id="main-content" className="flex-1 w-full">
+                        {children}
+                      </main>
+                      <Footer />
+                    </div>
+                    <Toaster />
+                    <GlobalAudioWrapper />
+                    <Analytics />
+                    <SpeedInsights />
+                    {process.env.NODE_ENV === 'development' && <PWAStatus />}
+                    <DebugSettingsPanel />
+                  </PWAProvider>
+                </StatsigProvider>
+              </AccessibilityProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

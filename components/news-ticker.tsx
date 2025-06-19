@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/components/auth/auth-provider'
 import { usePremium } from '@/hooks/usePremium'
+import { useAccessibility, useAccessibilityKeyboardShortcuts } from '@/components/accessibility/accessibility-provider'
 import { AIDeckBuilder } from '@/lib/ai-deck-builder'
 import { cn } from '@/lib/utils'
 import { 
@@ -34,7 +35,8 @@ import {
   Filter,
   Search,
   ChevronDown,
-  X
+  X,
+  Accessibility
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Input } from '@/components/ui/input'
@@ -225,6 +227,7 @@ function EnhancedNewsCard({
   dimensions?: BiasDimension[]
 }) {
   const { toast } = useToast()
+  const { speak, announceToScreenReader, preferences } = useAccessibility()
   const credibilityBadge = getCredibilityBadge(article.credibilityScore || article.organization?.transparency_score || undefined)
   const biasBadge = getBiasBadge(article.biasRating)
   const biasIndicator = getBiasIndicator(article.organization)
@@ -236,12 +239,18 @@ function EnhancedNewsCard({
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setIsBookmarked(!isBookmarked)
+    const newBookmarkState = !isBookmarked
+    setIsBookmarked(newBookmarkState)
     onBookmark?.(article)
+    
+    const message = newBookmarkState ? "Article bookmarked" : "Bookmark removed"
     toast({
-      title: isBookmarked ? "Bookmark removed" : "Article bookmarked",
-      description: isBookmarked ? "Removed from your reading list" : "Added to your reading list"
+      title: message,
+      description: newBookmarkState ? "Added to your reading list" : "Removed from your reading list"
     })
+    
+    // Announce to screen readers
+    announceToScreenReader(message)
   }
 
   const handleShare = (e: React.MouseEvent) => {
@@ -338,9 +347,56 @@ function EnhancedNewsCard({
     )
   }
 
+  // Handle keyboard navigation and focus
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault()
+        onClick()
+        break
+      case 'r':
+      case 'R':
+        if (preferences.audioEnabled) {
+          e.preventDefault()
+          const textToRead = `${article.title}. ${article.description}`
+          speak(textToRead)
+          announceToScreenReader("Reading article")
+        }
+        break
+      case 'b':
+      case 'B':
+        e.preventDefault()
+        handleBookmark(e as any)
+        break
+      case 's':
+      case 'S':
+        e.preventDefault()
+        handleShare(e as any)
+        break
+    }
+  }
+
+  // Auto-play title when focused (if enabled)
+  const handleFocus = () => {
+    if (preferences.audioEnabled && preferences.autoPlayQuestions) {
+      const textToRead = `${article.source.name} article: ${article.title}`
+      speak(textToRead, { interrupt: false })
+    }
+    announceToScreenReader(`Focused on article: ${article.title}`)
+  }
+
   return (
     <div 
-      className="flex-shrink-0 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-4 transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20 bg-white dark:bg-gray-800"
+      className={cn(
+        "news-card flex-shrink-0 cursor-pointer group rounded-lg p-4 transition-all duration-200 border bg-white dark:bg-gray-800",
+        preferences.reducedMotion 
+          ? "hover:bg-slate-50 dark:hover:bg-slate-800/50" 
+          : "hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20",
+        preferences.highContrast 
+          ? "border-white" 
+          : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"
+      )}
       style={{ 
         width: showAnalysis ? '600px' : '380px', 
         minWidth: showAnalysis ? '600px' : '380px', 
@@ -349,6 +405,12 @@ function EnhancedNewsCard({
         minHeight: '300px'
       }}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      tabIndex={0}
+      role="article"
+      aria-label={`Article: ${article.title} from ${article.source.name}`}
+      aria-describedby={`article-description-${article.id}`}
     >
       {/* Enhanced thumbnail */}
       <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 relative mb-3">
@@ -747,6 +809,10 @@ export function NewsTicker({
   const { user } = useAuth()
   const { hasFeatureAccess } = usePremium()
   const { toast } = useToast()
+  const { speak, announceToScreenReader, preferences } = useAccessibility()
+  
+  // Enable keyboard shortcuts for this component
+  useAccessibilityKeyboardShortcuts()
   
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [filteredArticles, setFilteredArticles] = useState<NewsArticle[]>([])
@@ -858,10 +924,14 @@ export function NewsTicker({
       setNewsSource(data.source || null)
       setError(null)
       
+      const updateMessage = `News updated: ${enhancedArticles.length} articles loaded`
       toast({
         title: "News updated",
         description: `Loaded ${enhancedArticles.length} articles from ${data.source || 'multiple sources'}`
       })
+      
+      // Announce to screen readers
+      announceToScreenReader(updateMessage)
       
     } catch (err) {
       setError('Failed to load news articles')
@@ -1151,6 +1221,19 @@ export function NewsTicker({
                 </Badge>
               )}
             </p>
+            
+            {/* Keyboard navigation help */}
+            {preferences.keyboardShortcuts && (
+              <div className="sr-only" aria-live="polite">
+                Keyboard navigation: Tab to focus articles, Enter to open, R to read aloud, B to bookmark, S to share
+              </div>
+            )}
+            
+            {/* Screen reader description */}
+            <div className="sr-only">
+              Live news ticker with {filteredArticles.length} political articles. Use Tab key to navigate between articles. 
+              Each article shows source, title, description, and publication time.
+            </div>
           </CardHeader>
 
           {/* Content */}
@@ -1226,6 +1309,38 @@ export function NewsTicker({
             </div>
           </Card>
         </div>
+
+        {/* Accessibility Help Section */}
+        {preferences.keyboardShortcuts && (
+          <Card className="mt-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Accessibility className="h-4 w-4" />
+                Keyboard Navigation Guide
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h4 className="font-medium mb-2">Article Navigation</h4>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li><kbd className="bg-white px-1 rounded text-xs">Tab</kbd> Navigate between articles</li>
+                    <li><kbd className="bg-white px-1 rounded text-xs">Enter</kbd> Open article</li>
+                    <li><kbd className="bg-white px-1 rounded text-xs">R</kbd> Read article aloud</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Article Actions</h4>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li><kbd className="bg-white px-1 rounded text-xs">B</kbd> Bookmark article</li>
+                    <li><kbd className="bg-white px-1 rounded text-xs">S</kbd> Share article</li>
+                    <li><kbd className="bg-white px-1 rounded text-xs">Esc</kbd> Stop reading</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </TooltipProvider>
   )

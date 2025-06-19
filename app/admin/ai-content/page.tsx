@@ -260,6 +260,8 @@ export default function AIContentAdminPage() {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [scheduledJobs, setScheduledJobs] = useState<any[]>([])
   const [showScheduleDialog, setShowScheduleDialog] = useState(false)
+  const [isTestingApiKey, setIsTestingApiKey] = useState(false)
+  const [apiKeyTestResult, setApiKeyTestResult] = useState<{ success: boolean, message: string } | null>(null)
   const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
     maxArticles: 10,
     daysSinceCreated: 7,
@@ -550,6 +552,22 @@ export default function AIContentAdminPage() {
         })
       })
       
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorMessage = 'Server error occurred'
+        
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error || errorData.details || errorMessage
+        } catch {
+          // If not JSON, use the raw text
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
       const result: GenerationResult = await response.json()
       setGenerationResult(result)
       
@@ -559,23 +577,62 @@ export default function AIContentAdminPage() {
           description: result.message,
         })
         
-        // Refresh the admin data to show new content
-        window.location.reload()
+        // Only refresh if we actually generated content
+        if (result.results?.topicsGenerated && result.results.topicsGenerated > 0) {
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500) // Give user time to see the success message
+        }
       } else {
-        toast({
-          title: "Generation Failed",
-          description: result.error || 'Unknown error occurred',
-          variant: "destructive"
-        })
+        // Handle specific error types
+        const errorMessage = result.error || 'Unknown error occurred'
+        
+        if (errorMessage.includes('API key')) {
+          toast({
+            title: "API Configuration Error",
+            description: "OpenAI API key is missing or invalid. Please check your environment variables.",
+            variant: "destructive"
+          })
+        } else if (errorMessage.includes('rate limit')) {
+          toast({
+            title: "Rate Limit Exceeded",
+            description: "Please wait a moment before trying again.",
+            variant: "destructive"
+          })
+        } else {
+          toast({
+            title: "Generation Failed",
+            description: errorMessage,
+            variant: "destructive"
+          })
+        }
       }
       
     } catch (error) {
       console.error('Error generating content:', error)
-      toast({
-        title: "Generation Error",
-        description: "Failed to communicate with the server",
-        variant: "destructive"
-      })
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      // Handle specific error cases
+      if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+        toast({
+          title: "API Configuration Error",
+          description: "OpenAI API key is missing or invalid. Please check your .env file.",
+          variant: "destructive"
+        })
+      } else if (errorMessage.includes('NetworkError') || errorMessage.includes('fetch')) {
+        toast({
+          title: "Network Error",
+          description: "Failed to connect to the server. Please check your internet connection.",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Generation Error",
+          description: errorMessage,
+          variant: "destructive"
+        })
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -600,6 +657,21 @@ export default function AIContentAdminPage() {
         })
       })
       
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorMessage = 'Server error occurred'
+        
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error || errorData.details || errorMessage
+        } catch {
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
       const result = await response.json()
       setPreviewData(result)
       
@@ -609,20 +681,41 @@ export default function AIContentAdminPage() {
           description: "Review the content that would be generated",
         })
       } else {
-        toast({
-          title: "Preview Failed",
-          description: result.error || 'Failed to generate preview',
-          variant: "destructive"
-        })
+        const errorMessage = result.error || 'Failed to generate preview'
+        
+        if (errorMessage.includes('API key')) {
+          toast({
+            title: "API Configuration Error",
+            description: "OpenAI API key is missing or invalid. Cannot generate preview.",
+            variant: "destructive"
+          })
+        } else {
+          toast({
+            title: "Preview Failed",
+            description: errorMessage,
+            variant: "destructive"
+          })
+        }
       }
       
     } catch (error) {
       console.error('Error generating preview:', error)
-      toast({
-        title: "Preview Error",
-        description: "Failed to generate preview",
-        variant: "destructive"
-      })
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+        toast({
+          title: "API Configuration Error",
+          description: "OpenAI API key is missing or invalid. Please check your .env file.",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Preview Error",
+          description: errorMessage,
+          variant: "destructive"
+        })
+      }
     } finally {
       setIsLoadingPreview(false)
     }
@@ -659,6 +752,56 @@ export default function AIContentAdminPage() {
       setScheduledJobs([])
     } catch (error) {
       console.error('Error loading scheduled jobs:', error)
+    }
+  }
+
+  const handleTestApiKey = async () => {
+    setIsTestingApiKey(true)
+    setApiKeyTestResult(null)
+    
+    try {
+      const response = await fetch('/api/admin/test-openai', {
+        method: 'GET'
+      })
+      
+      const result = await response.json()
+      
+      setApiKeyTestResult({
+        success: result.success,
+        message: result.success 
+          ? `✅ ${result.message} (${result.model_used})`
+          : `❌ ${result.error}: ${result.details}`
+      })
+      
+      if (result.success) {
+        toast({
+          title: "API Key Test Successful",
+          description: "OpenAI API key is working correctly",
+        })
+      } else {
+        toast({
+          title: "API Key Test Failed",
+          description: result.details || result.error,
+          variant: "destructive"
+        })
+      }
+      
+    } catch (error) {
+      console.error('Error testing API key:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Network error'
+      
+      setApiKeyTestResult({
+        success: false,
+        message: `❌ Test failed: ${errorMessage}`
+      })
+      
+      toast({
+        title: "API Key Test Error",
+        description: errorMessage,
+        variant: "destructive"
+      })
+    } finally {
+      setIsTestingApiKey(false)
     }
   }
 
@@ -962,6 +1105,7 @@ export default function AIContentAdminPage() {
                         <SelectItem value="30">30 questions</SelectItem>
                         <SelectItem value="35">35 questions</SelectItem>
                         <SelectItem value="40">40 questions</SelectItem>
+                        <SelectItem value="50">50 questions</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1174,6 +1318,8 @@ export default function AIContentAdminPage() {
                       Enable web search for real-time information
                     </label>
                   </div>
+                  
+
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">Custom System Prompt (Optional)</label>

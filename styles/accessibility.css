@@ -1,0 +1,398 @@
+/* CivicSense Accessibility Styles */
+/* Applied globally based on user accessibility preferences */
+
+/* Screen Reader Only - for content that should only be read by screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* High Contrast Mode */
+.accessibility-high-contrast {
+  /* Text and backgrounds */
+  --contrast-text: #ffffff;
+  --contrast-background: #000000;
+  --contrast-primary: #ffff00;
+  --contrast-secondary: #00ffff;
+  --contrast-accent: #ff00ff;
+  --contrast-border: #ffffff;
+  --contrast-link: #00ff00;
+  --contrast-visited: #ff69b4;
+  --contrast-focus: #ffff00;
+  --contrast-error: #ff0000;
+  --contrast-success: #00ff00;
+  --contrast-warning: #ffa500;
+}
+
+.accessibility-high-contrast * {
+  /* Force high contrast colors */
+  background-color: var(--contrast-background) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-border) !important;
+}
+
+.accessibility-high-contrast a {
+  color: var(--contrast-link) !important;
+  text-decoration: underline !important;
+}
+
+.accessibility-high-contrast a:visited {
+  color: var(--contrast-visited) !important;
+}
+
+.accessibility-high-contrast button,
+.accessibility-high-contrast [role="button"] {
+  background-color: var(--contrast-primary) !important;
+  color: var(--contrast-background) !important;
+  border: 2px solid var(--contrast-border) !important;
+  font-weight: bold !important;
+}
+
+.accessibility-high-contrast button:hover,
+.accessibility-high-contrast [role="button"]:hover {
+  background-color: var(--contrast-secondary) !important;
+}
+
+.accessibility-high-contrast button:focus,
+.accessibility-high-contrast [role="button"]:focus,
+.accessibility-high-contrast *:focus {
+  outline: 3px solid var(--contrast-focus) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 5px var(--contrast-focus) !important;
+}
+
+.accessibility-high-contrast input,
+.accessibility-high-contrast textarea,
+.accessibility-high-contrast select {
+  background-color: var(--contrast-background) !important;
+  color: var(--contrast-text) !important;
+  border: 2px solid var(--contrast-border) !important;
+}
+
+.accessibility-high-contrast .bg-blue-50,
+.accessibility-high-contrast .bg-blue-100,
+.accessibility-high-contrast .bg-green-50,
+.accessibility-high-contrast .bg-green-100,
+.accessibility-high-contrast .bg-red-50,
+.accessibility-high-contrast .bg-red-100,
+.accessibility-high-contrast .bg-yellow-50,
+.accessibility-high-contrast .bg-yellow-100 {
+  background-color: var(--contrast-background) !important;
+}
+
+.accessibility-high-contrast .text-blue-600,
+.accessibility-high-contrast .text-blue-700,
+.accessibility-high-contrast .text-green-600,
+.accessibility-high-contrast .text-green-700 {
+  color: var(--contrast-success) !important;
+}
+
+.accessibility-high-contrast .text-red-600,
+.accessibility-high-contrast .text-red-700 {
+  color: var(--contrast-error) !important;
+}
+
+.accessibility-high-contrast .text-yellow-600,
+.accessibility-high-contrast .text-yellow-700 {
+  color: var(--contrast-warning) !important;
+}
+
+/* Large Text Mode */
+.accessibility-large-text {
+  /* Increase base font size */
+  font-size: 118% !important;
+}
+
+.accessibility-large-text * {
+  /* Scale up all text elements */
+  font-size: inherit !important;
+  line-height: 1.6 !important;
+}
+
+.accessibility-large-text h1 {
+  font-size: 2.5rem !important;
+}
+
+.accessibility-large-text h2 {
+  font-size: 2rem !important;
+}
+
+.accessibility-large-text h3 {
+  font-size: 1.75rem !important;
+}
+
+.accessibility-large-text h4 {
+  font-size: 1.5rem !important;
+}
+
+.accessibility-large-text h5 {
+  font-size: 1.25rem !important;
+}
+
+.accessibility-large-text h6 {
+  font-size: 1.125rem !important;
+}
+
+.accessibility-large-text .text-xs {
+  font-size: 0.875rem !important;
+}
+
+.accessibility-large-text .text-sm {
+  font-size: 1rem !important;
+}
+
+.accessibility-large-text .text-base {
+  font-size: 1.125rem !important;
+}
+
+.accessibility-large-text .text-lg {
+  font-size: 1.25rem !important;
+}
+
+.accessibility-large-text .text-xl {
+  font-size: 1.5rem !important;
+}
+
+.accessibility-large-text button,
+.accessibility-large-text [role="button"] {
+  font-size: 1.125rem !important;
+  padding: 0.75rem 1.5rem !important;
+  min-height: 44px !important;
+}
+
+.accessibility-large-text input,
+.accessibility-large-text textarea,
+.accessibility-large-text select {
+  font-size: 1.125rem !important;
+  padding: 0.75rem !important;
+  min-height: 44px !important;
+}
+
+/* Reduced Motion Mode */
+.accessibility-reduced-motion,
+.accessibility-reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.accessibility-reduced-motion *::before,
+.accessibility-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Keep essential focus transitions */
+.accessibility-reduced-motion *:focus {
+  transition: outline 0.15s ease-in-out !important;
+}
+
+/* Remove parallax and transform animations */
+.accessibility-reduced-motion .parallax,
+.accessibility-reduced-motion [style*="transform"] {
+  transform: none !important;
+}
+
+/* Stop auto-playing content */
+.accessibility-reduced-motion .autoplay,
+.accessibility-reduced-motion [autoplay] {
+  animation-play-state: paused !important;
+}
+
+/* Enhanced Focus Indicators for All Modes */
+button:focus,
+[role="button"]:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus,
+[tabindex]:focus {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 1px #ffffff, 0 0 0 4px #2563eb !important;
+}
+
+/* Quiz-specific accessibility enhancements */
+.quiz-question {
+  scroll-margin-top: 2rem;
+}
+
+.quiz-option {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.quiz-option:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.quiz-option:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px #93c5fd;
+}
+
+.quiz-option.selected {
+  border-color: #2563eb;
+  background-color: #dbeafe;
+}
+
+.quiz-option input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.75rem;
+  accent-color: #2563eb;
+}
+
+/* News ticker accessibility */
+.news-card {
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.news-card:focus-within {
+  border-color: #2563eb;
+  outline: none;
+}
+
+.news-card:hover {
+  border-color: #3b82f6;
+}
+
+/* Skip links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #2563eb;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 0 0 4px 4px;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Screen reader improvements */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Keyboard navigation helpers */
+.keyboard-only {
+  display: none;
+}
+
+.keyboard-only:focus {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #2563eb;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  z-index: 1000;
+}
+
+/* Progress indicators for screen readers */
+.progress-announcement {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.progress-announcement[aria-live] {
+  left: auto;
+  width: auto;
+  height: auto;
+  position: static;
+}
+
+/* High contrast mode for specific components */
+.accessibility-high-contrast .news-ticker {
+  border: 3px solid var(--contrast-border) !important;
+}
+
+.accessibility-high-contrast .quiz-container {
+  border: 3px solid var(--contrast-border) !important;
+  background: var(--contrast-background) !important;
+}
+
+.accessibility-high-contrast .accessibility-feedback-form {
+  background: var(--contrast-background) !important;
+  border: 3px solid var(--contrast-border) !important;
+}
+
+/* Touch target improvements */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  input,
+  textarea,
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .quiz-option {
+    min-height: 54px;
+    padding: 1rem;
+  }
+  
+  .news-card {
+    min-height: 120px;
+    padding: 1rem;
+  }
+}
+
+/* Print accessibility */
+@media print {
+  .skip-link,
+  .screen-reader-only,
+  button,
+  [role="button"] {
+    display: none !important;
+  }
+  
+  a {
+    text-decoration: underline !important;
+  }
+  
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+} 
