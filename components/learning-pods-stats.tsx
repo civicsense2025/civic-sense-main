@@ -173,9 +173,9 @@ export function LearningPodsStats({ className, compact = false }: LearningPodsSt
     return (
       <div className={cn("grid grid-cols-2 md:grid-cols-3 gap-4", className)}>
         {/* Total Pods */}
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="shadow-lg border-0 bg-white dark:bg-slate-800">
           <CardContent className="p-4 text-center">
-            <Users className="h-6 w-6 mx-auto mb-2 text-blue-600 dark:text-blue-400" />
+            <Users className="h-6 w-6 mx-auto mb-2 text-slate-600 dark:text-slate-400" />
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
               {podStats.totalPods}
             </p>
@@ -184,7 +184,7 @@ export function LearningPodsStats({ className, compact = false }: LearningPodsSt
         </Card>
 
         {/* Role */}
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20">
+        <Card className="shadow-lg border-0 bg-white dark:bg-slate-800">
           <CardContent className="p-4 text-center">
             {getRoleIcon()}
             <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-2">
@@ -196,9 +196,9 @@ export function LearningPodsStats({ className, compact = false }: LearningPodsSt
 
         {/* Ranking */}
         {podStats.podRanking > 0 && (
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+          <Card className="shadow-lg border-0 bg-white dark:bg-slate-800">
             <CardContent className="p-4 text-center">
-              <Trophy className="h-6 w-6 mx-auto mb-2 text-purple-600 dark:text-purple-400" />
+              <Trophy className="h-6 w-6 mx-auto mb-2 text-slate-600 dark:text-slate-400" />
               <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
                 #{podStats.podRanking}
               </p>

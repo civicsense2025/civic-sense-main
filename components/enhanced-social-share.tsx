@@ -402,7 +402,7 @@ export function EnhancedSocialShare({
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent className="w-80 p-0" align="start">
+        <DropdownMenuContent className="w-80 p-0" align="end">
           <DropdownMenuLabel className="px-4 py-3 text-base font-semibold bg-authority-blue-50 text-authority-blue-900">
             Share to Social Media
           </DropdownMenuLabel>
@@ -419,7 +419,7 @@ export function EnhancedSocialShare({
                 <PlatformIcon platform="x" />
                 <div className="text-left">
                   <div className="font-medium text-sm">X</div>
-                  <div className="text-xs text-gray-500">1200x675</div>
+                  <div className="text-xs text-gray-500 hidden sm:block">1200x675</div>
                 </div>
               </Button>
               
@@ -432,7 +432,7 @@ export function EnhancedSocialShare({
                 <PlatformIcon platform="facebook" />
                 <div className="text-left">
                   <div className="font-medium text-sm">Facebook</div>
-                  <div className="text-xs text-gray-500">1200x630</div>
+                  <div className="text-xs text-gray-500 hidden sm:block">1200x630</div>
                 </div>
               </Button>
               
@@ -445,7 +445,7 @@ export function EnhancedSocialShare({
                 <PlatformIcon platform="linkedin" />
                 <div className="text-left">
                   <div className="font-medium text-sm">LinkedIn</div>
-                  <div className="text-xs text-gray-500">1200x627</div>
+                  <div className="text-xs text-gray-500 hidden sm:block">1200x627</div>
                 </div>
               </Button>
               
@@ -458,7 +458,7 @@ export function EnhancedSocialShare({
                 <PlatformIcon platform="instagram" />
                 <div className="text-left">
                   <div className="font-medium text-sm">Instagram</div>
-                  <div className="text-xs text-gray-500">Story & Post</div>
+                  <div className="text-xs text-gray-500 hidden sm:block">Story & Post</div>
                 </div>
               </Button>
             </div>
@@ -483,7 +483,7 @@ export function EnhancedSocialShare({
                   <div className="font-medium text-sm capitalize">
                     {template.replace('-', ' ')}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 hidden sm:block">
                     {dimensions.width}x{dimensions.height} • {dimensions.platform}
                   </div>
                 </div>

@@ -1,20 +1,288 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Menu, X, BarChart3, Settings, Crown, Users, Brain, LogOut } from "lucide-react"
 import { Button } from "./ui/button"
 import { UserMenu } from "./auth/user-menu"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 import { arePodsEnabled, isMultiplayerEnabled } from "@/lib/feature-flags"
+import { useTheme } from "next-themes"
+import { usePremium } from "@/hooks/usePremium"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
+import { LearningPodsStats } from "./learning-pods-stats"
 
 interface HeaderProps {
   onSignInClick?: () => void
   className?: string
   showTopBar?: boolean
   showMainHeader?: boolean
+}
+
+interface MobileUserMenuProps {
+  user: any
+  onSignInClick?: () => void
+  onClose: () => void
+  pathname: string
+  signOut: () => Promise<void>
+}
+
+function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut }: MobileUserMenuProps) {
+  const { theme, setTheme } = useTheme()
+  const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { isPremium, subscription } = usePremium()
+  const { isAdmin } = useAdminAccess()
+
+  // Load user stats when component mounts
+  useEffect(() => {
+    const loadUserStats = async () => {
+      if (!user?.id) return
+      
+      setIsLoading(true)
+      try {
+        const progress = await enhancedProgressOperations.getComprehensiveStats(user.id)
+        setUserProgress(progress)
+      } catch (error) {
+        console.error('Error loading user stats:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (user) {
+      loadUserStats()
+    }
+  }, [user])
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
+  const getUserTitle = () => {
+    if (isPremium) {
+      return subscription?.subscription_tier === 'pro' ? 'Pro Member' : 'Premium Member'
+    }
+    return userProgress?.currentLevel ? `Level ${userProgress.currentLevel}` : 'Member'
+  }
+
+  const getTierBadge = () => {
+    if (subscription?.subscription_tier === 'pro') return { icon: Crown, color: 'text-yellow-500', label: 'Pro' }
+    if (isPremium) return { icon: Crown, color: 'text-blue-500', label: 'Premium' }
+    return null
+  }
+
+  const userEmail = user?.email || 'user@example.com'
+  const tierBadge = getTierBadge()
+
+  return (
+    <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
+      {/* Main CTA at top of mobile menu */}
+      <div className="pb-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
+        <Link 
+          href="/civics-test"
+          onClick={onClose}
+          className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-4 px-4 rounded-md text-base font-semibold transition-colors"
+        >
+          Take A Civics Test
+        </Link>
+      </div>
+
+      {/* User Info Section - only show if authenticated */}
+      {user && (
+        <div className="pb-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-slate-900 font-medium shadow-sm">
+              {userEmail.split('@')[0].substring(0, 2).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                  {userEmail.split('@')[0]}
+                </p>
+                {tierBadge && (
+                  <div className={`flex items-center space-x-1 ${tierBadge.color}`}>
+                    <tierBadge.icon className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                {getUserTitle()}
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Section */}
+          {userProgress && !isLoading && (
+            <div className="grid grid-cols-3 gap-6 text-center py-2">
+              <div>
+                <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {userProgress.currentStreak || 0}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Day Streak
+                </div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {userProgress.totalXp || 0}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Total XP
+                </div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {userProgress.currentLevel || 1}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Level
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Learning Pods Section - feature flagged */}
+          {arePodsEnabled() && (
+            <div className="mt-4">
+              <LearningPodsStats compact={true} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Navigation Links */}
+      <div className="space-y-3">
+        {pathname !== '/' && (
+          <Link 
+            href="/"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <span>🏠</span>
+            <span>Home</span>
+          </Link>
+        )}
+        
+        <Link 
+          href="/categories"
+          onClick={onClose}
+          className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+        >
+          <span>📚</span>
+          <span>Categories</span>
+        </Link>
+
+        {/* Multiplayer link - feature flagged */}
+        {isMultiplayerEnabled() && (
+          <Link 
+            href="/multiplayer"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <span>🎮</span>
+            <span>Multiplayer</span>
+          </Link>
+        )}
+
+        {/* Learning Pods link - feature flagged */}
+        {arePodsEnabled() && (
+          <Link 
+            href="/pods"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <Users className="w-5 h-5" />
+            <span>Learning Pods</span>
+          </Link>
+        )}
+
+        <Link 
+          href="/donate"
+          onClick={onClose}
+          className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+        >
+          <span>❤️</span>
+          <span>Support</span>
+        </Link>
+      </div>
+      
+      {/* User Menu Items */}
+      {user ? (
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+          <Link 
+            href="/dashboard"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Dashboard</span>
+          </Link>
+          
+          <Link 
+            href="/settings"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </Link>
+
+          {/* Admin Panel - Only show for authorized users */}
+          {isAdmin && (
+            <Link 
+              href="/admin/ai-content"
+              onClick={onClose}
+              className="flex items-center space-x-3 text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors py-2 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/20"
+            >
+              <Brain className="w-5 h-5" />
+              <span>AI Content Review</span>
+            </Link>
+          )}
+
+          <button
+            onClick={() => {
+              toggleTheme()
+            }}
+            className="flex items-center space-x-3 w-full text-left text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <span className="text-base">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
+          <button
+            onClick={async () => {
+              onClose()
+              try {
+                await signOut()
+              } catch (error) {
+                console.error('Error signing out:', error)
+              }
+            }}
+            className="flex items-center space-x-3 w-full text-left text-base text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors py-2 px-3 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      ) : (
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+          <button
+            onClick={() => {
+              onClose()
+              onSignInClick && onSignInClick()
+            }}
+            className="block w-full text-left text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function Header({
@@ -116,7 +384,7 @@ export function Header({
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Menu content */}
-          <div className="sm:hidden fixed top-0 left-0 right-0 z-[95] bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="sm:hidden fixed top-0 left-0 right-0 z-[95] bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-xl max-h-screen overflow-y-auto">
             {/* Header in mobile menu */}
             <div className="flex items-center justify-between px-3 py-3 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2">
@@ -136,122 +404,13 @@ export function Header({
               </button>
             </div>
             
-            {/* Menu content */}
-            <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
-              {/* Main CTA at top of mobile menu */}
-              <div className="pb-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
-                <Link 
-                  href="/civics-test"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-4 px-4 rounded-md text-base font-semibold transition-colors"
-                >
-                  Take A Civics Test
-                </Link>
-              </div>
-
-              {/* Navigation Links */}
-              <div className="space-y-3">
-                {pathname !== '/' && (
-                  <Link 
-                    href="/"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                  >
-                    Home
-                  </Link>
-                )}
-                
-                <Link 
-                  href="/categories"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                >
-                  Categories
-                </Link>
-
-                {/* Multiplayer link - feature flagged */}
-                {isMultiplayerEnabled() && (
-                  <Link 
-                    href="/multiplayer"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                  >
-                    🎮 Multiplayer
-                  </Link>
-                )}
-
-                {/* Learning Pods link - feature flagged */}
-                {arePodsEnabled() && (
-                  <Link 
-                    href="/pods"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                  >
-                    👥 Learning Pods
-                  </Link>
-                )}
-
-                <Link 
-                  href="/donate"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                >
-                  Support
-                </Link>
-              </div>
-              
-              {/* Divider */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                {/* Authentication Links - Mobile Only */}
-                <div className="space-y-3">
-                  {!user ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setIsMobileMenuOpen(false)
-                          onSignInClick && onSignInClick()
-                        }}
-                        className="block w-full text-left text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                      >
-                        Sign In
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link 
-                        href="/dashboard"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                      >
-                        Dashboard
-                      </Link>
-                      
-                      <Link 
-                        href="/settings"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                      >
-                        Settings
-                      </Link>
-                      
-                      <button
-                        onClick={async () => {
-                          setIsMobileMenuOpen(false)
-                          try {
-                            await signOut()
-                          } catch (error) {
-                            console.error('Error signing out:', error)
-                          }
-                        }}
-                        className="block w-full text-left text-base text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors py-2 px-3 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
-                      >
-                        Sign Out
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+            <MobileUserMenu 
+              user={user}
+              onSignInClick={onSignInClick}
+              onClose={() => setIsMobileMenuOpen(false)}
+              pathname={pathname}
+              signOut={signOut}
+            />
           </div>
         </>
       )}

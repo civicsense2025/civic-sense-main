@@ -435,7 +435,7 @@ export const uiStrings = {
 
   // Learning Pods
   learningPods: {
-    title: 'Learning Pods',
+    title: 'Pods',
     subtitle: 'Learn together in small groups',
     createPod: 'Create Pod',
     joinPod: 'Join Pod',
