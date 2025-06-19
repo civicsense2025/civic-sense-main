@@ -38,8 +38,8 @@ function AvatarButton({
   }
 
   const getAvatarColor = (email: string) => {
-    // Use a neutral color instead of generating based on email
-    return 'bg-slate-500 dark:bg-slate-600'
+    // Use CivicSense brand colors instead of slate
+    return 'bg-primary hover:bg-primary/90'
   }
 
   const userEmail = user.email || 'user@example.com'
@@ -47,10 +47,10 @@ function AvatarButton({
   return (
     <button
       onClick={onClick}
-      className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-600 hover:ring-offset-2 hover:ring-offset-white dark:hover:ring-offset-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+      className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
     >
       {/* Avatar Circle */}
-      <div className={`w-10 h-10 rounded-full ${getAvatarColor(userEmail)} flex items-center justify-center text-white font-medium text-sm shadow-lg`}>
+      <div className={`w-10 h-10 rounded-full ${getAvatarColor(userEmail)} flex items-center justify-center text-primary-foreground font-medium text-sm shadow-lg transition-all duration-200`}>
         {getInitials(userEmail)}
       </div>
     </button>
@@ -112,8 +112,8 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
   }
 
   const getTierBadge = () => {
-    if (subscription?.subscription_tier === 'pro') return { icon: Crown, color: 'text-purple-500', label: 'Pro' }
-    if (isPremium) return { icon: Crown, color: 'text-blue-500', label: 'Premium' }
+    if (subscription?.subscription_tier === 'pro') return { icon: Crown, color: 'text-accent', label: 'Pro' }
+    if (isPremium) return { icon: Crown, color: 'text-primary', label: 'Premium' }
     return null
   }
 
@@ -133,16 +133,16 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-0">
+      <DropdownMenuContent align="end" className="w-80 p-0 rounded-xl border-border/50">
         {/* User Info Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-6 border-b border-border/50">
           <div className="flex items-center space-x-4">
-            <div className={`w-12 h-12 rounded-full ${userProgress ? 'bg-blue-500' : 'bg-slate-400'} flex items-center justify-center text-white font-medium shadow-lg`}>
+            <div className={`w-12 h-12 rounded-2xl ${userProgress ? 'bg-primary' : 'bg-muted-foreground'} flex items-center justify-center text-primary-foreground font-medium shadow-sm`}>
               {userEmail.split('@')[0].substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {userEmail.split('@')[0]}
                 </p>
                 {tierBadge && (
@@ -151,7 +151,7 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
                   </div>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {getUserTitle()}
               </p>
             </div>
@@ -160,29 +160,29 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
 
         {/* Stats Section */}
         {userProgress && !isLoading && (
-          <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+          <div className="p-6 border-b border-border/50">
             <div className="grid grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="py-2">
+                <div className="text-lg font-bold text-foreground">
                   {userProgress.currentStreak || 0}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
+                <div className="text-xs text-muted-foreground">
                   Day Streak
                 </div>
               </div>
-              <div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="py-2">
+                <div className="text-lg font-bold text-foreground">
                   {userProgress.totalXp || 0}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
+                <div className="text-xs text-muted-foreground">
                   Total XP
                 </div>
               </div>
-              <div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="py-2">
+                <div className="text-lg font-bold text-foreground">
                   {userProgress.currentLevel || 1}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
+                <div className="text-xs text-muted-foreground">
                   Level
                 </div>
               </div>
@@ -192,20 +192,20 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
 
         {/* Learning Pods Section - temporarily hidden until ready for public use */}
         {/*
-        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-5 border-b border-border">
           <LearningPodsStats compact={true} />
         </div>
         */}
 
         {/* Menu Items */}
-        <div className="py-3">
+        <div className="py-2 px-2">
           <DropdownMenuItem asChild>
             <Link 
               href="/dashboard" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
             >
-              <BarChart3 className="w-4 h-4" />
-              <span>Dashboard</span>
+              <BarChart3 className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Dashboard</span>
             </Link>
           </DropdownMenuItem>
           
@@ -214,10 +214,10 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           <DropdownMenuItem asChild>
             <Link 
               href="/learning-pods" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
             >
-              <Users className="w-4 h-4" />
-              <span>Learning Pods</span>
+              <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Learning Pods</span>
             </Link>
           </DropdownMenuItem>
           */}
@@ -225,10 +225,10 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           <DropdownMenuItem asChild>
             <Link 
               href="/settings" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors rounded-sm"
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
             >
-              <Settings className="w-4 h-4" />
-              <span>Settings</span>
+              <Settings className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Settings</span>
             </Link>
           </DropdownMenuItem>
 
@@ -237,32 +237,30 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
             <DropdownMenuItem asChild>
               <Link 
                 href="/admin/ai-content" 
-                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20 focus:bg-blue-50 dark:focus:bg-blue-950/20 transition-colors rounded-sm text-blue-600 dark:text-blue-400"
+                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all duration-200 rounded-lg text-primary group"
               >
-                <Brain className="w-4 h-4" />
-                <span>AI Content Review</span>
+                <Brain className="w-4 h-4 group-hover:scale-105 transition-transform" />
+                <span className="font-medium">AI Content Review</span>
               </Link>
             </DropdownMenuItem>
           )}
 
-          <DropdownMenuSeparator />
-
           <DropdownMenuItem 
             onClick={toggleTheme} 
-            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800 transition-colors"
+            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
           >
-            <span className="text-base">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            <span className="text-base group-hover:scale-105 transition-transform">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+
 
           <DropdownMenuItem 
             onClick={handleSignOut} 
-            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 text-red-600 dark:text-red-400 transition-colors"
+            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-destructive/5 hover:text-destructive focus:bg-destructive/5 focus:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/20 focus:ring-offset-0 text-destructive transition-all duration-200 rounded-lg group"
           >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <LogOut className="w-4 h-4 group-hover:scale-105 transition-transform" />
+            <span className="font-medium">Sign Out</span>
           </DropdownMenuItem>
         </div>
       </DropdownMenuContent>

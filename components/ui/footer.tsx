@@ -36,6 +36,12 @@ export function Footer() {
             
             <div className="flex items-center space-x-4 sm:space-x-6">
               <Link 
+                href="/changelog" 
+                className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+              >
+                What's New
+              </Link>
+              <Link 
                 href="/privacy" 
                 className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
               >

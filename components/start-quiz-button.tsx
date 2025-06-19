@@ -54,7 +54,7 @@ export function StartQuizButton({
   }, []);
 
   const baseClasses =
-    "rounded-xl shadow-sm px-8 py-6 text-2xl font-light transition-all duration-200 flex items-center justify-center gap-2 relative z-10"
+    "rounded-full shadow-sm px-8 py-4 text-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 relative z-10"
 
   const primaryStyles =
     "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-950 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 border border-blue-200 dark:border-blue-500"
@@ -141,7 +141,7 @@ export function StartQuizButton({
           style={{
             position: 'absolute',
             inset: 0,
-            borderRadius: '0.75rem', // rounded-xl
+            borderRadius: '9999px', // rounded-full
             zIndex: 0,
             background: glowColor,
             filter: 'blur(16px)'

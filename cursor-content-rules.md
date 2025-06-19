@@ -10,6 +10,22 @@
 5. [API Development Guidelines](#api-development-guidelines)
 6. [Frontend Content Display](#frontend-content-display)
 7. [Content Workflow Automation](#content-workflow-automation)
+8. [Module Export Management Rule](#module-export-management-rule)
+
+## Documentation Standards
+**REQUIRED**: All content development must follow documentation standards in `.cursor/rules/documentation-organization.mdc`:
+- Complete function and component documentation with civic impact focus
+- Dual changelog maintenance (internal and public)
+- Clean code practices with immediate technical debt cleanup
+- Quality gates for every commit and release
+
+## Accessibility Standards
+**REQUIRED**: All interactive civic education features must follow accessibility standards in `.cursor/rules/accessibility-standards.mdc`:
+- 100% keyboard navigation support for all quiz and multiplayer components
+- Screen reader compatibility with proper ARIA implementation
+- Audio accessibility with transcripts and keyboard controls
+- Visual accessibility meeting WCAG 2.1 AA standards
+- Real user testing with disabled community members
 
 ---
 
@@ -747,43 +763,140 @@ class ContentMonitor {
 
 ---
 
-## Implementation Checklist
+## Module Export Management Rule
 
-When implementing any content-related feature, ensure:
+### Always Export Public Functions, Types, and Classes
 
-### Brand Voice Compliance
-- [ ] Uses active voice that assigns responsibility
-- [ ] Names specific institutions and decision-makers
-- [ ] Provides uncomfortable truths about power structures
-- [ ] Includes specific actionable steps for civic engagement
-- [ ] Challenges common assumptions about how government works
+**Problem**: As modules grow, it's easy to forget to export new functions, types, and classes, leading to import errors and broken functionality.
 
-### Educational Effectiveness
-- [ ] Builds knowledge that enables civic action
-- [ ] Connects abstract concepts to personal consequences
-- [ ] Reveals systemic patterns and root causes
-- [ ] Empowers users rather than overwhelming them
-- [ ] Progressive skill building from knowledge to action
+**Solution**: Follow these patterns for consistent module exports:
 
-### Technical Implementation
-- [ ] Includes proper TypeScript interfaces for all content types
-- [ ] Implements validation pipelines for brand voice and accuracy
-- [ ] Tracks civic engagement metrics, not just consumption
-- [ ] Provides real-time content quality scoring
-- [ ] Automates content improvement suggestions
+#### 1. Export-First Development
+When creating new functions, types, or classes, immediately add them to the module exports:
 
-### Database Integration
-- [ ] All content tables include source validation fields
-- [ ] Power dynamics tracking is implemented
-- [ ] Content quality metrics are captured
-- [ ] RLS policies ensure proper content governance
-- [ ] Automated cleanup of low-quality content
+```typescript
+// ✅ Good: Export immediately when creating
+export function newFunction() {
+  // implementation
+}
 
-### User Experience
-- [ ] Content emphasizes action steps prominently
-- [ ] Power dynamics are visualized clearly
-- [ ] Source credibility is displayed transparently
-- [ ] Uncomfortable truths are highlighted effectively
-- [ ] Users can easily track their civic engagement progress
+export interface NewInterface {
+  // properties
+}
+
+export class NewClass {
+  // implementation
+}
+
+// ✅ Good: Grouped exports at bottom for overview
+export {
+  existingFunction,
+  anotherFunction,
+  SomeClass,
+  type SomeType
+}
+```
+
+#### 2. Export Validation Checklist
+Before committing changes to shared modules (especially `lib/` files):
+
+- [ ] All new public functions are exported
+- [ ] All new interfaces/types that are used externally are exported  
+- [ ] All new classes that are instantiated externally are exported
+- [ ] Export statements are organized (grouped at end or inline)
+- [ ] No internal/private functions are accidentally exported
+
+#### 3. Module Structure Pattern
+For complex modules like `lib/multiplayer.ts`, organize exports in sections:
+
+```typescript
+// =============================================================================
+// TYPES & INTERFACES (Export inline)
+// =============================================================================
+export interface PublicInterface {}
+export type PublicType = string
+
+// =============================================================================
+// CLASSES (Export inline)
+// =============================================================================
+export class PublicClass {}
+
+// =============================================================================
+// FUNCTIONS (Export inline or grouped)
+// =============================================================================
+export function publicFunction() {}
+
+// =============================================================================
+// HOOKS (Export inline)
+// =============================================================================
+export function useCustomHook() {}
+
+// =============================================================================
+// CONSTANTS (Export inline)
+// =============================================================================
+export const PUBLIC_CONSTANT = 'value'
+
+// =============================================================================
+// GROUPED EXPORTS (Optional - for existing code)
+// =============================================================================
+export {
+  legacyFunction1,
+  legacyFunction2,
+  type LegacyType
+}
+```
+
+#### 4. Import Testing Pattern
+When adding exports, immediately test imports in a consuming file:
+
+```typescript
+// Test import in component or another module
+import { 
+  newFunction, 
+  NewInterface, 
+  NewClass 
+} from '@/lib/module-name'
+
+// Verify TypeScript doesn't complain
+```
+
+#### 5. Common Export Mistakes to Avoid
+
+**❌ Don't**: Forget to export interfaces used as props
+```typescript
+interface ComponentProps {} // Not exported but used externally
+export function Component(props: ComponentProps) {}
+```
+
+**✅ Do**: Export interfaces used externally
+```typescript
+export interface ComponentProps {}
+export function Component(props: ComponentProps) {}
+```
+
+**❌ Don't**: Export internal utilities
+```typescript
+export function internalHelper() {} // Should be private
+```
+
+**✅ Do**: Keep internal functions private
+```typescript
+function internalHelper() {} // Private utility
+export function publicAPI() {
+  return internalHelper()
+}
+```
+
+#### 6. Module Dependencies
+When a module grows large, consider splitting it but maintain backward compatibility:
+
+```typescript
+// Original module re-exports from split modules
+export * from './module-section-a'
+export * from './module-section-b'
+export { legacyFunction } from './legacy-functions'
+```
+
+This rule helps prevent the "export not found" errors that break functionality as the codebase scales.
 
 **Remember: Every line of code should advance our mission of transforming passive observers into confident, effective participants in democracy. We're building civic education that politicians don't want people to have.** 

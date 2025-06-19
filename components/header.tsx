@@ -4,11 +4,9 @@ import Link from "next/link"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "./ui/button"
-import { ThemeToggle } from "./theme-toggle"
 import { UserMenu } from "./auth/user-menu"
 import { JoinRequestNotifications } from "./learning-pods/join-request-notifications"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
-import { LanguageSwitcher } from "./language-switcher"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 
@@ -74,8 +72,6 @@ export function Header({
               <div className="hidden sm:flex items-center space-x-4">
                 {/* Learning Pods Quick Actions - temporarily hidden until ready for public use */}
                 {/* <LearningPodsQuickActions variant="header" /> */}
-                {isDevelopment && <LanguageSwitcher variant="compact" />}
-                <ThemeToggle />
                 {user && <JoinRequestNotifications />}
                 
                 {/* Login button for non-authenticated users */}
@@ -93,8 +89,8 @@ export function Header({
                 {/* Main CTA - Take A Civics Test */}
                 <Button
                   asChild
-                  size="sm"
-                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-4 py-2"
+                  size="default"
+                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-6 py-3 text-base font-semibold"
                 >
                   <Link href="/civics-test">
                     Take A Civics Test
@@ -103,11 +99,6 @@ export function Header({
                 
                 {/* User menu for authenticated users */}
                 {user && <UserMenu onSignInClick={() => {}} />}
-              </div>
-              
-              {/* Mobile-only theme toggle */}
-              <div className="sm:hidden">
-                <ThemeToggle />
               </div>
               
               {/* Mobile menu button */}
@@ -163,7 +154,7 @@ export function Header({
                 <Link 
                   href="/civics-test"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-3 px-4 rounded-md font-medium transition-colors"
+                  className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-4 px-4 rounded-md text-base font-semibold transition-colors"
                 >
                   Take A Civics Test
                 </Link>
@@ -222,18 +213,6 @@ export function Header({
               
               {/* Divider */}
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                {/* Language Switcher - Mobile - Only in development */}
-                {isDevelopment && (
-                  <div className="mb-4">
-                    <div className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      Language
-                    </div>
-                    <div className="px-3">
-                      <LanguageSwitcher variant="compact" />
-                    </div>
-                  </div>
-                )}
-                
                 {/* Authentication Links - Mobile Only */}
                 <div className="space-y-3">
                   {!user ? (
@@ -293,7 +272,6 @@ export function Header({
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-3 sm:space-x-5">
-              <ThemeToggle />
               <UserMenu onSignInClick={() => {}} />
             </div>
           </div>

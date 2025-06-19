@@ -32,6 +32,11 @@ interface GenerationSettings {
   categories: string[]
   forceGeneration: boolean
   
+  // Source selection
+  selectedArticles: string[]
+  selectedSources: string[]
+  includeTopicsWithoutContent: boolean
+  
   // Content generation controls
   questionsPerTopic: number
   questionTypeDistribution: {
@@ -47,12 +52,26 @@ interface GenerationSettings {
     hard: number
   }
   
+  // AI Model Configuration
+  aiModel: 'gpt-4' | 'gpt-4-turbo' | 'claude-3-opus' | 'claude-3-sonnet' | 'claude-3-haiku'
+  temperature: number
+  enableWebSearch: boolean
+  maxTokens: number
+  systemPromptOverride?: string
+  
+  // Execution options
+  isDryRun: boolean
+  showPreview: boolean
+  
   // Scheduling options
   generateForFutureDates: boolean
   startDate: string
   daysToGenerate: number
   scheduleRecurring: boolean
   recurringInterval: 'daily' | 'every12hours' | 'weekly'
+  scheduleName?: string
+  scheduleDescription?: string
+  autoApprove: boolean
 }
 
 interface GenerationResult {
@@ -232,11 +251,25 @@ export default function AIContentAdminPage() {
   // Content generation state
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null)
+  
+  // Enhanced features state
+  const [availableArticles, setAvailableArticles] = useState<any[]>([])
+  const [availableSources, setAvailableSources] = useState<any[]>([])
+  const [topicsWithoutContent, setTopicsWithoutContent] = useState<any[]>([])
+  const [previewData, setPreviewData] = useState<any>(null)
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
+  const [scheduledJobs, setScheduledJobs] = useState<any[]>([])
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false)
   const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
     maxArticles: 10,
     daysSinceCreated: 7,
     categories: [],
     forceGeneration: false,
+    
+    // Source selection
+    selectedArticles: [],
+    selectedSources: [],
+    includeTopicsWithoutContent: false,
     
     // Content generation controls
     questionsPerTopic: 6,
@@ -253,12 +286,26 @@ export default function AIContentAdminPage() {
       hard: 20
     },
     
+    // AI Model Configuration
+    aiModel: 'gpt-4-turbo',
+    temperature: 0.7,
+    enableWebSearch: true,
+    maxTokens: 4096,
+    systemPromptOverride: undefined,
+    
+    // Execution options
+    isDryRun: false,
+    showPreview: false,
+    
     // Scheduling options
     generateForFutureDates: false,
     startDate: new Date().toISOString().split('T')[0],
     daysToGenerate: 1,
     scheduleRecurring: false,
-    recurringInterval: 'daily'
+    recurringInterval: 'daily',
+    scheduleName: undefined,
+    scheduleDescription: undefined,
+    autoApprove: false
   })
   
   // Check admin access and redirect if unauthorized
@@ -370,8 +417,58 @@ export default function AIContentAdminPage() {
         setIsLoading(false)
       }
     }
+
+    const loadEnhancedData = async () => {
+      try {
+        // Load available articles
+        const { data: articlesData } = await supabase
+          .from('source_metadata')
+          .select('id, title, domain, credibility_score, last_fetched_at, url')
+          .gte('credibility_score', 70)
+          .not('title', 'is', null)
+          .order('last_fetched_at', { ascending: false })
+          .limit(50)
+        
+        setAvailableArticles(articlesData || [])
+
+        // Load available sources with counts (simplified)
+        const { data: sourcesData } = await supabase
+          .from('source_metadata')
+          .select('domain')
+          .gte('credibility_score', 70)
+          .not('title', 'is', null)
+        
+        // Group by domain and count
+        const sourceCounts = (sourcesData || []).reduce((acc: any, item: any) => {
+          acc[item.domain] = (acc[item.domain] || 0) + 1
+          return acc
+        }, {})
+        
+        const sourcesWithCounts = Object.entries(sourceCounts).map(([domain, count]) => ({
+          domain,
+          count
+        })).slice(0, 20)
+        
+        setAvailableSources(sourcesWithCounts)
+
+        // Load topics without content (simplified check)
+        const { data: topicsWithoutContentData } = await supabase
+          .from('question_topics')
+          .select('topic_id, topic_title, categories')
+          .eq('is_active', true)
+          .limit(50)
+        
+        setTopicsWithoutContent(topicsWithoutContentData || [])
+
+        // Load scheduled jobs
+        loadScheduledJobs()
+      } catch (error) {
+        console.error('Error loading enhanced data:', error)
+      }
+    }
     
     loadAdminData()
+    loadEnhancedData()
   }, [user, toast])
 
   const handleApproveContent = async (type: 'topic' | 'figure' | 'event', id: string) => {
@@ -484,12 +581,85 @@ export default function AIContentAdminPage() {
     }
   }
 
+  const handleGeneratePreview = async () => {
+    if (!user) return
+    
+    setIsLoadingPreview(true)
+    setPreviewData(null)
+    
+    try {
+      const response = await fetch('/api/admin/generate-content-from-news', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...generationSettings,
+          isDryRun: true, // Force dry run for preview
+          userId: user?.id
+        })
+      })
+      
+      const result = await response.json()
+      setPreviewData(result)
+      
+      if (result.success) {
+        toast({
+          title: "Preview Generated",
+          description: "Review the content that would be generated",
+        })
+      } else {
+        toast({
+          title: "Preview Failed",
+          description: result.error || 'Failed to generate preview',
+          variant: "destructive"
+        })
+      }
+      
+    } catch (error) {
+      console.error('Error generating preview:', error)
+      toast({
+        title: "Preview Error",
+        description: "Failed to generate preview",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoadingPreview(false)
+    }
+  }
+
   const handleSaveAsSchedule = () => {
-    // TODO: Implement save as schedule dialog
-    toast({
-      title: "Coming Soon",
-      description: "Schedule management will be available soon",
-    })
+    setShowScheduleDialog(true)
+  }
+
+  const handleCreateScheduledJob = async (scheduleData: any) => {
+    if (!user) return
+    
+    try {
+      // TODO: Implement actual scheduling API endpoint
+      toast({
+        title: "Coming Soon",
+        description: "Full scheduling functionality will be available soon",
+      })
+      setShowScheduleDialog(false)
+    } catch (error) {
+      console.error('Error creating schedule:', error)
+      toast({
+        title: "Schedule Error",
+        description: "Failed to create scheduled job",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const loadScheduledJobs = async () => {
+    try {
+      // Note: scheduled_content_jobs table may not exist yet
+      // This will be implemented when the scheduling feature is fully ready
+      setScheduledJobs([])
+    } catch (error) {
+      console.error('Error loading scheduled jobs:', error)
+    }
   }
 
   const handlePresetSettings = (preset: 'daily-quiz' | 'weekly-batch') => {
@@ -786,6 +956,12 @@ export default function AIContentAdminPage() {
                         <SelectItem value="8">8 questions</SelectItem>
                         <SelectItem value="10">10 questions</SelectItem>
                         <SelectItem value="12">12 questions</SelectItem>
+                        <SelectItem value="15">15 questions</SelectItem>
+                        <SelectItem value="20">20 questions</SelectItem>
+                        <SelectItem value="25">25 questions</SelectItem>
+                        <SelectItem value="30">30 questions</SelectItem>
+                        <SelectItem value="35">35 questions</SelectItem>
+                        <SelectItem value="40">40 questions</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -914,6 +1090,280 @@ export default function AIContentAdminPage() {
                 </div>
               </div>
 
+              {/* AI Model Configuration */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">AI Model Configuration</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">AI Model</label>
+                    <Select
+                      value={generationSettings.aiModel}
+                      onValueChange={(value: any) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        aiModel: value 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Recommended)</SelectItem>
+                        <SelectItem value="gpt-4">GPT-4</SelectItem>
+                        <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                        <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+                        <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Temperature: {generationSettings.temperature}</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={generationSettings.temperature}
+                      onChange={(e) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        temperature: parseFloat(e.target.value) 
+                      }))}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <span>Focused</span>
+                      <span>Creative</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Max Tokens</label>
+                    <Select
+                      value={generationSettings.maxTokens.toString()}
+                      onValueChange={(value) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        maxTokens: parseInt(value) 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2048">2,048 tokens</SelectItem>
+                        <SelectItem value="4096">4,096 tokens</SelectItem>
+                        <SelectItem value="8192">8,192 tokens</SelectItem>
+                        <SelectItem value="16384">16,384 tokens</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="enableWebSearch"
+                      checked={generationSettings.enableWebSearch}
+                      onChange={(e) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        enableWebSearch: e.target.checked 
+                      }))}
+                      className="rounded"
+                    />
+                    <label htmlFor="enableWebSearch" className="text-sm font-medium">
+                      Enable web search for real-time information
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Custom System Prompt (Optional)</label>
+                    <textarea
+                      value={generationSettings.systemPromptOverride || ''}
+                      onChange={(e) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        systemPromptOverride: e.target.value || undefined 
+                      }))}
+                      placeholder="Override the default system prompt with custom instructions..."
+                      className="w-full px-3 py-2 text-sm border rounded-lg"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Source Selection */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Source Selection</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="includeTopicsWithoutContent"
+                      checked={generationSettings.includeTopicsWithoutContent}
+                      onChange={(e) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        includeTopicsWithoutContent: e.target.checked 
+                      }))}
+                      className="rounded"
+                    />
+                    <label htmlFor="includeTopicsWithoutContent" className="text-sm font-medium">
+                      Prioritize topics without existing content ({topicsWithoutContent.length} found)
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Select Specific Articles</label>
+                      <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                        {availableArticles.slice(0, 10).map((article, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`article-${index}`}
+                              checked={generationSettings.selectedArticles.includes(article.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setGenerationSettings(prev => ({
+                                    ...prev,
+                                    selectedArticles: [...prev.selectedArticles, article.id]
+                                  }))
+                                } else {
+                                  setGenerationSettings(prev => ({
+                                    ...prev,
+                                    selectedArticles: prev.selectedArticles.filter(id => id !== article.id)
+                                  }))
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <label htmlFor={`article-${index}`} className="text-xs flex-1 truncate">
+                              {article.title || 'Untitled Article'}
+                            </label>
+                          </div>
+                        ))}
+                        {availableArticles.length === 0 && (
+                          <p className="text-xs text-slate-500">Loading articles...</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Select News Sources</label>
+                      <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                        {availableSources.slice(0, 10).map((source, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`source-${index}`}
+                              checked={generationSettings.selectedSources.includes(source.domain)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setGenerationSettings(prev => ({
+                                    ...prev,
+                                    selectedSources: [...prev.selectedSources, source.domain]
+                                  }))
+                                } else {
+                                  setGenerationSettings(prev => ({
+                                    ...prev,
+                                    selectedSources: prev.selectedSources.filter(domain => domain !== source.domain)
+                                  }))
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <label htmlFor={`source-${index}`} className="text-xs flex-1">
+                              {source.domain} ({source.count} articles)
+                            </label>
+                          </div>
+                        ))}
+                        {availableSources.length === 0 && (
+                          <p className="text-xs text-slate-500">Loading sources...</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Execution Options */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Execution Options</h4>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="isDryRun"
+                        checked={generationSettings.isDryRun}
+                        onChange={(e) => setGenerationSettings(prev => ({ 
+                          ...prev, 
+                          isDryRun: e.target.checked 
+                        }))}
+                        className="rounded"
+                      />
+                      <label htmlFor="isDryRun" className="text-sm font-medium">
+                        Dry run (show what would be generated without saving)
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="showPreview"
+                        checked={generationSettings.showPreview}
+                        onChange={(e) => setGenerationSettings(prev => ({ 
+                          ...prev, 
+                          showPreview: e.target.checked 
+                        }))}
+                        className="rounded"
+                      />
+                      <label htmlFor="showPreview" className="text-sm font-medium">
+                        Show preview before generating
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="autoApprove"
+                        checked={generationSettings.autoApprove}
+                        onChange={(e) => setGenerationSettings(prev => ({ 
+                          ...prev, 
+                          autoApprove: e.target.checked 
+                        }))}
+                        className="rounded"
+                      />
+                      <label htmlFor="autoApprove" className="text-sm font-medium">
+                        Auto-approve generated content
+                      </label>
+                    </div>
+                  </div>
+
+                  {generationSettings.showPreview && (
+                    <div className="pl-6 border-l-2 border-blue-200 dark:border-blue-700">
+                      <Button
+                        onClick={() => handleGeneratePreview()}
+                        disabled={isLoadingPreview}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {isLoadingPreview ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600"></div>
+                            Loading Preview...
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4" />
+                            Generate Preview
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Future Dating & Scheduling */}
               <div>
                 <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Scheduling Options</h4>
@@ -935,67 +1385,126 @@ export default function AIContentAdminPage() {
                   </div>
 
                   {generationSettings.generateForFutureDates && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Start Date</label>
-                        <input
-                          type="date"
-                          value={generationSettings.startDate}
-                          onChange={(e) => setGenerationSettings(prev => ({ 
-                            ...prev, 
-                            startDate: e.target.value 
-                          }))}
-                          className="w-full px-3 py-2 text-sm border rounded"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Days to Generate</label>
-                        <Select
-                          value={generationSettings.daysToGenerate.toString()}
-                          onValueChange={(value) => setGenerationSettings(prev => ({ 
-                            ...prev, 
-                            daysToGenerate: parseInt(value) 
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 day</SelectItem>
-                            <SelectItem value="3">3 days</SelectItem>
-                            <SelectItem value="5">5 days</SelectItem>
-                            <SelectItem value="7">1 week</SelectItem>
-                            <SelectItem value="14">2 weeks</SelectItem>
-                            <SelectItem value="30">1 month</SelectItem>
-                          </SelectContent>
-                        </Select>
+                    <div className="space-y-4 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Start Date</label>
+                          <input
+                            type="date"
+                            value={generationSettings.startDate}
+                            onChange={(e) => setGenerationSettings(prev => ({ 
+                              ...prev, 
+                              startDate: e.target.value 
+                            }))}
+                            className="w-full px-3 py-2 text-sm border rounded"
+                            min={new Date().toISOString().split('T')[0]}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Days to Generate</label>
+                          <Select
+                            value={generationSettings.daysToGenerate.toString()}
+                            onValueChange={(value) => setGenerationSettings(prev => ({ 
+                              ...prev, 
+                              daysToGenerate: parseInt(value) 
+                            }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 day</SelectItem>
+                              <SelectItem value="3">3 days</SelectItem>
+                              <SelectItem value="5">5 days</SelectItem>
+                              <SelectItem value="7">1 week</SelectItem>
+                              <SelectItem value="14">2 weeks</SelectItem>
+                              <SelectItem value="30">1 month</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Recurring Interval</label>
+                          <Select
+                            value={generationSettings.recurringInterval}
+                            onValueChange={(value: 'daily' | 'every12hours' | 'weekly') => setGenerationSettings(prev => ({ 
+                              ...prev, 
+                              recurringInterval: value 
+                            }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="every12hours">Every 12 hours</SelectItem>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Recurring Interval</label>
-                        <Select
-                          value={generationSettings.recurringInterval}
-                          onValueChange={(value: 'daily' | 'every12hours' | 'weekly') => setGenerationSettings(prev => ({ 
-                            ...prev, 
-                            recurringInterval: value 
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="every12hours">Every 12 hours</SelectItem>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Schedule Name</label>
+                          <input
+                            type="text"
+                            value={generationSettings.scheduleName || ''}
+                            onChange={(e) => setGenerationSettings(prev => ({ 
+                              ...prev, 
+                              scheduleName: e.target.value 
+                            }))}
+                            placeholder="e.g., Daily Morning News Quiz"
+                            className="w-full px-3 py-2 text-sm border rounded"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
+                          <input
+                            type="text"
+                            value={generationSettings.scheduleDescription || ''}
+                            onChange={(e) => setGenerationSettings(prev => ({ 
+                              ...prev, 
+                              scheduleDescription: e.target.value 
+                            }))}
+                            placeholder="Brief description of this scheduled job"
+                            className="w-full px-3 py-2 text-sm border rounded"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Active Scheduled Jobs */}
+              {scheduledJobs.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Active Scheduled Jobs</h4>
+                  <div className="space-y-3">
+                    {scheduledJobs.slice(0, 5).map((job) => (
+                      <div key={job.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <div className="flex-1">
+                          <h5 className="font-medium text-sm">{job.name}</h5>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {job.interval} • Next run: {new Date(job.next_run).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={job.is_active ? "default" : "secondary"}>
+                            {job.is_active ? "Active" : "Paused"}
+                          </Badge>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Quick Schedule Button */}
               <div>
@@ -1028,21 +1537,93 @@ export default function AIContentAdminPage() {
                 </div>
               </div>
               
+              {/* Preview Display */}
+              {previewData && (
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                  <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Content Preview</h4>
+                  {previewData.success ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">{previewData.results?.topicsGenerated || 0}</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Topics</div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">{previewData.results?.questionsGenerated || 0}</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Questions</div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-600">{previewData.results?.articlesProcessed || 0}</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Articles</div>
+                        </div>
+                      </div>
+                      
+                      {previewData.results?.previewTopics && (
+                        <div>
+                          <h5 className="font-medium mb-2">Sample Topics:</h5>
+                          <div className="space-y-2">
+                            {previewData.results.previewTopics.slice(0, 3).map((topic: any, index: number) => (
+                              <div key={index} className="bg-white dark:bg-slate-800 p-3 rounded border">
+                                <div className="font-medium text-sm">{topic.title}</div>
+                                <div className="text-xs text-slate-500 mt-1">{topic.description}</div>
+                                <div className="text-xs text-slate-400 mt-1">{topic.questionCount} questions</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pt-4 border-t">
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                          This is a preview. No content has been saved.
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setPreviewData(null)}
+                          >
+                            Clear Preview
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setGenerationSettings(prev => ({ ...prev, isDryRun: false }))
+                              handleGenerateContent()
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Generate for Real
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-red-600 dark:text-red-400">
+                      Preview failed: {previewData.error}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center gap-4">
                 <Button
                   onClick={handleGenerateContent}
                   disabled={isGenerating}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className={cn(
+                    "text-white",
+                    generationSettings.isDryRun 
+                      ? "bg-orange-600 hover:bg-orange-700" 
+                      : "bg-blue-600 hover:bg-blue-700"
+                  )}
                 >
                   {isGenerating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Generating Content...
+                      {generationSettings.isDryRun ? 'Running Dry Run...' : 'Generating Content...'}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Content
+                      {generationSettings.isDryRun ? 'Run Dry Run' : 'Generate Content'}
                     </>
                   )}
                 </Button>

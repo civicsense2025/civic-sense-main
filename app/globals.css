@@ -68,7 +68,8 @@ body {
   --success: 142 76% 36%;
   --success-foreground: 0 0% 100%;
   
-  --warning: 38 92% 50%;
+  /* Warning uses CivicSense primary blue instead of amber */
+  --warning: 217 91% 60%;
   --warning-foreground: 0 0% 100%;
   
   /* Interactive elements */
@@ -114,8 +115,8 @@ body {
   --multiplayer-accent-light: 217 91% 95%;
   --multiplayer-success: 142 76% 36%;
   --multiplayer-success-light: 142 76% 95%;
-  --multiplayer-warning: 38 92% 50%;
-  --multiplayer-warning-light: 38 92% 95%;
+  --multiplayer-warning: 217 91% 60%;
+  --multiplayer-warning-light: 217 91% 95%;
 }
 
 .dark {
@@ -155,7 +156,8 @@ body {
   --success: 142 76% 46%;
   --success-foreground: 210 40% 98%;
   
-  --warning: 38 92% 60%;
+  /* Warning uses CivicSense primary blue instead of amber for dark mode */
+  --warning: 217 91% 65%;
   --warning-foreground: 224 71% 4%;
   
   /* Interactive elements */
@@ -174,8 +176,8 @@ body {
   --multiplayer-accent-light: 217 91% 15%;
   --multiplayer-success: 142 76% 46%;
   --multiplayer-success-light: 142 76% 12%;
-  --multiplayer-warning: 38 92% 60%;
-  --multiplayer-warning-light: 38 92% 12%;
+  --multiplayer-warning: 217 91% 65%;
+  --multiplayer-warning-light: 217 91% 12%;
 }
 
 /* Clean base styles */

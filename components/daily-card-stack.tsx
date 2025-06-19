@@ -1090,7 +1090,7 @@ export function DailyCardStack({
           <div className="flex justify-center px-4 sm:px-6 lg:px-8">
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center space-x-2 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700">
+                <button className="flex items-center space-x-2 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity px-3 py-2 border-b-2 border-dashed border-slate-300 dark:border-slate-600 bg-transparent">
                   <span className="flex items-center gap-2">
                     <span className="text-lg">{currentTopic.emoji}</span>
                     <span>
@@ -1287,8 +1287,16 @@ export function DailyCardStack({
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
-              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3 max-w-4xl mx-auto">
+              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3 max-w-4xl mx-auto text-center">
                 {currentTopic.topic_title}
+                                  {isTopicCompleted(currentTopic.topic_id) && (
+                    <span className="text-green-600 ml-2" title="Completed">
+                      <svg className="inline h-6 w-6 sm:h-8 sm:w-8 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ verticalAlign: 'baseline' }}>
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
+                        <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
               </h2>
               {/* Topic categories */}
               {currentTopic.categories && currentTopic.categories.length > 0 && (
@@ -1297,17 +1305,9 @@ export function DailyCardStack({
                     <Badge 
                       key={category} 
                       variant="secondary"
-                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1"
+                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                     >
                       {category}
-                      {isTopicCompleted(currentTopic.topic_id) && (
-                        <span className="ml-1 text-green-600" title="Completed">
-                          <svg className="inline h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
-                            <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      )}
                     </Badge>
                   ))}
                 </div>

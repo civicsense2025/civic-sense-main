@@ -39,3 +39,6 @@ lib/database.types.ts.backup.*
 /supabase/migrations/*
 .cursorrules
 .cursor/rules
+
+# Sandbox - Demo and test pages for development
+/app/sandbox/
