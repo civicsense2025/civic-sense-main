@@ -128,18 +128,47 @@ export default function SettingsPage() {
 
   // Voices are now loaded lazily when user opens voice settings
 
-  // Load preferences from localStorage
+  // Load preferences from localStorage AND database
   useEffect(() => {
-    const saved = localStorage.getItem('civicsense-preferences')
-    if (saved) {
+    const loadPreferences = async () => {
       try {
-        const parsed = JSON.parse(saved)
-        setPreferences(prev => ({ ...prev, ...parsed }))
+        // Load local preferences first (for non-email settings)
+        const saved = localStorage.getItem('civicsense-preferences')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setPreferences(prev => ({ ...prev, ...parsed }))
+        }
+
+        // Load email preferences from database if user is authenticated
+        if (user) {
+          const response = await fetch('/api/user/email-preferences')
+          if (response.ok) {
+            const { preferences: emailPrefs } = await response.json()
+            setPreferences(prev => ({
+              ...prev,
+              emailNotifications: emailPrefs.email_notifications,
+              weeklyDigest: emailPrefs.weekly_digest,
+              achievementAlerts: emailPrefs.achievement_alerts,
+              emailDeliveryFrequency: emailPrefs.email_delivery_frequency,
+              emailFormat: emailPrefs.email_format,
+              marketingEmails: emailPrefs.marketing_emails,
+              productUpdates: emailPrefs.product_updates,
+              communityDigest: emailPrefs.community_digest,
+              surveyInvitations: emailPrefs.survey_invitations,
+              // Map notification channels properly
+              notificationChannels: Array.isArray(emailPrefs.notification_channels) 
+                ? emailPrefs.notification_channels 
+                : []
+            }))
+          }
+        }
       } catch (error) {
         console.error('Error loading preferences:', error)
       }
     }
-  }, [])
+
+    loadPreferences()
+  }, [user])
 
   useEffect(() => {
     if (user) {
@@ -154,8 +183,57 @@ export default function SettingsPage() {
   const handleSavePreferences = async () => {
     setSaveStatus('saving')
     try {
-      // Save to localStorage and potentially backend
-      localStorage.setItem('civicsense-preferences', JSON.stringify(preferences))
+      // Save email preferences to database
+      const response = await fetch('/api/user/email-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailNotifications: preferences.emailNotifications,
+          weeklyDigest: preferences.weeklyDigest,
+          achievementAlerts: preferences.achievementAlerts,
+          emailDeliveryFrequency: preferences.emailDeliveryFrequency,
+          emailFormat: preferences.emailFormat,
+          marketingEmails: preferences.marketingEmails,
+          productUpdates: preferences.productUpdates,
+          communityDigest: preferences.communityDigest,
+          surveyInvitations: preferences.surveyInvitations,
+          civicNewsAlerts: preferences.allowDataAnalytics, // Map to appropriate field
+          reEngagementEmails: true, // Default for now
+          notificationChannels: preferences.notificationChannels
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save email preferences')
+      }
+
+      // Save other preferences to localStorage (non-email preferences)
+      const localPreferences = {
+        theme: preferences.theme,
+        language: preferences.language,
+        timezone: preferences.timezone,
+        accessibilityEnabled: preferences.accessibilityEnabled,
+        audioEnabled: preferences.audioEnabled,
+        autoPlayQuestions: preferences.autoPlayQuestions,
+        autoPlayAnswers: preferences.autoPlayAnswers,
+        speechRate: preferences.speechRate,
+        speechPitch: preferences.speechPitch,
+        speechVolume: preferences.speechVolume,
+        highContrast: preferences.highContrast,
+        largeText: preferences.largeText,
+        reducedMotion: preferences.reducedMotion,
+        keyboardShortcuts: preferences.keyboardShortcuts,
+        extendedTimeouts: preferences.extendedTimeouts,
+        confirmActions: preferences.confirmActions,
+        socialSharingEnabled: preferences.socialSharingEnabled,
+        autoShareAchievements: preferences.autoShareAchievements,
+        allowDataAnalytics: preferences.allowDataAnalytics,
+        allowPersonalization: preferences.allowPersonalization,
+        exportFormat: preferences.exportFormat,
+        integrationSync: preferences.integrationSync,
+        dataRetentionPeriod: preferences.dataRetentionPeriod
+      }
+      localStorage.setItem('civicsense-preferences', JSON.stringify(localPreferences))
       
       // Apply accessibility settings to document
       if (preferences.accessibilityEnabled) {
@@ -169,6 +247,7 @@ export default function SettingsPage() {
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (error) {
+      console.error('Error saving preferences:', error)
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 2000)
     }

@@ -3,7 +3,7 @@
  * Strategic transactional email automation via Plunk
  */
 
-import { CivicSenseEmailService } from './plunk-service'
+import { CivicSenseEmailService } from './mailerlite-service'
 import { createClient } from '@/lib/supabase/client'
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://civicsense.us'

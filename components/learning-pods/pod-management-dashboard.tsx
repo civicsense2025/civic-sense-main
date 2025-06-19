@@ -32,7 +32,14 @@ import {
   Eye,
   MessageSquare,
   School,
-  ArrowLeft
+  ArrowLeft,
+  Trophy,
+  Heart,
+  Lightbulb,
+  BookOpen,
+  Accessibility,
+  Sparkles,
+  Palette
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -61,6 +68,15 @@ interface PodSettings {
   content_filter_level: 'none' | 'light' | 'moderate' | 'strict'
   is_public: boolean
   join_code: string
+  
+  // Enhanced personalization fields
+  personality_type?: 'competitive' | 'collaborative' | 'exploratory' | 'structured'
+  theme_id?: string
+  accessibility_mode?: 'standard' | 'high_contrast' | 'sensory_friendly'
+  pod_emoji?: string
+  pod_color?: string
+  pod_slug?: string
+  pod_motto?: string
   
   // Time Management
   daily_time_limit_minutes?: number
@@ -138,6 +154,79 @@ export function PodManagementDashboard({ podId }: PodManagementDashboardProps) {
   const [copiedJoinCode, setCopiedJoinCode] = useState(false)
 
   const [podSettings, setPodSettings] = useState<PodSettings | null>(null)
+  const [availableThemes, setAvailableThemes] = useState<PodTheme[]>([])
+  const [themesLoading, setThemesLoading] = useState(false)
+
+  // Load themes when component mounts
+  useEffect(() => {
+    loadThemes()
+  }, [])
+
+  const loadThemes = async () => {
+    try {
+      setThemesLoading(true)
+      // Mock themes for demo - in real app, fetch from API
+      const mockThemes: PodTheme[] = [
+        {
+          id: 'constitution',
+          name: 'constitution',
+          display_name: 'Constitutional Scholar',
+          emoji: '📜',
+          primary_color: '#8B4513',
+          secondary_color: '#F4E4BC',
+          description: 'Classic theme inspired by founding documents',
+          is_seasonal: false
+        },
+        {
+          id: 'democracy',
+          name: 'democracy',
+          display_name: 'Democratic Spirit',
+          emoji: '🗳️',
+          primary_color: '#1E40AF',
+          secondary_color: '#DBEAFE',
+          description: 'Modern democracy and voting theme',
+          is_seasonal: false
+        },
+        {
+          id: 'justice',
+          name: 'justice',
+          display_name: 'Justice League',
+          emoji: '⚖️',
+          primary_color: '#7C2D12',
+          secondary_color: '#FED7AA',
+          description: 'Justice and law theme',
+          is_seasonal: false
+        },
+        {
+          id: 'halloween_democracy',
+          name: 'halloween_democracy',
+          display_name: 'Spooky Civics',
+          emoji: '🎃',
+          primary_color: '#EA580C',
+          secondary_color: '#000000',
+          description: 'Halloween-themed democracy education',
+          is_seasonal: true
+        }
+      ]
+      setAvailableThemes(mockThemes)
+    } catch (error) {
+      console.error('Error loading themes:', error)
+    } finally {
+      setThemesLoading(false)
+    }
+  }
+
+interface PodTheme {
+  id: string
+  name: string
+  display_name: string
+  emoji: string
+  primary_color: string
+  secondary_color?: string
+  description: string
+  unlock_condition?: string
+  is_seasonal: boolean
+}
 
   useEffect(() => {
     if (user) {
@@ -168,6 +257,16 @@ export function PodManagementDashboard({ podId }: PodManagementDashboardProps) {
       content_filter_level: "moderate",
       is_public: false,
       join_code: "SMITH123",
+      
+      // Enhanced personalization fields with demo data
+      personality_type: "collaborative",
+      theme_id: "democracy",
+      accessibility_mode: "standard",
+      pod_emoji: "👨‍👩‍👧‍👦",
+      pod_color: "#1E40AF",
+      pod_slug: "smith-family-learners",
+      pod_motto: "Learning together, growing stronger",
+      
       daily_time_limit_minutes: 60,
       allowed_start_time: "15:00",
       allowed_end_time: "20:00",
@@ -409,6 +508,34 @@ export function PodManagementDashboard({ podId }: PodManagementDashboardProps) {
     }
   }
 
+  const getPersonalityIcon = (personality?: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      'competitive': <Trophy className="h-5 w-5 text-yellow-600" />,
+      'collaborative': <Heart className="h-5 w-5 text-pink-600" />,
+      'exploratory': <Lightbulb className="h-5 w-5 text-blue-600" />,
+      'structured': <BookOpen className="h-5 w-5 text-green-600" />
+    }
+    return personality ? iconMap[personality] : <Users className="h-5 w-5" />
+  }
+
+  const getPersonalityColor = (personality?: string) => {
+    switch (personality) {
+      case 'competitive': return 'text-orange-600 bg-orange-50 dark:bg-orange-950/20'
+      case 'collaborative': return 'text-pink-600 bg-pink-50 dark:bg-pink-950/20'
+      case 'exploratory': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20'
+      case 'structured': return 'text-blue-600 bg-blue-50 dark:bg-blue-950/20'
+      default: return 'text-slate-600 bg-slate-50 dark:bg-slate-950/20'
+    }
+  }
+
+  const getAccessibilityIcon = (mode?: string) => {
+    switch (mode) {
+      case 'high_contrast': return <Accessibility className="h-4 w-4" />
+      case 'sensory_friendly': return <Heart className="h-4 w-4" />
+      default: return <Shield className="h-4 w-4" />
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
@@ -529,10 +656,14 @@ export function PodManagementDashboard({ podId }: PodManagementDashboardProps) {
 
       {/* Main Tabs */}
       <Tabs defaultValue="members" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-8 bg-slate-100 dark:bg-slate-800 h-12">
+        <TabsList className="grid w-full grid-cols-5 mb-8 bg-slate-100 dark:bg-slate-800 h-12">
           <TabsTrigger value="members" className="gap-2 font-light">
             <Users className="h-4 w-4" />
             Members
+          </TabsTrigger>
+          <TabsTrigger value="personalization" className="gap-2 font-light">
+            <Palette className="h-4 w-4" />
+            Personalization
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2 font-light">
             <Settings className="h-4 w-4" />
@@ -637,6 +768,250 @@ export function PodManagementDashboard({ podId }: PodManagementDashboardProps) {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="personalization" className="space-y-6">
+          <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+            Pod Personalization
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Personality & Theme */}
+            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  Personality & Theme
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Personality Type Selection */}
+                <div className="space-y-4">
+                  <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Personality</Label>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose how your pod approaches learning</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { 
+                        type: 'collaborative', 
+                        label: 'Collaborative', 
+                        desc: 'Learn together, support each other',
+                        icon: <Heart className="h-5 w-5" />,
+                        color: 'text-pink-600'
+                      },
+                      { 
+                        type: 'competitive', 
+                        label: 'Competitive', 
+                        desc: 'Friendly challenges motivate us',
+                        icon: <Trophy className="h-5 w-5" />,
+                        color: 'text-yellow-600'
+                      },
+                      { 
+                        type: 'exploratory', 
+                        label: 'Exploratory', 
+                        desc: 'Discover new ideas together',
+                        icon: <Lightbulb className="h-5 w-5" />,
+                        color: 'text-blue-600'
+                      },
+                      { 
+                        type: 'structured', 
+                        label: 'Structured', 
+                        desc: 'Step-by-step organized learning',
+                        icon: <BookOpen className="h-5 w-5" />,
+                        color: 'text-green-600'
+                      }
+                    ].map((personality) => (
+                      <div
+                        key={personality.type}
+                        onClick={() => updatePodSettings({ personality_type: personality.type as any })}
+                        className={cn(
+                          'p-3 rounded-lg border cursor-pointer transition-all',
+                          podSettings.personality_type === personality.type
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn('text-lg', personality.color)}>
+                            {personality.icon}
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-900 dark:text-white text-sm">
+                              {personality.label}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {personality.desc}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Theme Selection */}
+                <div className="space-y-4">
+                  <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Theme</Label>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose a visual theme for your pod</p>
+                  {themesLoading ? (
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
+                      Loading themes...
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      {availableThemes.map((theme) => (
+                        <div
+                          key={theme.id}
+                          onClick={() => updatePodSettings({ 
+                            theme_id: theme.id,
+                            pod_emoji: theme.emoji,
+                            pod_color: theme.primary_color
+                          })}
+                          className={cn(
+                            'p-3 rounded-lg border cursor-pointer transition-all',
+                            podSettings.theme_id === theme.id
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          )}
+                          style={{
+                            backgroundColor: podSettings.theme_id === theme.id 
+                              ? `${theme.primary_color}10` 
+                              : undefined
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">{theme.emoji}</span>
+                            <div>
+                              <div className="font-medium text-slate-900 dark:text-white text-sm">
+                                {theme.display_name}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {theme.description}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Visual Customization */}
+            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-blue-600" />
+                  Visual Customization
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Pod Emoji */}
+                <div className="space-y-3">
+                  <Label>Pod Emoji</Label>
+                  <Input
+                    value={podSettings.pod_emoji || ''}
+                    onChange={(e) => updatePodSettings({ pod_emoji: e.target.value })}
+                    placeholder="👥"
+                    className="text-2xl text-center h-12 border-0 bg-white dark:bg-slate-800"
+                    maxLength={2}
+                  />
+                </div>
+
+                {/* Pod Color */}
+                <div className="space-y-3">
+                  <Label>Pod Color</Label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={podSettings.pod_color || '#3b82f6'}
+                      onChange={(e) => updatePodSettings({ pod_color: e.target.value })}
+                      className="w-16 h-12 rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer"
+                    />
+                    <Input
+                      value={podSettings.pod_color || ''}
+                      onChange={(e) => updatePodSettings({ pod_color: e.target.value })}
+                      placeholder="#3b82f6"
+                      className="flex-1 font-mono border-0 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Pod Motto */}
+                <div className="space-y-3">
+                  <Label>Pod Motto</Label>
+                  <Input
+                    value={podSettings.pod_motto || ''}
+                    onChange={(e) => updatePodSettings({ pod_motto: e.target.value })}
+                    placeholder="Learning together, growing stronger"
+                    className="border-0 bg-white dark:bg-slate-800"
+                  />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    A short phrase that captures your pod's mission
+                  </p>
+                </div>
+
+                {/* Pod Slug */}
+                <div className="space-y-3">
+                  <Label>Custom URL Slug</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">
+                      civicsense.com/pods/
+                    </span>
+                    <Input
+                      value={podSettings.pod_slug || ''}
+                      onChange={(e) => updatePodSettings({ pod_slug: e.target.value })}
+                      placeholder="my-awesome-pod"
+                      className="flex-1 border-0 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Accessibility Mode */}
+                <div className="space-y-4">
+                  <Label className="text-slate-700 dark:text-slate-300 font-light">Accessibility Mode</Label>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose accessibility settings for your pod</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { value: 'standard', icon: Shield, label: 'Standard', desc: 'Default accessibility features' },
+                      { value: 'high_contrast', icon: Accessibility, label: 'High Contrast', desc: 'Enhanced visual contrast' },
+                      { value: 'sensory_friendly', icon: Heart, label: 'Sensory Friendly', desc: 'Reduced animations and effects' }
+                    ].map((mode) => {
+                      const Icon = mode.icon
+                      return (
+                        <div
+                          key={mode.value}
+                          onClick={() => updatePodSettings({ accessibility_mode: mode.value as any })}
+                          className={cn(
+                            'p-3 rounded-lg border cursor-pointer transition-all',
+                            podSettings.accessibility_mode === mode.value
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className={cn(
+                              'h-5 w-5',
+                              podSettings.accessibility_mode === mode.value ? 'text-green-600' : 'text-slate-400'
+                            )} />
+                            <div>
+                              <div className="font-medium text-slate-900 dark:text-white text-sm">
+                                {mode.label}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {mode.desc}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

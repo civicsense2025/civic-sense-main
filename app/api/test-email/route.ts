@@ -1,15 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CivicSenseEmailService } from '@/lib/email/plunk-service'
+import { CivicSenseEmailService } from '@/lib/email/mailerlite-service'
 
 const emailService = new CivicSenseEmailService()
 
 /**
- * Test API endpoint for Plunk email integration
+ * Test API endpoint for MailerLite email integration
  * Only for development and testing purposes
  */
 export async function POST(request: NextRequest) {
   try {
     const { emailType, recipientEmail, recipientName, customMessage } = await request.json()
+
+    // First test the API key
+    const apiKeyTest = await emailService.testApiKey()
+    console.log('📧 [API_KEY_TEST]', apiKeyTest)
+    
+    if (!apiKeyTest.success) {
+      return NextResponse.json({ 
+        error: 'Email service configuration error',
+        details: apiKeyTest.message,
+        apiKeyStatus: apiKeyTest
+      }, { status: 500 })
+    }
 
     // Generate test data based on email type
     const testData = generateTestData(emailType, recipientName, customMessage)

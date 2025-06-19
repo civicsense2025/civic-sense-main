@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useAnalytics } from '@/utils/analytics'
-import { EmailType, EmailResult } from '@/lib/email/plunk-service'
+import { EmailType, EmailResult } from '@/lib/email/mailerlite-service'
 
 // Email event schemas that integrate with existing Statsig analytics
 export interface EmailEvent {
@@ -35,7 +35,7 @@ export const useEmailAnalytics = () => {
   const trackEmailSent = useCallback((result: EmailResult, metadata: Record<string, any> = {}) => {
     const eventData = {
       email_type: result.emailType,
-      recipient_domain: result.recipient.split('@')[1],
+      recipient_domain: result.recipient ? result.recipient.split('@')[1] : 'unknown',
       success: result.success,
       message_id: result.messageId,
       timestamp: result.timestamp,
@@ -174,7 +174,7 @@ export const useEmailEventTriggers = () => {
    */
   const triggerWelcomeEmail = useCallback(async (userEmail: string, userName: string) => {
     try {
-      const { sendWelcomeEmail } = await import('@/lib/email/plunk-service')
+      const { sendWelcomeEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendWelcomeEmail(userEmail, userName)
       
       emailAnalytics.trackEmailSent(result, {
@@ -199,7 +199,7 @@ export const useEmailEventTriggers = () => {
     quizCategory: string
   }) => {
     try {
-      const { sendQuizAchievementEmail } = await import('@/lib/email/plunk-service')
+      const { sendQuizAchievementEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendQuizAchievementEmail({
         to: userEmail,
         userName,
@@ -231,7 +231,7 @@ export const useEmailEventTriggers = () => {
     primaryActivity: string
   }) => {
     try {
-      const { sendLevelUpEmail } = await import('@/lib/email/plunk-service')
+      const { sendLevelUpEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendLevelUpEmail({
         to: userEmail,
         userName,
@@ -266,7 +266,7 @@ export const useEmailEventTriggers = () => {
     requireParentConsent?: boolean
   }) => {
     try {
-      const { sendLearningPodInvite } = await import('@/lib/email/plunk-service')
+      const { sendLearningPodInvite } = await import('@/lib/email/mailerlite-service')
       const result = await sendLearningPodInvite(inviteData)
       
       emailAnalytics.trackEmailSent(result, {
@@ -294,7 +294,7 @@ export const useEmailEventTriggers = () => {
     giftMessage?: string
   }) => {
     try {
-      const { sendGiftClaimEmail } = await import('@/lib/email/plunk-service')
+      const { sendGiftClaimEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendGiftClaimEmail(giftData)
       
       emailAnalytics.trackEmailSent(result, {
@@ -316,7 +316,7 @@ export const useEmailEventTriggers = () => {
    */
   const triggerEducationalAccessEmail = useCallback(async (userEmail: string, userName: string, institutionDomain: string) => {
     try {
-      const { sendEducationalAccessEmail } = await import('@/lib/email/plunk-service')
+      const { sendEducationalAccessEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendEducationalAccessEmail({
         to: userEmail,
         userName,

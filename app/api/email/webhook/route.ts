@@ -2,29 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import crypto from 'crypto'
 
-// Plunk webhook event types
-interface PlunkWebhookEvent {
-  type: 'delivered' | 'opened' | 'clicked' | 'bounced' | 'complained' | 'unsubscribed'
+// MailerLite webhook event types
+interface MailerLiteWebhookEvent {
+  type: 'subscriber.created' | 'subscriber.updated' | 'subscriber.unsubscribed' | 'subscriber.bounced' | 'subscriber.complained' | 'campaign.sent' | 'campaign.opened' | 'campaign.clicked'
   timestamp: string
   data: {
-    id: string // message ID
+    id: string // message ID or subscriber ID
     email: string
     template?: string
     subject?: string
     url?: string // for click events
     bounce_type?: 'hard' | 'soft'
     reason?: string
+    campaign_id?: string
+    subscriber_id?: string
   }
 }
 
 /**
- * Verify webhook signature from Plunk
+ * Verify webhook signature from MailerLite
  */
-function verifyPlunkSignature(payload: string, signature: string): boolean {
-  const webhookSecret = process.env.PLUNK_WEBHOOK_SECRET
+function verifyMailerLiteSignature(payload: string, signature: string): boolean {
+  const webhookSecret = process.env.MAILERLITE_WEBHOOK_SECRET
   
   if (!webhookSecret) {
-    console.warn('PLUNK_WEBHOOK_SECRET not configured - webhook signature verification disabled')
+    console.warn('MAILERLITE_WEBHOOK_SECRET not configured - webhook signature verification disabled')
     return true // Allow in development
   }
 
@@ -67,7 +69,7 @@ function getEmailTypeFromMessage(template?: string, subject?: string): string {
 /**
  * Track email events in our analytics system
  */
-async function trackEmailEvent(event: PlunkWebhookEvent) {
+async function trackEmailEvent(event: MailerLiteWebhookEvent) {
   const emailType = getEmailTypeFromMessage(event.data.template, event.data.subject)
   const recipientDomain = event.data.email.split('@')[1]
   
@@ -81,14 +83,14 @@ async function trackEmailEvent(event: PlunkWebhookEvent) {
 
   // Add event-specific data
   switch (event.type) {
-    case 'clicked':
+    case 'campaign.clicked':
       analyticsData.clicked_url = event.data.url
       break
-    case 'bounced':
+    case 'subscriber.bounced':
       analyticsData.bounce_type = event.data.bounce_type
       analyticsData.bounce_reason = event.data.reason
       break
-    case 'complained':
+    case 'subscriber.complained':
       analyticsData.complaint_reason = event.data.reason
       break
   }
@@ -103,27 +105,27 @@ async function trackEmailEvent(event: PlunkWebhookEvent) {
 }
 
 /**
- * Handle Plunk webhook events
+ * Handle MailerLite webhook events
  */
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const signature = headersList.get('X-Plunk-Signature')
+    const signature = headersList.get('X-MailerLite-Signature')
     
     if (!signature) {
-      console.warn('Missing Plunk webhook signature')
+      console.warn('Missing MailerLite webhook signature')
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
     }
 
     const payload = await request.text()
     
     // Verify webhook signature
-    if (!verifyPlunkSignature(payload, signature)) {
-      console.error('Invalid Plunk webhook signature')
+    if (!verifyMailerLiteSignature(payload, signature)) {
+      console.error('Invalid MailerLite webhook signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const event: PlunkWebhookEvent = JSON.parse(payload)
+    const event: MailerLiteWebhookEvent = JSON.parse(payload)
     
     // Validate event structure
     if (!event.type || !event.data?.id || !event.data?.email) {
@@ -136,33 +138,41 @@ export async function POST(request: NextRequest) {
 
     // Process specific event types
     switch (event.type) {
-      case 'delivered':
-        console.log(`📧 Email delivered: ${event.data.email}`)
+      case 'campaign.sent':
+        console.log(`📧 Campaign sent: ${event.data.email}`)
         break
         
-      case 'opened':
+      case 'campaign.opened':
         console.log(`📧 Email opened: ${event.data.email}`)
         // Could trigger follow-up emails or user journey steps
         break
         
-      case 'clicked':
+      case 'campaign.clicked':
         console.log(`📧 Email clicked: ${event.data.email} -> ${event.data.url}`)
         // Track engagement and conversion
         break
         
-      case 'bounced':
+      case 'subscriber.bounced':
         console.log(`📧 Email bounced: ${event.data.email} (${event.data.bounce_type})`)
         // Handle bounced emails - update user status, remove from lists
         break
         
-      case 'complained':
+      case 'subscriber.complained':
         console.log(`📧 Email complaint: ${event.data.email}`)
         // Handle spam complaints - immediately unsubscribe
         break
         
-      case 'unsubscribed':
+      case 'subscriber.unsubscribed':
         console.log(`📧 Email unsubscribed: ${event.data.email}`)
         // Update user preferences
+        break
+        
+      case 'subscriber.created':
+        console.log(`📧 Subscriber created: ${event.data.email}`)
+        break
+        
+      case 'subscriber.updated':
+        console.log(`📧 Subscriber updated: ${event.data.email}`)
         break
     }
 

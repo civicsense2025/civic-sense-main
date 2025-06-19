@@ -28,7 +28,7 @@ export class EmailAnalyticsTracker {
   trackEmailSent(result: EmailResult, metadata: Record<string, any> = {}) {
     const eventData = {
       email_type: result.emailType,
-      recipient_domain: result.recipient.split('@')[1],
+      recipient_domain: result.recipient?.split('@')[1] || 'unknown',
       success: result.success,
       message_id: result.messageId,
       timestamp: result.timestamp,
@@ -93,7 +93,12 @@ export class EmailAnalyticsTracker {
       'premium_welcome': 'premium_engagement',
       'subscription_expiring': 'retention_engagement',
       'password_reset': 'account_maintenance',
-      'account_verification': 'account_activation'
+      'account_verification': 'account_activation',
+      'achievement': 'civic_achievement_celebration',
+      'streak': 'civic_learning_consistency',
+      'pod_invitation': 'collaborative_civic_learning',
+      're_engagement': 'civic_re_activation',
+      'civic_news_alert': 'civic_awareness_engagement'
     }
 
     const civicEngagementType = civicImpactMap[emailType] || 'general_engagement'
