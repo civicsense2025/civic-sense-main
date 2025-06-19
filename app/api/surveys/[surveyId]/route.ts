@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+
+// Create service role client for operations that need elevated permissions
+const serviceSupabase = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function GET(
   request: NextRequest,
@@ -32,8 +39,9 @@ export async function GET(
       }
     }
 
-    // Get questions
-    const { data: questions, error: questionsError } = await supabase
+    // Get questions using service role client to bypass RLS issues
+    // The RLS policies reference auth.users table which anonymous users can't access
+    const { data: questions, error: questionsError } = await serviceSupabase
       .from('survey_questions')
       .select('*')
       .eq('survey_id', surveyId)

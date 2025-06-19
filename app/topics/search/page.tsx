@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Filter, ChevronRight, Clock, BarChart, BookOpen, Calendar, X, Loader2 } from 'lucide-react'
@@ -56,7 +56,36 @@ const SORT_OPTIONS = [
   { value: 'popularity', label: 'Most Popular' }
 ]
 
-export default function TopicsSearchPage() {
+// Loading fallback component
+function SearchPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <div className="sticky top-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <div className="h-9 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            <div className="flex items-center justify-between">
+              <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <div className="h-9 w-44 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main search component that uses useSearchParams
+function TopicsSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -193,7 +222,7 @@ export default function TopicsSearchPage() {
     }
     const newUrl = params.toString() ? `?${params.toString()}` : '/topics/search'
     router.replace(newUrl, { scroll: false })
-  }, [searchQuery])
+  }, [searchQuery, searchParams, router])
 
   const toggleCategory = (categoryName: string) => {
     setSelectedCategories(prev =>
@@ -426,6 +455,15 @@ export default function TopicsSearchPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main exported component with Suspense boundary
+export default function TopicsSearchPage() {
+  return (
+    <Suspense fallback={<SearchPageSkeleton />}>
+      <TopicsSearchContent />
+    </Suspense>
   )
 }
 
