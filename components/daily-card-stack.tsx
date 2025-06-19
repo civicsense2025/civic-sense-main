@@ -153,6 +153,11 @@ const useTopicAccess = () => {
       return { accessible: false, reason: 'coming_soon' }
     }
 
+    // BREAKING & FEATURED CONTENT: Always accessible to everyone
+    if (topic.is_breaking || topic.is_featured) {
+      return { accessible: true, reason: 'breaking_or_featured_content' }
+    }
+
     // If topic date is in the future, lock it for everyone until that day
     if (localTopicDate > currentDate) {
       return { accessible: false, reason: 'future_locked' }
@@ -681,7 +686,8 @@ export function DailyCardStack({
       }
     }
 
-    if (!user && accessStatus.reason === 'guest_exploring_today') {
+    // For breaking/featured content or guest users exploring today, record the attempt
+    if (!user && (accessStatus.reason === 'guest_exploring_today' || accessStatus.reason === 'breaking_or_featured_content')) {
       try {
         await recordQuizAttempt()
       } catch (error) {

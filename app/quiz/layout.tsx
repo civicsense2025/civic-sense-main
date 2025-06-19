@@ -1,17 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { UserMenu } from "@/components/auth/user-menu"
 import { AuthDialog } from "@/components/auth/auth-dialog"
-import { Toaster } from "@/components/ui/toaster"
 
 export default function QuizLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [searchQuery, setSearchQuery] = useState("")
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [isInActiveQuiz, setIsInActiveQuiz] = useState(false)
   
@@ -43,29 +39,7 @@ export default function QuizLayout({
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Minimal header */}
-      <div className="border-b border-slate-100 dark:border-slate-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Clean branding */}
-            <Link 
-              href="/" 
-              className="group hover:opacity-70 transition-opacity"
-            >
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                CivicSense
-              </h1>
-            </Link>
-            
-            {/* Minimal user menu */}
-            <UserMenu 
-              onSignInClick={() => setIsAuthDialogOpen(true)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Main content area */}
+      {/* Main content area - let the client components handle their own headers */}
       <div className="relative">
         {children}
       </div>

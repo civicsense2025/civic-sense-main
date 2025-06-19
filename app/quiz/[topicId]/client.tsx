@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Header } from "@/components/header"
 import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { TopicInfo } from "@/components/quiz/topic-info"
@@ -155,20 +156,20 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   }, [params.topicId, topic, searchParams, user, recordQuizAttempt])
 
   const handleStartQuiz = async () => {
-    // Check quiz limits based on user tier
-    if (!user && hasReachedDailyLimit()) {
+    // Breaking and featured content is always free to access
+    const isBreakingOrFeatured = topic?.is_breaking || topic?.is_featured
+    
+    // Check quiz limits based on user tier (but skip for breaking/featured content)
+    if (!isBreakingOrFeatured && !user && hasReachedDailyLimit()) {
       setIsAuthDialogOpen(true)
       return
     }
     
-    // Premium users should have unlimited access
-    if (user && !isPremium && !isPro && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT) {
+    // Premium users should have unlimited access (but skip for breaking/featured content)
+    if (!isBreakingOrFeatured && user && !isPremium && !isPro && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT) {
       setShowPremiumGate(true)
       return
     }
-    
-    // Remove the premium user limit check
-    // Premium users should have unlimited access to quizzes
 
     // Check if questions are already loaded (they should be from useEffect)
     if (!questions || questions.length === 0) {
@@ -176,7 +177,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
       return
     }
 
-    // Increment quiz attempts for guest users
+    // Increment quiz attempts for guest users (even for breaking/featured content to track usage)
     if (!user) {
       recordQuizAttempt()
     }
@@ -284,20 +285,15 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-2 sm:py-4" data-quiz-active={!showTopicInfo}>
-      {/* Minimal navigation - hide during loading */}
-      {!showLoadingScreen && !showContinueLoading && (
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <button
-            onClick={handleBackToHome}
-            className="text-xs sm:text-sm font-medium tracking-wide transition-opacity opacity-70 hover:opacity-100"
-          >
-            ← Back to Home
-          </button>
-          
-          <div className="w-20 sm:w-24" /> {/* Spacer for centering */}
-        </div>
-      )}
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      {/* Main app header */}
+      <Header 
+        onSignInClick={() => setIsAuthDialogOpen(true)}
+        showTopBar={true}
+        showMainHeader={true}
+      />
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
 
       {showContinueLoading ? (
         <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
@@ -314,79 +310,80 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           hasCompletedTopic={hasCompletedTopic(params.topicId)}
           questions={questions}
         />
-      ) : (
-        <div className="bg-white dark:bg-slate-950 pb-4 sm:pb-8">
-          <QuizErrorBoundary>
-            <QuizEngine
-              questions={questions}
-              topicId={params.topicId}
-              currentTopic={{
-                id: topic?.topic_id || "",
-                title: topic?.topic_title || "",
-                emoji: topic?.emoji || "",
-                date: topic?.date || "",
-                dayOfWeek: topic?.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
-              }}
-              onComplete={handleQuizComplete}
-            />
-          </QuizErrorBoundary>
-        </div>
-      )}
-
-      {/* Auth Dialog */}
-      <AuthDialog
-        isOpen={isAuthDialogOpen}
-        onClose={() => setIsAuthDialogOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-        initialMode='sign-up'
-      />
-
-      {/* Premium Gate */}
-      <PremiumGate
-        feature="advanced_analytics"
-        isOpen={showPremiumGate}
-        onClose={() => setShowPremiumGate(false)}
-        title="Unlimited Daily Quizzes"
-        description="Upgrade to Premium for unlimited daily quizzes and advanced learning features"
-      />
-
-      {/* Share to LMS (Google Classroom & Clever) - for educators only */}
-      {(() => {
-        const role = (user?.user_metadata?.role || '') as string
-        const allowed = [
-          UserRole.Teacher,
-          UserRole.Parent,
-          UserRole.Admin,
-          UserRole.Organizer
-        ] as string[]
-        if (!role || !allowed.includes(role)) return null
-
-        const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`
-        const quizTitle = `CivicSense Quiz: ${topic?.topic_title ?? ''}`
-        const quizDescription = topic?.description || "Bite-sized civic knowledge from CivicSense"
-        
-        return (
-          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-            {/* Google Classroom Share */}
-            <ClassroomShareButton
-              url={shareUrl}
-              title={quizTitle}
-              body={quizDescription}
-              itemType="assignment"
-              size={56}
-            />
-            
-            {/* Clever Share */}
-            <CleverShareButton
-              topicId={params.topicId}
-              topicTitle={topic?.topic_title ?? ''}
-              description={quizDescription}
-              size="lg"
-              className="shadow-lg"
-            />
+              ) : (
+          <div className="pb-4 sm:pb-8">
+            <QuizErrorBoundary>
+              <QuizEngine
+                questions={questions}
+                topicId={params.topicId}
+                currentTopic={{
+                  id: topic?.topic_id || "",
+                  title: topic?.topic_title || "",
+                  emoji: topic?.emoji || "",
+                  date: topic?.date || "",
+                  dayOfWeek: topic?.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
+                }}
+                onComplete={handleQuizComplete}
+              />
+            </QuizErrorBoundary>
           </div>
-        )
-      })()}
+        )}
+
+        {/* Auth Dialog */}
+        <AuthDialog
+          isOpen={isAuthDialogOpen}
+          onClose={() => setIsAuthDialogOpen(false)}
+          onAuthSuccess={handleAuthSuccess}
+          initialMode='sign-up'
+        />
+
+        {/* Premium Gate */}
+        <PremiumGate
+          feature="advanced_analytics"
+          isOpen={showPremiumGate}
+          onClose={() => setShowPremiumGate(false)}
+          title="Unlimited Daily Quizzes"
+          description="Upgrade to Premium for unlimited daily quizzes and advanced learning features"
+        />
+
+        {/* Share to LMS (Google Classroom & Clever) - for educators only */}
+        {(() => {
+          const role = (user?.user_metadata?.role || '') as string
+          const allowed = [
+            UserRole.Teacher,
+            UserRole.Parent,
+            UserRole.Admin,
+            UserRole.Organizer
+          ] as string[]
+          if (!role || !allowed.includes(role)) return null
+
+          const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`
+          const quizTitle = `CivicSense Quiz: ${topic?.topic_title ?? ''}`
+          const quizDescription = topic?.description || "Bite-sized civic knowledge from CivicSense"
+          
+          return (
+            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+              {/* Google Classroom Share */}
+              <ClassroomShareButton
+                url={shareUrl}
+                title={quizTitle}
+                body={quizDescription}
+                itemType="assignment"
+                size={56}
+              />
+              
+              {/* Clever Share */}
+              <CleverShareButton
+                topicId={params.topicId}
+                topicTitle={topic?.topic_title ?? ''}
+                description={quizDescription}
+                size="lg"
+                className="shadow-lg"
+              />
+            </div>
+          )
+        })()}
+      </div>
     </div>
   )
-} 
+}  
