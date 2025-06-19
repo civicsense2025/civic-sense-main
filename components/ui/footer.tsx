@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { PWAInstallButton } from "@/components/pwa-install-button"
 import { LanguageSwitcher } from "../language-switcher"
+import { ThemeToggle } from "../theme-toggle"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -22,11 +23,10 @@ export function Footer() {
               </div>
             </div>
             
-            {isDevelopment && (
-              <div className="flex items-center">
-                <LanguageSwitcher variant="compact" />
-              </div>
-            )}
+            <div className="flex items-center space-x-2">
+              {isDevelopment && <LanguageSwitcher variant="compact" />}
+              <ThemeToggle />
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-3 sm:space-y-0">

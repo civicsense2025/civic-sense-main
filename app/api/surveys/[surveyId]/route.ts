@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { surveyId: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const surveyId = params.surveyId
 
     // Get survey details
@@ -82,7 +82,7 @@ export async function PUT(
   { params }: { params: { surveyId: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const surveyId = params.surveyId
     const body = await request.json()
 
@@ -157,7 +157,7 @@ export async function DELETE(
   { params }: { params: { surveyId: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const surveyId = params.surveyId
 
     // Get current user

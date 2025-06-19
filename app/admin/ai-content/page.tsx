@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -89,6 +90,7 @@ export default function AIContentAdminPage() {
   const { user } = useAuth()
   const { hasFeatureAccess } = usePremium()
   const { toast } = useToast()
+  const { isAdmin, isLoading: adminLoading, error: adminError } = useAdminAccess()
   
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -101,26 +103,34 @@ export default function AIContentAdminPage() {
   const [figures, setFigures] = useState<AIExtractedFigure[]>([])
   const [events, setEvents] = useState<AIExtractedEvent[]>([])
   
-  // Check admin access
+  // Check admin access and redirect if unauthorized
   useEffect(() => {
     if (!user) return
     
-    // For now, check if user has premium access or is specific admin email
-    const isAdmin = user.email === 'admin@civicsense.one' ||
-                   user.email?.includes('civicsense') ||
-                   hasFeatureAccess('advanced_analytics') // Use existing premium feature
-    
-    if (!isAdmin) {
+    if (adminError) {
       toast({
-        title: "Access Denied",
-        description: "You don't have permission to access the admin panel",
+        title: "Access Error",
+        description: "Could not verify admin permissions",
         variant: "destructive"
       })
-      // Redirect to dashboard
       window.location.href = '/dashboard'
       return
     }
-  }, [user, hasFeatureAccess, toast])
+    
+    if (!adminLoading && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin permissions to access this panel",
+        variant: "destructive"
+      })
+      window.location.href = '/dashboard'
+      return
+    }
+    
+    if (!adminLoading && isAdmin) {
+      console.log('✅ Admin access verified for user:', user.email)
+    }
+  }, [user, isAdmin, adminLoading, adminError, toast])
 
   // Load admin data
   useEffect(() => {
@@ -267,7 +277,7 @@ export default function AIContentAdminPage() {
     }
   }
 
-  if (isLoading || !stats) {
+  if (isLoading || adminLoading || !stats || (!isAdmin && !adminError)) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center space-y-4">

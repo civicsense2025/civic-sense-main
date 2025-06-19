@@ -10,3 +10,5 @@ Supabase scripts should be idempotent where it makes sense, and use update/alter
 When creating table schema, try not to use ambiguous field names. 
 
 Make sure all RLS policies build off one another and do not lead to infinite incursions.
+
+we're using supabase ssr/js, not supabaseaut helpers. do NOT use auth helpers ever again

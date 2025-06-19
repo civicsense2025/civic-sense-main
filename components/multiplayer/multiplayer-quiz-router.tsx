@@ -9,11 +9,11 @@ import { useMultiplayerRoom } from "@/lib/multiplayer"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import React from "react"
 
+import { debug } from "@/lib/debug-config"
+
 // Development-only logging utility
 const devLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🎯 [MultiplayerQuizRouter] ${message}`, data || '')
-  }
+  debug.log('multiplayer', `[MultiplayerQuizRouter] ${message}`, data)
 }
 
 // =============================================================================

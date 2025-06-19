@@ -128,10 +128,10 @@ export function GiftCreditsDashboard() {
 
     setIsLoadingLinks(true)
     try {
-      const response = await fetch('/api/shareable-gift-links')
+      const response = await fetch(`/api/shareable-gift-links?userId=${user.id}`)
       if (response.ok) {
         const data = await response.json()
-        setGiftLinks(data.links || [])
+        setGiftLinks(data.shareableLinks || [])
       }
     } catch (error) {
       console.error('Error loading gift links:', error)
@@ -151,7 +151,12 @@ export function GiftCreditsDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          credits: creditsToGift
+          donorUserId: user.id,
+          accessType: donationStatus.accessTier || 'annual',
+          creditsToUse: creditsToGift,
+          title: null,
+          message: null,
+          customSlug: null
         })
       })
 

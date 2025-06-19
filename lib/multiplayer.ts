@@ -30,7 +30,7 @@ export interface CreateRoomOptions {
   topicId: string
   roomName?: string
   maxPlayers?: number
-  gameMode?: 'classic' | 'speed_round' | 'elimination' | 'team_battle'
+  gameMode?: 'classic' | 'speed_round' | 'elimination' | 'team_battle' | 'learning_lab'
 }
 
 export interface JoinRoomOptions {
@@ -47,7 +47,10 @@ export const multiplayerOperations = {
   /**
    * Create a new multiplayer room
    */
-  async createRoom(options: CreateRoomOptions, hostUserId?: string, guestToken?: string): Promise<MultiplayerRoom> {
+  async createRoom(options: CreateRoomOptions, hostUserId?: string, guestToken?: string): Promise<{
+    room: MultiplayerRoom
+    player: MultiplayerPlayer
+  }> {
     // Either hostUserId or guestToken is required
     if (!hostUserId && !guestToken) {
       // Generate a guest token for anonymous hosts
@@ -98,15 +101,37 @@ export const multiplayerOperations = {
 
     const roomData = data[0]
     
-    // Get the full room data using the returned id (function returns 'id', not 'room_id')
-    const { data: room, error: roomError } = await supabase
-      .from('multiplayer_rooms')
-      .select('*')
-      .eq('id', roomData.id)
-      .single()
+    // Get the full room data and the host player data
+    const [roomResult, playerResult] = await Promise.all([
+      supabase
+        .from('multiplayer_rooms')
+        .select('*')
+        .eq('id', roomData.id)
+        .single(),
+      supabase
+        .from('multiplayer_room_players')
+        .select('*')
+        .eq('room_id', roomData.id)
+        .eq('is_host', true)
+        .single()
+    ])
 
-    if (roomError) throw roomError
-    return room as MultiplayerRoom
+    if (roomResult.error) throw roomResult.error
+    if (playerResult.error) throw playerResult.error
+
+    // Cache player ID locally so we can restore it later without cluttering URLs
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`multiplayerPlayer_${roomResult.data.room_code}`, playerResult.data.id)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return {
+      room: roomResult.data as MultiplayerRoom,
+      player: playerResult.data as MultiplayerPlayer
+    }
   },
 
   /**
@@ -152,6 +177,15 @@ export const multiplayerOperations = {
 
     if (roomResult.error) throw roomResult.error
     if (playerResult.error) throw playerResult.error
+
+    // Cache player ID locally so we can restore it later without cluttering URLs
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`multiplayerPlayer_${roomResult.data.room_code}`, playerResult.data.id)
+      } catch {
+        /* ignore */
+      }
+    }
 
     return {
       room: roomResult.data as MultiplayerRoom,

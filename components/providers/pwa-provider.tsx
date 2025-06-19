@@ -1,6 +1,7 @@
 "use client"
 
 import { ReactNode, Suspense, lazy, useEffect, useState } from 'react'
+import { debug } from "@/lib/debug-config"
 
 // Only load PWA components when they're actually needed
 const PWARegister = lazy(() => import('@/components/pwa-register').then(mod => ({ default: mod.PWARegister })))
@@ -21,7 +22,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
     if (process.env.NODE_ENV === 'development') {
       // Only log once per session to reduce console noise
       if (!window.sessionStorage.getItem('pwa-dev-logged')) {
-        console.log('PWA: Disabled in development mode to prevent caching issues')
+        debug.log('pwa', 'Disabled in development mode to prevent caching issues')
         window.sessionStorage.setItem('pwa-dev-logged', 'true')
       }
       return

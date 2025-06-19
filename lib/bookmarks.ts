@@ -11,7 +11,8 @@ import type {
   BookmarkTag,
   CreateBookmarkRequest,
   BookmarkSearchFilters,
-  BookmarkAnalyticsEvent
+  BookmarkAnalyticsEvent,
+  ContentType
 } from './types/bookmarks'
 import type { DbProfile } from './database.types'
 

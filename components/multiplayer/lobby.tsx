@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { 
   Users, 
   Zap, 
@@ -23,7 +24,8 @@ import {
   Globe,
   Lock,
   UserPlus,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -32,6 +34,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { multiplayerOperations, type CreateRoomOptions } from '@/lib/multiplayer'
 import { dataService } from '@/lib/data-service'
+import { TopicSelector } from './topic-selector'
 
 // Game mode definitions
 export interface GameMode {
@@ -99,8 +102,6 @@ interface LobbyState {
   selectedTopic: string | null
   maxPlayers: number
   includeNPCs: boolean
-  topicSearchQuery: string
-  topicsDisplayCount: number
 }
 
 export function MultiplayerLobby() {
@@ -118,47 +119,13 @@ export function MultiplayerLobby() {
     showAdvanced: false,
     selectedTopic: null,
     maxPlayers: 4,
-    includeNPCs: true,
-    topicSearchQuery: '',
-    topicsDisplayCount: 15
+    includeNPCs: true
   })
 
   const [creationStep, setCreationStep] = useState<'mode' | 'settings' | 'topic'>('mode')
 
-  const [topics, setTopics] = useState<any[]>([])
   const [userRooms, setUserRooms] = useState<any[]>([])
   const [isLoadingRooms, setIsLoadingRooms] = useState(false)
-
-  // Load available topics
-  useEffect(() => {
-    const loadTopics = async () => {
-      try {
-        const topicsData = await dataService.getAllTopics()
-        // dataService.getAllTopics() returns a Record<string, TopicMetadata>, convert to array
-        if (topicsData && typeof topicsData === 'object') {
-          const topicsArray = Object.values(topicsData)
-          // Sort by date (newest first) and load ALL topics
-          const sortedTopics = topicsArray.sort((a, b) => {
-            const dateA = new Date(a.date || 0).getTime()
-            const dateB = new Date(b.date || 0).getTime()
-            return dateB - dateA
-          })
-          setTopics(sortedTopics) // Load ALL topics, not just 10
-          console.log(`🎮 Loaded ${sortedTopics.length} topics for multiplayer lobby`)
-        } else {
-          console.warn('Unexpected topics data format:', topicsData)
-          setTopics([])
-        }
-      } catch (error) {
-        console.error('Error loading topics:', error)
-        setTopics([])
-        
-        // If topics fail to load, we can still create rooms with a fallback topic
-        console.log('🎮 Topics failed to load, will use fallback topic for room creation')
-      }
-    }
-    loadTopics()
-  }, [])
 
   // Load user's rooms and perform cleanup
   useEffect(() => {
@@ -207,14 +174,10 @@ export function MultiplayerLobby() {
     setState(prev => ({ ...prev, isCreating: true }))
 
     try {
-      // Use a real topic ID - either selected by user or first available topic
+      // Use selected topic ID or fallback to a known topic
       let topicId = state.selectedTopic
-      if (!topicId && topics.length > 0) {
-        // Use the first available topic as default
-        topicId = topics[0].topic_id || topics[0].id
-      }
       
-      // Fallback to known topic IDs from the database if no topics loaded
+      // Fallback to known topic IDs from the database if no topic selected
       if (!topicId) {
         // These are real topic IDs from the question_topics table
         const fallbackTopics = [
@@ -240,19 +203,11 @@ export function MultiplayerLobby() {
       // Generate a guest token if user is not logged in
       const guestToken = !user ? `guest_host_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : undefined
       
-      const room = await multiplayerOperations.createRoom(options, user?.id, guestToken)
-      console.log('Room created:', room)
-      
-      // Join the room as host
-      const result = await multiplayerOperations.joinRoom({
-        roomCode: room.room_code,
-        playerName: user?.user_metadata?.display_name || 'Host',
-        playerEmoji: '👑'
-      }, user?.id, guestToken)
-      console.log('Joined room as host:', result)
+      const result = await multiplayerOperations.createRoom(options, user?.id, guestToken)
+      console.log('Room created:', result)
 
-      // Navigate to waiting room
-      router.push(`/quiz/${room.topic_id}/multiplayer?room=${room.room_code}&player=${result.player.id}`)
+      // Navigate to waiting room (no need to join since createRoom already adds the host as a player)
+      router.push(`/quiz/${result.room.topic_id}/multiplayer?room=${result.room.room_code}&player=${result.player.id}`)
     } catch (error) {
       console.error('Error creating room:', error)
       
@@ -340,20 +295,121 @@ export function MultiplayerLobby() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Main Content */}
       <div className="min-h-screen flex flex-col">
-        {/* Clean Hero Header */}
-        <div className="text-center py-16 px-4">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-6xl font-light text-slate-900 dark:text-white tracking-tight">
+        {/* Clean Hero Header - Responsive */}
+        <div className="text-center py-8 md:py-16 px-4">
+          <div className="max-w-4xl mx-auto space-y-4 md:space-y-8">
+            <div className="space-y-2 md:space-y-4">
+              {/* Multiplayer Game Icon */}
+              <div className="flex justify-center mb-4 md:mb-6">
+                <Gamepad2 className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-primary" />
+              </div>
+              
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-slate-900 dark:text-white tracking-tight">
                 Learn Democracy
                 <span className="block text-slate-600 dark:text-slate-400">Together</span>
               </h1>
               
-              <p className="text-xl font-light text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl font-light text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
                 Join friends or meet new people in interactive civic knowledge games. 
                 Build understanding through competition and collaboration.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Your Rooms Section - Top */}
+        <div className="lg:hidden px-4 mb-6">
+          <div className="max-w-4xl mx-auto">
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Your Rooms</h3>
+                  {userRooms.length > 0 && (
+                    <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {userRooms.length}
+                    </Badge>
+                  )}
+                </div>
+                <ChevronDown className="h-4 w-4 text-slate-500 dark:text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                {userRooms.length > 0 ? (
+                  <div className="flex gap-4 pb-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                    {userRooms.map((roomData) => (
+                      <div
+                        key={roomData.room.id}
+                        className="min-w-[280px] p-4 border border-slate-200 dark:border-slate-800 rounded-lg hover:border-slate-300 dark:hover:border-slate-700 transition-colors bg-white dark:bg-slate-900/30 snap-start"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-slate-900 dark:text-white text-sm">
+                              {roomData.room.room_name || `${roomData.room.game_mode} Room`}
+                            </h4>
+                            {roomData.player.is_host && (
+                              <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border-0">
+                                👑 Host
+                              </Badge>
+                            )}
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs",
+                              roomData.room.room_status === 'waiting' && "text-green-600 dark:text-green-400 border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20",
+                              roomData.room.room_status === 'in_progress' && "text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20",
+                              roomData.room.room_status === 'starting' && "text-yellow-600 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20"
+                            )}
+                          >
+                            {roomData.room.room_status === 'waiting' && '⏳ Waiting'}
+                            {roomData.room.room_status === 'starting' && '🚀 Starting'}
+                            {roomData.room.room_status === 'in_progress' && '🎮 In Progress'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-500 mb-3">
+                          <span className="flex items-center gap-1">
+                            {roomData.topic?.emoji || '📝'} {roomData.topic?.topic_title || 'Civic Knowledge'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {roomData.room.current_players}/{roomData.room.max_players}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs text-slate-500 dark:text-slate-500 font-mono">
+                            {roomData.room.room_code}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-500">
+                            {roomData.room.game_mode}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                          onClick={() => handleJoinUserRoom(roomData)}
+                        >
+                          {roomData.room.room_status === 'waiting' ? 'Join Room' : 'Rejoin Game'}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-500">
+                    {isLoadingRooms ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400 mx-auto mb-2" />
+                    ) : (
+                      <Globe className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    )}
+                    <p className="text-sm">
+                      {isLoadingRooms ? 'Loading your rooms...' : 'No active rooms found'}
+                    </p>
+                    <p className="text-xs mt-1">
+                      {isLoadingRooms ? 'Please wait...' : 'Create your own to get started!'}
+                    </p>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </div>
 
@@ -367,11 +423,11 @@ export function MultiplayerLobby() {
                 {/* Create Room Section - Multi-step */}
                 <div className="space-y-8">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
+                    <div className="space-y-1 md:space-y-2">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-light text-slate-900 dark:text-white tracking-tight">
                         Create Room
                       </h2>
-                      <p className="text-slate-600 dark:text-slate-400 font-light">
+                      <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-light">
                         Start a new multiplayer session
                       </p>
                     </div>
@@ -415,7 +471,9 @@ export function MultiplayerLobby() {
                   {creationStep === 'mode' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                       <h3 className="text-lg font-medium text-slate-900 dark:text-white text-center">Choose Game Mode</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Desktop Grid */}
+                      <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {GAME_MODES.map((mode) => (
                           <button
                             key={mode.id}
@@ -459,6 +517,70 @@ export function MultiplayerLobby() {
                             </div>
                           </button>
                         ))}
+                      </div>
+
+                      {/* Mobile Carousel */}
+                      <div className="md:hidden">
+                        <div className="flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                          {GAME_MODES.map((mode) => (
+                            <button
+                              key={mode.id}
+                              className={cn(
+                                "relative min-w-[280px] p-6 text-left transition-all duration-200 rounded-xl border snap-start",
+                                "hover:scale-[1.01] hover:shadow-sm",
+                                state.selectedGameMode === mode.id
+                                  ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50"
+                                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/30"
+                              )}
+                              onClick={() => setState(prev => ({ ...prev, selectedGameMode: mode.id }))}
+                            >
+                              {mode.isPremium && !isPremium && !isPro && (
+                                <div className="absolute -top-2 -right-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    Premium
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{mode.emoji}</span>
+                                  <h4 className="text-base font-medium text-slate-900 dark:text-white">{mode.name}</h4>
+                                </div>
+                                
+                                <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
+                                  {mode.description}
+                                </p>
+                                
+                                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-500">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {mode.playerRange[0]}-{mode.playerRange[1]}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {mode.estimatedTime}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {/* Mobile carousel indicators */}
+                        <div className="flex justify-center gap-2 mt-4">
+                          {GAME_MODES.map((mode, index) => (
+                            <div
+                              key={mode.id}
+                              className={cn(
+                                "w-2 h-2 rounded-full transition-all duration-200",
+                                state.selectedGameMode === mode.id 
+                                  ? "bg-slate-600 dark:bg-slate-400" 
+                                  : "bg-slate-300 dark:bg-slate-700"
+                              )}
+                            />
+                          ))}
+                        </div>
                       </div>
                       
                       <div className="flex justify-center pt-4">
@@ -547,78 +669,14 @@ export function MultiplayerLobby() {
                   )}
 
                   {/* Step 3: Topic Selection */}
-                  {creationStep === 'topic' && topics.length > 0 && (
+                  {creationStep === 'topic' && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                       <h3 className="text-lg font-medium text-slate-900 dark:text-white text-center">Select Topic</h3>
                       
-                      {/* Search Bar and Random Button */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input
-                            placeholder="Search topics..."
-                            value={state.topicSearchQuery}
-                            onChange={(e) => setState(prev => ({ 
-                              ...prev, 
-                              topicSearchQuery: e.target.value,
-                              topicsDisplayCount: 15 
-                            }))}
-                            className="pl-10 border-slate-200 dark:border-slate-800 focus:border-slate-400 dark:focus:border-slate-600"
-                          />
-                        </div>
-                        <button
-                          onClick={() => setState(prev => ({ ...prev, selectedTopic: null }))}
-                          className={cn(
-                            "px-4 py-2 rounded-lg border transition-all flex items-center gap-2 whitespace-nowrap",
-                            !state.selectedTopic 
-                              ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 text-slate-900 dark:text-white" 
-                              : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30"
-                          )}
-                        >
-                          <span className="text-base">🎲</span>
-                          <span className="text-sm">Random Topic</span>
-                        </button>
-                      </div>
-
-                      {/* Topics List */}
-                      <div className="max-h-64 overflow-y-auto space-y-2 px-1">
-                        {(() => {
-                          const filteredTopics = topics.filter(topic => {
-                            if (!state.topicSearchQuery.trim()) return true
-                            const query = state.topicSearchQuery.toLowerCase()
-                            const title = (topic.topic_title || topic.title || '').toLowerCase()
-                            return title.includes(query)
-                          })
-                          
-                          const displayTopics = filteredTopics.slice(0, state.topicsDisplayCount)
-                          
-                          return displayTopics.map((topic) => (
-                            <button
-                              key={topic.topic_id || topic.id}
-                              onClick={() => setState(prev => ({ ...prev, selectedTopic: topic.topic_id || topic.id }))}
-                              className={cn(
-                                "w-full text-left p-3 rounded-lg transition-all duration-200 border",
-                                "hover:shadow-sm",
-                                state.selectedTopic === (topic.topic_id || topic.id)
-                                  ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50"
-                                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/30"
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-base">{topic.emoji || '📝'}</span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-slate-900 dark:text-white text-sm truncate">
-                                    {topic.topic_title || topic.title}
-                                  </div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-500">
-                                    {topic.date ? new Date(topic.date).toLocaleDateString() : 'Civic Knowledge'}
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          ))
-                        })()}
-                      </div>
+                      <TopicSelector
+                        selectedTopic={state.selectedTopic}
+                        onTopicSelect={(topicId) => setState(prev => ({ ...prev, selectedTopic: topicId }))}
+                      />
                       
                       <div className="flex justify-center gap-3 pt-4">
                         <Button
@@ -653,13 +711,13 @@ export function MultiplayerLobby() {
 
               {/* Right Panel - Join & Browse */}
               <div className="xl:col-span-1 space-y-16">
-                {/* Join Room */}
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
+                {/* Join Room - Desktop */}
+                <div className="hidden md:block space-y-6">
+                  <div className="space-y-1 lg:space-y-2">
+                    <h2 className="text-xl lg:text-2xl font-light text-slate-900 dark:text-white tracking-tight">
                       Join Room
                     </h2>
-                    <p className="text-slate-600 dark:text-slate-400 font-light">
+                    <p className="text-sm lg:text-base text-slate-600 dark:text-slate-400 font-light">
                       Enter a room code
                     </p>
                   </div>
@@ -695,8 +753,8 @@ export function MultiplayerLobby() {
                   </div>
                 </div>
 
-                {/* Your Rooms */}
-                <div className="space-y-6">
+                {/* Your Rooms - Desktop Only */}
+                <div className="hidden lg:block space-y-6">
                   <div className="text-center space-y-2">
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white">Your Rooms</h3>
                     {isLoadingRooms && (
@@ -805,14 +863,56 @@ export function MultiplayerLobby() {
           </div>
         </div>
 
+        {/* Mobile Join Room - Floating Bottom */}
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-2xl">
+            {/* Soft glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-xl -z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-xl blur-sm -z-10"></div>
+            
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Join Room</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Enter a room code</p>
+              </div>
+              
+              <Input
+                value={state.roomCode}
+                onChange={(e) => setState(prev => ({ ...prev, roomCode: e.target.value.toUpperCase() }))}
+                placeholder="ABCD1234"
+                className="text-center font-mono text-lg tracking-wider h-12 border-slate-200 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-500 bg-white dark:bg-slate-800"
+                maxLength={8}
+              />
+              
+              <Button
+                onClick={handleJoinRoom}
+                disabled={state.isJoining || !state.roomCode.trim()}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                {state.isJoining ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Join Room
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* FAQ Section - Real Talk About Multiplayer */}
         <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-          <div className="max-w-6xl mx-auto px-4 py-16">
-            <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-8">The Truth About Multiplayer Civics</h2>
+          <div className="max-w-6xl mx-auto px-4 py-8 md:py-16 pb-32 md:pb-16">
+            <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-white mb-6 md:mb-8">The Truth About Multiplayer Civics</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">How does this actually work?</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">How does this actually work?</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   Room codes are 8-character keys to your learning session. Here's what they don't tell you: 
                   authenticated users get 24-hour rooms because we trust you're serious about civic education. 
@@ -820,8 +920,8 @@ export function MultiplayerLobby() {
                 </p>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Why AI players matter</h3>
+                              <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">Why AI players matter</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   Our AI players aren't just filling seats—they're modeled on real civic archetypes. The News 
                   Junkie knows current events but fumbles history. The Retired Teacher explains concepts clearly 
@@ -829,8 +929,8 @@ export function MultiplayerLobby() {
                 </p>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Which mode cuts through the BS?</h3>
+                              <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">Which mode cuts through the BS?</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   Classic: Traditional learning with full explanations—when you need depth. Speed Round: Forces 
                   quick thinking like real political decisions. Elimination: High stakes mirror real democracy—wrong 
@@ -838,8 +938,8 @@ export function MultiplayerLobby() {
                 </p>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Remote play = real democracy simulation</h3>
+                              <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">Remote play = real democracy simulation</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   Democracy doesn't require physical proximity—neither does civic education. Create a room, share 
                   the code, connect across distances. This is how modern organizing works. Practice digital 
@@ -847,8 +947,8 @@ export function MultiplayerLobby() {
                 </p>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Group size limits exist for a reason</h3>
+                              <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">Group size limits exist for a reason</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   2-8 players per room. Why? Because effective democratic participation happens in small groups, 
                   not mobs. Town halls work. Twitter doesn't. Mix humans and AI to see how group dynamics change 
@@ -856,8 +956,8 @@ export function MultiplayerLobby() {
                 </p>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white">Disconnection ≠ disengagement</h3>
+                              <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-medium text-slate-900 dark:text-white">Disconnection ≠ disengagement</h3>
                 <p className="text-sm font-light text-slate-600 dark:text-slate-400 leading-relaxed">
                   Lost connection? Your civic education continues. Same room code gets you back in—progress saved, 
                   learning resumed. If the host drops, we pause. Why? Because in real democracy, when leaders fail, 

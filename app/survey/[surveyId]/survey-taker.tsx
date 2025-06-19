@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { SurveyForm, Survey, SurveyResponse } from "@/components/survey/survey-form"
 import { Header } from "@/components/header"
 import { AuthDialog } from "@/components/auth/auth-dialog"
@@ -22,6 +22,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
   const { guestToken } = useGuestAccess()
   const { toast } = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
   
   const [showSurvey, setShowSurvey] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
@@ -29,6 +30,9 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
   const [isCompleted, setIsCompleted] = useState(false)
   const [sessionId] = useState(() => `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const [existingResponses, setExistingResponses] = useState<SurveyResponse[]>([])
+
+  // Extract email from URL parameters
+  const emailFromUrl = searchParams.get('email')
 
   // Check for existing responses on mount
   useEffect(() => {
@@ -52,8 +56,61 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
             if (latestResponse.is_complete) {
               setIsCompleted(true)
             } else {
-              setExistingResponses(latestResponse.answers || [])
+              // Pre-fill email if provided in URL and not already answered
+              let responses = latestResponse.answers || []
+              
+              if (emailFromUrl && !responses.some((r: SurveyResponse) => 
+                survey.questions.find(q => q.id === r.question_id)?.type === 'email' ||
+                survey.questions.find(q => q.id === r.question_id)?.type === 'contact_info'
+              )) {
+                // Find email questions and pre-fill them
+                const emailQuestions = survey.questions.filter(q => 
+                  q.type === 'email' || q.type === 'contact_info'
+                )
+                
+                emailQuestions.forEach(question => {
+                  if (question.type === 'email') {
+                    responses.push({
+                      question_id: question.id,
+                      answer: emailFromUrl,
+                      answered_at: new Date().toISOString()
+                    })
+                  } else if (question.type === 'contact_info') {
+                    responses.push({
+                      question_id: question.id,
+                      answer: { email: emailFromUrl },
+                      answered_at: new Date().toISOString()
+                    })
+                  }
+                })
+              }
+              
+              setExistingResponses(responses)
             }
+          } else if (emailFromUrl) {
+            // No existing responses but email provided - pre-fill email questions
+            const emailResponses: SurveyResponse[] = []
+            const emailQuestions = survey.questions.filter(q => 
+              q.type === 'email' || q.type === 'contact_info'
+            )
+            
+            emailQuestions.forEach(question => {
+              if (question.type === 'email') {
+                emailResponses.push({
+                  question_id: question.id,
+                  answer: emailFromUrl,
+                  answered_at: new Date().toISOString()
+                })
+              } else if (question.type === 'contact_info') {
+                emailResponses.push({
+                  question_id: question.id,
+                  answer: { email: emailFromUrl },
+                  answered_at: new Date().toISOString()
+                })
+              }
+            })
+            
+            setExistingResponses(emailResponses)
           }
         }
       } catch (error) {
@@ -62,7 +119,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
     }
 
     checkExistingResponses()
-  }, [survey.id, sessionId, user, guestToken])
+  }, [survey.id, survey.questions, sessionId, user, guestToken, emailFromUrl])
 
   const handleStartSurvey = () => {
     setShowSurvey(true)
@@ -300,7 +357,15 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
             
             {existingResponses.length > 0 && (
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                You have a saved response. Continue where you left off.
+                {emailFromUrl ? 'Your email has been pre-filled. ' : ''}
+                {existingResponses.some(r => r.question_id && survey.questions.find(q => q.id === r.question_id && (q.type === 'email' || q.type === 'contact_info'))) ? '' : 'You have a saved response. '}
+                Continue where you left off.
+              </p>
+            )}
+            
+            {emailFromUrl && existingResponses.length === 0 && (
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Your email will be pre-filled to save you time.
               </p>
             )}
 

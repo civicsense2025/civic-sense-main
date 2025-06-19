@@ -18,6 +18,7 @@
 
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
+import { debug } from '@/lib/debug-config'
 
 // Base interface for all quiz state
 export interface BaseQuizState {
@@ -239,7 +240,7 @@ export class QuizProgressStorage {
         ? Object.keys(state.responses).length
         : Object.keys(state.answers).length
 
-      console.log(`💾 Saved ${options.quizType} progress:`, {
+      debug.log('storage', `Saved ${options.quizType} progress:`, {
         key: storageKey,
         questionIndex: state.currentQuestionIndex + 1,
         totalQuestions: state.questions.length,
@@ -248,7 +249,7 @@ export class QuizProgressStorage {
 
       return true
     } catch (error) {
-      console.warn(`Failed to save ${options.quizType} progress:`, error)
+      debug.warn('storage', `Failed to save ${options.quizType} progress:`, error)
       return false
     }
   }
@@ -268,7 +269,7 @@ export class QuizProgressStorage {
         for (const legacyKey of legacyKeys) {
           saved = localStorage.getItem(legacyKey)
           if (saved) {
-            console.log(`🔄 Found ${options.quizType} progress with legacy key:`, legacyKey)
+            debug.log('storage', `Found ${options.quizType} progress with legacy key:`, legacyKey)
             // Migrate to new key
             localStorage.setItem(storageKey, saved)
             localStorage.removeItem(legacyKey)
@@ -278,7 +279,7 @@ export class QuizProgressStorage {
       }
 
       if (!saved) {
-        console.log(`❌ No ${options.quizType} progress found`)
+        debug.log('storage', `No ${options.quizType} progress found`)
         return null
       }
 
@@ -290,7 +291,7 @@ export class QuizProgressStorage {
           ? Object.keys(state.responses).length
           : Object.keys(state.answers || {}).length
 
-        console.log(`✅ Restored ${options.quizType} progress:`, {
+        debug.log('storage', `Restored ${options.quizType} progress:`, {
           key: storageKey,
           questionIndex: state.currentQuestionIndex + 1,
           totalQuestions: state.questions?.length || 0,

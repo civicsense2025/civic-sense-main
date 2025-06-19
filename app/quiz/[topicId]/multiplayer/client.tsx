@@ -118,10 +118,55 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
+  
+  // Join form state - must be declared at top level to avoid conditional hook calls
+  const [joinName, setJoinName] = useState<string>('')
+  const [isJoining, setIsJoining] = useState(false)
 
   // Memoize the room and player IDs to prevent unnecessary re-renders
-  const roomId = useMemo(() => searchParams.room || null, [searchParams.room])
-  const playerId = useMemo(() => searchParams.player || null, [searchParams.player])
+  const roomId = useMemo(() => {
+    // Handle different possible formats of searchParams
+    if (typeof searchParams.room === 'string') {
+      return searchParams.room
+    }
+    
+    // If searchParams is a complex object, try to extract from it
+    if (searchParams && typeof searchParams === 'object') {
+      const serialized = JSON.stringify(searchParams)
+      try {
+        // Look for room value in serialized data
+        const roomMatch = serialized.match(/\"room\":\"([^\"]+)\"/)
+        if (roomMatch) {
+          return roomMatch[1]
+        }
+      } catch (e) {
+        console.warn('Failed to extract room from searchParams:', e)
+      }
+    }
+    
+    return null
+  }, [searchParams])
+  
+  // Store playerId in state so we can update it after localStorage lookup or a fresh join
+  const [playerId, setPlayerId] = useState<string | null>(() => {
+    // First, try to read from the URL / searchParams (legacy links)
+    if (typeof searchParams.player === 'string') {
+      return searchParams.player
+    }
+
+    // Attempt to parse from serialized searchParams (edge-case when props are dehydrated as an object)
+    if (searchParams && typeof searchParams === 'object') {
+      const serialized = JSON.stringify(searchParams)
+      const match = serialized.match(/\"player\":\"([^\"]+)\"/)
+      if (match) {
+        return match[1]
+      }
+    }
+
+    // Nothing found yet – return null for now; we will try localStorage on mount
+    return null
+  })
+
   const topicId = useMemo(() => params.topicId, [params.topicId])
 
   // Only log in development
@@ -133,8 +178,13 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
 
   devLog('Component mounted', {
     topicId,
-    roomId,
-    playerId
+    extractedRoomId: roomId,
+    extractedPlayerId: playerId,
+    searchParams,
+    rawRoom: searchParams.room,
+    rawPlayer: searchParams.player,
+    searchParamsType: typeof searchParams,
+    searchParamsKeys: searchParams ? Object.keys(searchParams) : 'null'
   })
 
   // Initialize the multiplayer room hook
@@ -278,6 +328,20 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
     }
   }, [roomId, playerId, leaveRoom, devLog])
 
+  // On mount, if no playerId yet, try to recover it from localStorage
+  useEffect(() => {
+    if (!playerId && roomId) {
+      try {
+        const cached = localStorage.getItem(`multiplayerPlayer_${roomId}`)
+        if (cached) {
+          setPlayerId(cached)
+        }
+      } catch {
+        /* ignore SSR / quota errors */
+      }
+    }
+  }, [playerId, roomId])
+
   // Loading state
   if (isLoading || roomLoading) {
     return (
@@ -295,8 +359,8 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
     )
   }
 
-  // Validate required params
-  if (!roomId || !playerId) {
+  // If no roomId at all we cannot proceed
+  if (!roomId) {
     return (
       <div className="fullscreen-multiplayer">
         <div className="flex items-center justify-center min-h-screen">
@@ -304,16 +368,74 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
             <div className="space-y-2">
               <h1 className="text-2xl font-light text-slate-900 dark:text-white">Invalid Room Link</h1>
               <p className="text-slate-600 dark:text-slate-400 font-light">
-                This multiplayer quiz link is missing required information.
+                This multiplayer quiz link is missing the room code.
               </p>
             </div>
-            <Button 
-              onClick={handleBackToHome} 
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 text-white px-8 py-3 rounded-full font-light"
-            >
-              <Home className="mr-2 h-4 w-4" />
-              Back to Home
+            {process.env.NODE_ENV === 'development' && (
+              <pre className="mt-4 text-xs text-left bg-gray-100 dark:bg-gray-800 p-2 rounded-lg overflow-x-auto">{JSON.stringify(searchParams, null, 2)}</pre>
+            )}
+            <Button onClick={handleBackToHome}>
+              <Home className="mr-2 h-4 w-4" /> Back to Home
             </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // If we have the roomId but not playerId yet, show a simple join form
+
+  const handleSelfJoin = async () => {
+    if (!joinName.trim()) return
+    setIsJoining(true)
+    try {
+      const result = await (await import('@/lib/multiplayer')).multiplayerOperations.joinRoom({
+        roomCode: roomId,
+        playerName: joinName.trim(),
+        playerEmoji: '😊'
+      })
+
+      // joinRoom already caches the playerId in localStorage – update state too
+      setPlayerId(result.player.id)
+      devLog('Joined room successfully', { playerId: result.player.id })
+    } catch (err) {
+      console.error('Failed to join room:', err)
+      alert('Failed to join room. Please check the code or try again.')
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  if (!playerId) {
+    return (
+      <div className="fullscreen-multiplayer">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center max-w-md mx-auto p-8 space-y-6">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-light text-slate-900 dark:text-white">Join Room</h1>
+              <p className="text-slate-600 dark:text-slate-400 font-light">
+                Enter a display name to join room <span className="font-medium">{roomId}</span>.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Your name"
+                value={joinName}
+                onChange={(e) => setJoinName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-md bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus:outline-none"
+              />
+              <Button
+                disabled={isJoining || !joinName.trim()}
+                onClick={handleSelfJoin}
+                className="w-full"
+              >
+                {isJoining ? 'Joining…' : 'Join Game'}
+              </Button>
+              <Button variant="outline" onClick={handleBackToHome} className="w-full">
+                <Home className="mr-2 h-4 w-4" /> Back to Home
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
 
 interface Feedback {
   id: string
@@ -42,18 +43,22 @@ export default function FeedbackAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const { user } = useAuth()
+  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    // Check if user is admin
-    if (user && !user.user_metadata?.isAdmin) {
-      router.push("/")
+    if (!user) return
+
+    if (!adminLoading && !isAdmin) {
+      router.push("/dashboard")
       return
     }
 
-    fetchFeedback()
-  }, [user, statusFilter, typeFilter])
+    if (isAdmin) {
+      fetchFeedback()
+    }
+  }, [user, statusFilter, typeFilter, isAdmin, adminLoading])
 
   async function fetchFeedback() {
     setIsLoading(true)
@@ -136,7 +141,11 @@ export default function FeedbackAdminPage() {
     }
   }
 
-  if (!user || !user.user_metadata?.isAdmin) {
+  if (!user || adminLoading) {
+    return <div className="p-8">Loading...</div>
+  }
+
+  if (!isAdmin) {
     return <div className="p-8">Unauthorized access</div>
   }
 

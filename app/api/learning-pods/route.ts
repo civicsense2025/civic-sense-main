@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/learning-pods - Get user's learning pods
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
       .in('pod_id', podIds)
       .eq('membership_status', 'active')
 
-    const memberCountMap = memberCounts?.reduce((acc, m) => {
+    const memberCountMap = memberCounts?.reduce((acc: Record<string, number>, m: { pod_id: string }) => {
       acc[m.pod_id] = (acc[m.pod_id] || 0) + 1
       return acc
     }, {} as Record<string, number>) || {}
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
 // POST /api/learning-pods - Create new learning pod
 export async function POST(request: NextRequest) {
   try {
-
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {

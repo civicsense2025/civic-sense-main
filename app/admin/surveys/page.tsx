@@ -19,6 +19,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
 
 interface SurveySummary {
   id: string
@@ -41,6 +42,7 @@ export default function SurveysAdminPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
   
   const [surveys, setSurveys] = useState<SurveySummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,15 +50,13 @@ export default function SurveysAdminPage() {
 
   // Check if user is admin
   useEffect(() => {
-    if (user && user.email !== 'admin@civicsense.app') {
+    if (!user) return
+
+    if (!adminLoading && !isAdmin) {
       router.push('/dashboard')
       return
     }
-    if (!user) {
-      router.push('/login')
-      return
-    }
-  }, [user, router])
+  }, [user, isAdmin, adminLoading, router])
 
   // Fetch surveys
   useEffect(() => {
@@ -83,10 +83,10 @@ export default function SurveysAdminPage() {
       }
     }
 
-    if (user?.email === 'admin@civicsense.app') {
+    if (isAdmin) {
       fetchSurveys()
     }
-  }, [user, selectedStatus, toast])
+  }, [isAdmin, selectedStatus, toast])
 
   const handleCopyLink = (surveyId: string) => {
     const url = `${window.location.origin}/survey/${surveyId}`
@@ -137,7 +137,11 @@ export default function SurveysAdminPage() {
     }
   }
 
-  if (!user || user.email !== 'admin@civicsense.app') {
+  if (!user || adminLoading) {
+    return null
+  }
+
+  if (!isAdmin) {
     return null
   }
 

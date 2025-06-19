@@ -13,6 +13,7 @@ import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PWAStatus } from "@/components/pwa-status"
+import { DebugSettingsPanel } from "@/components/debug-settings-panel"
 
 // Import cache debug utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -138,6 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Analytics />
                   <SpeedInsights />
                   {process.env.NODE_ENV === 'development' && <PWAStatus />}
+                  <DebugSettingsPanel />
                 </PWAProvider>
               </StatsigProvider>
             </AuthProvider>

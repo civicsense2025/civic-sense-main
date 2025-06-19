@@ -43,6 +43,7 @@ import { RecommendedTopics } from "@/components/recommended-topics"
 import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
 import { GiftCreditsDashboard } from "@/components/gift-credits-dashboard"
 import { LearningPodsDashboard } from "@/components/learning-pods-dashboard"
+import { SurveysDashboard } from "@/components/surveys-dashboard"
 
 interface DashboardData {
   totalQuizzes: number
@@ -515,6 +516,9 @@ export default function DashboardPage() {
 
           {/* Enhanced Recent Activity */}
           {user && <EnhancedRecentActivity userId={user.id} />}
+
+          {/* Available Surveys */}
+          <SurveysDashboard />
 
           {/* Learning Pods Dashboard - temporarily hidden until ready for public use */}
           {/*

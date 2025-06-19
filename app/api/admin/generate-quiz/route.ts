@@ -8,7 +8,6 @@ import { generateQuizContent, parseAIResponse, validateAndFixSources } from '@/s
 import { CivicSenseContentOrchestrator } from '@/scripts/optimize-question-content'
 
 // Create server-side Supabase client
-const supabase = createClient()
 const openai = new OpenAI()
 
 const QuizGenerationSchema = z.object({
@@ -214,6 +213,7 @@ const QuizContentSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient()
     // Validate request
     const body = await req.json()
     const { articleId, userId, focusAreas } = QuizGenerationSchema.parse(body)

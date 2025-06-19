@@ -18,11 +18,11 @@ import {
   useMultiplayerQuiz
 } from "@/lib/multiplayer"
 
+import { debug } from "@/lib/debug-config"
+
 // Development-only logging utility
 const devLog = (component: string, action: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🎮 [${component}] ${action}`, data ? data : '')
-  }
+  debug.log('multiplayer', `[${component}] ${action}`, data)
 }
 
 // =============================================================================
@@ -220,6 +220,77 @@ export function BaseMultiplayerEngine({
   const isAnswerSubmitted = gameState.isAnswerSubmitted
 
   // =============================================================================
+  // QUESTION ADVANCEMENT
+  // =============================================================================
+
+  const advanceToNextQuestion = useCallback(async () => {
+    if (gameState.currentQuestionIndex >= questions.length - 1) {
+      // Quiz completed
+      setGameState(prev => ({ 
+        ...prev, 
+        gamePhase: 'completed',
+        showFeedback: false
+      }))
+      onComplete()
+      return
+    }
+
+    // Move to next question
+    setGameState(prev => ({
+      ...prev,
+      currentQuestionIndex: prev.currentQuestionIndex + 1,
+      selectedAnswer: null,
+      isAnswerSubmitted: false,
+      showFeedback: false,
+      questionStartTime: null
+    }))
+
+    devLog('BaseMultiplayerEngine', 'Advanced to next question', { 
+      newIndex: gameState.currentQuestionIndex + 1 
+    })
+  }, [gameState.currentQuestionIndex, questions.length, onComplete])
+
+  const showFeedbackAndAdvance = useCallback(async () => {
+    if (!currentQuestion) return
+
+    // Show feedback first
+    setGameState(prev => ({ ...prev, showFeedback: true }))
+
+    // Wait for feedback display, then advance
+    setTimeout(async () => {
+      if (config.showExplanations) {
+        // Show explanation for a bit longer
+        setTimeout(advanceToNextQuestion, 2000)
+      } else {
+        // Advance quickly for speed modes
+        await advanceToNextQuestion()
+      }
+    }, config.showExplanations ? 3000 : 1500)
+  }, [currentQuestion, config.showExplanations, advanceToNextQuestion])
+
+  // =============================================================================
+  // GAME STATE SYNCHRONIZATION
+  // =============================================================================
+
+  const syncGameState = useCallback(async () => {
+    if (!room || !isHost) return
+
+    try {
+      // Only host can advance the game state for all players
+      // This would be implemented with a game_state table or game events
+      devLog('BaseMultiplayerEngine', 'Syncing game state as host', {
+        currentQuestionIndex: gameState.currentQuestionIndex,
+        gamePhase: gameState.gamePhase
+      })
+      
+      // For now, we'll let each player manage their own state
+      // In a full implementation, we'd have a multiplayer_game_state table
+    } catch (error) {
+      devLog('BaseMultiplayerEngine', 'Failed to sync game state', { error })
+    }
+  }, [room, isHost, gameState])
+
+  // =============================================================================
   // ANSWER SUBMISSION
   // =============================================================================
 
@@ -283,6 +354,9 @@ export function BaseMultiplayerEngine({
       // Stop timer
       stopTimer()
 
+      // Show feedback and advance after delay
+      await showFeedbackAndAdvance()
+
     } catch (error) {
       devLog('BaseMultiplayerEngine', 'Failed to submit answer', { 
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -290,7 +364,7 @@ export function BaseMultiplayerEngine({
       })
       console.error('Failed to submit multiplayer answer:', error)
     }
-  }, [currentQuestion, isAnswerSubmitted, gameState.questionStartTime, playerId, submitResponse, stopTimer])
+  }, [currentQuestion, isAnswerSubmitted, gameState.questionStartTime, playerId, submitResponse, stopTimer, showFeedbackAndAdvance])
 
   const handleSubmitAnswer = useCallback(async (answer: string) => {
     devLog('BaseMultiplayerEngine', 'Handle submit answer called', { answer })
@@ -337,6 +411,11 @@ export function BaseMultiplayerEngine({
     }
   }, [gameState.gamePhase, currentQuestion, isAnswerSubmitted, startTimer])
 
+  // Sync game state when it changes (if host)
+  useEffect(() => {
+    syncGameState()
+  }, [syncGameState])
+
   // =============================================================================
   // RENDER HELPERS
   // =============================================================================
@@ -368,29 +447,29 @@ export function BaseMultiplayerEngine({
           Leaderboard
         </Button>
 
-                  <Button
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setChatOpen(!chatOpen)}
+          className="flex items-center gap-2"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Chat
+        </Button>
+
+        {/* Host Settings */}
+        {isHost && (
+          <Button
             variant="outline"
             size="sm"
-            onClick={() => setChatOpen(!chatOpen)}
+            onClick={() => setShowHostSettings(!showHostSettings)}
             className="flex items-center gap-2"
           >
-            <MessageCircle className="h-4 w-4" />
-            Chat
+            <Crown className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
+            Host Settings
           </Button>
-
-          {/* Host Settings */}
-          {isHost && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHostSettings(!showHostSettings)}
-              className="flex items-center gap-2"
-            >
-              <Crown className="h-4 w-4" />
-              <Settings className="h-4 w-4" />
-              Host Settings
-            </Button>
-          )}
+        )}
       </div>
     </div>
   )
@@ -476,6 +555,16 @@ export function BaseMultiplayerEngine({
                   </button>
                 )
               })}
+            </div>
+          )}
+
+          {/* Show explanation when feedback is visible */}
+          {gameState.showFeedback && config.showExplanations && currentQuestion.explanation && (
+            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Explanation:</h3>
+              <p className="text-slate-700 dark:text-slate-300">
+                <GlossaryLinkText text={currentQuestion.explanation} />
+              </p>
             </div>
           )}
         </div>

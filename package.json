@@ -57,6 +57,7 @@
     "@statsig/session-replay": "^3.18.0",
     "@statsig/web-analytics": "^3.18.0",
     "@stripe/stripe-js": "^7.3.1",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "latest",
     "@types/dotenv": "^6.1.1",
     "@vercel/analytics": "^1.5.0",

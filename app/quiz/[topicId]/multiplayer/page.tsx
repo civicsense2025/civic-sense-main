@@ -15,23 +15,36 @@ const devLog = (component: string, action: string, data?: any) => {
 }
 
 interface PageProps {
-  params: { topicId: string }
-  searchParams: { 
+  params: Promise<{ topicId: string }>
+  searchParams: Promise<{ 
     room?: string
     mode?: string
     player?: string 
-  }
+  }>
 }
 
-export default function MultiplayerQuizPage({
+export default async function MultiplayerQuizPage({
   params,
   searchParams,
 }: PageProps) {
+  // Await both params and searchParams (Next.js 15+ behavior)
+  const resolvedParams = await params
+  const resolvedSearchParams = await searchParams
+  
   devLog('MultiplayerQuizPage', 'Page loaded', { 
-    topicId: params.topicId, 
-    room: searchParams.room, 
-    mode: searchParams.mode 
+    topicId: resolvedParams.topicId, 
+    room: resolvedSearchParams.room, 
+    mode: resolvedSearchParams.mode,
+    player: resolvedSearchParams.player,
+    rawSearchParams: searchParams
   })
+
+  // Extract the actual values to ensure they're simple strings
+  const cleanSearchParams = {
+    room: resolvedSearchParams.room || undefined,
+    mode: resolvedSearchParams.mode || undefined,
+    player: resolvedSearchParams.player || undefined
+  }
 
   return (
     <Suspense fallback={
@@ -43,8 +56,8 @@ export default function MultiplayerQuizPage({
       </div>
     }>
       <MultiplayerQuizClient
-        params={params}
-        searchParams={searchParams}
+        params={{ topicId: resolvedParams.topicId }}
+        searchParams={cleanSearchParams}
       />
     </Suspense>
   )

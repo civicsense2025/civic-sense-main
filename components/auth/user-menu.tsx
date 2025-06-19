@@ -14,6 +14,7 @@ import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users,
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "@/components/learning-pods-stats"
 import Link from "next/link"
@@ -62,6 +63,7 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { isPremium, subscription } = usePremium()
+  const { isAdmin } = useAdminAccess()
 
   // Load user stats when component mounts
   useEffect(() => {
@@ -115,11 +117,7 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
     return null
   }
 
-  const isAdmin = () => {
-    return user?.email === 'admin@civicsense.app' || 
-           user?.email?.includes('civicsense') ||
-           isPremium // For now, give premium users admin access
-  }
+
 
   const userEmail = user.email || 'user@example.com'
   const tierBadge = getTierBadge()
@@ -235,7 +233,7 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           </DropdownMenuItem>
 
           {/* Admin Panel - Only show for authorized users */}
-          {isAdmin() && (
+          {isAdmin && (
             <DropdownMenuItem asChild>
               <Link 
                 href="/admin/ai-content" 

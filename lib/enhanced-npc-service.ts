@@ -86,8 +86,9 @@ export class EnhancedNPCService {
   constructor() {
     // Initialize OpenAI API key from environment
     this.openaiApiKey = process.env.OPENAI_API_KEY || null
-    if (!this.openaiApiKey) {
-      console.warn('⚠️ OpenAI API key not found. NPCs will use fallback responses.')
+    if (!this.openaiApiKey && process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ OpenAI API key not found in development environment. NPCs will use fallback responses.')
+      console.info('💡 To enable AI-powered NPCs, add OPENAI_API_KEY to your .env.local file')
     }
   }
 

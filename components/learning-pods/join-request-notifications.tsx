@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase'
 
 interface JoinRequest {
   id: string
@@ -54,7 +55,21 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
 
   const loadJoinRequests = async () => {
     try {
-      const response = await fetch('/api/learning-pods/join-requests')
+      // Include Supabase access token to authenticate the request
+      let authHeader: HeadersInit = {}
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          authHeader['Authorization'] = `Bearer ${session.access_token}`
+        }
+      } catch {
+        // Ignore errors obtaining session
+      }
+
+      const response = await fetch('/api/learning-pods/join-requests', {
+        headers: authHeader,
+        credentials: 'include'
+      })
       const data = await response.json()
       
       if (response.ok) {
@@ -69,9 +84,19 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
 
   const handleRequest = async (requestId: string, action: 'approve' | 'deny') => {
     try {
+      // Attach token for authorization
+      let authHeader: HeadersInit = { 'Content-Type': 'application/json' }
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          authHeader['Authorization'] = `Bearer ${session.access_token}`
+        }
+      } catch {}
+
       const response = await fetch(`/api/learning-pods/join-requests/${requestId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeader,
+        credentials: 'include',
         body: JSON.stringify({ action })
       })
 

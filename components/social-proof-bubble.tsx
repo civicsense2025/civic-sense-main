@@ -183,6 +183,11 @@ export function SocialProofBubble({
   onStatsLoaded,
   className = ''
 }: SocialProofBubbleProps) {
+  // Disabled for now to avoid 404 errors - returning null
+  return null
+
+  // Keeping the original implementation commented for future use:
+  /*
   const [stats, setStats] = useState<QuestionStats | AssessmentQuestionStats | null>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -240,46 +245,32 @@ export function SocialProofBubble({
     }
   }, [questionId, assessmentType, showDelay, onStatsLoaded])
 
-  // Position classes
-  const positionClasses = {
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4', 
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'center': 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
-    'inline': ''
-  }
-
-  // Don't show anything if we're loading, have an error, no stats, or if stats are mock/sample data
-  if (isLoading || error || !stats || !stats.totalAttempts || stats.totalAttempts === 0) {
+  // Don't render anything if no stats or still loading
+  if (!stats || !isVisible || isLoading || error) {
     return null
   }
 
-  if (position === 'inline') {
-    return (
-      <div className={`relative w-full flex justify-center ${className}`}>
-        <AnimatePresence>
-          {isVisible && (
-            <SocialProofStats stats={stats} variant={variant} />
-          )}
-        </AnimatePresence>
-      </div>
-    )
-  }
+  const containerClasses = `${positionClasses[position]} ${className} z-10`
 
   return (
-    <div className={`fixed ${positionClasses[position]} z-50 ${className}`}>
+    <div className={containerClasses}>
       <AnimatePresence>
-        {isVisible && (
-          <SocialProofStats stats={stats} variant={variant} />
-        )}
+        {variant === 'minimal' && <MinimalBubble stats={stats} />}
+        {variant === 'compact' && <CompactCard stats={stats} />}
+        {variant === 'detailed' && <DetailedCard stats={stats} />}
       </AnimatePresence>
     </div>
   )
+  */
 }
 
 // Hook for easier integration
 export function useSocialProofStats(questionId: string, assessmentType?: 'onboarding' | 'civics_test') {
+  // Disabled for now to avoid 404 errors
+  return { stats: null, isLoading: false, error: null }
+
+  // Keeping the original implementation commented for future use:
+  /*
   const [stats, setStats] = useState<QuestionStats | AssessmentQuestionStats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -322,6 +313,7 @@ export function useSocialProofStats(questionId: string, assessmentType?: 'onboar
   }, [questionId, assessmentType])
 
   return { stats, isLoading, error }
+  */
 }
 
 // Inline social proof component for embedding in question text

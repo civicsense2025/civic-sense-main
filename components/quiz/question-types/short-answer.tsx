@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 // Typing animation component for human-like encouragement
@@ -162,6 +163,23 @@ export const checkAnswerDetailed = (userAnswer: string, correctAnswer: string): 
       .replace(/\b(eighteen|18)\b/g, '18')
       .replace(/\b(nineteen|19)\b/g, '19')
       .replace(/\b(twenty|20)\b/g, '20')
+      // Handle common name variations (like Emmanuel Macron vs Macron)
+      .replace(/\b(emmanuel|emanuel)\s+(macron)\b/g, 'macron')
+      .replace(/\b(donald)\s+(trump)\b/g, 'trump')
+      .replace(/\b(joe|joseph)\s+(biden)\b/g, 'biden')
+      .replace(/\b(barack)\s+(obama)\b/g, 'obama')
+      .replace(/\b(hillary)\s+(clinton)\b/g, 'clinton')
+      .replace(/\b(bernie)\s+(sanders)\b/g, 'sanders')
+      .replace(/\b(elizabeth)\s+(warren)\b/g, 'warren')
+      .replace(/\b(kamala)\s+(harris)\b/g, 'harris')
+      .replace(/\b(mike|michael)\s+(pence)\b/g, 'pence')
+      .replace(/\b(nancy)\s+(pelosi)\b/g, 'pelosi')
+      .replace(/\b(mitch)\s+(mcconnell)\b/g, 'mcconnell')
+      .replace(/\b(chuck|charles)\s+(schumer)\b/g, 'schumer')
+      .replace(/\b(alexandria)\s+(ocasio-cortez|ocasio cortez|aoc)\b/g, 'ocasio-cortez')
+      .replace(/\b(ted)\s+(cruz)\b/g, 'cruz')
+      .replace(/\b(marco)\s+(rubio)\b/g, 'rubio')
+      .replace(/\b(lindsey)\s+(graham)\b/g, 'graham')
       // Handle common abbreviations and variations
       .replace(/\b(doctor|dr)\b/g, 'dr')
       .replace(/\b(mister|mr)\b/g, 'mr')
@@ -169,6 +187,12 @@ export const checkAnswerDetailed = (userAnswer: string, correctAnswer: string): 
       .replace(/\b(miss|ms)\b/g, 'ms')
       .replace(/\b(saint|st)\b/g, 'st')
       .replace(/\b(mount|mt)\b/g, 'mt')
+      .replace(/\b(president|pres)\b/g, 'president')
+      .replace(/\b(senator|sen)\b/g, 'senator')
+      .replace(/\b(representative|rep)\b/g, 'representative')
+      .replace(/\b(governor|gov)\b/g, 'governor')
+      .replace(/\b(united states|usa|us)\b/g, 'us')
+      .replace(/\b(supreme court|scotus)\b/g, 'supreme court')
       // Handle pluralization (basic)
       .replace(/s\b/g, '')
       // Handle hyphenation
@@ -274,7 +298,7 @@ export function ShortAnswerQuestion({
   const [isFocused, setIsFocused] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [showEncouragement, setShowEncouragement] = useState(false)
+  const [showHint, setShowHint] = useState(false)
   
   // Use the enhanced detailed checking function
   const isCorrect = isSubmitted && checkAnswerIntelligently(inputValue, question.correct_answer)
@@ -304,7 +328,7 @@ export function ShortAnswerQuestion({
   useEffect(() => {
     if (selectedAnswer === null) {
       setInputValue("")
-      setShowEncouragement(false)
+      setShowHint(false)
     } else if (selectedAnswer) {
       setInputValue(selectedAnswer)
     }
@@ -314,7 +338,7 @@ export function ShortAnswerQuestion({
   useEffect(() => {
     setInputValue("")
     setIsTyping(false)
-    setShowEncouragement(false)
+    setShowHint(false)
     if (typingTimeout) {
       clearTimeout(typingTimeout)
     }
@@ -334,11 +358,6 @@ export function ShortAnswerQuestion({
       setIsTyping(false)
     }, 1000)
     setTypingTimeout(newTimeout)
-    
-    // Show encouragement after user starts typing (but not immediately)
-    if (value.length > 2 && !showEncouragement) {
-      setTimeout(() => setShowEncouragement(true), 1500)
-    }
   }
 
   const handleFocus = () => {
@@ -347,6 +366,10 @@ export function ShortAnswerQuestion({
 
   const handleBlur = () => {
     setIsFocused(false)
+  }
+
+  const toggleHint = () => {
+    setShowHint(!showHint)
   }
 
   return (
@@ -436,7 +459,7 @@ export function ShortAnswerQuestion({
                 <span className="flex items-center">
                   <span className="mr-2">💭</span>
                   <TypingText 
-                    text="Keep going! You're making progress..." 
+                    text="Keep thinking! You're making progress..." 
                     speed={40}
                     className="font-medium"
                   />
@@ -477,17 +500,35 @@ export function ShortAnswerQuestion({
         </div>
       )}
 
-      {/* Additional encouragement with typing animation */}
-      {!isSubmitted && showEncouragement && inputValue.length > 0 && answerStatus === 'incorrect' && (
-        <div className="mt-2 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200 dark:border-blue-800 animate-in slide-in-from-bottom duration-300">
-          <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center">
-            <span className="mr-2">👤</span>
-            <TypingText 
-              text="I'm here to help! Take your time and think it through..." 
-              speed={50}
-              className="italic"
-            />
-          </p>
+      {/* Hint button and reveal */}
+      {!isSubmitted && question.hint && (
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={toggleHint}
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            {showHint ? "Hide Hint" : "Show Hint"}
+          </Button>
+          
+          {/* Animated hint reveal */}
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            showHint ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+          )}>
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start">
+                <span className="mr-2 text-base">💡</span>
+                <TypingText 
+                  text={question.hint}
+                  speed={30}
+                  className="flex-1"
+                />
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

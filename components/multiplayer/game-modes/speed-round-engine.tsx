@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type MultiplayerGameState, type BaseMultiplayerEngineProps, type MultiplayerUserAnswer } from "./base-multiplayer-engine"
+import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type BaseMultiplayerEngineProps } from "./base-multiplayer-engine"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -9,20 +9,28 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Zap, Trophy, Clock, TrendingUp, Target, Users, Crown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
-import { useMultiplayerRoom } from "@/lib/multiplayer"
+import { useMultiplayerRoom, useMultiplayerQuiz } from "@/lib/multiplayer"
+import { multiplayerNPCIntegration } from "@/lib/multiplayer-npc-integration"
 import confetti from "canvas-confetti"
 
 // =============================================================================
 // SPEED ROUND SPECIFIC TYPES
 // =============================================================================
 
-interface SpeedRoundState extends MultiplayerGameState {
+interface SpeedRoundState {
   speedBonus: number
   consecutiveCorrect: number
-  leaderboard: LeaderboardEntry[]
   lastAnswerSpeed: number | null
   comboMultiplier: number
   pressureLevel: 'low' | 'medium' | 'high' | 'extreme'
+  totalScore: number
+}
+
+interface SpeedBonusDisplay {
+  points: number
+  multiplier: number
+  reason: string
+  show: boolean
 }
 
 interface LeaderboardEntry {
@@ -34,13 +42,7 @@ interface LeaderboardEntry {
   currentStreak: number
   rank: number
   isUser?: boolean
-}
-
-interface SpeedBonusDisplay {
-  points: number
-  multiplier: number
-  reason: string
-  show: boolean
+  isNPC?: boolean
 }
 
 // =============================================================================
@@ -50,23 +52,16 @@ interface SpeedBonusDisplay {
 export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   const config = GAME_MODE_CONFIGS.speed_round
   const { room, players } = useMultiplayerRoom(props.roomId)
+  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId)
 
   // Speed Round specific state
   const [speedState, setSpeedState] = useState<SpeedRoundState>({
-    currentQuestionIndex: 0,
-    userAnswers: [],
-    showResults: false,
-    gamePhase: 'active',
-    timeRemaining: config.timePerQuestion,
-    playerScores: {},
-    eliminatedPlayers: [],
-    currentRound: 1,
     speedBonus: 0,
     consecutiveCorrect: 0,
-    leaderboard: [],
     lastAnswerSpeed: null,
     comboMultiplier: 1,
-    pressureLevel: 'low'
+    pressureLevel: 'low',
+    totalScore: 0
   })
 
   const [speedBonusDisplay, setSpeedBonusDisplay] = useState<SpeedBonusDisplay>({
@@ -78,7 +73,8 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
 
   const [showLeaderboard, setShowLeaderboard] = useState(true)
   const [pulseEffect, setPulseEffect] = useState(false)
-  const [answerStartTime, setAnswerStartTime] = useState<number>(Date.now())
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [gameCompleted, setGameCompleted] = useState(false)
 
   // Animation refs
   const leaderboardRef = useRef<HTMLDivElement>(null)
@@ -90,9 +86,7 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   const calculateSpeedBonus = useCallback((timeSpent: number, isCorrect: boolean) => {
     if (!isCorrect) return { bonus: 0, multiplier: 1, reason: '' }
 
-    const timeLimit = config.timePerQuestion
-    const speedRatio = (timeLimit - timeSpent) / timeLimit
-
+    const timeLimit = config.timePerQuestion / 1000
     let bonus = 0
     let multiplier = 1
     let reason = ''
@@ -134,7 +128,7 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   }, [config.timePerQuestion, speedState.consecutiveCorrect])
 
   const calculatePressureLevel = useCallback((timeLeft: number) => {
-    const ratio = timeLeft / config.timePerQuestion
+    const ratio = timeLeft / (config.timePerQuestion / 1000)
     if (ratio > 0.7) return 'low'
     if (ratio > 0.4) return 'medium'
     if (ratio > 0.2) return 'high'
@@ -142,137 +136,168 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   }, [config.timePerQuestion])
 
   // =============================================================================
-  // ENHANCED ANSWER HANDLING
+  // REAL-TIME LEADERBOARD CALCULATION
   // =============================================================================
 
-  const handleSpeedAnswer = useCallback(async (answer: string, isCorrect: boolean) => {
-    const timeSpent = Math.max(1, (Date.now() - answerStartTime) / 1000)
-    const speedBonusData = calculateSpeedBonus(timeSpent, isCorrect)
+  const calculateLeaderboard = useMemo(() => {
+    // Get current user's data
+    const userResponses = responses.filter(r => r.player_id === props.playerId)
+    const userCorrect = userResponses.filter(r => r.is_correct).length
+    const userAvgTime = userResponses.length > 0 
+      ? userResponses.reduce((sum, r) => sum + r.response_time_seconds, 0) / userResponses.length 
+      : 0
 
-    // Create answer record
-    const newAnswer: MultiplayerUserAnswer = {
-      questionId: props.questions[speedState.currentQuestionIndex].question_number,
-      answer,
-      isCorrect,
-      timeSpent,
-      submittedAt: Date.now(),
-      playerId: props.playerId
-    }
-
-    // Update speed state
-    setSpeedState(prev => ({
-      ...prev,
-      userAnswers: [...prev.userAnswers, newAnswer],
-      speedBonus: prev.speedBonus + speedBonusData.bonus,
-      consecutiveCorrect: isCorrect ? prev.consecutiveCorrect + 1 : 0,
-      lastAnswerSpeed: timeSpent,
-      comboMultiplier: speedBonusData.multiplier
-    }))
-
-    // Show speed bonus animation
-    if (isCorrect && speedBonusData.bonus > 0) {
-      setSpeedBonusDisplay({
-        points: speedBonusData.bonus,
-        multiplier: speedBonusData.multiplier,
-        reason: speedBonusData.reason,
-        show: true
+    // Create leaderboard entries from actual players
+    const leaderboard: LeaderboardEntry[] = players.map(player => {
+      const playerResponses = responses.filter(r => r.player_id === player.id)
+      const correctAnswers = playerResponses.filter(r => r.is_correct).length
+      const avgTime = playerResponses.length > 0 
+        ? playerResponses.reduce((sum, r) => sum + r.response_time_seconds, 0) / playerResponses.length 
+        : 0
+      
+      // Calculate speed score: correct answers * 100 + speed bonus
+      let score = correctAnswers * 100
+      playerResponses.forEach(response => {
+        if (response.is_correct) {
+          const timeBonus = Math.max(0, (config.timePerQuestion / 1000) - response.response_time_seconds) * 2
+          score += Math.round(timeBonus)
+        }
       })
 
-      // Trigger confetti for great performances
-      if (timeSpent <= 3) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FFA500', '#FF6347']
-        })
+      // Calculate current streak
+      let currentStreak = 0
+      for (let i = playerResponses.length - 1; i >= 0; i--) {
+        if (playerResponses[i].is_correct) {
+          currentStreak++
+        } else {
+          break
+        }
       }
 
-      // Hide bonus display after animation
+      return {
+        playerId: player.id,
+        playerName: player.player_name,
+        score,
+        correctAnswers,
+        averageSpeed: avgTime,
+        currentStreak,
+        rank: 0, // Will be set after sorting
+        isUser: player.id === props.playerId,
+        isNPC: player.player_name.includes('🤖') || player.player_name.includes('AI')
+      }
+    })
+
+    // Sort by score and assign ranks
+    leaderboard.sort((a, b) => b.score - a.score)
+    leaderboard.forEach((entry, index) => {
+      entry.rank = index + 1
+    })
+
+    return leaderboard
+  }, [players, responses, props.playerId, config.timePerQuestion])
+
+  // =============================================================================
+  // ENHANCED ANSWER HANDLING WITH DATABASE INTEGRATION
+  // =============================================================================
+
+  const handleSpeedAnswer = useCallback(async (answer: string, timeSpent: number) => {
+    const currentQuestion = props.questions[currentQuestionIndex]
+    if (!currentQuestion) return
+
+    const isCorrect = answer === currentQuestion.correct_answer
+    const speedBonusData = calculateSpeedBonus(timeSpent, isCorrect)
+
+    try {
+      // Submit to database using real multiplayer hook
+      const attemptId = `speed_${props.playerId}_${Date.now()}`
+      await submitResponse(
+        currentQuestion.question_number,
+        currentQuestion.question_number.toString(),
+        answer,
+        isCorrect,
+        timeSpent,
+        attemptId
+      )
+
+      // Update speed state
+      setSpeedState(prev => ({
+        ...prev,
+        speedBonus: prev.speedBonus + speedBonusData.bonus,
+        consecutiveCorrect: isCorrect ? prev.consecutiveCorrect + 1 : 0,
+        lastAnswerSpeed: timeSpent,
+        comboMultiplier: speedBonusData.multiplier,
+        totalScore: prev.totalScore + (isCorrect ? 100 : 0) + speedBonusData.bonus
+      }))
+
+      // Show speed bonus animation
+      if (isCorrect && speedBonusData.bonus > 0) {
+        setSpeedBonusDisplay({
+          points: speedBonusData.bonus,
+          multiplier: speedBonusData.multiplier,
+          reason: speedBonusData.reason,
+          show: true
+        })
+
+        // Trigger confetti for great performances
+        if (timeSpent <= 3) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#FF6347']
+          })
+        }
+
+        // Hide bonus display after animation
+        setTimeout(() => {
+          setSpeedBonusDisplay(prev => ({ ...prev, show: false }))
+        }, 2500)
+      }
+
+      // Pulse effect for any answer
+      setPulseEffect(true)
+      setTimeout(() => setPulseEffect(false), 300)
+
+      // Move to next question automatically after a short delay
       setTimeout(() => {
-        setSpeedBonusDisplay(prev => ({ ...prev, show: false }))
-      }, 2500)
+        handleNextQuestion()
+      }, 1500)
+
+    } catch (error) {
+      console.error('Failed to submit speed round answer:', error)
     }
-
-    // Pulse effect for any answer
-    setPulseEffect(true)
-    setTimeout(() => setPulseEffect(false), 300)
-
-    // Move to next question automatically after a short delay
-    setTimeout(() => {
-      handleNextQuestion()
-    }, 1500)
-
-  }, [answerStartTime, calculateSpeedBonus, speedState.currentQuestionIndex, props.questions, props.playerId])
+  }, [currentQuestionIndex, props.questions, props.playerId, calculateSpeedBonus, submitResponse])
 
   // Handle next question navigation
   const handleNextQuestion = useCallback(() => {
-    const isLastQuestion = speedState.currentQuestionIndex >= props.questions.length - 1
+    const isLastQuestion = currentQuestionIndex >= props.questions.length - 1
     
     if (isLastQuestion) {
       // Quiz completed
-      setSpeedState(prev => ({ 
-        ...prev, 
-        showResults: true, 
-        gamePhase: 'completed' 
-      }))
+      setGameCompleted(true)
       props.onComplete()
     } else {
       // Move to next question
-      setSpeedState(prev => ({
-        ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex + 1
-      }))
-      // Reset timer for next question
-      setAnswerStartTime(Date.now())
+      setCurrentQuestionIndex(prev => prev + 1)
     }
-  }, [speedState.currentQuestionIndex, props.questions.length, props.onComplete])
+  }, [currentQuestionIndex, props.questions.length, props.onComplete])
 
   // =============================================================================
-  // REAL-TIME LEADERBOARD
+  // NPC INTEGRATION
   // =============================================================================
 
-  const updateLeaderboard = useCallback(() => {
-    // Mock leaderboard data - in real implementation, this would come from real-time updates
-    const mockLeaderboard: LeaderboardEntry[] = [
-      {
-        playerId: props.playerId,
-        playerName: 'You',
-        score: speedState.speedBonus + (speedState.userAnswers?.filter(a => a.isCorrect).length || 0) * 10,
-        correctAnswers: speedState.userAnswers?.filter(a => a.isCorrect).length || 0,
-        averageSpeed: speedState.lastAnswerSpeed || 0,
-        currentStreak: speedState.consecutiveCorrect,
-        rank: 1,
-        isUser: true
-      },
-      {
-        playerId: 'npc1',
-        playerName: 'Speed Demon 🔥',
-        score: Math.floor(Math.random() * 200) + 150,
-        correctAnswers: Math.floor(Math.random() * 8) + 5,
-        averageSpeed: Math.random() * 10 + 3,
-        currentStreak: Math.floor(Math.random() * 5),
-        rank: 2
-      },
-      {
-        playerId: 'npc2',
-        playerName: 'Quiz Master ⚡',
-        score: Math.floor(Math.random() * 180) + 120,
-        correctAnswers: Math.floor(Math.random() * 7) + 4,
-        averageSpeed: Math.random() * 12 + 4,
-        currentStreak: Math.floor(Math.random() * 3),
-        rank: 3
-      }
-    ].sort((a, b) => b.score - a.score).map((entry, index) => ({ ...entry, rank: index + 1 }))
-
-    setSpeedState(prev => ({ ...prev, leaderboard: mockLeaderboard }))
-  }, [props.playerId, speedState.speedBonus, speedState.userAnswers, speedState.consecutiveCorrect, speedState.lastAnswerSpeed])
-
-  // Update leaderboard periodically
   useEffect(() => {
-    const interval = setInterval(updateLeaderboard, 2000)
-    return () => clearInterval(interval)
-  }, [updateLeaderboard])
+    // Activate NPCs for competitive gameplay
+    if (room && players.length > 0) {
+      multiplayerNPCIntegration.activateRoomNPCs(props.roomId, {
+        difficulty: 'competitive',
+        personalityTypes: ['speed_demon', 'quiz_master'],
+        maxNPCs: 2
+      }).catch(error => {
+        console.warn('Failed to activate NPCs for speed round:', error)
+      })
+    }
+  }, [room, players.length, props.roomId])
 
   // =============================================================================
   // ENHANCED UI COMPONENTS
@@ -286,14 +311,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
           Speed Round
         </Badge>
         <span className="text-sm text-muted-foreground">
-          Question {speedState.currentQuestionIndex + 1} of {props.questions.length}
+          Question {currentQuestionIndex + 1} of {props.questions.length}
         </span>
       </div>
       
       <div className="flex items-center gap-4">
         <div className="text-right">
           <div className="text-lg font-bold text-orange-600">
-            {speedState.speedBonus + (speedState.userAnswers?.filter(a => a.isCorrect).length || 0) * 10} pts
+            {speedState.totalScore} pts
           </div>
           {speedState.consecutiveCorrect > 0 && (
             <div className="text-xs text-orange-500">
@@ -346,7 +371,7 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
         
         {showLeaderboard && (
           <div ref={leaderboardRef} className="space-y-2">
-            {speedState.leaderboard.slice(0, 5).map((entry, index) => (
+            {calculateLeaderboard.slice(0, 5).map((entry, index) => (
               <div
                 key={entry.playerId}
                 className={cn(
@@ -367,7 +392,10 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
                     {index === 0 ? <Crown className="h-3 w-3" /> : entry.rank}
                   </div>
                   <div>
-                    <div className="font-medium text-sm">{entry.playerName}</div>
+                    <div className="font-medium text-sm flex items-center gap-1">
+                      {entry.playerName}
+                      {entry.isNPC && <span className="text-xs">🤖</span>}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {entry.correctAnswers} correct • {entry.averageSpeed.toFixed(1)}s avg
                     </div>
@@ -389,68 +417,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     </Card>
   )
 
-  const renderSpeedQuestion = () => {
-    const currentQuestion = props.questions[speedState.currentQuestionIndex || 0]
-    if (!currentQuestion) return null
-
-    console.log('🎮 SpeedRoundEngine - Rendering question:', {
-      index: speedState.currentQuestionIndex,
-      questionNumber: currentQuestion.question_number,
-      questionType: currentQuestion.question_type,
-      hasOptions: !!(currentQuestion.option_a && currentQuestion.option_b),
-      correctAnswer: currentQuestion.correct_answer
-    })
-
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <GlossaryLinkText text={currentQuestion.question} />
-        </h1>
-
-        {/* Speed Round specific question rendering */}
-        {currentQuestion.question_type === 'multiple_choice' && (
-          <div className="space-y-3 max-w-2xl mx-auto">
-            {[
-              currentQuestion.option_a,
-              currentQuestion.option_b,
-              currentQuestion.option_c,
-              currentQuestion.option_d
-            ].filter((option): option is string => Boolean(option)).map((option, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                className={cn(
-                  "w-full text-left justify-start p-6 h-auto transition-all duration-200 hover:scale-[1.02]",
-                  "border-2 hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                )}
-                onClick={() => {
-                  const isCorrect = option === currentQuestion.correct_answer
-                  handleSpeedAnswer(option, isCorrect)
-                }}
-              >
-                <span className="font-bold mr-3 text-orange-600">
-                  {String.fromCharCode(65 + index)}.
-                </span>
-                <GlossaryLinkText text={option} />
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Track question start time
-  useEffect(() => {
-    setAnswerStartTime(Date.now())
-  }, [speedState.currentQuestionIndex])
-
   // =============================================================================
   // MAIN RENDER
   // =============================================================================
 
   // Show results if quiz is completed
-  if (speedState.showResults) {
+  if (gameCompleted) {
+    const userLeaderboardEntry = calculateLeaderboard.find(entry => entry.isUser)
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
         <div className="container mx-auto px-4 py-8">
@@ -460,13 +434,13 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <div className="text-3xl font-bold text-orange-600">
-                    {speedState.speedBonus + speedState.userAnswers.filter(a => a.isCorrect).length * 10}
+                    {speedState.totalScore}
                   </div>
                   <div className="text-sm text-muted-foreground">Total Score</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-green-600">
-                    {speedState.userAnswers.filter(a => a.isCorrect).length}/{speedState.userAnswers.length}
+                    {userLeaderboardEntry?.correctAnswers || 0}/{props.questions.length}
                   </div>
                   <div className="text-sm text-muted-foreground">Correct Answers</div>
                 </div>
@@ -476,6 +450,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
                 <div className="mb-4 p-4 bg-orange-100 dark:bg-orange-950/20 rounded-lg">
                   <div className="text-lg font-bold text-orange-700 dark:text-orange-300">
                     🔥 Best Streak: {speedState.consecutiveCorrect} questions!
+                  </div>
+                </div>
+              )}
+
+              {userLeaderboardEntry && (
+                <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-950/20 rounded-lg">
+                  <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                    🏆 Final Rank: #{userLeaderboardEntry.rank} of {calculateLeaderboard.length}
                   </div>
                 </div>
               )}
@@ -490,6 +472,7 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     )
   }
 
+  // Return the enhanced BaseMultiplayerEngine with speed round customizations
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-8">
@@ -498,12 +481,19 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
         
         <div className="mb-8">
           <Progress 
-            value={((speedState.currentQuestionIndex || 0) + 1) / props.questions.length * 100} 
+            value={((currentQuestionIndex) + 1) / props.questions.length * 100} 
             className="h-3"
           />
         </div>
 
-        {renderSpeedQuestion()}
+        {/* Use BaseMultiplayerEngine as the foundation but with speed round modifications */}
+        <BaseMultiplayerEngine
+          {...props}
+          config={{
+            ...config,
+            onAnswerSubmit: handleSpeedAnswer
+          } as any}
+        />
 
         {/* Speed tips */}
         <div className="mt-8 text-center">

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/learning-pods/join-requests - Get join requests for pods the user administers
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ requests: [] })
     }
 
-    const podIds = adminPods.map(p => p.pod_id)
+    const podIds = adminPods.map((p: { pod_id: string }) => p.pod_id)
 
     // Get pending join requests for these pods
     const { data: requests, error } = await supabase

@@ -635,25 +635,25 @@ export function QuizResults({
         {showStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="text-2xl mb-2">⏱️</div>
+              <div className="text-lg mb-2">⏱️</div>
               <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Avg Time</div>
               <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(averageTime)}</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
-              <div className="text-2xl mb-2">⚡</div>
+              <div className="text-lg mb-2">⚡</div>
               <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fastest</div>
               <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(fastestAnswer)}</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
-              <div className="text-2xl mb-2">🔥</div>
+              <div className="text-lg mb-2">🔥</div>
               <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Quiz Streak</div>
               <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{streak}</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
-              <div className="text-2xl mb-2">✨</div>
+              <div className="text-lg mb-2">✨</div>
               <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">XP Earned</div>
               <div className="text-lg font-medium text-slate-900 dark:text-slate-50">+{xpGained}</div>
             </div>
@@ -710,7 +710,7 @@ export function QuizResults({
             </Button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {questions.map((question, index) => {
               const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
               const isCorrect = userAnswer?.isCorrect || false
@@ -720,105 +720,98 @@ export function QuizResults({
               return (
                 <div 
                   key={question.question_number}
-                  className={cn(
-                    "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 transition-all duration-300",
-                    "hover:shadow-lg animate-in fade-in slide-in-from-bottom-4"
-                  )}
+                  className="animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start gap-4">
+                  {/* Question Header */}
+                  <div className="flex items-start gap-3 mb-4">
                     <div className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0 text-sm font-bold transition-all duration-300",
-                      isCorrect 
-                        ? "bg-green-500 border-green-500 text-white animate-in zoom-in duration-300" 
-                        : "bg-red-500 border-red-500 text-white animate-in zoom-in duration-300"
+                      "flex items-center justify-center w-6 h-6 flex-shrink-0 text-lg",
+                      isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                     )}>
-                      {index + 1}
+                      {isCorrect ? "✓" : "✗"}
                     </div>
-
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-3">
-                        <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
-                          {question.question}
-                        </p>
-                        <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 ml-4 flex-shrink-0">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {formatTime(timeSpent)}
-                        </div>
-                      </div>
-
-                      {/* Answer feedback */}
-                      <div className="space-y-2 mb-4">
-                        {isCorrect ? (
-                          <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300">
-                            <CheckCircle className="inline h-4 w-4 mr-1" />
-                            <span className="font-medium">Your answer:</span>{" "}
-                            <span className="font-semibold">
-                              {question.question_type === "multiple_choice"
-                                ? getSelectedAnswerText(question, selectedAnswer)
-                                : selectedAnswer}
-                            </span>
-                          </p>
-                        ) : (
-                          <>
-                            <p className="text-red-600 dark:text-red-400 text-sm animate-in fade-in duration-300">
-                              <XCircle className="inline h-4 w-4 mr-1" />
-                              <span className="font-medium">Your answer:</span>{" "}
-                              <span className="line-through opacity-75">
-                                {question.question_type === "multiple_choice"
-                                  ? getSelectedAnswerText(question, selectedAnswer)
-                                  : selectedAnswer || "(no answer)"}
-                              </span>
-                            </p>
-                            <p className="text-green-600 dark:text-green-400 text-sm animate-in fade-in duration-300 delay-100">
-                              <CheckCircle className="inline h-4 w-4 mr-1" />
-                              <span className="font-medium">Correct answer:</span>{" "}
-                              <span className="font-semibold">
-                                {question.question_type === "multiple_choice"
-                                  ? getSelectedAnswerText(question, question.correct_answer)
-                                  : question.correct_answer}
-                              </span>
-                            </p>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Explanation */}
-                      {showExplanations && (
-                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm mb-4">
-                          <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                            {question.explanation}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Sources */}
-                      {showExplanations && question.sources.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-sm font-mono font-medium text-slate-900 dark:text-slate-50 mb-3">
-                            📚 Learn more:
-                          </p>
-                          <div className="space-y-3">
-                            {question.sources.map((source, idx) => (
-                              <SourceMetadataCard
-                                key={idx}
-                                source={source}
-                                showThumbnail={true}
-                                compact={false}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Question Feedback */}
-                      <QuestionFeedback 
-                        questionId={question.question_number?.toString() || `${question.question_number}`}
-                        questionText={question.question}
-                        topicId={topicId}
-                      />
+                      <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
+                        {question.question}
+                      </p>
+                    </div>
+                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {formatTime(timeSpent)}
                     </div>
                   </div>
+
+                  {/* Answer Section */}
+                  <div className="space-y-2 mb-6">
+                    {/* Your answer */}
+                    <p className="text-sm">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Your answer:</span>{" "}
+                      <span className={cn(
+                        "font-medium",
+                        isCorrect 
+                          ? "text-green-600 dark:text-green-400" 
+                          : "text-red-600 dark:text-red-400 line-through"
+                      )}>
+                        {question.question_type === "multiple_choice"
+                          ? getSelectedAnswerText(question, selectedAnswer)
+                          : selectedAnswer || "(no answer)"}
+                      </span>
+                    </p>
+                    
+                    {/* Correct answer (if incorrect) */}
+                    {!isCorrect && (
+                      <p className="text-sm">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Correct answer:</span>{" "}
+                        <span className="font-medium text-green-600 dark:text-green-400">
+                          {question.question_type === "multiple_choice"
+                            ? getSelectedAnswerText(question, question.correct_answer)
+                            : question.correct_answer}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Separator */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 my-6"></div>
+
+                  {/* Explanation */}
+                  {showExplanations && (
+                    <div className="mb-6">
+                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                        {question.explanation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Sources - Always show if available */}
+                  {question.sources.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
+                        Sources:
+                      </p>
+                      <div className="space-y-3">
+                        {question.sources.map((source, idx) => (
+                          <SourceMetadataCard
+                            key={idx}
+                            source={source}
+                            showThumbnail={true}
+                            compact={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Separator */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 my-6"></div>
+
+                  {/* Question Feedback */}
+                  <QuestionFeedback 
+                    questionId={question.question_number?.toString() || `${question.question_number}`}
+                    questionText={question.question}
+                    topicId={topicId}
+                  />
                 </div>
               )
             })}

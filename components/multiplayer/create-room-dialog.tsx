@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Users, Gamepad2, Zap, Clock, Target, Shield, Bot } from 'lucide-react'
+import { Users, Gamepad2, Zap, Clock, Target, Shield, Bot, Brain } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { usePremium } from '@/hooks/usePremium'
@@ -36,7 +36,7 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('4')
-  const [gameMode, setGameMode] = useState<'classic' | 'speed_round' | 'elimination' | 'team_battle'>('classic')
+  const [gameMode, setGameMode] = useState<'classic' | 'speed_round' | 'elimination' | 'team_battle' | 'learning_lab'>('classic')
   const [playerName, setPlayerName] = useState(user?.user_metadata?.full_name || user?.email?.split('@')[0] || '')
   const [selectedEmoji, setSelectedEmoji] = useState('😊')
   const [fillWithNPCs, setFillWithNPCs] = useState(true)
@@ -68,7 +68,7 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
 
     try {
       // Create the room
-      const room = await multiplayerOperations.createRoom({
+      const { room } = await multiplayerOperations.createRoom({
         topicId,
         roomName: roomName.trim() || undefined,
         maxPlayers: parseInt(maxPlayers),
@@ -115,6 +115,8 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
         return 'Players eliminated after wrong answers - last one standing wins'
       case 'team_battle':
         return 'Team-based competition with collaborative scoring'
+      case 'learning_lab':
+        return 'Collaborative exploration with AI teachers and group discussion'
       default:
         return 'Standard quiz mode'
     }
@@ -130,6 +132,8 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
         return <Shield className="h-4 w-4" />
       case 'team_battle':
         return <Users className="h-4 w-4" />
+      case 'learning_lab':
+        return <Brain className="h-4 w-4" />
       default:
         return <Gamepad2 className="h-4 w-4" />
     }
@@ -219,7 +223,7 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
             <div>
               <Label>Game Mode</Label>
               <div className="grid grid-cols-1 gap-2 mt-2">
-                {(['classic', 'speed_round', 'elimination', 'team_battle'] as const).map((mode) => (
+                {(['classic', 'speed_round', 'elimination', 'team_battle', 'learning_lab'] as const).map((mode) => (
                   <Card
                     key={mode}
                     className={cn(

@@ -9,15 +9,20 @@ import {
 import { StatsigAutoCapturePlugin } from '@statsig/web-analytics'
 import { useAuth } from '@/components/auth/auth-provider'
 
-// Create a context for Statsig status
+// Store Statsig client in module scope so non-React callers can use it safely
+let globalStatsigClient: any = null;
+
+// Create a context for Statsig status (and optionally expose client)
 type StatsigContextType = {
   isReady: boolean;
   error: Error | null;
+  client?: any;
 };
 
 const StatsigContext = createContext<StatsigContextType>({
   isReady: false,
   error: null,
+  client: null as any,
 });
 
 // Hook to use Statsig context
@@ -73,6 +78,9 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
       setIsReady(true);
       setError(null);
       console.log('[Statsig] Client initialized successfully');
+
+      // Expose for non-React consumers (e.g., analytics helper functions)
+      globalStatsigClient = client;
     } else if (!isLoading && !client) {
       setError(new Error('Failed to initialize Statsig client'));
     }
@@ -80,7 +88,7 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
 
   // Provide context values
   return (
-    <StatsigContext.Provider value={{ isReady, error }}>
+    <StatsigContext.Provider value={{ isReady, error, client }}>
       <BaseStatsigProvider client={client}>
         {children}
       </BaseStatsigProvider>
@@ -116,68 +124,58 @@ export function StatsigProvider({ children }: StatsigWrapperProps) {
 export function useStatsig() {
   const { isReady, error } = useStatsigStatus();
   
-  // Import hooks from react-bindings
+  // Import hooks from react-bindings (but avoid calling them from outside component bodies)
   let checkGate: (gateName: string) => boolean = () => false;
   let getDynamicConfig: (configName: string) => any = () => ({});
   let getExperiment: (experimentName: string) => any = () => ({});
   let logEvent: (eventName: string, value?: string | number, metadata?: Record<string, any>) => void = () => {};
 
   try {
-    // These hooks must be called unconditionally
-    const { useGate, useConfig, useExperiment, useStatsigClient } = require('@statsig/react-bindings');
-    
-    const gateHook = useGate;
-    const configHook = useConfig;
-    const experimentHook = useExperiment;
-    const clientHook = useStatsigClient;
-
+    // Use the underlying client directly to avoid hook usage outside React contexts
     checkGate = (gateName: string): boolean => {
       try {
-        const gate = gateHook(gateName);
-        return gate?.value || false;
-      } catch (error) {
-        console.warn(`[Statsig] Error checking gate "${gateName}":`, error);
+        return globalStatsigClient ? globalStatsigClient.checkGate(gateName) : false;
+      } catch (err) {
+        console.warn(`[Statsig] Error checking gate "${gateName}":`, err);
         return false;
       }
     };
 
     getDynamicConfig = (configName: string): any => {
       try {
-        const config = configHook(configName);
-        return config?.config || {};
-      } catch (error) {
-        console.warn(`[Statsig] Error getting config "${configName}":`, error);
+        return globalStatsigClient ? globalStatsigClient.getConfig(configName) : {};
+      } catch (err) {
+        console.warn(`[Statsig] Error getting config "${configName}":`, err);
         return {};
       }
     };
 
     getExperiment = (experimentName: string): any => {
       try {
-        const experiment = experimentHook(experimentName);
-        return experiment?.config || {};
-      } catch (error) {
-        console.warn(`[Statsig] Error getting experiment "${experimentName}":`, error);
+        return globalStatsigClient ? globalStatsigClient.getExperiment(experimentName) : {};
+      } catch (err) {
+        console.warn(`[Statsig] Error getting experiment "${experimentName}":`, err);
         return {};
       }
     };
 
     logEvent = (eventName: string, value?: string | number, metadata?: Record<string, any>): void => {
       try {
-        const client = clientHook();
-        if (client?.client) {
-          client.client.logEvent(eventName, value, metadata);
+        const client = globalStatsigClient;
+        if (client) {
+          client.logEvent(eventName, value, metadata);
           if (process.env.NODE_ENV === 'development') {
             console.log(`[Statsig] Event logged: ${eventName}`, { value, metadata });
           }
         } else if (process.env.NODE_ENV === 'development') {
-          console.log(`[Statsig] Event logged (no client): ${eventName}`, { value, metadata });
+          console.log(`[Statsig] Event queued (client not ready): ${eventName}`, { value, metadata });
         }
       } catch (error) {
         console.warn(`[Statsig] Error logging event "${eventName}":`, error);
       }
     };
   } catch (error) {
-    console.warn('[Statsig] React bindings not available:', error);
+    console.warn('[Statsig] Statsig client not available:', error);
   }
   
   return {

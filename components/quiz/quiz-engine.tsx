@@ -19,7 +19,7 @@ import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye } from "lucide-react"
+import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye, Minimize2, Maximize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
@@ -33,6 +33,7 @@ import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
 import { supabase } from "@/lib/supabase"
 import { SocialProofBubble } from "@/components/social-proof-bubble"
 import { createRegularQuizProgress, type BaseQuizState } from "@/lib/progress-storage"
+import { debug } from "@/lib/debug-config"
 
 interface QuizTopic {
   id: string
@@ -105,7 +106,7 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
       seen.add(questionKey)
       uniqueQuestions.push(question)
     } else {
-      console.warn(`Duplicate question detected and removed:`, {
+      debug.warn('quiz', `Duplicate question detected and removed:`, {
         topic_id: question.topic_id,
         question_number: question.question_number,
         question_preview: question.question.slice(0, 50) + '...'
@@ -113,20 +114,20 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
     }
   }
   
-  console.log(`Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
+  debug.log('quiz', `Question validation: ${questions.length} input → ${uniqueQuestions.length} unique questions`)
   
   const contentSeen = new Set<string>()
   const finalQuestions = uniqueQuestions.filter(question => {
     const contentKey = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
     if (contentSeen.has(contentKey)) {
-      console.warn(`Duplicate question content detected:`, question.question.slice(0, 50))
+      debug.warn('quiz', `Duplicate question content detected:`, question.question.slice(0, 50))
       return false
     }
     contentSeen.add(contentKey)
     return true
   })
   
-  console.log(`Final unique questions after content deduplication: ${finalQuestions.length}`)
+  debug.log('quiz', `Final unique questions after content deduplication: ${finalQuestions.length}`)
   return finalQuestions
 }
 
@@ -157,6 +158,112 @@ const MemoizedQuestionDisplay = memo(({
 
 MemoizedQuestionDisplay.displayName = 'MemoizedQuestionDisplay'
 
+// Debug Panel Component
+const DebugPanel = memo(({
+  selectedAnswer,
+  isAnswerSubmitted,
+  timeLeft,
+  timeFrozen,
+  currentQuestionIndex,
+  totalQuestions,
+  currentQuestion,
+  getQuestionDifficulty,
+  currentAttemptNumber,
+  sessionAnalytics,
+  isPremium,
+  keyboardEnabled
+}: {
+  selectedAnswer: string | null
+  isAnswerSubmitted: boolean
+  timeLeft: number
+  timeFrozen: boolean
+  currentQuestionIndex: number
+  totalQuestions: number
+  currentQuestion: QuizQuestion
+  getQuestionDifficulty: (question: QuizQuestion) => string
+  currentAttemptNumber: number
+  sessionAnalytics: any
+  isPremium: boolean
+  keyboardEnabled: boolean
+}) => {
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [position, setPosition] = useState({ x: 16, y: 16 })
+  const dragRef = useRef<HTMLDivElement>(null)
+
+  const handleMinimizeToggle = () => {
+    setIsMinimized(!isMinimized)
+    debug.toggleMinimized()
+  }
+
+  if (isMinimized) {
+    return (
+      <div 
+        className="fixed top-4 right-4 z-50 cursor-pointer"
+        onClick={handleMinimizeToggle}
+      >
+        <div className="bg-black/80 text-white p-2 rounded-lg text-xs font-mono backdrop-blur-sm hover:bg-black/90 transition-all">
+          <div className="flex items-center gap-2">
+            <span>🎯 Debug</span>
+            <Maximize2 className="h-3 w-3" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div 
+      ref={dragRef}
+      className="fixed top-4 right-4 z-50 max-w-sm select-none"
+      style={{ transform: `translate(${position.x - 16}px, ${position.y - 16}px)` }}
+    >
+      <div className="bg-black/80 text-white p-4 rounded-lg text-xs font-mono backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-bold">🎯 Quiz Debug</div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => debug.showStatus()}
+              className="text-white/60 hover:text-white text-xs"
+              title="Show debug status in console"
+            >
+              ⚙️
+            </button>
+            <button
+              onClick={handleMinimizeToggle}
+              className="text-white/60 hover:text-white"
+              title="Minimize debug panel"
+            >
+              <Minimize2 className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div>Selected: {selectedAnswer || 'None'}</div>
+          <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
+          <div>Timer: {timeLeft}s {timeFrozen && '(Frozen)'}</div>
+          <div>Question: {currentQuestionIndex + 1}/{totalQuestions}</div>
+          <div>Type: {currentQuestion?.question_type}</div>
+          <div>Difficulty: {getQuestionDifficulty(currentQuestion)}</div>
+          <div>Category: {currentQuestion?.category}</div>
+          <div>Attempt: {currentAttemptNumber}</div>
+          <div>Hints Used: {sessionAnalytics.hintsUsed}</div>
+          <div>Boosts Used: {sessionAnalytics.boostsUsed.length}</div>
+          <div>Premium: {isPremium ? 'Yes' : 'No'}</div>
+          <div>Keyboard: {keyboardEnabled ? 'Enabled' : 'Disabled'}</div>
+        </div>
+        <div className="mt-2 pt-2 border-t border-white/20">
+          <div className="text-xs text-white/60">
+            Use window.debug in console for controls
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+DebugPanel.displayName = 'DebugPanel'
+
 export function QuizEngine({ 
   questions, 
   topicId, 
@@ -182,23 +289,23 @@ export function QuizEngine({
   
   // Enhanced question randomization with session uniqueness
   const randomizedQuestions = useMemo(() => {
-    console.log(`=== ENHANCED QUIZ ENGINE PROCESSING ===`)
-    console.log(`Input questions for topic ${topicId}:`, questions.length)
+    debug.log('quiz', '=== ENHANCED QUIZ ENGINE PROCESSING ===')
+    debug.log('quiz', `Input questions for topic ${topicId}:`, questions.length)
     
     if (!questions || questions.length === 0) {
-      console.error(`No questions provided for topic ${topicId}`)
+      debug.error('quiz', `No questions provided for topic ${topicId}`)
       return []
     }
     
     const validatedQuestions = validateAndDeduplicateQuestions(questions)
     
     if (validatedQuestions.length === 0) {
-      console.error(`All questions were duplicates or invalid for topic ${topicId}`)
+      debug.error('quiz', `All questions were duplicates or invalid for topic ${topicId}`)
       return []
     }
     
     const sessionSeed = `${Date.now()}-${user?.id || 'anonymous'}-${topicId}`
-    console.log(`Session seed for randomization: ${sessionSeed}`)
+    debug.log('quiz', `Session seed for randomization: ${sessionSeed}`)
     
     // Multiple shuffle passes for better randomization
     let shuffled = validatedQuestions
@@ -206,15 +313,15 @@ export function QuizEngine({
       shuffled = shuffleArray(shuffled)
     }
     
-    console.log(`Final randomized questions:`, shuffled.length)
-    console.log(`Question numbers:`, shuffled.map(q => q.question_number))
-    console.log(`Question types:`, shuffled.map(q => q.question_type))
+    debug.log('quiz', `Final randomized questions:`, shuffled.length)
+    debug.log('quiz', `Question numbers:`, shuffled.map(q => q.question_number))
+    debug.log('quiz', `Question types:`, shuffled.map(q => q.question_type))
     
     // Validate final questions
     const validQuestions = shuffled.filter(q => {
       const isValid = q.question && q.question_type && q.correct_answer
       if (!isValid) {
-        console.warn(`Invalid question filtered out:`, {
+        debug.warn('quiz', `Invalid question filtered out:`, {
           topic_id: q.topic_id,
           question_number: q.question_number,
           has_question: !!q.question,
@@ -225,7 +332,7 @@ export function QuizEngine({
       return isValid
     })
     
-    console.log(`Valid questions after filtering: ${validQuestions.length}`)
+    debug.log('quiz', `Valid questions after filtering: ${validQuestions.length}`)
     return validQuestions
   }, [questions, topicId, user?.id])
 
@@ -440,7 +547,7 @@ export function QuizEngine({
   // Initialize quiz state and restore progress
   useEffect(() => {
     const initializeQuiz = async () => {
-      console.log('🔄 Initializing quiz...', { 
+      debug.log('quiz', 'Initializing quiz...', { 
         hasRestoredState, 
         topicId,
         userId: user?.id || 'guest',
@@ -451,7 +558,7 @@ export function QuizEngine({
       if (!hasRestoredState && randomizedQuestions.length > 0) {
         const restored = loadQuizState()
         if (restored) {
-          console.log('✅ Restored quiz state')
+          debug.log('quiz', 'Restored quiz state')
           setHasRestoredState(true)
           
           // Reset UI state for restored session
@@ -462,7 +569,7 @@ export function QuizEngine({
           
           return
         } else {
-          console.log('❌ No valid saved quiz state found')
+          debug.log('quiz', 'No valid saved quiz state found')
           setHasRestoredState(true) // Mark as checked to prevent re-checking
         }
       }
@@ -1509,25 +1616,22 @@ export function QuizEngine({
 
 
 
-        {/* Enhanced debug panel */}
-        {process.env.NODE_ENV === 'development' && !isMobile && (
-          <div className="fixed top-4 right-4 z-50 max-w-sm">
-            <div className="bg-black/80 text-white p-4 rounded-lg text-xs font-mono backdrop-blur-sm">
-              <div className="text-xs font-bold mb-2">Enhanced Quiz Debug:</div>
-              <div>Selected: {selectedAnswer || 'None'}</div>
-              <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
-              <div>Timer: {timeLeft}s {timeFrozen && '(Frozen)'}</div>
-              <div>Question: {currentQuestionIndex + 1}/{randomizedQuestions.length}</div>
-              <div>Type: {currentQuestion?.question_type}</div>
-              <div>Difficulty: {getQuestionDifficulty(currentQuestion)}</div>
-              <div>Category: {currentQuestion?.category}</div>
-              <div>Attempt: {currentAttemptNumber}</div>
-              <div>Hints Used: {sessionAnalytics.hintsUsed}</div>
-              <div>Boosts Used: {sessionAnalytics.boostsUsed.length}</div>
-              <div>Premium: {isPremium ? 'Yes' : 'No'}</div>
-              <div>Keyboard: {keyboardEnabled ? 'Enabled' : 'Disabled'}</div>
-            </div>
-          </div>
+        {/* Enhanced debug panel with minimize toggle */}
+        {process.env.NODE_ENV === 'development' && !isMobile && debug.isEnabled('quiz') && (
+          <DebugPanel
+            selectedAnswer={selectedAnswer}
+            isAnswerSubmitted={isAnswerSubmitted}
+            timeLeft={timeLeft}
+            timeFrozen={timeFrozen}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={randomizedQuestions.length}
+            currentQuestion={currentQuestion}
+            getQuestionDifficulty={getQuestionDifficulty}
+            currentAttemptNumber={currentAttemptNumber}
+            sessionAnalytics={sessionAnalytics}
+            isPremium={isPremium}
+            keyboardEnabled={keyboardEnabled}
+          />
         )}
 
         {/* Enhanced keyboard shortcuts */}

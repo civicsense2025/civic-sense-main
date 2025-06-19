@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 // PATCH /api/learning-pods/join-requests/[requestId] - Approve or deny a join request
 export async function PATCH(
@@ -7,6 +7,7 @@ export async function PATCH(
   { params }: { params: { requestId: string } }
 ) {
   try {
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {

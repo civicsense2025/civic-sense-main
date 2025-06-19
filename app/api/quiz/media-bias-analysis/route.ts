@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   const topicId = searchParams.get('topicId')
   const analyzeAll = searchParams.get('all') === 'true'
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   try {
     // Get bias dimensions

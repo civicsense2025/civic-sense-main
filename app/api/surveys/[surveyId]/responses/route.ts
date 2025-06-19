@@ -6,7 +6,7 @@ export async function POST(
   { params }: { params: { surveyId: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const surveyId = params.surveyId
     const body = await request.json()
 
@@ -167,7 +167,7 @@ export async function GET(
   { params }: { params: { surveyId: string } }
 ) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const surveyId = params.surveyId
     const url = new URL(request.url)
     const session_id = url.searchParams.get('session_id')
