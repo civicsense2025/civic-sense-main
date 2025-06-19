@@ -52,7 +52,7 @@ interface LeaderboardEntry {
 export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   const config = GAME_MODE_CONFIGS.speed_round
   const { room, players } = useMultiplayerRoom(props.roomId)
-  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId)
+  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId, props.topicId, props.questions.length)
 
   // Speed Round specific state
   const [speedState, setSpeedState] = useState<SpeedRoundState>({

@@ -424,7 +424,7 @@ export function AccessibilityNavigation({
               Help us improve CivicSense's accessibility by reporting issues or suggesting improvements.
             </DialogDescription>
           </DialogHeader>
-          <AccessibilityFeedbackForm onSubmit={() => setShowFeedback(false)} />
+          <AccessibilityFeedbackForm />
         </DialogContent>
       </Dialog>
     </div>

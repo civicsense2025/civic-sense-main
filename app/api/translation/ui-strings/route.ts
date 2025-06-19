@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { extractTranslatableStrings } from '@/lib/ui-strings-translation'
+import { extractTranslatableStrings } from '@/lib/ui-strings-extractor'
 
 export async function GET(request: NextRequest) {
   try {

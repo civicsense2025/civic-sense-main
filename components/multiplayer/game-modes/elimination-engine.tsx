@@ -54,7 +54,7 @@ interface EliminationAlert {
 export function EliminationEngine(props: BaseMultiplayerEngineProps) {
   const config = GAME_MODE_CONFIGS.elimination
   const { room, players } = useMultiplayerRoom(props.roomId)
-  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId)
+  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId, props.topicId, props.questions.length)
 
   // Elimination specific state
   const [eliminationState, setEliminationState] = useState<EliminationState>({

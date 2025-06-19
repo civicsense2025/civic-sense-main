@@ -73,7 +73,7 @@ export function LearningLabEngine(props: BaseMultiplayerEngineProps) {
   const config = GAME_MODE_CONFIGS.learning_lab
   
   const { room, players } = useMultiplayerRoom(roomId)
-  const { responses, submitResponse } = useMultiplayerQuiz(roomId, playerId)
+  const { responses, submitResponse } = useMultiplayerQuiz(roomId, playerId, props.topicId, questions.length)
   
   const [labState, setLabState] = useState<LearningLabState>({
     currentPhase: 'study',

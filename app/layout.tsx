@@ -9,6 +9,7 @@ import { AccessibilityProvider } from "@/components/accessibility/accessibility-
 import { StatsigProvider } from "@/components/providers/statsig-provider"
 import { PWAProvider } from "@/components/providers/pwa-provider"
 import { LanguageProvider } from "@/components/providers/language-provider"
+import { ConnectionProvider } from "@/components/providers/connection-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
@@ -131,22 +132,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AccessibilityProvider>
                 <StatsigProvider>
                   <PWAProvider>
-                    {/* Skip link for keyboard users */}
-                    <a href="#main-content" className="skip-link">
-                      Skip to main content
-                    </a>
+                    <ConnectionProvider>
+                      {/* Skip link for keyboard users */}
+                      <a href="#main-content" className="skip-link">
+                        Skip to main content
+                      </a>
                     <div className="min-h-screen flex flex-col w-full">
                       <main id="main-content" className="flex-1 w-full">
                         {children}
                       </main>
                       <Footer />
                     </div>
-                    <Toaster />
-                    <GlobalAudioWrapper />
-                    <Analytics />
-                    <SpeedInsights />
-                    {process.env.NODE_ENV === 'development' && <PWAStatus />}
-                    <DebugSettingsPanel />
+                      <Toaster />
+                      <GlobalAudioWrapper />
+                      <Analytics />
+                      <SpeedInsights />
+                      {process.env.NODE_ENV === 'development' && <PWAStatus />}
+                      <DebugSettingsPanel />
+                    </ConnectionProvider>
                   </PWAProvider>
                 </StatsigProvider>
               </AccessibilityProvider>

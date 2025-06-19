@@ -5,6 +5,7 @@
 
 import { uiStrings, type UIStrings } from './ui-strings'
 import { createClient } from '@/utils/supabase/client'
+import { extractTranslatableStrings as extractStrings, getStringByPath as getStringByPathUtil } from './ui-strings-extractor'
 
 // Translation storage interface for UI strings
 export interface UIStringTranslations {
@@ -42,7 +43,7 @@ export function getTranslatedString(
 ): string {
   // If English, return original
   if (language === 'en') {
-    return getStringByPath(path) || path
+    return getStringByPathUtil(path) || path
   }
 
   // Check cache first
@@ -52,47 +53,14 @@ export function getTranslatedString(
   }
 
   // If no translation available, return original
-  return getStringByPath(path) || path
-}
-
-/**
- * Helper to get string value by dot notation path
- */
-function getStringByPath(path: string): string | undefined {
-  const keys = path.split('.')
-  let result: any = uiStrings
-
-  for (const key of keys) {
-    result = result?.[key]
-    if (result === undefined) {
-      return undefined
-    }
-  }
-
-  return typeof result === 'string' ? result : undefined
+  return getStringByPathUtil(path) || path
 }
 
 /**
  * Extract all translatable strings from the UI strings object
+ * Re-exported from ui-strings-extractor for backwards compatibility
  */
-export function extractTranslatableStrings(): Array<{ path: string; text: string }> {
-  const strings: Array<{ path: string; text: string }> = []
-
-  function traverse(obj: any, currentPath: string = '') {
-    for (const [key, value] of Object.entries(obj)) {
-      const path = currentPath ? `${currentPath}.${key}` : key
-
-      if (typeof value === 'string') {
-        strings.push({ path, text: value })
-      } else if (typeof value === 'object' && value !== null) {
-        traverse(value, path)
-      }
-    }
-  }
-
-  traverse(uiStrings)
-  return strings
-}
+export const extractTranslatableStrings = extractStrings
 
 /**
  * UI String Translation Service
@@ -147,7 +115,7 @@ export class UIStringTranslationService {
       console.log(`🌐 Generating UI translations for ${targetLanguage}...`)
 
       // Extract all translatable strings
-      const translatableStrings = extractTranslatableStrings()
+      const translatableStrings = extractStrings()
       console.log(`Found ${translatableStrings.length} UI strings to translate`)
 
       // Check what's already translated
@@ -255,7 +223,7 @@ export class UIStringTranslationService {
     completion_percentage: number
   }>> {
     try {
-      const totalStrings = extractTranslatableStrings().length
+      const totalStrings = extractStrings().length
 
       const { data, error } = await this.supabase
         .from('ui_string_translations')

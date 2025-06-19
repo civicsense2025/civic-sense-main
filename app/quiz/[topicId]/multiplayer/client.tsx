@@ -194,7 +194,8 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
     error: roomError,
     updatePlayerReady,
     startGame,
-    leaveRoom
+    leaveRoom,
+    ensurePlayerInRoom
   } = useMultiplayerRoom(roomId || undefined)
 
   // Load quiz data - memoize the effect to prevent infinite loops
@@ -490,6 +491,7 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
           updatePlayerReady={updatePlayerReady}
           startGame={startGame}
           leaveRoom={leaveRoom}
+          ensurePlayerInRoom={ensurePlayerInRoom}
           onGameStart={handleGameStart}
         />
       </div>

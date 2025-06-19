@@ -169,7 +169,7 @@ export function BaseMultiplayerEngine({
   const { room, players } = useMultiplayerRoom(roomId)
   
   // Quiz responses from multiplayer quiz hook
-  const { responses, submitResponse } = useMultiplayerQuiz(roomId, playerId)
+  const { responses, submitResponse, completeQuizAttempt } = useMultiplayerQuiz(roomId, playerId, topicId, questions.length)
 
   // Progress storage for multiplayer sessions
   const progressManager = createMultiplayerQuizProgress(user?.id, undefined, roomId)
@@ -296,7 +296,13 @@ export function BaseMultiplayerEngine({
 
   const advanceToNextQuestion = useCallback(async () => {
     if (gameState.currentQuestionIndex >= questions.length - 1) {
-      // Quiz completed - clear saved progress
+      // Quiz completed - complete attempt and clear saved progress
+      const timeSpentSeconds = gameState.startTime 
+        ? Math.round((Date.now() - gameState.startTime) / 1000)
+        : 0
+      
+      await completeQuizAttempt(gameState.score, gameState.correctAnswers, timeSpentSeconds)
+      
       clearMultiplayerState()
       setGameState(prev => ({ 
         ...prev, 
@@ -320,7 +326,7 @@ export function BaseMultiplayerEngine({
     devLog('BaseMultiplayerEngine', 'Advanced to next question', { 
       newIndex: gameState.currentQuestionIndex + 1 
     })
-  }, [gameState.currentQuestionIndex, questions.length, onComplete])
+  }, [gameState.currentQuestionIndex, gameState.startTime, gameState.score, gameState.correctAnswers, questions.length, onComplete, completeQuizAttempt])
 
   const showFeedbackAndAdvance = useCallback(async () => {
     if (!currentQuestion) return

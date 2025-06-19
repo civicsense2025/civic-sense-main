@@ -85,7 +85,7 @@ interface CollaborativeHint {
 export function MatchingEngine(props: BaseMultiplayerEngineProps) {
   const config = GAME_MODE_CONFIGS.matching
   const { room, players } = useMultiplayerRoom(props.roomId)
-  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId)
+  const { responses, submitResponse } = useMultiplayerQuiz(props.roomId, props.playerId, props.topicId, props.questions.length)
 
   // Matching specific state
   const [matchingState, setMatchingState] = useState<MatchingState>({

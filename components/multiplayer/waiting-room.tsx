@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { ConnectionStatusIndicator } from '@/components/providers/connection-provider'
 import { 
   Users, 
   Copy, 
@@ -54,6 +55,7 @@ interface WaitingRoomProps {
   updatePlayerReady: (playerId: string, isReady: boolean) => Promise<void>
   startGame: () => Promise<boolean>
   leaveRoom: (playerId: string) => Promise<void>
+  ensurePlayerInRoom: (playerId: string, playerName: string, playerEmoji?: string) => Promise<boolean>
   onGameStart: () => void
 }
 
@@ -67,6 +69,7 @@ export function WaitingRoom({
   updatePlayerReady,
   startGame,
   leaveRoom,
+  ensurePlayerInRoom,
   onGameStart 
 }: WaitingRoomProps) {
   const router = useRouter()
@@ -162,6 +165,50 @@ export function WaitingRoom({
       onGameStart()
     }
   }, [room?.room_status, onGameStart])
+
+  // Auto-rejoin if player is missing from room
+  useEffect(() => {
+    // Only check if we have a stable room and players list (not loading)
+    if (!room || isLoading || !playerId || players.length === 0) {
+      return
+    }
+
+    const currentPlayer = players.find(p => p.id === playerId)
+    
+    // If player is missing, try to rejoin
+    if (!currentPlayer) {
+      console.log('🔄 Player missing from room, attempting rejoin...', { playerId, roomId })
+      
+      const playerName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Player'
+      const playerEmoji = selectedEmoji || '😊'
+      
+      ensurePlayerInRoom(playerId, playerName, playerEmoji)
+        .then((success) => {
+          if (success) {
+            console.log('✅ Successfully rejoined room')
+            toast({
+              title: "Reconnected to room",
+              description: "You've been automatically reconnected to the game.",
+            })
+          } else {
+            console.error('❌ Failed to rejoin room')
+            toast({
+              title: "Connection lost",
+              description: "Unable to reconnect. Please refresh the page.",
+              variant: "destructive"
+            })
+          }
+        })
+        .catch((err) => {
+          console.error('❌ Error rejoining room:', err)
+          toast({
+            title: "Connection error",
+            description: "Lost connection to room. Please refresh the page.",
+            variant: "destructive"
+          })
+        })
+    }
+  }, [room, players, playerId, isLoading, ensurePlayerInRoom, selectedEmoji, user, toast])
 
   const handleCopyRoomCode = async () => {
     if (!room?.room_code) return
@@ -360,6 +407,9 @@ export function WaitingRoom({
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Connection Status */}
+            <ConnectionStatusIndicator />
+            
             {/* Room Code with Copy Button Inside */}
             <div className="relative group">
               <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
