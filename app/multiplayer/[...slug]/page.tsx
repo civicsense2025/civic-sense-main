@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isMultiplayerEnabled } from '@/lib/feature-flags'
 
 interface PageProps {
   params: Promise<{ slug: string[] }>
@@ -17,6 +18,11 @@ interface PageProps {
  *   /quiz/<topicId>/multiplayer?room=<ROOMCODE>[&player=<PLAYERID>]
  */
 export default async function MultiplayerRedirectPage({ params }: PageProps) {
+  // Feature flag check - hide multiplayer in production
+  if (!isMultiplayerEnabled()) {
+    notFound()
+  }
+
   const resolvedParams = await params
   const [roomCode, playerId] = resolvedParams.slug ?? []
 

@@ -8,6 +8,7 @@ import { UserMenu } from "./auth/user-menu"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
+import { arePodsEnabled, isMultiplayerEnabled } from "@/lib/feature-flags"
 
 interface HeaderProps {
   onSignInClick?: () => void
@@ -59,8 +60,8 @@ export function Header({
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-4">
-                {/* Learning Pods Quick Actions */}
-                <LearningPodsQuickActions variant="header" />
+                {/* Learning Pods Quick Actions - feature flagged */}
+                {arePodsEnabled() && <LearningPodsQuickActions variant="header" />}
                 
                 {/* Login button for non-authenticated users */}
                 {!user && (
@@ -168,24 +169,27 @@ export function Header({
                   Categories
                 </Link>
 
-                {/* Multiplayer link - temporarily hidden until ready for public use */}
-                {/*
-                <Link 
-                  href="/multiplayer"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                >
-                  🎮 Multiplayer
-                </Link>
-                */}
+                {/* Multiplayer link - feature flagged */}
+                {isMultiplayerEnabled() && (
+                  <Link 
+                    href="/multiplayer"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                  >
+                    🎮 Multiplayer
+                  </Link>
+                )}
 
-                <Link 
-                  href="/pods"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-                >
-                  👥 Learning Pods
-                </Link>
+                {/* Learning Pods link - feature flagged */}
+                {arePodsEnabled() && (
+                  <Link 
+                    href="/pods"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+                  >
+                    👥 Learning Pods
+                  </Link>
+                )}
 
                 <Link 
                   href="/donate"

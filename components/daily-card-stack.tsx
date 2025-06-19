@@ -92,7 +92,7 @@ const parseTopicDate = (dateString: string | Date | null | undefined) => {
 }
 
 // Helper to get relative date category
-const getDateCategory = (date: string | Date, currentDate: Date) => {
+const getDateCategory = (date: string | Date, currentDate: Date): 'today' | 'future' | 'past' | null => {
   const localTopicDate = parseTopicDate(date)
   if (!localTopicDate) return null
   
@@ -488,16 +488,64 @@ export function DailyCardStack({
   }, [topicsList, selectedCategory, searchQuery, currentDate])
 
   const allFilteredTopics = useMemo(() => {
-    return [
+    const allTopics = [
       ...(organizedTopics.today || []),
       ...(organizedTopics.future || []),
       ...(organizedTopics.past || [])
-    ].sort((a, b) => {
+    ]
+    
+    // Debug logging to see what we're working with
+    const breakingTopics = allTopics.filter(t => t.is_breaking === true)
+    const featuredTopics = allTopics.filter(t => t.is_featured === true)
+    console.log(`🔍 Topic sorting: ${allTopics.length} total, ${breakingTopics.length} breaking, ${featuredTopics.length} featured`)
+    
+    if (featuredTopics.length > 0) {
+      console.log(`🌟 Featured topics:`, featuredTopics.map(t => ({ 
+        id: t.topic_id,
+        title: t.topic_title.substring(0, 40) + '...', 
+        breaking: !!t.is_breaking, 
+        featured: !!t.is_featured 
+      })))
+      
+      // Check for duplicates
+      const uniqueIds = new Set(featuredTopics.map(t => t.topic_id))
+      if (uniqueIds.size !== featuredTopics.length) {
+        console.error(`🚨 DUPLICATE FEATURED TOPICS DETECTED! ${featuredTopics.length} topics but only ${uniqueIds.size} unique IDs`)
+        console.log(`🔍 Duplicate analysis:`, featuredTopics.map(t => t.topic_id))
+      }
+    }
+    
+    const sorted = allTopics.sort((a, b) => {
+      // First priority: Breaking news (is_breaking = true)
+      const aIsBreaking = a.is_breaking === true
+      const bIsBreaking = b.is_breaking === true
+      
+      if (aIsBreaking && !bIsBreaking) return -1
+      if (!aIsBreaking && bIsBreaking) return 1
+      
+      // Second priority: Featured topics (is_featured = true) - but only if neither is breaking
+      if (!aIsBreaking && !bIsBreaking) {
+        const aIsFeatured = a.is_featured === true
+        const bIsFeatured = b.is_featured === true
+        
+        if (aIsFeatured && !bIsFeatured) return -1
+        if (!aIsFeatured && bIsFeatured) return 1
+      }
+      
+      // Third priority: Date (most recent first)
       const dateA = parseTopicDate(a.date)
       const dateB = parseTopicDate(b.date)
       if (!dateA || !dateB) return 0
       return dateB.getTime() - dateA.getTime()
     })
+    
+    console.log(`🎯 Final order (first 10):`, sorted.slice(0, 10).map(t => ({ 
+      title: t.topic_title.substring(0, 30) + '...', 
+      breaking: t.is_breaking, 
+      featured: t.is_featured 
+    })))
+    
+    return sorted
   }, [organizedTopics])
 
   // Now all useCallback hooks that depend on allFilteredTopics
@@ -679,16 +727,44 @@ export function DailyCardStack({
     try {
       setIsLoadingTopics(true)
       
-      const topicsData = await dataService.getTopicsInRange(startDate, endDate)
-      const newTopicsArray: TopicMetadata[] = Object.values(topicsData)
+      // Load both date range topics and featured topics (to ensure featured are always available)
+      const [topicsData, featuredTopicsData] = await Promise.all([
+        dataService.getTopicsInRange(startDate, endDate),
+        dataService.getFeaturedTopics()
+      ])
       
-      // Merge with existing topics (avoid duplicates)
+      let newRangeTopics: TopicMetadata[] = Object.values(topicsData)
+      const featuredTopics: TopicMetadata[] = Object.values(featuredTopicsData)
+      
+      // If range loading didn't give us many new topics, try loading ALL topics
+      if (newRangeTopics.length < 50) {
+        console.log(`📚 Range lazy load only got ${newRangeTopics.length} topics, trying ALL topics`)
+        const allTopicsData = await dataService.getAllTopics()
+        newRangeTopics = Object.values(allTopicsData)
+      }
+      
+      // Combine and deduplicate new topics
+      const combinedNewTopics = [...newRangeTopics, ...featuredTopics]
+      
+      // First, deduplicate within the new topics themselves
+      const newTopicsSeenIds = new Set<string>()
+      const deduplicatedNewTopics = combinedNewTopics.filter(topic => {
+        if (!topic?.topic_id) return false
+        if (newTopicsSeenIds.has(topic.topic_id)) {
+          console.log(`🔍 Removing duplicate in lazy load: ${topic.topic_id}`)
+          return false
+        }
+        newTopicsSeenIds.add(topic.topic_id)
+        return true
+      })
+      
+      // Merge with existing topics (avoid duplicates with existing list)
       setTopicsList(prevTopics => {
         const existingIds = new Set(prevTopics.map(t => t.topic_id))
-        const uniqueNewTopics = newTopicsArray.filter(t => !existingIds.has(t.topic_id))
+        const uniqueNewTopics = deduplicatedNewTopics.filter(t => !existingIds.has(t.topic_id))
         
         if (uniqueNewTopics.length > 0) {
-          console.log(`📚 Lazy loaded ${uniqueNewTopics.length} new topics for date range`)
+          console.log(`📚 Lazy loaded ${uniqueNewTopics.length} new unique topics (${combinedNewTopics.length - deduplicatedNewTopics.length} internal dupes removed, ${deduplicatedNewTopics.length - uniqueNewTopics.length} existing dupes filtered)`)
           return [...prevTopics, ...uniqueNewTopics].sort((a, b) => {
             const dateA = new Date(a.date || '').getTime()
             const dateB = new Date(b.date || '').getTime()
@@ -702,8 +778,8 @@ export function DailyCardStack({
       setLoadedDateRanges(prev => new Set([...prev, rangeKey]))
       
       // Check questions for new topics (but limit the number to avoid performance issues)
-      if (process.env.NODE_ENV !== 'development' && newTopicsArray.length > 0 && newTopicsArray.length < 20) {
-        await checkTopicsForQuestions(newTopicsArray)
+      if (process.env.NODE_ENV !== 'development' && deduplicatedNewTopics.length > 0 && deduplicatedNewTopics.length < 20) {
+        await checkTopicsForQuestions(deduplicatedNewTopics)
       }
     } catch (error) {
       console.error('Error lazy loading topics:', error)
@@ -727,6 +803,7 @@ export function DailyCardStack({
             supabaseClientRef.current = createSupabaseClient()
           }
           
+          // Get count of ALL active topics with valid dates (not just a limited range)
           const { count, error } = await supabaseClientRef.current
             .from('question_topics')
             .select('*', { count: 'exact', head: true })
@@ -738,7 +815,7 @@ export function DailyCardStack({
           const totalCount = count || 0
           if (!isCancelled) {
             setTotalTopicsCount(totalCount)
-            console.log(`📊 Total topics available: ${totalCount}`)
+            console.log(`📊 Total active topics available in database: ${totalCount}`)
           }
         } catch (countError) {
           console.warn('Could not get total topics count from database, falling back:', countError)
@@ -748,34 +825,93 @@ export function DailyCardStack({
             const totalCount = Object.keys(allTopicsData).length
             if (!isCancelled) {
               setTotalTopicsCount(totalCount)
-              console.log(`📊 Total topics available (fallback): ${totalCount}`)
+              console.log(`📊 Total topics available (fallback method): ${totalCount}`)
             }
           } catch (fallbackError) {
             console.warn('Could not get total topics count:', fallbackError)
+            setTotalTopicsCount(0)
           }
         }
         
-        // Load topics for current month (±2 weeks) for better initial experience
+        // First, load priority content: featured topics (always show) and today's topics
         const today = getTodayAtMidnight()
-        const startDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000) // 2 weeks ago
-        const endDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)   // 2 weeks ahead
         
-        const topicsData = await dataService.getTopicsInRange(startDate, endDate)
+        // Load featured topics first (they should always be visible regardless of date)
+        const featuredTopicsData = await dataService.getFeaturedTopics()
+        const featuredTopics: TopicMetadata[] = Object.values(featuredTopicsData)
+        
+        // Load today's topics (prioritized with breaking news first)
+        const todaysTopicsData = await dataService.getTopicsForDate(today)
+        const todaysTopics: TopicMetadata[] = Object.values(todaysTopicsData)
+        
+        console.log(`📚 Priority load: ${featuredTopics.length} featured topics, ${todaysTopics.length} topics for today (${today.toDateString()})`)
+        
+        // Then load topics for a much broader range to ensure we get all content
+        const startDate = new Date(today.getTime() - 180 * 24 * 60 * 60 * 1000) // 6 months ago  
+        const endDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)    // 3 months ahead
+        
+        let rangeTopicsData = await dataService.getTopicsInRange(startDate, endDate)
+        let rangeTopics: TopicMetadata[] = Object.values(rangeTopicsData)
+        
+        // If we don't have many topics from the range, load ALL topics as fallback
+        if (rangeTopics.length < 100) {
+          console.log(`📚 Range only returned ${rangeTopics.length} topics, loading ALL topics as fallback`)
+          const allTopicsData = await dataService.getAllTopics()
+          rangeTopics = Object.values(allTopicsData)
+        }
+        
+        // Filter out today's topics and featured topics from range to avoid duplicates
+        const todayString = today.toISOString().split('T')[0]
+        const featuredIds = new Set(featuredTopics.map(t => t.topic_id))
+        const todayIds = new Set(todaysTopics.map(t => t.topic_id))
+        const otherRangeTopics = rangeTopics.filter(topic => 
+          topic.date !== todayString && 
+          !featuredIds.has(topic.topic_id) &&
+          !todayIds.has(topic.topic_id)
+        )
+        
+        // Combine all topics with deduplication
+        const combinedTopics = [
+          ...featuredTopics, // Featured topics (will be sorted with breaking featured first)
+          ...todaysTopics, // Today's topics (already sorted with breaking news first)
+          ...otherRangeTopics.sort((a, b) => {
+            const dateA = new Date(a.date || '').getTime()
+            const dateB = new Date(b.date || '').getTime()
+            return dateB - dateA // Most recent first
+          })
+        ]
+        
+        // DEDUPLICATION: Remove duplicate topics by topic_id
+        const seenIds = new Set<string>()
+        const allTopics = combinedTopics.filter(topic => {
+          if (!topic?.topic_id) return false // Filter out topics without IDs
+          if (seenIds.has(topic.topic_id)) {
+            console.log(`🔍 Removing duplicate topic: ${topic.topic_id} - ${topic.topic_title}`)
+            return false
+          }
+          seenIds.add(topic.topic_id)
+          return true
+        })
         
         if (isCancelled) return
         
-        const topicsArray: TopicMetadata[] = Object.values(topicsData)
-        setTopicsList(topicsArray)
+        setTopicsList(allTopics)
         
-        console.log(`📚 Initial load: ${topicsArray.length} topics from ${startDate.toDateString()} to ${endDate.toDateString()}`)
+        console.log(`📚 Initial load complete: ${allTopics.length} loaded topics (${featuredTopics.length} featured, ${todaysTopics.length} for today, ${otherRangeTopics.length} surrounding dates)`)
+        console.log(`📊 Database total: ${totalTopicsCount} topics | Range load: ${rangeTopics.length} topics | Successfully loaded: ${allTopics.length}`)
         
-        // Mark initial range as loaded
+        if (allTopics.length < totalTopicsCount) {
+          console.log(`⚠️ Note: Only loaded ${allTopics.length} of ${totalTopicsCount} total topics. More will load dynamically as needed.`)
+        }
+        
+        // Mark both today and the range as loaded
+        const todayKey = `${todayString}_${todayString}`
         const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
-        setLoadedDateRanges(new Set([rangeKey]))
+        setLoadedDateRanges(new Set([todayKey, rangeKey]))
         
         // Only check questions for the initially loaded topics
-        if (process.env.NODE_ENV !== 'development' && !isCancelled && topicsArray.length < 50) {
-          await checkTopicsForQuestions(topicsArray)
+        if (process.env.NODE_ENV !== 'development' && !isCancelled && allTopics.length < 50) {
+          await checkTopicsForQuestions(allTopics)
         }
       } catch (error) {
         if (!isCancelled) {
@@ -851,9 +987,17 @@ export function DailyCardStack({
       const currentAccessStatus = getTopicAccessStatus(currentTopic)
       
       if (e.key === 'ArrowLeft') {
+        console.log(`⬅️ Previous: ${currentStackIndex} -> ${Math.max(0, currentStackIndex - 1)} (${allFilteredTopics.length} total)`)
         handlePrevious()
         e.preventDefault()
       } else if (e.key === 'ArrowRight') {
+        const nextIndex = Math.min(allFilteredTopics.length - 1, currentStackIndex + 1)
+        console.log(`➡️ Next: ${currentStackIndex} -> ${nextIndex} (${allFilteredTopics.length} total)`)
+        console.log(`🎯 Current topic: ${currentTopic.topic_title} (breaking: ${currentTopic.is_breaking}, featured: ${currentTopic.is_featured})`)
+        if (nextIndex < allFilteredTopics.length) {
+          const nextTopic = allFilteredTopics[nextIndex]
+          console.log(`🎯 Next topic: ${nextTopic.topic_title} (breaking: ${nextTopic.is_breaking}, featured: ${nextTopic.is_featured})`)
+        }
         handleNext()
         e.preventDefault()
       } else if (e.key === 'Enter' || e.key === ' ') {
@@ -866,7 +1010,7 @@ export function DailyCardStack({
     
     window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentStackIndex, allFilteredTopics.length]) // Minimize dependencies
+  }, [currentStackIndex, allFilteredTopics.length, handlePrevious, handleNext, getTopicAccessStatus, handleExploreGame]) // Include all dependencies
 
   // Add scroll handler for dropdown with lazy loading
   const handleDropdownScroll = useCallback(() => {
@@ -881,12 +1025,13 @@ export function DailyCardStack({
       setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
       
       // Also trigger lazy loading for more topics if we're running low and haven't loaded all yet
-      if (!loadedDateRanges.has('all_topics_loaded') && allFilteredTopics.length - visibleTopicsCount < 50) {
-        // Load more topics from database for future navigation
+      if (!loadedDateRanges.has('all_topics_loaded') && allFilteredTopics.length < totalTopicsCount) {
+        // Load more topics from database for future navigation with wider range
         const today = getTodayAtMidnight()
-        const futureDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days ahead
-        const pastDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)   // 30 days back
+        const futureDate = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000) // 6 months ahead
+        const pastDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000)   // 1 year back
         
+        console.log(`📚 Lazy loading more topics: currently have ${allFilteredTopics.length} of ${totalTopicsCount} total`)
         loadTopicsForDateRange(pastDate, futureDate)
       }
     }
@@ -1095,7 +1240,7 @@ export function DailyCardStack({
                     <span className="text-lg">{currentTopic.emoji}</span>
                     <span>
                       {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
-                        weekday: 'short', month: 'short', day: 'numeric' 
+                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
                       })}
                     </span>
                   </span>
@@ -1169,10 +1314,24 @@ export function DailyCardStack({
                           <div className="flex items-center space-x-3 flex-grow min-w-0">
                             <span className="text-lg flex-shrink-0">{topic.emoji}</span>
                             <div className="flex-grow min-w-0">
-                              <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
+                                {topic.is_breaking && (
+                                  <span className="inline-block px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
+                                    Breaking
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
-                                {topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                                <span>{topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                {topic.is_featured && !topic.is_breaking && (
+                                  <span className="inline-flex items-center px-0.5 py-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[8px] font-bold font-space-mono uppercase tracking-wide rounded-sm">
+                                    <Star className="h-1 w-1 mr-0.5" />
+                                    <span className="hidden sm:inline">Featured</span>
+                                    <span className="inline sm:hidden">★</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1287,21 +1446,43 @@ export function DailyCardStack({
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
-              <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 mb-3 max-w-4xl mx-auto text-center">
-                {currentTopic.topic_title}
-                                  {isTopicCompleted(currentTopic.topic_id) && (
-                    <span className="text-green-600 ml-2" title="Completed">
-                      <svg className="inline h-6 w-6 sm:h-8 sm:w-8 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ verticalAlign: 'baseline' }}>
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
-                        <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                  )}
-              </h2>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 max-w-4xl text-center leading-tight">
+                  {currentTopic.topic_title}
+                </h2>
+                
+                {/* Breaking News Badge */}
+                {currentTopic.is_breaking && (
+                  <div className="inline-block px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-600 text-white text-xs sm:text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
+                    Breaking
+                  </div>
+                )}
+                
+
+                
+                {/* Completed Badge */}
+                {isTopicCompleted(currentTopic.topic_id) && (
+                  <span className="text-green-600" title="Completed">
+                    <svg className="inline h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
+                      <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                )}
+              </div>
               {/* Topic categories */}
-              {currentTopic.categories && currentTopic.categories.length > 0 && (
+              {((currentTopic.categories && currentTopic.categories.length > 0) || currentTopic.is_featured) && (
                 <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
-                  {currentTopic.categories.map((category) => (
+                  {/* Featured Badge First */}
+                  {currentTopic.is_featured && !currentTopic.is_breaking && (
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold font-space-mono uppercase tracking-wider">
+                      <Star className="h-3 w-3 mr-1" />
+                      Featured
+                    </Badge>
+                  )}
+                  
+                  {/* Category Badges */}
+                  {currentTopic.categories && currentTopic.categories.map((category) => (
                     <Badge 
                       key={category} 
                       variant="secondary"
@@ -1362,12 +1543,12 @@ export function DailyCardStack({
               {/* Status indicators */}
               <div className="flex items-center justify-center gap-3 mt-6">
                 {isTopicCompleted(currentTopic.topic_id) && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-space-mono">
                     Completed
                   </Badge>
                 )}
                 {!currentAccessStatus.accessible && (
-                  <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-space-mono">
                     {currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon' : 'Premium Content'}
                   </Badge>
                 )}

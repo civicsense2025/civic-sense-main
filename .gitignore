@@ -42,3 +42,43 @@ lib/database.types.ts.backup.*
 
 # Sandbox - Demo and test pages for development
 /app/sandbox/
+
+# Test and Demo Routes - Development only
+/app/test-*/
+/app/*-demo/
+/app/admin-content-demo/
+/app/donation-demo/
+/app/learning-pods-demo/
+/app/news-ticker-demo/
+/app/npc-demo/
+/app/survey-demo/
+
+# Debug and Development Routes
+/app/debug-*/
+/app/test-accessibility/
+/app/test-ai-extraction/
+/app/test-analytics/
+/app/test-auth-fix/
+/app/test-classroom-setup/
+/app/test-dynamic-images/
+/app/test-educational-access/
+/app/test-email-preferences-flow/
+/app/test-ghost-player-fix/
+/app/test-gift-analytics/
+/app/test-heartbeat-system/
+/app/test-institutional-integration/
+/app/test-jsonb-translation/
+/app/test-localStorage-fix/
+/app/test-media-bias-analysis/
+/app/test-multi-lms-integration/
+/app/test-multiplayer/
+/app/test-multiplayer-debug/
+/app/test-multiplayer-modes/
+/app/test-npc-integration/
+/app/test-plunk-integration/
+/app/test-room-management/
+/app/test-source-maintenance/
+/app/test-stripe/
+/app/test-toast/
+/app/test-translation/
+/app/test-tts/

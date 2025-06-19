@@ -8,6 +8,8 @@ export interface TopicMetadata {
   date: string
   dayOfWeek: string
   categories: string[] // Added categories field
+  is_breaking?: boolean // Breaking news flag for priority sorting
+  is_featured?: boolean // Featured topics flag for priority sorting
 }
 
 // Question types

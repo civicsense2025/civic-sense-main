@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Header } from '@/components/header'
 import { PodManagementDashboard } from '@/components/learning-pods/pod-management-dashboard'
+import { arePodsEnabled } from '@/lib/feature-flags'
 
 interface PodPageProps {
   params: {
@@ -19,6 +20,11 @@ export async function generateMetadata({ params }: PodPageProps): Promise<Metada
 }
 
 export default async function PodPage({ params }: PodPageProps) {
+  // Feature flag check - hide pods in production
+  if (!arePodsEnabled()) {
+    notFound()
+  }
+
   const { podId } = await params
 
   // Basic validation

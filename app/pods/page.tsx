@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense, lazy } from 'react'
+import { notFound } from 'next/navigation'
+import { arePodsEnabled } from '@/lib/feature-flags'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -403,6 +405,11 @@ function PodCard({
 }
 
 export default function PodsPage() {
+  // Feature flag check - hide pods in production
+  if (!arePodsEnabled()) {
+    notFound()
+  }
+
   const { user } = useAuth()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('my-pods')

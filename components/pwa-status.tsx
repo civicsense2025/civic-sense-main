@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { debug } from '@/lib/debug-config'
 
 export function PWAStatus() {
   const [status, setStatus] = useState({
@@ -10,6 +11,20 @@ export function PWAStatus() {
     displayMode: 'checking...',
     developmentMode: false,
   })
+  const [debugConfig, setDebugConfig] = useState(debug.getConfig())
+
+  // Update debug config when it changes
+  useEffect(() => {
+    const updateDebugConfig = () => {
+      setDebugConfig(debug.getConfig())
+    }
+    
+    // Set up an interval to check for debug config changes
+    // Since the debug system doesn't have events, we'll poll
+    const interval = setInterval(updateDebugConfig, 1000)
+    
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -127,8 +142,23 @@ export function PWAStatus() {
     }
   }
 
-  // Only show in development
+  // Only show in development AND if debug allows it
   if (process.env.NODE_ENV !== 'development') {
+    return null
+  }
+
+  // Hide if debug is disabled entirely
+  if (!debugConfig.enabled) {
+    return null
+  }
+  
+  // Hide if PWA category is disabled
+  if (!debugConfig.categories.pwa) {
+    return null
+  }
+  
+  // If minimized mode is on, don't show PWA status
+  if (debugConfig.minimized) {
     return null
   }
 

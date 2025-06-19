@@ -1,7 +1,7 @@
 "use client"
 
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
-import { useMemo, useEffect, useState } from "react"
+import { useMemo, useEffect, useState, useCallback } from "react"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { StartQuizButton } from "@/components/start-quiz-button"
 import { CreateRoomDialog } from "@/components/multiplayer/create-room-dialog"
@@ -49,9 +49,9 @@ export function TopicInfo({
   // Global audio integration
   const { autoPlayEnabled, playText } = useGlobalAudio()
   const [activeTab, setActiveTab] = useState("why-this-matters")
-  const [questions, setQuestions] = useState<QuizQuestion[]>([])
-  const [isLoadingSources, setIsLoadingSources] = useState(false)
-  const [hasQuestions, setHasQuestions] = useState(false)
+  const [questions, setQuestions] = useState<QuizQuestion[]>(preloadedQuestions)
+  const [isLoadingSources, setIsLoadingSources] = useState(preloadedQuestions.length === 0)
+  const [hasQuestions, setHasQuestions] = useState(preloadedQuestions.length > 0)
   const [isCheckingQuestions, setIsCheckingQuestions] = useState(true)
   
   // Check if the topic has questions
@@ -198,154 +198,107 @@ export function TopicInfo({
     }
   }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
 
-  // Initialize questions with preloaded data or load them if not provided
+  // Load questions if not preloaded
   useEffect(() => {
-    // If we have preloaded questions, use them immediately
+    // Skip loading if we already have preloaded questions
     if (preloadedQuestions.length > 0) {
       console.log(`🚀 TopicInfo: Using ${preloadedQuestions.length} preloaded questions for ${topicData.topic_id}`)
-      setQuestions(preloadedQuestions)
+      setIsLoadingSources(false)
       return
     }
 
-    // Otherwise, load questions if we don't have any yet
-    let isCancelled = false
+    // Load questions for source extraction
+    if (!topicData.topic_id) {
+      setIsLoadingSources(false)
+      return
+    }
 
     const loadQuestions = async () => {
-      if (questions.length === 0 && !isLoadingSources && topicData.topic_id) {
-        console.log(`📥 TopicInfo: Loading questions for ${topicData.topic_id} (no preloaded questions available)`)
-        setIsLoadingSources(true)
-        try {
-          const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
-          
-          if (!isCancelled) {
-            // Ensure we have valid questions data
-            const validQuestions = Array.isArray(questionsData) ? questionsData : []
-            setQuestions(validQuestions)
-            console.log(`✅ TopicInfo: Loaded ${validQuestions.length} questions for ${topicData.topic_id}`)
-          }
-        } catch (error) {
-          if (!isCancelled) {
-            console.error("Error loading questions for sources:", error)
-            setQuestions([]) // Set empty array on error
-          }
-        } finally {
-          if (!isCancelled) {
-            setIsLoadingSources(false)
-          }
-        }
+      console.log(`📥 TopicInfo: Loading questions for ${topicData.topic_id}`)
+      setIsLoadingSources(true)
+      
+      try {
+        const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
+        const validQuestions = Array.isArray(questionsData) ? questionsData : []
+        setQuestions(validQuestions)
+        console.log(`✅ TopicInfo: Loaded ${validQuestions.length} questions for ${topicData.topic_id}`)
+      } catch (error) {
+        console.error("Error loading questions for sources:", error)
+        setQuestions([])
+      } finally {
+        setIsLoadingSources(false)
       }
     }
     
     loadQuestions()
+  }, [topicData.topic_id, preloadedQuestions.length])
 
-    return () => {
-      isCancelled = true
-    }
-  }, [topicData.topic_id, questions.length, isLoadingSources, preloadedQuestions])
-
-  // Extract all unique sources from questions with improved deduplication
+  // Extract and process sources from questions
   const allSources = useMemo(() => {
+    if (questions.length === 0) {
+      return []
+    }
+
     const sourceMap = new Map()
     
-    // Debug logging
     console.log('🔍 TopicInfo: Processing questions for sources:', {
       questionsCount: questions.length,
-      topicId: topicData.topic_id,
-      questionsWithSources: questions.filter(q => q.sources && Array.isArray(q.sources) && q.sources.length > 0).length
+      topicId: topicData.topic_id
     })
     
     questions.forEach((question) => {
       if (question.sources && Array.isArray(question.sources) && question.sources.length > 0) {
-        console.log(`📚 Question ${question.question_number} has ${question.sources.length} sources:`, question.sources)
-        
         question.sources.forEach((source: any) => {
-          // Handle different source formats more flexibly
+          // Handle different source formats
+          let name = ''
+          let url = ''
+          
           if (source && typeof source === 'object') {
-            // Try multiple field combinations that might exist in the database
-            const name = source.name || source.title || source.source_name || ''
-            const url = source.url || source.link || source.href || ''
-            
-            console.log(`🔗 Processing source:`, { name, url, originalSource: source })
-            
-            // Accept sources that have at least a URL, even if name is missing
-            if (url && url.trim() !== '') {
-              // Normalize URL for better deduplication (remove trailing slashes, fragments, etc.)
-              const normalizedUrl = url.trim().replace(/\/$/, '').split('#')[0].split('?')[0]
-              
-              // Use normalized URL as the primary key for deduplication
-              const key = normalizedUrl
-              
-              const displayName = name && name.trim() !== '' ? name.trim() : normalizedUrl
-              
-              if (!sourceMap.has(key)) {
-                sourceMap.set(key, { 
-                  name: displayName,
-                  url: url, // Keep original URL for linking
-                  normalizedUrl: normalizedUrl,
-                  // Include any additional metadata without overwriting name/url
-                  ...(source.title && { title: source.title }),
-                  ...(source.description && { description: source.description }),
-                  ...(source.domain && { domain: source.domain }),
-                  questions: [question.question_number] 
-                })
-                console.log(`✅ Added source to map:`, { displayName, url: normalizedUrl })
-              } else {
-                const existingSource = sourceMap.get(key)
-                // Update with better name if current one is just a URL
-                if (existingSource.name === existingSource.normalizedUrl && displayName !== normalizedUrl) {
-                  existingSource.name = displayName
-                }
-                // Add question number if not already present
-                if (!existingSource.questions.includes(question.question_number)) {
-                  existingSource.questions.push(question.question_number)
-                }
-                console.log(`🔄 Updated existing source with question ${question.question_number}`)
-              }
-            } else {
-              console.log(`❌ Skipped source - missing URL:`, source)
-            }
+            name = source.name || source.title || source.source_name || ''
+            url = source.url || source.link || source.href || ''
           } else if (typeof source === 'string' && source.startsWith('http')) {
-            // Handle string URLs directly
-            const normalizedUrl = source.trim().replace(/\/$/, '').split('#')[0].split('?')[0]
-            const key = normalizedUrl
+            url = source
+            name = source
+          }
+          
+          if (url && url.trim() !== '') {
+            const displayName = name && name.trim() !== '' ? name.trim() : url
             
-            if (!sourceMap.has(key)) {
-              sourceMap.set(key, { 
-                name: normalizedUrl,
-                url: source,
-                normalizedUrl: normalizedUrl,
-                questions: [question.question_number] 
+            // Simple deduplication by URL
+            if (!sourceMap.has(url)) {
+              sourceMap.set(url, { 
+                name: displayName,
+                url: url,
+                questions: [question.question_number],
+                // Include any additional metadata
+                ...(source.title && { title: source.title }),
+                ...(source.description && { description: source.description }),
+                ...(source.domain && { domain: source.domain })
               })
-              console.log(`✅ Added string URL source:`, normalizedUrl)
             } else {
-              const existingSource = sourceMap.get(key)
-              if (!existingSource.questions.includes(question.question_number)) {
-                existingSource.questions.push(question.question_number)
+              // Add question number if not already present
+              const existing = sourceMap.get(url)
+              const questionId = question.question_number
+              if (!existing.questions.includes(questionId)) {
+                existing.questions.push(questionId)
               }
-              console.log(`🔄 Updated existing string URL source`)
             }
-          } else {
-            console.log(`❌ Skipped invalid source:`, source)
           }
         })
-      } else {
-        console.log(`📝 Question ${question.question_number} has no sources`)
       }
     })
     
-    // Convert to array and sort by number of questions (most referenced first), then by name
-    const finalSources = Array.from(sourceMap.values()).sort((a: { questions: number[]; name: string }, b: { questions: number[]; name: string }) => {
-      // First sort by number of questions (descending)
+    // Convert to array and sort
+    const sources = Array.from(sourceMap.values()).sort((a, b) => {
+      // Sort by number of questions (descending), then alphabetically
       if (b.questions.length !== a.questions.length) {
         return b.questions.length - a.questions.length
       }
-      // Then sort alphabetically by name
       return a.name.localeCompare(b.name)
     })
     
-    console.log('🎯 Final sources extracted:', finalSources.length, finalSources)
-    
-    return finalSources
+    console.log('🎯 Processed sources:', sources.length, sources)
+    return sources
   }, [questions, topicData.topic_id])
 
   // FAQ data with structured schema
@@ -482,8 +435,7 @@ export function TopicInfo({
               </TabsTrigger>
               <TabsTrigger 
                 value="sources-citations"
-                className={"flex items-center gap-2 relative " + (allSources.length === 0 ? "opacity-50 cursor-not-allowed pointer-events-none bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600" : "")}
-                disabled={allSources.length === 0}
+                className="flex items-center gap-2"
               >
                 <BookOpen className="h-4 w-4" />
                 Sources & Citations

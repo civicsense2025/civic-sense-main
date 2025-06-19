@@ -17,6 +17,7 @@ import { usePremium } from "@/hooks/usePremium"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "@/components/learning-pods-stats"
+import { arePodsEnabled } from "@/lib/feature-flags"
 import Link from "next/link"
 
 interface UserMenuProps {
@@ -190,12 +191,12 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           </div>
         )}
 
-        {/* Learning Pods Section - temporarily hidden until ready for public use */}
-        {/*
-        <div className="p-5 border-b border-border">
-          <LearningPodsStats compact={true} />
-        </div>
-        */}
+        {/* Learning Pods Section - feature flagged */}
+        {arePodsEnabled() && (
+          <div className="p-5 border-b border-border">
+            <LearningPodsStats compact={true} />
+          </div>
+        )}
 
         {/* Menu Items */}
         <div className="py-2 px-2">
@@ -209,18 +210,18 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
             </Link>
           </DropdownMenuItem>
           
-          {/* Learning Pods menu item - temporarily hidden until ready for public use */}
-          {/*
-          <DropdownMenuItem asChild>
-            <Link 
-                                    href="/pods" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-            >
-              <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Learning Pods</span>
-            </Link>
-          </DropdownMenuItem>
-          */}
+          {/* Learning Pods menu item - feature flagged */}
+          {arePodsEnabled() && (
+            <DropdownMenuItem asChild>
+              <Link 
+                href="/pods" 
+                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
+              >
+                <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
+                <span className="font-medium">Learning Pods</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuItem asChild>
             <Link 

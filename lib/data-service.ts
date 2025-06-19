@@ -86,6 +86,8 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
     date: dbTopic.date,
     dayOfWeek: dbTopic.day_of_week,
     categories: Array.isArray(dbTopic.categories) ? dbTopic.categories : [],
+    is_breaking: dbTopic.is_breaking === true, // Include breaking news flag
+    is_featured: dbTopic.is_featured === true, // Include featured topics flag
   }
   
   return cleanObjectContent(topic)
@@ -120,13 +122,17 @@ async function getTopicsInDateRange(startDate: Date, endDate: Date): Promise<any
     }
     
     // For Supabase - use a more robust approach to filter out invalid dates
+    // Note: Removing any implicit limits to ensure we get ALL topics in range
     const { data, error } = await supabase
       .from('question_topics')
       .select('*')
       .filter('date', 'not.is', null)
       .filter('date', 'gte', startDate.toISOString().split('T')[0])
       .filter('date', 'lte', endDate.toISOString().split('T')[0])
-      .order('date', { ascending: false });
+      .eq('is_active', true) // Only active topics
+      .order('is_breaking', { ascending: false }) // Breaking first
+      .order('is_featured', { ascending: false }) // Featured second  
+      .order('date', { ascending: false }); // Most recent first
 
     if (error) {
       console.warn('Supabase query error:', error.message)
@@ -189,12 +195,15 @@ async function getAllTopicsWithValidDates() {
       throw new Error('Supabase client not initialized')
     }
     
-    // Only filter for date IS NOT NULL in Supabase
+    // Load ALL active topics with valid dates - no limits!
     const { data, error } = await supabase
       .from('question_topics')
       .select('*')
       .filter('date', 'not.is', null)
-      .order('date', { ascending: false });
+      .eq('is_active', true) // Only active topics
+      .order('is_breaking', { ascending: false }) // Breaking first
+      .order('is_featured', { ascending: false }) // Featured second
+      .order('date', { ascending: false }); // Most recent first
 
     if (error) {
       console.warn('Supabase query error:', error.message)
@@ -249,9 +258,168 @@ async function getAllTopicsWithValidDates() {
 }
 
 /**
+ * Get topics for a specific date (like today)
+ */
+async function getTopicsForDate(targetDate: Date): Promise<any[]> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+    
+    const dateString = targetDate.toISOString().split('T')[0]
+    
+    const { data, error } = await supabase
+      .from('question_topics')
+      .select('*')
+      .eq('date', dateString)
+      .eq('is_active', true)
+      .order('is_breaking', { ascending: false }) // Breaking news first
+      .order('is_featured', { ascending: false }) // Featured topics second
+      .order('created_at', { ascending: false }) // Then by creation time
+
+    if (error) {
+      console.warn('Supabase query error for specific date:', error.message)
+      throw error
+    }
+    
+    return data || []
+  } catch (error) {
+    console.error(`Error getting topics for date ${targetDate.toISOString().split('T')[0]}:`, error)
+    
+    // Fallback to filtering all topics
+    try {
+      const allTopics = await topicOperations.getAll()
+      const dateString = targetDate.toISOString().split('T')[0]
+      return allTopics.filter(topic => topic.date === dateString)
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError)
+      return []
+    }
+  }
+}
+
+/**
+ * Get all featured topics regardless of date
+ */
+async function getAllFeaturedTopics(): Promise<any[]> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+    
+    const { data, error } = await supabase
+      .from('question_topics')
+      .select('*')
+      .eq('is_featured', true)
+      .eq('is_active', true)
+      .order('is_breaking', { ascending: false }) // Breaking featured first
+      .order('created_at', { ascending: false }) as any // Cast to any for new fields
+
+    if (error) {
+      console.warn('Supabase query error for featured topics:', error.message)
+      throw error
+    }
+    
+    return data || []
+  } catch (error) {
+    console.error('Error getting featured topics:', error)
+    
+    // Fallback to filtering all topics
+    try {
+      const allTopics = await topicOperations.getAll()
+      return allTopics.filter(topic => (topic as any).is_featured === true)
+    } catch (fallbackError) {
+      console.error('Featured topics fallback also failed:', fallbackError)
+      return []
+    }
+  }
+}
+
+/**
  * Data service with optimized database queries
  */
 export const dataService = {
+  /**
+   * Get all featured topics regardless of date (always show these)
+   */
+  async getFeaturedTopics(): Promise<Record<string, TopicMetadata>> {
+    const isDbAvailable = await checkDatabaseAvailability()
+    
+    if (isDbAvailable) {
+      try {
+        const dbTopics = await getAllFeaturedTopics()
+        const topicsRecord: Record<string, TopicMetadata> = {}
+        
+        dbTopics.forEach((dbTopic: any) => {
+          const appTopic = dbTopicToAppFormat(dbTopic)
+          topicsRecord[appTopic.topic_id] = appTopic
+        })
+        
+        console.log(`📊 Loaded ${Object.keys(topicsRecord).length} featured topics from database`)
+        return topicsRecord
+      } catch (error) {
+        console.error('Error loading featured topics from database:', error)
+      }
+    }
+    
+    // Fallback to mock data filtered by featured
+    const validTopics = getValidMockTopics()
+    const filteredTopics: Record<string, TopicMetadata> = {}
+    
+    Object.entries(validTopics).forEach(([topicId, topic]) => {
+      try {
+        if (topic.is_featured === true) {
+          filteredTopics[topicId] = topic
+        }
+      } catch (e) {
+        // Skip invalid topics
+      }
+    })
+    
+    return cleanObjectContent(filteredTopics)
+  },
+
+  /**
+   * Get all topics for a specific date (prioritizes breaking news)
+   */
+  async getTopicsForDate(targetDate: Date): Promise<Record<string, TopicMetadata>> {
+    const isDbAvailable = await checkDatabaseAvailability()
+    
+    if (isDbAvailable) {
+      try {
+        const dbTopics = await getTopicsForDate(targetDate)
+        const topicsRecord: Record<string, TopicMetadata> = {}
+        
+        dbTopics.forEach((dbTopic: any) => {
+          const appTopic = dbTopicToAppFormat(dbTopic)
+          topicsRecord[appTopic.topic_id] = appTopic
+        })
+        
+        console.log(`📊 Loaded ${Object.keys(topicsRecord).length} topics for ${targetDate.toISOString().split('T')[0]} from database`)
+        return topicsRecord
+      } catch (error) {
+        console.error('Error loading topics for specific date from database:', error)
+      }
+    }
+    
+    // Fallback to mock data filtered by date
+    const validTopics = getValidMockTopics()
+    const targetDateString = targetDate.toISOString().split('T')[0]
+    const filteredTopics: Record<string, TopicMetadata> = {}
+    
+    Object.entries(validTopics).forEach(([topicId, topic]) => {
+      try {
+        if (topic.date && topic.date === targetDateString) {
+          filteredTopics[topicId] = topic
+        }
+      } catch (e) {
+        // Skip invalid dates
+      }
+    })
+    
+    return cleanObjectContent(filteredTopics)
+  },
+
   /**
    * Get topics in a date range
    */

@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { multiplayerOperations } from '@/lib/multiplayer'
+import { isMultiplayerEnabled } from '@/lib/feature-flags'
 
 /**
  * Clean up expired multiplayer rooms
  * This endpoint can be called periodically (e.g., by a cron job) to maintain the database
  */
 export async function POST(request: NextRequest) {
+  // Feature flag check - disable multiplayer API in production
+  if (!isMultiplayerEnabled()) {
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
+  }
+
   try {
     console.log('🧹 Starting multiplayer room cleanup...')
     
@@ -35,6 +41,11 @@ export async function POST(request: NextRequest) {
  * Get cleanup status and statistics
  */
 export async function GET(request: NextRequest) {
+  // Feature flag check - disable multiplayer API in production
+  if (!isMultiplayerEnabled()) {
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
+  }
+
   try {
     // This could be expanded to show cleanup statistics
     return NextResponse.json({
