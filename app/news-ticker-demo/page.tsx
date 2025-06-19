@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { NewsTicker } from '@/components/news-ticker'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -244,9 +245,11 @@ export default function NewsTickerDemoPage() {
                 <BookOpen className="h-4 w-4 mr-2" />
                 View Documentation
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                <ArrowRight className="h-4 w-4 mr-2" />
-                Try It Now
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600" asChild>
+                <Link href="/test-ai-extraction">
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Test AI Extraction
+                </Link>
               </Button>
             </div>
           </CardContent>

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users } from "lucide-react"
+import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users, Brain } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
@@ -113,6 +113,12 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
     if (subscription?.subscription_tier === 'pro') return { icon: Crown, color: 'text-purple-500', label: 'Pro' }
     if (isPremium) return { icon: Crown, color: 'text-blue-500', label: 'Premium' }
     return null
+  }
+
+  const isAdmin = () => {
+    return user?.email === 'admin@civicsense.app' || 
+           user?.email?.includes('civicsense') ||
+           isPremium // For now, give premium users admin access
   }
 
   const userEmail = user.email || 'user@example.com'
@@ -227,6 +233,19 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
+
+          {/* Admin Panel - Only show for authorized users */}
+          {isAdmin() && (
+            <DropdownMenuItem asChild>
+              <Link 
+                href="/admin/ai-content" 
+                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20 focus:bg-blue-50 dark:focus:bg-blue-950/20 transition-colors rounded-sm text-blue-600 dark:text-blue-400"
+              >
+                <Brain className="w-4 h-4" />
+                <span>AI Content Review</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator />
 

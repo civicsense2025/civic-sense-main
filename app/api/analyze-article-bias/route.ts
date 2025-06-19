@@ -117,17 +117,6 @@ Format your response as JSON with these exact fields:
       { "name": "event name", "date": "ISO date or null", "type": "election|legislation|court_case|protest|policy_change|other", "significance": "low|medium|high|critical", "description": "why this matters" }
     ]
   },
-  "civic_education_content": {
-    "question_topics": [
-      { "name": "topic name", "description": "what this teaches", "category": "government/policy/elections", "difficulty": "beginner/intermediate/advanced", "level": "local/state/federal/international" }
-    ],
-    "public_figures": [
-      { "name": "full name", "role": "position/title", "party": "party or null", "level": "local/state/federal/international", "description": "why they matter" }
-    ],
-    "events": [
-      { "name": "event name", "date": "date or null", "type": "election/legislation/court_case/protest/policy_change/other", "significance": "low/medium/high/critical", "description": "impact and importance" }
-    ]
-  },
   "factual_claims": [
     { "claim": "specific claim", "verifiable": true/false, "verification": "how to check" }
   ],
@@ -225,10 +214,14 @@ Format your response as JSON with these exact fields:
       throw new Error('Failed to save analysis to database')
     }
 
-    // Step 6: Return enhanced response with civic action
+    // Step 6: Extract and save civic education content
+    const civicContentResults = await saveCivicEducationContent(analysis.civic_education_content, data.id)
+
+    // Step 7: Return enhanced response with civic action
     return NextResponse.json({
       success: true,
       analysis: data,
+      civic_content_saved: civicContentResults,
       insights: {
         overall_bias: overallBiasScore > 33 ? 'significant' : 'moderate',
         primary_concern: identifyPrimaryConcern(analysis),
@@ -306,4 +299,161 @@ function identifyPrimaryConcern(analysis: any): string {
 function generateShareMessage(analysis: any): string {
   const concern = identifyPrimaryConcern(analysis)
   return `This article shows ${concern}. Here's what they don't want you to know: ${analysis.metadata.title.substring(0, 50)}...`
+}
+
+// Save civic education content to database
+async function saveCivicEducationContent(civicContent: any, analysisId: string) {
+  const results = {
+    question_topics: { created: 0, existing: 0 },
+    public_figures: { created: 0, existing: 0 },
+    events: { created: 0, existing: 0 }
+  }
+
+  try {
+    // Save question topics
+    if (civicContent.question_topics && civicContent.question_topics.length > 0) {
+      for (const topic of civicContent.question_topics) {
+        try {
+          // Check if topic already exists
+          const { data: existingTopic } = await supabase
+            .from('question_topics')
+            .select('id')
+            .eq('topic_title', topic.name)
+            .single()
+
+          if (existingTopic) {
+            results.question_topics.existing++
+          } else {
+            // Create new topic with proper schema
+            const topicId = `ai-extracted-${Date.now()}-${topic.name.toLowerCase().replace(/\s+/g, '-')}`
+            const { data: newTopic, error } = await supabase
+              .from('question_topics')
+              .insert({
+                topic_id: topicId,
+                topic_title: topic.name,
+                description: topic.description,
+                why_this_matters: `Understanding ${topic.name} is crucial for civic participation and democratic engagement.`,
+                emoji: '🏛️', // Default emoji for AI-extracted topics
+                categories: [topic.category],
+                is_active: true,
+                source_type: 'ai_extracted',
+                source_analysis_id: analysisId,
+                ai_extraction_metadata: {
+                  difficulty: topic.difficulty,
+                  level: topic.level,
+                  extraction_date: new Date().toISOString()
+                }
+              })
+              .select('id')
+              .single()
+
+            if (!error && newTopic) {
+              results.question_topics.created++
+            }
+          }
+        } catch (error) {
+          console.error('Error saving question topic:', error)
+        }
+      }
+    }
+
+    // Save public figures
+    if (civicContent.public_figures && civicContent.public_figures.length > 0) {
+      for (const figure of civicContent.public_figures) {
+        try {
+          // Check if figure already exists
+          const { data: existingFigure } = await supabase
+            .from('public_figures')
+            .select('id')
+            .eq('full_name', figure.name)
+            .single()
+
+          if (existingFigure) {
+            results.public_figures.existing++
+          } else {
+            // Create new figure with proper schema
+            const figureSlug = figure.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+            const { data: newFigure, error } = await supabase
+              .from('public_figures')
+              .insert({
+                full_name: figure.name,
+                display_name: figure.name,
+                slug: figureSlug,
+                primary_role_category: figure.role,
+                party_affiliation: figure.party,
+                current_positions: [figure.role],
+                civicsense_priority: 1, // Default priority for AI-extracted figures
+                content_review_status: 'ai_generated',
+                source_type: 'ai_extracted',
+                source_analysis_id: analysisId,
+                ai_extraction_metadata: {
+                  level: figure.level,
+                  extraction_date: new Date().toISOString(),
+                  original_description: figure.description
+                }
+              })
+              .select('id')
+              .single()
+
+            if (!error && newFigure) {
+              results.public_figures.created++
+            }
+          }
+        } catch (error) {
+          console.error('Error saving public figure:', error)
+        }
+      }
+    }
+
+    // Save events
+    if (civicContent.events && civicContent.events.length > 0) {
+      for (const event of civicContent.events) {
+        try {
+          // Check if event already exists
+          const { data: existingEvent } = await supabase
+            .from('events')
+            .select('topic_id')
+            .eq('topic_title', event.name)
+            .single()
+
+          if (existingEvent) {
+            results.events.existing++
+          } else {
+            // Create new event with proper schema
+            const eventTopicId = `ai-event-${Date.now()}-${event.name.toLowerCase().replace(/\s+/g, '-')}`
+            const { data: newEvent, error } = await supabase
+              .from('events')
+              .insert({
+                topic_id: eventTopicId,
+                topic_title: event.name,
+                date: event.date || new Date().toISOString().split('T')[0],
+                description: event.description,
+                why_this_matters: `This event is significant because it affects ${event.significance} level civic processes and democratic participation.`,
+                sources: { ai_extracted: true, analysis_id: analysisId },
+                source_type: 'ai_extracted',
+                source_analysis_id: analysisId,
+                ai_extraction_metadata: {
+                  event_type: event.type,
+                  significance: event.significance,
+                  extraction_date: new Date().toISOString()
+                }
+              })
+              .select('topic_id')
+              .single()
+
+            if (!error && newEvent) {
+              results.events.created++
+            }
+          }
+        } catch (error) {
+          console.error('Error saving event:', error)
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('Error in saveCivicEducationContent:', error)
+  }
+
+  return results
 } 
