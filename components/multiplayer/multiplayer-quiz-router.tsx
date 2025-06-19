@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from "react"
 import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type BaseMultiplayerEngineProps } from "./game-modes/base-multiplayer-engine"
 import { SpeedRoundEngine } from "./game-modes/speed-round-engine"
+import { MatchingEngine } from "./game-modes/matching-engine"
 import { EliminationEngine } from "./game-modes/elimination-engine"
 import { LearningLabEngine } from "./game-modes/learning-lab-engine"
 import { useMultiplayerRoom } from "@/lib/multiplayer"
@@ -259,6 +260,9 @@ function MultiplayerQuizRouterInternal({
       case 'speed_round':
         return <SpeedRoundEngine {...engineProps} />
       
+      case 'matching':
+        return <MatchingEngine {...engineProps} />
+      
       case 'elimination':
         return <EliminationEngine {...engineProps} />
       
@@ -299,6 +303,8 @@ export function getGameModeDescription(gameMode: string): string {
       return 'Traditional quiz format with detailed explanations and balanced pacing'
     case 'speed_round':
       return 'Fast-paced competitive quiz with real-time leaderboards and speed bonuses'
+    case 'matching':
+      return 'Collaborative puzzle-solving with team hints and matching challenges'
     case 'elimination':
       return 'High-stakes survival mode where wrong answers eliminate players'
     case 'learning_lab':
@@ -314,6 +320,8 @@ export function getGameModeIcon(gameMode: string): string {
       return '📚'
     case 'speed_round':
       return '⚡'
+    case 'matching':
+      return '🧩'
     case 'elimination':
       return '🏆'
     case 'learning_lab':

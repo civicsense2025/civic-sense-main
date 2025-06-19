@@ -30,14 +30,37 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
   const [isCompleted, setIsCompleted] = useState(false)
   const [sessionId] = useState(() => `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const [existingResponses, setExistingResponses] = useState<SurveyResponse[]>([])
+  const [completedResponses, setCompletedResponses] = useState<SurveyResponse[]>([])
 
-  // Extract email from URL parameters
+  // Extract URL parameters
   const emailFromUrl = searchParams.get('email')
+  const isViewingCompleted = searchParams.get('completed') === 'true'
+  const responseId = searchParams.get('response_id')
 
   // Check for existing responses on mount
   useEffect(() => {
     const checkExistingResponses = async () => {
       if (!user && !guestToken) return
+
+      // If viewing completed survey, fetch specific response
+      if (isViewingCompleted && responseId) {
+        try {
+          const response = await fetch(`/api/surveys/${survey.id}/responses/${responseId}`)
+          if (response.ok) {
+            const data = await response.json()
+            setCompletedResponses(data.answers || [])
+            return
+          }
+        } catch (error) {
+          console.error('Error fetching completed response:', error)
+          toast({
+            title: "Error loading responses",
+            description: "Failed to load your survey responses.",
+            variant: "destructive"
+          })
+        }
+        return
+      }
 
       try {
         const params = new URLSearchParams({
@@ -119,7 +142,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
     }
 
     checkExistingResponses()
-  }, [survey.id, survey.questions, sessionId, user, guestToken, emailFromUrl])
+  }, [survey.id, survey.questions, sessionId, user, guestToken, emailFromUrl, isViewingCompleted, responseId, toast])
 
   const handleStartSurvey = () => {
     setShowSurvey(true)
@@ -247,7 +270,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
     )
   }
 
-  if (showSurvey) {
+  if (showSurvey || isViewingCompleted) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header onSignInClick={() => setShowAuthDialog(true)} />
@@ -259,6 +282,8 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
             existingResponses={existingResponses}
             sessionId={sessionId}
             className="px-4 sm:px-6 lg:px-8"
+            showCompleted={isViewingCompleted}
+            completedResponses={completedResponses}
           />
         </main>
         

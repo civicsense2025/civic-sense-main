@@ -48,6 +48,7 @@ export default function MultiplayerModesTestPage() {
   const gameModes = [
     { mode: 'classic', name: 'Classic Quiz', icon: '📚' },
     { mode: 'speed_round', name: 'Speed Round', icon: '⚡' },
+    { mode: 'matching', name: 'Matching Challenge', icon: '🧩' },
     { mode: 'elimination', name: 'Elimination', icon: '🏆' },
     { mode: 'learning_lab', name: 'Learning Lab', icon: '🧪' }
   ]

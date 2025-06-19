@@ -17,12 +17,60 @@ import {
   Eye, Edit, Trash2, ExternalLink, Star,
   TrendingUp, BarChart3, Sparkles, Shield,
   ArrowRight, Plus, Download, Upload,
-  Globe, User, BookOpen, Gavel, Vote
+  Globe, User, BookOpen, Gavel, Vote,
+  RefreshCw
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { supabase } from '@/lib/supabase'
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+
+// Content generation interfaces
+interface GenerationSettings {
+  maxArticles: number
+  daysSinceCreated: number
+  categories: string[]
+  forceGeneration: boolean
+  
+  // Content generation controls
+  questionsPerTopic: number
+  questionTypeDistribution: {
+    multipleChoice: number
+    trueFalse: number
+    shortAnswer: number
+    fillInBlank: number
+    matching: number
+  }
+  difficultyDistribution: {
+    easy: number
+    medium: number
+    hard: number
+  }
+  
+  // Scheduling options
+  generateForFutureDates: boolean
+  startDate: string
+  daysToGenerate: number
+  scheduleRecurring: boolean
+  recurringInterval: 'daily' | 'every12hours' | 'weekly'
+}
+
+interface GenerationResult {
+  success: boolean
+  message: string
+  results?: {
+    articlesProcessed: number
+    topicsGenerated: number
+    questionsGenerated: number
+    saveResults: {
+      topicsSaved: number
+      questionsSaved: number
+      errors: string[]
+    }
+    errors?: Array<{ article: string, error: string }>
+  }
+  error?: string
+}
 
 // Use actual database types with optional tracking fields (since migration hasn't run yet)
 interface AIExtractedTopic {
@@ -86,6 +134,84 @@ interface AdminStats {
   extractionSources: number
 }
 
+function NewsArticlesPreview() {
+  const [articles, setArticles] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchRecentArticles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('source_metadata')
+          .select('title, domain, credibility_score, last_fetched_at, url')
+          .gte('credibility_score', 70)
+          .not('title', 'is', null)
+          .order('last_fetched_at', { ascending: false })
+          .limit(10)
+
+        if (error) throw error
+        setArticles(data || [])
+      } catch (error) {
+        console.error('Error fetching articles:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchRecentArticles()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-600"></div>
+      </div>
+    )
+  }
+
+  if (articles.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+        No recent news articles found in the database
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {articles.map((article, index) => (
+        <div key={index} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+          <div className="flex-1">
+            <h4 className="font-medium text-sm text-slate-900 dark:text-white truncate">
+              {article.title}
+            </h4>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {article.domain}
+              </span>
+              {article.credibility_score && (
+                <Badge variant="outline" className="text-xs">
+                  {article.credibility_score}% credible
+                </Badge>
+              )}
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {new Date(article.last_fetched_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.open(article.url, '_blank')}
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AIContentAdminPage() {
   const { user } = useAuth()
   const { hasFeatureAccess } = usePremium()
@@ -102,6 +228,38 @@ export default function AIContentAdminPage() {
   const [topics, setTopics] = useState<AIExtractedTopic[]>([])
   const [figures, setFigures] = useState<AIExtractedFigure[]>([])
   const [events, setEvents] = useState<AIExtractedEvent[]>([])
+  
+  // Content generation state
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null)
+  const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
+    maxArticles: 10,
+    daysSinceCreated: 7,
+    categories: [],
+    forceGeneration: false,
+    
+    // Content generation controls
+    questionsPerTopic: 6,
+    questionTypeDistribution: {
+      multipleChoice: 60,
+      trueFalse: 25,
+      shortAnswer: 15,
+      fillInBlank: 0,
+      matching: 0
+    },
+    difficultyDistribution: {
+      easy: 30,
+      medium: 50,
+      hard: 20
+    },
+    
+    // Scheduling options
+    generateForFutureDates: false,
+    startDate: new Date().toISOString().split('T')[0],
+    daysToGenerate: 1,
+    scheduleRecurring: false,
+    recurringInterval: 'daily'
+  })
   
   // Check admin access and redirect if unauthorized
   useEffect(() => {
@@ -277,6 +435,115 @@ export default function AIContentAdminPage() {
     }
   }
 
+  const handleGenerateContent = async () => {
+    if (!user) return
+    
+    setIsGenerating(true)
+    setGenerationResult(null)
+    
+    try {
+      const response = await fetch('/api/admin/generate-content-from-news', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...generationSettings,
+          userId: user.id
+        })
+      })
+      
+      const result: GenerationResult = await response.json()
+      setGenerationResult(result)
+      
+      if (result.success) {
+        toast({
+          title: "Content Generation Complete",
+          description: result.message,
+        })
+        
+        // Refresh the admin data to show new content
+        window.location.reload()
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: result.error || 'Unknown error occurred',
+          variant: "destructive"
+        })
+      }
+      
+    } catch (error) {
+      console.error('Error generating content:', error)
+      toast({
+        title: "Generation Error",
+        description: "Failed to communicate with the server",
+        variant: "destructive"
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSaveAsSchedule = () => {
+    // TODO: Implement save as schedule dialog
+    toast({
+      title: "Coming Soon",
+      description: "Schedule management will be available soon",
+    })
+  }
+
+  const handlePresetSettings = (preset: 'daily-quiz' | 'weekly-batch') => {
+    if (preset === 'daily-quiz') {
+      setGenerationSettings(prev => ({
+        ...prev,
+        maxArticles: 5,
+        questionsPerTopic: 6,
+        generateForFutureDates: true,
+        daysToGenerate: 7,
+        questionTypeDistribution: {
+          multipleChoice: 70,
+          trueFalse: 20,
+          shortAnswer: 10,
+          fillInBlank: 0,
+          matching: 0
+        },
+        difficultyDistribution: {
+          easy: 25,
+          medium: 55,
+          hard: 20
+        }
+      }))
+      toast({
+        title: "Daily Quiz Preset Applied",
+        description: "Configured for daily quiz generation with 6 questions per topic",
+      })
+    } else if (preset === 'weekly-batch') {
+      setGenerationSettings(prev => ({
+        ...prev,
+        maxArticles: 20,
+        questionsPerTopic: 8,
+        generateForFutureDates: true,
+        daysToGenerate: 7,
+        questionTypeDistribution: {
+          multipleChoice: 60,
+          trueFalse: 25,
+          shortAnswer: 15,
+          fillInBlank: 0,
+          matching: 0
+        },
+        difficultyDistribution: {
+          easy: 30,
+          medium: 50,
+          hard: 20
+        }
+      }))
+      toast({
+        title: "Weekly Batch Preset Applied",
+        description: "Configured for weekly content generation with 8 questions per topic",
+      })
+    }
+  }
+
   if (isLoading || adminLoading || !stats || (!isAdmin && !adminError)) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
@@ -411,6 +678,413 @@ export default function AIContentAdminPage() {
             </div>
           </div>
 
+          {/* Content Generation Section */}
+          <Card className="border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="bg-blue-500 p-2 rounded-lg">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                Generate Content from News Articles
+              </CardTitle>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Automatically create civic education topics and questions from recent news articles in your database
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Basic Settings */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Basic Settings</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Max Articles</label>
+                    <Select
+                      value={generationSettings.maxArticles.toString()}
+                      onValueChange={(value) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        maxArticles: parseInt(value) 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 articles</SelectItem>
+                        <SelectItem value="10">10 articles</SelectItem>
+                        <SelectItem value="20">20 articles</SelectItem>
+                        <SelectItem value="30">30 articles</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Time Range</label>
+                    <Select
+                      value={generationSettings.daysSinceCreated.toString()}
+                      onValueChange={(value) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        daysSinceCreated: parseInt(value) 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Last 24 hours</SelectItem>
+                        <SelectItem value="3">Last 3 days</SelectItem>
+                        <SelectItem value="7">Last week</SelectItem>
+                        <SelectItem value="14">Last 2 weeks</SelectItem>
+                        <SelectItem value="30">Last month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="forceGeneration"
+                        checked={generationSettings.forceGeneration}
+                        onChange={(e) => setGenerationSettings(prev => ({ 
+                          ...prev, 
+                          forceGeneration: e.target.checked 
+                        }))}
+                        className="rounded"
+                      />
+                      <label htmlFor="forceGeneration" className="text-sm">
+                        Force generation (ignore duplicates)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Configuration */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Content Configuration</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Questions Per Topic */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Questions Per Topic</label>
+                    <Select
+                      value={generationSettings.questionsPerTopic.toString()}
+                      onValueChange={(value) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        questionsPerTopic: parseInt(value) 
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 questions</SelectItem>
+                        <SelectItem value="4">4 questions</SelectItem>
+                        <SelectItem value="5">5 questions</SelectItem>
+                        <SelectItem value="6">6 questions (default)</SelectItem>
+                        <SelectItem value="7">7 questions</SelectItem>
+                        <SelectItem value="8">8 questions</SelectItem>
+                        <SelectItem value="10">10 questions</SelectItem>
+                        <SelectItem value="12">12 questions</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Question Type Distribution */}
+                  <div>
+                    <label className="text-sm font-medium mb-3 block">Question Type Distribution (%)</label>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">Multiple Choice</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.questionTypeDistribution.multipleChoice}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            questionTypeDistribution: {
+                              ...prev.questionTypeDistribution,
+                              multipleChoice: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">True/False</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.questionTypeDistribution.trueFalse}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            questionTypeDistribution: {
+                              ...prev.questionTypeDistribution,
+                              trueFalse: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">Short Answer</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.questionTypeDistribution.shortAnswer}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            questionTypeDistribution: {
+                              ...prev.questionTypeDistribution,
+                              shortAnswer: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Difficulty Distribution */}
+                  <div>
+                    <label className="text-sm font-medium mb-3 block">Difficulty Distribution (%)</label>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">Easy (Recall)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.difficultyDistribution.easy}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            difficultyDistribution: {
+                              ...prev.difficultyDistribution,
+                              easy: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">Medium (Analysis)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.difficultyDistribution.medium}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            difficultyDistribution: {
+                              ...prev.difficultyDistribution,
+                              medium: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <label className="text-xs">Hard (Evaluation)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generationSettings.difficultyDistribution.hard}
+                          onChange={(e) => setGenerationSettings(prev => ({
+                            ...prev,
+                            difficultyDistribution: {
+                              ...prev.difficultyDistribution,
+                              hard: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          className="px-2 py-1 text-xs border rounded"
+                        />
+                        <span className="text-xs text-slate-500">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Future Dating & Scheduling */}
+              <div>
+                <h4 className="text-sm font-semibold mb-4 text-slate-900 dark:text-white">Scheduling Options</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="generateForFutureDates"
+                      checked={generationSettings.generateForFutureDates}
+                      onChange={(e) => setGenerationSettings(prev => ({ 
+                        ...prev, 
+                        generateForFutureDates: e.target.checked 
+                      }))}
+                      className="rounded"
+                    />
+                    <label htmlFor="generateForFutureDates" className="text-sm font-medium">
+                      Generate content for future dates
+                    </label>
+                  </div>
+
+                  {generationSettings.generateForFutureDates && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Start Date</label>
+                        <input
+                          type="date"
+                          value={generationSettings.startDate}
+                          onChange={(e) => setGenerationSettings(prev => ({ 
+                            ...prev, 
+                            startDate: e.target.value 
+                          }))}
+                          className="w-full px-3 py-2 text-sm border rounded"
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Days to Generate</label>
+                        <Select
+                          value={generationSettings.daysToGenerate.toString()}
+                          onValueChange={(value) => setGenerationSettings(prev => ({ 
+                            ...prev, 
+                            daysToGenerate: parseInt(value) 
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 day</SelectItem>
+                            <SelectItem value="3">3 days</SelectItem>
+                            <SelectItem value="5">5 days</SelectItem>
+                            <SelectItem value="7">1 week</SelectItem>
+                            <SelectItem value="14">2 weeks</SelectItem>
+                            <SelectItem value="30">1 month</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Recurring Interval</label>
+                        <Select
+                          value={generationSettings.recurringInterval}
+                          onValueChange={(value: 'daily' | 'every12hours' | 'weekly') => setGenerationSettings(prev => ({ 
+                            ...prev, 
+                            recurringInterval: value 
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="every12hours">Every 12 hours</SelectItem>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Schedule Button */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3 text-slate-900 dark:text-white">Quick Actions</h4>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSaveAsSchedule()}
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="h-4 w-4" />
+                    Save as Scheduled Job
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePresetSettings('daily-quiz')}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Daily Quiz Setup
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePresetSettings('weekly-batch')}
+                    className="flex items-center gap-2"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Weekly Batch
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleGenerateContent}
+                  disabled={isGenerating}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                      Generating Content...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate Content
+                    </>
+                  )}
+                </Button>
+                
+                {generationResult && (
+                  <div className="flex-1">
+                    {generationResult.success ? (
+                      <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                        ✅ {generationResult.message}
+                        {generationResult.results && (
+                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            {generationResult.results.topicsGenerated} topics, {generationResult.results.questionsGenerated} questions generated
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-red-600 dark:text-red-400 font-medium">
+                        ❌ {generationResult.error || 'Generation failed'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {generationResult?.results?.errors && generationResult.results.errors.length > 0 && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                    Some articles couldn't be processed:
+                  </h4>
+                  <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                    {generationResult.results.errors.slice(0, 3).map((error, idx) => (
+                      <li key={idx}>• {error.article}: {error.error}</li>
+                    ))}
+                    {generationResult.results.errors.length > 3 && (
+                      <li>• ... and {generationResult.results.errors.length - 3} more</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList className="grid w-full grid-cols-4 rounded-full bg-slate-100 dark:bg-slate-800 p-1">
@@ -479,6 +1153,22 @@ export default function AIContentAdminPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* News Articles Available */}
+              <Card className="border-slate-200 dark:border-slate-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-orange-500" />
+                    Available News Articles
+                  </CardTitle>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Recent news articles in your database ready for content generation
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <NewsArticlesPreview />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="topics" className="space-y-6">
@@ -696,6 +1386,14 @@ export default function AIContentAdminPage() {
                     Test Extraction
                   </Button>
                 </Link>
+                <Button 
+                  variant="outline" 
+                  className="rounded-full"
+                  onClick={() => window.location.reload()}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
               </div>
             </div>
           </div>

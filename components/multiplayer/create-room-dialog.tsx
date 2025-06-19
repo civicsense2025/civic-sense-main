@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Users, Gamepad2, Zap, Clock, Target, Shield, Bot, Brain } from 'lucide-react'
+import { Users, Gamepad2, Zap, Clock, Target, Shield, Bot, Brain, Puzzle } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { usePremium } from '@/hooks/usePremium'
@@ -36,7 +36,7 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('4')
-  const [gameMode, setGameMode] = useState<'classic' | 'speed_round' | 'elimination' | 'team_battle' | 'learning_lab'>('classic')
+  const [gameMode, setGameMode] = useState<'classic' | 'speed_round' | 'matching' | 'elimination' | 'team_battle' | 'learning_lab'>('classic')
   const [playerName, setPlayerName] = useState(user?.user_metadata?.full_name || user?.email?.split('@')[0] || '')
   const [selectedEmoji, setSelectedEmoji] = useState('😊')
   const [fillWithNPCs, setFillWithNPCs] = useState(true)
@@ -111,6 +111,8 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
         return 'Traditional quiz with standard timing and scoring'
       case 'speed_round':
         return 'Faster questions with time pressure and speed bonuses'
+      case 'matching':
+        return 'Collaborative puzzle-solving with team hints and matching challenges'
       case 'elimination':
         return 'Players eliminated after wrong answers - last one standing wins'
       case 'team_battle':
@@ -128,6 +130,8 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
         return <Target className="h-4 w-4" />
       case 'speed_round':
         return <Zap className="h-4 w-4" />
+      case 'matching':
+        return <Puzzle className="h-4 w-4" />
       case 'elimination':
         return <Shield className="h-4 w-4" />
       case 'team_battle':
@@ -223,7 +227,7 @@ export function CreateRoomDialog({ topicId, topicTitle, children }: CreateRoomDi
             <div>
               <Label>Game Mode</Label>
               <div className="grid grid-cols-1 gap-2 mt-2">
-                {(['classic', 'speed_round', 'elimination', 'team_battle', 'learning_lab'] as const).map((mode) => (
+                {(['classic', 'speed_round', 'matching', 'elimination', 'team_battle', 'learning_lab'] as const).map((mode) => (
                   <Card
                     key={mode}
                     className={cn(

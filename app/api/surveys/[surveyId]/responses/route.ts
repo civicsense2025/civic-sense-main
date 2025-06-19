@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+
+// Create service role client for operations that need elevated permissions
+const serviceSupabase = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const surveyId = params.surveyId
+    const resolvedParams = await params
+    const surveyId = resolvedParams.surveyId
     const body = await request.json()
 
     const {
@@ -34,8 +42,8 @@ export async function POST(
       return NextResponse.json({ error: 'Guest token required for anonymous responses' }, { status: 400 })
     }
 
-    // Verify survey exists and is active
-    const { data: survey, error: surveyError } = await supabase
+    // Verify survey exists and is active using service role to avoid RLS issues
+    const { data: survey, error: surveyError } = await serviceSupabase
       .from('surveys')
       .select('id, status, allow_anonymous')
       .eq('id', surveyId)
@@ -57,9 +65,9 @@ export async function POST(
     const ip_address = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null
     const user_agent = request.headers.get('user-agent') || null
 
-    // Check if response session already exists
-    let surveyResponse
-    const { data: existingResponse } = await supabase
+    // Check if response session already exists using service role
+    let surveyResponse: any = null
+    const { data: existingResponse } = await serviceSupabase
       .from('survey_responses')
       .select('id, is_complete')
       .eq('survey_id', surveyId)
@@ -72,8 +80,8 @@ export async function POST(
       }
       surveyResponse = existingResponse
       
-      // Update the existing response
-      const { error: updateError } = await supabase
+      // Update the existing response using service role
+      const { error: updateError } = await serviceSupabase
         .from('survey_responses')
         .update({
           is_complete,
@@ -87,8 +95,8 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to update response' }, { status: 500 })
       }
     } else {
-      // Create new response session
-      const { data: newResponse, error: responseError } = await supabase
+      // Create new response session using service role
+      const { data: newResponse, error: responseError } = await serviceSupabase
         .from('survey_responses')
         .insert({
           survey_id: surveyId,
@@ -111,8 +119,8 @@ export async function POST(
       surveyResponse = newResponse
     }
 
-    // Get all question IDs for this survey to validate responses
-    const { data: questions, error: questionsError } = await supabase
+    // Get all question IDs for this survey to validate responses using service role
+    const { data: questions, error: questionsError } = await serviceSupabase
       .from('survey_questions')
       .select('id, question_text')
       .eq('survey_id', surveyId)
@@ -138,8 +146,8 @@ export async function POST(
       return NextResponse.json({ error: 'No valid responses to save' }, { status: 400 })
     }
 
-    // Use upsert to handle both new and updated answers
-    const { error: answersError } = await supabase
+    // Use service role for answers upsert to handle both new and updated answers
+    const { error: answersError } = await serviceSupabase
       .from('survey_answers')
       .upsert(answersToUpsert, {
         onConflict: 'response_id,question_id'
@@ -164,11 +172,12 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const surveyId = params.surveyId
+    const resolvedParams = await params
+    const surveyId = resolvedParams.surveyId
     const url = new URL(request.url)
     const session_id = url.searchParams.get('session_id')
     const guest_token = url.searchParams.get('guest_token')
@@ -180,8 +189,8 @@ export async function GET(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // Build query based on authentication
-    let query = supabase
+    // Build query using service role to avoid RLS issues
+    let query = serviceSupabase
       .from('survey_responses')
       .select(`
         id,

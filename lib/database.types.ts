@@ -7384,6 +7384,22 @@ export type Database = {
           success: boolean
         }[]
       }
+      create_multiplayer_room_v2: {
+        Args: {
+          p_topic_id: string
+          p_host_user_id?: string
+          p_host_guest_token?: string
+          p_room_name?: string
+          p_max_players?: number
+          p_game_mode?: string
+        }
+        Returns: {
+          id: string
+          room_code: string
+          message: string
+          success: boolean
+        }[]
+      }
       create_pod_invite_link: {
         Args: {
           p_pod_id: string
@@ -7789,6 +7805,22 @@ export type Database = {
           join_order: number
         }[]
       }
+      join_multiplayer_room_v2: {
+        Args: {
+          p_room_code: string
+          p_player_name: string
+          p_user_id?: string
+          p_guest_token?: string
+          p_player_emoji?: string
+        }
+        Returns: {
+          success: boolean
+          message: string
+          room_id: string
+          player_id: string
+          join_order: number
+        }[]
+      }
       join_pod_via_invite: {
         Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
         Returns: {
@@ -7799,6 +7831,14 @@ export type Database = {
         }[]
       }
       leave_multiplayer_room: {
+        Args: { p_room_id: string; p_player_id: string }
+        Returns: {
+          success: boolean
+          message: string
+          new_host_player_id: string
+        }[]
+      }
+      leave_multiplayer_room_v2: {
         Args: { p_room_id: string; p_player_id: string }
         Returns: {
           success: boolean
@@ -7912,6 +7952,10 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: boolean
       }
+      start_multiplayer_game_v2: {
+        Args: { p_room_id: string }
+        Returns: boolean
+      }
       track_feature_usage: {
         Args: { p_user_id: string; p_feature_name: string }
         Returns: boolean
@@ -7944,6 +7988,10 @@ export type Database = {
         Returns: undefined
       }
       update_player_ready_status: {
+        Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
+        Returns: boolean
+      }
+      update_player_ready_status_v2: {
         Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
         Returns: boolean
       }
@@ -8114,6 +8162,7 @@ export const Constants = {
   },
 } as const
 
+
 // Convenient type exports for easier usage
 export type DbQuestionTopic = Tables<'question_topics'>
 export type DbQuestion = Tables<'questions'>
@@ -8156,6 +8205,42 @@ export type DbOrganization = Tables<'organizations'>
 export type DbFigureEvent = Tables<'figure_events'>
 export type DbFigureRelationship = Tables<'figure_relationships'>
 
+// Multiplayer types
+export type DbMultiplayerRoom = Tables<'multiplayer_rooms'>
+export type DbMultiplayerRoomPlayer = Tables<'multiplayer_room_players'>
+export type DbMultiplayerQuizAttempt = Tables<'multiplayer_quiz_attempts'>
+export type DbMultiplayerQuestionResponse = Tables<'multiplayer_question_responses'>
+export type DbMultiplayerGameEvent = Tables<'multiplayer_game_events'>
+export type DbMultiplayerChatMessage = Tables<'multiplayer_chat_messages'>
+export type DbMultiplayerConversationContext = Tables<'multiplayer_conversation_context'>
+export type DbMultiplayerNpcPlayer = Tables<'multiplayer_npc_players'>
+
+// Survey types
+export type DbSurvey = Tables<'surveys'>
+export type DbSurveyQuestion = Tables<'survey_questions'>
+export type DbSurveyResponse = Tables<'survey_responses'>
+export type DbSurveyAnswer = Tables<'survey_answers'>
+
+// Bookmark types
+export type DbBookmark = Tables<'bookmarks'>
+export type DbBookmarkCollection = Tables<'bookmark_collections'>
+export type DbBookmarkSnippet = Tables<'bookmark_snippets'>
+export type DbBookmarkTag = Tables<'bookmark_tags'>
+
+// Media bias types
+export type DbMediaOrganization = Tables<'media_organizations'>
+export type DbBiasDimension = Tables<'bias_dimensions'>
+export type DbOrganizationBiasScore = Tables<'organization_bias_scores'>
+export type DbArticleBiasAnalysis = Tables<'article_bias_analysis'>
+export type DbBiasFeedback = Tables<'bias_feedback'>
+export type DbSourceMetadata = Tables<'source_metadata'>
+
+// NPC types
+export type DbNpcPersonality = Tables<'npc_personalities'>
+export type DbNpcQuizAttempt = Tables<'npc_quiz_attempts'>
+export type DbNpcQuestionResponse = Tables<'npc_question_responses'>
+export type DbNpcConversationHistory = Tables<'npc_conversation_history'>
+
 // Insert types
 export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
 export type DbQuestionInsert = TablesInsert<'questions'>
@@ -8181,6 +8266,20 @@ export type DbUserSkillPreferenceInsert = TablesInsert<'user_skill_preferences'>
 export type DbGuestUsageTrackingInsert = TablesInsert<'guest_usage_tracking'>
 export type DbGuestCivicsTestResultInsert = TablesInsert<'guest_civics_test_results'>
 export type DbCivicsTestAnalyticsInsert = TablesInsert<'civics_test_analytics'>
+
+// Multiplayer insert types
+export type DbMultiplayerRoomInsert = TablesInsert<'multiplayer_rooms'>
+export type DbMultiplayerRoomPlayerInsert = TablesInsert<'multiplayer_room_players'>
+export type DbMultiplayerQuizAttemptInsert = TablesInsert<'multiplayer_quiz_attempts'>
+export type DbMultiplayerQuestionResponseInsert = TablesInsert<'multiplayer_question_responses'>
+export type DbMultiplayerGameEventInsert = TablesInsert<'multiplayer_game_events'>
+export type DbMultiplayerChatMessageInsert = TablesInsert<'multiplayer_chat_messages'>
+
+// Survey insert types
+export type DbSurveyInsert = TablesInsert<'surveys'>
+export type DbSurveyQuestionInsert = TablesInsert<'survey_questions'>
+export type DbSurveyResponseInsert = TablesInsert<'survey_responses'>
+export type DbSurveyAnswerInsert = TablesInsert<'survey_answers'>
 
 // Update types
 export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
@@ -8209,55 +8308,16 @@ export type DbGuestCivicsTestResultUpdate = TablesUpdate<'guest_civics_test_resu
 // Subscription update types
 export type DbUserSubscriptionUpdate = TablesUpdate<'user_subscriptions'>
 
-// Enum types (add as needed)
-// Example: export type DbUserRole = Database['public']['Enums']['user_role']
-// Example: export type DbQuestionType = Database['public']['Enums']['question_type']
-
-// Multiplayer Types
-export type DbMultiplayerRoom = Tables<'multiplayer_rooms'>
-export type DbMultiplayerRoomPlayer = Tables<'multiplayer_room_players'>
-export type DbMultiplayerQuizAttempt = Tables<'multiplayer_quiz_attempts'>
-export type DbMultiplayerQuestionResponse = Tables<'multiplayer_question_responses'>
-export type DbMultiplayerGameEvent = Tables<'multiplayer_game_events'>
-export type DbMultiplayerChatMessage = Tables<'multiplayer_chat_messages'>
-export type DbMultiplayerConversationContext = Tables<'multiplayer_conversation_context'>
-export type DbMultiplayerNpcPlayer = Tables<'multiplayer_npc_players'>
-
-// Multiplayer Insert Types
-export type DbMultiplayerRoomInsert = TablesInsert<'multiplayer_rooms'>
-export type DbMultiplayerRoomPlayerInsert = TablesInsert<'multiplayer_room_players'>
-export type DbMultiplayerQuizAttemptInsert = TablesInsert<'multiplayer_quiz_attempts'>
-export type DbMultiplayerQuestionResponseInsert = TablesInsert<'multiplayer_question_responses'>
-export type DbMultiplayerGameEventInsert = TablesInsert<'multiplayer_game_events'>
-export type DbMultiplayerChatMessageInsert = TablesInsert<'multiplayer_chat_messages'>
-export type DbMultiplayerConversationContextInsert = TablesInsert<'multiplayer_conversation_context'>
-export type DbMultiplayerNpcPlayerInsert = TablesInsert<'multiplayer_npc_players'>
-
-// Multiplayer Update Types
+// Multiplayer update types
 export type DbMultiplayerRoomUpdate = TablesUpdate<'multiplayer_rooms'>
 export type DbMultiplayerRoomPlayerUpdate = TablesUpdate<'multiplayer_room_players'>
 export type DbMultiplayerQuizAttemptUpdate = TablesUpdate<'multiplayer_quiz_attempts'>
-export type DbMultiplayerQuestionResponseUpdate = TablesUpdate<'multiplayer_question_responses'>
-export type DbMultiplayerGameEventUpdate = TablesUpdate<'multiplayer_game_events'>
-export type DbMultiplayerChatMessageUpdate = TablesUpdate<'multiplayer_chat_messages'>
-export type DbMultiplayerConversationContextUpdate = TablesUpdate<'multiplayer_conversation_context'>
-export type DbMultiplayerNpcPlayerUpdate = TablesUpdate<'multiplayer_npc_players'>
 
-// Bookmark Types
-export type DbBookmark = Tables<'bookmarks'>
-export type DbBookmarkCollection = Tables<'bookmark_collections'>
-export type DbBookmarkSnippet = Tables<'bookmark_snippets'>
-export type DbBookmarkTag = Tables<'bookmark_tags'>
-export type DbBookmarkAnalytics = Tables<'bookmark_analytics'>
+// Survey update types
+export type DbSurveyUpdate = TablesUpdate<'surveys'>
+export type DbSurveyQuestionUpdate = TablesUpdate<'survey_questions'>
+export type DbSurveyResponseUpdate = TablesUpdate<'survey_responses'>
 
-export type DbBookmarkInsert = TablesInsert<'bookmarks'>
-export type DbBookmarkCollectionInsert = TablesInsert<'bookmark_collections'>
-export type DbBookmarkSnippetInsert = TablesInsert<'bookmark_snippets'>
-export type DbBookmarkTagInsert = TablesInsert<'bookmark_tags'>
-export type DbBookmarkAnalyticsInsert = TablesInsert<'bookmark_analytics'>
-
-export type DbBookmarkUpdate = TablesUpdate<'bookmarks'>
-export type DbBookmarkCollectionUpdate = TablesUpdate<'bookmark_collections'>
-export type DbBookmarkSnippetUpdate = TablesUpdate<'bookmark_snippets'>
-export type DbBookmarkTagUpdate = TablesUpdate<'bookmark_tags'>
-export type DbBookmarkAnalyticsUpdate = TablesUpdate<'bookmark_analytics'>
+// Enum types (add as needed)
+// Example: export type DbUserRole = Database['public']['Enums']['user_role']
+// Example: export type DbQuestionType = Database['public']['Enums']['question_type']

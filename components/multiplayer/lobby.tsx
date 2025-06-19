@@ -71,6 +71,16 @@ const GAME_MODES: GameMode[] = [
     estimatedTime: '5-8 min'
   },
   {
+    id: 'matching',
+    name: 'Matching Challenge',
+    description: 'Collaborative puzzle-solving with team hints and matching gameplay',
+    emoji: '🧩',
+    features: ['Puzzle solving', 'Team collaboration', 'Strategy bonuses'],
+    difficulty: 'mixed',
+    playerRange: [2, 6],
+    estimatedTime: '12-18 min'
+  },
+  {
     id: 'learning_lab',
     name: 'Learning Lab',
     description: 'Collaborative exploration with AI teachers and discussion',

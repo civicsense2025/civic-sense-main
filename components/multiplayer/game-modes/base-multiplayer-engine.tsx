@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { QuestionTimer, useQuestionTimer } from "@/components/quiz/question-timer"
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
@@ -17,6 +17,7 @@ import {
   useMultiplayerRoom, 
   useMultiplayerQuiz
 } from "@/lib/multiplayer"
+import { createMultiplayerQuizProgress, type BaseQuizState } from "@/lib/progress-storage"
 
 import { debug } from "@/lib/debug-config"
 
@@ -76,6 +77,16 @@ export const GAME_MODE_CONFIGS: Record<string, GameModeConfig> = {
     allowBoosts: true,
     collaborativeMode: true,
     showRealTimeScores: false
+  },
+  matching: {
+    name: "Matching Challenge",
+    timePerQuestion: 120000, // 2 minutes for matching puzzles
+    showExplanations: true,
+    allowHints: true,
+    allowBoosts: false,
+    collaborativeMode: true,
+    showRealTimeScores: true,
+    speedBonusEnabled: true
   }
 }
 
@@ -160,6 +171,9 @@ export function BaseMultiplayerEngine({
   // Quiz responses from multiplayer quiz hook
   const { responses, submitResponse } = useMultiplayerQuiz(roomId, playerId)
 
+  // Progress storage for multiplayer sessions
+  const progressManager = createMultiplayerQuizProgress(user?.id, undefined, roomId)
+
   // Game state
   const [gameState, setGameState] = useState<GameState>({
     currentQuestionIndex: 0,
@@ -191,6 +205,63 @@ export function BaseMultiplayerEngine({
 
   // Timer hook
   const { timeLeft, isActive: isTimerActive, startTimer, stopTimer } = useQuestionTimer(config.timePerQuestion / 1000)
+
+  // Generate session ID for multiplayer state persistence
+  const sessionId = useRef<string>(`multiplayer-${roomId}-${playerId}-${Date.now()}`)
+
+  // Convert game state to BaseQuizState for progress storage
+  const convertToBaseQuizState = (state: GameState): BaseQuizState => ({
+    sessionId: sessionId.current,
+    quizType: 'multiplayer',
+    topicId: roomId,
+    questions,
+    currentQuestionIndex: state.currentQuestionIndex,
+    answers: {}, // Multiplayer answers are managed server-side
+    streak: 0,
+    maxStreak: 0,
+    startTime: state.startTime || Date.now(),
+    responseTimes: {},
+    savedAt: Date.now(),
+    roomId,
+    playerId,
+    gameMode
+  })
+
+  // Save multiplayer state
+  const saveMultiplayerState = (state: GameState) => {
+    if (questions.length > 0) {
+      const baseState = convertToBaseQuizState(state)
+      progressManager.save(baseState)
+      devLog('MultiplayerEngine', 'Saved progress', { roomId, playerId, questionIndex: state.currentQuestionIndex })
+    }
+  }
+
+  // Load multiplayer state
+  const loadMultiplayerState = (): GameState | null => {
+    const baseState = progressManager.load()
+    if (baseState) {
+      devLog('MultiplayerEngine', 'Restored progress', { roomId, playerId, questionIndex: baseState.currentQuestionIndex })
+      return {
+        currentQuestionIndex: baseState.currentQuestionIndex,
+        gamePhase: 'active',
+        showFeedback: false,
+        selectedAnswer: null,
+        isAnswerSubmitted: false,
+        score: 0,
+        correctAnswers: 0,
+        timeSpentSeconds: 0,
+        startTime: baseState.startTime,
+        questionStartTime: null
+      }
+    }
+    return null
+  }
+
+  // Clear multiplayer state
+  const clearMultiplayerState = () => {
+    progressManager.clear()
+    devLog('MultiplayerEngine', 'Cleared progress', { roomId, playerId })
+  }
 
   // =============================================================================
   // COMPUTED VALUES
@@ -225,7 +296,8 @@ export function BaseMultiplayerEngine({
 
   const advanceToNextQuestion = useCallback(async () => {
     if (gameState.currentQuestionIndex >= questions.length - 1) {
-      // Quiz completed
+      // Quiz completed - clear saved progress
+      clearMultiplayerState()
       setGameState(prev => ({ 
         ...prev, 
         gamePhase: 'completed',
@@ -394,6 +466,24 @@ export function BaseMultiplayerEngine({
   // =============================================================================
   // EFFECTS
   // =============================================================================
+
+  // Restore multiplayer state on mount
+  useEffect(() => {
+    const savedState = loadMultiplayerState()
+    if (savedState) {
+      setGameState(savedState)
+      devLog('MultiplayerEngine', 'Restored multiplayer session state')
+    }
+  }, []) // Only run once on mount
+
+  // Save state whenever it changes (debounced)
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      saveMultiplayerState(gameState)
+    }, 1000) // Debounce saves by 1 second
+
+    return () => clearTimeout(saveTimeout)
+  }, [gameState])
 
   // Timer effect
   useEffect(() => {

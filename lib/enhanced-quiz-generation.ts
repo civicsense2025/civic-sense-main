@@ -281,21 +281,21 @@ export class EnhancedQuizGenerator {
 
     // Start easy: Basic figure identification
     if (context.figures) {
-      const popularFigures = context.figures.filter(f => f.popularity_score && f.popularity_score > 70)
+      const popularFigures = context.figures.filter(f => f.influence_level && f.influence_level > 70)
       for (const figure of popularFigures.slice(0, 3)) {
         questions.push({
           topic_id: `elimination_easy_${figure.id}`,
           question_number: questions.length + 1,
           question_type: 'multiple_choice',
           category: options.category,
-          question: `What political party is ${figure.name} affiliated with?`,
+          question: `What political party is ${figure.full_name} affiliated with?`,
           option_a: figure.party_affiliation || 'Independent',
           option_b: this.generateDistractorParty(figure.party_affiliation),
           option_c: this.generateDistractorParty(figure.party_affiliation),
           option_d: this.generateDistractorParty(figure.party_affiliation),
           correct_answer: 'option_a',
           hint: 'Consider their recent political activities',
-          explanation: `${figure.name} is affiliated with the ${figure.party_affiliation || 'Independent'} party.`,
+          explanation: `${figure.full_name} is affiliated with the ${figure.party_affiliation || 'Independent'} party.`,
           tags: ['figures', 'parties', 'easy'],
           sources: []
         })
@@ -312,10 +312,10 @@ export class EnhancedQuizGenerator {
             question_number: questions.length + 1,
             question_type: 'short_answer',
             category: options.category,
-            question: `What is ${figure.name}'s position on ${policy.policy_area}?`,
+            question: `What is ${figure.full_name}'s position on ${policy.policy_area}?`,
             correct_answer: policy.position_description.split('.')[0], // First sentence
             hint: 'Consider their public statements and voting record',
-            explanation: `${figure.name}'s position: ${policy.position_description}`,
+            explanation: `${figure.full_name}'s position: ${policy.position_description}`,
             tags: ['policy', 'figures', 'medium'],
             sources: policy.sources as any || []
           })
@@ -327,16 +327,16 @@ export class EnhancedQuizGenerator {
     if (context.figureOrgs && context.figures) {
       for (const figureOrg of context.figureOrgs.slice(0, 2)) {
         const figure = context.figures.find(f => f.id === figureOrg.figure_id)
-        if (figure && figureOrg.organizations) {
+        if (figure && figureOrg.role_title) {
           questions.push({
             topic_id: `elimination_hard_${figureOrg.id}`,
             question_number: questions.length + 1,
             question_type: 'ordering',
             category: options.category,
-            question: `Order these career positions of ${figure.name} chronologically:`,
+            question: `Order these career positions of ${figure.full_name} chronologically:`,
             correct_answer: 'See ordering items',
             hint: 'Consider the typical career progression in politics',
-            explanation: `This reflects ${figure.name}'s actual career timeline.`,
+            explanation: `This reflects ${figure.full_name}'s actual career timeline.`,
             tags: ['figures', 'careers', 'hard'],
             sources: [],
             ordering_items: this.generateCareerOrderingItems(figure, context.figureOrgs)
@@ -462,8 +462,8 @@ export class EnhancedQuizGenerator {
       .map((item, index) => ({
         id: item.data.id || `${item.type}_${index}`,
         content: item.type === 'event' 
-          ? item.data.topic_title 
-          : item.data.event_title,
+          ? (item.data as Event).topic_title 
+          : (item.data as FigureEvent).event_title,
         category: item.type
       }))
   }

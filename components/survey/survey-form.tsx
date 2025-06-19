@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,20 +16,22 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail } from "lucide-react"
+import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail, Keyboard } from "lucide-react"
 import { 
   useProgressStorage, 
   convertSurveyStateToBaseSurvey, 
   convertBaseSurveyStateToSurvey,
   type SurveyResponse as StorageSurveyResponse 
 } from "@/lib/progress-storage"
+import { MultipleChoice, MultipleSelect, ScaleRating, StarRating, MatrixGrid, TextInput, SliderInput, Ranking, DynamicContent } from "./questions"
+import { PostCompletionContent } from "./post-completion-content"
 
 // Survey Types
 export interface SurveyQuestion {
   id: string
   type: 'multiple_choice' | 'multiple_select' | 'scale' | 'text' | 'textarea' | 'ranking' | 'likert' | 
         'matrix' | 'slider' | 'date' | 'email' | 'phone' | 'number' | 'dropdown' | 'image_choice' | 
-        'file_upload' | 'rating_stars' | 'yes_no' | 'statement' | 'contact_info'
+        'file_upload' | 'rating_stars' | 'yes_no' | 'statement' | 'contact_info' | 'dynamic_content'
   question: string
   description?: string
   required?: boolean
@@ -41,6 +43,19 @@ export interface SurveyQuestion {
   max_rankings?: number
   matrix_config?: {
     scale: {
+      min: number
+      max: number
+      labels: { min: string; max: string }
+    }
+  }
+  dynamic_config?: {
+    contentType: 'quiz_question' | 'article' | 'topic' | 'custom'
+    contentId?: string
+    apiEndpoint?: string
+    displayFields: string[]
+    questionType: 'rating_stars' | 'scale' | 'text' | 'multiple_choice'
+    questionPrompt: string
+    scaleConfig?: {
       min: number
       max: number
       labels: { min: string; max: string }
@@ -62,6 +77,21 @@ export interface Survey {
   allow_anonymous: boolean
   allow_partial_responses: boolean
   estimated_time?: number
+  post_completion_config?: {
+    enabled: boolean
+    type: 'redirect' | 'content' | 'recommendations' | 'learning_path' | 'mixed'
+    redirect_url?: string
+    redirect_delay?: number
+    title?: string
+    message?: string
+    show_recommendations?: boolean
+    show_learning_goals?: boolean
+    show_related_content?: boolean
+    custom_content?: string
+    cta_text?: string
+    cta_url?: string
+    show_stats?: boolean
+  }
 }
 
 export interface SurveyResponse {
@@ -77,6 +107,8 @@ interface SurveyFormProps {
   existingResponses?: SurveyResponse[]
   sessionId?: string
   className?: string
+  showCompleted?: boolean // New prop to show completion state
+  completedResponses?: SurveyResponse[] // For showing completed survey responses
 }
 
 export function SurveyForm({ 
@@ -85,7 +117,9 @@ export function SurveyForm({
   onSaveProgress,
   existingResponses = [],
   sessionId,
-  className 
+  className,
+  showCompleted = false,
+  completedResponses = []
 }: SurveyFormProps) {
   const { toast } = useToast()
   const { 
@@ -100,6 +134,17 @@ export function SurveyForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startTime] = useState(new Date())
   const [hasRestoredProgress, setHasRestoredProgress] = useState(false)
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+  const [showRequiredFeedback, setShowRequiredFeedback] = useState(false)
+  const [focusedElementId, setFocusedElementId] = useState<string | null>(null)
+  const [showPostCompletion, setShowPostCompletion] = useState(false)
+  const [completionResponses, setCompletionResponses] = useState<SurveyResponse[]>([])
+
+  // Refs for focus management
+  const questionCardRef = useRef<HTMLDivElement>(null)
+  const nextButtonRef = useRef<HTMLButtonElement>(null)
+  const submitButtonRef = useRef<HTMLButtonElement>(null)
+  const currentQuestionRef = useRef<HTMLDivElement>(null)
 
   // Generate sessionId if not provided
   const effectiveSessionId = sessionId || `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -164,6 +209,159 @@ export function SurveyForm({
   const visibleQuestions = getVisibleQuestions()
   const currentQuestion = visibleQuestions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100
+  const isFirstQuestion = currentQuestionIndex === 0
+  const isLastQuestion = currentQuestionIndex === visibleQuestions.length - 1
+  const answeredQuestions = visibleQuestions.filter((q: SurveyQuestion) => responses[q.id]).length
+
+  // Enhanced keyboard shortcuts with better accessibility
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere if user is typing in an input
+      const activeElement = document.activeElement
+      const isTyping = activeElement && (
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName) ||
+        activeElement.hasAttribute('contenteditable')
+      )
+
+      if (isTyping && !['Escape', 'F1'].includes(e.key)) {
+        return
+      }
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'n':
+        case 'N':
+          if (!isTyping) {
+            e.preventDefault()
+            // Allow advancing if question is answered or not required
+            if (!currentQuestion?.required || responses[currentQuestion.id]) {
+              handleNext()
+            } else {
+              // Show visual feedback for required question
+              setShowRequiredFeedback(true)
+              setTimeout(() => setShowRequiredFeedback(false), 3000)
+            }
+          }
+          break
+        case 'ArrowLeft':
+        case 'p':
+        case 'P':
+          if (!isTyping) {
+            e.preventDefault()
+            handlePrevious()
+          }
+          break
+        case 's':
+        case 'S':
+          if ((e.ctrlKey || e.metaKey) && !isTyping) {
+            e.preventDefault()
+            if (survey.allow_partial_responses && onSaveProgress) {
+              handleSaveProgress()
+            }
+          }
+          break
+        case 'Enter':
+          if ((e.ctrlKey || e.metaKey) && !isTyping) {
+            e.preventDefault()
+            if (isLastQuestion) {
+              handleSubmit()
+            } else {
+              handleNext()
+            }
+          }
+          break
+        case 'Escape':
+          e.preventDefault()
+          setShowKeyboardShortcuts(false)
+          setShowRequiredFeedback(false)
+          // Return focus to question if shortcuts were open
+          if (showKeyboardShortcuts && currentQuestionRef.current) {
+            currentQuestionRef.current.focus()
+          }
+          break
+        case 'F1':
+        case '?':
+          if (!isTyping) {
+            e.preventDefault()
+            setShowKeyboardShortcuts(!showKeyboardShortcuts)
+          }
+          break
+        case 'Tab':
+          // Allow normal tab behavior, but track focus for screen readers
+          break
+        case 'Home':
+          if (!isTyping) {
+            e.preventDefault()
+            setCurrentQuestionIndex(0)
+          }
+          break
+        case 'End':
+          if (!isTyping) {
+            e.preventDefault()
+            setCurrentQuestionIndex(visibleQuestions.length - 1)
+          }
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [currentQuestionIndex, survey.allow_partial_responses, onSaveProgress, isLastQuestion, showKeyboardShortcuts, currentQuestion, visibleQuestions.length, responses])
+
+  // Focus management when questions change
+  useEffect(() => {
+    if (currentQuestionRef.current) {
+      // Small delay to allow question to render
+      setTimeout(() => {
+        currentQuestionRef.current?.focus()
+      }, 100)
+    }
+  }, [currentQuestionIndex])
+
+  // Enhanced navigation handlers with focus management
+  const handleNext = useCallback(() => {
+    if (currentQuestion?.required && !responses[currentQuestion.id]) {
+      toast({
+        title: "Answer required",
+        description: "Please answer this question before continuing.",
+        variant: "destructive"
+      })
+      // Focus back to question area for accessibility
+      currentQuestionRef.current?.focus()
+      return
+    }
+
+    if (currentQuestionIndex < visibleQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1)
+      // Announce progress to screen readers
+      setTimeout(() => {
+        const progress = Math.round(((currentQuestionIndex + 2) / visibleQuestions.length) * 100)
+        announce(`Question ${currentQuestionIndex + 2} of ${visibleQuestions.length}. ${progress}% complete.`)
+      }, 200)
+    }
+  }, [currentQuestion, responses, currentQuestionIndex, visibleQuestions.length, toast])
+
+  const handlePrevious = useCallback(() => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1)
+      // Announce progress to screen readers
+      setTimeout(() => {
+        const progress = Math.round((currentQuestionIndex / visibleQuestions.length) * 100)
+        announce(`Question ${currentQuestionIndex} of ${visibleQuestions.length}. ${progress}% complete.`)
+      }, 200)
+    }
+  }, [currentQuestionIndex, visibleQuestions.length])
+
+  // Screen reader announcements
+  const announce = (message: string) => {
+    const announcement = document.createElement('div')
+    announcement.setAttribute('aria-live', 'polite')
+    announcement.setAttribute('aria-atomic', 'true')
+    announcement.className = 'sr-only'
+    announcement.textContent = message
+    document.body.appendChild(announcement)
+    setTimeout(() => document.body.removeChild(announcement), 1000)
+  }
 
   // Save progress to localStorage whenever responses change
   useEffect(() => {
@@ -184,66 +382,6 @@ export function SurveyForm({
     console.log('💾 Auto-saved survey progress to localStorage')
   }, [responses, currentQuestionIndex, visibleQuestions, startTime, effectiveSessionId, survey.id, hasRestoredProgress, progressStorage])
 
-  // Helper function to format answer display for popover
-  const formatAnswerForDisplay = (question: SurveyQuestion, response: SurveyResponse) => {
-    if (!response) return "Not answered"
-    
-    const { answer } = response
-    
-    switch (question.type) {
-      case 'multiple_choice':
-      case 'yes_no':
-      case 'dropdown':
-        return answer as string
-      
-      case 'multiple_select':
-        const selections = answer as string[]
-        return selections.length > 0 ? selections.join(', ') : "None selected"
-      
-      case 'scale':
-      case 'rating_stars':
-      case 'number':
-        return `${answer}`
-      
-      case 'text':
-      case 'textarea':
-      case 'email':
-      case 'phone':
-      case 'date':
-        const textAnswer = answer as string
-        return textAnswer.length > 50 ? `${textAnswer.substring(0, 50)}...` : textAnswer
-      
-      case 'slider':
-        return `${answer}${question.scale_labels ? ` (${question.scale_labels.min} - ${question.scale_labels.max})` : ''}`
-      
-      case 'matrix':
-        const matrixData = answer as Record<string, number>
-        const answered = Object.keys(matrixData).length
-        const total = question.options?.length || 0
-        return `${answered}/${total} items rated`
-      
-      case 'ranking':
-        const rankings = answer as string[]
-        return rankings.length > 0 ? `${rankings.length} items ranked` : "None ranked"
-      
-      case 'contact_info':
-        const contactData = answer as Record<string, string>
-        return contactData.email || contactData.firstName || "Contact info provided"
-      
-      case 'file_upload':
-        return answer as string || "File uploaded"
-      
-      case 'statement':
-        return "Statement viewed"
-      
-      case 'likert':
-        return "Likert scale answered"
-      
-      default:
-        return "Answered"
-    }
-  }
-
   // Auto-read questions when they change (if audio is enabled)
   useEffect(() => {
     if (currentQuestion && autoPlayEnabled) {
@@ -262,7 +400,8 @@ export function SurveyForm({
     }
   }, [currentQuestionIndex, currentQuestion, autoPlayEnabled, readContentWithSettings])
 
-  const updateResponse = (questionId: string, answer: string | string[] | number | Record<string, any>) => {
+  // Debounced update response to improve responsiveness
+  const updateResponse = useCallback((questionId: string, answer: string | string[] | number | Record<string, any>) => {
     const newResponse: SurveyResponse = {
       question_id: questionId,
       answer,
@@ -273,28 +412,7 @@ export function SurveyForm({
       ...prev,
       [questionId]: newResponse
     }))
-  }
-
-  const handleNext = () => {
-    if (currentQuestion?.required && !responses[currentQuestion.id]) {
-      toast({
-        title: "Answer required",
-        description: "Please answer this question before continuing.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    if (currentQuestionIndex < visibleQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1)
-    }
-  }
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1)
-    }
-  }
+  }, [])
 
   const handleSaveProgress = async () => {
     if (onSaveProgress) {
@@ -325,6 +443,13 @@ export function SurveyForm({
     setIsSubmitting(true)
     try {
       const responseArray = Object.values(responses)
+      
+      // Show post-completion content if configured
+      if (survey.post_completion_config?.enabled) {
+        setCompletionResponses(responseArray)
+        setShowPostCompletion(true)
+      }
+      
       await onComplete(responseArray)
       
       // Clear localStorage progress on successful completion
@@ -343,374 +468,195 @@ export function SurveyForm({
     }
   }
 
-  const renderQuestion = (question: SurveyQuestion) => {
-    const currentResponse = responses[question.id]
+  // Format answer for display in tooltips and previews
+  const formatAnswerForDisplay = (question: SurveyQuestion, response: SurveyResponse) => {
+    const { answer } = response
     
     switch (question.type) {
       case 'multiple_choice':
+      case 'dropdown':
+      case 'yes_no':
+        return String(answer)
+      
+      case 'multiple_select':
+        if (Array.isArray(answer)) {
+          return answer.join(', ')
+        }
+        return String(answer)
+      
+      case 'scale':
+      case 'slider':
+      case 'number':
+        return `${answer}${question.scale_labels ? ` (${question.scale_labels.min} - ${question.scale_labels.max})` : ''}`
+      
+      case 'rating_stars':
+        const rating = Number(answer)
+        return `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)} (${rating}/5)`
+      
+      case 'text':
+      case 'textarea':
+      case 'email':
+      case 'phone':
+        const text = String(answer)
+        return text.length > 100 ? `${text.substring(0, 100)}...` : text
+      
+      case 'date':
+        if (typeof answer === 'string') {
+          try {
+            return new Date(answer).toLocaleDateString()
+          } catch {
+            return String(answer)
+          }
+        }
+        return String(answer)
+      
+      case 'ranking':
+        if (Array.isArray(answer)) {
+          return answer.map((item, index) => `${index + 1}. ${item}`).join(', ')
+        }
+        return String(answer)
+      
+      case 'matrix':
+        if (typeof answer === 'object' && answer !== null) {
+          return Object.entries(answer)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ')
+        }
+        return String(answer)
+      
+      case 'likert':
+        return String(answer)
+      
+      case 'file_upload':
+        if (typeof answer === 'object' && answer !== null && 'fileName' in answer) {
+          return (answer as any).fileName
+        }
+        return 'File uploaded'
+      
+      case 'image_choice':
+        return String(answer)
+      
+      case 'contact_info':
+        if (typeof answer === 'object' && answer !== null) {
+          const contact = answer as Record<string, string>
+          const parts = []
+          if (contact.name) parts.push(contact.name)
+          if (contact.email) parts.push(contact.email)
+          if (contact.phone) parts.push(contact.phone)
+          return parts.join(', ')
+        }
+        return String(answer)
+      
+            case 'statement':
+        return 'Acknowledged'
+      
+      case 'dynamic_content':
+        if (typeof answer === 'number') {
+          return `Rating: ${answer}`
+        } else if (typeof answer === 'string') {
+          return answer.length > 100 ? `${answer.substring(0, 100)}...` : answer
+        }
+        return 'Response provided'
+      
+      default:
+        return String(answer)
+    }
+  }
+
+  // Render question component based on type
+  const renderQuestion = (question: SurveyQuestion) => {
+    const currentResponse = responses[question.id]
+    const currentValue = currentResponse?.answer
+
+    const handleQuestionChange = (answer: string | string[] | number | Record<string, any>) => {
+      updateResponse(question.id, answer)
+    }
+
+    switch (question.type) {
+      case 'multiple_choice':
         return (
-          <RadioGroup
-            value={currentResponse?.answer as string || ""}
-            onValueChange={(value) => updateResponse(question.id, value)}
-            className="space-y-3"
-          >
-            {question.options?.map((option, index) => {
-              const isSelected = (currentResponse?.answer as string) === option
-              return (
-                <div key={index} className={cn(
-                  "relative flex items-center space-x-4 p-6 rounded-2xl transition-all duration-300 cursor-pointer group",
-                  "hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50",
-                  isSelected 
-                    ? "bg-blue-50 dark:bg-blue-950/20 shadow-sm" 
-                    : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                )}>
-                  {/* Custom selection indicator */}
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200",
-                    isSelected 
-                      ? "border-blue-600 bg-blue-600" 
-                      : "border-slate-300 dark:border-slate-600 group-hover:border-blue-400"
-                  )}>
-                    {isSelected && (
-                      <div className="w-3 h-3 bg-white rounded-full animate-in zoom-in-50 duration-200" />
-                    )}
-                  </div>
-                  
-                  <RadioGroupItem value={option} id={`${question.id}-${index}`} className="sr-only" />
-                  <Label htmlFor={`${question.id}-${index}`} className={cn(
-                    "flex-1 cursor-pointer transition-colors text-base leading-relaxed",
-                    isSelected 
-                      ? "text-blue-900 dark:text-blue-100 font-medium" 
-                      : "text-slate-700 dark:text-slate-200 font-light group-hover:text-slate-900 dark:group-hover:text-white"
-                  )}>
-                    {option}
-                  </Label>
-                  
-                  {/* Subtle selection indicator */}
-                  {isSelected && (
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-in zoom-in-50 duration-200" />
-                  )}
-                </div>
-              )
-            })}
-          </RadioGroup>
+          <MultipleChoice
+            questionId={question.id}
+            options={question.options || []}
+            value={typeof currentValue === 'string' ? currentValue : ''}
+            onChange={handleQuestionChange}
+          />
         )
 
-      case 'multiple_select':
-        const selectedOptions = (currentResponse?.answer as string[]) || []
+      case 'multiple_select': {
+        const multiValue = Array.isArray(currentValue) ? currentValue : []
+        
         return (
-          <div className="space-y-3">
-            {question.options?.map((option, index) => {
-              const isSelected = selectedOptions.includes(option)
-              return (
-                <div key={index} className={cn(
-                  "relative flex items-center space-x-4 p-6 rounded-2xl transition-all duration-300 cursor-pointer group",
-                  "hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50",
-                  isSelected 
-                    ? "bg-blue-50 dark:bg-blue-950/20 shadow-sm" 
-                    : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                )}>
-                  <Checkbox
-                    id={`${question.id}-${index}`}
-                    checked={isSelected}
-                    onCheckedChange={(checked) => {
-                      let newSelection = [...selectedOptions]
-                      if (checked) {
-                        if (!question.max_selections || newSelection.length < question.max_selections) {
-                          newSelection.push(option)
-                        } else {
-                          toast({
-                            title: "Selection limit reached",
-                            description: `You can only select up to ${question.max_selections} options.`,
-                            variant: "destructive"
-                          })
-                          return
-                        }
-                      } else {
-                        newSelection = newSelection.filter(item => item !== option)
-                      }
-                      updateResponse(question.id, newSelection)
-                    }}
-                    className={cn(
-                      "w-5 h-5 border-2 transition-all duration-200",
-                      isSelected 
-                        ? "border-blue-600 bg-blue-600" 
-                        : "border-slate-300 dark:border-slate-600 group-hover:border-blue-400"
-                    )}
-                  />
-                  <Label htmlFor={`${question.id}-${index}`} className={cn(
-                    "flex-1 cursor-pointer transition-colors text-base leading-relaxed",
-                    isSelected 
-                      ? "text-blue-900 dark:text-blue-100 font-medium" 
-                      : "text-slate-700 dark:text-slate-200 font-light group-hover:text-slate-900 dark:group-hover:text-white"
-                  )}>
-                    {option}
-                  </Label>
-                  
-                  {/* Selection count indicator */}
-                  {isSelected && (
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-in zoom-in-50 duration-200" />
-                  )}
-                </div>
-              )
-            })}
-            {question.max_selections && (
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3">
-                Select up to {question.max_selections} options
-              </p>
-            )}
-          </div>
+          <MultipleSelect
+            questionId={question.id}
+            options={question.options || []}
+            value={multiValue}
+            onChange={handleQuestionChange}
+            maxSelections={question.max_selections}
+          />
         )
+      }
 
       case 'scale':
-        const scaleValue = currentResponse?.answer as number || 0
         return (
-          <div className="space-y-8">
-            {question.scale_labels && (
-              <div className="flex justify-between items-center px-4">
-                <div className="text-center">
-                  <div className="text-sm font-light text-slate-900 dark:text-white mb-2 font-mono" style={{ fontFamily: 'Space Mono, monospace' }} data-question-content="true">
-                    {question.scale_labels.min}
-                  </div>
-                  <div className="w-12 h-1 bg-red-200 dark:bg-red-800 rounded-full mx-auto"></div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm font-light text-slate-900 dark:text-white mb-2 font-mono" style={{ fontFamily: 'Space Mono, monospace' }} data-question-content="true">
-                    {question.scale_labels.max}
-                  </div>
-                  <div className="w-12 h-1 bg-green-200 dark:bg-green-800 rounded-full mx-auto"></div>
-                </div>
-              </div>
-            )}
-            
-            <div className="relative">
-              {/* Background progress bar */}
-              <div className="absolute top-1/2 left-0 right-0 h-2 bg-slate-200 dark:bg-slate-700 rounded-full transform -translate-y-1/2"></div>
-              
-              <div className="flex justify-between relative z-10">
-                {Array.from({ length: (question.scale_max || 5) - (question.scale_min || 1) + 1 }, (_, i) => {
-                  const value = (question.scale_min || 1) + i
-                  const minVal = question.scale_min || 1
-                  const maxVal = question.scale_max || 5
-                  const range = maxVal - minVal
-                  const position = (value - minVal) / range
-                  
-                  // Determine if this is a low (red) or high (green) value
-                  const isLowValue = position <= 0.4
-                  const isHighValue = position >= 0.6
-                  
-                  let selectedColors = "bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/30 scale-115 ring-4 ring-blue-600/20"
-                  let indicatorColor = "bg-blue-500"
-                  
-                  if (scaleValue === value) {
-                    if (isLowValue) {
-                      selectedColors = "bg-red-500 border-red-500 text-white shadow-xl shadow-red-500/30 scale-115 ring-4 ring-red-500/20"
-                      indicatorColor = "bg-red-400"
-                    } else if (isHighValue) {
-                      selectedColors = "bg-green-500 border-green-500 text-white shadow-xl shadow-green-500/30 scale-115 ring-4 ring-green-500/20"
-                      indicatorColor = "bg-green-400"
-                    }
-                  }
-                  
-                  return (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant="ghost"
-                      size="lg"
-                      onClick={() => updateResponse(question.id, value)}
-                      className={cn(
-                        "w-16 h-16 rounded-full font-bold text-lg transition-all duration-300 transform border-2 relative",
-                        "hover:scale-110 hover:shadow-lg focus-visible:scale-110 focus-visible:shadow-lg",
-                        scaleValue === value 
-                          ? selectedColors
-                          : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                      )}
-                    >
-                      {value}
-                      {scaleValue === value && (
-                        <div className={cn("absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse", indicatorColor)}></div>
-                      )}
-                    </Button>
-                  )
-                })}
-              </div>
-            </div>
-            
-            {scaleValue > 0 && (
-              <div className="text-center space-y-2">
-                {(() => {
-                  const minVal = question.scale_min || 1
-                  const maxVal = question.scale_max || 5
-                  const range = maxVal - minVal
-                  const position = (scaleValue - minVal) / range
-                  
-                  const isLowValue = position <= 0.4
-                  const isHighValue = position >= 0.6
-                  
-                  let bgColor = "bg-blue-50 dark:bg-blue-950/20"
-                  let textColor = "text-blue-900 dark:text-blue-100"
-                  let subTextColor = "text-blue-700 dark:text-blue-300"
-                  
-                  if (isLowValue) {
-                    bgColor = "bg-red-50 dark:bg-red-950/20"
-                    textColor = "text-red-900 dark:text-red-100"
-                    subTextColor = "text-red-700 dark:text-red-300"
-                  } else if (isHighValue) {
-                    bgColor = "bg-green-50 dark:bg-green-950/20"
-                    textColor = "text-green-900 dark:text-green-100"
-                    subTextColor = "text-green-700 dark:text-green-300"
-                  }
-                  
-                  return (
-                    <div className={cn("inline-flex items-center space-x-2 px-4 py-2 rounded-full", bgColor)}>
-                      <span className={cn("text-lg font-medium", textColor)}>
-                        {scaleValue}
-                      </span>
-                      <span className={cn("text-sm", subTextColor)}>
-                        selected
-                      </span>
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
-          </div>
+          <ScaleRating
+            questionId={question.id}
+            min={question.scale_min || 1}
+            max={question.scale_max || 5}
+            value={typeof currentValue === 'number' ? currentValue : undefined}
+            onChange={handleQuestionChange}
+            labels={question.scale_labels}
+          />
+        )
+
+      case 'slider':
+        return (
+          <SliderInput
+            questionId={question.id}
+            min={question.scale_min || 0}
+            max={question.scale_max || 100}
+            value={typeof currentValue === 'number' ? currentValue : question.scale_min || 0}
+            onChange={handleQuestionChange}
+            labels={question.scale_labels}
+          />
         )
 
       case 'rating_stars':
-        const starRating = currentResponse?.answer as number || 0
         return (
-          <div className="flex justify-center space-x-2">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Button
-                key={i}
-                type="button"
-                variant="ghost"
-                size="lg"
-                onClick={() => updateResponse(question.id, i + 1)}
-                className="p-2"
-              >
-                <Star 
-                  className={cn(
-                    "h-8 w-8 transition-colors",
-                    i < starRating 
-                      ? "fill-yellow-400 text-yellow-400" 
-                      : "text-slate-300 dark:text-slate-600"
-                  )}
-                />
-              </Button>
-            ))}
-          </div>
-        )
-
-      case 'yes_no':
-        return (
-          <RadioGroup
-            value={currentResponse?.answer as string || ""}
-            onValueChange={(value) => updateResponse(question.id, value)}
-            className="flex space-x-6 justify-center"
-          >
-            <div className="flex items-center space-x-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-              <RadioGroupItem value="yes" id={`${question.id}-yes`} />
-              <Label htmlFor={`${question.id}-yes`} className="cursor-pointer font-medium text-green-700 dark:text-green-400">
-                Yes
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-              <RadioGroupItem value="no" id={`${question.id}-no`} />
-              <Label htmlFor={`${question.id}-no`} className="cursor-pointer font-medium text-red-700 dark:text-red-400">
-                No
-              </Label>
-            </div>
-          </RadioGroup>
+          <StarRating
+            questionId={question.id}
+            value={typeof currentValue === 'number' ? currentValue : 0}
+            onChange={handleQuestionChange}
+            maxStars={5}
+          />
         )
 
       case 'text':
-        return (
-          <Input
-            value={currentResponse?.answer as string || ""}
-            onChange={(e) => updateResponse(question.id, e.target.value)}
-            placeholder="Enter your answer..."
-            className="w-full text-base p-6 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300"
-          />
-        )
-
       case 'email':
-        return (
-          <div className="relative">
-            <Mail className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <Input
-              type="email"
-              value={currentResponse?.answer as string || ""}
-              onChange={(e) => updateResponse(question.id, e.target.value)}
-              placeholder="your@email.com"
-              className="w-full text-base p-6 pl-14 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300"
-            />
-          </div>
-        )
-
       case 'phone':
-        return (
-          <div className="relative">
-            <Phone className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <Input
-              type="tel"
-              value={currentResponse?.answer as string || ""}
-              onChange={(e) => updateResponse(question.id, e.target.value)}
-              placeholder="(555) 123-4567"
-              className="w-full text-base p-6 pl-14 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300"
-            />
-          </div>
-        )
-
       case 'number':
-        return (
-          <Input
-            type="number"
-            value={currentResponse?.answer as string || ""}
-            onChange={(e) => updateResponse(question.id, e.target.value)}
-            placeholder="Enter a number..."
-            className="w-full text-base p-6 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300"
-          />
-        )
-
       case 'date':
-        return (
-          <div className="relative">
-            <Calendar className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <Input
-              type="date"
-              value={currentResponse?.answer as string || ""}
-              onChange={(e) => updateResponse(question.id, e.target.value)}
-              className="w-full text-base p-6 pl-14 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300"
-            />
-          </div>
-        )
-
       case 'textarea':
         return (
-          <Textarea
-            value={currentResponse?.answer as string || ""}
-            onChange={(e) => updateResponse(question.id, e.target.value)}
-            placeholder="Share your thoughts..."
-            className="w-full min-h-[120px] text-base p-6 border-0 bg-slate-50 dark:bg-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-800 transition-all duration-300 resize-none"
-            maxLength={1000}
+          <TextInput
+            questionId={question.id}
+            type={question.type === 'textarea' ? 'textarea' : question.type}
+            value={typeof currentValue === 'string' ? currentValue : ''}
+            onChange={handleQuestionChange}
+            required={question.required}
+            maxLength={question.type === 'textarea' ? 1000 : undefined}
           />
         )
 
       case 'dropdown':
         return (
-          <Select
-            value={currentResponse?.answer as string || ""}
-            onValueChange={(value) => updateResponse(question.id, value)}
-          >
-            <SelectTrigger className="w-full text-base p-4 h-auto border-slate-200 dark:border-slate-700">
-              <SelectValue placeholder="Choose an option..." />
+          <Select value={typeof currentValue === 'string' ? currentValue : ''} onValueChange={handleQuestionChange}>
+            <SelectTrigger className="w-full p-4 border-2 rounded-2xl bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10">
+              <SelectValue placeholder="Select an option..." />
             </SelectTrigger>
             <SelectContent>
               {question.options?.map((option, index) => (
-                <SelectItem key={index} value={option} className="text-base p-3">
+                <SelectItem key={index} value={option} data-question-content="true">
                   {option}
                 </SelectItem>
               ))}
@@ -718,402 +664,304 @@ export function SurveyForm({
           </Select>
         )
 
-      case 'slider':
-        const sliderValue = currentResponse?.answer as number || (question.scale_min || 0)
+      case 'yes_no':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              {question.scale_labels && (
-                <>
-                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                    {question.scale_labels.min}
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                    {question.scale_labels.max}
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="px-3">
-              <Slider
-                value={[sliderValue]}
-                onValueChange={(value) => updateResponse(question.id, value[0])}
-                min={question.scale_min || 0}
-                max={question.scale_max || 100}
-                step={1}
-                className="w-full"
-              />
-              <div className="text-center mt-4">
-                <span className="text-2xl font-light text-slate-900 dark:text-white">{sliderValue}</span>
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'ranking':
-        const rankingOptions = question.options || []
-        const rankings = (currentResponse?.answer as string[]) || []
-        const maxRankings = question.max_rankings || rankingOptions.length
-        
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
-              {question.max_rankings 
-                ? `Rank your top ${question.max_rankings} preferences (1 = most preferred)`
-                : "Rank these options in order of preference (1 = most preferred)"}
-            </p>
-            {rankingOptions.map((option, index) => {
-              const currentRank = rankings.indexOf(option) + 1
+          <div className="flex space-x-4 justify-center">
+            {['Yes', 'No'].map((option) => {
+              const isSelected = currentValue === option
               return (
-                <div key={index} className="flex items-center space-x-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <Select
-                    value={currentRank > 0 ? String(currentRank) : ""}
-                    onValueChange={(value) => {
-                      const newRankings = [...rankings]
-                      const currentIndex = newRankings.indexOf(option)
-                      
-                      if (currentIndex >= 0) {
-                        newRankings.splice(currentIndex, 1)
-                      }
-                      
-                      if (value) {
-                        const newPosition = parseInt(value) - 1
-                        newRankings.splice(newPosition, 0, option)
-                      }
-                      
-                      updateResponse(question.id, newRankings.slice(0, maxRankings))
-                    }}
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue placeholder="Rank" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {Array.from({ length: maxRankings }, (_, i) => (
-                        <SelectItem key={i} value={String(i + 1)}>
-                          {i + 1}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Label className="flex-1 font-light">{option}</Label>
-                </div>
+                <Button
+                  key={option}
+                  type="button"
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => handleQuestionChange(option)}
+                  className={cn(
+                    "px-12 py-6 rounded-2xl font-medium text-lg transition-all duration-300 border-2",
+                    isSelected 
+                      ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30" 
+                      : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                  )}
+                >
+                  {option}
+                </Button>
               )
             })}
           </div>
         )
 
       case 'matrix':
-        const matrixResponses = (currentResponse?.answer as Record<string, number>) || {}
-        const scale = question.matrix_config?.scale || { min: 1, max: 5, labels: { min: "Low", max: "High" } }
-        
-        return (
-          <div className="space-y-6">
-            {/* Enhanced header with Space Mono font */}
-            <div className="flex justify-between items-center px-4">
-              <div className="text-center">
-                <div className="text-sm font-light text-slate-900 dark:text-white mb-2 font-mono" style={{ fontFamily: 'Space Mono, monospace' }} data-question-content="true">
-                  {scale.labels.min}
-                </div>
-                <div className="w-12 h-1 bg-red-200 dark:bg-red-800 rounded-full mx-auto"></div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-light text-slate-900 dark:text-white mb-2 font-mono" style={{ fontFamily: 'Space Mono, monospace' }} data-question-content="true">
-                  {scale.labels.max}
-                </div>
-                <div className="w-12 h-1 bg-green-200 dark:bg-green-800 rounded-full mx-auto"></div>
-              </div>
-            </div>
-            
-            {/* Enhanced matrix items */}
-            <div className="space-y-6">
-              {question.options?.map((statement, index) => {
-                const isRated = matrixResponses[statement] !== undefined
-                return (
-                  <div key={index} className={cn(
-                    "relative p-6 rounded-2xl transition-all duration-300",
-                    "bg-white dark:bg-slate-900 hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50",
-                    isRated 
-                      ? "shadow-sm border border-slate-200 dark:border-slate-700" 
-                      : "border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
-                  )}>
-                    {/* Completion indicator */}
-                    {isRated && (
-                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                      <div className="font-light text-slate-900 dark:text-white text-base leading-relaxed" data-question-content="true">
-                        {statement}
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        {Array.from({ length: scale.max - scale.min + 1 }, (_, i) => {
-                          const value = scale.min + i
-                          const isSelected = matrixResponses[statement] === value
-                          const range = scale.max - scale.min
-                          const position = (value - scale.min) / range
-                          
-                          // Determine color based on position (1=red, 5=green)
-                          const isLowValue = position <= 0.25    // 1
-                          const isLowMidValue = position <= 0.5   // 2
-                          const isMidValue = position <= 0.75     // 3
-                          const isHighMidValue = position <= 1.0  // 4
-                          const isHighValue = position === 1.0    // 5
-                          
-                          let selectedColors = "bg-slate-600 border-slate-600 text-white shadow-lg shadow-slate-600/30"
-                          let indicatorColor = "bg-slate-500"
-                          
-                          if (isSelected) {
-                            if (isLowValue) {
-                              selectedColors = "bg-red-400 border-red-400 text-white shadow-lg shadow-red-400/30"
-                              indicatorColor = "bg-red-300"
-                            } else if (isLowMidValue) {
-                              selectedColors = "bg-orange-400 border-orange-400 text-white shadow-lg shadow-orange-400/30"
-                              indicatorColor = "bg-orange-300"
-                            } else if (isMidValue) {
-                              selectedColors = "bg-yellow-400 border-yellow-400 text-white shadow-lg shadow-yellow-400/30"
-                              indicatorColor = "bg-yellow-300"
-                            } else if (isHighMidValue && !isHighValue) {
-                              selectedColors = "bg-lime-400 border-lime-400 text-white shadow-lg shadow-lime-400/30"
-                              indicatorColor = "bg-lime-300"
-                            } else if (isHighValue) {
-                              selectedColors = "bg-green-400 border-green-400 text-white shadow-lg shadow-green-400/30"
-                              indicatorColor = "bg-green-300"
-                            }
-                          }
-                          
-                          return (
-                            <Button
-                              key={value}
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newResponses = { ...matrixResponses, [statement]: value }
-                                updateResponse(question.id, newResponses)
-                              }}
-                              className={cn(
-                                "w-12 h-12 rounded-full font-bold text-sm transition-all duration-300 border-2 relative",
-                                "hover:scale-110 hover:shadow-lg focus-visible:scale-110",
-                                isSelected 
-                                  ? selectedColors
-                                  : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
-                              )}
-                            >
-                              {value}
-                              {isSelected && (
-                                <div className={cn("absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse", indicatorColor)}></div>
-                              )}
-                            </Button>
-                          )
-                        })}
-                      </div>
-                      
-                      {/* Show selected value */}
-                      {matrixResponses[statement] && (
-                        <div className="text-center">
-                          {(() => {
-                            const selectedValue = matrixResponses[statement]
-                            const range = scale.max - scale.min
-                            const position = (selectedValue - scale.min) / range
-                            
-                            let bgColor = "bg-slate-50 dark:bg-slate-900/20"
-                            let textColor = "text-slate-900 dark:text-slate-100"
-                            
-                            if (position <= 0.25) {
-                              bgColor = "bg-red-50 dark:bg-red-950/20"
-                              textColor = "text-red-900 dark:text-red-100"
-                            } else if (position <= 0.5) {
-                              bgColor = "bg-orange-50 dark:bg-orange-950/20"
-                              textColor = "text-orange-900 dark:text-orange-100"
-                            } else if (position <= 0.75) {
-                              bgColor = "bg-yellow-50 dark:bg-yellow-950/20"
-                              textColor = "text-yellow-900 dark:text-yellow-100"
-                            } else if (position < 1.0) {
-                              bgColor = "bg-lime-50 dark:bg-lime-950/20"
-                              textColor = "text-lime-900 dark:text-lime-100"
-                            } else {
-                              bgColor = "bg-green-50 dark:bg-green-950/20"
-                              textColor = "text-green-900 dark:text-green-100"
-                            }
-                            
-                            return (
-                              <div className={cn("inline-flex items-center space-x-2 px-3 py-1 rounded-full", bgColor)}>
-                                <span className={cn("text-sm font-medium", textColor)}>
-                                  Rated: {selectedValue}
-                                </span>
-                              </div>
-                            )
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            
-            {/* Progress indicator */}
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-medium text-slate-700 dark:text-slate-300">
-                  Progress: {Object.keys(matrixResponses).length} of {question.options?.length || 0} items rated
-                </span>
-                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  {Math.round((Object.keys(matrixResponses).length / (question.options?.length || 1)) * 100)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        )
+        if (question.matrix_config) {
+          return (
+            <MatrixGrid
+              questionId={question.id}
+              items={question.options || []}
+              scale={question.matrix_config.scale}
+              values={typeof currentValue === 'object' && currentValue !== null ? currentValue as Record<string, number> : {}}
+              onChange={handleQuestionChange}
+            />
+          )
+        }
+        return <div>Matrix configuration missing</div>
 
-      case 'contact_info':
-        const contactData = (currentResponse?.answer as Record<string, string>) || {}
+      case 'ranking': {
+        const rankingValue = Array.isArray(currentValue) ? currentValue : []
+
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor={`${question.id}-first`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  First Name
-                </Label>
-                <Input
-                  id={`${question.id}-first`}
-                  value={contactData.firstName || ""}
-                  onChange={(e) => updateResponse(question.id, { ...contactData, firstName: e.target.value })}
-                  placeholder="First name"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor={`${question.id}-last`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Last Name
-                </Label>
-                <Input
-                  id={`${question.id}-last`}
-                  value={contactData.lastName || ""}
-                  onChange={(e) => updateResponse(question.id, { ...contactData, lastName: e.target.value })}
-                  placeholder="Last name"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor={`${question.id}-email`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Email Address
-              </Label>
-              <Input
-                id={`${question.id}-email`}
-                type="email"
-                value={contactData.email || ""}
-                onChange={(e) => updateResponse(question.id, { ...contactData, email: e.target.value })}
-                placeholder="your@email.com"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor={`${question.id}-phone`} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Phone Number (Optional)
-              </Label>
-              <Input
-                id={`${question.id}-phone`}
-                type="tel"
-                value={contactData.phone || ""}
-                onChange={(e) => updateResponse(question.id, { ...contactData, phone: e.target.value })}
-                placeholder="(555) 123-4567"
-                className="mt-1"
-              />
-            </div>
-          </div>
+          <Ranking
+            questionId={question.id}
+            options={question.options || []}
+            value={rankingValue}
+            onChange={handleQuestionChange}
+            maxRankings={question.max_rankings}
+          />
         )
+      }
 
       case 'file_upload':
         return (
-          <div className="space-y-4">
-            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+          <div className="space-y-4" data-audio-content="true">
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-12 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
               <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-500">
-                PNG, JPG, PDF up to 10MB
-              </p>
+              <div className="space-y-2">
+                <div className="text-lg font-medium text-slate-900 dark:text-white">Upload a file</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Drag and drop or click to browse</div>
+              </div>
               <Input
                 type="file"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   if (file) {
-                    updateResponse(question.id, file.name)
+                    handleQuestionChange({
+                      fileName: file.name,
+                      fileSize: file.size,
+                      fileType: file.type
+                    })
                   }
                 }}
-                className="hidden"
-                accept=".png,.jpg,.jpeg,.pdf"
+                className="mt-4"
               />
             </div>
-            {currentResponse?.answer && (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Selected: {currentResponse.answer as string}
-              </p>
+            {currentValue && typeof currentValue === 'object' && 'fileName' in currentValue && (
+              <div className="text-center text-sm text-green-600 dark:text-green-400">
+                ✓ {(currentValue as any).fileName} uploaded
+              </div>
             )}
           </div>
         )
 
+      case 'contact_info': {
+        const contactValue = typeof currentValue === 'object' && currentValue !== null 
+          ? currentValue as Record<string, string>
+          : { name: '', email: '', phone: '' }
+
+        return (
+          <div className="space-y-6" data-audio-content="true">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor={`${question.id}-name`} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  Name
+                </Label>
+                <Input
+                  id={`${question.id}-name`}
+                  value={contactValue.name || ''}
+                  onChange={(e) => handleQuestionChange({ ...contactValue, name: e.target.value })}
+                  placeholder="Your full name"
+                  className="text-base p-4 border-2 rounded-2xl"
+                />
+              </div>
+              <div>
+                <Label htmlFor={`${question.id}-email`} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  id={`${question.id}-email`}
+                  type="email"
+                  value={contactValue.email || ''}
+                  onChange={(e) => handleQuestionChange({ ...contactValue, email: e.target.value })}
+                  placeholder="your@email.com"
+                  className="text-base p-4 border-2 rounded-2xl"
+                />
+              </div>
+              <div>
+                <Label htmlFor={`${question.id}-phone`} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                  Phone
+                </Label>
+                <Input
+                  id={`${question.id}-phone`}
+                  type="tel"
+                  value={contactValue.phone || ''}
+                  onChange={(e) => handleQuestionChange({ ...contactValue, phone: e.target.value })}
+                  placeholder="(555) 123-4567"
+                  className="text-base p-4 border-2 rounded-2xl"
+                />
+              </div>
+            </div>
+          </div>
+        )
+      }
+
       case 'statement':
         return (
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-slate-700 dark:text-slate-300 font-light leading-relaxed">
-              {question.question}
-            </p>
+          <div className="space-y-6 text-center" data-audio-content="true">
+            <div className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed" data-question-content="true">
+              {question.description || "Please read and acknowledge the statement above."}
+            </div>
+            <Button
+              type="button"
+              onClick={() => handleQuestionChange('acknowledged')}
+              className={cn(
+                "px-8 py-4 rounded-2xl font-medium text-lg transition-all duration-300",
+                currentValue === 'acknowledged'
+                  ? "bg-green-600 text-white shadow-lg shadow-green-600/30"
+                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/30"
+              )}
+            >
+              {currentValue === 'acknowledged' ? '✓ Acknowledged' : 'I Understand'}
+            </Button>
           </div>
         )
 
       case 'likert':
+        const likertOptions = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-6 gap-2 text-center text-sm mb-6">
-              <div></div>
-              <div className="text-slate-600 dark:text-slate-400 font-light">Strongly Disagree</div>
-              <div className="text-slate-600 dark:text-slate-400 font-light">Disagree</div>
-              <div className="text-slate-600 dark:text-slate-400 font-light">Neutral</div>
-              <div className="text-slate-600 dark:text-slate-400 font-light">Agree</div>
-              <div className="text-slate-600 dark:text-slate-400 font-light">Strongly Agree</div>
+          <div className="space-y-6" data-audio-content="true">
+            <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-400 px-4">
+              <span>Strongly Disagree</span>
+              <span>Strongly Agree</span>
             </div>
-            {question.options?.map((statement, index) => (
-              <div key={index} className="grid grid-cols-6 gap-2 items-center border-b border-slate-100 dark:border-slate-800 pb-4 last:border-0">
-                <div className="text-sm font-light pr-4">{statement}</div>
-                {[1, 2, 3, 4, 5].map(value => (
-                  <div key={value} className="flex justify-center">
-                    <RadioGroup
-                      value={currentResponse?.answer as string || ""}
-                      onValueChange={(val) => updateResponse(question.id, val)}
-                    >
-                      <RadioGroupItem value={`${statement}-${value}`} />
-                    </RadioGroup>
-                  </div>
-                ))}
-              </div>
-            ))}
+            <div className="grid grid-cols-5 gap-2">
+              {likertOptions.map((option, index) => {
+                const isSelected = currentValue === option
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="ghost"
+                    onClick={() => handleQuestionChange(option)}
+                    className={cn(
+                      "h-16 text-xs font-medium transition-all duration-300 border-2 rounded-xl",
+                      isSelected 
+                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/30" 
+                        : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    )}
+                  >
+                    <span className="text-center leading-tight" data-question-content="true">{option}</span>
+                  </Button>
+                )
+              })}
+            </div>
           </div>
         )
 
+      case 'dynamic_content':
+        if (question.dynamic_config) {
+          return (
+            <DynamicContent
+              questionId={question.id}
+              config={question.dynamic_config}
+              value={currentValue}
+              onChange={handleQuestionChange}
+            />
+          )
+        }
+        return <div>Dynamic content configuration missing</div>
+
       default:
         return (
-          <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-            Question type "{question.type}" not yet implemented
+          <div className="text-center text-slate-500 dark:text-slate-400">
+            Question type "{question.type}" not supported yet.
           </div>
         )
     }
   }
 
+  // Show completed survey responses view
+  if (showCompleted && completedResponses.length > 0) {
+    return (
+      <div className={cn("max-w-5xl mx-auto space-y-8", className)}>
+        <div className="text-center space-y-4">
+          <div className="text-6xl mb-6">📋</div>
+          <h1 className="text-3xl font-light text-slate-900 dark:text-white">
+            Your Survey Responses
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400">
+            You completed "{survey.title}" on {new Date(completedResponses[0]?.answered_at || '').toLocaleDateString()}
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {survey.questions.map((question, index) => {
+            const response = completedResponses.find(r => r.question_id === question.id)
+            if (!response) return null
+
+            return (
+              <Card key={question.id} className="border-slate-200 dark:border-slate-700">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                          Question {index + 1}
+                        </h3>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {question.question}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {question.type.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    
+                    <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-r-lg">
+                      <div className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                        Your Answer:
+                      </div>
+                      <div className="text-slate-900 dark:text-white">
+                        {formatAnswerForDisplay(question, response)}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        <div className="text-center">
+          <Button
+            onClick={() => window.history.back()}
+            variant="outline"
+            className="px-8 py-3"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show post-completion content
+  if (showPostCompletion && survey.post_completion_config) {
+    return (
+      <div className={cn("max-w-5xl mx-auto space-y-8", className)}>
+        <PostCompletionContent
+          surveyId={survey.id}
+          surveyTitle={survey.title}
+          responses={completionResponses}
+          config={survey.post_completion_config}
+          onContinue={() => {
+            setShowPostCompletion(false)
+            // Optionally redirect to dashboard or show default completion
+          }}
+        />
+      </div>
+    )
+  }
+
   if (!currentQuestion) {
     return <div>No questions available</div>
   }
-
-  const isFirstQuestion = currentQuestionIndex === 0
-  const isLastQuestion = currentQuestionIndex === visibleQuestions.length - 1
-  const answeredQuestions = visibleQuestions.filter(q => responses[q.id]).length
 
   return (
     <div className={cn("max-w-5xl mx-auto space-y-8", className)} data-audio-content="true">
@@ -1129,6 +977,17 @@ export function SurveyForm({
                 Est. {survey.estimated_time} min
               </div>
             )}
+            {/* Keyboard shortcuts help indicator */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowKeyboardShortcuts(true)}
+              className="ml-auto text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              aria-label="Show keyboard shortcuts help"
+              title="Press ? or F1 for keyboard shortcuts"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
           </div>
           {survey.description && (
             <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed" data-question-content="true">
@@ -1252,17 +1111,29 @@ export function SurveyForm({
       </div>
 
       {/* Clean Question card */}
-      <Card className="border-0 bg-white dark:bg-slate-950 rounded-3xl overflow-hidden">
+      <Card 
+        ref={questionCardRef}
+        className="border-0 bg-white dark:bg-slate-950 rounded-3xl overflow-hidden"
+        role="main"
+        aria-labelledby="current-question-title"
+        aria-describedby="current-question-description"
+      >
         <CardHeader className="pb-8 pt-12 px-12 bg-gradient-to-br from-slate-50/80 to-blue-50/40 dark:from-slate-900/80 dark:to-blue-950/40">
           <div className="flex items-start justify-between">
             <div className="space-y-3 flex-1">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   {currentQuestion.required && (
-                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                    <div 
+                      className="w-1.5 h-1.5 bg-blue-600 rounded-full"
+                      aria-label="Required question"
+                    ></div>
                   )}
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     {currentQuestion.type.replace('_', ' ')}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                    Question {currentQuestionIndex + 1} of {visibleQuestions.length}
                   </span>
                 </div>
                 
@@ -1278,18 +1149,27 @@ export function SurveyForm({
                   }}
                   className="ml-auto p-2.5 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 hover:border-blue-200 dark:hover:border-blue-800"
                   title="Read question aloud"
+                  aria-label="Play audio for current question"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.025 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.025l4.358-3.824a1 1 0 011-.1z" clipRule="evenodd" />
                     <path d="M14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.414A3.983 3.983 0 0013 10a3.983 3.983 0 00-1.172-2.829 1 1 0 010-1.414z" />
                   </svg>
                 </button>
               </div>
-              <CardTitle className="text-3xl font-light text-slate-900 dark:text-white leading-tight tracking-tight mt-6" data-question-content="true">
+              <CardTitle 
+                id="current-question-title"
+                className="text-3xl font-light text-slate-900 dark:text-white leading-tight tracking-tight mt-6" 
+                data-question-content="true"
+              >
                 {currentQuestion.question}
               </CardTitle>
               {currentQuestion.description && (
-                <p className="text-base text-slate-600 dark:text-slate-400 font-light leading-relaxed" data-question-content="true">
+                <p 
+                  id="current-question-description"
+                  className="text-base text-slate-600 dark:text-slate-400 font-light leading-relaxed" 
+                  data-question-content="true"
+                >
                   {currentQuestion.description}
                 </p>
               )}
@@ -1298,14 +1178,21 @@ export function SurveyForm({
         </CardHeader>
         
         <CardContent className="px-12 pt-8 pb-12 space-y-12">
-          <div className="min-h-[250px] flex items-center justify-center">
+          <div 
+            ref={currentQuestionRef}
+            className="min-h-[250px] flex items-center justify-center focus:outline-none"
+            tabIndex={-1}
+            role="group"
+            aria-labelledby="current-question-title"
+            aria-describedby={currentQuestion.description ? "current-question-description" : undefined}
+          >
             <div className="w-full max-w-2xl">
               {renderQuestion(currentQuestion)}
             </div>
           </div>
           
           {/* Clean Navigation */}
-          <div className="flex items-center justify-between pt-8">
+          <div className="flex items-center justify-between pt-8" role="navigation" aria-label="Survey navigation">
             <div>
               <Button
                 variant="ghost"
@@ -1317,55 +1204,194 @@ export function SurveyForm({
                     ? "opacity-30 cursor-not-allowed" 
                     : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 )}
+                aria-label={`Go to previous question. Currently on question ${currentQuestionIndex + 1} of ${visibleQuestions.length}`}
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="font-light">Previous</span>
               </Button>
             </div>
             
-            <div className="flex space-x-4">
-              {survey.allow_partial_responses && onSaveProgress && (
-                <Button
-                  variant="ghost"
-                  onClick={handleSaveProgress}
-                  className="flex items-center space-x-2 px-6 py-3 rounded-full bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all duration-300"
-                >
-                  <Save className="h-4 w-4" />
-                  <span className="font-light">Save Progress</span>
-                </Button>
+            <div className="flex flex-col items-end space-y-3">
+              {/* Required question feedback */}
+              {showRequiredFeedback && (
+                <div className="animate-in slide-in-from-bottom-2 duration-300 animate-out fade-out-0 duration-3000">
+                  <div className="flex items-center space-x-2 bg-orange-50 dark:bg-orange-950/20 text-orange-700 dark:text-orange-300 px-4 py-2 rounded-full border border-orange-200 dark:border-orange-800 shadow-lg">
+                    <span className="animate-bounce">⚠️</span>
+                    <span className="text-sm font-medium">
+                      {currentQuestion?.required ? "This question is required!" : "Please answer to continue"}
+                    </span>
+                  </div>
+                </div>
               )}
-              
-              {isLastQuestion ? (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className={cn(
-                    "flex items-center space-x-3 px-8 py-4 rounded-full text-base font-light transition-all duration-300",
-                    "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900",
-                    "text-white hover:shadow-lg hover:shadow-slate-900/20 dark:hover:shadow-white/20",
-                    "disabled:opacity-50 disabled:cursor-not-allowed"
-                  )}
-                >
-                  <Send className="h-4 w-4" />
-                  <span>{isSubmitting ? "Submitting..." : "Complete Survey"}</span>
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNext}
-                  className={cn(
-                    "flex items-center space-x-3 px-8 py-4 rounded-full text-base font-light transition-all duration-300",
-                    "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900",
-                    "text-white hover:shadow-lg hover:shadow-slate-900/20 dark:hover:shadow-white/20"
-                  )}
-                >
-                  <span>Continue</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              )}
+
+              <div className="flex space-x-4">
+                {survey.allow_partial_responses && onSaveProgress && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleSaveProgress}
+                    className="flex items-center space-x-2 px-6 py-3 rounded-full bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all duration-300"
+                    aria-label="Save current progress"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span className="font-light">Save Progress</span>
+                  </Button>
+                )}
+                
+                {isLastQuestion ? (
+                  <Button
+                    ref={submitButtonRef}
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className={cn(
+                      "flex items-center space-x-3 px-8 py-4 rounded-full text-base font-light transition-all duration-300 transform hover:scale-105",
+                      "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white",
+                      "shadow-lg shadow-green-600/30 hover:shadow-xl hover:shadow-green-600/40",
+                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    )}
+                    aria-label="Submit completed survey"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>{isSubmitting ? "Submitting..." : "Complete Survey"}</span>
+                    {!isSubmitting && <span className="animate-pulse">🎉</span>}
+                  </Button>
+                ) : (
+                  <Button
+                    ref={nextButtonRef}
+                    onClick={handleNext}
+                    disabled={currentQuestion?.required && !responses[currentQuestion.id]}
+                    className={cn(
+                      "flex items-center space-x-3 px-8 py-4 rounded-full text-base font-light transition-all duration-300 transform hover:scale-105",
+                      "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900",
+                      "text-white hover:shadow-lg hover:shadow-slate-900/20 dark:hover:shadow-white/20",
+                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    )}
+                    aria-label={`Continue to next question. Currently on question ${currentQuestionIndex + 1} of ${visibleQuestions.length}`}
+                  >
+                    <span>Continue</span>
+                    <ChevronRight className="h-4 w-4" />
+                    {responses[currentQuestion.id] && <span className="animate-bounce">✨</span>}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Keyboard Shortcuts Help Modal */}
+      {showKeyboardShortcuts && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shortcuts-title"
+          onClick={() => setShowKeyboardShortcuts(false)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 id="shortcuts-title" className="text-2xl font-light text-slate-900 dark:text-white">
+                <Keyboard className="inline w-6 h-6 mr-3" />
+                Keyboard Shortcuts
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowKeyboardShortcuts(false)}
+                aria-label="Close keyboard shortcuts help"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Navigation</h3>
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Next question</span>
+                    <div className="flex space-x-2">
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">→</kbd>
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">N</kbd>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Previous question</span>
+                    <div className="flex space-x-2">
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">←</kbd>
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">P</kbd>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">First question</span>
+                    <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Home</kbd>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Last question</span>
+                    <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">End</kbd>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Actions</h3>
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Submit/Continue</span>
+                    <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Ctrl+Enter</kbd>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Save Progress</span>
+                    <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Ctrl+S</kbd>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Show/Hide Help</span>
+                    <div className="flex space-x-2">
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">?</kbd>
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">F1</kbd>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Close dialogs</span>
+                    <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Escape</kbd>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Multiple Choice</h3>
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Select option</span>
+                    <div className="flex space-x-2">
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">1-9</kbd>
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">↑↓</kbd>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Confirm selection</span>
+                    <div className="flex space-x-2">
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Space</kbd>
+                      <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">Enter</kbd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Survey progress is automatically saved. You can return later to complete where you left off.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen reader live region for announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true" id="survey-announcements"></div>
 
       {/* Clean Survey info footer */}
       <div className="text-center space-y-6 py-8">

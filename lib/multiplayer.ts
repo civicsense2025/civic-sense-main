@@ -31,7 +31,7 @@ export interface CreateRoomOptions {
   topicId: string
   roomName?: string
   maxPlayers?: number
-  gameMode?: 'classic' | 'speed_round' | 'elimination' | 'team_battle' | 'learning_lab'
+  gameMode?: 'classic' | 'speed_round' | 'elimination' | 'team_battle' | 'learning_lab' | 'matching'
 }
 
 export interface JoinRoomOptions {
