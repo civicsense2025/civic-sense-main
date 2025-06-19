@@ -2,14 +2,18 @@ import { notFound } from 'next/navigation'
 import { SurveyTaker } from './survey-taker'
 
 interface SurveyPageProps {
-  params: {
+  params: Promise<{
     surveyId: string
-  }
+  }>
 }
 
 async function getSurvey(surveyId: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/surveys/${surveyId}`, {
+    // Use localhost in development, or construct the URL properly
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '')
+    
+    const response = await fetch(`${baseUrl}/api/surveys/${surveyId}`, {
       cache: 'no-store' // Always get fresh data for surveys
     })
     
@@ -26,7 +30,8 @@ async function getSurvey(surveyId: string) {
 }
 
 export async function generateMetadata({ params }: SurveyPageProps) {
-  const survey = await getSurvey(params.surveyId)
+  const { surveyId } = await params
+  const survey = await getSurvey(surveyId)
   
   if (!survey) {
     return {
@@ -46,7 +51,8 @@ export async function generateMetadata({ params }: SurveyPageProps) {
 }
 
 export default async function SurveyPage({ params }: SurveyPageProps) {
-  const survey = await getSurvey(params.surveyId)
+  const { surveyId } = await params
+  const survey = await getSurvey(surveyId)
 
   if (!survey) {
     notFound()

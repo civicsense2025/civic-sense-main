@@ -8,6 +8,7 @@ import {
 } from '@statsig/react-bindings'
 import { StatsigAutoCapturePlugin } from '@statsig/web-analytics'
 import { useAuth } from '@/components/auth/auth-provider'
+import { debug } from '@/lib/debug-config'
 
 // Store Statsig client in module scope so non-React callers can use it safely
 let globalStatsigClient: any = null;
@@ -69,7 +70,7 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
   // Update ready state when client is ready
   useEffect(() => {
     if (!clientKey) {
-      console.warn('[Statsig] NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.');
+      debug.warn('analytics', 'NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.');
       setError(new Error('Statsig client key not configured'));
       return;
     }
@@ -77,7 +78,7 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
     if (client && !isLoading) {
       setIsReady(true);
       setError(null);
-      console.log('[Statsig] Client initialized successfully');
+      debug.log('analytics', 'Client initialized successfully');
 
       // Expose for non-React consumers (e.g., analytics helper functions)
       globalStatsigClient = client;
@@ -164,11 +165,9 @@ export function useStatsig() {
         const client = globalStatsigClient;
         if (client) {
           client.logEvent(eventName, value, metadata);
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[Statsig] Event logged: ${eventName}`, { value, metadata });
-          }
-        } else if (process.env.NODE_ENV === 'development') {
-          console.log(`[Statsig] Event queued (client not ready): ${eventName}`, { value, metadata });
+          debug.log('analytics', `Event logged: ${eventName}`, { value, metadata });
+        } else {
+          debug.log('analytics', `Event queued (client not ready): ${eventName}`, { value, metadata });
         }
       } catch (error) {
         console.warn(`[Statsig] Error logging event "${eventName}":`, error);

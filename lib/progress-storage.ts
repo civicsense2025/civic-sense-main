@@ -300,7 +300,7 @@ export class QuizProgressStorage {
         })
         return state
       } else {
-        console.log(`🗑️ Cleaning up invalid ${options.quizType} progress:`, {
+        debug.log('storage', `Cleaning up invalid ${options.quizType} progress:`, {
           key: storageKey,
           reason: validation.reason,
           validation
@@ -309,7 +309,7 @@ export class QuizProgressStorage {
         return null
       }
     } catch (error) {
-      console.warn(`Failed to load ${options.quizType} progress:`, error)
+      debug.warn('storage', `Failed to load ${options.quizType} progress:`, error)
       return null
     }
   }
@@ -322,10 +322,10 @@ export class QuizProgressStorage {
       const storageKey = this.generateStorageKey(options)
       localStorage.removeItem(storageKey)
       
-      console.log(`🗑️ Cleared ${options.quizType} progress:`, storageKey)
+      debug.log('storage', `Cleared ${options.quizType} progress:`, storageKey)
       return true
     } catch (error) {
-      console.warn(`Failed to clear ${options.quizType} progress:`, error)
+      debug.warn('storage', `Failed to clear ${options.quizType} progress:`, error)
       return false
     }
   }
@@ -352,21 +352,21 @@ export class QuizProgressStorage {
           if (Date.now() - savedAt > maxAge) {
             localStorage.removeItem(key)
             cleanedCount++
-            console.log(`🗑️ Cleaned up expired progress:`, key)
+            debug.log('storage', `Cleaned up expired progress:`, key)
           }
         } catch (error) {
           // Invalid JSON, remove it
           localStorage.removeItem(key)
           cleanedCount++
-          console.log(`🗑️ Cleaned up invalid progress:`, key)
+          debug.log('storage', `Cleaned up invalid progress:`, key)
         }
       }
     } catch (error) {
-      console.warn('Error during progress cleanup:', error)
+      debug.warn('storage', 'Error during progress cleanup:', error)
     }
 
     if (cleanedCount > 0) {
-      console.log(`🧹 Cleaned up ${cleanedCount} expired progress entries`)
+      debug.log('storage', `Cleaned up ${cleanedCount} expired progress entries`)
     }
 
     return cleanedCount
@@ -393,7 +393,7 @@ export class QuizProgressStorage {
         }
       }
     } catch (error) {
-      console.warn('Error getting all progress:', error)
+      debug.warn('storage', 'Error getting all progress:', error)
     }
 
     return allProgress

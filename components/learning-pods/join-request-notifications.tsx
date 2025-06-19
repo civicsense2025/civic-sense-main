@@ -15,7 +15,6 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase'
 
 interface JoinRequest {
   id: string
@@ -50,30 +49,31 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
       // Poll for new requests every 30 seconds
       const interval = setInterval(loadJoinRequests, 30000)
       return () => clearInterval(interval)
+    } else {
+      setIsLoading(false)
+      setRequests([])
     }
   }, [user])
 
   const loadJoinRequests = async () => {
-    try {
-      // Include Supabase access token to authenticate the request
-      let authHeader: HeadersInit = {}
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.access_token) {
-          authHeader['Authorization'] = `Bearer ${session.access_token}`
-        }
-      } catch {
-        // Ignore errors obtaining session
-      }
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
 
+    try {
       const response = await fetch('/api/learning-pods/join-requests', {
-        headers: authHeader,
         credentials: 'include'
       })
-      const data = await response.json()
       
       if (response.ok) {
+        const data = await response.json()
         setRequests(data.requests || [])
+      } else if (response.status === 401) {
+        // User not authenticated, clear requests
+        setRequests([])
+      } else {
+        console.error('Failed to load join requests:', response.status)
       }
     } catch (error) {
       console.error('Failed to load join requests:', error)
@@ -84,18 +84,11 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
 
   const handleRequest = async (requestId: string, action: 'approve' | 'deny') => {
     try {
-      // Attach token for authorization
-      let authHeader: HeadersInit = { 'Content-Type': 'application/json' }
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.access_token) {
-          authHeader['Authorization'] = `Bearer ${session.access_token}`
-        }
-      } catch {}
-
       const response = await fetch(`/api/learning-pods/join-requests/${requestId}`, {
-        method: 'PATCH',
-        headers: authHeader,
+        method: 'PUT', // Changed from PATCH to PUT to match the API
+        headers: {
+          'Content-Type': 'application/json'
+        },
         credentials: 'include',
         body: JSON.stringify({ action })
       })
@@ -127,7 +120,8 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
 
   const pendingRequests = requests.filter(r => r.status === 'pending')
 
-  if (isLoading || pendingRequests.length === 0) {
+  // Don't show anything if user is not authenticated or no pending requests
+  if (!user || isLoading || pendingRequests.length === 0) {
     return null
   }
 

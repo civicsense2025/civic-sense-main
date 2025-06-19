@@ -287,17 +287,29 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
   // =============================================================================
 
   useEffect(() => {
-    // Activate NPCs for competitive gameplay
-    if (room && players.length > 0) {
-      multiplayerNPCIntegration.activateRoomNPCs(props.roomId, {
-        difficulty: 'competitive',
-        personalityTypes: ['speed_demon', 'quiz_master'],
-        maxNPCs: 2
-      }).catch(error => {
-        console.warn('Failed to activate NPCs for speed round:', error)
-      })
+    // Add NPCs for competitive gameplay if room has space
+    if (room && room.room_code && players.length > 0 && players.length < (room.max_players || 6)) {
+      // Only add NPCs if there are human players and room for more
+      const humanPlayers = players.filter(p => !p.player_name.includes('🤖'))
+      if (humanPlayers.length > 0) {
+        // Try to add a competitive NPC
+        multiplayerNPCIntegration.handleRoomEvent({
+          roomId: props.roomId,
+          npcId: 'speed_demon',
+          playerId: 'npc_speed_demon',
+          roomState: {
+            players,
+            currentQuestionIndex,
+            totalQuestions: props.questions.length,
+            averageScore: 0
+          },
+          userPerformance: {}
+        }, 'player_joined').catch((error: Error) => {
+          console.warn('Failed to activate NPCs for speed round:', error.message)
+        })
+      }
     }
-  }, [room, players.length, props.roomId])
+  }, [room, players.length, props.roomId, currentQuestionIndex, props.questions.length])
 
   // =============================================================================
   // ENHANCED UI COMPONENTS

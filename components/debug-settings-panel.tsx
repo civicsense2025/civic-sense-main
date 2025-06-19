@@ -18,6 +18,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
   const [config, setConfig] = useState(debug.getConfig())
 
   // Only show in development
+  // Only show in development
   if (process.env.NODE_ENV !== 'development') {
     return null
   }

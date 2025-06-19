@@ -7,6 +7,7 @@ import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { useMultiplayerRoom } from "@/lib/multiplayer"
 import { dataService } from "@/lib/data-service"
 import type { QuizQuestion, TopicMetadata } from "@/lib/quiz-data"
+import { debug } from "@/lib/debug-config"
 import { Button } from "@/components/ui/button"
 import { Home } from "lucide-react"
 import React from "react"
@@ -171,9 +172,7 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
 
   // Only log in development
   const devLog = useCallback((message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🎮 [MultiplayerQuizClient] ${message}`, data || '')
-    }
+    debug.log('multiplayer', `[MultiplayerQuizClient] ${message}`, data)
   }, [])
 
   devLog('Component mounted', {

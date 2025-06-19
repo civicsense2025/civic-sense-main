@@ -2,7 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
-  params: { slug: string[] }
+  params: Promise<{ slug: string[] }>
 }
 
 /**
@@ -17,7 +17,8 @@ interface PageProps {
  *   /quiz/<topicId>/multiplayer?room=<ROOMCODE>[&player=<PLAYERID>]
  */
 export default async function MultiplayerRedirectPage({ params }: PageProps) {
-  const [roomCode, playerId] = params.slug ?? []
+  const resolvedParams = await params
+  const [roomCode, playerId] = resolvedParams.slug ?? []
 
   // Basic validation – room code must be 8 chars.
   if (!roomCode || roomCode.length !== 8) {
@@ -25,7 +26,7 @@ export default async function MultiplayerRedirectPage({ params }: PageProps) {
   }
 
   // Look up the room to get its topic.
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: room, error } = await supabase
     .from('multiplayer_rooms')
     .select('topic_id')

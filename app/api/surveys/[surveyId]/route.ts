@@ -1,32 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const surveyId = params.surveyId
+    const resolvedParams = await params
+    const surveyId = resolvedParams.surveyId
 
-    // Get survey details
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
+    // First check if survey exists and is accessible via survey_summary view
+    const { data: surveyOverview, error: overviewError } = await supabase
+      .from('survey_summary')
       .select('*')
       .eq('id', surveyId)
       .single()
 
-    if (surveyError || !survey) {
+    if (overviewError || !surveyOverview) {
       return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
     }
 
-    // Check if survey is accessible (active or user owns it)
-    const { data: { user } } = await supabase.auth.getUser()
-    const isOwner = user && survey.created_by === user.id
-    const isAdmin = user?.email === 'admin@civicsense.app'
-    
-    if (survey.status !== 'active' && !isOwner && !isAdmin) {
-      return NextResponse.json({ error: 'Survey not accessible' }, { status: 403 })
+    // Check if survey is accessible (active or allow anonymous)
+    if (surveyOverview.status !== 'active' && !surveyOverview.allow_anonymous) {
+      const { data: { user } } = await supabase.auth.getUser()
+      const isOwner = user && surveyOverview.created_by === user.id
+      const isAdmin = user?.email === 'admin@civicsense.app'
+      
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json({ error: 'Survey not accessible' }, { status: 403 })
+      }
     }
 
     // Get questions
@@ -59,14 +62,14 @@ export async function GET(
     }))
 
     const transformedSurvey = {
-      id: survey.id,
-      title: survey.title,
-      description: survey.description,
-      status: survey.status,
-      allow_anonymous: survey.allow_anonymous,
-      allow_partial_responses: survey.allow_partial_responses,
-      estimated_time: survey.estimated_time,
-      created_at: survey.created_at,
+      id: surveyOverview.id,
+      title: surveyOverview.title,
+      description: surveyOverview.description,
+      status: surveyOverview.status,
+      allow_anonymous: surveyOverview.allow_anonymous,
+      allow_partial_responses: surveyOverview.allow_partial_responses,
+      estimated_time: surveyOverview.estimated_time,
+      created_at: surveyOverview.created_at,
       questions: transformedQuestions
     }
 
@@ -79,11 +82,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const surveyId = params.surveyId
+    const resolvedParams = await params
+    const surveyId = resolvedParams.surveyId
     const body = await request.json()
 
     // Get current user
@@ -154,11 +158,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const surveyId = params.surveyId
+    const resolvedParams = await params
+    const surveyId = resolvedParams.surveyId
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

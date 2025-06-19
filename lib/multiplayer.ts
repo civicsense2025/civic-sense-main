@@ -5,6 +5,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { debug } from '@/lib/debug-config'
 import type {
   DbMultiplayerRoom,
   DbMultiplayerRoomPlayer,
@@ -360,7 +361,7 @@ export const multiplayerOperations = {
         return { cleanedRooms: 0, cleanedPlayers: 0 }
       }
 
-      console.log(`🧹 Cleaning up ${expiredRooms.length} expired rooms`)
+      debug.log('multiplayer', `Cleaning up ${expiredRooms.length} expired rooms`)
 
       // Delete players from expired rooms
       const roomIds = expiredRooms.map(room => room.id)
@@ -385,7 +386,7 @@ export const multiplayerOperations = {
         throw roomsError
       }
 
-      console.log(`✅ Cleaned up ${expiredRooms.length} expired rooms`)
+      debug.log('multiplayer', `Cleaned up ${expiredRooms.length} expired rooms`)
       return { cleanedRooms: expiredRooms.length, cleanedPlayers: roomIds.length }
 
     } catch (error) {
@@ -533,26 +534,22 @@ export const multiplayerOperations = {
    */
   async submitQuestionResponse(response: Omit<DbMultiplayerQuestionResponseInsert, 'id' | 'answered_at'>): Promise<void> {
     // Development-only logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('💾 [multiplayerOperations] submitQuestionResponse called', {
-        roomId: response.room_id,
-        playerId: response.player_id,
-        questionNumber: response.question_number,
-        selectedAnswer: response.selected_answer,
-        isCorrect: response.is_correct,
-        responseTime: response.response_time_seconds,
-        timestamp: new Date().toISOString()
-      })
-    }
+    debug.log('multiplayer', '[multiplayerOperations] submitQuestionResponse called', {
+      roomId: response.room_id,
+      playerId: response.player_id,
+      questionNumber: response.question_number,
+      selectedAnswer: response.selected_answer,
+      isCorrect: response.is_correct,
+      responseTime: response.response_time_seconds,
+      timestamp: new Date().toISOString()
+    })
 
     const responseWithTimestamp: DbMultiplayerQuestionResponseInsert = {
       ...response,
       answered_at: new Date().toISOString()
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('💾 [multiplayerOperations] Inserting into multiplayer_question_responses', responseWithTimestamp)
-    }
+    debug.log('multiplayer', '[multiplayerOperations] Inserting into multiplayer_question_responses', responseWithTimestamp)
 
     const { error } = await supabase
       .from('multiplayer_question_responses')
@@ -571,12 +568,10 @@ export const multiplayerOperations = {
       throw error
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('💾 [multiplayerOperations] ✅ Response inserted successfully', {
-        questionNumber: response.question_number,
-        isCorrect: response.is_correct
-      })
-    }
+    debug.log('multiplayer', '[multiplayerOperations] Response inserted successfully', {
+      questionNumber: response.question_number,
+      isCorrect: response.is_correct
+    })
   },
 
   /**
@@ -605,9 +600,7 @@ export const multiplayerOperations = {
 
 // Development-only logging utility
 const devLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🏠 [useMultiplayerRoom] ${message}`, data || '')
-  }
+  debug.log('multiplayer', `[useMultiplayerRoom] ${message}`, data)
 }
 
 /**
@@ -939,19 +932,17 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
     attemptId: string
   ) => {
     // Development-only logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 [useMultiplayerQuiz] submitResponse called', {
-        roomId,
-        playerId,
-        questionNumber,
-        questionId,
-        selectedAnswer,
-        isCorrect,
-        responseTimeSeconds,
-        attemptId,
-        timestamp: new Date().toISOString()
-      })
-    }
+    debug.log('multiplayer', '[useMultiplayerQuiz] submitResponse called', {
+      roomId,
+      playerId,
+      questionNumber,
+      questionId,
+      selectedAnswer,
+      isCorrect,
+      responseTimeSeconds,
+      attemptId,
+      timestamp: new Date().toISOString()
+    })
 
     try {
       const responseData = {
@@ -966,19 +957,15 @@ export function useMultiplayerQuiz(roomId: string, playerId: string) {
         bonus_applied: null // No bonus for now, can be enhanced later
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🎯 [useMultiplayerQuiz] Calling multiplayerOperations.submitQuestionResponse', responseData)
-      }
+      debug.log('multiplayer', '[useMultiplayerQuiz] Calling multiplayerOperations.submitQuestionResponse', responseData)
 
       await multiplayerOperations.submitQuestionResponse(responseData)
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🎯 [useMultiplayerQuiz] ✅ Response submitted successfully', {
-          questionNumber,
-          isCorrect,
-          responseTime: responseTimeSeconds
-        })
-      }
+      debug.log('multiplayer', '[useMultiplayerQuiz] Response submitted successfully', {
+        questionNumber,
+        isCorrect,
+        responseTime: responseTimeSeconds
+      })
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('🎯 [useMultiplayerQuiz] ❌ Failed to submit response', {
