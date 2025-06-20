@@ -374,7 +374,6 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-              tabIndex={-1}
             >
               Terms of Service
             </a>
@@ -384,7 +383,6 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-              tabIndex={-1}
             >
               Privacy Policy
             </a>

@@ -4,14 +4,14 @@ import { dataService } from "@/lib/data-service"
 import QuizPlayClient from "./client"
 
 interface QuizPlayPageProps {
-  params: {
-    topicId: string
-  }
+  params: Promise<{ topicId: string }>
 }
 
 export async function generateMetadata({ params }: QuizPlayPageProps): Promise<Metadata> {
+  const { topicId } = await params
+  
   try {
-    const topic = await dataService.getTopicById(params.topicId)
+    const topic = await dataService.getTopicById(topicId)
     
     if (!topic) {
       return {
@@ -40,15 +40,17 @@ export async function generateMetadata({ params }: QuizPlayPageProps): Promise<M
 }
 
 export default async function QuizPlayPage({ params }: QuizPlayPageProps) {
+  const { topicId } = await params
+  
   try {
     // Fetch topic data to verify it exists
-    const topic = await dataService.getTopicById(params.topicId)
+    const topic = await dataService.getTopicById(topicId)
     
     if (!topic) {
       notFound()
     }
 
-    return <QuizPlayClient params={params} />
+    return <QuizPlayClient topicId={topicId} />
   } catch (error) {
     console.error("Error loading quiz play page:", error)
     notFound()

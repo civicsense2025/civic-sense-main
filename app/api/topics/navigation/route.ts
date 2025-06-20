@@ -32,47 +32,88 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
     }
 
-        // Get previous topics (older dates - what user expects when clicking left arrow)
-    const { data: previousTopics, error: prevError } = await supabase
-      .from('question_topics')
-      .select(`
-        topic_id,
-        topic_title,
-        description,
-        emoji,
-        date,
-        categories,
-        is_breaking,
-        is_featured
-      `)
-      .eq('is_active', true)
-      .not('date', 'is', null)
-      .lt('date', currentTopic.date)
-      .order('date', { ascending: false })
-      .limit(params.limit)
+    let previousTopics: any[] = []
+    let nextTopics: any[] = []
+    let prevError: any = null
+    let nextError: any = null
+
+    // Handle topics with dates vs evergreen topics (null dates)
+    if (currentTopic.date) {
+      // Current topic has a date - get previous and next dated topics
+      const { data: prevData, error: prevErr } = await supabase
+        .from('question_topics')
+        .select(`
+          topic_id,
+          topic_title,
+          description,
+          emoji,
+          date,
+          categories,
+          is_breaking,
+          is_featured
+        `)
+        .eq('is_active', true)
+        .not('date', 'is', null)
+        .lt('date', currentTopic.date)
+        .order('date', { ascending: false })
+        .limit(params.limit)
+
+      previousTopics = prevData || []
+      prevError = prevErr
+
+      const { data: nextData, error: nextErr } = await supabase
+        .from('question_topics')
+        .select(`
+          topic_id,
+          topic_title,
+          description,
+          emoji,
+          date,
+          categories,
+          is_breaking,
+          is_featured
+        `)
+        .eq('is_active', true)
+        .not('date', 'is', null)
+        .gt('date', currentTopic.date)
+        .order('date', { ascending: true })
+        .limit(params.limit)
+
+      nextTopics = nextData || []
+      nextError = nextErr
+    } else {
+      // Current topic is evergreen (null date) - get other evergreen topics
+      const { data: evergreenData, error: evergreenErr } = await supabase
+        .from('question_topics')
+        .select(`
+          topic_id,
+          topic_title,
+          description,
+          emoji,
+          date,
+          categories,
+          is_breaking,
+          is_featured
+        `)
+        .eq('is_active', true)
+        .is('date', null)
+        .neq('topic_id', currentTopic.topic_id)
+        .order('created_at', { ascending: false })
+        .limit(params.limit * 2) // Get more since we'll split them
+
+      if (evergreenData && evergreenData.length > 0) {
+        // Split evergreen topics into "previous" and "next" for navigation
+        const midpoint = Math.ceil(evergreenData.length / 2)
+        previousTopics = evergreenData.slice(0, midpoint)
+        nextTopics = evergreenData.slice(midpoint)
+      }
+      prevError = evergreenErr
+      nextError = evergreenErr
+    }
 
     if (prevError) {
       console.error('Error fetching previous topics:', prevError)
     }
-
-    // Get next topics (newer dates - what user expects when clicking right arrow)
-    const { data: nextTopics, error: nextError } = await supabase
-      .from('question_topics')
-      .select(`
-        topic_id,
-        topic_title,
-        description,
-        emoji,
-        date,
-        categories,
-        is_breaking,
-        is_featured
-      `)
-      .eq('is_active', true)
-      .not('date', 'is', null)
-      .gt('date', currentTopic.date)
-      .order('date', { ascending: true })
-      .limit(params.limit)
 
     if (nextError) {
       console.error('Error fetching next topics:', nextError)
@@ -80,8 +121,8 @@ export async function GET(request: NextRequest) {
 
     // Get question counts for all topics
     const allTopicIds = [
-      ...(previousTopics || []).map(t => t.topic_id),
-      ...(nextTopics || []).map(t => t.topic_id)
+      ...previousTopics.map(t => t.topic_id),
+      ...nextTopics.map(t => t.topic_id)
     ]
 
     let questionCounts: Record<string, number> = {}
@@ -117,11 +158,11 @@ export async function GET(request: NextRequest) {
         topic_title: currentTopic.topic_title,
         date: currentTopic.date
       },
-      previous: enhanceTopics(previousTopics || []),
-      next: enhanceTopics(nextTopics || []),
+      previous: enhanceTopics(previousTopics),
+      next: enhanceTopics(nextTopics),
       hasMore: {
-        previous: (previousTopics || []).length === params.limit,
-        next: (nextTopics || []).length === params.limit
+        previous: previousTopics.length === params.limit,
+        next: nextTopics.length === params.limit
       }
     }
 

@@ -456,7 +456,10 @@ async function triggerContentGeneration(settings: any, userId: string) {
     userId: userId
   }
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/generate-content-from-news`, {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                 (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://civicsense.one')
+
+  const response = await fetch(`${baseUrl}/api/admin/generate-content-from-news`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(generationPayload)

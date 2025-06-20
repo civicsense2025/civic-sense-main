@@ -20,9 +20,9 @@ export function useAdminAccess() {
         setIsLoading(true)
         setError(null)
 
-        // Create a fresh client instance for this request
-        // Using singleton supabase client
-
+        // Create the Supabase client
+        const supabase = createClient()
+        
         // Check if user has admin privileges in the profiles table
         const { data: profile, error } = await supabase
           .from('profiles')

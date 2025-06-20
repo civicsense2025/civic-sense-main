@@ -666,6 +666,8 @@ export function DailyCardStack({
 
     const accessStatus = getTopicAccessStatus(topic)
 
+    // Allow navigation to quiz landing page for most cases, including future-locked topics
+    // The quiz landing page will handle the specific access restrictions for starting the quiz
     if (!accessStatus.accessible) {
       switch (accessStatus.reason) {
         case 'coming_soon':
@@ -679,7 +681,10 @@ export function DailyCardStack({
           setShowInlinePremiumPrompt(true)
           return
         case 'future_locked':
-          console.log(`"${topic.topic_title}" will be available soon. Check back later!`)
+          // Allow navigation to quiz landing page for future-locked topics
+          // Users can see the topic details but won't be able to start the quiz until the date
+          console.log(`Navigating to "${topic.topic_title}" landing page - quiz will be available on its scheduled date`)
+          router.push(`/quiz/${topicId}`)
           return
         default:
           return
@@ -1114,16 +1119,20 @@ export function DailyCardStack({
   // Add missing cardBaseHeight constant
   const cardBaseHeight = "min-h-[400px] sm:min-h-[500px]"
 
-  // Ensure we land on the first accessible (non future-locked) topic when no explicit topic param
+  // Ensure we land on the latest (most recent) topic when no explicit topic param
+  // Users should be able to see and click through to any topic, but quiz access is controlled separately
   useEffect(() => {
     const topicParam = searchParams.get('topic')
     if (topicParam) return // user explicitly navigated
     if (allFilteredTopics.length === 0) return
-    const firstAccessibleIdx = allFilteredTopics.findIndex(t => getTopicAccessStatus(t).accessible)
-    if (firstAccessibleIdx !== -1 && firstAccessibleIdx !== currentStackIndex) {
-      setCurrentStackIndex(firstAccessibleIdx)
+    
+    // Always land on the latest topic (index 0, since topics are sorted newest first)
+    // This allows users to see the latest content and navigate to the quiz landing page
+    // The actual quiz start will be controlled by the date-based access logic
+    if (currentStackIndex !== 0) {
+      setCurrentStackIndex(0)
     }
-  }, [allFilteredTopics, searchParams, getTopicAccessStatus, currentStackIndex])
+  }, [allFilteredTopics, searchParams, currentStackIndex])
 
   // Track previous index to determine animation direction
   useEffect(() => {
@@ -1338,7 +1347,7 @@ export function DailyCardStack({
                               <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
                               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 mt-0.5">
                                 <span>{topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                                {topic.is_featured && !topic.is_breaking && (
+                                {topic.is_featured && (
                                   <span className="inline-flex items-center px-0.5 py-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[8px] font-bold font-space-mono uppercase tracking-wide rounded-sm">
                                     <Star className="h-1 w-1 mr-0.5" />
                                     <span className="hidden sm:inline">Featured</span>
@@ -1496,8 +1505,8 @@ export function DailyCardStack({
               {/* Topic categories */}
               {((currentTopic.categories && currentTopic.categories.length > 0) || currentTopic.is_featured) && (
                 <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
-                  {/* Featured Badge First */}
-                  {currentTopic.is_featured && !currentTopic.is_breaking && (
+                  {/* Featured Badge - show regardless of breaking status */}
+                  {currentTopic.is_featured && (
                     <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded-full">
                       <Star className="h-3 w-3 mr-1" />
                       Featured
@@ -1530,22 +1539,25 @@ export function DailyCardStack({
                 ) : (
                   <div className="flex flex-col items-center space-y-2">
                     {currentAccessStatus.reason === 'future_locked' ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <StartQuizButton
-                                label="Available Soon"
-                                disabled
-                                variant="outline"
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            This quiz will unlock at 12:00&nbsp;AM&nbsp;ET on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex flex-col items-center space-y-2">
+                        <StartQuizButton
+                          label="Preview Topic"
+                          onClick={() => handleExploreGame(currentTopic.topic_id)}
+                          variant="outline"
+                        />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 cursor-help">
+                                💡 Quiz available on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              This quiz will unlock at 12:00&nbsp;AM&nbsp;ET on {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     ) : (
                       <StartQuizButton
                         label={currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon! 🚀' : 
@@ -1555,9 +1567,6 @@ export function DailyCardStack({
                         disabled
                         variant="outline"
                       />
-                    )}
-                    {currentAccessStatus.reason === 'future_locked' && (
-                      <div className="text-[10px] text-neutral-500 dark:text-neutral-400">💡 Tip: Bookmark this page to return when it's ready!</div>
                     )}
                   </div>
                 )}

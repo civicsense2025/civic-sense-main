@@ -147,7 +147,7 @@ export default function GhostPlayerFixTest() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 onClick={createTestRoom}
-                disabled={isCreatingRoom || roomCode}
+                disabled={isCreatingRoom || !!roomCode}
                 className="flex items-center gap-2"
               >
                 {isCreatingRoom ? (
@@ -160,7 +160,7 @@ export default function GhostPlayerFixTest() {
               
               <Button
                 onClick={simulateDisconnect}
-                disabled={!roomCode || !playerId || isSimulatingDisconnect || !!isGhost}
+                disabled={!roomCode || !playerId || isSimulatingDisconnect || isGhost}
                 variant="destructive"
                 className="flex items-center gap-2"
               >
@@ -174,7 +174,7 @@ export default function GhostPlayerFixTest() {
               
               <Button
                 onClick={manualRejoin}
-                disabled={isGhost === false}
+                disabled={!isGhost}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -301,7 +301,7 @@ export default function GhostPlayerFixTest() {
                       </div>
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      ID: {player.id} | Created: {new Date(player.created_at).toLocaleTimeString()}
+                      ID: {player.id} | Created: {player.created_at ? new Date(player.created_at).toLocaleTimeString() : 'Unknown'}
                     </div>
                   </div>
                 ))}

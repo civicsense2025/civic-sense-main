@@ -11,9 +11,9 @@ import { usePathname } from "next/navigation"
 import { arePodsEnabled, isMultiplayerEnabled } from "@/lib/feature-flags"
 import { useTheme } from "next-themes"
 import { usePremium } from "@/hooks/usePremium"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "./learning-pods-stats"
+import { useAdminAccess } from "@/hooks/useAdminAccess"
 
 interface HeaderProps {
   onSignInClick?: () => void
@@ -28,14 +28,14 @@ interface MobileUserMenuProps {
   onClose: () => void
   pathname: string
   signOut: () => Promise<void>
+  isAdmin?: boolean
 }
 
-function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut }: MobileUserMenuProps) {
+function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdmin = false }: MobileUserMenuProps) {
   const { theme, setTheme } = useTheme()
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { isPremium, subscription } = usePremium()
-  const { isAdmin } = useAdminAccess()
 
   // Load user stats when component mounts
   useEffect(() => {
@@ -295,6 +295,7 @@ export function Header({
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isDevelopment = process.env.NODE_ENV !== 'production'
+  const { isAdmin } = useAdminAccess()
 
   return (
     <div className={className}>
@@ -355,7 +356,7 @@ export function Header({
                 </Button>
                 
                 {/* User menu for authenticated users */}
-                {user && <UserMenu />}
+                {user && <UserMenu isAdmin={isAdmin} />}
               </div>
               
               {/* Mobile menu button */}
@@ -410,6 +411,7 @@ export function Header({
               onClose={() => setIsMobileMenuOpen(false)}
               pathname={pathname}
               signOut={signOut}
+              isAdmin={isAdmin}
             />
           </div>
         </>
@@ -420,7 +422,7 @@ export function Header({
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-3 sm:space-x-5">
-              <UserMenu />
+              <UserMenu isAdmin={isAdmin} />
             </div>
           </div>
         </div>

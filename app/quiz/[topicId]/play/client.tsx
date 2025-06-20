@@ -18,12 +18,10 @@ import { ClassroomShareButton } from "@/components/integrations/google-classroom
 import { CleverShareButton } from "@/components/integrations/clever-share-button"
 
 interface QuizPlayClientProps {
-  params: {
-    topicId: string
-  }
+  topicId: string
 }
 
-export default function QuizPlayClient({ params }: QuizPlayClientProps) {
+export default function QuizPlayClient({ topicId }: QuizPlayClientProps) {
   const router = useRouter()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
@@ -62,37 +60,37 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
         setIsLoading(true)
         setError(null)
 
-        console.log(`🎮 QuizPlayClient: Loading quiz data for ${params.topicId}`)
+        console.log(`🎮 QuizPlayClient: Loading quiz data for ${topicId}`)
 
         // Load topic metadata AND questions together
         const [topicData, questionsData] = await Promise.all([
-          dataService.getTopicById(params.topicId),
-          dataService.getQuestionsByTopic(params.topicId)
+          dataService.getTopicById(topicId),
+          dataService.getQuestionsByTopic(topicId)
         ])
         
         if (isCancelled) return // Prevent state update if component unmounted
         
         if (!topicData) {
-          console.error(`❌ QuizPlayClient: Topic not found for ${params.topicId}`)
+          console.error(`❌ QuizPlayClient: Topic not found for ${topicId}`)
           setError("Quiz not found")
           return
         }
         setTopic(topicData)
         
         if (!questionsData || questionsData.length === 0) {
-          console.error(`❌ QuizPlayClient: No questions found for ${params.topicId}`)
+          console.error(`❌ QuizPlayClient: No questions found for ${topicId}`)
           setError("No questions available for this quiz")
           return
         }
         
         setQuestions(questionsData)
-        console.log(`✅ QuizPlayClient: Loaded ${questionsData.length} questions for ${params.topicId}`)
+        console.log(`✅ QuizPlayClient: Loaded ${questionsData.length} questions for ${topicId}`)
         
         // Record the quiz attempt
         if (!user) {
           recordQuizAttempt()
         }
-        await recordQuizAttempt(params.topicId)
+        await recordQuizAttempt(topicId)
         
         setIsLoading(false)
       } catch (err) {
@@ -104,14 +102,14 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
       }
     }
 
-    if (params.topicId && !topic) {
+    if (topicId && !topic) {
       loadQuizData()
     }
 
     return () => {
       isCancelled = true
     }
-  }, [params.topicId, topic, user, recordQuizAttempt])
+  }, [topicId, topic, user, recordQuizAttempt])
 
   const handleQuizComplete = () => {
     // Handle quiz completion (update localStorage, etc.)
@@ -121,14 +119,14 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
     // Mark topic as completed
     const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
     const completedTopics = savedCompleted ? JSON.parse(savedCompleted) : []
-    if (!completedTopics.includes(params.topicId)) {
-      completedTopics.push(params.topicId)
+    if (!completedTopics.includes(topicId)) {
+      completedTopics.push(topicId)
       localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(completedTopics))
     }
 
     // Redirect to results page (or back to quiz landing)
     setTimeout(() => {
-      router.push(`/quiz/${params.topicId}`)
+      router.push(`/quiz/${topicId}`)
     }, 3000)
   }
 
@@ -158,7 +156,7 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
           <h1 className="text-2xl font-bold mb-4">Quiz Not Available</h1>
           <p className="text-muted-foreground mb-6">{error || "The requested quiz could not be loaded."}</p>
           <button 
-            onClick={() => router.push(`/quiz/${params.topicId}`)}
+            onClick={() => router.push(`/quiz/${topicId}`)}
             className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             Back to Quiz Info
@@ -187,7 +185,7 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
             <QuizErrorBoundary>
               <QuizEngine
                 questions={questions}
-                topicId={params.topicId}
+                topicId={topicId}
                 currentTopic={{
                   id: topic?.topic_id || "",
                   title: topic?.topic_title || "",
@@ -229,7 +227,7 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
           ] as string[]
           if (!role || !allowed.includes(role)) return null
 
-          const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`
+          const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${topicId}`
           const quizTitle = `CivicSense Quiz: ${topic?.topic_title ?? ''}`
           const quizDescription = topic?.description || "Bite-sized civic knowledge from CivicSense"
           
@@ -246,7 +244,7 @@ export default function QuizPlayClient({ params }: QuizPlayClientProps) {
               
               {/* Clever Share */}
               <CleverShareButton
-                topicId={params.topicId}
+                topicId={topicId}
                 topicTitle={topic?.topic_title ?? ''}
                 description={quizDescription}
                 size="lg"

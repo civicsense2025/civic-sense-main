@@ -97,7 +97,23 @@ function SearchStatsSkeleton() {
 function GlossaryLoadingSkeleton() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
+      {/* Static header for loading state - no client-side logic */}
+      <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
+          <div className="flex items-center gap-2">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+              CivicSense
+            </div>
+            <span className="text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm">
+              alpha
+            </span>
+          </div>
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <Skeleton className="h-10 w-24 rounded-md" />
+            <Skeleton className="h-10 w-32 rounded-md" />
+          </div>
+        </div>
+      </div>
       
       <main className="w-full py-8">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">

@@ -127,7 +127,6 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
               variant="link" 
               onClick={onResetPassword}
               className="text-xs text-blue-600 dark:text-blue-400 p-0 h-auto font-normal"
-              tabIndex={-1}
             >
               Forgot password?
             </Button>

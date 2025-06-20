@@ -56,21 +56,22 @@ export async function POST(request: NextRequest) {
     // Sort based on criteria
     switch (params.sortBy) {
       case 'date':
-        query = query.order('date', { ascending: false })
+        // For date sorting, put null dates (evergreen content) at the end
+        query = query.order('date', { ascending: false, nullsFirst: false })
         break
       case 'difficulty':
       case 'questions':
       case 'popularity':
         // These will be handled post-query
-        query = query.order('date', { ascending: false })
+        query = query.order('date', { ascending: false, nullsFirst: false })
         break
       case 'relevance':
       default:
         if (params.query) {
           // For relevance, we'll post-process to score matches
-          query = query.order('date', { ascending: false })
+          query = query.order('date', { ascending: false, nullsFirst: false })
         } else {
-          query = query.order('date', { ascending: false })
+          query = query.order('date', { ascending: false, nullsFirst: false })
         }
     }
 

@@ -14,13 +14,13 @@ import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users,
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { arePodsEnabled } from "@/lib/feature-flags"
 import Link from "next/link"
 
 interface UserMenuProps {
   onSignInClick?: () => void
+  isAdmin?: boolean
 }
 
 // Custom Avatar Button Component
@@ -57,13 +57,12 @@ function AvatarButton({
   )
 }
 
-export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuProps) {
+export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherProps }: UserMenuProps) {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { isPremium, subscription } = usePremium()
-  const { isAdmin } = useAdminAccess()
 
   // Load user stats when component mounts
   useEffect(() => {
