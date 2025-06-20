@@ -173,8 +173,27 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
+
+      {/* News Ticker Section - Right under header */}
+      <div className="border-b border-slate-200 dark:border-slate-800 py-4">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <NewsTicker 
+            sources={['reuters', 'ap-news', 'politico', 'bbc-news']}
+            categories={['politics', 'government']}
+            maxArticles={15}
+            autoScroll={true}
+            scrollSpeed={40}
+            showHeader={false}
+            showControls={false}
+            showStats={false}
+            compact={true}
+            titleLineLimit={2}
+            className="w-full"
+          />
+        </div>
+      </div>
     
-            {/* Continue Where You Left Off - Fixed at top */}
+      {/* Continue Where You Left Off - Fixed at top */}
       {user && incompleteAttempts.length > 0 && (
         <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 sm:py-4">
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -253,18 +272,6 @@ export default function HomePage() {
               />
             </div>
           )}
-
-          {/* News Ticker Section */}
-          <div className="mt-8 sm:mt-12">
-            <NewsTicker 
-              sources={['reuters', 'ap-news', 'politico', 'bbc-news']}
-              categories={['politics', 'government']}
-              maxArticles={15}
-              autoScroll={true}
-              scrollSpeed={40}
-              className="w-full"
-            />
-          </div>
 
           {/* Categories Section */}
           <div className="mt-8 sm:mt-12">

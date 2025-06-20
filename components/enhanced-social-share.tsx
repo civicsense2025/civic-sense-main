@@ -2,19 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuGroup
-} from '@/components/ui/dropdown-menu'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/components/auth/auth-provider'
-import { Share2, Download, Eye, TrendingUp, Settings, Zap } from 'lucide-react'
+import { Share2, Download, Eye, TrendingUp, Settings, Zap, Copy, X } from 'lucide-react'
 import { 
   generateImageUrl, 
   generateImageSet, 
@@ -28,7 +20,6 @@ import {
   type ImageGenerationParams,
   type PerformanceMetrics
 } from '@/lib/image-generator'
-import { CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -78,6 +69,10 @@ export function EnhancedSocialShare({
   const { user } = useAuth()
   const { toast } = useToast()
   
+  // Popover state
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
+  
   // User customization state
   const [selectedTheme, setSelectedTheme] = useState<keyof typeof CUSTOM_THEMES>(defaultTheme)
   const [selectedVariant, setSelectedVariant] = useState<keyof typeof VISUAL_VARIANTS>(defaultVariant)
@@ -101,6 +96,33 @@ export function EnhancedSocialShare({
       setSelectedTheme(testTheme as keyof typeof CUSTOM_THEMES)
     }
   }, [enableABTesting, user?.id])
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setIsPopoverOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsPopoverOpen(false)
+      }
+    }
+
+    if (isPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isPopoverOpen])
 
   // Generate stable session ID (only once per component mount)
   const sessionId = useMemo(() => 
@@ -156,7 +178,7 @@ export function EnhancedSocialShare({
         userId: user?.id,
         theme: selectedTheme,
         variant: selectedVariant,
-        darkMode: darkMode === 'auto' ? (template.includes('story') ? 'true' : 'false') : darkMode === 'dark' ? 'true' : 'false',
+        darkMode: darkMode === 'auto' ? (template.includes('story') ? 'dark' : 'light') : darkMode,
         ...baseParams
       }
       
@@ -270,6 +292,8 @@ export function EnhancedSocialShare({
       description: `Opening ${platformNames[platform as keyof typeof platformNames] || platform} share dialog...`,
       duration: 2000
     })
+    
+    setIsPopoverOpen(false)
   }, [title, selectedTheme, url, trackEngagementEvent, toast])
 
   // Download image
@@ -287,7 +311,7 @@ export function EnhancedSocialShare({
     
     trackEngagementEvent(template, 'download')
     
-    const imageUrl = generateImageUrl({ ...sanitizedParams, template })
+    const imageUrl = generateImageUrl({ ...sanitizedParams, template, darkMode })
     const filename = `civicsense-${type}-${template}-${Date.now()}.svg`
     
     await downloadImage(imageUrl, filename, user?.id)
@@ -305,12 +329,12 @@ export function EnhancedSocialShare({
       description: `${template} image downloaded successfully`,
       duration: 3000
     })
-  }, [isValid, sanitizedParams, type, user?.id, selectedVariant, selectedTheme, trackEngagementEvent, toast])
+  }, [isValid, sanitizedParams, type, user?.id, selectedVariant, selectedTheme, trackEngagementEvent, toast, darkMode])
 
   // Copy link
   const copyLink = useCallback(async (template: keyof typeof IMAGE_TEMPLATES) => {
     try {
-      const imageUrl = generateImageUrl({ ...sanitizedParams, template })
+      const imageUrl = generateImageUrl({ ...sanitizedParams, template, darkMode })
       trackEngagementEvent(template, 'click')
       
       await navigator.clipboard.writeText(imageUrl)
@@ -327,14 +351,14 @@ export function EnhancedSocialShare({
         variant: "destructive"
       })
     }
-  }, [sanitizedParams, trackEngagementEvent, toast])
+  }, [sanitizedParams, trackEngagementEvent, toast, darkMode])
 
   // Preview image
   const handlePreview = useCallback((template: keyof typeof IMAGE_TEMPLATES) => {
-    const imageUrl = generateImageUrl({ ...sanitizedParams, template })
+    const imageUrl = generateImageUrl({ ...sanitizedParams, template, darkMode })
     setPreviewImage(imageUrl)
     trackEngagementEvent(template, 'view')
-  }, [sanitizedParams, trackEngagementEvent])
+  }, [sanitizedParams, trackEngagementEvent, darkMode])
 
   // Platform icons as components
   const PlatformIcon = ({ platform }: { platform: string }) => {
@@ -386,128 +410,155 @@ export function EnhancedSocialShare({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Main Share Button */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            className="w-full sm:w-auto bg-white border-authority-blue-300 text-authority-blue-700 hover:bg-authority-blue-50 font-medium"
+      <Button 
+        variant="outline" 
+        className="w-full sm:w-auto bg-white border-authority-blue-300 text-authority-blue-700 hover:bg-authority-blue-50 font-medium"
+        onClick={() => setIsPopoverOpen(true)}
+      >
+        <Share2 className="w-4 h-4 mr-2" />
+        Share Your {type === 'result' ? 'Score' : 'Knowledge'}
+        {selectedVariant !== 'bold' && (
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {selectedVariant}
+          </Badge>
+        )}
+      </Button>
+
+      {/* Popover Overlay */}
+      {isPopoverOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Blurred Background */}
+          <div 
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setIsPopoverOpen(false)}
+          />
+          
+          {/* Popover Content */}
+          <div 
+            ref={popoverRef}
+            className="relative bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
-            <Share2 className="w-4 h-4 mr-2" />
-            Share Your {type === 'result' ? 'Score' : 'Knowledge'}
-            {selectedVariant !== 'bold' && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {selectedVariant}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        
-        <DropdownMenuContent className="w-80 p-0" align="end">
-          <DropdownMenuLabel className="px-4 py-3 text-base font-semibold bg-authority-blue-50 text-authority-blue-900">
-            Share to Social Media
-          </DropdownMenuLabel>
-          
-          {/* Quick Share Options */}
-          <DropdownMenuGroup className="p-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => shareToPopular('x', imageSet['twitter-card'])}
-                className="justify-start h-auto py-3 px-3 hover:bg-slate-100"
-              >
-                <PlatformIcon platform="x" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">X</div>
-                  <div className="text-xs text-gray-500 hidden sm:block">1200x675</div>
-                </div>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => shareToPopular('facebook', imageSet['facebook-post'])}
-                className="justify-start h-auto py-3 px-3 hover:bg-blue-50"
-              >
-                <PlatformIcon platform="facebook" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Facebook</div>
-                  <div className="text-xs text-gray-500 hidden sm:block">1200x630</div>
-                </div>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => shareToPopular('linkedin', imageSet['linkedin-post'])}
-                className="justify-start h-auto py-3 px-3 hover:bg-blue-50"
-              >
-                <PlatformIcon platform="linkedin" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">LinkedIn</div>
-                  <div className="text-xs text-gray-500 hidden sm:block">1200x627</div>
-                </div>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handlePreview('instagram-story')}
-                className="justify-start h-auto py-3 px-3 hover:bg-pink-50"
-              >
-                <PlatformIcon platform="instagram" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Instagram</div>
-                  <div className="text-xs text-gray-500 hidden sm:block">Story & Post</div>
-                </div>
-              </Button>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-authority-blue-50 dark:bg-authority-blue-950/20 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-authority-blue-900 dark:text-authority-blue-100">
+                  Share to Social Media
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsPopoverOpen(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </DropdownMenuGroup>
-          
-          <DropdownMenuSeparator />
-          
-          {/* Download Options */}
-          <DropdownMenuLabel className="px-4 py-2 text-sm font-medium text-gray-700">
-            Download Images
-          </DropdownMenuLabel>
-          
-          <DropdownMenuGroup className="p-2">
-            {Object.entries(IMAGE_TEMPLATES).map(([template, dimensions]) => (
-              <DropdownMenuItem
-                key={template}
-                onClick={() => handleDownload(template as keyof typeof IMAGE_TEMPLATES)}
-                className="cursor-pointer"
-              >
-                <Download className="w-4 h-4 mr-3" />
-                <div className="flex-1">
-                  <div className="font-medium text-sm capitalize">
-                    {template.replace('-', ' ')}
+            
+            {/* Quick Share Options */}
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => shareToPopular('x', imageSet['twitter-card'])}
+                  className="justify-start h-auto py-3 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <PlatformIcon platform="x" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">X</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x675</div>
                   </div>
-                  <div className="text-xs text-gray-500 hidden sm:block">
-                    {dimensions.width}x{dimensions.height} • {dimensions.platform}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => shareToPopular('facebook', imageSet['facebook-post'])}
+                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                >
+                  <PlatformIcon platform="facebook" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Facebook</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x630</div>
                   </div>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => shareToPopular('linkedin', imageSet['linkedin-post'])}
+                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                >
+                  <PlatformIcon platform="linkedin" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">LinkedIn</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x627</div>
+                  </div>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePreview('instagram-story')}
+                  className="justify-start h-auto py-3 px-3 hover:bg-pink-50 dark:hover:bg-pink-950/20"
+                >
+                  <PlatformIcon platform="instagram" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Instagram</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Story & Post</div>
+                  </div>
+                </Button>
+              </div>
+              
+              {/* Download Options */}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mb-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Download Images
+                </h4>
+                
+                <div className="space-y-2">
+                  {Object.entries(IMAGE_TEMPLATES).map(([template, dimensions]) => (
+                    <Button
+                      key={template}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownload(template as keyof typeof IMAGE_TEMPLATES)}
+                      className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      <Download className="w-4 h-4 mr-3" />
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-sm capitalize">
+                          {template.replace('-', ' ')}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {dimensions.width}x{dimensions.height} • {dimensions.platform}
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
                 </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-          
-          <DropdownMenuSeparator />
-          
-          {/* Advanced Options */}
-          {allowCustomization && (
-            <DropdownMenuGroup className="p-2">
-              <DropdownMenuItem
-                onClick={() => setShowCustomization(!showCustomization)}
-                className="cursor-pointer"
-              >
-                <Settings className="w-4 h-4 mr-3" />
-                <span>Customize Design</span>
-                {showCustomization && <Badge variant="outline" className="ml-auto">Active</Badge>}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+              </div>
+              
+              {/* Advanced Options */}
+              {allowCustomization && (
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCustomization(!showCustomization)}
+                    className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <Settings className="w-4 h-4 mr-3" />
+                    <span>Customize Design</span>
+                    {showCustomization && <Badge variant="outline" className="ml-auto">Active</Badge>}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Customization Panel */}
       {showCustomization && allowCustomization && (
@@ -622,7 +673,7 @@ export function EnhancedSocialShare({
       {/* Image Preview Modal */}
       {previewImage && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setPreviewImage(null)}
         >
           <div className="bg-white rounded-lg p-4 max-w-4xl max-h-full overflow-auto">

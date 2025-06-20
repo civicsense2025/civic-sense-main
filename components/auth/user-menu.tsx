@@ -16,7 +16,6 @@ import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
-import { LearningPodsStats } from "@/components/learning-pods-stats"
 import { arePodsEnabled } from "@/lib/feature-flags"
 import Link from "next/link"
 
@@ -118,8 +117,6 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
     return null
   }
 
-
-
   const userEmail = user.email || 'user@example.com'
   const tierBadge = getTierBadge()
 
@@ -191,13 +188,6 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
           </div>
         )}
 
-        {/* Learning Pods Section - feature flagged */}
-        {arePodsEnabled() && (
-          <div className="p-5 border-b border-border">
-            <LearningPodsStats compact={true} />
-          </div>
-        )}
-
         {/* Menu Items */}
         <div className="py-2 px-2">
           <DropdownMenuItem asChild>
@@ -210,19 +200,6 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
             </Link>
           </DropdownMenuItem>
           
-          {/* Learning Pods menu item - feature flagged */}
-          {arePodsEnabled() && (
-            <DropdownMenuItem asChild>
-              <Link 
-                href="/pods" 
-                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-              >
-                <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
-                <span className="font-medium">Learning Pods</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-
           <DropdownMenuItem asChild>
             <Link 
               href="/settings" 
@@ -253,8 +230,6 @@ export function UserMenu({ onSignInClick = () => {}, ...otherProps }: UserMenuPr
             <span className="text-base group-hover:scale-105 transition-transform">{theme === 'dark' ? '☀️' : '🌙'}</span>
             <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </DropdownMenuItem>
-
-
 
           <DropdownMenuItem 
             onClick={handleSignOut} 

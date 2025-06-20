@@ -324,15 +324,15 @@ const RSS_NEWS_SOURCES = [
   },
   {
     name: 'Reuters US Politics',
-    url: 'https://www.reuters.com/arc/outboundfeeds/rss/category/politics/?size=20',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+politics&ceid=US:en&hl=en-US&gl=US',
     category: 'US Politics',
     type: 'rss'
   },
   {
     name: 'AP News Politics',
-    url: 'https://apnews.com/news-sitemap-content.xml',
+    url: 'https://openrss.org/apnews.com/hub/politics',
     category: 'US Politics',
-    type: 'sitemap'
+    type: 'rss'
   },
   {
     name: 'The Hill',
