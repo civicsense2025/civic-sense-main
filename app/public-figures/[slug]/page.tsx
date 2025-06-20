@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Loader2, ArrowLeft, Calendar, Info, Link as LinkIcon, ExternalLink, Briefcase, Award, MessageSquare, AlertTriangle, FileText, Users } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Define types for public figures data
 interface PublicFigure {
@@ -89,6 +90,114 @@ interface PolicyPosition {
   certainty_level: string | null
   consistency_score: number | null
   sources: any
+}
+
+// Comprehensive skeleton for the detail page
+function PublicFigureDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-4 w-1 bg-slate-300" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          
+          <div className="space-y-6">
+            {/* Name and basic info */}
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-80" />
+              <div className="flex flex-wrap gap-3">
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-28 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            </div>
+            
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-7 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Tabs skeleton */}
+        <div className="space-y-8">
+          <div className="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-md" />
+            ))}
+          </div>
+
+          {/* Content area */}
+          <div className="space-y-8">
+            {/* Basic info section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-32" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-40" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-36" />
+                  <div className="grid grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="space-y-1">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lists section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="space-y-4">
+                  <Skeleton className="h-6 w-32" />
+                  <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <div key={j} className="flex items-center gap-2">
+                        <Skeleton className="h-2 w-2 rounded-full" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function PublicFigureDetailPage() {
@@ -216,11 +325,7 @@ export default function PublicFigureDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
-      </div>
-    )
+    return <PublicFigureDetailSkeleton />
   }
 
   if (error || !figure) {

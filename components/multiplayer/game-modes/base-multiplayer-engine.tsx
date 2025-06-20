@@ -393,16 +393,12 @@ export function BaseMultiplayerEngine({
         ? Math.round((Date.now() - gameState.questionStartTime) / 1000)
         : 30
 
-      // Create attempt ID
-      const attemptId = `attempt_${playerId}_${Date.now()}`
-
       devLog('BaseMultiplayerEngine', 'Calling submitResponse', { 
         questionNumber: currentQuestion.question_number,
         questionId: currentQuestion.question_number.toString(),
         selectedAnswer: answer,
         isCorrect,
-        responseTime,
-        attemptId
+        responseTime
       })
 
       await submitResponse(
@@ -410,14 +406,12 @@ export function BaseMultiplayerEngine({
         currentQuestion.question_number.toString(),
         answer,
         isCorrect,
-        responseTime,
-        attemptId
+        responseTime
       )
 
       devLog('BaseMultiplayerEngine', 'Answer submitted successfully', { 
         isCorrect, 
-        responseTime, 
-        attemptId 
+        responseTime 
       })
 
       // Update local state

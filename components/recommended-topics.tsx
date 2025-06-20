@@ -157,7 +157,7 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
                             {rec.title}
                           </h3>
                           <div className="flex items-center gap-3">
-                            <Badge className={`${getDifficultyColor(rec.difficulty)} text-xs font-light border-0 px-3 py-1`}>
+                            <Badge className={`${getDifficultyColor(rec.difficulty)} text-xs font-space-mono border-0 px-3 py-1`}>
                               {rec.difficulty}
                             </Badge>
                             <span className="text-sm text-slate-500 dark:text-slate-400 font-light">
@@ -169,7 +169,7 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
                       
                       <div className="flex items-center gap-2">
                         {rec.trending && (
-                          <Badge className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 text-xs font-light border-0 px-3 py-1">
+                          <Badge className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 text-xs font-space-mono border-0 px-3 py-1">
                             <TrendingUp className="w-3 h-3 mr-1" />
                             trending
                           </Badge>

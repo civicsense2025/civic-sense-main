@@ -587,6 +587,17 @@ async function createNPCPlayer(
   nextJoinOrder: number
 ): Promise<{ success: boolean; playerId?: string; error?: string }> {
   try {
+    console.log(`🤖 Creating NPC player with data:`, {
+      room_id: roomData.id,
+      guest_token: `npc_${npc.id}`,
+      player_name: npc.name,
+      player_emoji: npc.emoji,
+      join_order: nextJoinOrder,
+      is_host: false,
+      is_ready: true,
+      is_connected: true
+    })
+
     // Add NPC as a player first (this should work with the RLS policy)
     const { data: newPlayerData, error: playerError } = await supabase
       .from('multiplayer_room_players')
@@ -604,15 +615,32 @@ async function createNPCPlayer(
       .single()
 
     if (playerError) {
-      console.error('Error creating NPC player:', playerError)
-      return { success: false, error: `Failed to create NPC player: ${playerError.message}` }
+      console.error('Error creating NPC player:', {
+        error: playerError,
+        code: playerError?.code,
+        message: playerError?.message,
+        details: playerError?.details,
+        hint: playerError?.hint
+      })
+      return { 
+        success: false, 
+        error: `Failed to create NPC player: ${playerError?.message || JSON.stringify(playerError)}` 
+      }
     }
 
     if (!newPlayerData) {
-      return { success: false, error: 'Failed to create NPC player' }
+      return { success: false, error: 'Failed to create NPC player - no data returned' }
     }
 
+    console.log(`🤖 Successfully created NPC player with ID: ${newPlayerData.id}`)
+
     // Now try to create the NPC-specific record
+    console.log(`🤖 Creating NPC record with data:`, {
+      room_id: roomData.id,
+      npc_id: npcPersonality.id,
+      player_id: newPlayerData.id
+    })
+
     const { data: npcPlayerData, error: npcError } = await supabase
       .from('multiplayer_npc_players')
       .insert({
@@ -624,7 +652,13 @@ async function createNPCPlayer(
       .single()
 
     if (npcError) {
-      console.error('Error creating NPC record:', npcError)
+      console.error('Error creating NPC record:', {
+        error: npcError,
+        code: npcError?.code,
+        message: npcError?.message,
+        details: npcError?.details,
+        hint: npcError?.hint
+      })
       
       // Clean up the player record if NPC record creation fails
       await supabase
@@ -632,7 +666,10 @@ async function createNPCPlayer(
         .delete()
         .eq('id', newPlayerData.id)
       
-      return { success: false, error: `Failed to create NPC record: ${npcError.message}` }
+      return { 
+        success: false, 
+        error: `Failed to create NPC record: ${npcError?.message || JSON.stringify(npcError)}` 
+      }
     }
 
     // Update room player count
@@ -648,18 +685,22 @@ async function createNPCPlayer(
 
     // Send welcome message
     try {
-      const welcomeMessages = npc.chatMessages.onJoin
-      const message = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
-      
-      await supabase
-        .from('multiplayer_chat_messages')
-        .insert({
-          room_id: roomData.id,
-          npc_id: npcPersonality.id, // Use the UUID from the database
-          message_content: message,
-          message_type: 'chat',
-          educational_value: 'low'
-        })
+      const welcomeMessages = npc.chatMessages?.onJoin
+      if (welcomeMessages && welcomeMessages.length > 0) {
+        const message = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
+        
+        await supabase
+          .from('multiplayer_chat_messages')
+          .insert({
+            room_id: roomData.id,
+            npc_id: npcPersonality.id, // Use the UUID from the database
+            message_content: message,
+            message_type: 'chat',
+            educational_value: 'low'
+          })
+      } else {
+        console.warn('No welcome messages found for NPC')
+      }
     } catch (messageError) {
       console.warn('Could not send NPC welcome message:', messageError)
       // Don't fail the whole operation for a message error
@@ -668,8 +709,15 @@ async function createNPCPlayer(
     console.log(`🤖 Successfully added NPC ${npc.name} to room`)
     return { success: true, playerId: newPlayerData.id }
   } catch (error) {
-    console.error('Error creating NPC player:', error)
-    return { success: false, error: 'Internal error' }
+    console.error('Error creating NPC player:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return { 
+      success: false, 
+      error: `Internal error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    }
   }
 }
 

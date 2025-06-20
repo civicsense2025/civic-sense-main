@@ -239,7 +239,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                     </div>
                     <Progress 
                       value={progress ? ((progress.totalXp % 100) / 100) * 100 : 0} 
-                      className="h-3" 
+                      className="h-1" 
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Progress to next level</span>
@@ -269,7 +269,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                     </div>
                     <Progress 
                       value={(progress?.weeklyCompleted || 0) / (progress?.weeklyGoal || 1) * 100} 
-                      className="h-3" 
+                      className="h-1" 
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Keep going!</span>
@@ -373,7 +373,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                           </div>
                           <Progress 
                             value={skill.progressToNextLevel} 
-                            className="h-3 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/20 dark:to-purple-950/20" 
+                            className="h-1 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/20 dark:to-purple-950/20" 
                           />
                         </div>
 
@@ -653,7 +653,7 @@ export function EnhancedProgressDashboard({ isOpen, onClose }: EnhancedProgressD
                             </div>
                             <Progress 
                               value={goal.progress} 
-                              className="h-3 bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-950/20 dark:to-blue-950/20" 
+                              className="h-1 bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-950/20 dark:to-blue-950/20" 
                             />
                           </div>
                         )}

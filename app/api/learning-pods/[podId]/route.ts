@@ -288,4 +288,102 @@ export async function PUT(
     console.error('Error in pod settings PUT:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { podId: string } }
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { podId } = await params
+    const body = await request.json()
+    const { action, ...updateData } = body
+
+    // Verify user has admin access to this pod
+    const { data: membership, error: membershipError } = await supabase
+      .from('pod_memberships')
+      .select('role')
+      .eq('pod_id', podId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (membershipError || !membership || !['admin', 'parent', 'teacher', 'organizer'].includes(membership.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    // Handle different update actions
+    let updateFields: any = {}
+
+    if (action === 'update_emoji' && updateData.emoji) {
+      updateFields.pod_emoji = updateData.emoji
+    } else if (action === 'update_title' && updateData.title) {
+      updateFields.pod_name = updateData.title.trim()
+    } else if (action === 'archive') {
+      updateFields.archived_at = new Date().toISOString()
+      updateFields.archived_by = user.id
+    } else {
+      // General update - validate allowed fields
+      const allowedFields = ['pod_name', 'pod_emoji', 'description', 'pod_motto', 'pod_color']
+      for (const [key, value] of Object.entries(updateData)) {
+        if (allowedFields.includes(key)) {
+          updateFields[key] = value
+        }
+      }
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
+    // Update the pod
+    const { data: updatedPod, error: updateError } = await supabase
+      .from('learning_pods')
+      .update({
+        ...updateFields,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', podId)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Error updating pod:', updateError)
+      return NextResponse.json({ error: 'Failed to update pod' }, { status: 500 })
+    }
+
+    // Create activity log for the update
+    const activityDescription = action === 'update_emoji' 
+      ? `Pod emoji changed to ${updateData.emoji}`
+      : action === 'update_title'
+      ? `Pod renamed to "${updateData.title}"`
+      : action === 'archive'
+      ? 'Pod archived'
+      : 'Pod settings updated'
+
+    await supabase
+      .from('pod_activities')
+      .insert({
+        pod_id: podId,
+        activity_type: 'settings_updated',
+        description: activityDescription,
+        user_name: user.user_metadata?.full_name || user.email || 'Admin',
+        created_at: new Date().toISOString()
+      })
+
+    return NextResponse.json({ 
+      success: true, 
+      pod: updatedPod,
+      message: 'Pod updated successfully'
+    })
+  } catch (error) {
+    console.error('Error in pod update:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 } 

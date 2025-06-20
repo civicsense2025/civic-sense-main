@@ -112,7 +112,7 @@ export function LearningPodsQuickActions({ className, variant = 'header' }: Quic
             <Users className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Pods</span>
             {stats.totalPods > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-blue-500 hover:bg-blue-500 text-white border-0">
+              <Badge className="notification-badge absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-blue-500 hover:bg-blue-500 text-white border-0">
                 {stats.totalPods}
               </Badge>
             )}

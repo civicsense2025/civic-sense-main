@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { debug } from '@/lib/debug-config'
 import { 
   premiumFeatures, 
   subscriptionOperations,
@@ -92,11 +93,21 @@ export function usePremium(): UsePremiumReturn {
 
     setIsLoading(true)
     try {
+      debug.log('premium', '🔄 Loading subscription data for user:', user.id)
+      
       const [subscriptionData, limitsData, accessData] = await Promise.all([
         subscriptionOperations.getUserSubscription(user.id),
         subscriptionOperations.getUserFeatureLimits(user.id),
         premiumFeatures.getAllFeatureAccess(user.id)
       ])
+
+      debug.log('premium', '📊 Subscription data loaded:', {
+        hasSubscription: !!subscriptionData,
+        subscription: subscriptionData,
+        hasLimits: !!limitsData,
+        limits: limitsData,
+        accessData
+      })
 
       setSubscription(subscriptionData)
       setLimits(limitsData)
@@ -110,7 +121,7 @@ export function usePremium(): UsePremiumReturn {
         fetchedAt: Date.now()
       })
     } catch (error) {
-      console.error('Error loading subscription data:', error)
+      debug.error('premium', 'Error loading subscription data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -171,7 +182,7 @@ export function usePremium(): UsePremiumReturn {
       )
 
       if (error) {
-        console.error('Error opening customer portal:', error)
+        debug.error('premium', 'Error opening customer portal:', error)
         return
       }
 
@@ -179,7 +190,7 @@ export function usePremium(): UsePremiumReturn {
         window.location.href = url
       }
     } catch (error) {
-      console.error('Error opening customer portal:', error)
+      debug.error('premium', 'Error opening customer portal:', error)
     }
   }, [user, subscription])
 

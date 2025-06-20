@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Define types for public figures data
 interface PublicFigure {
@@ -22,6 +23,96 @@ interface PublicFigure {
   current_positions: string[] | null
   party_affiliation: string | null
   civicsense_priority: number | null
+}
+
+// Public Figure Card Skeleton Component
+function PublicFigureCardSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Header with name and badges */}
+          <div className="space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          {/* Positions */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-12" />
+            </div>
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-4 w-16 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Public Figure List Item Skeleton Component
+function PublicFigureListSkeleton() {
+  return (
+    <div className="border-b border-slate-100 dark:border-slate-800 py-4 last:border-0">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-40" />
+            <div className="flex gap-2">
+              <Skeleton className="h-4 w-16 rounded-full" />
+              <Skeleton className="h-4 w-20 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-64" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-4 rounded-full" />
+      </div>
+    </div>
+  )
+}
+
+// Loading state for grid view
+function GridLoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {Array.from({ length: 9 }).map((_, i) => (
+        <PublicFigureCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
+
+// Loading state for list view
+function ListLoadingSkeleton() {
+  return (
+    <div className="space-y-0">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <PublicFigureListSkeleton key={i} />
+      ))}
+    </div>
+  )
 }
 
 export default function PublicFiguresPage() {
@@ -193,9 +284,7 @@ export default function PublicFiguresPage() {
           {/* Grid View - cleaner cards */}
           <TabsContent value="grid">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
-              </div>
+              <GridLoadingSkeleton />
             ) : error ? (
               <div className="text-center py-12 text-red-500">{error}</div>
             ) : filteredFigures.length === 0 ? (
@@ -248,9 +337,7 @@ export default function PublicFiguresPage() {
           {/* List View - cleaner list */}
           <TabsContent value="list">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
-              </div>
+              <ListLoadingSkeleton />
             ) : error ? (
               <div className="text-center py-12 text-red-500">{error}</div>
             ) : filteredFigures.length === 0 ? (

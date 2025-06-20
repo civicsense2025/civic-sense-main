@@ -21,7 +21,8 @@ import {
   Crown,
   Star,
   Calendar,
-  Sparkles
+  Sparkles,
+  Plus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
@@ -74,13 +75,8 @@ export function AggregatePodAnalytics() {
 
   const loadAggregateAnalytics = async () => {
     if (!user) {
-      // Show demo analytics for guests
-      setAnalytics(getMockAggregateAnalytics())
+      setAnalytics(null)
       setIsLoading(false)
-      toast({
-        title: "Demo analytics",
-        description: "Sign in to view real aggregate pod analytics.",
-      })
       return
     }
 
@@ -90,8 +86,7 @@ export function AggregatePodAnalytics() {
       const response = await fetch(`/api/learning-pods/aggregate-analytics?days=${timeRange}`)
       
       if (!response.ok) {
-        // Show mock analytics if API fails
-        setAnalytics(getMockAggregateAnalytics())
+        setAnalytics(null)
         setIsLoading(false)
         if (response.status === 401) {
           toast({
@@ -99,122 +94,27 @@ export function AggregatePodAnalytics() {
             description: "Please sign in to view aggregate pod analytics.",
             variant: "destructive"
           })
-        } else {
-          toast({
-            title: "Using demo analytics",
-            description: "Showing sample aggregate analytics data for demonstration.",
-          })
         }
         return
       }
       
       const data = await response.json()
-      setAnalytics(data.analytics)
+      
+      // Only set analytics if there's actual data
+      if (data.analytics && data.analytics.totalPods > 0) {
+        setAnalytics(data.analytics)
+      } else {
+        setAnalytics(null)
+      }
     } catch (error) {
       console.error('Error loading aggregate analytics:', error)
-      // Show mock analytics on error
-      setAnalytics(getMockAggregateAnalytics())
-      toast({
-        title: "Using demo analytics",
-        description: "Showing sample aggregate analytics data for demonstration.",
-      })
+      setAnalytics(null)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Mock analytics data for demo
-  const getMockAggregateAnalytics = (): AggregateAnalytics => ({
-    totalPods: 3,
-    totalMembers: 14,
-    activePods: 2,
-    totalQuestionsAnswered: 1247,
-    averageAccuracy: 82.4,
-    totalTimeSpent: 2890, // minutes
-    totalAchievements: 47,
-    topPerformingPod: {
-      id: 'pod-1',
-      name: 'Smith Family Learning Pod',
-      type: 'family',
-      memberCount: 4,
-      accuracy: 89.2,
-      timeSpent: 420,
-      questionsAnswered: 245,
-      isActive: true,
-      userRole: 'admin'
-    },
-    mostActivePod: {
-      id: 'pod-2',
-      name: 'Democracy Study Group',
-      type: 'study_group',
-      memberCount: 8,
-      accuracy: 78.6,
-      timeSpent: 1205,
-      questionsAnswered: 567,
-      isActive: true,
-      userRole: 'member'
-    },
-    recentActivity: [
-      {
-        podId: 'pod-1',
-        podName: 'Smith Family Learning Pod',
-        activity: 'Emma completed Constitutional Rights quiz with 95% accuracy',
-        timestamp: '2024-06-19T16:30:00Z'
-      },
-      {
-        podId: 'pod-2',
-        podName: 'Democracy Study Group',
-        activity: 'New member Jake joined the pod',
-        timestamp: '2024-06-19T14:20:00Z'
-      },
-      {
-        podId: 'pod-1',
-        podName: 'Smith Family Learning Pod',
-        activity: 'John earned the "Civic Scholar" achievement',
-        timestamp: '2024-06-19T12:45:00Z'
-      }
-    ],
-    podPerformance: [
-      {
-        id: 'pod-1',
-        name: 'Smith Family Learning Pod',
-        type: 'family',
-        memberCount: 4,
-        accuracy: 89.2,
-        timeSpent: 420,
-        questionsAnswered: 245,
-        isActive: true,
-        userRole: 'admin'
-      },
-      {
-        id: 'pod-2',
-        name: 'Democracy Study Group',
-        type: 'study_group',
-        memberCount: 8,
-        accuracy: 78.6,
-        timeSpent: 1205,
-        questionsAnswered: 567,
-        isActive: true,
-        userRole: 'member'
-      },
-      {
-        id: 'pod-3',
-        name: 'Civic Debate Team',
-        type: 'debate_team',
-        memberCount: 2,
-        accuracy: 85.1,
-        timeSpent: 1265,
-        questionsAnswered: 435,
-        isActive: false,
-        userRole: 'organizer'
-      }
-    ],
-    trends: {
-      memberGrowth: 12.5, // percentage growth
-      accuracyTrend: 3.2,
-      activityTrend: 8.7
-    }
-  })
+
 
   useEffect(() => {
     loadAggregateAnalytics()
@@ -269,14 +169,87 @@ export function AggregatePodAnalytics() {
     )
   }
 
-  if (!analytics) {
+  if (!user) {
     return (
       <div className="text-center py-24">
         <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
           <BarChart3 className="h-8 w-8 text-slate-400" />
         </div>
-        <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No analytics available</h3>
-        <p className="text-slate-500 dark:text-slate-400 font-light">Create some learning pods to see aggregate analytics.</p>
+        <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Sign in required</h3>
+        <p className="text-slate-500 dark:text-slate-400 font-light">Please sign in to view your pod analytics.</p>
+      </div>
+    )
+  }
+
+  if (!analytics) {
+    return (
+      <div className="space-y-12">
+        {/* Header */}
+        <div className="text-center space-y-6">
+          <h2 className="text-3xl font-light text-slate-900 dark:text-white">
+            Your Learning Pods Overview
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+            Aggregate insights across all your learning pods and communities
+          </p>
+        </div>
+
+        {/* Empty State with Zero Values */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="text-center space-y-2">
+            <div className="text-4xl font-light text-slate-900 dark:text-white">0</div>
+            <p className="text-slate-600 dark:text-slate-400 font-light">Total Pods</p>
+            <div className="flex items-center justify-center gap-1 text-sm">
+              <span className="text-slate-500">0 active</span>
+            </div>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="text-4xl font-light text-slate-900 dark:text-white">0</div>
+            <p className="text-slate-600 dark:text-slate-400 font-light">Total Members</p>
+            <div className="flex items-center justify-center gap-1 text-sm">
+              <span className="text-slate-500">0% growth</span>
+            </div>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="text-4xl font-light text-slate-900 dark:text-white">0</div>
+            <p className="text-slate-600 dark:text-slate-400 font-light">Questions Answered</p>
+            <div className="flex items-center justify-center gap-1 text-sm">
+              <span className="text-slate-500">0% avg accuracy</span>
+            </div>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="text-4xl font-light text-slate-900 dark:text-white">0m</div>
+            <p className="text-slate-600 dark:text-slate-400 font-light">Total Time</p>
+            <div className="flex items-center justify-center gap-1 text-sm">
+              <span className="text-slate-500">0% activity</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State Message */}
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Users className="h-8 w-8 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No pods yet</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-light mb-6">
+            Create your first learning pod to start seeing analytics and insights.
+          </p>
+          <Button 
+            onClick={() => {
+              // Trigger create pod form
+              const createEvent = new CustomEvent('triggerCreatePod')
+              window.dispatchEvent(createEvent)
+            }}
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-full px-8 py-3 h-12 font-light"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Your First Pod
+          </Button>
+        </div>
       </div>
     )
   }

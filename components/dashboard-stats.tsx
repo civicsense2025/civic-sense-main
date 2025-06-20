@@ -308,7 +308,7 @@ export function DashboardStats({ className, compact = false, collapsible = false
           </div>
           <Progress 
             value={completionPercentage} 
-            className="h-3 bg-slate-200 dark:bg-slate-700" 
+            className="h-1 bg-slate-200 dark:bg-slate-700" 
           />
           <p className="text-sm text-slate-700 dark:text-slate-200 mt-2">
             {statsData.completedTopics} of {statsData.totalTopics} civic topics completed

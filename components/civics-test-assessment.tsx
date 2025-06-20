@@ -12,6 +12,11 @@ import { pendingUserAttribution } from '@/lib/pending-user-attribution'
 import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
 import { SocialProofBubble } from '@/components/social-proof-bubble'
 import { createCivicsTestProgress, type BaseQuizState } from '@/lib/progress-storage'
+import { 
+  createEnhancedCivicsTestProgress, 
+  type EnhancedQuizState, 
+  type QuestionResponse 
+} from '@/lib/enhanced-progress-storage'
 
 interface AssessmentQuestion {
   id: string
@@ -255,8 +260,9 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
   // Generate session ID for state persistence
   const sessionId = useRef<string>(`civics-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
 
-  // Initialize progress manager
-  const progressManager = createCivicsTestProgress(userId, guestToken)
+  // Initialize both enhanced and legacy progress managers
+  const enhancedProgressManager = createEnhancedCivicsTestProgress(userId, guestToken)
+  const legacyProgressManager = createCivicsTestProgress(userId, guestToken)
 
   // Convert TestState to BaseQuizState
   const convertToBaseQuizState = (state: TestState): BaseQuizState => ({
@@ -288,21 +294,119 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     categoryPerformance: baseState.categoryPerformance || {}
   })
 
-  // Save test state using the utility
-  const saveTestState = (state: TestState) => {
+  // Convert TestState to EnhancedQuizState
+  const convertToEnhancedQuizState = (state: TestState): EnhancedQuizState => ({
+    sessionId: state.sessionId,
+    sessionType: 'civics_test',
+    testType: state.testType,
+    questions: state.questions,
+    currentQuestionIndex: state.currentQuestionIndex,
+    answers: state.answers,
+    streak: state.streak,
+    maxStreak: state.maxStreak,
+    responseTimes: state.responseTimes,
+    categoryPerformance: state.categoryPerformance,
+    startedAt: state.startTime,
+    lastUpdatedAt: Date.now()
+  })
+
+  // Convert EnhancedQuizState to TestState
+  const convertFromEnhancedQuizState = (enhancedState: EnhancedQuizState): TestState => ({
+    sessionId: enhancedState.sessionId,
+    testType: (enhancedState.testType || 'full') as 'quick' | 'full',
+    questions: enhancedState.questions,
+    currentQuestionIndex: enhancedState.currentQuestionIndex,
+    answers: enhancedState.answers,
+    streak: enhancedState.streak,
+    maxStreak: enhancedState.maxStreak,
+    startTime: enhancedState.startedAt,
+    responseTimes: enhancedState.responseTimes,
+    categoryPerformance: enhancedState.categoryPerformance || {}
+  })
+
+  // Save test state using enhanced storage with legacy fallback
+  const saveTestState = async (state: TestState) => {
+    try {
+      // Save to enhanced database-backed storage
+      const enhancedState = convertToEnhancedQuizState(state)
+      const result = await enhancedProgressManager.save(enhancedState)
+      
+      if (result.success) {
+        console.log('✅ Saved to enhanced progress storage')
+      } else {
+        console.warn('⚠️ Enhanced storage failed, using legacy fallback:', result.error)
+      }
+    } catch (error) {
+      console.warn('⚠️ Enhanced storage exception, using legacy fallback:', error)
+    }
+    
+    // Always save to legacy storage as backup
     const baseState = convertToBaseQuizState(state)
-    progressManager.save(baseState)
+    legacyProgressManager.save(baseState)
   }
 
-  // Load test state using the utility
-  const loadTestState = (): TestState | null => {
-    const baseState = progressManager.load()
-    return baseState ? convertFromBaseQuizState(baseState) : null
+  // Load test state from enhanced storage with legacy fallback
+  const loadTestState = async (): Promise<TestState | null> => {
+    try {
+      // Try enhanced database storage first
+      const enhancedState = await enhancedProgressManager.load(sessionId.current)
+      if (enhancedState) {
+        console.log('✅ Restored from enhanced progress storage')
+        return convertFromEnhancedQuizState(enhancedState)
+      }
+    } catch (error) {
+      console.warn('⚠️ Enhanced storage load failed, trying legacy:', error)
+    }
+    
+    // Fallback to legacy localStorage storage
+    const baseState = legacyProgressManager.load()
+    if (baseState) {
+      console.log('✅ Restored from legacy progress storage')
+      return convertFromBaseQuizState(baseState)
+    }
+    
+    console.log('❌ No saved progress found in any storage')
+    return null
   }
 
-  // Clear saved state using the utility
-  const clearSavedState = () => {
-    progressManager.clear()
+  // Save individual question response to database
+  const saveQuestionResponse = async (questionId: string, answer: string, isCorrect: boolean, timeSpent: number) => {
+    if (!testState) return
+    
+    try {
+      const response: QuestionResponse = {
+        questionId,
+        questionIndex: testState.currentQuestionIndex,
+        userAnswer: answer,
+        isCorrect,
+        timeSpentSeconds: Math.round(timeSpent / 1000),
+        hintUsed: false
+      }
+      
+      const result = await enhancedProgressManager.saveQuestionResponse(testState.sessionId, response)
+      if (result.success) {
+        console.log('✅ Saved question response to database:', questionId)
+      } else {
+        console.warn('⚠️ Failed to save question response:', result.error)
+      }
+    } catch (error) {
+      console.warn('⚠️ Exception saving question response:', error)
+    }
+  }
+
+  // Clear saved state from both enhanced and legacy storage
+  const clearSavedState = async () => {
+    try {
+      // Clear from enhanced storage
+      if (testState) {
+        await enhancedProgressManager.clear(testState.sessionId)
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to clear enhanced storage:', error)
+    }
+    
+    // Clear from legacy storage
+    legacyProgressManager.clear()
   }
 
   // Normalize API question
@@ -368,40 +472,45 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
       
       // First, try to restore saved state (only once)
       if (!hasRestoredState) {
-        const savedState = loadTestState()
-        if (savedState) {
-          console.log('✅ Restoring saved state')
-          setTestState(savedState)
-          setSelectedTestType(savedState.testType)
-          setShowTestTypeSelection(false)
-          setHasRestoredState(true)
-          setLoading(false)
-          
-          // Reset UI state for restored session
-          setShowResult(false)
-          setCanAdvance(false)
-          setAutoAdvanceCountdown(0)
-          setAssessmentComplete(false)
-          
-          // Track test resumption
-          fetch('/api/civics-test/analytics', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event_type: 'resumed',
-              session_id: savedState.sessionId,
-              user_id: userId || null,
-              guest_token: !userId ? guestToken : null,
-              metadata: { 
-                test_type: savedState.testType,
-                question_index: savedState.currentQuestionIndex
-              }
-            })
-          }).catch(console.error)
-          
-          return
-        } else {
-          console.log('❌ No valid saved state found')
+        try {
+          const savedState = await loadTestState()
+          if (savedState) {
+            console.log('✅ Restoring saved state')
+            setTestState(savedState)
+            setSelectedTestType(savedState.testType)
+            setShowTestTypeSelection(false)
+            setHasRestoredState(true)
+            setLoading(false)
+            
+            // Reset UI state for restored session
+            setShowResult(false)
+            setCanAdvance(false)
+            setAutoAdvanceCountdown(0)
+            setAssessmentComplete(false)
+            
+            // Track test resumption
+            fetch('/api/civics-test/analytics', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event_type: 'resumed',
+                session_id: savedState.sessionId,
+                user_id: userId || null,
+                guest_token: !userId ? guestToken : null,
+                metadata: { 
+                  test_type: savedState.testType,
+                  question_index: savedState.currentQuestionIndex
+                }
+              })
+            }).catch(console.error)
+            
+            return
+          } else {
+            console.log('❌ No valid saved state found')
+            setHasRestoredState(true) // Mark as checked to prevent re-checking
+          }
+        } catch (error) {
+          console.warn('⚠️ Error loading saved state:', error)
           setHasRestoredState(true) // Mark as checked to prevent re-checking
         }
       }
@@ -424,7 +533,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
             categoryPerformance: {}
           }
           setTestState(newState)
-          saveTestState(newState)
+          saveTestState(newState).catch(console.error)
           
           // Track test start
           fetch('/api/civics-test/analytics', {
@@ -540,7 +649,15 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     }
     
     setTestState(newState)
-    saveTestState(newState)
+    saveTestState(newState).catch(console.error)
+    
+    // Save individual question response to database
+    saveQuestionResponse(
+      currentQuestion.id,
+      optionId,
+      isCorrect,
+      responseTime * 1000 // Convert to milliseconds
+    ).catch(console.error)
     
     // Trigger streak animation if correct
     if (isCorrect) {
@@ -593,14 +710,14 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     
     if (testState.currentQuestionIndex === testState.questions.length - 1) {
       setAssessmentComplete(true)
-      clearSavedState() // Clear saved state when completing
+      clearSavedState().catch(console.error) // Clear saved state when completing
     } else {
       const newState = {
         ...testState,
         currentQuestionIndex: testState.currentQuestionIndex + 1
       }
       setTestState(newState)
-      saveTestState(newState)
+      saveTestState(newState).catch(console.error)
     }
   }
 
@@ -995,7 +1112,7 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
       
       {/* Progress */}
       <div className="space-y-2">
-        <Progress value={progress} className="h-2" />
+                      <Progress value={progress} className="h-1" />
         <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
           <span>{Math.round(progress)}% complete</span>
           <div className="flex items-center space-x-1">

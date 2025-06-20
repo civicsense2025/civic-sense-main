@@ -22,7 +22,7 @@ import {
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
-import { createClient as createSupabaseClient } from "@/utils/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { StartQuizButton } from "@/components/start-quiz-button"
 
 // Helper to get today's date at midnight in the user's local timezone
@@ -806,7 +806,7 @@ export function DailyCardStack({
         try {
           // Try to get count efficiently from database
           if (!supabaseClientRef.current) {
-            supabaseClientRef.current = createSupabaseClient()
+            supabaseClientRef.current = supabase
           }
           
           // Get count of ALL active topics with valid dates (not just a limited range)
@@ -1459,7 +1459,7 @@ export function DailyCardStack({
                 
                 {/* Breaking News Badge */}
                 {currentTopic.is_breaking && (
-                  <div className="inline-block px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-600 text-white text-xs sm:text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
+                  <div className="inline-block px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-600 text-white text-xs sm:text-xs font-bold font-space-mono uppercase tracking-wider rounded-full animate-pulse">
                     Breaking
                   </div>
                 )}
@@ -1481,7 +1481,7 @@ export function DailyCardStack({
                 <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
                   {/* Featured Badge First */}
                   {currentTopic.is_featured && !currentTopic.is_breaking && (
-                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold font-space-mono uppercase tracking-wider">
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded-full">
                       <Star className="h-3 w-3 mr-1" />
                       Featured
                     </Badge>
@@ -1492,7 +1492,7 @@ export function DailyCardStack({
                     <Badge 
                       key={category} 
                       variant="secondary"
-                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      className="text-xs font-space-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full"
                     >
                       {category}
                     </Badge>

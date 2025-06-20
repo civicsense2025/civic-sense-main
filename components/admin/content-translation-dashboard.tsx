@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -74,7 +74,7 @@ const LANGUAGES = [
 
 export function ContentTranslationDashboard() {
   const { supportedLanguages } = useLanguage()
-  const supabase = createClient()
+  // Using singleton supabase client
   
   // State management
   const [contentStats, setContentStats] = useState<ContentStats[]>([])

@@ -82,6 +82,8 @@ async function getCategories(): Promise<CategoryWithStats[]> {
   }))
 }
 
+
+
 export default async function CategoriesPage() {
   const categories = await getCategories()
 

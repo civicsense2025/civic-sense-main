@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/join/[inviteCode] - Get invite info
 export async function GET(

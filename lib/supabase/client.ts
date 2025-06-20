@@ -1,14 +1,33 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '../database.types'
 
+// Singleton client instance
+let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null
+
 export const createClient = () => {
-  return createBrowserClient<Database>(
+  // Return existing instance if it exists
+  if (clientInstance) {
+    return clientInstance
+  }
+
+  // Create new instance only if one doesn't exist
+  clientInstance = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+      }
+    }
   )
+  
+  return clientInstance
 }
 
-// Create a single client instance for the app
+// Create and export the single client instance for the app
 export const supabase = createClient()
 
 // OAuth helper functions

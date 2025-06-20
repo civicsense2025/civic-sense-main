@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# CivicSense Brand Voice & Content Rules
+
+*Reference: `docs/branding-content.md` - Always check this guide before writing any content*
+
+## Core Voice Principles
+
+### Write Like Tán Talking to a Smart Friend
+- **Natural, not forced**: Avoid overusing "civic" in every sentence - talk about "understanding power" or "democratic participation" instead
+- **Direct personal communication**: Every email, UI text, and content piece should feel like it's coming directly from Tán, not from a corporation
+- **Story-driven**: Lead with narrative, not facts. Connect to personal experience before explaining concepts
+- **Specific about power**: Name actual people, institutions, and mechanisms rather than vague "government" references
+
+### Content Requirements
+
+**EVERY piece of content must:**
+1. Answer "why should I care?" in the first paragraph
+2. Include specific next steps the user can take
+3. Connect abstract concepts to concrete personal consequences
+4. Challenge assumptions while providing evidence
+5. Feel authentic and conversational, not corporate or academic
+
+### Email Communication Standards
+- **Subject lines**: Natural language that sparks curiosity, not marketing-speak
+- **Opening**: Start with story or personal insight, not summary
+- **Body**: One key insight per email with verifiable examples
+- **Closing**: Personal sign-off from Tán acknowledging their work
+
+### Language Guidelines
+
+**AVOID overusing "civic":**
+- ❌ "civic education", "civic engagement", "civic learning" in every sentence
+- ✅ "understanding how power works", "democratic participation", "government literacy"
+
+**BE specific about power:**
+- ❌ "Government officials decided"
+- ✅ "Republican senators voted to..." or "The Biden administration chose to..."
+
+**CONNECT to personal impact:**
+- ❌ "This policy affects the economy"
+- ✅ "This policy determines whether your rent goes up next year"
+
+### Success Metrics
+We succeed when people become:
+- Harder to manipulate
+- More difficult to ignore
+- Impossible to fool
+
+Every interaction should build confidence to engage with power structures, not just complain about them.
+
+---
+
+**Always check `docs/branding-content.md` for complete guidelines before writing any user-facing content.**

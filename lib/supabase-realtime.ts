@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
+import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
+import { supabase } from './supabase'
 import { debug } from './debug-config'
 
 interface ConnectionManager {
@@ -30,20 +31,7 @@ class SupabaseRealtimeManager {
 
   constructor() {
     this.manager = {
-      client: createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          realtime: {
-            params: {
-              eventsPerSecond: 50, // Increased for multiplayer
-            },
-          },
-          db: {
-            schema: 'public',
-          },
-        }
-      ),
+      client: supabase,
       channels: new Map(),
       connectionState: 'disconnected',
       reconnectAttempts: 0,

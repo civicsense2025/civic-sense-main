@@ -1,4 +1,4 @@
-// lib/data-service.ts - Optimized with database-level filtering and proper joins
+// lib/data-service.ts - Fixed with proper question-topic relationships and source handling
 
 import { topicOperations, questionOperations, categoryOperations } from './database'
 import type { TopicMetadata, QuizQuestion } from './quiz-data'
@@ -93,6 +93,60 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
 }
 
 /**
+ * Convert database question to app format with proper source handling
+ */
+function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
+  // Parse sources if they're stored as JSON string
+  let sources = []
+  if (dbQuestion.sources) {
+    try {
+      if (typeof dbQuestion.sources === 'string') {
+        sources = JSON.parse(dbQuestion.sources)
+      } else if (Array.isArray(dbQuestion.sources)) {
+        sources = dbQuestion.sources
+      }
+    } catch (e) {
+      console.warn('Failed to parse question sources:', e)
+      sources = []
+    }
+  }
+
+  // Parse tags if they're stored as JSON string
+  let tags = []
+  if (dbQuestion.tags) {
+    try {
+      if (typeof dbQuestion.tags === 'string') {
+        tags = JSON.parse(dbQuestion.tags)
+      } else if (Array.isArray(dbQuestion.tags)) {
+        tags = dbQuestion.tags
+      }
+    } catch (e) {
+      console.warn('Failed to parse question tags:', e)
+      tags = []
+    }
+  }
+
+  const question: QuizQuestion = {
+    topic_id: dbQuestion.topic_id,
+    question_number: dbQuestion.question_number || 1,
+    question_type: dbQuestion.question_type || 'multiple_choice',
+    category: dbQuestion.category || 'General',
+    question: dbQuestion.question || '',
+    option_a: dbQuestion.option_a || null,
+    option_b: dbQuestion.option_b || null,
+    option_c: dbQuestion.option_c || null,
+    option_d: dbQuestion.option_d || null,
+    correct_answer: dbQuestion.correct_answer || '',
+    hint: dbQuestion.hint || '',
+    explanation: dbQuestion.explanation || '',
+    tags: tags,
+    sources: sources
+  }
+  
+  return cleanObjectContent(question)
+}
+
+/**
  * Get topics in date range (database-level filtering)
  */
 async function getTopicsInDateRange(startDate: Date, endDate: Date): Promise<any[]> {
@@ -134,7 +188,7 @@ async function getTopicsInDateRange(startDate: Date, endDate: Date): Promise<any
     });
   } catch (error) {
     console.error(`Error in getTopicsInDateRange:`, error);
-    throw error; // Don't fall back to mock data
+    throw error;
   }
 }
 
@@ -178,7 +232,7 @@ async function getAllTopicsWithValidDates() {
     });
   } catch (error) {
     console.error(`Error in getAllTopicsWithValidDates:`, error);
-    throw error; // Don't fall back to mock data
+    throw error;
   }
 }
 
@@ -210,7 +264,7 @@ async function getTopicsForDate(targetDate: Date): Promise<any[]> {
     return data || []
   } catch (error) {
     console.error(`Error getting topics for date ${targetDate.toISOString().split('T')[0]}:`, error)
-    throw error; // Don't fall back to mock data
+    throw error;
   }
 }
 
@@ -239,167 +293,156 @@ async function getAllFeaturedTopics(): Promise<any[]> {
     return data || []
   } catch (error) {
     console.error('Error getting featured topics:', error)
-    throw error; // Don't fall back to mock data
+    throw error;
   }
 }
 
 /**
- * Get questions for a topic with proper join to ensure topic exists and is active
+ * Get questions for a topic using the correct foreign key relationship
  */
-async function getQuestionsWithTopicJoin(topicId: string): Promise<any[]> {
+async function getQuestionsForTopic(topicId: string): Promise<any[]> {
   try {
     if (!supabase) {
       throw new Error('Supabase client not initialized')
     }
     
-    console.log(`📊 Querying questions for topic ${topicId} with topic join`)
+    console.log(`📊 Querying questions for topic ${topicId}`)
     
-    // Try multiple query approaches to find questions
-    let questions: any[] = []
-    let querySuccess = false
+    // Method 1: Query questions table directly using topic_id foreign key
+    console.log(`📊 Attempting direct query on questions table with topic_id`)
+    const { data: questions, error: questionsError } = await supabase
+      .from('questions')
+      .select(`
+        id,
+        topic_id,
+        question_number,
+        question_type,
+        category,
+        question,
+        option_a,
+        option_b,
+        option_c,
+        option_d,
+        correct_answer,
+        hint,
+        explanation,
+        tags,
+        sources,
+        difficulty_level,
+        is_active,
+        created_at,
+        updated_at
+      `)
+      .eq('topic_id', topicId)
+      .eq('is_active', true)
+      .order('question_number', { ascending: true })
 
-    // First try: Direct query on questions table using topic_identifier
-    console.log(`📊 Attempting query 1: direct questions query on topic_identifier`)
-    try {
-      const result1 = await supabase
-        .from('questions')
-        .select('*')
-        .eq('topic_identifier', topicId)
-        .eq('is_active', true)
-        .order('question_number', { ascending: true })
-      
-      if (!result1.error && result1.data && result1.data.length > 0) {
-        questions = result1.data
-        querySuccess = true
-        console.log(`📊 Query 1 succeeded: found ${questions.length} questions`)
-      } else {
-        console.log(`📊 Query 1 failed or found no data:`, result1.error?.message || 'No data')
-      }
-    } catch (err) {
-      console.log(`📊 Query 1 error:`, err)
+    if (questionsError) {
+      console.error(`📊 Error querying questions:`, questionsError)
+      throw questionsError
     }
 
-    // Second try: Direct query on questions table using topic_id
-    if (!querySuccess) {
-      console.log(`📊 Attempting query 2: direct questions query on topic_id`)
-      try {
-        const result2 = await supabase
-          .from('questions')
-          .select('*')
-          .eq('topic_id', topicId)
-          .eq('is_active', true)
-          .order('question_number', { ascending: true })
-        
-        if (!result2.error && result2.data && result2.data.length > 0) {
-          questions = result2.data
-          querySuccess = true
-          console.log(`📊 Query 2 succeeded: found ${questions.length} questions`)
-        } else {
-          console.log(`📊 Query 2 failed or found no data:`, result2.error?.message || 'No data')
-        }
-      } catch (err) {
-        console.log(`📊 Query 2 error:`, err)
-      }
-    }
-
-    // Third try: Query from question_topics and join to questions using topic_id
-    if (!querySuccess) {
-      console.log(`📊 Attempting query 3: question_topics -> questions join on topic_id`)
-      try {
-        const result3 = await supabase
-          .from('question_topics')
-          .select(`
-            topic_id,
-            topic_title,
-            is_active,
-            questions!inner (*)
-          `)
-          .eq('topic_id', topicId)
-          .eq('is_active', true)
-          .eq('questions.is_active', true)
-          .order('questions.question_number', { ascending: true })
-        
-        if (!result3.error && result3.data && result3.data.length > 0) {
-          // Flatten the joined data
-          questions = result3.data.flatMap((item: any) => item.questions || [])
-          querySuccess = true
-          console.log(`📊 Query 3 succeeded: found ${questions.length} questions`)
-        } else {
-          console.log(`📊 Query 3 failed or found no data:`, result3.error?.message || 'No data')
-        }
-      } catch (err) {
-        console.log(`📊 Query 3 error:`, err)
-      }
-    }
-
-    if (!querySuccess) {
-      console.log(`📊 All query attempts failed for topic ${topicId}`)
+    if (!questions || questions.length === 0) {
+      console.log(`📊 No questions found for topic ${topicId}`)
       return []
     }
+
+    console.log(`📊 Found ${questions.length} questions for topic ${topicId}`)
     
-    console.log(`📊 Database returned ${questions.length} questions for topic ${topicId}`)
+    // Log sample question structure for debugging
     if (questions[0]) {
-      console.log(`📊 Sample question data:`, {
+      console.log(`📊 Sample question structure:`, {
+        id: questions[0].id,
+        topic_id: questions[0].topic_id,
         question_number: questions[0].question_number,
         question_type: questions[0].question_type,
-        topic_id: questions[0].topic_id,
-        topic_identifier: questions[0].topic_identifier,
         hasQuestion: !!questions[0].question,
-        hasCorrectAnswer: !!questions[0].correct_answer
+        hasCorrectAnswer: !!questions[0].correct_answer,
+        hasSources: !!questions[0].sources,
+        sourcesType: typeof questions[0].sources,
+        sourcesContent: questions[0].sources ? (typeof questions[0].sources === 'string' ? 'JSON string' : 'Object/Array') : 'None'
       })
     }
     
     return questions
   } catch (error) {
-    console.error(`Error in getQuestionsWithTopicJoin for topic ${topicId}:`, error)
-    throw error; // Don't fall back to mock data
+    console.error(`Error in getQuestionsForTopic for topic ${topicId}:`, error)
+    throw error;
   }
 }
 
 /**
- * Check if topic has questions with proper join
+ * Verify topic exists and is active
  */
-async function checkTopicHasQuestionsWithJoin(topicId: string): Promise<boolean> {
+async function verifyTopicExists(topicId: string): Promise<boolean> {
   try {
     if (!supabase) {
       throw new Error('Supabase client not initialized')
     }
     
-    // Use a join to ensure both topic and questions exist and are active
+    const { data, error } = await supabase
+      .from('question_topics')
+      .select('topic_id, is_active')
+      .eq('topic_id', topicId)
+      .eq('is_active', true)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - topic doesn't exist or isn't active
+        console.log(`📊 Topic ${topicId} not found or not active`)
+        return false
+      }
+      console.error(`📊 Error verifying topic exists:`, error)
+      throw error
+    }
+
+    console.log(`📊 Topic ${topicId} verified as existing and active`)
+    return !!data
+  } catch (error) {
+    console.error(`Error in verifyTopicExists for topic ${topicId}:`, error)
+    return false
+  }
+}
+
+/**
+ * Check if topic has questions
+ */
+async function checkTopicHasQuestions(topicId: string): Promise<boolean> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+    
+    // First verify the topic exists
+    const topicExists = await verifyTopicExists(topicId)
+    if (!topicExists) {
+      return false
+    }
+    
+    // Then check for questions
     const { count, error } = await supabase
       .from('questions')
       .select('*', { count: 'exact', head: true })
       .eq('topic_id', topicId)
       .eq('is_active', true)
-      // We can also add a separate check for topic existence
       
     if (error) {
       console.error(`Error checking questions for topic ${topicId}:`, error)
       throw error
     }
 
-    // Additional check to ensure topic exists and is active
-    const { data: topicData, error: topicError } = await supabase
-      .from('question_topics')
-      .select('topic_id')
-      .eq('topic_id', topicId)
-      .eq('is_active', true)
-      .single()
-
-    if (topicError) {
-      console.error(`Topic ${topicId} not found or not active:`, topicError)
-      return false
-    }
-
-    return count !== null && count > 0 && !!topicData
+    const hasQuestions = count !== null && count > 0
+    console.log(`📊 Topic ${topicId} has ${count || 0} questions`)
+    return hasQuestions
   } catch (error) {
-    console.error(`Error in checkTopicHasQuestionsWithJoin for topic ${topicId}:`, error)
+    console.error(`Error in checkTopicHasQuestions for topic ${topicId}:`, error)
     return false
   }
 }
 
 /**
- * Data service with proper database queries and joins
+ * Data service with proper database queries and foreign key relationships
  */
 export const dataService = {
   /**
@@ -426,7 +469,7 @@ export const dataService = {
       return topicsRecord
     } catch (error) {
       console.error('Error loading featured topics from database:', error)
-      return {} // Return empty object instead of mock data
+      return {}
     }
   },
 
@@ -454,7 +497,7 @@ export const dataService = {
       return topicsRecord
     } catch (error) {
       console.error('Error loading topics for specific date from database:', error)
-      return {} // Return empty object instead of mock data
+      return {}
     }
   },
 
@@ -483,7 +526,7 @@ export const dataService = {
       return validTopics
     } catch (error) {
       console.error('Error loading topics from database:', error)
-      return {} // Return empty object instead of mock data
+      return {}
     }
   },
 
@@ -511,7 +554,7 @@ export const dataService = {
       return topicsRecord
     } catch (error) {
       console.error('Error fetching topics from database:', error)
-      return {} // Return empty object instead of mock data
+      return {}
     }
   },
 
@@ -531,7 +574,22 @@ export const dataService = {
 
     try {
       console.log('📊 dataService.getTopicById - Querying database for topic:', topicId)
-      const dbTopic = await topicOperations.getById(topicId)
+      
+      const { data: dbTopic, error } = await supabase
+        .from('question_topics')
+        .select('*')
+        .eq('topic_id', topicId)
+        .eq('is_active', true)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('📊 dataService.getTopicById - Topic not found:', topicId)
+          return null
+        }
+        throw error
+      }
+      
       console.log('📊 dataService.getTopicById - Database result:', {
         found: !!dbTopic,
         topicData: dbTopic ? {
@@ -547,12 +605,12 @@ export const dataService = {
       return result
     } catch (error) {
       console.error('📊 dataService.getTopicById - Database error:', error)
-      return null // Return null instead of mock data
+      return null
     }
   },
 
   /**
-   * Get questions for a topic with proper topic validation
+   * Get questions for a topic with proper foreign key relationship
    */
   async getQuestionsByTopic(topicId: string): Promise<QuizQuestion[]> {
     console.log('📊 dataService.getQuestionsByTopic - Called with:', topicId)
@@ -566,26 +624,69 @@ export const dataService = {
     }
 
     try {
-      console.log('📊 dataService.getQuestionsByTopic - Querying database with topic join:', topicId)
-      const dbQuestions = await getQuestionsWithTopicJoin(topicId)
+      // First verify the topic exists and is active
+      const topicExists = await verifyTopicExists(topicId)
+      if (!topicExists) {
+        console.log('📊 dataService.getQuestionsByTopic - Topic does not exist or is not active:', topicId)
+        return []
+      }
+
+      console.log('📊 dataService.getQuestionsByTopic - Querying questions for verified topic:', topicId)
+      const dbQuestions = await getQuestionsForTopic(topicId)
+      
       console.log('📊 dataService.getQuestionsByTopic - Database questions result:', {
         count: dbQuestions.length,
         firstQuestion: dbQuestions[0] ? {
+          id: dbQuestions[0].id,
           question_number: dbQuestions[0].question_number,
           question_type: dbQuestions[0].question_type,
           hasOptions: !!(dbQuestions[0].option_a && dbQuestions[0].option_b),
-          question: dbQuestions[0].question.substring(0, 100) + '...'
+          question: dbQuestions[0].question ? dbQuestions[0].question.substring(0, 100) + '...' : 'No question text',
+          hasSources: !!dbQuestions[0].sources,
+          sourcesType: typeof dbQuestions[0].sources
         } : null
       })
       
-      const questions = dbQuestions.map(dbQuestion => questionOperations.toQuestionAppFormat(dbQuestion))
+      if (dbQuestions.length === 0) {
+        console.log('📊 dataService.getQuestionsByTopic - No questions found in database')
+        return []
+      }
+      
+      // Transform questions with better error handling and source parsing
+      const questions: QuizQuestion[] = []
+      
+      for (const dbQuestion of dbQuestions) {
+        try {
+          const transformedQuestion = dbQuestionToAppFormat(dbQuestion)
+          
+          // Validate that the question has required fields
+          if (transformedQuestion.question && transformedQuestion.correct_answer) {
+            questions.push(transformedQuestion)
+          } else {
+            console.warn('📊 Skipping invalid question:', {
+              id: dbQuestion.id,
+              question_number: dbQuestion.question_number,
+              hasQuestion: !!transformedQuestion.question,
+              hasCorrectAnswer: !!transformedQuestion.correct_answer
+            })
+          }
+        } catch (transformError) {
+          console.error('📊 Error transforming question:', transformError, {
+            id: dbQuestion.id,
+            question_number: dbQuestion.question_number
+          })
+        }
+      }
+      
       console.log('📊 dataService.getQuestionsByTopic - Transformed questions:', {
         count: questions.length,
         firstTransformed: questions[0] ? {
           question_number: questions[0].question_number,
           question_type: questions[0].question_type,
           hasOptions: !!(questions[0].option_a && questions[0].option_b),
-          correct_answer: questions[0].correct_answer
+          correct_answer: questions[0].correct_answer,
+          sourcesCount: questions[0].sources?.length || 0,
+          tagsCount: questions[0].tags?.length || 0
         } : null
       })
       
@@ -595,7 +696,7 @@ export const dataService = {
       return result
     } catch (error) {
       console.error('📊 dataService.getQuestionsByTopic - Database error:', error)
-      return [] // Return empty array instead of mock data
+      return []
     }
   },
 
@@ -677,10 +778,10 @@ export const dataService = {
     }
 
     try {
-      return await checkTopicHasQuestionsWithJoin(topicId)
+      return await checkTopicHasQuestions(topicId)
     } catch (error) {
       console.error('Error checking if topic has questions:', error)
-      return false // Return false instead of checking mock data
+      return false
     }
   }
 }

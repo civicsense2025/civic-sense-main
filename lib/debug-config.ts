@@ -13,6 +13,7 @@ interface DebugConfig {
     analytics: boolean
     auth: boolean
     api: boolean
+    premium: boolean
     general: boolean
   }
   minimized: boolean // Show condensed logs when true
@@ -66,6 +67,7 @@ class DebugManager {
         analytics: false,
         auth: false,
         api: false,
+        premium: true, // Enabled by default for subscription debugging
         general: true
       },
       minimized: false
@@ -128,6 +130,7 @@ class DebugManager {
       analytics: '📊',
       auth: '🔐',
       api: '🌐',
+      premium: '💵',
       general: '🔧'
     }
     return `${prefixes[category]} [${category.toUpperCase()}]`
@@ -191,9 +194,19 @@ class DebugManager {
     console.log('  .enable()           - Enable all debug messages')
     console.log('  .disable()          - Disable all debug messages')
     console.log('  .showStatus()       - Show current configuration')
+    console.log('  .testPremium()      - Test premium subscription debugging')
     console.log('  .help()             - Show this help')
     console.log('')
     console.log('Available categories:', Object.keys(this.config.categories).join(', '))
+    console.groupEnd()
+  }
+
+  testPremium() {
+    console.group('💵 Testing Premium Debugging')
+    this.log('premium', 'Test message: Premium debugging is working!')
+    this.warn('premium', 'Test warning: This is a premium warning message')
+    this.error('premium', 'Test error: This is a premium error message')
+    console.log('Premium debugging enabled:', this.isEnabled('premium'))
     console.groupEnd()
   }
 }
@@ -220,7 +233,8 @@ export const debug = {
     debugManager.disable(category),
   getConfig: () => debugManager.getConfig(),
   showStatus: () => debugManager.showStatus(),
-  help: () => debugManager.help()
+  help: () => debugManager.help(),
+  testPremium: () => debugManager.testPremium()
 }
 
 export default debug 

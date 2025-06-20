@@ -44,6 +44,10 @@ import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
 import { GiftCreditsDashboard } from "@/components/gift-credits-dashboard"
 import { LearningPodsDashboard } from "@/components/learning-pods-dashboard"
 import { SurveysDashboard } from "@/components/surveys-dashboard"
+import { AuthDialog } from '@/components/auth/auth-dialog'
+import { FeedbackButton } from '@/components/feedback'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface DashboardData {
   totalQuizzes: number
@@ -74,30 +78,253 @@ interface DashboardData {
   achievements: Achievement[]
 }
 
+// Dashboard Stats Skeleton
+function DashboardStatsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="border-0 shadow-sm bg-white dark:bg-slate-900">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4 rounded-full" />
+              </div>
+              <Skeleton className="h-8 w-16" />
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
+// Weekly Progress Chart Skeleton
+function WeeklyProgressSkeleton() {
+  // Use static heights to prevent hydration mismatch
+  const staticHeights = [80, 120, 60, 100, 90, 110, 70]
+  
+  return (
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-8 w-24 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Chart area */}
+          <div className="h-64 bg-slate-50 dark:bg-slate-800 rounded-lg flex items-end justify-center p-4">
+            <div className="flex items-end gap-2 w-full max-w-md">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton 
+                  key={i} 
+                  className="flex-1 rounded-t-sm" 
+                  style={{ height: `${staticHeights[i]}px` }}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3 w-3 rounded-sm" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3 w-3 rounded-sm" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Recent Activity Skeleton
+function RecentActivitySkeleton() {
+  return (
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-8 w-20 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-16 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Category Progress Skeleton
+function CategoryProgressSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+      <CardHeader>
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-4 w-52" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-6 w-6 rounded-lg" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+              <div className="flex justify-between">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Complete Dashboard Loading Skeleton
+function DashboardLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <Header onSignInClick={() => {}} />
+      
+      <main className="w-full py-8">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+          {/* Header skeleton */}
+          <div className="text-center space-y-4">
+            <Skeleton className="h-12 w-64 mx-auto" />
+            <Skeleton className="h-6 w-96 mx-auto" />
+          </div>
+
+          {/* Stats overview */}
+          <DashboardStatsSkeleton />
+
+          {/* Main content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left column - Charts */}
+            <div className="lg:col-span-2 space-y-8">
+              <WeeklyProgressSkeleton />
+              <CategoryProgressSkeleton />
+            </div>
+
+            {/* Right column - Activity */}
+            <div className="space-y-8">
+              <RecentActivitySkeleton />
+              
+              {/* Quick actions skeleton */}
+              <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
+                <CardHeader>
+                  <Skeleton className="h-6 w-28" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full rounded-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+// Unauthenticated state component
+function UnauthenticatedDashboard() {
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
+  
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <Header onSignInClick={() => setShowAuthDialog(true)} />
+      
+      <main className="w-full py-8">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+              Welcome to CivicSense
+            </h1>
+            <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+              Sign in to track your civic knowledge and create custom learning experiences
+            </p>
+          </div>
+          
+          <Button 
+            onClick={() => setShowAuthDialog(true)}
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-medium rounded-full px-8 py-3 h-auto"
+          >
+            Sign In to Continue
+          </Button>
+        </div>
+      </main>
+      
+      <AuthDialog
+        isOpen={showAuthDialog}
+        onClose={() => setShowAuthDialog(false)}
+        onAuthSuccess={() => setShowAuthDialog(false)}
+        initialMode="sign-in"
+      />
+    </div>
+  )
+}
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
   const { trackEngagement } = useAnalytics()
 
-
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isDataLoading, setIsDataLoading] = useState(false)
   const [enhancedProgress, setEnhancedProgress] = useState<EnhancedUserProgress | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
 
   // Add state for onboarding status
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false)
-
-  // Redirect unauthenticated users to login page
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login')
-    }
-  }, [user, isLoading, router])
 
   // Track dashboard page view
   useEffect(() => {
@@ -125,16 +352,15 @@ export default function DashboardPage() {
     }
   }, [user, subscription, isActive, isPremium, isPro, hasFeatureAccess])
 
-  // Load comprehensive dashboard data
+  // Load comprehensive dashboard data - only when user is authenticated
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!user) {
-        setIsLoading(false)
         return
       }
       
       try {
-        setIsLoading(true)
+        setIsDataLoading(true)
         
         // Add timeout protection to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => 
@@ -318,14 +544,12 @@ export default function DashboardPage() {
         }
         setDashboardData(fallbackData)
       } finally {
-        setIsLoading(false)
+        setIsDataLoading(false)
       }
     }
 
     loadDashboardData()
   }, [user])
-
-
 
   // Add useEffect to check onboarding status
   useEffect(() => {
@@ -340,7 +564,10 @@ export default function DashboardPage() {
           .maybeSingle()
         
         if (error) {
-          console.error('Error fetching onboarding status:', error)
+          console.warn('Onboarding status check failed (table may not exist):', error)
+          // Assume onboarding is complete if we can't check
+          setOnboardingComplete(true)
+          setShowOnboardingBanner(false)
           return
         }
         
@@ -353,7 +580,10 @@ export default function DashboardPage() {
           setShowOnboardingBanner(false)
         }
       } catch (err) {
-        console.error('Error checking onboarding status:', err)
+        console.warn('Error checking onboarding status (assuming complete):', err)
+        // Assume onboarding is complete if we can't check
+        setOnboardingComplete(true)
+        setShowOnboardingBanner(false)
       }
     }
     
@@ -368,15 +598,18 @@ export default function DashboardPage() {
     setShowOnboardingBanner(false)
   }
 
-  if (isLoading || !dashboardData) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-400 font-light">Loading your dashboard...</p>
-        </div>
-      </div>
-    )
+  // Handle authentication states properly
+  if (authLoading) {
+    return <DashboardLoadingSkeleton />
+  }
+
+  if (!user) {
+    return <UnauthenticatedDashboard />
+  }
+
+  // Show loading skeleton while dashboard data is loading
+  if (isDataLoading || !dashboardData) {
+    return <DashboardLoadingSkeleton />
   }
 
   const completionPercentage = Math.round((dashboardData.completedQuizzes / dashboardData.totalQuizzes) * 100) || 0
@@ -512,8 +745,6 @@ export default function DashboardPage() {
           {/* Recommended Topics Section */}
           {user && <RecommendedTopics userId={user.id} />}
 
-
-
           {/* Enhanced Recent Activity */}
           {user && <EnhancedRecentActivity userId={user.id} />}
 
@@ -554,10 +785,6 @@ export default function DashboardPage() {
               variant="banner"
             />
           </div>
-
-
-
-
         </div>
       </main>
     </div>

@@ -94,7 +94,7 @@ export function QuestionTimer({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 text-sm",
+      "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 text-sm timer-component",
       getTimerBgColor(),
       getTimerColor(),
       className

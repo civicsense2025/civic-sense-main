@@ -16,7 +16,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@/hooks/useGuestAccess'
 import { useToast } from '@/hooks/use-toast'
 import { dataService } from '@/lib/data-service'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { 
   Info, CheckCircle, XCircle, Clock, AlertTriangle, Users, Play, Settings,
   Zap, Trophy, BookOpen, FlaskConical, Database, Network, TestTube

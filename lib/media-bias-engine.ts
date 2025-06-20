@@ -5,7 +5,7 @@
  * across different news organizations and articles.
  */
 
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { Tables } from '@/lib/database.types'
 
 // =============================================================================
@@ -241,7 +241,6 @@ export async function getOrCreateMediaOrganization(
   domain: string,
   name?: string
 ): Promise<MediaOrganization | null> {
-  const supabase = createClient()
   
   const { data, error } = await supabase.rpc('get_or_create_media_organization', {
     p_domain: domain,
@@ -269,7 +268,6 @@ export async function getOrCreateMediaOrganization(
 export async function getMediaOrganizationWithScores(
   organizationId: string
 ): Promise<MediaOrganizationWithScores | null> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('media_organizations')
@@ -298,7 +296,6 @@ export async function getMediaOrganizationWithScores(
 export async function getMediaOrganizationByDomain(
   domain: string
 ): Promise<MediaOrganizationWithScores | null> {
-  const supabase = createClient()
   
   // Clean domain
   const cleanDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '')
@@ -328,7 +325,6 @@ export async function getMediaOrganizationByDomain(
  * Get all active bias dimensions
  */
 export async function getBiasDimensions(): Promise<BiasDimension[]> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('bias_dimensions')
@@ -371,7 +367,6 @@ export async function analyzeArticleBias(
       console.error('Error analyzing article:', error)
       
       // Fall back to simple database entry if API fails
-      const supabase = createClient()
       const dimensions = await getBiasDimensions()
       const dimensionScores: any = {}
       
@@ -424,7 +419,6 @@ export async function submitBiasFeedback(
   userId?: string,
   guestToken?: string
 ): Promise<boolean> {
-  const supabase = createClient()
   
   const { error } = await supabase
     .from('bias_feedback')
@@ -451,7 +445,6 @@ export async function getOrganizationLearningEvents(
   organizationId: string,
   limit = 10
 ): Promise<BiasLearningEvent[]> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('bias_learning_events')
@@ -478,7 +471,6 @@ export async function voteFeedbackHelpfulness(
   feedbackId: string,
   isHelpful: boolean
 ): Promise<boolean> {
-  const supabase = createClient()
   
   const { error } = await supabase.rpc('increment', {
     table_name: 'bias_feedback',
@@ -508,7 +500,6 @@ export async function getBiasConsensus(
   sample_size: number
   agreement_rate: number
 } | null> {
-  const supabase = createClient()
   
   const { data, error } = await supabase.rpc('calculate_bias_consensus', {
     p_organization_id: organizationId,
@@ -530,7 +521,6 @@ export async function getBiasConsensus(
 export async function searchMediaOrganizations(
   query: string
 ): Promise<MediaOrganization[]> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('media_organizations')
@@ -552,7 +542,6 @@ export async function searchMediaOrganizations(
 export async function getArticleBiasAnalysis(
   articleUrl: string
 ): Promise<ArticleBiasAnalysis | null> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('article_bias_analysis')
@@ -579,7 +568,6 @@ export async function getArticleBiasAnalysis(
 export async function updateOrganizationBiasFromArticles(
   organizationId: string
 ): Promise<boolean> {
-  const supabase = createClient()
   
   const { error } = await supabase.rpc('update_organization_bias_from_articles', {
     p_organization_id: organizationId

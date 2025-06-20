@@ -1,6 +1,7 @@
 "use client"
 
 import { supabase } from './supabase'
+import { debug } from './debug-config'
 import type { Database } from './database.types'
 
 // Types for premium features
@@ -113,6 +114,14 @@ export const subscriptionOperations = {
    * Get user's current subscription
    */
   async getUserSubscription(userId: string): Promise<UserSubscription | null> {
+    // Add validation for userId
+    if (!userId) {
+      debug.error('premium', 'getUserSubscription called with empty userId')
+      return null
+    }
+
+    debug.log('premium', `Fetching subscription for user: ${userId}`)
+
     const { data, error } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -120,9 +129,28 @@ export const subscriptionOperations = {
       .single()
 
     if (error) {
-      console.error('Error fetching user subscription:', error)
+      // Handle "no rows returned" as a normal case, not an error
+      if (error.code === 'PGRST116') {
+        debug.log('premium', `No subscription found for user ${userId} - this is normal for free users`)
+        return null
+      }
+      
+      // Log other errors with more context
+      debug.error('premium', 'Error fetching user subscription:', {
+        error,
+        userId,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details
+      })
       return null
     }
+
+    debug.log('premium', `Subscription found for user ${userId}:`, {
+      tier: data.subscription_tier,
+      status: data.subscription_status,
+      provider: data.payment_provider
+    })
 
     return data as UserSubscription
   },
@@ -169,15 +197,68 @@ export const subscriptionOperations = {
    * Get feature limits for user's tier
    */
   async getUserFeatureLimits(userId: string): Promise<FeatureLimits | null> {
+    // Add validation for userId
+    if (!userId) {
+      debug.error('premium', 'getUserFeatureLimits called with empty userId')
+      return null
+    }
+
+    debug.log('premium', `Fetching feature limits for user: ${userId}`)
+
     const { data, error } = await supabase
       .rpc('get_user_feature_limits', { p_user_id: userId })
 
     if (error) {
-      console.error('Error fetching feature limits:', error)
+      // Provide more detailed error information
+      debug.error('premium', 'Error fetching feature limits:', {
+        error,
+        userId,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        hint: error.hint
+      })
+      
+      // If the function doesn't exist, return default free tier limits
+      if (error.code === '42883' || error.message?.includes('function')) {
+        debug.warn('premium', 'get_user_feature_limits function not found, returning default free tier limits')
+        return {
+          tier: 'free',
+          custom_decks_limit: 0,
+          historical_months_limit: 1,
+          advanced_analytics: false,
+          spaced_repetition: false,
+          learning_insights: false,
+          priority_support: false,
+          offline_mode: false,
+          export_data: false
+        }
+      }
+      
       return null
     }
 
-    return (data?.[0] as FeatureLimits) || null
+    // The function returns an array, so get the first result
+    const result = Array.isArray(data) ? data[0] : data
+    
+    if (!result) {
+      debug.log('premium', `No feature limits found for user ${userId}, returning default free tier limits`)
+      return {
+        tier: 'free',
+        custom_decks_limit: 0,
+        historical_months_limit: 1,
+        advanced_analytics: false,
+        spaced_repetition: false,
+        learning_insights: false,
+        priority_support: false,
+        offline_mode: false,
+        export_data: false
+      }
+    }
+
+    debug.log('premium', `Feature limits found for user ${userId}:`, result)
+
+    return result as FeatureLimits
   }
 }
 
@@ -240,6 +321,14 @@ export const premiumFeatures = {
    * Check if user has access to a feature (using database function)
    */
   async hasFeatureAccess(userId: string, feature: PremiumFeature): Promise<boolean> {
+    // Add validation
+    if (!userId) {
+      debug.error('premium', 'hasFeatureAccess called with empty userId')
+      return false
+    }
+
+    debug.log('premium', `Checking feature access for user ${userId}, feature: ${feature}`)
+
     const { data, error } = await supabase
       .rpc('check_premium_feature_access', {
         p_user_id: userId,
@@ -247,10 +336,45 @@ export const premiumFeatures = {
       })
 
     if (error) {
-      console.error('Error checking premium feature access:', error)
+      debug.error('premium', 'Error checking premium feature access:', {
+        error,
+        userId,
+        feature,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        hint: error.hint
+      })
+      
+      // If the function doesn't exist, fall back to basic logic
+      if (error.code === '42883' || error.message?.includes('function')) {
+        debug.warn('premium', 'check_premium_feature_access function not found, falling back to basic subscription check')
+        
+        // Get subscription directly and do basic check
+        const subscription = await subscriptionOperations.getUserSubscription(userId)
+        const isPremium = subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro'
+        const isActive = subscription?.subscription_status === 'active'
+        
+        // For free tier features, return true
+        if (['basic_quizzes', 'community_features'].includes(feature)) {
+          debug.log('premium', `Feature ${feature} is free tier, granting access`)
+          return true
+        }
+        
+        // For premium features, check if user has active premium subscription
+        const hasAccess = isPremium && isActive
+        debug.log('premium', `Fallback check for ${feature}: ${hasAccess ? 'granted' : 'denied'}`, {
+          isPremium,
+          isActive,
+          tier: subscription?.subscription_tier
+        })
+        return hasAccess
+      }
+      
       return false
     }
 
+    debug.log('premium', `Feature access check result for ${feature}: ${data ? 'granted' : 'denied'}`)
     return data || false
   },
 
@@ -258,6 +382,14 @@ export const premiumFeatures = {
    * Track feature usage
    */
   async trackFeatureUsage(userId: string, feature: PremiumFeature): Promise<boolean> {
+    // Add validation
+    if (!userId) {
+      debug.error('premium', 'trackFeatureUsage called with empty userId')
+      return false
+    }
+
+    debug.log('premium', `Tracking feature usage for user ${userId}, feature: ${feature}`)
+
     const { data, error } = await supabase
       .rpc('track_feature_usage', {
         p_user_id: userId,
@@ -265,10 +397,26 @@ export const premiumFeatures = {
       })
 
     if (error) {
-      console.error('Error tracking feature usage:', error)
+      debug.error('premium', 'Error tracking feature usage:', {
+        error,
+        userId,
+        feature,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details,
+        hint: error.hint
+      })
+      
+      // If the function doesn't exist, log but don't fail
+      if (error.code === '42883' || error.message?.includes('function')) {
+        debug.warn('premium', 'track_feature_usage function not found, skipping usage tracking')
+        return true // Don't block the user from using the feature
+      }
+      
       return false
     }
 
+    debug.log('premium', `Feature usage tracked successfully for ${feature}`)
     return data || false
   },
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from './useTranslation'
 import { useLanguage } from '@/components/providers/language-provider'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 /**
  * Simplified quiz-specific translation hook
@@ -30,7 +30,7 @@ export function useQuizTranslation(options: UseQuizTranslationOptions = {}) {
   const { autoTranslate = true, cacheResults = true } = options
   const { currentLanguage } = useLanguage()
   const { translateBatch } = useTranslation()
-  const supabase = createClient()
+  // Using singleton supabase client
   
   const [isTranslating, setIsTranslating] = useState(false)
   const [translationCache] = useState(new Map<string, any>())

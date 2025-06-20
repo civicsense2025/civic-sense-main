@@ -570,7 +570,7 @@ export const enhancedQuizDatabase = {
   },
 
   /**
-   * Get recent quiz activity for a user with deduplication
+   * Get recent activity for a user across different activity types
    */
   async getRecentActivity(userId: string, limit: number = 10): Promise<Array<{
     attemptId?: string
@@ -584,69 +584,100 @@ export const enhancedQuizDatabase = {
     activityType?: 'quiz' | 'assessment'
   }>> {
     try {
-      // Fetch quiz attempts with proper deduplication by topic_id + completion status
-      const { data: attempts, error } = await supabase
-        .from('user_quiz_attempts')
-        .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed, created_at')
-        .eq('user_id', userId)
-        .order('completed_at', { ascending: false })
-      if (error) throw error
-      // Fetch topics to get titles
-      const { data: topics } = await supabase
-        .from('question_topics')
-        .select('topic_id, topic_title')
-      const topicMap = topics?.reduce<Record<string, string>>((acc, topic) => {
-        acc[topic.topic_id] = topic.topic_title
-        return acc
-      }, {}) || {}
-      // Fetch assessment completions
-      const { data: assessments } = await supabase
-        .from('user_assessments')
-        .select('id, score, completed_at, level')
-        .eq('user_id', userId)
-        .order('completed_at', { ascending: false })
-        .limit(limit * 2)
-      // Deduplicate attempts by topic_id + is_completed (keep most recent for each combination)
-      const deduplicatedAttempts = (attempts || []).reduce((acc: any[], attempt: any) => {
-        const key = `${attempt.topic_id}-${attempt.is_completed}`
-        const existingIndex = acc.findIndex(a => `${a.topic_id}-${a.is_completed}` === key)
+      // Get quiz attempts
+      let quizAttempts: any[] = []
+      try {
+        const { data: quizData, error: quizError } = await supabase
+          .from('user_quiz_attempts')
+          .select(`
+            id,
+            topic_id,
+            score,
+            completed_at,
+            time_spent_seconds,
+            is_completed
+          `)
+          .eq('user_id', userId)
+          .order('completed_at', { ascending: false })
+          .limit(limit * 2)
         
-        if (existingIndex >= 0) {
-          // Keep the more recent attempt
-          const existingDate = new Date(acc[existingIndex].completed_at || acc[existingIndex].created_at)
-          const currentDate = new Date(attempt.completed_at || attempt.created_at)
-          if (currentDate > existingDate) {
-            acc[existingIndex] = attempt
-          }
+        if (quizError) {
+          console.warn('Error fetching quiz attempts (table may not exist):', quizError)
         } else {
-          acc.push(attempt)
+          quizAttempts = quizData || []
         }
-        return acc
-      }, [])
+      } catch (error) {
+        console.warn('Failed to fetch quiz attempts:', error)
+      }
 
-      // Build activity list from deduplicated attempts
-      const quizActivity = deduplicatedAttempts.map(attempt => ({
-        attemptId: attempt.id,
-        topicId: attempt.topic_id,
-        topicTitle: topicMap[attempt.topic_id] || 'Unknown Topic',
-        score: attempt.score ?? 0,
-        completedAt: attempt.completed_at ?? new Date().toISOString(),
-        timeSpent: attempt.time_spent_seconds ?? undefined,
-        isPartial: !attempt.is_completed,
-        activityType: 'quiz' as const
-      }))
-      const assessmentActivity = (assessments || []).map(a => ({
-        attemptId: a.id,
-        topicId: 'assessment',
-        topicTitle: 'CivicSense Assessment',
-        score: a.score ?? 0,
-        completedAt: a.completed_at ?? new Date().toISOString(),
-        isPartial: false,
-        level: a.level,
-        activityType: 'assessment' as const
-      }))
-      // Merge and dedupe by completedAt+type+attemptId
-      const all = [...quizActivity, ...assessmentActivity]
+      // Get assessment attempts
+      let assessmentAttempts: any[] = []
+      try {
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('user_assessment_attempts')
+          .select(`
+            id,
+            assessment_type,
+            score,
+            completed_at,
+            time_spent_seconds,
+            is_completed,
+            level_achieved
+          `)
+          .eq('user_id', userId)
+          .order('completed_at', { ascending: false })
+          .limit(limit)
+        
+        if (assessmentError) {
+          // Only log this in development, not production
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Error fetching assessment attempts (table may not exist):', assessmentError)
+          }
+          assessmentAttempts = []
+        } else {
+          assessmentAttempts = assessmentData || []
+        }
+      } catch (error) {
+        console.warn('Failed to fetch assessment attempts:', error)
+      }
+
+      // Get topic information for display
+      let allTopics: Record<string, any> = {}
+      try {
+        const { dataService } = await import('@/lib/data-service')
+        allTopics = await dataService.getAllTopics()
+      } catch (error) {
+        console.warn('Failed to load topics for recent activity:', error)
+      }
+
+      // Combine and format all activities
+      const all = [
+        ...quizAttempts.map((attempt: any) => ({
+          attemptId: attempt.id,
+          topicId: attempt.topic_id,
+          topicTitle: allTopics[attempt.topic_id]?.topic_title || `Topic ${attempt.topic_id}`,
+          score: attempt.score ?? 0,
+          completedAt: attempt.completed_at ?? new Date().toISOString(),
+          timeSpent: attempt.time_spent_seconds || 0,
+          isPartial: !attempt.is_completed,
+          activityType: 'quiz' as const
+        })),
+        ...assessmentAttempts.map((attempt: any) => ({
+          attemptId: attempt.id,
+          topicId: attempt.assessment_type || 'assessment',
+          topicTitle: attempt.assessment_type === 'civics_test' 
+            ? 'Civics Test Assessment'
+            : 'Assessment',
+          score: attempt.score ?? 0,
+          completedAt: attempt.completed_at ?? new Date().toISOString(),
+          timeSpent: attempt.time_spent_seconds || 0,
+          isPartial: !attempt.is_completed,
+          level: attempt.level_achieved,
+          activityType: 'assessment' as const
+        }))
+      ]
+
+      // Deduplicate by attempt ID and completion time
       const seen = new Set<string>()
       const deduped = all.filter(item => {
         const key = `${item.completedAt}-${item.activityType}-${item.attemptId}`
@@ -680,7 +711,14 @@ export const enhancedQuizDatabase = {
         .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed')
         .eq('user_id', userId)
         .order('completed_at', { ascending: false })
-      if (error) throw error
+      
+      if (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Error getting user quiz attempts (table may not exist):', error)
+        }
+        return []
+      }
+      
       // Deduplicate by id+completedAt
       const seen = new Set<string>()
       return (attempts || []).filter(attempt => {
@@ -697,7 +735,7 @@ export const enhancedQuizDatabase = {
         isPartial: !attempt.is_completed
       }))
     } catch (error) {
-      console.error('Error getting user quiz attempts:', error)
+      console.warn('Error getting user quiz attempts:', error)
       return []
     }
   },
@@ -714,7 +752,12 @@ export const enhancedQuizDatabase = {
         .eq('is_completed', true)
         .order('completed_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Error getting completed topics (table may not exist):', error)
+        }
+        return []
+      }
 
       // Deduplicate topic ids
       const uniqueTopics = new Set<string>()
@@ -722,7 +765,7 @@ export const enhancedQuizDatabase = {
       
       return Array.from(uniqueTopics)
     } catch (error) {
-      console.error('Error getting completed topics:', error)
+      console.warn('Error getting completed topics:', error)
       return []
     }
   },

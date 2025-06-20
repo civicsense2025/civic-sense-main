@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import { EnhancedPodAnalytics } from './enhanced-pod-analytics'
+import { GoogleClassroomSyncDialog } from '@/components/integrations/google-classroom-sync-dialog'
 import Link from 'next/link'
 
 interface PodMember {
@@ -687,10 +688,20 @@ interface PodTheme {
                             <div className="flex gap-2">
                   {/* Show classroom sync if pod was created from classroom */}
                   {pod.pod_type === 'classroom' && (
-                    <Button variant="outline">
-                      <School className="h-4 w-4 mr-2" />
+                    <GoogleClassroomSyncDialog
+                      onPodCreated={(podId) => {
+                        toast({
+                          title: "New pod created!",
+                          description: "Your Google Classroom has been synced to a new learning pod.",
+                        })
+                        // Optionally redirect to the new pod
+                        window.location.href = `/pods/${podId}`
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                    >
+                      <School className="h-4 w-4 mr-2 text-white" />
                       Sync from Classroom
-                    </Button>
+                    </GoogleClassroomSyncDialog>
                   )}
                   <Button>
                     <UserPlus className="h-4 w-4 mr-2" />

@@ -53,17 +53,14 @@ export function StartQuizButton({
     return () => observer.disconnect();
   }, []);
 
-  const baseClasses =
-    "rounded-full shadow-sm px-8 py-4 text-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 relative z-10"
-
   const primaryStyles =
-    "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-950 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:hover:text-white border border-blue-200 dark:border-blue-500"
+    "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-950 dark:bg-blue-600 dark:text-blue-50 dark:hover:bg-blue-700 dark:hover:text-white border border-blue-200 dark:border-blue-500"
   const outlineStyles =
-    "border border-blue-300 dark:border-blue-400 text-blue-700 dark:text-blue-100 bg-transparent hover:bg-blue-50 hover:text-blue-900 dark:hover:bg-blue-800/50 dark:hover:text-blue-50"
+    "border border-blue-300 dark:border-blue-400 text-blue-700 dark:text-blue-200 bg-transparent hover:bg-blue-50 hover:text-blue-900 dark:hover:bg-blue-800/50 dark:hover:text-blue-50"
   const completedStyles =
-    "border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-100 hover:bg-green-100 hover:text-green-950 dark:hover:bg-green-800/40 dark:hover:text-green-50"
+    "border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-200 hover:bg-green-100 hover:text-green-950 dark:hover:bg-green-800/40 dark:hover:text-green-50"
   const partiallyCompletedStyles =
-    "border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 hover:bg-amber-100 hover:text-amber-950 dark:hover:bg-amber-800/40 dark:hover:text-amber-50"
+    "border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 hover:text-amber-950 dark:hover:bg-amber-800/40 dark:hover:text-amber-50"
   const disabledStyles = "opacity-40 cursor-not-allowed"
 
   // Choose style based on state
@@ -75,9 +72,18 @@ export function StartQuizButton({
   }
 
   const combined = cn(
-    baseClasses,
+    // Base structure
+    "rounded-full shadow-sm px-8 py-4 text-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 relative z-10",
+    // Override any button component defaults completely
+    "!outline-none !ring-0 !ring-offset-0",
+    // Apply our specific theme-responsive styles
     styleToUse,
+    // State-based styles
     disabled && disabledStyles,
+    // Ensure text is properly inherited
+    "[&>*]:text-inherit [&_svg]:text-inherit",
+    // Focus styles
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
     className,
   )
 
@@ -153,27 +159,29 @@ export function StartQuizButton({
         disabled={disabled}
         onClick={onClick}
         className={combined}
-        variant="ghost"
         size="lg"
         title={getTooltipText()}
+        asChild
       >
-        <span>{label}</span>
-        <ArrowRight className="h-5 w-5 ml-1 transition-transform group-hover:translate-x-0.5" />
-        {completed && (
-          <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
-            <ArrowRight className="h-4 w-4" />
-          </div>
-        )}
-        {isPartiallyCompleted && (
-          <div className="absolute -top-2 -right-2 bg-amber-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
-            <span className="text-xs font-bold">⏸</span>
-          </div>
-        )}
-        {remainingQuizzes !== undefined && !completed && !isPartiallyCompleted && !(isPremium || isPro) && (
-          <div className="absolute -top-2 -right-2 bg-blue-600 dark:bg-blue-400 text-white dark:text-blue-950 rounded-full w-6 h-6 text-xs flex items-center justify-center font-medium z-20">
-            {remainingQuizzes}
-          </div>
-        )}
+        <button type="button">
+          <span>{label}</span>
+          <ArrowRight className="h-5 w-5 ml-1 transition-transform group-hover:translate-x-0.5" />
+          {completed && (
+            <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          )}
+          {isPartiallyCompleted && (
+            <div className="absolute -top-2 -right-2 bg-amber-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
+              <span className="text-xs font-bold">⏸</span>
+            </div>
+          )}
+          {remainingQuizzes !== undefined && !completed && !isPartiallyCompleted && !(isPremium || isPro) && (
+            <div className="absolute -top-2 -right-2 bg-blue-600 dark:bg-blue-400 text-white dark:text-blue-950 rounded-full w-6 h-6 text-xs flex items-center justify-center font-medium z-20">
+              {remainingQuizzes}
+            </div>
+          )}
+        </button>
       </Button>
     </div>
   )

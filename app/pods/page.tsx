@@ -10,12 +10,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Users, 
-  Search, 
   BarChart3, 
   Star,
   School,
@@ -39,31 +38,245 @@ import {
   Shield,
   Accessibility,
   Copy,
-  Check
+  Check,
+  MoreVertical,
+  UserPlus,
+  CheckCircle,
+  XCircle,
+  Edit,
+  UserX,
+  Archive,
+  Smile
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
+import { GoogleClassroomSyncDialog } from '@/components/integrations/google-classroom-sync-dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { EmojiPicker } from '@/components/ui/emoji-picker'
+
+// Atomic components
+import { PodHeader } from '@/components/pods/pod-header'
+import { PodCard } from '@/components/pods/pod-card'
+import { PodCardSkeleton } from '@/components/pods/pod-card-skeleton'
+import { PodTabs, TabsContent } from '@/components/pods/pod-tabs'
 
 // Lazy loaded components
 const LearningPodManager = lazy(() => import('@/components/learning-pods/family-pod-manager').then(module => ({ default: module.LearningPodManager })))
-const PodDiscovery = lazy(() => import('@/components/learning-pods/pod-discovery').then(module => ({ default: module.PodDiscovery })))
 const AggregatePodAnalytics = lazy(() => import('@/components/learning-pods/aggregate-pod-analytics').then(module => ({ default: module.AggregatePodAnalytics })))
 const LearningPodsErrorBoundary = lazy(() => import('@/components/learning-pods/error-boundary').then(module => ({ default: module.LearningPodsErrorBoundary })))
 
-// Temporary placeholder for notifications - will be implemented separately
-const PodNotificationsAndActivity = () => (
-  <div className="text-center py-24">
-    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-      <Bell className="h-8 w-8 text-slate-400" />
+// Join Request Interface
+interface JoinRequest {
+  id: string
+  user_name: string
+  user_email: string
+  pod_name: string
+  pod_id: string
+  requested_at: string
+  message?: string
+}
+
+// Activity Interface
+interface PodActivity {
+  id: string
+  pod_name: string
+  activity_type: 'member_joined' | 'quiz_completed' | 'achievement_unlocked' | 'milestone_reached'
+  description: string
+  created_at: string
+  user_name?: string
+}
+
+// Activity and Join Requests Component
+const PodNotificationsAndActivity = () => {
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([])
+  const [activities, setActivities] = useState<PodActivity[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    loadActivityData()
+  }, [])
+
+  const loadActivityData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Load join requests
+      const joinRequestsResponse = await fetch('/api/learning-pods/join-requests')
+      if (joinRequestsResponse.ok) {
+        const joinRequestsData = await joinRequestsResponse.json()
+        setJoinRequests(joinRequestsData.requests || [])
+      }
+
+      // Load recent activities
+      const activitiesResponse = await fetch('/api/learning-pods/activities')
+      if (activitiesResponse.ok) {
+        const activitiesData = await activitiesResponse.json()
+        setActivities(activitiesData.activities || [])
+      }
+    } catch (error) {
+      console.error('Failed to load activity data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleJoinRequest = async (requestId: string, action: 'approve' | 'deny') => {
+    try {
+      const response = await fetch(`/api/learning-pods/join-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+
+      if (response.ok) {
+        toast({
+          title: action === 'approve' ? 'Request approved' : 'Request denied',
+          description: `Join request has been ${action}d.`
+        })
+        loadActivityData() // Refresh data
+      } else {
+        throw new Error('Failed to process request')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to process join request.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-32" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const hasJoinRequests = joinRequests.length > 0
+  const hasActivities = activities.length > 0
+
+  if (!hasJoinRequests && !hasActivities) {
+    return (
+      <div className="text-center py-24">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Bell className="h-8 w-8 text-slate-400" />
+        </div>
+        <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No activity yet</h3>
+        <p className="text-slate-500 dark:text-slate-400 font-light">
+          Join requests and pod activities will appear here.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Join Requests */}
+      {hasJoinRequests && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Pending Join Requests ({joinRequests.length})
+          </h3>
+          <div className="space-y-3">
+            {joinRequests.map((request) => (
+              <Card key={request.id} className="p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="font-medium text-slate-900 dark:text-white">
+                      {request.user_name} wants to join {request.pod_name}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {request.user_email} • {new Date(request.requested_at).toLocaleDateString()}
+                    </p>
+                    {request.message && (
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 italic">
+                        "{request.message}"
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleJoinRequest(request.id, 'deny')}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Deny
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleJoinRequest(request.id, 'approve')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Activities */}
+      {hasActivities && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Activity
+          </h3>
+          <div className="space-y-3">
+            {activities.map((activity) => (
+              <Card key={activity.id} className="p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    {activity.activity_type === 'member_joined' && <UserPlus className="h-4 w-4 text-blue-600" />}
+                    {activity.activity_type === 'quiz_completed' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    {activity.activity_type === 'achievement_unlocked' && <Trophy className="h-4 w-4 text-yellow-600" />}
+                    {activity.activity_type === 'milestone_reached' && <Target className="h-4 w-4 text-purple-600" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-900 dark:text-white">
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {activity.pod_name} • {new Date(activity.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-    <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Notifications Coming Soon</h3>
-    <p className="text-slate-500 dark:text-slate-400 font-light">
-      Join request notifications and activity feeds will be available here.
-    </p>
-  </div>
-)
+  )
+}
 
 import { Header } from '@/components/header'
 
@@ -130,342 +343,7 @@ interface LearningPod {
   partnership_status?: 'open' | 'closed' | 'invite_only'
 }
 
-// Large Pod Card Component
-interface PodCardProps {
-  pod: LearningPod
-  showDescription?: boolean
-  showActivity?: boolean
-  showMembers?: boolean
-  showRole?: boolean
-  showJoinCode?: boolean
-  className?: string
-}
 
-function PodCard({ 
-  pod, 
-  showDescription = true, 
-  showActivity = true, 
-  showMembers = true, 
-  showRole = true,
-  showJoinCode = false,
-  className 
-}: PodCardProps) {
-  const getPodTypeIcon = (type: string) => {
-    switch (type) {
-      case 'family': return '👨‍👩‍👧‍👦'
-      case 'friends': return '👥'
-      case 'classroom': return '🏫'
-      case 'study_group': return '📚'
-      case 'campaign': return '🗳️'
-      case 'organization': return '🏢'
-      case 'book_club': return '📖'
-      case 'debate_team': return '⚖️'
-      case 'custom': return '⭐'
-      default: return '👥'
-    }
-  }
-
-  const getFilterLevelColor = (level: string) => {
-    switch (level) {
-      case 'none': return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
-      case 'light': return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300'
-      case 'moderate': return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-      case 'strict': return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
-      default: return 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300'
-    }
-  }
-
-  const getRoleColor = (role: string) => {
-    const colorMap: Record<string, string> = {
-      'admin': 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
-      'parent': 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-      'organizer': 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
-      'teacher': 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-      'member': 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300'
-    }
-    return colorMap[role] || 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300'
-  }
-
-  const getPersonalityIcon = (type?: string) => {
-    switch (type) {
-      case 'competitive': return <Trophy className="h-4 w-4" />
-      case 'collaborative': return <Heart className="h-4 w-4" />
-      case 'exploratory': return <Lightbulb className="h-4 w-4" />
-      case 'structured': return <BookOpen className="h-4 w-4" />
-      default: return null
-    }
-  }
-
-  const getPersonalityColor = (type?: string) => {
-    switch (type) {
-      case 'competitive': return 'text-orange-600 bg-orange-50 dark:bg-orange-950/20'
-      case 'collaborative': return 'text-pink-600 bg-pink-50 dark:bg-pink-950/20'
-      case 'exploratory': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20'
-      case 'structured': return 'text-blue-600 bg-blue-50 dark:bg-blue-950/20'
-      default: return 'text-slate-600 bg-slate-50 dark:bg-slate-950/20'
-    }
-  }
-
-  const getAccessibilityIcon = (mode?: string) => {
-    switch (mode) {
-      case 'high_contrast': return <Accessibility className="h-4 w-4" />
-      case 'sensory_friendly': return <Heart className="h-4 w-4" />
-      default: return <Shield className="h-4 w-4" />
-    }
-  }
-
-  // Use theme colors if available
-  const themeColors = pod.theme ? {
-    backgroundColor: `${pod.theme.primary_color}15`,
-    borderColor: pod.theme.primary_color
-  } : pod.pod_color ? {
-    backgroundColor: `${pod.pod_color}15`,
-    borderColor: pod.pod_color
-  } : undefined
-
-  return (
-    <Link href={`/pods/${pod.id}`} className="group block">
-      <Card className={cn(
-        "transition-all duration-200 group-hover:shadow-lg border-0 bg-white dark:bg-slate-900",
-        className
-      )}>
-        <CardContent className="p-8">
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div 
-                  className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl border-2"
-                  style={themeColors || { 
-                    backgroundColor: pod.pod_color ? `${pod.pod_color}15` : '#f1f5f9',
-                    borderColor: pod.pod_color || '#e2e8f0'
-                  }}
-                >
-                  {pod.theme?.emoji || pod.pod_emoji || getPodTypeIcon(pod.pod_type)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white">
-                      {pod.pod_name}
-                    </h3>
-                    {pod.theme && (
-                      <Badge 
-                        className="border-0 text-xs px-2 py-1"
-                        style={{ 
-                          backgroundColor: `${pod.theme.primary_color}20`,
-                          color: pod.theme.primary_color
-                        }}
-                      >
-                        {pod.theme.display_name}
-                      </Badge>
-                    )}
-                  </div>
-                  {pod.pod_motto && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-light italic mb-1 line-clamp-1">
-                      "{pod.pod_motto}"
-                    </p>
-                  )}
-                  {pod.family_name && (
-                    <p className="text-slate-500 dark:text-slate-400 font-light">
-                      {pod.family_name}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge 
-                      className="border-0 text-xs"
-                      style={{ 
-                        backgroundColor: pod.pod_color ? `${pod.pod_color}15` : undefined,
-                        color: pod.pod_color || undefined,
-                        borderColor: pod.pod_color || undefined
-                      }}
-                    >
-                      {pod.pod_type === 'custom' && pod.custom_type_label ? pod.custom_type_label : pod.pod_type}
-                    </Badge>
-                    {showRole && (
-                      <Badge className={cn(getRoleColor(pod.user_role), "border-0 text-xs")}>
-                        {pod.user_role}
-                      </Badge>
-                    )}
-                    {pod.is_admin && <Crown className="h-4 w-4 text-yellow-500" />}
-                    
-                    {/* Personality Type Badge */}
-                    {pod.personality_type && (
-                      <Badge className={cn(getPersonalityColor(pod.personality_type), "border-0 text-xs flex items-center gap-1")}>
-                        {getPersonalityIcon(pod.personality_type)}
-                        {pod.personality_type}
-                      </Badge>
-                    )}
-                    
-                    {/* Accessibility Mode Badge */}
-                    {pod.accessibility_mode && pod.accessibility_mode !== 'standard' && (
-                      <Badge className="border-0 text-xs flex items-center gap-1 bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-300">
-                        {getAccessibilityIcon(pod.accessibility_mode)}
-                        A11y
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {showJoinCode && pod.is_admin && (
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Join Code</p>
-                  <code className="text-sm font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                    {pod.join_code}
-                  </code>
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {showDescription && pod.description && (
-              <p className="text-slate-600 dark:text-slate-400 font-light line-clamp-2">
-                {pod.description}
-              </p>
-            )}
-
-            {/* Enhanced Features Display */}
-            {(pod.unlocked_features?.length > 0 || Object.keys(pod.milestone_data || {}).length > 0) && (
-              <div className="space-y-2">
-                {pod.unlocked_features?.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {pod.unlocked_features.length} unlocked feature{pod.unlocked_features.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                )}
-                {Object.keys(pod.milestone_data || {}).length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      Milestones achieved
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-6">
-              {showMembers && (
-                <div className="text-center">
-                  <div className="text-2xl font-light text-slate-900 dark:text-white">
-                    {pod.member_count}
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
-                    Member{pod.member_count !== 1 ? 's' : ''}
-                  </p>
-                  {pod.active_members && (
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      {pod.active_members} active
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              <div className="text-center">
-                <div className="text-2xl font-light text-slate-900 dark:text-white capitalize">
-                  {pod.content_filter_level}
-                </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-light">Filter</p>
-              </div>
-              
-              {showActivity && (
-                <div className="text-center">
-                  <div className="text-2xl font-light text-slate-900 dark:text-white">
-                    {pod.last_activity 
-                      ? new Date(pod.last_activity).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                      : new Date(pod.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    }
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
-                    {pod.last_activity ? 'Last Activity' : 'Created'}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <Calendar className="h-4 w-4" />
-                <span>Created {new Date(pod.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-                <span className="text-sm text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
-                  Manage
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  )
-}
-
-// Pod Card Skeleton Component
-function PodCardSkeleton({ className }: { className?: string }) {
-  return (
-    <Card className={cn(
-      "transition-all duration-200 border-0 bg-white dark:bg-slate-900",
-      className
-    )}>
-      <CardContent className="p-8">
-        <div className="space-y-6">
-          {/* Header skeleton */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="w-16 h-16 rounded-xl" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                </div>
-                <Skeleton className="h-4 w-24" />
-                <div className="flex items-center gap-2 mt-2">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                  <Skeleton className="h-4 w-4" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Description skeleton */}
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-
-          {/* Stats Grid skeleton */}
-          <div className="grid grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="text-center space-y-2">
-                <Skeleton className="h-8 w-8 mx-auto" />
-                <Skeleton className="h-4 w-16 mx-auto" />
-                <Skeleton className="h-3 w-12 mx-auto" />
-              </div>
-            ))}
-          </div>
-
-          {/* Action Bar skeleton */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-16" />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 export default function PodsPage() {
   // Feature flag check - hide pods in production
@@ -479,6 +357,20 @@ export default function PodsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [pods, setPods] = useState<LearningPod[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Dialog states
+  const [editTitleDialog, setEditTitleDialog] = useState<{ open: boolean; podId: string; currentTitle: string }>({
+    open: false,
+    podId: '',
+    currentTitle: ''
+  })
+  const [transferDialog, setTransferDialog] = useState<{ open: boolean; podId: string; podName: string }>({
+    open: false,
+    podId: '',
+    podName: ''
+  })
+  const [newTitle, setNewTitle] = useState('')
+  const [transferEmail, setTransferEmail] = useState('')
 
   // Create pod form state with enhanced features
   const [createForm, setCreateForm] = useState({
@@ -671,49 +563,165 @@ export default function PodsPage() {
     }
   }
 
+  // Handler functions for pod actions
+  const handleEmojiChange = async (podId: string, emoji: string) => {
+    try {
+      const response = await fetch(`/api/learning-pods/${podId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_emoji', emoji })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Emoji updated",
+          description: `Pod emoji changed to ${emoji}`,
+        })
+        loadUserPods() // Refresh pods
+      } else {
+        throw new Error('Failed to update emoji')
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating emoji",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleEditTitle = (podId: string, currentTitle: string) => {
+    setEditTitleDialog({ open: true, podId, currentTitle })
+    setNewTitle(currentTitle)
+  }
+
+  const handleSaveTitle = async () => {
+    if (!newTitle.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please enter a pod title.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/learning-pods/${editTitleDialog.podId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_title', title: newTitle.trim() })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Title updated",
+          description: `Pod renamed to "${newTitle.trim()}"`,
+        })
+        setEditTitleDialog({ open: false, podId: '', currentTitle: '' })
+        setNewTitle('')
+        loadUserPods() // Refresh pods
+      } else {
+        throw new Error('Failed to update title')
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating title",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleTransferPod = (podId: string, podName: string) => {
+    setTransferDialog({ open: true, podId, podName })
+    setTransferEmail('')
+  }
+
+  const handleConfirmTransfer = async () => {
+    if (!transferEmail.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter the new owner's email.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/learning-pods/${transferDialog.podId}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newOwnerEmail: transferEmail.trim() })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Pod transferred",
+          description: data.message,
+        })
+        setTransferDialog({ open: false, podId: '', podName: '' })
+        setTransferEmail('')
+        loadUserPods() // Refresh pods
+      } else {
+        toast({
+          title: "Transfer failed",
+          description: data.error || "Please try again later.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error transferring pod",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleArchivePod = async (podId: string) => {
+    if (!confirm('Are you sure you want to archive this pod? It will no longer be visible to members.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/learning-pods/${podId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'archive' })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Pod archived",
+          description: "The pod has been archived and is no longer visible to members.",
+        })
+        loadUserPods() // Refresh pods
+      } else {
+        throw new Error('Failed to archive pod')
+      }
+    } catch (error) {
+      toast({
+        title: "Error archiving pod",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
       
       <main className="container mx-auto px-6 py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto">
-          {/* Pods-specific header with create pod action */}
-          <div className="text-center space-y-6 mb-16 sm:mb-20">
-            <h1 className="text-4xl sm:text-5xl font-light text-slate-900 dark:text-white tracking-tight">
-              My Learning Pods
-            </h1>
-            <p className="text-xl text-slate-500 dark:text-slate-400 font-light max-w-3xl mx-auto">
-              Create and manage safe learning spaces for families, friends, classrooms, and organizations
-            </p>
-            
-            {/* Action Buttons */}
-            <div className="flex justify-center items-center gap-4 pt-4">
-              <Button 
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-full px-8 py-3 h-12 font-light"
-                onClick={() => {
-                  if (user) {
-                    setShowCreateForm(true)
-                  } else {
-                    toast({
-                      title: "Sign in required",
-                      description: "Please sign in to create learning pods.",
-                      variant: "destructive"
-                    })
-                  }
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Pod
-              </Button>
-              
-              <Button asChild variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-full px-6 py-3 h-12 font-light border border-slate-200 dark:border-slate-700">
-                <Link href="/create-pod-from-classroom">
-                  <School className="h-4 w-4 mr-2" />
-                  Sync with Google Classroom
-                </Link>
-              </Button>
-            </div>
-          </div>
+          <PodHeader 
+            onCreatePod={() => setShowCreateForm(true)}
+            onPodCreated={(podId) => {
+              loadUserPods()
+            }}
+          />
 
           {/* Create Pod Form */}
           {user && showCreateForm && (
@@ -866,9 +874,18 @@ export default function PodsPage() {
                         <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Theme</Label>
                         <p className="text-sm text-slate-500 dark:text-slate-400">Choose a visual theme for your pod</p>
                         {themesLoading ? (
-                          <div className="flex items-center gap-2 text-slate-500">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
-                            Loading themes...
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-3">
+                                  <Skeleton className="h-5 w-5 rounded-full" />
+                                  <div className="space-y-1">
+                                    <Skeleton className="h-4 w-20" />
+                                    <Skeleton className="h-3 w-32" />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1064,32 +1081,14 @@ export default function PodsPage() {
             </div>
           )}
 
-          {/* Main Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-12 bg-slate-100 dark:bg-slate-800 h-12">
-              <TabsTrigger value="my-pods" className="gap-2 font-light">
-                <Users className="h-4 w-4" />
-                My Pods
-              </TabsTrigger>
-              <TabsTrigger value="discover" className="gap-2 font-light">
-                <Search className="h-4 w-4" />
-                Discover
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-2 font-light">
-                <Bell className="h-4 w-4" />
-                Activity
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2 font-light">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-            </TabsList>
+          <PodTabs activeTab={activeTab} onTabChange={setActiveTab}>
 
             <TabsContent value="my-pods">
               <Suspense fallback={
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">Loading your pods...</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <PodCardSkeleton key={i} />
+                  ))}
                 </div>
               }>
                 <LearningPodsErrorBoundary>
@@ -1104,9 +1103,10 @@ export default function PodsPage() {
                       </p>
                     </div>
                   ) : isLoading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-                      <p className="text-slate-600 dark:text-slate-400 font-light">Loading your pods...</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <PodCardSkeleton key={i} />
+                      ))}
                     </div>
                   ) : pods.length === 0 ? (
                     <div className="text-center py-24">
@@ -1139,6 +1139,18 @@ export default function PodsPage() {
                           showMembers={true}
                           showRole={true}
                           showJoinCode={false}
+                          onEmojiClick={(podId, emoji) => {
+                            handleEmojiChange(podId, emoji)
+                          }}
+                          onManageClick={(podId) => {
+                            window.location.href = `/pods/${podId}`
+                          }}
+                          onEditTitle={handleEditTitle}
+                          onTransferPod={(podId) => {
+                            const pod = pods.find(p => p.id === podId)
+                            if (pod) handleTransferPod(podId, pod.pod_name)
+                          }}
+                          onArchivePod={handleArchivePod}
                         />
                       ))}
                     </div>
@@ -1147,18 +1159,7 @@ export default function PodsPage() {
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="discover">
-              <Suspense fallback={
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">Loading discoverable pods...</p>
-                </div>
-              }>
-                <LearningPodsErrorBoundary>
-                  <PodDiscovery />
-                </LearningPodsErrorBoundary>
-              </Suspense>
-            </TabsContent>
+
 
             <TabsContent value="notifications">
               <LearningPodsErrorBoundary>
@@ -1168,9 +1169,44 @@ export default function PodsPage() {
 
             <TabsContent value="analytics">
               <Suspense fallback={
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">Loading analytics...</p>
+                <div className="space-y-8">
+                  {/* Header */}
+                  <div className="space-y-4">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-96" />
+                  </div>
+                  
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Card key={i} className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-4 w-4 rounded-full" />
+                          </div>
+                          <Skeleton className="h-8 w-12" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {/* Charts */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card className="p-6">
+                      <div className="space-y-4">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-64 w-full" />
+                      </div>
+                    </Card>
+                    <Card className="p-6">
+                      <div className="space-y-4">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-64 w-full" />
+                      </div>
+                    </Card>
+                  </div>
                 </div>
               }>
                 <LearningPodsErrorBoundary>
@@ -1178,9 +1214,89 @@ export default function PodsPage() {
                 </LearningPodsErrorBoundary>
               </Suspense>
             </TabsContent>
-          </Tabs>
+          </PodTabs>
         </div>
       </main>
+
+      {/* Edit Title Dialog */}
+      <Dialog open={editTitleDialog.open} onOpenChange={(open) => {
+        setEditTitleDialog({ open, podId: '', currentTitle: '' })
+        if (!open) setNewTitle('')
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Pod Title</DialogTitle>
+            <DialogDescription>
+              Change the name of your learning pod.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-title">Pod Title</Label>
+              <Input
+                id="new-title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Enter new pod title"
+                className="w-full"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setEditTitleDialog({ open: false, podId: '', currentTitle: '' })
+              setNewTitle('')
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTitle}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Pod Dialog */}
+      <Dialog open={transferDialog.open} onOpenChange={(open) => {
+        setTransferDialog({ open, podId: '', podName: '' })
+        if (!open) setTransferEmail('')
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Pod Ownership</DialogTitle>
+            <DialogDescription>
+              Transfer ownership of "{transferDialog.podName}" to another user. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="transfer-email">New Owner's Email</Label>
+              <Input
+                id="transfer-email"
+                type="email"
+                value={transferEmail}
+                onChange={(e) => setTransferEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="w-full"
+              />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                The user must already have a CivicSense account.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setTransferDialog({ open: false, podId: '', podName: '' })
+              setTransferEmail('')
+            }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmTransfer}>
+              Transfer Ownership
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

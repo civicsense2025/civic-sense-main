@@ -1107,35 +1107,156 @@ export const spacedRepetitionOperations = {
 
 export const enhancedProgressOperations = {
   async getComprehensiveStats(userId: string): Promise<EnhancedUserProgress> {
-    const { data, error } = await supabaseClient
-      .from('user_comprehensive_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (error) {
-      // Fallback to basic progress if view doesn't exist or user not found
-      const { data: basicProgress } = await supabaseClient
-        .from('user_progress')
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_comprehensive_stats')
         .select('*')
         .eq('user_id', userId)
         .single()
 
+      if (error) {
+        console.warn('user_comprehensive_stats view not available, trying fallback:', error.message)
+        
+        // Fallback to basic progress if view doesn't exist or user not found
+        try {
+          const { data: basicProgress, error: basicError } = await supabaseClient
+            .from('user_progress')
+            .select('*')
+            .eq('user_id', userId)
+            .single()
+
+          if (basicError) {
+            console.warn('user_progress table not available, using defaults:', basicError.message)
+            
+            // Return complete default values if both tables fail
+            return {
+              currentStreak: 0,
+              longestStreak: 0,
+              totalQuizzesCompleted: 0,
+              totalQuestionsAnswered: 0,
+              totalCorrectAnswers: 0,
+              totalXp: 0,
+              currentLevel: 1,
+              xpToNextLevel: 100,
+              weeklyGoal: 3,
+              weeklyCompleted: 0,
+              weekStartDate: undefined,
+              preferredCategories: [],
+              adaptiveDifficulty: true,
+              learningStyle: 'mixed',
+              accuracyPercentage: 0,
+              categoriesMastered: 0,
+              categoriesAttempted: 0,
+              activeGoals: 0,
+              customDecksCount: 0,
+              achievementsThisWeek: 0,
+              availableXpForBoosts: 0,
+              totalBoostsPurchased: 0,
+              activeBoosts: []
+            }
+          }
+
+          return {
+            currentStreak: basicProgress?.current_streak || 0,
+            longestStreak: basicProgress?.longest_streak || 0,
+            totalQuizzesCompleted: basicProgress?.total_quizzes_completed || 0,
+            totalQuestionsAnswered: basicProgress?.total_questions_answered || 0,
+            totalCorrectAnswers: basicProgress?.total_correct_answers || 0,
+            totalXp: basicProgress?.total_xp || 0,
+            currentLevel: basicProgress?.current_level || 1,
+            xpToNextLevel: basicProgress?.xp_to_next_level || 100,
+            weeklyGoal: basicProgress?.weekly_goal || 3,
+            weeklyCompleted: basicProgress?.weekly_completed || 0,
+            weekStartDate: basicProgress?.week_start_date || undefined,
+            preferredCategories: (basicProgress?.preferred_categories as string[]) || [],
+            adaptiveDifficulty: basicProgress?.adaptive_difficulty || true,
+            learningStyle: (basicProgress?.learning_style as EnhancedUserProgress['learningStyle']) || 'mixed',
+            accuracyPercentage: 0,
+            categoriesMastered: 0,
+            categoriesAttempted: 0,
+            activeGoals: 0,
+            customDecksCount: 0,
+            achievementsThisWeek: 0,
+            availableXpForBoosts: 0,
+            totalBoostsPurchased: 0,
+            activeBoosts: []
+          }
+        } catch (fallbackError) {
+          console.warn('All database queries failed, using complete defaults:', fallbackError)
+          
+          // Return complete default values if all database access fails
+          return {
+            currentStreak: 0,
+            longestStreak: 0,
+            totalQuizzesCompleted: 0,
+            totalQuestionsAnswered: 0,
+            totalCorrectAnswers: 0,
+            totalXp: 0,
+            currentLevel: 1,
+            xpToNextLevel: 100,
+            weeklyGoal: 3,
+            weeklyCompleted: 0,
+            weekStartDate: undefined,
+            preferredCategories: [],
+            adaptiveDifficulty: true,
+            learningStyle: 'mixed',
+            accuracyPercentage: 0,
+            categoriesMastered: 0,
+            categoriesAttempted: 0,
+            activeGoals: 0,
+            customDecksCount: 0,
+            achievementsThisWeek: 0,
+            availableXpForBoosts: 0,
+            totalBoostsPurchased: 0,
+            activeBoosts: []
+          }
+        }
+      }
+
       return {
-        currentStreak: basicProgress?.current_streak || 0,
-        longestStreak: basicProgress?.longest_streak || 0,
-        totalQuizzesCompleted: basicProgress?.total_quizzes_completed || 0,
-        totalQuestionsAnswered: basicProgress?.total_questions_answered || 0,
-        totalCorrectAnswers: basicProgress?.total_correct_answers || 0,
-        totalXp: basicProgress?.total_xp || 0,
-        currentLevel: basicProgress?.current_level || 1,
-        xpToNextLevel: basicProgress?.xp_to_next_level || 100,
-        weeklyGoal: basicProgress?.weekly_goal || 3,
-        weeklyCompleted: basicProgress?.weekly_completed || 0,
-        weekStartDate: basicProgress?.week_start_date || undefined,
-        preferredCategories: (basicProgress?.preferred_categories as string[]) || [],
-        adaptiveDifficulty: basicProgress?.adaptive_difficulty || true,
-        learningStyle: (basicProgress?.learning_style as EnhancedUserProgress['learningStyle']) || 'mixed',
+        currentStreak: data.current_streak || 0,
+        longestStreak: data.longest_streak || 0,
+        totalQuizzesCompleted: data.total_quizzes_completed || 0,
+        totalQuestionsAnswered: data.total_questions_answered || 0,
+        totalCorrectAnswers: data.total_correct_answers || 0,
+        totalXp: data.total_xp || 0,
+        currentLevel: data.current_level || 1,
+        xpToNextLevel: 100, // Default value since property doesn't exist
+        weeklyGoal: data.weekly_goal || 3,
+        weeklyCompleted: data.weekly_completed || 0,
+        weekStartDate: undefined, // Property doesn't exist in database
+        preferredCategories: (data.preferred_categories as string[]) || [],
+        adaptiveDifficulty: true, // Default value since property doesn't exist
+        learningStyle: 'mixed' as EnhancedUserProgress['learningStyle'], // Default value
+        accuracyPercentage: data.accuracy_percentage || 0,
+        categoriesMastered: data.categories_mastered || 0,
+        categoriesAttempted: data.categories_attempted || 0,
+        activeGoals: data.active_goals || 0,
+        customDecksCount: data.custom_decks_count || 0,
+        achievementsThisWeek: data.achievements_this_week || 0,
+        availableXpForBoosts: 0, // Default value since property doesn't exist
+        totalBoostsPurchased: 0, // Default value since property doesn't exist
+        activeBoosts: [] // Default value since property doesn't exist
+      }
+    } catch (error) {
+      console.warn('Error getting comprehensive stats, using defaults:', error)
+      
+      // Return complete default values if any error occurs
+      return {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalQuizzesCompleted: 0,
+        totalQuestionsAnswered: 0,
+        totalCorrectAnswers: 0,
+        totalXp: 0,
+        currentLevel: 1,
+        xpToNextLevel: 100,
+        weeklyGoal: 3,
+        weeklyCompleted: 0,
+        weekStartDate: undefined,
+        preferredCategories: [],
+        adaptiveDifficulty: true,
+        learningStyle: 'mixed',
         accuracyPercentage: 0,
         categoriesMastered: 0,
         categoriesAttempted: 0,
@@ -1146,32 +1267,6 @@ export const enhancedProgressOperations = {
         totalBoostsPurchased: 0,
         activeBoosts: []
       }
-    }
-
-    return {
-      currentStreak: data.current_streak || 0,
-      longestStreak: data.longest_streak || 0,
-      totalQuizzesCompleted: data.total_quizzes_completed || 0,
-      totalQuestionsAnswered: data.total_questions_answered || 0,
-      totalCorrectAnswers: data.total_correct_answers || 0,
-      totalXp: data.total_xp || 0,
-      currentLevel: data.current_level || 1,
-      xpToNextLevel: 100, // Default value since property doesn't exist
-      weeklyGoal: data.weekly_goal || 3,
-      weeklyCompleted: data.weekly_completed || 0,
-      weekStartDate: undefined, // Property doesn't exist in database
-      preferredCategories: (data.preferred_categories as string[]) || [],
-      adaptiveDifficulty: true, // Default value since property doesn't exist
-      learningStyle: 'mixed' as EnhancedUserProgress['learningStyle'], // Default value
-      accuracyPercentage: data.accuracy_percentage || 0,
-      categoriesMastered: data.categories_mastered || 0,
-      categoriesAttempted: data.categories_attempted || 0,
-      activeGoals: data.active_goals || 0,
-      customDecksCount: data.custom_decks_count || 0,
-      achievementsThisWeek: data.achievements_this_week || 0,
-      availableXpForBoosts: 0, // Default value since property doesn't exist
-      totalBoostsPurchased: 0, // Default value since property doesn't exist
-      activeBoosts: [] // Default value since property doesn't exist
     }
   },
 

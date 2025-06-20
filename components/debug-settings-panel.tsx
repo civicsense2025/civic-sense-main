@@ -42,6 +42,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     debug.enable()
     debug.enable('quiz')
     debug.enable('multiplayer')
+    debug.enable('premium')
     debug.enable('general')
     debug.disable('pwa')
     debug.disable('storage')
@@ -59,6 +60,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     analytics: "User tracking and performance metrics",
     auth: "Authentication and user management",
     api: "API calls and server communications",
+    premium: "Premium subscriptions, feature access, and billing",
     general: "General application debug messages"
   }
 
@@ -70,6 +72,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     analytics: "bg-pink-100 text-pink-800 border-pink-200",
     auth: "bg-indigo-100 text-indigo-800 border-indigo-200",
     api: "bg-orange-100 text-orange-800 border-orange-200",
+    premium: "bg-emerald-100 text-emerald-800 border-emerald-200",
     general: "bg-gray-100 text-gray-800 border-gray-200"
   }
 

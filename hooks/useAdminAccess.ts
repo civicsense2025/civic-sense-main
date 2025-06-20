@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 export function useAdminAccess() {
   const { user } = useAuth()
@@ -20,6 +20,9 @@ export function useAdminAccess() {
         setIsLoading(true)
         setError(null)
 
+        // Create a fresh client instance for this request
+        // Using singleton supabase client
+
         // Check if user has admin privileges in the profiles table
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -33,6 +36,7 @@ export function useAdminAccess() {
           setIsAdmin(false)
         } else {
           setIsAdmin(profile?.is_admin === true)
+          console.log(`✅ Admin check for ${user.email}:`, profile?.is_admin === true)
         }
       } catch (err) {
         console.error('Error verifying admin access:', err)

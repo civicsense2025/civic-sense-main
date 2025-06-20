@@ -24,13 +24,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const params = searchSchema.parse(body)
 
-    // Build the base query
+    // Build the base query - remove the problematic join
     let query = supabase
       .from('question_topics')
-      .select(`
-        *,
-        questions:questions(count)
-      `, { count: 'exact' })
+      .select('*')
       .eq('is_active', params.isActive)
 
     // Apply search query if provided
@@ -87,12 +84,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to search topics' }, { status: 500 })
     }
 
-    // Get question counts for each topic
+    // Get question counts for each topic - handle potential table name issues
     const topicIdList = topics?.map(t => t.topic_id) || []
-    const { data: questionCounts } = await supabase
-      .from('questions')
-      .select('topic_id, question_type')
-      .in('topic_id', topicIdList)
+    let questionCounts: any[] = []
+    
+    if (topicIdList.length > 0) {
+      // Try the main questions table first
+      const { data: questionsData, error: questionsError } = await supabase
+        .from('questions')
+        .select('topic_id, question_type')
+        .in('topic_id', topicIdList)
+      
+      if (questionsError) {
+        console.warn('Questions table error, trying questions_test:', questionsError)
+        // Fallback to questions_test table if questions table fails
+        const { data: questionsTestData } = await supabase
+          .from('questions_test')
+          .select('topic_id, question_type')
+          .in('topic_id', topicIdList)
+        
+        questionCounts = questionsTestData || []
+      } else {
+        questionCounts = questionsData || []
+      }
+    }
 
     // Build question stats map
     const questionStatsMap = new Map<string, any>()
@@ -118,13 +133,32 @@ export async function POST(request: NextRequest) {
 
     const categoryMap = new Map(categories?.map(c => [c.name, c]) || [])
 
-    // Get average difficulty for topics based on their questions
+    // Get average difficulty for topics based on their questions - handle table name issues
     const topicIds = topics?.map(t => t.topic_id) || []
-    const { data: questionDifficulties } = await supabase
-      .from('questions')
-      .select('topic_id, difficulty_level')
-      .in('topic_id', topicIds)
-      .not('difficulty_level', 'is', null)
+    let questionDifficulties: any[] = []
+    
+    if (topicIds.length > 0) {
+      // Try the main questions table first
+      const { data: difficultyData, error: difficultyError } = await supabase
+        .from('questions')
+        .select('topic_id, difficulty_level')
+        .in('topic_id', topicIds)
+        .not('difficulty_level', 'is', null)
+      
+      if (difficultyError) {
+        console.warn('Questions table error for difficulty, trying questions_test:', difficultyError)
+        // Fallback to questions_test table if questions table fails
+        const { data: difficultyTestData } = await supabase
+          .from('questions_test')
+          .select('topic_id, difficulty_level')
+          .in('topic_id', topicIds)
+          .not('difficulty_level', 'is', null)
+        
+        questionDifficulties = difficultyTestData || []
+      } else {
+        questionDifficulties = difficultyData || []
+      }
+    }
 
     // Calculate average difficulty per topic
     const topicDifficultyMap = new Map<string, { avg: number, count: number }>()

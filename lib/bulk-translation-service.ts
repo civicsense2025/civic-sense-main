@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 export interface BulkTranslationOptions {
   contentType: string
@@ -33,7 +33,7 @@ export interface ContentTranslationStats {
 }
 
 export class BulkTranslationService {
-  private supabase = createClient()
+  // Using singleton supabase client
 
   /**
    * Start a bulk translation job

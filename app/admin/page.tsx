@@ -29,6 +29,7 @@ export default function AdminDashboardPage() {
     if (!user) return
     
     if (adminError) {
+      console.error('Admin access error:', adminError)
       toast({
         title: "Access Error",
         description: "Could not verify admin permissions",
@@ -38,7 +39,9 @@ export default function AdminDashboardPage() {
       return
     }
     
-    if (!adminLoading && !isAdmin) {
+    // Only redirect if we're done loading AND the user is definitely not an admin
+    if (!adminLoading && isAdmin === false) {
+      console.log('User is not admin, redirecting to dashboard')
       toast({
         title: "Access Denied",
         description: "You don't have admin permissions to access this panel",
@@ -47,14 +50,22 @@ export default function AdminDashboardPage() {
       window.location.href = '/dashboard'
       return
     }
+    
+    // Log admin status for debugging
+    if (!adminLoading) {
+      console.log('Admin access check complete:', { isAdmin, user: user.email })
+    }
   }, [user, isAdmin, adminLoading, adminError, toast])
 
-  if (adminLoading || !isAdmin) {
+  // Show loading while checking admin status OR if user is not admin
+  if (adminLoading || isAdmin === false) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-400 font-light">Verifying admin access...</p>
+          <p className="text-slate-600 dark:text-slate-400 font-light">
+            {adminLoading ? 'Verifying admin access...' : 'Redirecting...'}
+          </p>
         </div>
       </div>
     )

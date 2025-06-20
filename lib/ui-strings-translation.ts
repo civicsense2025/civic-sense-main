@@ -4,7 +4,7 @@
  */
 
 import { uiStrings, type UIStrings } from './ui-strings'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { extractTranslatableStrings as extractStrings, getStringByPath as getStringByPathUtil } from './ui-strings-extractor'
 
 // Translation storage interface for UI strings
@@ -66,7 +66,7 @@ export const extractTranslatableStrings = extractStrings
  * UI String Translation Service
  */
 export class UIStringTranslationService {
-  private supabase = createClient()
+  // Using singleton supabase client
 
   /**
    * Load UI string translations from database

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { supabase, authHelpers } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // donation status when they want to create gift links.
 
   // Helper function to transfer pending data when user authenticates
-  const transferPendingData = async (user: User) => {
+  const transferPendingData = useCallback(async (user: User) => {
     try {
       // Check if there's any pending data to transfer
       if (!pendingUserAttribution.hasPendingData()) {
@@ -71,34 +71,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error transferring pending data:', error)
     }
-  }
+  }, [toast])
+
+  // Memoized sign out function
+  const signOut = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const { error } = await authHelpers.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+        toast({
+          title: "Sign out failed",
+          description: "There was an error signing you out. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Signed out successfully! 👋",
+          description: "You've been signed out of CivicSense. Come back soon!",
+          variant: "default",
+        })
+      }
+      setUser(null)
+    } catch (error) {
+      console.error('Error in signOut:', error)
+      toast({
+        title: "Sign out failed",
+        description: "There was an unexpected error signing you out.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [toast])
+
+  const handleCloseDonationThankYou = useCallback(() => {
+    setShowDonationThankYou(false)
+    setDonationDetails(null)
+    // Clear localStorage flags
+    localStorage.removeItem('showDonationThankYou')
+    localStorage.removeItem('donationDetails')
+  }, [])
 
   useEffect(() => {
+    let mounted = true
+
     // Check if we have a session on mount
     const getSession = async () => {
-      setIsLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        setUser(session.user)
-        // Transfer any pending data on initial load
-        await transferPendingData(session.user)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
         
-        // Check if we should show donation thank you popover
-        const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
-        const savedDonationDetails = localStorage.getItem('donationDetails')
-        if (shouldShowThankYou === 'true' && savedDonationDetails) {
-          try {
-            const details = JSON.parse(savedDonationDetails)
-            setDonationDetails(details)
-            setShowDonationThankYou(true)
-          } catch (error) {
-            console.error('Error parsing donation details:', error)
+        if (!mounted) return
+        
+        if (session?.user) {
+          setUser(session.user)
+          // Transfer any pending data on initial load
+          await transferPendingData(session.user)
+          
+          // Check if we should show donation thank you popover
+          const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
+          const savedDonationDetails = localStorage.getItem('donationDetails')
+          if (shouldShowThankYou === 'true' && savedDonationDetails) {
+            try {
+              const details = JSON.parse(savedDonationDetails)
+              if (mounted) {
+                setDonationDetails(details)
+                setShowDonationThankYou(true)
+              }
+            } catch (error) {
+              console.error('Error parsing donation details:', error)
+            }
           }
         }
+        
+        if (mounted) {
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
-      
-      setIsLoading(false)
     }
 
     getSession()
@@ -113,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth callback detected, refreshing session...')
         try {
           const { data: { session } } = await supabase.auth.getSession()
-          if (session?.user) {
+          if (mounted && session?.user) {
             setUser(session.user)
           }
         } catch (error) {
@@ -127,6 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return
+        
         console.log('Auth state changed:', event, session?.user?.email)
         
         if (event === 'SIGNED_IN' && session?.user) {
@@ -166,48 +222,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
-  }, [router])
-
-  const signOut = async () => {
-    setIsLoading(true)
-    try {
-      const { error } = await authHelpers.signOut()
-      if (error) {
-        console.error('Error signing out:', error)
-        toast({
-          title: "Sign out failed",
-          description: "There was an error signing you out. Please try again.",
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Signed out successfully! 👋",
-          description: "You've been signed out of CivicSense. Come back soon!",
-          variant: "default",
-        })
-      }
-      setUser(null)
-    } catch (error) {
-      console.error('Error in signOut:', error)
-      toast({
-        title: "Sign out failed",
-        description: "There was an unexpected error signing you out.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleCloseDonationThankYou = () => {
-    setShowDonationThankYou(false)
-    setDonationDetails(null)
-    // Clear localStorage flags
-    localStorage.removeItem('showDonationThankYou')
-    localStorage.removeItem('donationDetails')
-  }
+  }, [transferPendingData])
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>

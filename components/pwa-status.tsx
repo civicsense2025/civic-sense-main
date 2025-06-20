@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { debug } from '@/lib/debug-config'
 
 export function PWAStatus() {
+  const [mounted, setMounted] = useState(false)
   const [status, setStatus] = useState({
     serviceWorker: 'checking...',
     installable: 'checking...',
@@ -13,8 +14,15 @@ export function PWAStatus() {
   })
   const [debugConfig, setDebugConfig] = useState(debug.getConfig())
 
+  // Set mounted to true after component mounts on client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Update debug config when it changes
   useEffect(() => {
+    if (!mounted) return
+    
     const updateDebugConfig = () => {
       setDebugConfig(debug.getConfig())
     }
@@ -24,10 +32,10 @@ export function PWAStatus() {
     const interval = setInterval(updateDebugConfig, 1000)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [mounted])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (!mounted) return
 
     const isDevelopment = process.env.NODE_ENV === 'development'
     
@@ -82,10 +90,10 @@ export function PWAStatus() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
-  }, [])
+  }, [mounted])
 
   const clearServiceWorkerCache = async () => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+    if (!mounted || !('serviceWorker' in navigator)) return
 
     try {
       // First try to send message to service worker to clear cache
@@ -121,7 +129,7 @@ export function PWAStatus() {
   }
 
   const refreshDesignCache = async () => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+    if (!mounted || !('serviceWorker' in navigator)) return
 
     try {
       if (navigator.serviceWorker.controller) {
@@ -140,6 +148,11 @@ export function PWAStatus() {
       console.error('Error refreshing design cache:', error)
       window.location.href = window.location.href
     }
+  }
+
+  // Don't render anything until mounted on client to prevent hydration mismatch
+  if (!mounted) {
+    return null
   }
 
   // Only show in development AND if debug allows it

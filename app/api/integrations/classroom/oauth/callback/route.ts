@@ -11,11 +11,14 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('OAuth error:', error)
-      return redirect(`/test-classroom-setup?error=${encodeURIComponent(error)}`)
+      // Get return URL from state parameter or default to test page
+      const returnUrl = state && state.startsWith('http') ? state : '/test-classroom-setup'
+      return redirect(`${returnUrl}?error=${encodeURIComponent(error)}`)
     }
 
     if (!code) {
-      return redirect('/test-classroom-setup?error=no_authorization_code')
+      const returnUrl = state && state.startsWith('http') ? state : '/test-classroom-setup'
+      return redirect(`${returnUrl}?error=no_authorization_code`)
     }
 
     // Exchange code for tokens
@@ -39,7 +42,8 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
       console.error('Token exchange failed:', errorText)
-      return redirect('/test-classroom-setup?error=token_exchange_failed')
+      const returnUrl = state && state.startsWith('http') ? state : '/test-classroom-setup'
+      return redirect(`${returnUrl}?error=token_exchange_failed`)
     }
 
     const tokens = await tokenResponse.json()
@@ -54,7 +58,8 @@ export async function GET(request: NextRequest) {
     if (!coursesResponse.ok) {
       const errorText = await coursesResponse.text()
       console.error('Courses API failed:', errorText)
-      return redirect('/test-classroom-setup?error=api_test_failed')
+      const returnUrl = state && state.startsWith('http') ? state : '/test-classroom-setup'
+      return redirect(`${returnUrl}?error=api_test_failed`)
     }
 
     const coursesData = await coursesResponse.json()
@@ -62,8 +67,21 @@ export async function GET(request: NextRequest) {
       coursesFound: coursesData.courses?.length || 0
     })
 
+    // Determine redirect URL - check state parameter first, then fall back to test page
+    let redirectUrl = '/test-classroom-setup?success=true'
+    
+    // If state contains a return URL, use it and add success parameter
+    if (state && state.startsWith('http')) {
+      const url = new URL(state)
+      url.searchParams.set('google_classroom_auth', 'success')
+      redirectUrl = url.toString()
+    } else if (state === 'test-connection') {
+      // Legacy state for test page
+      redirectUrl = '/test-classroom-setup?success=true'
+    }
+
     // Store tokens temporarily for the test (in production, store securely)
-    const response = NextResponse.redirect(new URL('/test-classroom-setup?success=true', request.url))
+    const response = NextResponse.redirect(new URL(redirectUrl, request.url))
     response.cookies.set('test_access_token', tokens.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -74,6 +92,10 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('OAuth callback error:', error)
-    return redirect(`/test-classroom-setup?error=${encodeURIComponent('callback_failed')}`)
+    // Use searchParams to get state again since it's out of scope
+    const { searchParams } = new URL(request.url)
+    const state = searchParams.get('state')
+    const returnUrl = state && state.startsWith('http') ? state : '/test-classroom-setup'
+    return redirect(`${returnUrl}?error=${encodeURIComponent('callback_failed')}`)
   }
 } 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from './useTranslation'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/providers/language-provider'
 
 /**
@@ -102,7 +102,7 @@ export function useJSONBTranslation<T extends TranslatableEntity>(
 
   const { translate: runtimeTranslate, translateBatch } = useTranslation({ cacheTimeout })
   const { currentLanguage } = useLanguage()
-  const supabase = createClient()
+  // Using singleton supabase client
 
   const [isTranslating, setIsTranslating] = useState(false)
   const [error, setError] = useState<string | null>(null)
