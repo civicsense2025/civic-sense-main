@@ -800,6 +800,7 @@ export function QuizEngine({
     updateCategoryPerformance(currentQuestion, false, timeSpent)
     
     setUserAnswers(prev => [...prev, newAnswer])
+    setSelectedAnswer("timeout") // Set selected answer to indicate timeout
     setIsAnswerSubmitted(true)
     setShowFeedback(true)
     

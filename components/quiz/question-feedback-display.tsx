@@ -71,12 +71,13 @@ export function QuestionFeedbackDisplay({
         showBonus: timeLeft > 45
       }
     } else {
-      const title = timeLeft === 0 ? "Time's up!" : 
+      const title = (timeLeft === 0 || selectedAnswer === "timeout") ? "Time's up!" : 
                    selectedAnswer === "skipped" ? "Skipped" : 
                    "Not quite right"
       
       return {
-        emoji: "💭",
+        emoji: (timeLeft === 0 || selectedAnswer === "timeout") ? "⏰" : 
+               selectedAnswer === "skipped" ? "⏭️" : "💭",
         title,
         titleClass: "text-red-700 dark:text-red-300",
         bgClass: "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800",
@@ -92,7 +93,11 @@ export function QuestionFeedbackDisplay({
     if (!autoPlayEnabled) return
     let feedbackText = feedback.title
     if (!isCorrectAnswer && selectedAnswer !== "skipped") {
-      feedbackText += `. The correct answer was: ${question.correct_answer}.`
+      if (selectedAnswer === "timeout") {
+        feedbackText += ` Time ran out! The correct answer was: ${question.correct_answer}.`
+      } else {
+        feedbackText += `. The correct answer was: ${question.correct_answer}.`
+      }
     }
     playText(feedbackText, { autoPlay: true })
     // Stop audio if unmounting or skipping
@@ -134,9 +139,10 @@ export function QuestionFeedbackDisplay({
                 </div>
               )}
               
-              {/* Show correct answer if wrong */}
+              {/* Show correct answer if wrong or timed out */}
               {!isCorrectAnswer && selectedAnswer !== "skipped" && (
                 <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                  {selectedAnswer === "timeout" ? "Time ran out! " : ""}
                   The correct answer was: <span className="font-medium">{question.correct_answer}</span>
                 </p>
               )}

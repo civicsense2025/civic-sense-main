@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/components/auth/auth-provider'
 import { cn } from '@/lib/utils'
 import { 
@@ -181,11 +182,11 @@ function CompactNewsCard({
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     <Globe className="w-3 h-3" />
-                    <span className={cn("truncate font-light", compact ? "max-w-[100px]" : "max-w-[140px]")}>{domain}</span>
+                    <span className={cn("truncate font-light font-mono", compact ? "max-w-[100px]" : "max-w-[140px]")}>{domain}</span>
                   </div>
                   
                   {relativeTime && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-light">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-light font-mono">
                       {relativeTime}
                     </span>
                   )}
@@ -208,13 +209,54 @@ function CompactNewsCard({
                 {article.description}
               </p>
             )}
-            <div className="text-xs opacity-75 font-light">
+            <div className="text-xs opacity-75 font-light font-mono">
               {article.source.name} • {relativeTime}
             </div>
           </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  )
+}
+
+// News card skeleton component
+function NewsCardSkeleton({ compact = false }: { compact?: boolean }) {
+  return (
+    <Card 
+      className="flex-shrink-0 border border-slate-200 dark:border-slate-800"
+      style={{ 
+        width: compact ? '260px' : '320px', 
+        minWidth: compact ? '260px' : '320px'
+      }}
+    >
+      <CardContent className={compact ? "p-3" : "p-4"}>
+        <div className={compact ? "space-y-2" : "space-y-3"}>
+          {/* Title skeleton */}
+          <div className="space-y-2">
+            <Skeleton className={compact ? "h-3 w-full" : "h-4 w-full"} />
+            <Skeleton className={compact ? "h-3 w-4/5" : "h-4 w-3/4"} />
+            {!compact && <Skeleton className="h-3 w-2/3" />}
+          </div>
+          
+          {/* Description skeleton (only for non-compact) */}
+          {!compact && (
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          )}
+          
+          {/* Footer skeleton */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className="h-3 w-12" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -350,13 +392,15 @@ export function NewsTicker({
       <div className={`space-y-4 ${className}`}>
         {showHeader && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-slate-600 dark:text-slate-400 animate-spin" />
-            </div>
-            <div className="w-48 h-6 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
+            <Skeleton className="w-8 h-8 rounded-full" />
+            <Skeleton className="w-48 h-6" />
           </div>
         )}
-        <div className={compact ? "h-20 bg-slate-50 dark:bg-slate-900 rounded-xl animate-pulse" : "h-32 bg-slate-50 dark:bg-slate-900 rounded-xl animate-pulse"}></div>
+        <div className="flex gap-4 overflow-hidden py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <NewsCardSkeleton key={i} compact={compact} />
+          ))}
+        </div>
       </div>
     )
   }
