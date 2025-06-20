@@ -1,10 +1,12 @@
 /**
  * CivicSense Email Triggers
- * Strategic transactional email automation via Plunk
+ * Strategic transactional email automation via MailerLite
  */
 
 import { CivicSenseEmailService } from './mailerlite-service'
 import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://civicsense.us'
 
@@ -53,7 +55,7 @@ const emailService = new CivicSenseEmailService()
 // Helper function to get user's pod memberships
 async function getUserPodMemberships(userId: string): Promise<PodMembership[]> {
   try {
-    const supabase = createClient()
+    // Using singleton supabase client
     const { data, error } = await supabase
       .from('pod_memberships')
       .select(`
@@ -91,7 +93,7 @@ async function getUserPodMemberships(userId: string): Promise<PodMembership[]> {
 // Helper function to get comprehensive user data including pods
 async function getEnhancedUserData(userId: string): Promise<UserData | null> {
   try {
-    const supabase = createClient()
+    // Using singleton supabase client
     // Get basic user data using admin API to get any user by ID
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId)
     if (userError || !user) {
@@ -265,12 +267,13 @@ export async function triggerFirstPerfectQuizEmail(user: UserData, quizData: any
     }
   }
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'achievement-first-quiz-perfect',
-    data: emailData,
-    emailType: 'quiz_achievement'
-  })
+  await emailService.sendTransactionalEmail(
+    userData.email,
+    "You just understood something most Americans don't",
+    emailData,
+    'achievement-first-quiz-perfect',
+    'quiz_achievement'
+  )
 }
 
 export async function triggerSevenDayStreak(userId: string) {
@@ -290,12 +293,13 @@ export async function triggerSevenDayStreak(userId: string) {
     }
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'achievement-week-streak',
-    data: emailData,
-    emailType: 'streak_encouragement'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "Your civic learning streak is impressive",
+    emailData,
+    'achievement-week-streak',
+    'streak_encouragement'
+  )
 }
 
 export async function triggerLevelUp(userId: string, newLevel: number) {
@@ -312,12 +316,13 @@ export async function triggerLevelUp(userId: string, newLevel: number) {
     body: `Congratulations on reaching ${getLevelTitle(newLevel)}! You've unlocked a new level of civic understanding.`
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'achievement-level-up',
-    data: emailData,
-    emailType: 'level_up'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "You've leveled up your civic knowledge",
+    emailData,
+    'achievement-level-up',
+    'level_up'
+  )
 }
 
 export async function triggerFirstSocialShare(userId: string, shareData: {
@@ -337,12 +342,13 @@ export async function triggerFirstSocialShare(userId: string, shareData: {
     body: "Thank you for sharing your civic learning journey! When you share your achievements, you're not just celebrating - you're encouraging others to understand how power really works."
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'first-share-celebration',
-    data: emailData,
-    emailType: 'quiz_achievement'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "Thank you for sharing your civic learning journey",
+    emailData,
+    'first-share-celebration',
+    'quiz_achievement'
+  )
 }
 
 // Tier 2: Milestone Moments (Strategic Timing)
@@ -375,12 +381,13 @@ export async function triggerWeeklyDigest(userId: string) {
     body: "Your weekly civic learning summary - plus some developments this week that connect to what you've been studying."
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'personalized-topic-digest',
-    data: emailData,
-    emailType: 'weekly_digest'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "This week you learned what most people don't know",
+    emailData,
+    'personalized-topic-digest',
+    'weekly_digest'
+  )
 }
 
 export async function triggerLearningPodInvitation(
@@ -413,12 +420,13 @@ export async function triggerLearningPodInvitation(
     body: `${inviter.user_metadata?.full_name || inviter.email.split('@')[0]} has invited you to join "${podData.name}" for collaborative civic learning.`
   }, invitee)
 
-  await emailService.sendTemplateEmail({
-    to: invitee.email,
-    template: 'pod-invitation',
-    data: emailData,
-    emailType: 'learning_pod_invitation'
-  })
+  await emailService.sendTransactionalEmail(
+    invitee.email,
+    `${inviter.user_metadata?.full_name || inviter.email.split('@')[0]} wants to learn with you`,
+    emailData,
+    'pod-invitation',
+    'learning_pod_invitation'
+  )
 }
 
 // Tier 3: Engagement & Retention
@@ -442,12 +450,13 @@ export async function triggerReEngagement(userId: string, daysSinceLastVisit: nu
     body: `We miss you! While you were away for ${daysSinceLastVisit} days, some important civic developments happened that connect to what you've been learning.`
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 're-engagement-civic-moment',
-    data: emailData,
-    emailType: 'weekly_digest'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "Democracy didn't stop while you were away",
+    emailData,
+    're-engagement-civic-moment',
+    're_engagement'
+  )
 }
 
 export async function triggerCivicNewsAlert(
@@ -473,12 +482,13 @@ export async function triggerCivicNewsAlert(
     body: `Breaking: ${newsData.headline} - this affects you directly based on what you've been learning about democracy.`
   }, user)
 
-  await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'civic-news-alert',
-    data: emailData,
-    emailType: 'weekly_digest'
-  })
+  await emailService.sendTransactionalEmail(
+    user.email,
+    "Breaking: Something they don't want you to understand",
+    emailData,
+    'civic-news-alert',
+    'civic_news_alert'
+  )
 }
 
 function getNextChallengeForUser(user: UserData | null): string {

@@ -69,8 +69,7 @@ export default function GhostPlayerFixTest() {
     
     try {
       // Manually remove the player from the database to simulate a disconnect
-      const { createClient } = await import('@/utils/supabase/client')
-      const supabase = createClient()
+      const { supabase } = await import('@/lib/supabase/client')
       const { error } = await supabase
         .from('multiplayer_room_players')
         .delete()
@@ -175,7 +174,7 @@ export default function GhostPlayerFixTest() {
               
               <Button
                 onClick={manualRejoin}
-                disabled={!Boolean(isGhost)}
+                disabled={isGhost === false}
                 variant="outline"
                 className="flex items-center gap-2"
               >

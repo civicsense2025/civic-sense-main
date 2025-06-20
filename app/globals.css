@@ -10,6 +10,28 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Line clamp utilities for text truncation */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
 }
 
 html {
@@ -268,7 +290,8 @@ body {
 .apple-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 40px hsla(var(--foreground), 0.15);
-  border-color: hsl(var(--primary));
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted) / 0.5);
 }
 
 .apple-button-primary {
@@ -467,6 +490,25 @@ html {
   .text-balance {
     text-wrap: auto;
   }
+}
+
+/* Subtle hover effects for cards and interactive elements */
+.hover\\:bg-muted:hover,
+[class*="hover:bg-"]:hover:not(.hover\\:bg-primary):not(.hover\\:bg-destructive):not(.hover\\:bg-accent) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+/* Override specific problematic hover colors */
+.hover\\:bg-blue-50:hover,
+.hover\\:bg-blue-100:hover {
+  background-color: hsl(var(--muted) / 0.3) !important;
+}
+
+/* Subtle hover for buttons and links */
+button:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent),
+a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent) {
+  background-color: hsl(var(--muted) / 0.4);
+  transition: background-color 0.2s ease;
 }
 
 /* Ensure dialogs and modals have proper stacking context and prevent jumping */

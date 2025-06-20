@@ -82,3 +82,5 @@ lib/database.types.ts.backup.*
 /app/test-toast/
 /app/test-translation/
 /app/test-tts/
+/apps/*
+/packages/

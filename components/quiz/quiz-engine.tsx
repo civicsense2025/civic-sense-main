@@ -13,7 +13,7 @@ import { CrosswordQuestion } from "./question-types/crossword"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
-import { QuizDateNavigation, useQuizNavigation } from "./quiz_date_navigation"
+// Removed QuizDateNavigation - now using the new QuizNavigation component in the page layout
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 
 import { Button } from "@/components/ui/button"
@@ -285,8 +285,7 @@ export function QuizEngine({
   // Enhanced gamification integration
   const { updateProgress, currentStreak, currentLevel } = useGamification()
   
-  // Topic navigation integration
-  const topicNavigation = useQuizNavigation(availableTopics, topicId)
+  // Topic navigation is now handled by the new QuizNavigation component in the page layout
   
   // Enhanced question randomization with session uniqueness
   const randomizedQuestions = useMemo(() => {
@@ -495,12 +494,8 @@ export function QuizEngine({
     }
   }, [onTopicChange, topicId])
   
-  const handleTopicNavigate = useCallback((direction: 'prev' | 'next') => {
-    const newTopicId = topicNavigation.navigateToTopic(direction)
-    if (newTopicId && onTopicChange) {
-      onTopicChange(newTopicId)
-    }
-  }, [topicNavigation, onTopicChange])
+  // Topic navigation is now handled by the new QuizNavigation component
+  // No need for handleTopicNavigate since navigation is external
 
   // Mobile detection
   useEffect(() => {
@@ -1455,18 +1450,7 @@ export function QuizEngine({
 
   return (
     <div className="min-h-screen">
-      {/* Topic Navigation */}
-      {availableTopics.length > 0 && (
-        <QuizDateNavigation
-          currentTopic={currentTopic}
-          previousTopic={topicNavigation.previousTopic}
-          nextTopic={topicNavigation.nextTopic}
-          availableDates={availableTopics}
-          onDateSelect={handleTopicSelect}
-          onNavigate={handleTopicNavigate}
-          className="sticky top-0 z-40 shadow-sm"
-        />
-      )}
+      {/* Topic Navigation is now handled by the new QuizNavigation component in the page layout */}
       
       <div className={cn(
         "max-w-4xl mx-auto space-y-6",

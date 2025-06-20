@@ -424,7 +424,7 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
+      <Header />
       {/* Progress Header */}
       <div className="max-w-7xl mx-auto px-8 py-6">
         <div className="flex items-center justify-between mb-6">

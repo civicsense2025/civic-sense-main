@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { 
   Plus, 
   Users, 
@@ -17,9 +17,21 @@ import {
   Copy,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Send,
+  Mail,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  MessageSquare,
+  Download
 } from "lucide-react"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 interface SurveySummary {
   id: string
@@ -38,15 +50,64 @@ interface SurveySummary {
   anonymous_responses: number
 }
 
+interface Survey {
+  id: string
+  title: string
+  description?: string
+  status: 'draft' | 'active' | 'completed' | 'archived'
+  created_at: string
+  updated_at: string
+  estimated_time?: number
+  response_count: number
+  completed_responses: number
+  completion_rate: number
+  avg_rating?: number
+}
+
+interface SurveyResponse {
+  id: string
+  survey_id: string
+  user_id?: string
+  guest_token?: string
+  user_email?: string
+  is_complete: boolean
+  started_at: string
+  completed_at?: string
+  progress_percentage: number
+}
+
+interface EmailStats {
+  total_sent: number
+  invitations: number
+  completions: number
+  reminders: number
+  bounce_rate: number
+  open_rate: number
+  click_rate: number
+}
+
 export default function SurveysAdminPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const { isAdmin, isLoading: adminLoading } = useAdminAccess()
   
-  const [surveys, setSurveys] = useState<SurveySummary[]>([])
+  const [surveys, setSurveys] = useState<Survey[]>([])
+  const [responses, setResponses] = useState<SurveyResponse[]>([])
+  const [emailStats, setEmailStats] = useState<EmailStats>({
+    total_sent: 0,
+    invitations: 0,
+    completions: 0,
+    reminders: 0,
+    bounce_rate: 0,
+    open_rate: 0,
+    click_rate: 0
+  })
   const [loading, setLoading] = useState(true)
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'draft' | 'active' | 'closed'>('all')
+  const [selectedSurvey, setSelectedSurvey] = useState<string | null>(null)
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteMessage, setInviteMessage] = useState('')
 
   // Check if user is admin
   useEffect(() => {
@@ -62,8 +123,7 @@ export default function SurveysAdminPage() {
   useEffect(() => {
     const fetchSurveys = async () => {
       try {
-        const params = selectedStatus !== 'all' ? `?status=${selectedStatus}` : ''
-        const response = await fetch(`/api/surveys${params}`)
+        const response = await fetch('/api/admin/surveys')
         
         if (response.ok) {
           const data = await response.json()
@@ -86,54 +146,150 @@ export default function SurveysAdminPage() {
     if (isAdmin) {
       fetchSurveys()
     }
-  }, [isAdmin, selectedStatus, toast])
+  }, [isAdmin, toast])
 
-  const handleCopyLink = (surveyId: string) => {
-    const url = `${window.location.origin}/survey/${surveyId}`
-    navigator.clipboard.writeText(url)
-    toast({
-      title: "Link copied",
-      description: "Survey link has been copied to clipboard."
-    })
-  }
-
-  const handleStatusChange = async (surveyId: string, newStatus: string) => {
+  const loadSurveyResponses = async (surveyId: string) => {
     try {
-      const response = await fetch(`/api/surveys/${surveyId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      })
-
+      const response = await fetch(`/api/admin/surveys/${surveyId}/responses`)
       if (response.ok) {
-        setSurveys(prev => prev.map(survey => 
-          survey.id === surveyId 
-            ? { ...survey, status: newStatus as any }
-            : survey
-        ))
-        toast({
-          title: "Status updated",
-          description: `Survey is now ${newStatus}.`
-        })
-      } else {
-        throw new Error('Failed to update status')
+        const data = await response.json()
+        setResponses(data.responses || [])
       }
     } catch (error) {
-      console.error('Error updating status:', error)
+      console.error('Error loading survey responses:', error)
       toast({
-        title: "Error updating status",
-        description: "Failed to update survey status.",
+        title: "Error loading responses",
+        description: "Failed to load survey responses. Please try again.",
         variant: "destructive"
       })
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-      case 'draft': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-      case 'closed': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-      default: return 'bg-gray-100 text-gray-800'
+  const loadEmailStats = async () => {
+    try {
+      const response = await fetch('/api/admin/surveys/email-stats')
+      if (response.ok) {
+        const data = await response.json()
+        setEmailStats(data.stats || emailStats)
+      }
+    } catch (error) {
+      console.error('Error loading email stats:', error)
+    }
+  }
+
+  const sendSurveyInvitation = async () => {
+    if (!selectedSurvey || !inviteEmail) {
+      toast({
+        title: "Missing information",
+        description: "Please select a survey and enter an email address",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const response = await fetch('/api/admin/surveys/send-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          survey_id: selectedSurvey,
+          email: inviteEmail,
+          custom_message: inviteMessage,
+          inviter_name: 'CivicSense Admin'
+        })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Invitation sent",
+          description: "Survey invitation sent successfully!",
+        })
+        setEmailModalOpen(false)
+        setInviteEmail('')
+        setInviteMessage('')
+        loadEmailStats()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Failed to send invitation",
+          description: error.error || 'Failed to send invitation',
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error)
+      toast({
+        title: "Error sending invitation",
+        description: "Failed to send invitation. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const sendCompletionEmails = async (surveyId: string) => {
+    try {
+      const response = await fetch('/api/admin/surveys/send-completion-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ survey_id: surveyId })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast({
+          title: "Completion emails sent",
+          description: `Sent ${data.sent_count} completion emails`,
+        })
+        loadEmailStats()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Failed to send emails",
+          description: error.error || 'Failed to send completion emails',
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error sending completion emails:', error)
+      toast({
+        title: "Error sending emails",
+        description: "Failed to send completion emails. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const exportSurveyData = async (surveyId: string) => {
+    try {
+      const response = await fetch(`/api/admin/surveys/${surveyId}/export`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `survey-${surveyId}-responses.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        toast({
+          title: "Export successful",
+          description: "Survey data exported successfully",
+        })
+      } else {
+        toast({
+          title: "Export failed",
+          description: "Failed to export survey data. Please try again.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error exporting survey data:', error)
+      toast({
+        title: "Export error",
+        description: "Failed to export survey data. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -195,7 +351,7 @@ export default function SurveysAdminPage() {
                     Total Responses
                   </p>
                   <p className="text-2xl font-light text-slate-900 dark:text-white">
-                    {surveys.reduce((sum, s) => sum + s.total_responses, 0)}
+                    {surveys.reduce((sum, s) => sum + s.response_count, 0)}
                   </p>
                 </div>
               </div>
@@ -229,7 +385,7 @@ export default function SurveysAdminPage() {
                   <p className="text-2xl font-light text-slate-900 dark:text-white">
                     {surveys.length > 0 
                       ? Math.round((surveys.reduce((sum, s) => sum + s.completed_responses, 0) / 
-                         Math.max(1, surveys.reduce((sum, s) => sum + s.total_responses, 0))) * 100)
+                         Math.max(1, surveys.reduce((sum, s) => sum + s.response_count, 0))) * 100)
                       : 0}%
                   </p>
                 </div>
@@ -238,136 +394,258 @@ export default function SurveysAdminPage() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex space-x-2">
-          {(['all', 'draft', 'active', 'closed'] as const).map(status => (
-            <Button
-              key={status}
-              variant={selectedStatus === status ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedStatus(status)}
-              className="capitalize"
-            >
-              {status}
-            </Button>
-          ))}
-        </div>
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="surveys" className="w-full">
+          <TabsList>
+            <TabsTrigger value="surveys">Surveys</TabsTrigger>
+            <TabsTrigger value="responses">Responses</TabsTrigger>
+            <TabsTrigger value="email-analytics">Email Analytics</TabsTrigger>
+          </TabsList>
 
-        {/* Surveys Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl font-medium">Surveys</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-slate-600 dark:text-slate-400 mt-4">Loading surveys...</p>
-              </div>
-            ) : surveys.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-slate-600 dark:text-slate-400">No surveys found.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Survey</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Questions</TableHead>
-                    <TableHead>Responses</TableHead>
-                    <TableHead>Completion</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {surveys.map((survey) => (
-                    <TableRow key={survey.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium text-slate-900 dark:text-white">
-                            {survey.title}
-                          </div>
-                          {survey.description && (
-                            <div className="text-sm text-slate-600 dark:text-slate-400 truncate max-w-xs">
-                              {survey.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(survey.status)}>
-                          {survey.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{survey.question_count}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div>{survey.total_responses}</div>
-                          <div className="text-xs text-slate-500">
-                            {survey.authenticated_responses} auth • {survey.anonymous_responses} anon
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {survey.total_responses > 0 
-                          ? `${Math.round((survey.completed_responses / survey.total_responses) * 100)}%`
-                          : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {new Date(survey.created_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(`/survey/${survey.id}`, '_blank')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCopyLink(survey.id)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-
-                          {survey.status === 'draft' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleStatusChange(survey.id, 'active')}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              Publish
-                            </Button>
-                          )}
-
-                          {survey.status === 'active' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleStatusChange(survey.id, 'closed')}
-                              className="text-orange-600 hover:text-orange-700"
-                            >
-                              Close
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+          <TabsContent value="surveys" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Surveys</CardTitle>
+                <CardDescription>
+                  Manage survey status and email communications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Responses</TableHead>
+                      <TableHead>Completion Rate</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {surveys.map((survey) => (
+                      <TableRow key={survey.id}>
+                        <TableCell className="font-medium">{survey.title}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            survey.status === 'active' ? 'default' :
+                            survey.status === 'completed' ? 'secondary' :
+                            survey.status === 'draft' ? 'outline' : 'destructive'
+                          }>
+                            {survey.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{survey.response_count}</TableCell>
+                        <TableCell>{(survey.completion_rate * 100).toFixed(1)}%</TableCell>
+                        <TableCell>{new Date(survey.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedSurvey(survey.id)
+                                loadSurveyResponses(survey.id)
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => sendCompletionEmails(survey.id)}
+                              disabled={survey.status !== 'active'}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => exportSurveyData(survey.id)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="responses" className="space-y-4">
+            {selectedSurvey ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Survey Responses</CardTitle>
+                  <CardDescription>
+                    Individual response tracking and email status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Started</TableHead>
+                        <TableHead>Completed</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {responses.map((response) => (
+                        <TableRow key={response.id}>
+                          <TableCell>
+                            {response.user_email || response.user_id || 'Anonymous'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={response.is_complete ? 'default' : 'secondary'}>
+                              {response.is_complete ? 'Complete' : 'In Progress'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{response.progress_percentage}%</TableCell>
+                          <TableCell>{new Date(response.started_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {response.completed_at 
+                              ? new Date(response.completed_at).toLocaleDateString()
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {response.is_complete && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    // Send completion email for this specific response
+                                    fetch('/api/admin/surveys/send-completion-email', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ response_id: response.id })
+                                    })
+                                    .then(() => toast({
+                                      title: "Email sent",
+                                      description: "Completion email sent successfully",
+                                    }))
+                                    .catch(() => toast({
+                                      title: "Email failed",
+                                      description: "Failed to send email. Please try again.",
+                                      variant: "destructive"
+                                    }))
+                                  }}
+                                >
+                                  <Mail className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Alert>
+                <AlertDescription>
+                  Select a survey from the Surveys tab to view its responses.
+                </AlertDescription>
+              </Alert>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          <TabsContent value="email-analytics" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email Performance</CardTitle>
+                  <CardDescription>
+                    MailerSend delivery and engagement metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Delivery Rate</span>
+                    <span className="font-semibold">
+                      {((1 - emailStats.bounce_rate) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Open Rate</span>
+                    <span className="font-semibold">
+                      {(emailStats.open_rate * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Click Rate</span>
+                    <span className="font-semibold">
+                      {(emailStats.click_rate * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Bounce Rate</span>
+                    <span className="font-semibold text-red-600">
+                      {(emailStats.bounce_rate * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email Types Sent</CardTitle>
+                  <CardDescription>
+                    Breakdown by email category
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Invitations</span>
+                    <span className="font-semibold">{emailStats.invitations}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Completions</span>
+                    <span className="font-semibold">{emailStats.completions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Reminders</span>
+                    <span className="font-semibold">{emailStats.reminders}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="font-semibold">Total</span>
+                    <span className="font-semibold">{emailStats.total_sent}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Integration Status</CardTitle>
+                <CardDescription>
+                  MailerSend service health and configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span>MailerSend integration active</span>
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  All survey emails are being sent via MailerSend transactional API
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

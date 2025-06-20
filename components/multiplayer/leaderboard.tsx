@@ -46,15 +46,15 @@ export function Leaderboard({
       
       // Calculate average response time
       const averageResponseTime = totalAnswers > 0 
-        ? playerResponses.reduce((sum, r) => sum + r.response_time_seconds, 0) / totalAnswers
+        ? playerResponses.reduce((sum, r) => sum + (r.response_time_ms || 0) / 1000, 0) / totalAnswers
         : 0
 
       return {
         playerId: player.id,
         playerName: player.player_name,
-        playerEmoji: player.player_emoji,
+        playerEmoji: player.player_emoji || '🎮',
         isNPC: player.guest_token?.startsWith('npc_') ?? false,
-        isHost: player.is_host,
+        isHost: player.is_host ?? false,
         isCurrentPlayer: player.id === currentPlayerId,
         correctAnswers,
         totalAnswers,

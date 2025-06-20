@@ -1,6 +1,6 @@
 /**
  * CivicSense Email Triggers
- * Functions to send strategic transactional emails via Plunk
+ * Functions to send strategic transactional emails via MailerSend
  */
 
 import { emailService, EmailType } from './mailerlite-service'
@@ -69,24 +69,26 @@ export async function triggerFirstPerfectQuiz(
   const civicInsight = quiz.whyThisMatters || getDefaultCivicInsight(quiz.topic)
   const nextChallenge = await getPersonalizedNextTopic(user.id)
   
-  const result = await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'achievement',
-    emailType: 'achievement',
-    userId: user.id,
-    data: {
-      user_name: user.name,
-      achievement_type: 'first_perfect_quiz',
-      achievement_title: `Perfect Score: ${quiz.title}`,
-      achievement_description: civicInsight,
-      quiz_topic: quiz.title,
-      score: 100,
-      civic_insight: civicInsight,
-      share_url: `${baseUrl}/results/${attemptId}?share=true`,
-      next_challenge: nextChallenge,
-      power_message: "You now understand something about democracy that most Americans don't. That's real civic power."
-    }
-  })
+  const emailData = {
+    user_name: user.name,
+    achievement_type: 'first_perfect_quiz',
+    achievement_title: `Perfect Score: ${quiz.title}`,
+    achievement_description: civicInsight,
+    quiz_topic: quiz.title,
+    score: 100,
+    civic_insight: civicInsight,
+    share_url: `${baseUrl}/results/${attemptId}?share=true`,
+    next_challenge: nextChallenge,
+    power_message: "You now understand something about democracy that most Americans don't. That's real civic power."
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "You just understood something most Americans don't",
+    emailData,
+    'achievement-first-quiz-perfect',
+    'achievement'
+  )
   
   // Track for analytics
   await analytics.trackEmailSent(result, {
@@ -106,23 +108,25 @@ export async function triggerFirstPerfectQuiz(
 export async function triggerSevenDayStreak(user: EmailUser) {
   const streakBadgeUrl = `${baseUrl}/api/generate-image?template=achievement&badge=7-day-streak&user=${encodeURIComponent(user.name)}`
   
-  const result = await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'streak',
-    emailType: 'streak',
-    userId: user.id,
-    data: {
-      user_name: user.name,
-      achievement_type: 'seven_day_streak',
-      achievement_title: '🔥 7-Day Learning Streak!',
-      achievement_description: 'You understand more about democracy than 73% of Americans',
-      streak_count: 7,
-      civic_power_unlocked: "You now understand more about democracy than 73% of Americans",
-      streak_badge_url: streakBadgeUrl,
-      keep_streak_url: `${baseUrl}/dashboard`,
-      social_share_message: `🏛️ Just completed a 7-day civic learning streak on @CivicSense! Building real democratic knowledge, one day at a time. #CivicPower #Democracy`
-    }
-  })
+  const emailData = {
+    user_name: user.name,
+    achievement_type: 'seven_day_streak',
+    achievement_title: '🔥 7-Day Learning Streak!',
+    achievement_description: 'You understand more about democracy than 73% of Americans',
+    streak_count: 7,
+    civic_power_unlocked: "You now understand more about democracy than 73% of Americans",
+    streak_badge_url: streakBadgeUrl,
+    keep_streak_url: `${baseUrl}/dashboard`,
+    social_share_message: `🏛️ Just completed a 7-day civic learning streak on @CivicSense! Building real democratic knowledge, one day at a time. #CivicPower #Democracy`
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "Your civic learning streak is impressive",
+    emailData,
+    'achievement-week-streak',
+    'streak'
+  )
   
   await analytics.trackEmailSent(result, {
     achievement_type: 'seven_day_streak',
@@ -143,23 +147,25 @@ export async function triggerLevelUp(user: EmailUser, newLevel: number) {
   const nextMilestone = getNextMilestone(newLevel)
   const xpGained = 100 // Assuming a default xpGained value
   
-  const result = await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'level_up',
-    emailType: 'level_up',
-    userId: user.id,
-    data: {
-      user_name: user.name,
-      old_level: newLevel - 1,
-      new_level: newLevel,
-      level_title: levelTitle,
-      xp_earned: xpGained,
-      civic_power_message: "You now understand more about democracy than most college graduates. That's real civic power.",
-      next_milestone: nextMilestone,
-      dashboard_url: `${baseUrl}/dashboard`,
-      social_share_message: `🏛️ Just leveled up to ${levelTitle} on @CivicSense! Understanding democracy is real power. #CivicPower #Democracy`
-    }
-  })
+  const emailData = {
+    user_name: user.name,
+    old_level: newLevel - 1,
+    new_level: newLevel,
+    level_title: levelTitle,
+    xp_earned: xpGained,
+    civic_power_message: "You now understand more about democracy than most college graduates. That's real civic power.",
+    next_milestone: nextMilestone,
+    dashboard_url: `${baseUrl}/dashboard`,
+    social_share_message: `🏛️ Just leveled up to ${levelTitle} on @CivicSense! Understanding democracy is real power. #CivicPower #Democracy`
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "You've leveled up your civic knowledge",
+    emailData,
+    'achievement-level-up',
+    'level_up'
+  )
   
   await analytics.trackEmailSent(result, {
     achievement_type: 'level_up',
@@ -180,8 +186,7 @@ export async function triggerFirstShare(
 ) {
   const communityStats = await getCommunityGrowthStats()
   
-  const result = await emailService.sendFirstShareEmail({
-    to: user.email,
+  const emailData = {
     user_name: user.name,
     share_platform: platform,
     shared_content: sharedContent.title,
@@ -192,7 +197,15 @@ export async function triggerFirstShare(
       twitter: `🏛️ Just shared my civic learning progress on @CivicSense! "${sharedContent.title}" - civic education that actually prepares you for democratic participation. #CivicPower`,
       facebook: `I just learned something about democracy that I never knew: "${sharedContent.title}". Check out CivicSense - it's civic education that actually prepares you for real democratic participation.`
     }
-  })
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "Thank you for sharing your civic learning journey",
+    emailData,
+    'first-share-celebration',
+    'achievement'
+  )
   
   await analytics.trackEmailSent(result, {
     achievement_type: 'first_share',
@@ -221,8 +234,7 @@ export async function triggerWeeklyDigest(user: EmailUser) {
   const trendingDiscussions = await getTrendingPodDiscussions()
   const weeklyNews = await getWeeklyDemocracyNews()
   
-  const result = await emailService.sendWeeklyDigest({
-    to: user.email,
+  const emailData = {
     user_name: user.name,
     user_state: user.state || 'your area',
     civic_level: user.civic_level || 1,
@@ -232,7 +244,15 @@ export async function triggerWeeklyDigest(user: EmailUser) {
     trending_discussions: trendingDiscussions,
     this_week_in_democracy: weeklyNews,
     streak_count: user.streak_count || 0
-  })
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "This week you learned what most people don't know",
+    emailData,
+    'personalized-topic-digest',
+    'weekly_digest'
+  )
   
   await analytics.trackEmailSent(result, {
     user_level: user.civic_level,
@@ -254,23 +274,25 @@ export async function triggerPodInvitation(
 ) {
   const podStats = await getPodStats(pod.id)
   
-  const result = await emailService.sendTemplateEmail({
-    to: invitee.email,
-    template: 'learning_pod_invitation',
-    emailType: 'learning_pod_invitation',
-    userId: inviter.id,
-    data: {
-      inviter_name: inviter.name,
-      invitee_name: invitee.name,
-      pod_name: pod.name,
-      join_link: `${baseUrl}/join/${inviteCode}`,
-      pod_description: pod.description || 'A collaborative space for civic learning',
-      pod_members_count: pod.member_count || podStats.member_count || 0,
-      action_url: `${baseUrl}/join/${inviteCode}`,
-      deadline: 'Join anytime',
-      custom_message: ''
-    }
-  })
+  const emailData = {
+    inviter_name: inviter.name,
+    invitee_name: invitee.name,
+    pod_name: pod.name,
+    join_link: `${baseUrl}/join/${inviteCode}`,
+    pod_description: pod.description || 'A collaborative space for civic learning',
+    pod_members_count: pod.member_count || podStats.member_count || 0,
+    action_url: `${baseUrl}/join/${inviteCode}`,
+    deadline: 'Join anytime',
+    custom_message: ''
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    invitee.email,
+    `${inviter.name} wants to learn with you`,
+    emailData,
+    'pod-invitation',
+    'learning_pod_invitation'
+  )
   
   await analytics.trackEmailSent(result, {
     pod_id: pod.id,
@@ -290,19 +312,21 @@ export async function triggerHelpedSomeoneRecognition(
 ) {
   const impactStats = await getHelperImpactStats(helper.id)
   
-  const result = await emailService.sendTemplateEmail({
-    to: helper.email,
-    template: 'recognition',
-    emailType: 'achievement',
-    userId: helper.id,
-    data: {
-      helper_name: helper.name,
-      impact_message: `Your shared insight about "${helpedWith.topic}" just helped someone master that topic!`,
-      civic_ripple_effect: "When you share civic knowledge, you strengthen democracy for everyone.",
-      community_impact_stats: impactStats,
-      continue_helping_url: `${baseUrl}/pods`
-    }
-  })
+  const emailData = {
+    helper_name: helper.name,
+    impact_message: `Your shared insight about "${helpedWith.topic}" just helped someone master that topic!`,
+    civic_ripple_effect: "When you share civic knowledge, you strengthen democracy for everyone.",
+    community_impact_stats: impactStats,
+    continue_helping_url: `${baseUrl}/pods`
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    helper.email,
+    "You just helped someone understand democracy better",
+    emailData,
+    'helped-someone-recognition',
+    'achievement'
+  )
   
   await analytics.trackEmailSent(result, {
     helped_with_topic: helpedWith.topic,
@@ -326,15 +350,22 @@ export async function triggerReEngagement(user: EmailUser, daysSinceLastVisit: n
   const recommendedQuizId = await getRecommendedQuiz(user.id)
   const recentHighlights = await getRecentCivicHighlights()
   
-  const result = await emailService.sendReEngagementEmail({
-    to: user.email,
+  const emailData = {
     user_name: user.name,
     days_away: daysSinceLastVisit,
     civic_moment_hook: civicMoment,
     personalized_comeback: personalizedComeback,
     quick_quiz_url: `${baseUrl}/quiz/${recommendedQuizId}`,
     what_you_missed: recentHighlights
-  })
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "Democracy didn't stop while you were away",
+    emailData,
+    're-engagement-civic-moment',
+    're_engagement'
+  )
   
   await analytics.trackEmailSent(result, {
     days_inactive: daysSinceLastVisit,
@@ -358,20 +389,22 @@ export async function triggerCivicNewsAlert(
     relatedQuizId?: string
   }
 ) {
-  const result = await emailService.sendTemplateEmail({
-    to: user.email,
-    template: 'civic_news_alert',
-    emailType: 'civic_news_alert',
-    userId: user.id,
-    data: {
-      user_name: user.name,
-      news_headline: event.headline,
-      why_this_matters_to_you: event.personalizedImpact,
-      action_you_can_take: event.civicAction,
-      learn_more_quiz: event.relatedQuizId,
-      discussion_url: `${baseUrl}/pods/discuss/${event.id}`
-    }
-  })
+  const emailData = {
+    user_name: user.name,
+    news_headline: event.headline,
+    why_this_matters_to_you: event.personalizedImpact,
+    action_you_can_take: event.civicAction,
+    learn_more_quiz: event.relatedQuizId,
+    discussion_url: `${baseUrl}/pods/discuss/${event.id}`
+  }
+  
+  const result = await emailService.sendTransactionalEmail(
+    user.email,
+    "Breaking: Something they don't want you to understand",
+    emailData,
+    'civic-news-alert',
+    'civic_news_alert'
+  )
   
   await analytics.trackEmailSent(result, {
     event_id: event.id,

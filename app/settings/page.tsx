@@ -341,9 +341,7 @@ export default function SettingsPage() {
             </Link>
             
             {/* User menu */}
-            <UserMenu 
-              onSignInClick={() => {}}
-            />
+            <UserMenu />
           </div>
         </div>
       </div>

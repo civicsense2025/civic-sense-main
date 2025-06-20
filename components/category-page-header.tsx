@@ -34,7 +34,7 @@ export function CategoryPageHeader({
               </h1>
             </Link>
             
-            <UserMenu onSignInClick={() => {}} />
+            <UserMenu />
           </div>
         </div>
       </div>

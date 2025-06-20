@@ -17,7 +17,7 @@ export function CategoriesPageHeader() {
             </h1>
           </Link>
           
-          <UserMenu onSignInClick={() => {}} />
+          <UserMenu />
         </div>
       </div>
     </div>

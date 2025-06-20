@@ -23,15 +23,10 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Missing roomId or userId' }, { status: 400 })
         }
         
-        const heartbeatResult = await multiplayerOperations.updatePlayerHeartbeat(
-          roomId, 
-          userId, 
-          connectionLatency, 
-          connectionQuality
-        )
+        await multiplayerOperations.updatePlayerHeartbeat(roomId, userId)
         
         return NextResponse.json({ 
-          success: heartbeatResult.success,
+          success: true,
           message: 'Heartbeat updated'
         })
       
@@ -44,9 +39,9 @@ export async function POST(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
+          migrated: migrationResult.migrated,
           newHostId: migrationResult.newHostId,
-          inactivePlayers: migrationResult.inactivePlayers,
-          message: migrationResult.newHostId ? 'Host migrated' : 'No migration needed'
+          message: migrationResult.migrated ? 'Host migrated' : 'No migration needed'
         })
       
       case 'cleanup_inactive':
@@ -86,11 +81,11 @@ export async function POST(request: NextRequest) {
         for (const room of activeRooms || []) {
           try {
             const result = await multiplayerOperations.checkAndMigrateHost(room.id)
-            if (result.newHostId || result.inactivePlayers.length > 0) {
+            if (result.migrated) {
               migrationResults.push({
                 roomId: room.id,
                 newHostId: result.newHostId,
-                inactivePlayersCount: result.inactivePlayers.length
+                migrated: result.migrated
               })
             }
           } catch (error) {

@@ -17,13 +17,12 @@ export async function POST(request: NextRequest) {
     
     const result = await multiplayerOperations.cleanupExpiredRooms()
     
-    console.log(`✅ Cleanup completed: ${result.cleanedRooms} rooms, ${result.cleanedPlayers} players`)
+    console.log(`✅ Cleanup completed: ${result.cleaned} items`)
     
     return NextResponse.json({
       success: true,
-      message: `Cleaned up ${result.cleanedRooms} expired rooms and ${result.cleanedPlayers} players`,
-      cleanedRooms: result.cleanedRooms,
-      cleanedPlayers: result.cleanedPlayers,
+      message: `Cleaned up ${result.cleaned} expired items`,
+      cleaned: result.cleaned,
       timestamp: new Date().toISOString()
     })
   } catch (error) {

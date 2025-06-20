@@ -76,13 +76,8 @@ export function QuizLoadingScreen({
       <div className="text-center space-y-8 max-w-md px-6">
         {/* Animated icon */}
         <div className="relative">
-          <div className="w-16 h-16 mx-auto mb-6 animate-pulse">
+          <div className="w-16 h-16 mx-auto mb-6">
             <div className="text-5xl animate-bounce">🏛️</div>
-          </div>
-          
-          {/* Spinning ring around icon */}
-          <div className="absolute inset-0 w-20 h-20 mx-auto">
-            <div className="w-full h-full border-4 border-slate-200 dark:border-slate-800 rounded-full animate-spin border-t-blue-600"></div>
           </div>
         </div>
 
@@ -96,11 +91,11 @@ export function QuizLoadingScreen({
           </p>
         </div>
 
-        {/* Progress bar */}
+        {/* Thin Progress bar */}
         <div className="space-y-3">
-          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1">
             <div 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-100 ease-out"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 h-1 rounded-full transition-all duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

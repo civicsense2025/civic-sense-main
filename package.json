@@ -11,6 +11,14 @@
     "sync-db:watch": "npm run sync-db && echo '🔄 Watching for database changes...' && npx nodemon --watch supabase/migrations --ext sql --exec 'npm run sync-db'",
     "db:status": "supabase status",
     "db:reset": "supabase db reset && npm run sync-db",
+    "env:setup": "bash scripts/setup-env.sh",
+    "docker:setup": "bash scripts/docker-setup.sh",
+    "docker:up": "docker-compose --env-file .env.docker up -d",
+    "docker:down": "docker-compose --env-file .env.docker down",
+    "docker:logs": "docker-compose --env-file .env.docker logs -f",
+    "docker:db": "docker-compose --env-file .env.docker up -d postgres redis",
+    "docker:dev": "docker-compose --env-file .env.docker up web",
+    "docker:tools": "docker-compose --env-file .env.docker --profile tools up -d",
     "generate-quiz": "tsx scripts/generate-quiz-content.ts",
     "generate-quiz-import": "npx tsx scripts/generate-quiz-content.ts generate-and-import",
     "test-generator": "npx tsx scripts/test-quiz-generator.ts",
@@ -20,7 +28,9 @@
     "optimize-questions": "npx tsx scripts/optimize-question-content.ts",
     "check-integrity": "npx tsx scripts/check-question-integrity.ts",
     "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/generate-enum-exports.js",
-    "gen:types": "npm run generate-types"
+    "gen:types": "npm run generate-types",
+    "sync:db-constants": "node scripts/sync-database-constants.js",
+    "gen:constants": "npm run sync:db-constants"
   },
   "dependencies": {
     "@flags-sdk/statsig": "^0.2.2",
@@ -100,6 +110,7 @@
     "sonner": "^1.7.1",
     "stripe": "^18.2.1",
     "supabase": "^2.24.3",
+    "supabase-cli": "^0.0.21",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",

@@ -95,7 +95,7 @@ export function WaitingRoom({
   
   // Check if user is host - either marked as host OR is the first player (fallback)
   const isMarkedAsHost = currentPlayer?.is_host || false
-  const isFirstPlayer = players.length > 0 && players.sort((a, b) => a.join_order - b.join_order)[0]?.id === playerId
+  const isFirstPlayer = players.length > 0 && players.sort((a, b) => (a.join_order || 0) - (b.join_order || 0))[0]?.id === playerId
   const isHost = isMarkedAsHost || isFirstPlayer
   
   const hasMinimumPlayers = players.length >= 2
@@ -201,9 +201,12 @@ export function WaitingRoom({
         })
         .catch((err) => {
           console.error('❌ Error rejoining room:', err)
+          const errorMessage = err instanceof Error ? err.message : 
+                              typeof err === 'string' ? err :
+                              'Lost connection to room. Please refresh the page.'
           toast({
             title: "Connection error",
-            description: "Lost connection to room. Please refresh the page.",
+            description: errorMessage,
             variant: "destructive"
           })
         })
@@ -393,7 +396,7 @@ export function WaitingRoom({
               <div className="text-2xl">
                 {room.game_mode === 'speed_round' && '⚡'}
                 {room.game_mode === 'elimination' && '🏆'}
-                {(!['speed_round', 'elimination'].includes(room.game_mode)) && '📚'}
+                {(!['speed_round', 'elimination'].includes(room.game_mode || '')) && '📚'}
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -516,7 +519,7 @@ export function WaitingRoom({
               .sort((a, b) => {
                 if (a.is_host && !b.is_host) return -1
                 if (!a.is_host && b.is_host) return 1
-                return a.join_order - b.join_order
+                return (a.join_order || 0) - (b.join_order || 0)
               })
               .map((player) => (
               <div
@@ -539,7 +542,7 @@ export function WaitingRoom({
             ))}
             
             {/* Add AI Player Card (Dashed Outline) - Only show to hosts */}
-            {isHost && players.length < room.max_players && (
+            {isHost && players.length < (room.max_players || 8) && (
               <div 
                 onClick={() => setShowNPCSelector(true)}
                 className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-3 text-center bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 dark:hover:border-slate-500 transition-colors cursor-pointer"
@@ -555,7 +558,7 @@ export function WaitingRoom({
             )}
             
             {/* Empty Slots */}
-            {Array.from({ length: Math.max(0, room.max_players - players.length - (isHost ? 1 : 0)) }).map((_, index) => (
+            {Array.from({ length: Math.max(0, (room.max_players || 8) - players.length - (isHost ? 1 : 0)) }).map((_, index) => (
               <div
                 key={`empty-${index}`}
                 className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-3 text-center"

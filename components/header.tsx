@@ -355,7 +355,7 @@ export function Header({
                 </Button>
                 
                 {/* User menu for authenticated users */}
-                {user && <UserMenu onSignInClick={() => {}} />}
+                {user && <UserMenu />}
               </div>
               
               {/* Mobile menu button */}
@@ -420,7 +420,7 @@ export function Header({
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-3 sm:space-x-5">
-              <UserMenu onSignInClick={() => {}} />
+              <UserMenu />
             </div>
           </div>
         </div>

@@ -144,7 +144,7 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
     const userResponses = responses.filter(r => r.player_id === props.playerId)
     const userCorrect = userResponses.filter(r => r.is_correct).length
     const userAvgTime = userResponses.length > 0 
-      ? userResponses.reduce((sum, r) => sum + r.response_time_seconds, 0) / userResponses.length 
+              ? userResponses.reduce((sum, r) => sum + (r.response_time_ms || 0) / 1000, 0) / userResponses.length 
       : 0
 
     // Create leaderboard entries from actual players
@@ -152,14 +152,14 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
       const playerResponses = responses.filter(r => r.player_id === player.id)
       const correctAnswers = playerResponses.filter(r => r.is_correct).length
       const avgTime = playerResponses.length > 0 
-        ? playerResponses.reduce((sum, r) => sum + r.response_time_seconds, 0) / playerResponses.length 
+        ? playerResponses.reduce((sum, r) => sum + (r.response_time_ms || 0) / 1000, 0) / playerResponses.length 
         : 0
       
       // Calculate speed score: correct answers * 100 + speed bonus
       let score = correctAnswers * 100
       playerResponses.forEach(response => {
         if (response.is_correct) {
-          const timeBonus = Math.max(0, (config.timePerQuestion / 1000) - response.response_time_seconds) * 2
+          const timeBonus = Math.max(0, (config.timePerQuestion / 1000) - ((response.response_time_ms || 0) / 1000)) * 2
           score += Math.round(timeBonus)
         }
       })
@@ -498,13 +498,10 @@ export function SpeedRoundEngine(props: BaseMultiplayerEngineProps) {
           />
         </div>
 
-        {/* Use BaseMultiplayerEngine as the foundation but with speed round modifications */}
+        {/* Use BaseMultiplayerEngine as the foundation */}
         <BaseMultiplayerEngine
           {...props}
-          config={{
-            ...config,
-            onAnswerSubmit: handleSpeedAnswer
-          } as any}
+          config={config}
         />
 
         {/* Speed tips */}

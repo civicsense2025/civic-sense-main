@@ -84,26 +84,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to search topics' }, { status: 500 })
     }
 
-    // Get question counts for each topic - handle potential table name issues
+    // Get question counts for each topic
     const topicIdList = topics?.map(t => t.topic_id) || []
     let questionCounts: any[] = []
     
     if (topicIdList.length > 0) {
-      // Try the main questions table first
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select('topic_id, question_type')
         .in('topic_id', topicIdList)
+        .eq('is_active', true)
       
       if (questionsError) {
-        console.warn('Questions table error, trying questions_test:', questionsError)
-        // Fallback to questions_test table if questions table fails
-        const { data: questionsTestData } = await supabase
-          .from('questions_test')
-          .select('topic_id, question_type')
-          .in('topic_id', topicIdList)
-        
-        questionCounts = questionsTestData || []
+        console.error('Error fetching question counts:', questionsError)
+        questionCounts = []
       } else {
         questionCounts = questionsData || []
       }
@@ -133,28 +127,21 @@ export async function POST(request: NextRequest) {
 
     const categoryMap = new Map(categories?.map(c => [c.name, c]) || [])
 
-    // Get average difficulty for topics based on their questions - handle table name issues
+    // Get average difficulty for topics based on their questions
     const topicIds = topics?.map(t => t.topic_id) || []
     let questionDifficulties: any[] = []
     
     if (topicIds.length > 0) {
-      // Try the main questions table first
       const { data: difficultyData, error: difficultyError } = await supabase
         .from('questions')
         .select('topic_id, difficulty_level')
         .in('topic_id', topicIds)
+        .eq('is_active', true)
         .not('difficulty_level', 'is', null)
       
       if (difficultyError) {
-        console.warn('Questions table error for difficulty, trying questions_test:', difficultyError)
-        // Fallback to questions_test table if questions table fails
-        const { data: difficultyTestData } = await supabase
-          .from('questions_test')
-          .select('topic_id, difficulty_level')
-          .in('topic_id', topicIds)
-          .not('difficulty_level', 'is', null)
-        
-        questionDifficulties = difficultyTestData || []
+        console.error('Error fetching question difficulties:', difficultyError)
+        questionDifficulties = []
       } else {
         questionDifficulties = difficultyData || []
       }

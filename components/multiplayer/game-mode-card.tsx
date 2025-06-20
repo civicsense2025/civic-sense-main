@@ -14,6 +14,8 @@ export interface GameMode {
   playerRange: [number, number]
   estimatedTime: string
   isPremium?: boolean
+  guestAccess?: boolean
+  requiresSignup?: boolean
 }
 
 interface GameModeCardProps {
@@ -45,13 +47,23 @@ export function GameModeCard({
       )}
       onClick={() => onSelect(mode.id)}
     >
-      {mode.isPremium && !isPremium && !isPro && (
-        <div className="absolute -top-2 -right-2">
+      <div className="absolute -top-2 -right-2 flex flex-col gap-1">
+        {mode.isPremium && !isPremium && !isPro && (
           <Badge variant="secondary" className="text-xs">
             Premium
           </Badge>
-        </div>
-      )}
+        )}
+        {mode.requiresSignup && (
+          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+            Sign Up
+          </Badge>
+        )}
+        {mode.guestAccess && (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+            Guest OK
+          </Badge>
+        )}
+      </div>
       
       <div className="space-y-3">
         <div className="flex items-center gap-3">

@@ -3,7 +3,7 @@
  * Extends the base analytics system with email tracking and civic engagement metrics
  */
 
-import { EmailType, EmailResult } from '@/lib/email/plunk-service'
+import { EmailType, EmailResult } from '@/lib/email/mailerlite-service'
 
 // Re-export base analytics for convenience
 export { useAnalytics, mapCategoryToAnalytics } from './analytics'
@@ -147,7 +147,7 @@ export class EmailEventOrchestrator {
   }) {
     try {
       // Send welcome email
-      const { sendWelcomeEmail } = await import('@/lib/email/plunk-service')
+      const { sendWelcomeEmail } = await import('@/lib/email/mailerlite-service')
       const result = await sendWelcomeEmail(userEmail, userName)
       
       // Track the email with registration context
@@ -161,7 +161,7 @@ export class EmailEventOrchestrator {
 
       // If educational user, also send educational access email
       if (registrationContext.isEducational && registrationContext.institutionDomain) {
-        const { sendEducationalAccessEmail } = await import('@/lib/email/plunk-service')
+        const { sendEducationalAccessEmail } = await import('@/lib/email/mailerlite-service')
         const eduResult = await sendEducationalAccessEmail({
           to: userEmail,
           userName,
@@ -197,7 +197,7 @@ export class EmailEventOrchestrator {
       const results: EmailResult[] = []
 
       // Send achievement email
-      const { sendQuizAchievementEmail } = await import('@/lib/email/plunk-service')
+      const { sendQuizAchievementEmail } = await import('@/lib/email/mailerlite-service')
       const achievementResult = await sendQuizAchievementEmail({
         to: userEmail,
         userName,
@@ -218,7 +218,7 @@ export class EmailEventOrchestrator {
 
       // If user leveled up, send level up email
       if (achievementData.levelUp) {
-        const { sendLevelUpEmail } = await import('@/lib/email/plunk-service')
+        const { sendLevelUpEmail } = await import('@/lib/email/mailerlite-service')
         const levelUpResult = await sendLevelUpEmail({
           to: userEmail,
           userName,
@@ -263,7 +263,7 @@ export class EmailEventOrchestrator {
     const results: EmailResult[] = []
     
     try {
-      const { sendLearningPodInvite } = await import('@/lib/email/plunk-service')
+      const { sendLearningPodInvite } = await import('@/lib/email/mailerlite-service')
       
       for (const invitation of invitations) {
         const result = await sendLearningPodInvite(invitation)

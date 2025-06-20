@@ -1,5 +1,503 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
+# CivicSense Mobile iOS Development Rules
+
+*Monorepo Structure: `../../civic-sense-main/` with web app at `../web/`*
+
+## 🏗️ Project Architecture
+
+### Monorepo Structure
+```
+civic-sense-main/
+├── apps/
+│   ├── web/                    # Existing Next.js app
+│   └── mobile/                 # Expo app (current context)
+├── packages/
+│   ├── shared/                 # Shared business logic
+│   │   ├── database/          # Supabase client & types
+│   │   ├── auth/              # Authentication logic
+│   │   ├── quiz/              # Quiz engine & logic
+│   │   ├── multiplayer/       # Multiplayer functionality
+│   │   └── utils/             # Utility functions
+│   ├── ui-web/                # Web-specific UI components
+│   ├── ui-mobile/             # Mobile-specific UI components
+│   └── ui-shared/             # Platform-agnostic components
+└── supabase/                  # Database migrations & config
+```
+
+## 📱 iOS-Specific Development Standards
+
+### 1. App Configuration (app.config.ts)
+```typescript
+// apps/mobile/app.config.ts
+import { ExpoConfig, ConfigContext } from 'expo/config';
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: 'CivicSense',
+  slug: 'civicsense',
+  version: '1.0.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'automatic',
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: 'com.civicsense.app',
+    buildNumber: '1',
+    // iOS-specific configurations
+    requireFullScreen: false,
+    userInterfaceStyle: 'automatic',
+    infoPlist: {
+      NSCameraUsageDescription: 'CivicSense needs camera access for profile photos',
+      NSMicrophoneUsageDescription: 'CivicSense needs microphone access for voice features',
+      CFBundleAllowMixedLocalizations: true,
+    },
+    associatedDomains: ['applinks:civicsense.com'],
+  },
+  plugins: [
+    'expo-router',
+    'expo-secure-store',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          newArchEnabled: true,
+          deploymentTarget: '13.0'
+        }
+      }
+    ]
+  ],
+});
+```
+
+### 2. iOS-Specific UI Guidelines
+
+#### Safe Area Handling
+```typescript
+// Always use SafeAreaView for iOS screens
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+export default function Screen() {
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Screen content */}
+    </SafeAreaView>
+  );
+}
+```
+
+#### iOS Design System Colors
+```typescript
+// packages/ui-mobile/src/theme/ios-colors.ts
+export const iOSColors = {
+  // CivicSense brand colors optimized for iOS
+  primary: '#3B82F6',        // Authority Blue
+  secondary: '#10B981',      // Empowerment Green  
+  accent: '#F59E0B',         // Insight Gold
+  
+  // iOS system colors
+  systemBlue: '#007AFF',
+  systemGreen: '#34C759',
+  systemRed: '#FF3B30',
+  systemOrange: '#FF9500',
+  
+  // Dynamic colors (adapt to light/dark mode)
+  label: '#000000',          // Primary text
+  secondaryLabel: '#3C3C43', // Secondary text
+  tertiaryLabel: '#3C3C4399', // Tertiary text
+  
+  // Background colors
+  systemBackground: '#FFFFFF',
+  secondarySystemBackground: '#F2F2F7',
+  tertiarySystemBackground: '#FFFFFF',
+} as const;
+```
+
+#### Typography Scale (iOS Human Interface Guidelines)
+```typescript
+// packages/ui-mobile/src/theme/ios-typography.ts
+export const iOSTypography = {
+  largeTitle: {
+    fontSize: 34,
+    fontWeight: '400' as const,
+    lineHeight: 41,
+  },
+  title1: {
+    fontSize: 28,
+    fontWeight: '400' as const,
+    lineHeight: 34,
+  },
+  title2: {
+    fontSize: 22,
+    fontWeight: '400' as const,
+    lineHeight: 28,
+  },
+  title3: {
+    fontSize: 20,
+    fontWeight: '400' as const,
+    lineHeight: 25,
+  },
+  headline: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+  },
+  body: {
+    fontSize: 17,
+    fontWeight: '400' as const,
+    lineHeight: 22,
+  },
+  callout: {
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 21,
+  },
+  subhead: {
+    fontSize: 15,
+    fontWeight: '400' as const,
+    lineHeight: 20,
+  },
+  footnote: {
+    fontSize: 13,
+    fontWeight: '400' as const,
+    lineHeight: 18,
+  },
+  caption1: {
+    fontSize: 12,
+    fontWeight: '400' as const,
+    lineHeight: 16,
+  },
+  caption2: {
+    fontSize: 11,
+    fontWeight: '400' as const,
+    lineHeight: 13,
+  },
+} as const;
+```
+
+### 3. iOS Authentication (Biometric + OAuth)
+
+#### Face ID / Touch ID Integration
+```typescript
+// packages/shared/auth/ios-biometric-auth.ts
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
+
+export class iOSBiometricAuth {
+  static async isBiometricAvailable(): Promise<boolean> {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    return compatible && enrolled;
+  }
+
+  static async authenticateWithBiometric(): Promise<boolean> {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Sign in to CivicSense',
+      fallbackLabel: 'Use Passcode',
+      cancelLabel: 'Cancel',
+    });
+    return result.success;
+  }
+
+  static async storeBiometricToken(token: string): Promise<void> {
+    await SecureStore.setItemAsync('biometric_token', token, {
+      requireAuthentication: true,
+    });
+  }
+}
+```
+
+#### Apple Sign In Integration
+```typescript
+// packages/shared/auth/apple-auth.ts
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { supabase } from '../database/client';
+
+export class AppleAuthService {
+  static async signInWithApple() {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken!,
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Apple Sign In Error:', error);
+      throw error;
+    }
+  }
+}
+```
+
+### 4. iOS-Specific Components
+
+#### Native iOS Button Component
+```typescript
+// packages/ui-mobile/src/components/ios/IOSButton.tsx
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { iOSColors, iOSTypography } from '../../theme';
+
+interface IOSButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: 'filled' | 'tinted' | 'plain';
+  size?: 'large' | 'medium' | 'small';
+  disabled?: boolean;
+  style?: ViewStyle;
+}
+
+export const IOSButton: React.FC<IOSButtonProps> = ({
+  title,
+  onPress,
+  variant = 'filled',
+  size = 'medium',
+  disabled = false,
+  style,
+}) => {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.base,
+        styles[variant],
+        styles[size],
+        disabled && styles.disabled,
+        style,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.6}
+    >
+      <Text style={[styles.text, styles[`${variant}Text`], styles[`${size}Text`]]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  base: {
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44, // iOS minimum touch target
+  },
+  filled: {
+    backgroundColor: iOSColors.primary,
+  },
+  tinted: {
+    backgroundColor: `${iOSColors.primary}20`,
+  },
+  plain: {
+    backgroundColor: 'transparent',
+  },
+  large: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  medium: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  small: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  disabled: {
+    opacity: 0.3,
+  },
+  text: {
+    textAlign: 'center',
+  },
+  filledText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  tintedText: {
+    color: iOSColors.primary,
+    fontWeight: '600',
+  },
+  plainText: {
+    color: iOSColors.primary,
+    fontWeight: '400',
+  },
+  largeText: {
+    ...iOSTypography.headline,
+  },
+  mediumText: {
+    ...iOSTypography.body,
+  },
+  smallText: {
+    ...iOSTypography.callout,
+  },
+});
+```
+
+### 5. iOS Performance Optimization
+
+#### Image Optimization
+```typescript
+// packages/ui-mobile/src/components/ios/OptimizedImage.tsx
+import React from 'react';
+import { Image } from 'expo-image';
+import { ViewStyle } from 'react-native';
+
+interface OptimizedImageProps {
+  source: string;
+  style?: ViewStyle;
+  placeholder?: string;
+  contentFit?: 'cover' | 'contain' | 'fill';
+}
+
+export const OptimizedImage: React.FC<OptimizedImageProps> = ({
+  source,
+  style,
+  placeholder,
+  contentFit = 'cover',
+}) => {
+  return (
+    <Image
+      source={{ uri: source }}
+      style={style}
+      placeholder={placeholder}
+      contentFit={contentFit}
+      transition={200}
+      cachePolicy="memory-disk"
+    />
+  );
+};
+```
+
+### 6. iOS Testing & Quality Assurance
+
+#### iOS-Specific Test Configuration
+```typescript
+// apps/mobile/__tests__/ios/setup.ts
+import 'react-native-gesture-handler/jestSetup';
+
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+}));
+
+jest.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
+  isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
+  authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
+}));
+```
+
+### 7. iOS Build & Deployment
+
+#### EAS Build Configuration for iOS
+```json
+// apps/mobile/eas.json
+{
+  "cli": {
+    "version": ">= 5.2.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id"
+      }
+    }
+  }
+}
+```
+
+## 🔒 iOS Security Requirements
+
+### 1. Secure Storage
+- ALWAYS use `expo-secure-store` for sensitive data on iOS
+- Enable `requireAuthentication: true` for biometric-protected storage
+- Never store tokens in AsyncStorage or plain text
+
+### 2. Network Security
+```typescript
+// packages/shared/network/ios-security.ts
+export const iOSNetworkConfig = {
+  // Enforce HTTPS
+  allowsArbitraryLoads: false,
+  // Certificate pinning for production
+  certificatePinning: {
+    'api.civicsense.com': ['sha256-hash-of-certificate'],
+  },
+};
+```
+
+## 📊 iOS Performance Targets
+
+### Metrics to Monitor
+- **App Launch Time**: < 400ms cold start
+- **Memory Usage**: < 150MB baseline
+- **Battery Impact**: Minimal background usage
+- **Crash Rate**: < 0.1%
+
+### iOS-Specific Optimizations
+- Use `React.memo()` for expensive components
+- Implement proper image caching with expo-image
+- Lazy load screens with React.lazy()
+- Use FlatList for long lists with proper keyExtractor
+
+## 🧪 iOS Development Workflow
+
+```bash
+# Development commands
+npm run ios:dev          # Start iOS simulator
+npm run ios:device       # Run on connected iOS device
+npm run ios:build:dev    # Build development version
+npm run ios:build:prod   # Build production version
+npm run ios:test         # Run iOS-specific tests
+```
+
+## ✅ iOS Quality Checklist
+
+Before each iOS release:
+- [ ] Test on multiple iOS versions (13.0+)
+- [ ] Verify Face ID/Touch ID functionality
+- [ ] Test Apple Sign In flow
+- [ ] Validate App Store guidelines compliance
+- [ ] Check accessibility with VoiceOver
+- [ ] Test offline functionality
+- [ ] Verify deep linking works
+- [ ] Test push notifications
+- [ ] Validate memory usage
+- [ ] Check for crashes on older devices
+
+---
+
+*Always follow Apple's Human Interface Guidelines and ensure compliance with App Store Review Guidelines*

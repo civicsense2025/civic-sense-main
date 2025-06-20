@@ -104,7 +104,7 @@ export function QuizDateNavigation({
       "sticky top-0 z-20 backdrop-blur-sm bg-white/95 dark:bg-slate-900/95",
       className
     )}>
-      {/* Previous Topic Button */}
+      {/* Previous Topic Button - Older Topics (Left Arrow) */}
       <Button
         variant="ghost"
         onClick={() => onNavigate('prev')}
@@ -134,7 +134,7 @@ export function QuizDateNavigation({
             </>
           ) : (
             <div className="text-sm font-medium">
-              {isMobile ? "Prev" : "Previous"}
+              {isMobile ? "Older" : "Older Topics"}
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ export function QuizDateNavigation({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Next Topic Button */}
+      {/* Next Topic Button - Newer Topics (Right Arrow) */}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -263,13 +263,13 @@ export function QuizDateNavigation({
                 ) : (
                   <>
                     <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                      Coming soon...
+                      No more topics...
                     </div>
                     <div className="flex items-center gap-1 font-medium text-sm">
                       <span className="text-right">
-                        {isMobile ? "Next" : "Tomorrow's Politics"}
+                        {isMobile ? "Newer" : "Newer Topics"}
                       </span>
-                      <span className="text-base">🔮</span>
+                      <span className="text-base">📚</span>
                     </div>
                   </>
                 )}
@@ -280,8 +280,8 @@ export function QuizDateNavigation({
           {!nextTopic && (
             <TooltipContent side="left" className="max-w-xs">
               <p className="text-sm">
-                Democracy doesn't pause for anyone—new political developments drop every day. 
-                Check back tomorrow for fresh civic challenges that'll test what you really know.
+                You've reached the end of our current topic collection. 
+                New civic education content is added regularly—check back for more!
               </p>
             </TooltipContent>
           )}
@@ -292,11 +292,18 @@ export function QuizDateNavigation({
 }
 
 // Hook for managing quiz navigation state
+// NOTE: Topics are in reverse chronological order (newest first)
+// Left arrow (←) = previous = older topics (higher index)
+// Right arrow (→) = next = newer topics (lower index)
 export function useQuizNavigation(topics: QuizTopic[], currentTopicId: string) {
   const currentIndex = topics.findIndex(topic => topic.id === currentTopicId)
   const currentTopic = topics[currentIndex]
-  const previousTopic = currentIndex > 0 ? topics[currentIndex - 1] : undefined
-  const nextTopic = currentIndex < topics.length - 1 ? topics[currentIndex + 1] : undefined
+  
+  // Corrected navigation pattern to match user expectations:
+  // previousTopic = older topic (higher index, left arrow ←)
+  // nextTopic = newer topic (lower index, right arrow →)
+  const previousTopic = currentIndex < topics.length - 1 ? topics[currentIndex + 1] : undefined
+  const nextTopic = currentIndex > 0 ? topics[currentIndex - 1] : undefined
 
   const navigateToTopic = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && previousTopic) {

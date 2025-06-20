@@ -16,7 +16,7 @@ import {
 } from '../utils/game-utils'
 
 interface UseAnswerSubmissionProps {
-  roomId: string
+  roomId: string // Should be the actual UUID room ID, not a room code
   playerId: string
   gameState: GameState
   setGameState: React.Dispatch<React.SetStateAction<GameState>>

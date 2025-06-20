@@ -1,0 +1,125 @@
+# =============================================================================
+# CivicSense Environment Configuration Template
+# =============================================================================
+# INSTRUCTIONS:
+# 1. Copy this file to .env.local (recommended for Next.js)
+# 2. Or copy to .env (for general use)
+# 3. Fill in your actual values
+# 4. Uncomment the sections you need
+
+# =============================================================================
+# DEPLOYMENT ENVIRONMENT
+# =============================================================================
+NODE_ENV=development
+NEXT_TELEMETRY_DISABLED=1
+
+# =============================================================================
+# SUPABASE CONFIGURATION
+# =============================================================================
+# Production Supabase (default)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# For Docker/Local Development - uncomment these to use local Supabase
+# NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+# SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# Production Database (Supabase)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.your-project.supabase.co:5432/postgres
+
+# For Docker/Local Development - uncomment to use local PostgreSQL
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/civicsense_dev
+# POSTGRES_DB=civicsense_dev
+# POSTGRES_USER=postgres
+# POSTGRES_PASSWORD=postgres
+
+# =============================================================================
+# REDIS CONFIGURATION
+# =============================================================================
+# Production Redis (if using external service)
+REDIS_URL=redis://your-redis-provider.com:6379
+
+# For Docker/Local Development - uncomment to use local Redis
+# REDIS_URL=redis://localhost:6379
+
+# =============================================================================
+# AUTHENTICATION & SECURITY
+# =============================================================================
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-nextauth-secret-key-here
+JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters-long
+
+# =============================================================================
+# STRIPE PAYMENT CONFIGURATION
+# =============================================================================
+STRIPE_PUBLIC_KEY=pk_test_your-stripe-public-key
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-stripe-webhook-secret
+
+# =============================================================================
+# EMAIL SERVICE CONFIGURATION
+# =============================================================================
+# Plunk Email Service
+PLUNK_API_KEY=your-plunk-api-key
+
+# MailerLite (if using)
+MAILERLITE_API_KEY=your-mailerlite-api-key
+
+# =============================================================================
+# AI SERVICE CONFIGURATION
+# =============================================================================
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Google Cloud Services (for translation, TTS, etc.)
+GOOGLE_CLOUD_PROJECT_ID=your-google-cloud-project
+GOOGLE_CLOUD_PRIVATE_KEY=your-google-cloud-private-key
+GOOGLE_CLOUD_CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
+
+# =============================================================================
+# ANALYTICS & MONITORING
+# =============================================================================
+# Vercel Analytics
+NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your-vercel-analytics-id
+
+# Statsig Feature Flags
+NEXT_PUBLIC_STATSIG_CLIENT_KEY=your-statsig-client-key
+STATSIG_SERVER_SECRET_KEY=your-statsig-server-secret
+
+# =============================================================================
+# INTEGRATION SERVICES
+# =============================================================================
+# Google Classroom Integration
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+
+# Clever Integration
+CLEVER_CLIENT_ID=your-clever-client-id
+CLEVER_CLIENT_SECRET=your-clever-client-secret
+
+# =============================================================================
+# DOCKER DEVELOPMENT OVERRIDES
+# =============================================================================
+# When using Docker, these variables override the production ones above
+# Uncomment the section below when running with Docker
+
+# DOCKER_MODE=true
+# NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+# DATABASE_URL=postgresql://postgres:postgres@postgres:5432/civicsense_dev
+# REDIS_URL=redis://redis:6379
+
+# =============================================================================
+# DEVELOPMENT & DEBUGGING
+# =============================================================================
+# Set to true to enable debug logging
+DEBUG=false
+
+# Set to true to enable mock data in development
+USE_MOCK_DATA=false
+
+# Set to true to skip external API calls in development
+SKIP_EXTERNAL_APIS=false 

@@ -19,6 +19,7 @@ import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { cn } from "@/lib/utils"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
 import { CleverShareButton } from "@/components/integrations/clever-share-button"
+import { QuizNavigation } from "@/components/quiz/quiz-navigation"
 import { UserRole } from "@/lib/types/user"
 
 interface QuizPageProps {
@@ -97,15 +98,31 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         setIsLoading(true)
         setError(null)
 
+        console.log(`🔍 QuizPageClient: Starting to load data for topic ${params.topicId}`)
+
         // Load topic metadata AND questions together for better UX
         const [topicData, questionsData] = await Promise.all([
           dataService.getTopicById(params.topicId),
           dataService.getQuestionsByTopic(params.topicId)
         ])
         
+        console.log(`📊 QuizPageClient: Loaded data for ${params.topicId}:`, {
+          topicFound: !!topicData,
+          topicTitle: topicData?.topic_title,
+          questionsCount: questionsData?.length || 0,
+          questionsPreview: questionsData?.slice(0, 2).map(q => ({
+            question_number: q.question_number,
+            question_type: q.question_type,
+            hasQuestion: !!q.question,
+            hasCorrectAnswer: !!q.correct_answer,
+            sourcesCount: q.sources?.length || 0
+          }))
+        })
+        
         if (isCancelled) return // Prevent state update if component unmounted
         
         if (!topicData) {
+          console.error(`❌ QuizPageClient: Topic not found for ${params.topicId}`)
           setError("Quiz not found")
           return
         }
@@ -114,9 +131,27 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         // Always load questions for sources display and better UX
         if (questionsData && questionsData.length > 0) {
           setQuestions(questionsData)
-          console.log(`✅ Pre-loaded ${questionsData.length} questions for topic ${params.topicId}`)
+          console.log(`✅ QuizPageClient: Pre-loaded ${questionsData.length} questions for topic ${params.topicId}`)
+          
+          // Log detailed question analysis
+          const questionAnalysis = questionsData.map(q => ({
+            number: q.question_number,
+            type: q.question_type,
+            hasQuestion: !!q.question,
+            hasAnswer: !!q.correct_answer,
+            sourcesCount: q.sources?.length || 0,
+            tagsCount: q.tags?.length || 0,
+            hasExplanation: !!q.explanation,
+            hasHint: !!q.hint
+          }))
+          console.log(`📋 QuizPageClient: Question analysis for ${params.topicId}:`, questionAnalysis)
+          
         } else {
-          console.warn(`⚠️ No questions found for topic ${params.topicId}`)
+          console.warn(`⚠️ QuizPageClient: No questions found for topic ${params.topicId}`)
+          console.log(`🔍 QuizPageClient: Topic data:`, {
+            topic_id: topicData.topic_id,
+            topic_title: topicData.topic_title
+          })
         }
         
         // Check if this is a continue request
@@ -139,7 +174,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
       } catch (err) {
         if (isCancelled) return // Prevent state update if component unmounted
         
-        console.error("Error loading quiz data:", err)
+        console.error("❌ QuizPageClient: Error loading quiz data:", err)
         setError("Failed to load quiz data")
         setIsLoading(false)
       }
@@ -177,16 +212,8 @@ export default function QuizPageClient({ params }: QuizPageProps) {
       return
     }
 
-    // Increment quiz attempts for guest users (even for breaking/featured content to track usage)
-    if (!user) {
-      recordQuizAttempt()
-    }
-
-    // Show loading screen first
-    setShowLoadingScreen(true)
-
-    // Record the quiz attempt with the topic ID
-    await recordQuizAttempt(params.topicId)
+    // Redirect to the dedicated play page
+    router.push(`/quiz/${params.topicId}/play`)
   }
 
   const handleQuizComplete = () => {
@@ -216,7 +243,6 @@ export default function QuizPageClient({ params }: QuizPageProps) {
 
   const handleAuthSuccess = () => {
     setIsAuthDialogOpen(false)
-    setShowTopicInfo(false) // Start quiz after successful auth
   }
 
   const handleLoadingComplete = () => {
@@ -226,13 +252,6 @@ export default function QuizPageClient({ params }: QuizPageProps) {
 
   const handleContinueLoadingComplete = () => {
     setShowContinueLoading(false)
-    if (questions.length > 0) {
-      // Questions were pre-loaded, go directly to quiz
-      setShowTopicInfo(false)
-    } else {
-      // Questions failed to load, show topic info as fallback
-      setShowTopicInfo(true)
-    }
   }
 
   // Update the guest access display
@@ -293,13 +312,21 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         showMainHeader={true}
       />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active={!showTopicInfo}>
+      {/* Quiz Navigation - Only show on topic info screen, not during gameplay */}
+      <QuizNavigation 
+        topicId={params.topicId}
+        showKeyboardHints={false} // No keyboard hints on landing page
+        compact={true} // Use compact mode on topic info screen
+        enableKeyboardShortcuts={false} // Disable keyboard shortcuts on landing page
+      />
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8">
 
       {showContinueLoading ? (
         <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
       ) : showLoadingScreen ? (
         <QuizLoadingScreen onComplete={handleLoadingComplete} />
-      ) : showTopicInfo ? (
+      ) : (
         <TopicInfo
           topicData={topic}
           onStartQuiz={handleStartQuiz}
@@ -310,24 +337,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           hasCompletedTopic={hasCompletedTopic(params.topicId)}
           questions={questions}
         />
-              ) : (
-          <div className="pb-4 sm:pb-8">
-            <QuizErrorBoundary>
-              <QuizEngine
-                questions={questions}
-                topicId={params.topicId}
-                currentTopic={{
-                  id: topic?.topic_id || "",
-                  title: topic?.topic_title || "",
-                  emoji: topic?.emoji || "",
-                  date: topic?.date || "",
-                  dayOfWeek: topic?.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
-                }}
-                onComplete={handleQuizComplete}
-              />
-            </QuizErrorBoundary>
-          </div>
-        )}
+      )}
 
         {/* Auth Dialog */}
         <AuthDialog

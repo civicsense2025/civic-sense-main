@@ -647,10 +647,10 @@ export function DailyCardStack({
     
     if (isHorizontalSwipe && isFastEnough && isLongEnough) {
       if (deltaX > 0) {
-        // Swipe right - go to previous
+        // Swipe right - go to previous item in list
         handlePrevious()
       } else {
-        // Swipe left - go to next
+        // Swipe left - go to next item in list
         handleNext()
       }
     }
@@ -993,18 +993,25 @@ export function DailyCardStack({
       const currentAccessStatus = getTopicAccessStatus(currentTopic)
       
       if (e.key === 'ArrowLeft') {
-        console.log(`⬅️ Previous: ${currentStackIndex} -> ${Math.max(0, currentStackIndex - 1)} (${allFilteredTopics.length} total)`)
-        handlePrevious()
+        // Left arrow = Previous = Older topics (higher index)
+        const nextIndex = Math.min(allFilteredTopics.length - 1, currentStackIndex + 1)
+        console.log(`⬅️ Previous (Older): ${currentStackIndex} -> ${nextIndex} (${allFilteredTopics.length} total)`)
+        if (nextIndex < allFilteredTopics.length) {
+          setCurrentStackIndex(nextIndex)
+          updateUrlWithTopic(nextIndex)
+        }
         e.preventDefault()
       } else if (e.key === 'ArrowRight') {
-        const nextIndex = Math.min(allFilteredTopics.length - 1, currentStackIndex + 1)
-        console.log(`➡️ Next: ${currentStackIndex} -> ${nextIndex} (${allFilteredTopics.length} total)`)
+        // Right arrow = Next = Newer topics (lower index)  
+        const nextIndex = Math.max(0, currentStackIndex - 1)
+        console.log(`➡️ Next (Newer): ${currentStackIndex} -> ${nextIndex} (${allFilteredTopics.length} total)`)
         console.log(`🎯 Current topic: ${currentTopic.topic_title} (breaking: ${currentTopic.is_breaking}, featured: ${currentTopic.is_featured})`)
-        if (nextIndex < allFilteredTopics.length) {
+        if (nextIndex >= 0) {
           const nextTopic = allFilteredTopics[nextIndex]
           console.log(`🎯 Next topic: ${nextTopic.topic_title} (breaking: ${nextTopic.is_breaking}, featured: ${nextTopic.is_featured})`)
+          setCurrentStackIndex(nextIndex)
+          updateUrlWithTopic(nextIndex)
         }
-        handleNext()
         e.preventDefault()
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (currentAccessStatus.accessible) {
@@ -1363,36 +1370,37 @@ export function DailyCardStack({
 
           {/* Previous/Next navigation */}
           <div className="relative flex items-center px-4 sm:px-6 lg:px-8">
-            {/* Previous button - shows tomorrow when at first item */}
+            {/* Previous button - goes to older topics (higher index) */}
             <button
-              onClick={currentStackIndex > 0 ? handlePrevious : undefined}
-              disabled={currentStackIndex === 0}
+              onClick={currentStackIndex < allFilteredTopics.length - 1 ? () => {
+                const newIndex = Math.min(allFilteredTopics.length - 1, currentStackIndex + 1)
+                setCurrentStackIndex(newIndex)
+                updateUrlWithTopic(newIndex)
+              } : undefined}
+              disabled={currentStackIndex === allFilteredTopics.length - 1}
               className={cn(
                 "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0",
-                currentStackIndex === 0 ? "opacity-70 cursor-default" : "opacity-70 hover:opacity-100 cursor-pointer"
+                currentStackIndex === allFilteredTopics.length - 1 ? "opacity-70 cursor-default" : "opacity-70 hover:opacity-100 cursor-pointer"
               )}
             >
-              {currentStackIndex > 0 ? (
+              {currentStackIndex < allFilteredTopics.length - 1 ? (
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    ← {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    ← {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
+                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
                     <span className="text-left max-w-[100px] sm:max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 15)}
+                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 15)}
                     </span>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    ← {(() => {
-                      const tomorrow = new Date(getTodayAtMidnight().getTime() + 24 * 60 * 60 * 1000)
-                      return tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    })()}
+                    ← Previous
                   </div>
-                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Tomorrow</div>
+                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400">No more topics</div>
                 </div>
               )}
             </button>
@@ -1402,29 +1410,38 @@ export function DailyCardStack({
               {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
             </div>
 
-            {/* Next button */}
+            {/* Next button - goes to newer topics (lower index) */}
             <button
-              onClick={handleNext}
-              disabled={currentStackIndex === allFilteredTopics.length - 1}
+              onClick={currentStackIndex > 0 ? () => {
+                const newIndex = Math.max(0, currentStackIndex - 1)
+                setCurrentStackIndex(newIndex)
+                updateUrlWithTopic(newIndex)
+              } : undefined}
+              disabled={currentStackIndex === 0}
               className={cn(
                 "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0 ml-auto",
-                currentStackIndex === allFilteredTopics.length - 1 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
+                currentStackIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
               )}
             >
-              {currentStackIndex < allFilteredTopics.length - 1 ? (
+              {currentStackIndex > 0 ? (
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
+                    {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
                   </div>
                   <div className="flex items-center gap-1 font-medium text-sm">
                     <span className="text-right max-w-[100px] sm:max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 15)}
+                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 15)}
                     </span>
-                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
+                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm font-medium text-slate-400">Next</div>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                    Next →
+                  </div>
+                  <div className="text-sm font-medium text-slate-400">No more topics</div>
+                </div>
               )}
             </button>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { createMultiplayerQuizProgress, type BaseQuizState } from '@/lib/progress-storage'
-import { multiplayerOperations, type GameState as ServerGameState } from '@/lib/multiplayer'
+import { multiplayerOperations, type GameState as ServerGameState, useMultiplayerRoom } from '@/lib/multiplayer'
 import type { GameState, GameModeConfig } from '../types/game-types'
 import type { QuizQuestion } from '@/lib/quiz-data'
 import { 
@@ -13,7 +13,7 @@ import {
 } from '../utils/game-utils'
 
 interface UseGameStateProps {
-  roomId: string
+  roomId: string // This might be a room code or room ID
   playerId: string
   questions: QuizQuestion[]
   config: GameModeConfig
@@ -32,18 +32,22 @@ interface UseGameStateReturn {
 }
 
 export function useGameState({
-  roomId,
+  roomId: roomIdOrCode, // Rename to be clearer about what this might be
   playerId,
   questions,
   config
 }: UseGameStateProps): UseGameStateReturn {
   const { user } = useAuth()
   
-  // Generate session ID for multiplayer state persistence
-  const sessionId = useRef<string>(generateSessionId(roomId, playerId))
+  // Get the actual room data and real UUID room ID
+  const { room } = useMultiplayerRoom(roomIdOrCode)
+  const actualRoomId = room?.id // This is the actual UUID
   
-  // Progress storage for multiplayer sessions
-  const progressManager = createMultiplayerQuizProgress(user?.id, undefined, roomId)
+  // Generate session ID for multiplayer state persistence
+  const sessionId = useRef<string>(generateSessionId(roomIdOrCode, playerId))
+  
+  // Progress storage for multiplayer sessions - use the original roomIdOrCode for consistency
+  const progressManager = createMultiplayerQuizProgress(user?.id, undefined, roomIdOrCode)
 
   // Game state
   const [gameState, setGameState] = useState<GameState>({
@@ -66,7 +70,7 @@ export function useGameState({
   const convertToBaseQuizState = (state: GameState): BaseQuizState => ({
     sessionId: sessionId.current,
     quizType: 'multiplayer',
-    topicId: roomId,
+    topicId: roomIdOrCode, // Use original for storage consistency
     questions,
     currentQuestionIndex: state.currentQuestionIndex,
     answers: {}, // Multiplayer answers are managed server-side
@@ -76,7 +80,7 @@ export function useGameState({
     responseTimes: {},
     savedAt: Date.now(),
     // Multiplayer-specific fields
-    roomId,
+    roomId: roomIdOrCode,
     playerId,
     gameMode: config.name,
     playerScores: {
@@ -94,19 +98,19 @@ export function useGameState({
       const baseState = convertToBaseQuizState(gameState)
       progressManager.save(baseState)
       devLog('useGameState', 'Saved progress', { 
-        roomId, 
+        roomId: roomIdOrCode, 
         playerId, 
         questionIndex: gameState.currentQuestionIndex 
       })
     }
-  }, [gameState, questions.length, progressManager, roomId, playerId])
+  }, [gameState, questions.length, progressManager, roomIdOrCode, playerId])
 
   // Load multiplayer state
   const loadGameState = useCallback(() => {
     const baseState = progressManager.load()
     if (baseState && baseState.playerScores) {
       devLog('useGameState', 'Restored progress', { 
-        roomId, 
+        roomId: roomIdOrCode, 
         playerId, 
         questionIndex: baseState.currentQuestionIndex 
       })
@@ -127,13 +131,13 @@ export function useGameState({
         answeredPlayers: []
       })
     }
-  }, [progressManager, roomId, playerId])
+  }, [progressManager, roomIdOrCode, playerId])
 
   // Clear multiplayer state
   const clearGameState = useCallback(() => {
     progressManager.clear()
-    devLog('useGameState', 'Cleared progress', { roomId, playerId })
-  }, [progressManager, roomId, playerId])
+    devLog('useGameState', 'Cleared progress', { roomId: roomIdOrCode, playerId })
+  }, [progressManager, roomIdOrCode, playerId])
 
   // Advance to next question
   const advanceToNextQuestion = useCallback(async () => {
@@ -177,11 +181,16 @@ export function useGameState({
     devLog('useGameState', 'Started countdown', { duration })
   }, [])
 
-  // Sync with server game state
+  // Sync with server game state - only when we have the actual room ID
   useEffect(() => {
+    if (!actualRoomId) {
+      devLog('useGameState', 'No actual room ID available yet, skipping server sync')
+      return
+    }
+
     const syncGameState = async () => {
       try {
-        const serverGameState = await multiplayerOperations.getGameState(roomId)
+        const serverGameState = await multiplayerOperations.getGameState(actualRoomId)
         if (serverGameState) {
           // Map server game state to local game state
           setGameState(prev => ({
@@ -206,7 +215,7 @@ export function useGameState({
     // Set up periodic sync every 2 seconds
     const syncInterval = setInterval(syncGameState, 2000)
     return () => clearInterval(syncInterval)
-  }, [roomId])
+  }, [actualRoomId]) // Use actualRoomId instead of roomIdOrCode
 
   // Handle countdown phase
   useEffect(() => {

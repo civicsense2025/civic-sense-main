@@ -75,8 +75,8 @@ export function PlayerPanel({
     
     return {
       hasAnswered: !!response,
-      isCorrect: response?.is_correct,
-      responseTime: response?.response_time_seconds,
+      isCorrect: response?.is_correct ?? undefined,
+      responseTime: response?.response_time_ms ? response.response_time_ms / 1000 : undefined,
       isReady: player?.is_ready ?? false
     }
   }

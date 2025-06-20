@@ -116,7 +116,7 @@ export function MatchingEngine(props: BaseMultiplayerEngineProps) {
   const [showCollaborativeView, setShowCollaborativeView] = useState(false)
 
   // Timer refs for performance tracking
-  const matchTimerRef = useRef<NodeJS.Timeout>()
+  const matchTimerRef = useRef<NodeJS.Timeout | null>(null)
   const questionTimerRef = useRef<number>(Date.now())
 
   // =============================================================================
@@ -153,7 +153,7 @@ export function MatchingEngine(props: BaseMultiplayerEngineProps) {
       
       // Calculate speed based on response times
       const avgResponseTime = playerResponses.length > 0 
-        ? playerResponses.reduce((sum, r) => sum + (r.response_time || 30), 0) / playerResponses.length
+        ? playerResponses.reduce((sum, r) => sum + ((r.response_time_ms || 30000) / 1000), 0) / playerResponses.length
         : 30
       const speed = Math.max(0, Math.round(100 - (avgResponseTime * 2))) // Lower time = higher speed
 

@@ -85,9 +85,9 @@ export function ChatSidebar({
         id: `msg_${Date.now()}`,
         playerId: playerId,
         playerName: currentPlayer.player_name,
-        playerEmoji: currentPlayer.player_emoji,
+        playerEmoji: currentPlayer.player_emoji || '🎮',
         isNPC: false,
-        isHost: currentPlayer.is_host,
+        isHost: currentPlayer.is_host ?? false,
         message: newMessage.trim(),
         timestamp: new Date().toISOString(),
         messageType: 'chat'

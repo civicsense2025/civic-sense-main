@@ -617,14 +617,17 @@ async function createNPCPlayer(
     if (playerError) {
       console.error('Error creating NPC player:', {
         error: playerError,
+        errorType: typeof playerError,
+        errorKeys: Object.keys(playerError || {}),
         code: playerError?.code,
         message: playerError?.message,
         details: playerError?.details,
-        hint: playerError?.hint
+        hint: playerError?.hint,
+        fullError: JSON.stringify(playerError, null, 2)
       })
       return { 
         success: false, 
-        error: `Failed to create NPC player: ${playerError?.message || JSON.stringify(playerError)}` 
+        error: `Failed to create NPC player: ${playerError?.message || playerError?.code || JSON.stringify(playerError)}` 
       }
     }
 

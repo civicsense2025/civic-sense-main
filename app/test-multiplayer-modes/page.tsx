@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MultiplayerQuizRouter } from "@/components/multiplayer/multiplayer-quiz-router"
 import { GAME_MODE_CONFIGS } from "@/components/multiplayer/game-modes/base-multiplayer-engine"
 import { useAuth } from "@/components/auth/auth-provider"
-import { createClient } from "@/utils/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { Users, Play, Settings, Info, CheckCircle, XCircle, Clock } from "lucide-react"
 
 const MOCK_QUESTIONS = [
@@ -58,16 +58,17 @@ export default function MultiplayerModesTestPage() {
     setIsCreatingRoom(true)
     
     try {
-      const supabase = createClient()
+      // Using singleton supabase client
       const { data: room, error } = await supabase
         .from('multiplayer_rooms')
         .insert({
-          creator_id: user.id,
+          host_user_id: user.id,
           topic_id: MOCK_TOPIC.id,
           game_mode: gameMode,
           max_players: 4,
-          room_status: 'active',
-          room_name: `Test ${gameMode} Room`
+          room_status: 'waiting',
+          room_name: `Test ${gameMode} Room`,
+          room_code: Math.random().toString(36).substring(2, 10).toUpperCase()
         })
         .select()
         .single()
@@ -75,7 +76,7 @@ export default function MultiplayerModesTestPage() {
       if (error) throw error
 
       await supabase
-        .from('multiplayer_players')
+        .from('multiplayer_room_players')
         .insert({
           room_id: room.id,
           user_id: user.id,

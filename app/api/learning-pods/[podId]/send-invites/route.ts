@@ -54,17 +54,19 @@ export async function POST(
     // Send email invitations
     for (const student of students as InviteStudent[]) {
       try {
-        // Send real email using Plunk service
-        const { sendLearningPodInvite } = await import('@/lib/email/plunk-service')
-        const emailResult = await sendLearningPodInvite({
-          to: student.email,
-          studentName: student.name,
-          podName: pod.pod_name,
-          teacherName: pod.family_name || 'Your teacher',
-          joinUrl: podInviteUrl,
-          courseName,
-          requireParentConsent
-        })
+        // Send real email using MailerSend service
+        const { sendLearningPodInvite } = await import('@/lib/email/mailerlite-service')
+        const emailResult = await sendLearningPodInvite(
+          student.email,
+          {
+            studentName: student.name,
+            podName: pod.pod_name,
+            teacherName: pod.family_name || 'Your teacher',
+            joinUrl: podInviteUrl,
+            courseName,
+            requireParentConsent
+          }
+        )
         
         const emailSent = emailResult.success
 

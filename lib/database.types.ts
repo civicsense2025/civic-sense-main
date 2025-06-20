@@ -2147,6 +2147,8 @@ export type Database = {
           allowed_days: number[] | null
           allowed_end_time: string | null
           allowed_start_time: string | null
+          archived_at: string | null
+          archived_by: string | null
           average_rating: number | null
           banner_image_url: string | null
           blocked_categories: string[] | null
@@ -2212,6 +2214,8 @@ export type Database = {
           allowed_days?: number[] | null
           allowed_end_time?: string | null
           allowed_start_time?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           average_rating?: number | null
           banner_image_url?: string | null
           blocked_categories?: string[] | null
@@ -2277,6 +2281,8 @@ export type Database = {
           allowed_days?: number[] | null
           allowed_end_time?: string | null
           allowed_start_time?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           average_rating?: number | null
           banner_image_url?: string | null
           blocked_categories?: string[] | null
@@ -2538,251 +2544,238 @@ export type Database = {
       }
       multiplayer_chat_messages: {
         Row: {
-          confidence_score: number | null
-          created_at: string
-          educational_value: string | null
+          created_at: string | null
           id: string
-          message_content: string
+          is_from_host: boolean | null
+          is_from_npc: boolean | null
+          message_text: string
           message_type: string
-          npc_id: string | null
-          npc_personality_traits: string[] | null
-          player_id: string | null
+          metadata: Json | null
+          player_id: string
+          reply_to_message_id: string | null
           room_id: string
-          trigger_context: Json | null
-          trigger_type: string | null
+          timestamp: string | null
         }
         Insert: {
-          confidence_score?: number | null
-          created_at?: string
-          educational_value?: string | null
+          created_at?: string | null
           id?: string
-          message_content: string
+          is_from_host?: boolean | null
+          is_from_npc?: boolean | null
+          message_text: string
           message_type?: string
-          npc_id?: string | null
-          npc_personality_traits?: string[] | null
-          player_id?: string | null
+          metadata?: Json | null
+          player_id: string
+          reply_to_message_id?: string | null
           room_id: string
-          trigger_context?: Json | null
-          trigger_type?: string | null
+          timestamp?: string | null
         }
         Update: {
-          confidence_score?: number | null
-          created_at?: string
-          educational_value?: string | null
+          created_at?: string | null
           id?: string
-          message_content?: string
+          is_from_host?: boolean | null
+          is_from_npc?: boolean | null
+          message_text?: string
           message_type?: string
-          npc_id?: string | null
-          npc_personality_traits?: string[] | null
-          player_id?: string | null
+          metadata?: Json | null
+          player_id?: string
+          reply_to_message_id?: string | null
           room_id?: string
-          trigger_context?: Json | null
-          trigger_type?: string | null
+          timestamp?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "multiplayer_chat_messages_npc_id_fkey"
-            columns: ["npc_id"]
+            foreignKeyName: "multiplayer_chat_messages_reply_to_fkey"
+            columns: ["reply_to_message_id"]
             isOneToOne: false
-            referencedRelation: "npc_personalities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_chat_messages_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "active_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_chat_messages_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_chat_messages_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
+            referencedRelation: "multiplayer_chat_messages"
             referencedColumns: ["id"]
           },
         ]
       }
       multiplayer_conversation_context: {
         Row: {
-          conflict_detected: boolean
-          current_topic_difficulty: string | null
-          dominant_players: string[] | null
-          engagement_level: string | null
+          conversation_history: Json | null
+          created_at: string | null
+          educational_goals: Json | null
           id: string
-          intervention_cooldown_until: string | null
-          last_message_at: string
-          last_npc_intervention: string | null
+          last_interaction_at: string | null
+          npc_player_id: string
+          personality_state: Json | null
           room_id: string
-          room_mood: string | null
-          silence_duration_seconds: number
-          struggling_players: string[] | null
-          total_messages: number
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          conflict_detected?: boolean
-          current_topic_difficulty?: string | null
-          dominant_players?: string[] | null
-          engagement_level?: string | null
+          conversation_history?: Json | null
+          created_at?: string | null
+          educational_goals?: Json | null
           id?: string
-          intervention_cooldown_until?: string | null
-          last_message_at?: string
-          last_npc_intervention?: string | null
+          last_interaction_at?: string | null
+          npc_player_id: string
+          personality_state?: Json | null
           room_id: string
-          room_mood?: string | null
-          silence_duration_seconds?: number
-          struggling_players?: string[] | null
-          total_messages?: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          conflict_detected?: boolean
-          current_topic_difficulty?: string | null
-          dominant_players?: string[] | null
-          engagement_level?: string | null
+          conversation_history?: Json | null
+          created_at?: string | null
+          educational_goals?: Json | null
           id?: string
-          intervention_cooldown_until?: string | null
-          last_message_at?: string
-          last_npc_intervention?: string | null
+          last_interaction_at?: string | null
+          npc_player_id?: string
+          personality_state?: Json | null
           room_id?: string
-          room_mood?: string | null
-          silence_duration_seconds?: number
-          struggling_players?: string[] | null
-          total_messages?: number
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "multiplayer_conversation_context_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: true
-            referencedRelation: "multiplayer_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       multiplayer_game_events: {
         Row: {
-          created_at: string
-          event_data: Json
+          created_at: string | null
+          event_data: Json | null
           event_type: string
           id: string
+          player_id: string
+          question_number: number | null
           room_id: string
-          triggered_by: string | null
+          session_id: string
+          timestamp: string | null
         }
         Insert: {
-          created_at?: string
-          event_data?: Json
+          created_at?: string | null
+          event_data?: Json | null
           event_type: string
           id?: string
+          player_id: string
+          question_number?: number | null
           room_id: string
-          triggered_by?: string | null
+          session_id: string
+          timestamp?: string | null
         }
         Update: {
-          created_at?: string
-          event_data?: Json
+          created_at?: string | null
+          event_data?: Json | null
           event_type?: string
           id?: string
+          player_id?: string
+          question_number?: number | null
           room_id?: string
-          triggered_by?: string | null
+          session_id?: string
+          timestamp?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "multiplayer_game_events_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: "multiplayer_game_events_session_id_fkey"
+            columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_game_events_triggered_by_fkey"
-            columns: ["triggered_by"]
-            isOneToOne: false
-            referencedRelation: "active_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_game_events_triggered_by_fkey"
-            columns: ["triggered_by"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_room_players"
+            referencedRelation: "multiplayer_game_sessions"
             referencedColumns: ["id"]
           },
         ]
       }
-      multiplayer_npc_players: {
+      multiplayer_game_sessions: {
         Row: {
-          conflict_interventions: number
-          conflict_resolution_active: boolean
-          conversation_frequency: number
-          created_at: string
-          educational_contributions: number
+          completed_at: string | null
+          created_at: string | null
+          current_question_number: number | null
+          final_scores: Json | null
+          game_mode: string
           id: string
-          last_activity: string
-          messages_sent: number
-          npc_id: string
-          player_id: string
+          performance_stats: Json | null
           room_id: string
-          teaching_mode: boolean
+          session_config: Json | null
+          session_number: number
+          session_status: string
+          started_at: string | null
+          topic_id: string
+          total_questions: number
+          updated_at: string | null
         }
         Insert: {
-          conflict_interventions?: number
-          conflict_resolution_active?: boolean
-          conversation_frequency?: number
-          created_at?: string
-          educational_contributions?: number
+          completed_at?: string | null
+          created_at?: string | null
+          current_question_number?: number | null
+          final_scores?: Json | null
+          game_mode?: string
           id?: string
-          last_activity?: string
-          messages_sent?: number
-          npc_id: string
-          player_id: string
+          performance_stats?: Json | null
           room_id: string
-          teaching_mode?: boolean
+          session_config?: Json | null
+          session_number?: number
+          session_status?: string
+          started_at?: string | null
+          topic_id: string
+          total_questions?: number
+          updated_at?: string | null
         }
         Update: {
-          conflict_interventions?: number
-          conflict_resolution_active?: boolean
-          conversation_frequency?: number
-          created_at?: string
-          educational_contributions?: number
+          completed_at?: string | null
+          created_at?: string | null
+          current_question_number?: number | null
+          final_scores?: Json | null
+          game_mode?: string
           id?: string
-          last_activity?: string
-          messages_sent?: number
-          npc_id?: string
-          player_id?: string
+          performance_stats?: Json | null
           room_id?: string
-          teaching_mode?: boolean
+          session_config?: Json | null
+          session_number?: number
+          session_status?: string
+          started_at?: string | null
+          topic_id?: string
+          total_questions?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      multiplayer_npc_players: {
+        Row: {
+          ai_behavior_config: Json | null
+          created_at: string | null
+          difficulty_level: number | null
+          id: string
+          is_active: boolean | null
+          npc_id: string
+          personality_type: string | null
+          player_emoji: string
+          player_name: string
+          questions_answered: number | null
+          questions_correct: number | null
+          room_id: string
+          score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_behavior_config?: Json | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          npc_id: string
+          personality_type?: string | null
+          player_emoji: string
+          player_name: string
+          questions_answered?: number | null
+          questions_correct?: number | null
+          room_id: string
+          score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_behavior_config?: Json | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          npc_id?: string
+          personality_type?: string | null
+          player_emoji?: string
+          player_name?: string
+          questions_answered?: number | null
+          questions_correct?: number | null
+          room_id?: string
+          score?: number | null
+          updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "multiplayer_npc_players_npc_id_fkey"
-            columns: ["npc_id"]
-            isOneToOne: false
-            referencedRelation: "npc_personalities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_npc_players_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "active_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_npc_players_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_room_players"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "multiplayer_npc_players_room_id_fkey"
             columns: ["room_id"]
@@ -2794,57 +2787,65 @@ export type Database = {
       }
       multiplayer_question_responses: {
         Row: {
-          answered_at: string
-          attempt_id: string
-          bonus_applied: string | null
+          boosts_used: number | null
+          created_at: string | null
+          hints_used: number | null
           id: string
-          is_correct: boolean
-          player_id: string
+          is_correct: boolean | null
+          npc_player_id: string | null
+          player_id: string | null
+          points_earned: number | null
           question_id: string
           question_number: number
-          response_time_seconds: number
+          response_metadata: Json | null
+          response_time_ms: number | null
           room_id: string
           selected_answer: string | null
+          submitted_at: string | null
+          topic_id: string
         }
         Insert: {
-          answered_at?: string
-          attempt_id: string
-          bonus_applied?: string | null
+          boosts_used?: number | null
+          created_at?: string | null
+          hints_used?: number | null
           id?: string
-          is_correct: boolean
-          player_id: string
+          is_correct?: boolean | null
+          npc_player_id?: string | null
+          player_id?: string | null
+          points_earned?: number | null
           question_id: string
           question_number: number
-          response_time_seconds: number
+          response_metadata?: Json | null
+          response_time_ms?: number | null
           room_id: string
           selected_answer?: string | null
+          submitted_at?: string | null
+          topic_id: string
         }
         Update: {
-          answered_at?: string
-          attempt_id?: string
-          bonus_applied?: string | null
+          boosts_used?: number | null
+          created_at?: string | null
+          hints_used?: number | null
           id?: string
-          is_correct?: boolean
-          player_id?: string
+          is_correct?: boolean | null
+          npc_player_id?: string | null
+          player_id?: string | null
+          points_earned?: number | null
           question_id?: string
           question_number?: number
-          response_time_seconds?: number
+          response_metadata?: Json | null
+          response_time_ms?: number | null
           room_id?: string
           selected_answer?: string | null
+          submitted_at?: string | null
+          topic_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "multiplayer_question_responses_attempt_id_fkey"
-            columns: ["attempt_id"]
+            foreignKeyName: "multiplayer_question_responses_npc_player_id_fkey"
+            columns: ["npc_player_id"]
             isOneToOne: false
-            referencedRelation: "multiplayer_quiz_attempts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_question_responses_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "active_room_players"
+            referencedRelation: "multiplayer_npc_players"
             referencedColumns: ["id"]
           },
           {
@@ -2865,127 +2866,146 @@ export type Database = {
       }
       multiplayer_quiz_attempts: {
         Row: {
-          bonus_points: number
+          attempt_data: Json | null
           completed_at: string | null
-          correct_answers: number
-          final_rank: number | null
-          game_session_id: string | null
+          created_at: string | null
+          final_score: number | null
           id: string
-          is_completed: boolean
           player_id: string
+          questions_correct: number | null
+          questions_total: number | null
           room_id: string
-          score: number
-          started_at: string
-          time_spent_seconds: number
+          session_id: string
+          time_spent_seconds: number | null
           topic_id: string
-          total_questions: number
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          bonus_points?: number
+          attempt_data?: Json | null
           completed_at?: string | null
-          correct_answers?: number
-          final_rank?: number | null
-          game_session_id?: string | null
+          created_at?: string | null
+          final_score?: number | null
           id?: string
-          is_completed?: boolean
           player_id: string
+          questions_correct?: number | null
+          questions_total?: number | null
           room_id: string
-          score?: number
-          started_at?: string
-          time_spent_seconds?: number
+          session_id: string
+          time_spent_seconds?: number | null
           topic_id: string
-          total_questions: number
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          bonus_points?: number
+          attempt_data?: Json | null
           completed_at?: string | null
-          correct_answers?: number
-          final_rank?: number | null
-          game_session_id?: string | null
+          created_at?: string | null
+          final_score?: number | null
           id?: string
-          is_completed?: boolean
           player_id?: string
+          questions_correct?: number | null
+          questions_total?: number | null
           room_id?: string
-          score?: number
-          started_at?: string
-          time_spent_seconds?: number
+          session_id?: string
+          time_spent_seconds?: number | null
           topic_id?: string
-          total_questions?: number
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "multiplayer_quiz_attempts_player_id_fkey"
-            columns: ["player_id"]
+            foreignKeyName: "multiplayer_quiz_attempts_session_id_fkey"
+            columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "active_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_quiz_attempts_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_room_players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "multiplayer_quiz_attempts_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
+            referencedRelation: "multiplayer_game_sessions"
             referencedColumns: ["id"]
           },
         ]
       }
+      multiplayer_room_events: {
+        Row: {
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          player_id: string | null
+          room_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          player_id?: string | null
+          room_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          player_id?: string | null
+          room_id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       multiplayer_room_players: {
         Row: {
-          boost_inventory: Json | null
-          connection_latency: number | null
-          connection_quality: string | null
-          created_at: string
+          created_at: string | null
           guest_token: string | null
           id: string
-          is_connected: boolean
-          is_host: boolean
-          is_ready: boolean
-          join_order: number
-          last_activity: string
-          player_emoji: string
+          is_connected: boolean | null
+          is_host: boolean | null
+          is_ready: boolean | null
+          join_order: number | null
+          last_activity_at: string | null
+          player_emoji: string | null
           player_name: string
+          questions_answered: number | null
+          questions_correct: number | null
           room_id: string
+          score: number | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          boost_inventory?: Json | null
-          connection_latency?: number | null
-          connection_quality?: string | null
-          created_at?: string
+          created_at?: string | null
           guest_token?: string | null
           id?: string
-          is_connected?: boolean
-          is_host?: boolean
-          is_ready?: boolean
-          join_order: number
-          last_activity?: string
-          player_emoji?: string
+          is_connected?: boolean | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          join_order?: number | null
+          last_activity_at?: string | null
+          player_emoji?: string | null
           player_name: string
+          questions_answered?: number | null
+          questions_correct?: number | null
           room_id: string
+          score?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          boost_inventory?: Json | null
-          connection_latency?: number | null
-          connection_quality?: string | null
-          created_at?: string
+          created_at?: string | null
           guest_token?: string | null
           id?: string
-          is_connected?: boolean
-          is_host?: boolean
-          is_ready?: boolean
-          join_order?: number
-          last_activity?: string
-          player_emoji?: string
+          is_connected?: boolean | null
+          is_host?: boolean | null
+          is_ready?: boolean | null
+          join_order?: number | null
+          last_activity_at?: string | null
+          player_emoji?: string | null
           player_name?: string
+          questions_answered?: number | null
+          questions_correct?: number | null
           room_id?: string
+          score?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -3001,51 +3021,54 @@ export type Database = {
       multiplayer_rooms: {
         Row: {
           completed_at: string | null
-          created_at: string
-          current_players: number
-          expires_at: string
-          game_mode: string
+          created_at: string | null
+          current_players: number | null
+          expires_at: string | null
+          game_mode: string | null
           host_user_id: string | null
           id: string
-          max_players: number
+          max_players: number | null
           room_code: string
           room_name: string | null
-          room_status: string
-          settings: Json
+          room_status: string | null
+          settings: Json | null
           started_at: string | null
           topic_id: string
+          updated_at: string | null
         }
         Insert: {
           completed_at?: string | null
-          created_at?: string
-          current_players?: number
-          expires_at?: string
-          game_mode?: string
+          created_at?: string | null
+          current_players?: number | null
+          expires_at?: string | null
+          game_mode?: string | null
           host_user_id?: string | null
           id?: string
-          max_players?: number
+          max_players?: number | null
           room_code: string
           room_name?: string | null
-          room_status?: string
-          settings?: Json
+          room_status?: string | null
+          settings?: Json | null
           started_at?: string | null
           topic_id: string
+          updated_at?: string | null
         }
         Update: {
           completed_at?: string | null
-          created_at?: string
-          current_players?: number
-          expires_at?: string
-          game_mode?: string
+          created_at?: string | null
+          current_players?: number | null
+          expires_at?: string | null
+          game_mode?: string | null
           host_user_id?: string | null
           id?: string
-          max_players?: number
+          max_players?: number | null
           room_code?: string
           room_name?: string | null
-          room_status?: string
-          settings?: Json
+          room_status?: string | null
+          settings?: Json | null
           started_at?: string | null
           topic_id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3222,13 +3245,6 @@ export type Database = {
             columns: ["npc_id"]
             isOneToOne: false
             referencedRelation: "npc_personalities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "npc_conversation_history_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -3540,13 +3556,6 @@ export type Database = {
           total_questions?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "npc_quiz_attempts_multiplayer_room_id_fkey"
-            columns: ["multiplayer_room_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "npc_quiz_attempts_npc_id_fkey"
             columns: ["npc_id"]
@@ -8637,74 +8646,6 @@ export type Database = {
       }
     }
     Views: {
-      active_room_players: {
-        Row: {
-          boost_inventory: Json | null
-          connection_latency: number | null
-          connection_quality: string | null
-          created_at: string | null
-          guest_token: string | null
-          id: string | null
-          is_connected: boolean | null
-          is_host: boolean | null
-          is_ready: boolean | null
-          join_order: number | null
-          last_activity: string | null
-          player_emoji: string | null
-          player_name: string | null
-          presence_status: string | null
-          room_id: string | null
-          seconds_since_activity: number | null
-          user_id: string | null
-        }
-        Insert: {
-          boost_inventory?: Json | null
-          connection_latency?: number | null
-          connection_quality?: string | null
-          created_at?: string | null
-          guest_token?: string | null
-          id?: string | null
-          is_connected?: boolean | null
-          is_host?: boolean | null
-          is_ready?: boolean | null
-          join_order?: number | null
-          last_activity?: string | null
-          player_emoji?: string | null
-          player_name?: string | null
-          presence_status?: never
-          room_id?: string | null
-          seconds_since_activity?: never
-          user_id?: string | null
-        }
-        Update: {
-          boost_inventory?: Json | null
-          connection_latency?: number | null
-          connection_quality?: string | null
-          created_at?: string | null
-          guest_token?: string | null
-          id?: string | null
-          is_connected?: boolean | null
-          is_host?: boolean | null
-          is_ready?: boolean | null
-          join_order?: number | null
-          last_activity?: string | null
-          player_emoji?: string | null
-          player_name?: string | null
-          presence_status?: never
-          room_id?: string | null
-          seconds_since_activity?: never
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "multiplayer_room_players_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "multiplayer_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       assessment_question_stats: {
         Row: {
           category: string | null
@@ -9159,6 +9100,14 @@ export type Database = {
         Args: { p_pod_id: string; p_date?: string }
         Returns: undefined
       }
+      can_access_room: {
+        Args: {
+          room_uuid: string
+          check_user_id?: string
+          check_guest_token?: string
+        }
+        Returns: boolean
+      }
       can_join_pod_via_invite: {
         Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
         Returns: Json
@@ -9284,24 +9233,14 @@ export type Database = {
         Returns: {
           id: string
           room_code: string
-          message: string
-          success: boolean
-        }[]
-      }
-      create_multiplayer_room_v2: {
-        Args: {
-          p_topic_id: string
-          p_host_user_id?: string
-          p_host_guest_token?: string
-          p_room_name?: string
-          p_max_players?: number
-          p_game_mode?: string
-        }
-        Returns: {
-          id: string
-          room_code: string
-          message: string
-          success: boolean
+          topic_id: string
+          room_name: string
+          max_players: number
+          current_players: number
+          game_mode: string
+          room_status: string
+          host_user_id: string
+          created_at: string
         }[]
       }
       create_pod_invite_link: {
@@ -9356,6 +9295,23 @@ export type Database = {
       generate_room_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_room_slug: {
+        Args: { room_name: string }
+        Returns: string
+      }
+      get_active_game_session: {
+        Args: { room_uuid: string }
+        Returns: {
+          session_id: string
+          session_number: number
+          topic_id: string
+          game_mode: string
+          session_status: string
+          current_question_number: number
+          total_questions: number
+          started_at: string
+        }[]
       }
       get_assessment_question_social_proof_stats: {
         Args: { p_question_id: string; p_assessment_type?: string }
@@ -9537,6 +9493,19 @@ export type Database = {
           category_name: string
           recommendation_reason: string
           priority_score: number
+        }[]
+      }
+      get_room_members: {
+        Args: { room_uuid: string }
+        Returns: {
+          player_id: string
+          user_id: string
+          guest_token: string
+          player_name: string
+          player_emoji: string
+          is_host: boolean
+          is_ready: boolean
+          is_connected: boolean
         }[]
       }
       get_shareable_link_info: {
@@ -9807,22 +9776,6 @@ export type Database = {
           join_order: number
         }[]
       }
-      join_multiplayer_room_v2: {
-        Args: {
-          p_room_code: string
-          p_player_name: string
-          p_user_id?: string
-          p_guest_token?: string
-          p_player_emoji?: string
-        }
-        Returns: {
-          success: boolean
-          message: string
-          room_id: string
-          player_id: string
-          join_order: number
-        }[]
-      }
       join_pod_via_invite: {
         Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
         Returns: {
@@ -9833,14 +9786,6 @@ export type Database = {
         }[]
       }
       leave_multiplayer_room: {
-        Args: { p_room_id: string; p_player_id: string }
-        Returns: {
-          success: boolean
-          message: string
-          new_host_player_id: string
-        }[]
-      }
-      leave_multiplayer_room_v2: {
         Args: { p_room_id: string; p_player_id: string }
         Returns: {
           success: boolean
@@ -9892,13 +9837,25 @@ export type Database = {
           lifetime_credits_granted: number
         }[]
       }
-      reassign_room_host: {
-        Args: { p_room_id: string; p_leaving_player_id?: string }
-        Returns: {
-          success: boolean
-          message: string
-          new_host_player_id: string
-        }[]
+      record_game_event: {
+        Args: {
+          p_session_id: string
+          p_room_id: string
+          p_player_id: string
+          p_event_type: string
+          p_event_data?: Json
+          p_question_number?: number
+        }
+        Returns: string
+      }
+      record_room_event: {
+        Args: {
+          p_room_id: string
+          p_event_type: string
+          p_player_id?: string
+          p_event_data?: Json
+        }
+        Returns: string
       }
       redeem_gift_code: {
         Args: { p_redemption_code: string; p_recipient_user_id: string }
@@ -9976,9 +9933,13 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: boolean
       }
-      start_multiplayer_game_v2: {
-        Args: { p_room_id: string }
-        Returns: boolean
+      test_multiplayer_operations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          test_name: string
+          status: string
+          details: string
+        }[]
       }
       track_feature_usage: {
         Args: { p_user_id: string; p_feature_name: string }
@@ -10025,10 +9986,6 @@ export type Database = {
         Returns: undefined
       }
       update_player_ready_status: {
-        Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
-        Returns: boolean
-      }
-      update_player_ready_status_v2: {
         Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
         Returns: boolean
       }
@@ -10125,6 +10082,25 @@ export type Database = {
           rooms_without_hosts: number
           rooms_with_multiple_hosts: number
           success_rate: number
+        }[]
+      }
+      validate_multiplayer_schema: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          table_exists: boolean
+          rls_enabled: boolean
+          policy_count: number
+        }[]
+      }
+      validate_multiplayer_schema_alignment: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          column_name: string
+          expected_type: string
+          actual_type: string
+          status: string
         }[]
       }
       validate_translation_structure: {

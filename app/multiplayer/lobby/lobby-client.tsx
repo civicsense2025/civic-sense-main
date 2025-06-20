@@ -262,9 +262,9 @@ export function MultiplayerLobbyClient() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
-
-      {/* Add space under header */}
-      <div className="pt-8">
+      
+      {/* Space under header */}
+      <div className="pt-16">
         {/* Main Game Area */}
         <div className="flex-1 px-4 pb-16">
           <div className="max-w-6xl mx-auto">

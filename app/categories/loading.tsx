@@ -58,7 +58,7 @@ function CategoryCardSkeleton() {
 export default function CategoriesLoading() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
+      <Header />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
         {/* Page header skeleton */}

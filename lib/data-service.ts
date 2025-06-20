@@ -93,25 +93,41 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
 }
 
 /**
- * Convert database question to app format with proper source handling
+ * Transform database question to app format with enhanced source handling
  */
 function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
-  // Parse sources if they're stored as JSON string
+  // Enhanced source parsing with better error handling
   let sources = []
   if (dbQuestion.sources) {
     try {
       if (typeof dbQuestion.sources === 'string') {
         sources = JSON.parse(dbQuestion.sources)
+        console.log(`📊 Parsed sources from string for question ${dbQuestion.question_number}:`, sources.length, 'sources')
       } else if (Array.isArray(dbQuestion.sources)) {
         sources = dbQuestion.sources
+        console.log(`📊 Using array sources for question ${dbQuestion.question_number}:`, sources.length, 'sources')
+      } else if (typeof dbQuestion.sources === 'object') {
+        // Handle case where it might be a single object
+        sources = [dbQuestion.sources]
+        console.log(`📊 Converted object to array for question ${dbQuestion.question_number}:`, sources.length, 'sources')
       }
+      
+      // Validate source structure
+      sources = sources.filter((source: any) => {
+        if (!source || typeof source !== 'object') return false
+        if (!source.url && !source.name) return false
+        return true
+      })
+      
+      console.log(`📊 Valid sources after filtering for question ${dbQuestion.question_number}:`, sources.length)
+      
     } catch (e) {
-      console.warn('Failed to parse question sources:', e)
+      console.warn(`Failed to parse question sources for question ${dbQuestion.question_number}:`, e, 'Raw sources:', dbQuestion.sources)
       sources = []
     }
   }
 
-  // Parse tags if they're stored as JSON string
+  // Enhanced tag parsing with better error handling
   let tags = []
   if (dbQuestion.tags) {
     try {
@@ -120,8 +136,12 @@ function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
       } else if (Array.isArray(dbQuestion.tags)) {
         tags = dbQuestion.tags
       }
+      
+      // Ensure tags are strings
+      tags = tags.filter((tag: any) => typeof tag === 'string' && tag.trim().length > 0)
+      
     } catch (e) {
-      console.warn('Failed to parse question tags:', e)
+      console.warn(`Failed to parse question tags for question ${dbQuestion.question_number}:`, e)
       tags = []
     }
   }
@@ -142,6 +162,19 @@ function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
     tags: tags,
     sources: sources
   }
+  
+  // Log the final transformed question for debugging
+  console.log(`📊 Transformed question ${dbQuestion.question_number}:`, {
+    topic_id: question.topic_id,
+    question_number: question.question_number,
+    question_type: question.question_type,
+    hasQuestion: !!question.question,
+    hasCorrectAnswer: !!question.correct_answer,
+    sourcesCount: question.sources.length,
+    tagsCount: question.tags.length,
+    hasExplanation: !!question.explanation,
+    hasHint: !!question.hint
+  })
   
   return cleanObjectContent(question)
 }
@@ -308,7 +341,7 @@ async function getQuestionsForTopic(topicId: string): Promise<any[]> {
     
     console.log(`📊 Querying questions for topic ${topicId}`)
     
-    // Method 1: Query questions table directly using topic_id foreign key
+    // Enhanced query to get all question fields including sources
     console.log(`📊 Attempting direct query on questions table with topic_id`)
     const { data: questions, error: questionsError } = await supabase
       .from('questions')
@@ -331,7 +364,11 @@ async function getQuestionsForTopic(topicId: string): Promise<any[]> {
         difficulty_level,
         is_active,
         created_at,
-        updated_at
+        updated_at,
+        fact_check_notes,
+        fact_check_status,
+        last_fact_check,
+        translations
       `)
       .eq('topic_id', topicId)
       .eq('is_active', true)
@@ -349,7 +386,7 @@ async function getQuestionsForTopic(topicId: string): Promise<any[]> {
 
     console.log(`📊 Found ${questions.length} questions for topic ${topicId}`)
     
-    // Log sample question structure for debugging
+    // Enhanced logging for debugging
     if (questions[0]) {
       console.log(`📊 Sample question structure:`, {
         id: questions[0].id,
@@ -360,7 +397,10 @@ async function getQuestionsForTopic(topicId: string): Promise<any[]> {
         hasCorrectAnswer: !!questions[0].correct_answer,
         hasSources: !!questions[0].sources,
         sourcesType: typeof questions[0].sources,
-        sourcesContent: questions[0].sources ? (typeof questions[0].sources === 'string' ? 'JSON string' : 'Object/Array') : 'None'
+        sourcesContent: questions[0].sources ? (typeof questions[0].sources === 'string' ? 'JSON string' : 'Object/Array') : 'None',
+        sourcesPreview: questions[0].sources ? JSON.stringify(questions[0].sources).substring(0, 100) + '...' : 'None',
+        hasExplanation: !!questions[0].explanation,
+        hasHint: !!questions[0].hint
       })
     }
     

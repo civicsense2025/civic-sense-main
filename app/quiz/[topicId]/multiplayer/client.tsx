@@ -152,18 +152,22 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
   const [playerId, setPlayerId] = useState<string | null>(() => {
     // First, try to read from the URL / searchParams (legacy links)
     if (typeof searchParams.player === 'string') {
+      console.log('🎮 Found player ID in searchParams.player:', searchParams.player)
       return searchParams.player
     }
 
     // Attempt to parse from serialized searchParams (edge-case when props are dehydrated as an object)
     if (searchParams && typeof searchParams === 'object') {
+      console.log('🎮 Searching for player ID in serialized searchParams:', searchParams)
       const serialized = JSON.stringify(searchParams)
       const match = serialized.match(/\"player\":\"([^\"]+)\"/)
       if (match) {
+        console.log('🎮 Found player ID in serialized searchParams:', match[1])
         return match[1]
       }
     }
 
+    console.log('🎮 No player ID found in searchParams, will try localStorage')
     // Nothing found yet – return null for now; we will try localStorage on mount
     return null
   })
@@ -331,13 +335,17 @@ function MultiplayerQuizClient({ params, searchParams }: MultiplayerQuizClientPr
   // On mount, if no playerId yet, try to recover it from localStorage
   useEffect(() => {
     if (!playerId && roomId) {
+      console.log('🎮 Trying to recover player ID from localStorage for room:', roomId)
       try {
         const cached = localStorage.getItem(`multiplayerPlayer_${roomId}`)
         if (cached) {
+          console.log('🎮 Found cached player ID:', cached)
           setPlayerId(cached)
+        } else {
+          console.log('🎮 No cached player ID found for room:', roomId)
         }
-      } catch {
-        /* ignore SSR / quota errors */
+      } catch (error) {
+        console.warn('🎮 Error accessing localStorage:', error)
       }
     }
   }, [playerId, roomId])
