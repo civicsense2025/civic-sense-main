@@ -23,6 +23,7 @@ import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw,
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
+import { quizAttemptOperations } from "@/lib/database"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from "@/hooks/useGamification"
 import { usePremium } from "@/hooks/usePremium"
@@ -1312,30 +1313,70 @@ export function QuizEngine({
               .eq('id', existingAttempt.id)
               
           } else {
-            // Create new attempt
-            const { data: newAttempt, error } = await supabase
-              .from('user_quiz_attempts')
-              .insert({
-                user_id: user.id,
-                topic_id: topicId,
-                total_questions: randomizedQuestions.length,
-                started_at: new Date().toISOString(),
-                is_completed: false
-              })
-              .select()
-              .single()
-              
-            if (error) {
-              console.error('Error creating enhanced quiz attempt:', error)
-              attemptCreatedRef.current = false // Allow retry on error
-            } else if (newAttempt) {
-              console.log(`✅ Created new enhanced quiz attempt: ${newAttempt.id}`)
-              setResumedAttemptId(newAttempt.id)
-            }
+            // Create new attempt using proper database operations
+            console.log(`📝 Creating new quiz attempt for user ${user.id}, topic ${topicId}`)
+            const newAttempt = await quizAttemptOperations.start(
+              user.id,
+              topicId,
+              randomizedQuestions.length
+            )
+            
+            console.log(`✅ Created new enhanced quiz attempt: ${newAttempt.id}`)
+            setResumedAttemptId(newAttempt.id)
           }
         } catch (err) {
-          console.error('Failed to initialize enhanced quiz attempt:', err)
-          attemptCreatedRef.current = false // Allow retry on error
+          // Enhanced error handling for RLS policy violations and other database issues
+          if (err && typeof err === 'object') {
+            const dbError = err as any
+            
+            // Handle RLS policy violations gracefully
+            if (dbError.code === '42501' || dbError.message?.includes('row-level security policy')) {
+              console.warn('🔒 RLS policy violation when creating quiz attempt - continuing with quiz anyway:', {
+                code: dbError.code,
+                message: dbError.message,
+                userId: user.id,
+                topicId,
+                table: dbError.message?.includes('pod_analytics') ? 'pod_analytics' : 'unknown'
+              })
+              
+              // Quiz can continue without analytics - this is not a blocking error
+              // Don't set attemptCreatedRef.current = false to prevent retries
+              return
+            }
+            
+            // Handle other database errors
+            if (dbError.code) {
+              console.error('🔥 Database error creating quiz attempt:', {
+                code: dbError.code,
+                message: dbError.message,
+                details: dbError.details,
+                hint: dbError.hint,
+                userId: user.id,
+                topicId,
+                questionCount: randomizedQuestions.length
+              })
+            } else {
+              console.error('❌ Unexpected error creating quiz attempt:', {
+                error: err,
+                userId: user.id,
+                topicId,
+                questionCount: randomizedQuestions.length,
+                errorType: typeof err,
+                errorMessage: err.toString()
+              })
+            }
+          } else {
+            console.error('💥 Non-object error creating quiz attempt:', {
+              error: err,
+              userId: user.id,
+              topicId,
+              questionCount: randomizedQuestions.length
+            })
+          }
+          
+          // Only allow retry for non-RLS errors
+          // The core quiz functionality should not be blocked by analytics issues
+          attemptCreatedRef.current = false
         }
       }
     }
@@ -1541,8 +1582,8 @@ export function QuizEngine({
         {/* Enhanced action buttons */}
         {!isAnswerSubmitted && !isMobile && (
           <div className="space-y-6">
-            {/* Boost buttons */}
-            {(currentBoostEffects.timeFreezeAvailable || 
+            {/* Boost buttons - TEMPORARILY DISABLED */}
+            {false && (currentBoostEffects.timeFreezeAvailable || 
               currentBoostEffects.answerRevealAvailable || 
               currentBoostEffects.secondChanceAvailable) && (
               <div className="flex items-center justify-center gap-3 animate-in fade-in duration-300">
@@ -1708,8 +1749,8 @@ export function QuizEngine({
         </div>
       )}
 
-      {/* Enhanced Boost Command Bar */}
-      {user && (
+      {/* Enhanced Boost Command Bar - TEMPORARILY DISABLED */}
+      {false && user && (
         <BoostCommandBar
           userXP={userXP}
           onXPChanged={setUserXP}

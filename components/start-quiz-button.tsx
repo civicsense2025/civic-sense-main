@@ -57,13 +57,13 @@ export function StartQuizButton({
     "rounded-full shadow-sm px-8 py-4 text-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 relative z-10"
 
   const primaryStyles =
-    "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-950 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 border border-blue-200 dark:border-blue-500"
+    "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-950 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:hover:text-white border border-blue-200 dark:border-blue-500"
   const outlineStyles =
-    "border border-blue-300 dark:border-blue-400 text-blue-700 dark:text-blue-100 bg-transparent hover:bg-blue-50 hover:text-blue-900 dark:hover:bg-blue-800/50"
+    "border border-blue-300 dark:border-blue-400 text-blue-700 dark:text-blue-100 bg-transparent hover:bg-blue-50 hover:text-blue-900 dark:hover:bg-blue-800/50 dark:hover:text-blue-50"
   const completedStyles =
-    "border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-100 hover:bg-green-100 hover:text-green-950 dark:hover:bg-green-800/40"
+    "border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-100 hover:bg-green-100 hover:text-green-950 dark:hover:bg-green-800/40 dark:hover:text-green-50"
   const partiallyCompletedStyles =
-    "border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 hover:bg-amber-100 hover:text-amber-950 dark:hover:bg-amber-800/40"
+    "border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 hover:bg-amber-100 hover:text-amber-950 dark:hover:bg-amber-800/40 dark:hover:text-amber-50"
   const disabledStyles = "opacity-40 cursor-not-allowed"
 
   // Choose style based on state

@@ -18,6 +18,7 @@ import { EnhancedSocialShare } from "@/components/enhanced-social-share"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { dataService } from "@/lib/data-service"
 import { questionOperations } from "@/lib/database"
+import { cn } from '@/lib/utils'
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -28,6 +29,7 @@ interface TopicInfoProps {
   isPartiallyCompleted?: boolean
   hasCompletedTopic?: boolean
   questions?: QuizQuestion[] // Optional pre-loaded questions
+  className?: string
 }
 
 interface ParsedBlurb {
@@ -44,37 +46,85 @@ export function TopicInfo({
   remainingQuizzes,
   isPartiallyCompleted = false,
   hasCompletedTopic = false,
-  questions: preloadedQuestions = []
+  questions: preloadedQuestions = [],
+  className
 }: TopicInfoProps) {
-  // Global audio integration
+
   const { autoPlayEnabled, playText } = useGlobalAudio()
   const [activeTab, setActiveTab] = useState("why-this-matters")
-  const [questions, setQuestions] = useState<QuizQuestion[]>(preloadedQuestions)
-  const [isLoadingSources, setIsLoadingSources] = useState(preloadedQuestions.length === 0)
-  const [hasQuestions, setHasQuestions] = useState(preloadedQuestions.length > 0)
+  const [questions, setQuestions] = useState<QuizQuestion[]>([])
+  const [isLoadingSources, setIsLoadingSources] = useState(true)
+  const [hasQuestions, setHasQuestions] = useState(false)
   const [isCheckingQuestions, setIsCheckingQuestions] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
-  // Check if the topic has questions
+  // Initialize state based on pre-loaded questions
   useEffect(() => {
-    async function checkQuestions() {
+    if (preloadedQuestions.length > 0) {
+      console.log(`🚀 TopicInfo: Using ${preloadedQuestions.length} preloaded questions for ${topicData.topic_id}`)
+      setQuestions(preloadedQuestions)
+      setHasQuestions(true)
+      setIsCheckingQuestions(false)
+      setIsLoadingSources(false)
+    } else {
+      // Only check if topic has questions when no preloaded questions are provided
       setIsCheckingQuestions(true)
-      try {
-        if (topicData.topic_id) {
-          const hasQuestionsResult = await dataService.checkTopicHasQuestions(topicData.topic_id)
-          setHasQuestions(hasQuestionsResult)
-        } else {
-          setHasQuestions(false)
-        }
-      } catch (error) {
-        console.error("Error checking if topic has questions:", error)
-        setHasQuestions(false)
-      } finally {
-        setIsCheckingQuestions(false)
-      }
+      checkQuestionsAndLoad()
     }
-    
-    checkQuestions()
-  }, [topicData.topic_id])
+  }, [preloadedQuestions, topicData.topic_id])
+
+  // Check if the topic has questions and load them (only when no preloaded questions)
+  async function checkQuestionsAndLoad() {
+    try {
+      if (topicData.topic_id) {
+        console.log(`📥 TopicInfo: Checking and loading questions for ${topicData.topic_id}`)
+        
+        // Check if questions exist first with proper database join
+        const hasQuestionsResult = await dataService.checkTopicHasQuestions(topicData.topic_id)
+        setHasQuestions(hasQuestionsResult)
+        
+        if (hasQuestionsResult) {
+          // Load the questions for source extraction using database queries with joins
+          setIsLoadingSources(true)
+          try {
+            const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
+            const validQuestions = Array.isArray(questionsData) ? questionsData : []
+            setQuestions(validQuestions)
+            console.log(`✅ TopicInfo: Loaded ${validQuestions.length} questions from database for ${topicData.topic_id}`)
+            
+            // If database returned 0 questions but check said there were some, log as warning
+            if (validQuestions.length === 0 && hasQuestionsResult) {
+              console.warn(`⚠️ TopicInfo: Database query returned 0 questions despite hasQuestions check being true for ${topicData.topic_id}`)
+              setHasQuestions(false)
+            }
+          } catch (error) {
+            console.error("Error loading questions from database:", error)
+            setQuestions([])
+            setHasQuestions(false)
+          } finally {
+            setIsLoadingSources(false)
+          }
+        } else {
+          console.log(`📊 TopicInfo: No questions found in database for ${topicData.topic_id}`)
+          setQuestions([])
+          setIsLoadingSources(false)
+        }
+      } else {
+        console.warn('TopicInfo: No topic_id provided')
+        setHasQuestions(false)
+        setQuestions([])
+        setIsLoadingSources(false)
+      }
+    } catch (error) {
+      console.error("Error checking if topic has questions:", error)
+      setHasQuestions(false)
+      setQuestions([])
+      setIsLoadingSources(false)
+    } finally {
+      setIsCheckingQuestions(false)
+    }
+  }
 
   // Parse the HTML content into structured blurbs
   const blurbs = useMemo(() => {
@@ -198,41 +248,6 @@ export function TopicInfo({
     }
   }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
 
-  // Load questions if not preloaded
-  useEffect(() => {
-    // Skip loading if we already have preloaded questions
-    if (preloadedQuestions.length > 0) {
-      console.log(`🚀 TopicInfo: Using ${preloadedQuestions.length} preloaded questions for ${topicData.topic_id}`)
-      setIsLoadingSources(false)
-      return
-    }
-
-    // Load questions for source extraction
-    if (!topicData.topic_id) {
-      setIsLoadingSources(false)
-      return
-    }
-
-    const loadQuestions = async () => {
-      console.log(`📥 TopicInfo: Loading questions for ${topicData.topic_id}`)
-      setIsLoadingSources(true)
-      
-      try {
-        const questionsData = await dataService.getQuestionsByTopic(topicData.topic_id)
-        const validQuestions = Array.isArray(questionsData) ? questionsData : []
-        setQuestions(validQuestions)
-        console.log(`✅ TopicInfo: Loaded ${validQuestions.length} questions for ${topicData.topic_id}`)
-      } catch (error) {
-        console.error("Error loading questions for sources:", error)
-        setQuestions([])
-      } finally {
-        setIsLoadingSources(false)
-      }
-    }
-    
-    loadQuestions()
-  }, [topicData.topic_id, preloadedQuestions.length])
-
   // Extract and process sources from questions
   const allSources = useMemo(() => {
     if (questions.length === 0) {
@@ -243,12 +258,27 @@ export function TopicInfo({
     
     console.log('🔍 TopicInfo: Processing questions for sources:', {
       questionsCount: questions.length,
-      topicId: topicData.topic_id
+      topicId: topicData.topic_id,
+      questionsPreview: questions.slice(0, 2).map(q => ({
+        question_number: q.question_number,
+        has_sources: !!(q.sources && q.sources.length > 0),
+        sources_count: q.sources?.length || 0
+      }))
     })
     
-    questions.forEach((question) => {
+    questions.forEach((question, index) => {
+      // Debug logging for individual questions
+      console.log(`📋 Processing question ${index + 1}:`, {
+        question_number: question.question_number,
+        has_sources: !!(question.sources && Array.isArray(question.sources)),
+        sources_count: question.sources?.length || 0,
+        topic_id: question.topic_id
+      })
+      
       if (question.sources && Array.isArray(question.sources) && question.sources.length > 0) {
-        question.sources.forEach((source: any) => {
+        question.sources.forEach((source: any, sourceIndex) => {
+          console.log(`📎 Processing source ${sourceIndex + 1} for question ${question.question_number}:`, source)
+          
           // Handle different source formats
           let name = ''
           let url = ''
@@ -264,27 +294,35 @@ export function TopicInfo({
           if (url && url.trim() !== '') {
             const displayName = name && name.trim() !== '' ? name.trim() : url
             
+            // Use question_number as the identifier, with fallback
+            const questionId = question.question_number || (index + 1)
+            
             // Simple deduplication by URL
             if (!sourceMap.has(url)) {
               sourceMap.set(url, { 
                 name: displayName,
                 url: url,
-                questions: [question.question_number],
+                questions: [questionId],
                 // Include any additional metadata
                 ...(source.title && { title: source.title }),
                 ...(source.description && { description: source.description }),
                 ...(source.domain && { domain: source.domain })
               })
+              console.log(`✅ Added new source: ${displayName} for question ${questionId}`)
             } else {
               // Add question number if not already present
               const existing = sourceMap.get(url)
-              const questionId = question.question_number
               if (!existing.questions.includes(questionId)) {
                 existing.questions.push(questionId)
+                console.log(`🔗 Linked existing source to question ${questionId}`)
               }
             }
+          } else {
+            console.warn(`⚠️ Invalid source URL for question ${question.question_number}:`, source)
           }
         })
+      } else {
+        console.log(`ℹ️ Question ${question.question_number} has no sources`)
       }
     })
     
@@ -343,8 +381,10 @@ export function TopicInfo({
 
   const topicCompleted = hasCompletedTopic
 
+
+
   return (
-    <div className="flex flex-col h-full px-4 sm:px-8 py-8">
+    <div className={cn('flex flex-col h-full px-4 sm:px-8 py-8', className)}>
       {/* Quiz Buttons (positioned at the top right) */}
       <div className="flex justify-end gap-3 mb-6">
         {/* Multiplayer Options - Temporarily hidden until ready for public use */}
@@ -545,9 +585,21 @@ export function TopicInfo({
                   </div>
                 </div>
               ) : (
-                <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg text-center">
-                  <p className="text-slate-600 dark:text-slate-300">No sources available for this topic.</p>
-                  <p className="text-xs text-slate-400 mt-2">Sources & Citations will appear here when available.</p>
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-6 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="text-orange-600 dark:text-orange-400 mt-1">🚧</div>
+                    <div className="text-center w-full">
+                      <p className="text-orange-800 dark:text-orange-200 font-medium mb-2">
+                        Quiz content coming soon
+                      </p>
+                      <p className="text-orange-700 dark:text-orange-300 text-sm mb-3">
+                        This topic is being prepared with curated questions and verified sources. We're working to add comprehensive quiz content for this important civic topic.
+                      </p>
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        Check back soon or explore other available topics while we prepare this one!
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </TabsContent>
