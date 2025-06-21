@@ -171,126 +171,35 @@ async function getSkillsByCategory(): Promise<Record<string, Skill[]>> {
   return skillsByCategory
 }
 
-async function getTopicsByCategory(): Promise<Record<string, Topic[]>> {
+async function getEvergreenTopics(): Promise<Topic[]> {
   try {
-    // First check if junction table exists and has data
-    const { data: junctionExists } = await supabase
-      .from('question_topic_categories')
-      .select('category_id')
-      .limit(1)
-    
-    if (junctionExists && junctionExists.length > 0) {
-      // Use optimized junction table approach
-      const { data: junctionData, error: junctionError } = await supabase
-        .from('question_topic_categories')
-        .select(`
-          category_id,
-          question_topics!inner(
-            topic_id,
-            topic_title,
-            description,
-            emoji,
-            date,
-            categories,
-            is_active
-          )
-        `)
-        .eq('question_topics.is_active', true)
-        .not('question_topics.date', 'is', null)
-        .order('question_topics.date', { ascending: false })
-        .limit(100)
-      
-      if (junctionError) {
-        console.error('Junction table error, falling back to JSONB:', junctionError)
-      } else {
-        // Group topics by category using junction table data
-        const topicsByCategory: Record<string, Topic[]> = {}
-        
-        junctionData?.forEach(row => {
-          const categoryId = row.category_id
-          const topic = (row as any).question_topics
-          
-          if (!topicsByCategory[categoryId]) {
-            topicsByCategory[categoryId] = []
-          }
-          
-          // Check if topic already exists to avoid duplicates
-          if (!topicsByCategory[categoryId].find(t => t.topic_id === topic.topic_id)) {
-            topicsByCategory[categoryId].push({
-              ...topic,
-              categories: Array.isArray(topic.categories) ? topic.categories as string[] : []
-            })
-          }
-        })
-        
-        return topicsByCategory
-      }
-    }
-    
-    // Fallback to JSONB approach if junction table not available
     const { data: topics, error } = await supabase
       .from('question_topics')
       .select('topic_id, topic_title, description, emoji, date, categories')
       .eq('is_active', true)
-      .not('date', 'is', null) // Only get topics with dates for this function
-      .order('date', { ascending: false })
-      .limit(100) // Limit for performance
+      .is('date', null) // Evergreen topics have no date
+      .order('topic_title', { ascending: true })
+      .limit(50)
 
     if (error) {
-      console.error('Error fetching topics:', error)
-      return {}
+      console.error('Error fetching evergreen topics:', error)
+      return []
     }
 
-    // Group topics by category
-    const topicsByCategory: Record<string, Topic[]> = {}
-    topics?.forEach(topic => {
-      // Handle the Json type properly
-      const categories = topic.categories
-      if (Array.isArray(categories)) {
-        (categories as string[]).forEach(categoryName => {
-          if (!topicsByCategory[categoryName]) {
-            topicsByCategory[categoryName] = []
-          }
-          topicsByCategory[categoryName].push({
-            ...topic,
-            categories: categories as string[]
-          })
-        })
-      }
-    })
-
-    return topicsByCategory
+    return (topics || []).map(topic => ({
+      ...topic,
+      categories: Array.isArray(topic.categories) ? topic.categories as string[] : []
+    }))
   } catch (error) {
-    console.error('Error in getTopicsByCategory:', error)
-    return {}
-  }
-}
-
-async function getEvergreenTopics(): Promise<Topic[]> {
-  const { data: topics, error } = await supabase
-    .from('question_topics')
-    .select('topic_id, topic_title, description, emoji, date, categories')
-    .eq('is_active', true)
-    .is('date', null) // Only get topics without dates (evergreen content)
-    .order('created_at', { ascending: false })
-    .limit(50) // Limit for performance
-
-  if (error) {
-    console.error('Error fetching evergreen topics:', error)
+    console.error('Error in getEvergreenTopics:', error)
     return []
   }
-
-  return (topics || []).map(topic => ({
-    ...topic,
-    categories: Array.isArray(topic.categories) ? topic.categories as string[] : []
-  }))
 }
 
 export default async function CategoriesPage() {
-  const [categories, skillsByCategory, topicsByCategory, evergreenTopics] = await Promise.all([
+  const [categories, skillsByCategory, evergreenTopics] = await Promise.all([
     getCategories(),
     getSkillsByCategory(),
-    getTopicsByCategory(),
     getEvergreenTopics()
   ])
 
@@ -302,7 +211,7 @@ export default async function CategoriesPage() {
       <CategoriesSearchCommand 
         categories={categories}
         skills={Object.values(skillsByCategory).flat()}
-        topics={Object.values(topicsByCategory).flat()}
+        topics={evergreenTopics}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
@@ -435,114 +344,7 @@ export default async function CategoriesPage() {
               </div>
             </section>
 
-            {/* Skills Section */}
-            {Object.keys(skillsByCategory).length > 0 && (
-              <section>
-                <div className="flex items-center gap-3 mb-8">
-                  <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  <h2 className="text-3xl font-light text-slate-900 dark:text-white">
-                    Featured Skills
-                  </h2>
-                  <Badge variant="outline" className="font-light">
-                    {Object.values(skillsByCategory).flat().length} total
-                  </Badge>
-                </div>
-                
-                <p className="text-slate-600 dark:text-slate-400 font-light mb-8 max-w-3xl">
-                  Essential civic skills organized by category. Master these to build a strong foundation in democratic participation.
-                </p>
-                
-                <SkillsCarousel skillsByCategory={skillsByCategory} />
-              </section>
-            )}
-
-            {/* Topics Section */}
-            {Object.keys(topicsByCategory).length > 0 && (
-              <section>
-                <div className="flex items-center gap-3 mb-8">
-                  <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  <h2 className="text-3xl font-light text-slate-900 dark:text-white">
-                    Current Events & News
-                  </h2>
-                  <Badge variant="outline" className="font-light">
-                    {Object.values(topicsByCategory).flat().length} available
-                  </Badge>
-                </div>
-                
-                <p className="text-slate-600 dark:text-slate-400 font-light mb-8 max-w-3xl">
-                  Test your knowledge with quizzes covering current events, breaking news, and timely civic issues.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.values(topicsByCategory).flat().slice(0, 9).map((topic) => (
-                    <Link key={topic.topic_id} href={`/quiz/${topic.topic_id}`}>
-                      <Card className="h-full border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 group cursor-pointer">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
-                              <span className="text-lg">{topic.emoji}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
-                                {topic.topic_title}
-                              </CardTitle>
-                              {topic.date && (
-                                <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                                  <Clock className="w-3 h-3" />
-                                  {new Date(topic.date).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="pt-0">
-                          <p className="text-sm text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4 line-clamp-3">
-                            {topic.description}
-                          </p>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-wrap gap-1">
-                              {topic.categories.slice(0, 2).map(cat => (
-                                <Badge key={cat} variant="outline" className="text-xs font-light">
-                                  {cat}
-                                </Badge>
-                              ))}
-                              {topic.categories.length > 2 && (
-                                <Badge variant="outline" className="text-xs font-light">
-                                  +{topic.categories.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
-                              <Play className="w-3 h-3" />
-                              <span className="font-medium">Take Quiz</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-                
-                {/* View More Link */}
-                <div className="text-center mt-8">
-                  <Link href="/topics/search">
-                    <Button variant="outline" className="font-light">
-                      Browse All Topics
-                      <CheckCircle className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </section>
-            )}
-
-            {/* Evergreen Topics Section */}
+            {/* Core Civic Knowledge Section - Moved above skills */}
             {evergreenTopics.length > 0 && (
               <section>
                 <div className="flex items-center gap-3 mb-8">
@@ -618,6 +420,27 @@ export default async function CategoriesPage() {
                     <BookOpen className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
+              </section>
+            )}
+
+            {/* Skills Section - Now below core civic knowledge */}
+            {Object.keys(skillsByCategory).length > 0 && (
+              <section>
+                <div className="flex items-center gap-3 mb-8">
+                  <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  <h2 className="text-3xl font-light text-slate-900 dark:text-white">
+                    Featured Skills
+                  </h2>
+                  <Badge variant="outline" className="font-light">
+                    {Object.values(skillsByCategory).flat().length} total
+                  </Badge>
+                </div>
+                
+                <p className="text-slate-600 dark:text-slate-400 font-light mb-8 max-w-3xl">
+                  Essential civic skills organized by category. Master these to build a strong foundation in democratic participation.
+                </p>
+                
+                <SkillsCarousel skillsByCategory={skillsByCategory} />
               </section>
             )}
           </div>

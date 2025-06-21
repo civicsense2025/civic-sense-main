@@ -1,128 +1,138 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { NPCPersonality } from "@/lib/multiplayer-npcs"
+import { QuestionTimer } from "@/components/quiz/question-timer"
+import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { Button } from "@/components/ui/button"
-import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
-import { Lightbulb } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Shield, Sword, Brain } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { QuestionPhaseProps } from "../types/game-types"
-import { getQuestionOptions } from "../utils/game-utils"
+
+export interface QuestionPhaseProps {
+  opponent: NPCPersonality
+  question: {
+    id: string
+    question: string
+    options: string[]
+    correctAnswer: string
+    explanation?: string
+    difficulty: 'easy' | 'medium' | 'hard'
+  }
+  timeLimit: number
+  onAnswer: (answer: string, timeSpent: number) => void
+  playerScore: number
+  opponentScore: number
+}
 
 export function QuestionPhase({
-  currentQuestion,
-  gameState,
-  config,
-  onAnswerSelect,
-  onSubmitAnswer,
-  onShowHint,
-  isAnswerSubmitted,
-  showHint
+  opponent,
+  question,
+  timeLimit,
+  onAnswer,
+  playerScore,
+  opponentScore
 }: QuestionPhaseProps) {
-  const questionOptions = getQuestionOptions(currentQuestion)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [timeSpent, setTimeSpent] = useState(0)
+  const [powerUpUsed, setPowerUpUsed] = useState<string | null>(null)
+  const [isTimerActive, setIsTimerActive] = useState(true)
+
+  useEffect(() => {
+    if (selectedAnswer) {
+      onAnswer(selectedAnswer, timeSpent)
+    }
+  }, [selectedAnswer, timeSpent, onAnswer])
+
+  const handlePowerUp = (type: string) => {
+    if (powerUpUsed) return
+    setPowerUpUsed(type)
+    // Implement power-up effects
+  }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white leading-relaxed">
-          <GlossaryLinkText text={currentQuestion.question || ''} />
-        </h2>
-
-        {showHint && currentQuestion.hint && (
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mt-0.5">
-                <Lightbulb className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-              </div>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                <strong>Hint:</strong> <GlossaryLinkText text={currentQuestion.hint} />
-              </p>
-            </div>
-          </div>
-        )}
+      <div className="flex justify-between items-center">
+        <BattlePlayerPanel
+          name="You"
+          score={playerScore}
+          emoji="👤"
+        />
+        <div className="text-2xl font-bold">VS</div>
+        <BattlePlayerPanel
+          name={opponent.name}
+          score={opponentScore}
+          emoji={opponent.emoji}
+          isNPC
+        />
       </div>
 
-      {currentQuestion.question_type === 'multiple_choice' && (
-        <div className="grid gap-3">
-          {questionOptions.map((option) => {
-            const isSelected = gameState.selectedAnswer === option.text
-            const isCorrect = option.text === currentQuestion.correct_answer
-            const showResult = gameState.showFeedback
+      <QuestionTimer
+        initialTime={timeLimit}
+        isActive={isTimerActive}
+        onTimeUp={() => {
+          if (!selectedAnswer) {
+            setSelectedAnswer('timeout')
+            setTimeSpent(timeLimit)
+          }
+          setIsTimerActive(false)
+        }}
+      />
 
-            return (
-              <button
-                key={option.key}
-                onClick={() => !isAnswerSubmitted && onAnswerSelect(option.text!)}
-                disabled={isAnswerSubmitted}
-                className={cn(
-                  "w-full text-left p-4 rounded-lg border-2 transition-all duration-200",
-                  "hover:border-blue-300 dark:hover:border-blue-600",
-                  "disabled:cursor-not-allowed",
-                  {
-                    "border-blue-500 bg-blue-50 dark:bg-blue-950/30": isSelected && !showResult,
-                    "border-green-500 bg-green-50 dark:bg-green-950/30": showResult && isCorrect,
-                    "border-red-500 bg-red-50 dark:bg-red-950/30": showResult && isSelected && !isCorrect,
-                    "border-slate-200 dark:border-slate-700": !isSelected && (!showResult || !isCorrect)
-                  }
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-semibold",
-                    {
-                      "border-blue-500 bg-blue-500 text-white": isSelected && !showResult,
-                      "border-green-500 bg-green-500 text-white": showResult && isCorrect,
-                      "border-red-500 bg-red-500 text-white": showResult && isSelected && !isCorrect,
-                      "border-slate-300 dark:border-slate-600": !isSelected && (!showResult || !isCorrect)
-                    }
-                  )}>
-                    {option.key}
-                  </div>
-                  <span className="text-slate-900 dark:text-white">
-                    <GlossaryLinkText text={option.text!} />
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      {!isAnswerSubmitted && (
-        <div className="flex items-center justify-center gap-4">
-          {config.allowHints && !showHint && currentQuestion.hint && (
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-4">{question.question}</h3>
+        <div className="grid grid-cols-1 gap-3">
+          {question.options.map((option) => (
             <Button
-              onClick={onShowHint}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
+              key={option}
+              onClick={() => {
+                if (!selectedAnswer) {
+                  setSelectedAnswer(option)
+                  setIsTimerActive(false)
+                }
+              }}
+              variant={selectedAnswer === option ? "default" : "outline"}
+              className="w-full justify-start text-left"
+              disabled={!!selectedAnswer}
             >
-              <Lightbulb className="h-4 w-4" />
-              Show Hint for Everyone
+              {option}
             </Button>
-          )}
-          
-          <Button
-            onClick={() => gameState.selectedAnswer && onSubmitAnswer(gameState.selectedAnswer)}
-            disabled={!gameState.selectedAnswer}
-            className={cn(
-              "px-8 py-3 font-medium transition-all duration-200",
-              gameState.selectedAnswer 
-                ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
-            )}
-          >
-            Submit Answer
-          </Button>
+          ))}
         </div>
-      )}
+      </Card>
 
-      {/* Show explanation when feedback is visible */}
-      {gameState.showFeedback && config.showExplanations && currentQuestion.explanation && (
-        <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border">
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Explanation:</h3>
-          <p className="text-slate-700 dark:text-slate-300">
-            <GlossaryLinkText text={currentQuestion.explanation} />
-          </p>
-        </div>
-      )}
+      <div className="flex justify-center gap-4">
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-32"
+          onClick={() => handlePowerUp('shield')}
+          disabled={!!powerUpUsed || !!selectedAnswer}
+        >
+          <Shield className="mr-2 h-4 w-4" />
+          Shield
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-32"
+          onClick={() => handlePowerUp('sword')}
+          disabled={!!powerUpUsed || !!selectedAnswer}
+        >
+          <Sword className="mr-2 h-4 w-4" />
+          Sword
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-32"
+          onClick={() => handlePowerUp('brain')}
+          disabled={!!powerUpUsed || !!selectedAnswer}
+        >
+          <Brain className="mr-2 h-4 w-4" />
+          Brain
+        </Button>
+      </div>
     </div>
   )
 } 

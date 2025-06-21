@@ -115,71 +115,76 @@ export function SkillsCarousel({ skillsByCategory }: SkillsCarouselProps) {
         <CarouselContent className="-ml-2 md:-ml-4">
           {displaySkills.map((skill) => (
             <CarouselItem key={skill.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-              <Card className="h-full border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 group">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                        <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      {skill.is_core_skill && (
-                        <Star className="w-4 h-4 text-yellow-500" />
-                      )}
-                    </div>
-                    <Badge 
-                      className={`text-xs font-light ${getDifficultyColor(skill.difficulty_level)}`}
-                      variant="secondary"
-                    >
-                      {getDifficultyLabel(skill.difficulty_level)}
-                    </Badge>
-                  </div>
-                  
-                  <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                    {skill.skill_name}
-                  </CardTitle>
-                </CardHeader>
-                
-                {skill.description && (
-                  <CardContent className="pt-0">
-                    <p className="text-sm text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4">
-                      {skill.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
+              <Link href={`/skills/${skill.skill_slug}`} className="block h-full">
+                <Card className="h-full border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                          <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        </div>
                         {skill.is_core_skill && (
-                          <Badge variant="outline" className="text-xs font-light border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400">
-                            Core Skill
-                          </Badge>
+                          <Star className="w-4 h-4 text-yellow-500" />
                         )}
                       </div>
-                      
-                      <Button variant="ghost" size="sm" className="p-1 h-auto">
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
+                      <Badge 
+                        className={`text-xs font-light ${getDifficultyColor(skill.difficulty_level)}`}
+                        variant="secondary"
+                      >
+                        {getDifficultyLabel(skill.difficulty_level)}
+                      </Badge>
                     </div>
-                  </CardContent>
-                )}
-              </Card>
+                    
+                    <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                      {skill.skill_name}
+                    </CardTitle>
+                  </CardHeader>
+                  
+                  {skill.description && (
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4 line-clamp-3">
+                        {skill.description}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {skill.is_core_skill && (
+                            <Badge variant="outline" className="text-xs font-light border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400">
+                              Core Skill
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                          <span className="font-medium">Learn more</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              </Link>
             </CarouselItem>
           ))}
           
           {/* Show more card if there are more skills */}
           {!selectedCategory && Object.values(skillsByCategory).flat().length > 12 && (
             <CarouselItem className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-              <Card className="h-full border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 group cursor-pointer">
-                <CardContent className="flex flex-col items-center justify-center h-full p-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
-                    <ArrowRight className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-                    View All Skills
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                    {Object.values(skillsByCategory).flat().length - 12} more skills available
-                  </p>
-                </CardContent>
-              </Card>
+              <Link href="/skills" className="block h-full">
+                <Card className="h-full border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 group cursor-pointer">
+                  <CardContent className="flex flex-col items-center justify-center h-full p-6 text-center">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
+                      <ArrowRight className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                      View All Skills
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
+                      {Object.values(skillsByCategory).flat().length - 12} more skills available
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             </CarouselItem>
           )}
         </CarouselContent>

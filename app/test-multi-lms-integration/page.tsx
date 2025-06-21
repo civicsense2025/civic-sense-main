@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LMSIntegrationPanel } from '@/components/integrations/lms-integration-panel'
 import { ClassroomShareButton } from '@/components/integrations/google-classroom-share-button'
-import { CleverShareButton } from '@/components/integrations/clever-share-button'
 import { 
   GraduationCap, 
   BookOpen, 
@@ -323,45 +322,6 @@ export default function TestMultiLMSIntegration() {
                   <AlertDescription>
                     Google Classroom share requires Google's platform.js to be loaded.
                     In production, this happens automatically.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Clever Share Button
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Test the Clever share button functionality.
-                </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  <CleverShareButton
-                    topicId="constitutional-rights"
-                    topicTitle="Constitutional Rights"
-                    description="Test your knowledge of constitutional protections and civil liberties"
-                    size="default"
-                  />
-                  
-                  <CleverShareButton
-                    topicId="separation-of-powers"
-                    topicTitle="Separation of Powers"
-                    description="Understand how the three branches of government balance each other"
-                    size="sm"
-                    variant="secondary"
-                  />
-                </div>
-                
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Clever doesn't have a direct share API. The button copies assignment details
-                    to clipboard and provides instructions for manual assignment creation.
                   </AlertDescription>
                 </Alert>
               </CardContent>

@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Sparkles, Star, TrendingUp, BookOpen, Zap, Target, HelpCircle, ArrowUpRight } from "lucide-react"
+import { Sparkles, Star, TrendingUp, BookOpen, Zap, Target, HelpCircle, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { dataService } from "@/lib/data-service"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { supabase } from "@/lib/supabase"
+import { cn } from "@/lib/utils"
 
 interface RecommendedTopic {
   id: string
@@ -33,6 +34,7 @@ interface RecommendedTopicsProps {
 export function RecommendedTopics({ userId, className }: RecommendedTopicsProps) {
   const [recommendations, setRecommendations] = useState<RecommendedTopic[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [scrollPosition, setScrollPosition] = useState(0)
 
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -54,7 +56,77 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
           userProgress
         )
 
-        setRecommendations(recs.slice(0, 4)) // Show top 4 recommendations
+        // If we have less than 4 recommendations, fall back to topics they've already played but haven't completed
+        let finalRecs = [...recs]
+        if (finalRecs.length < 4) {
+          const completedTopics = await enhancedQuizDatabase.getCompletedTopics(userId)
+          const completedSet = new Set(completedTopics)
+          
+          // Get topics they've played but not completed
+          const playedTopics = await enhancedQuizDatabase.getPlayedTopics(userId)
+          const incompleteTopics = playedTopics.filter(topic => !completedSet.has(topic.id))
+          
+          // Add incomplete topics until we have at least 4
+          for (const topic of incompleteTopics) {
+            if (finalRecs.length >= 4) break
+            
+            if (!finalRecs.some(rec => rec.id === topic.id)) {
+              finalRecs.push({
+                id: topic.id,
+                title: topic.title,
+                description: topic.description || 'Continue your learning journey',
+                category: topic.category || 'General',
+                emoji: topic.emoji || '📚',
+                reason: 'Continue where you left off',
+                confidence: 0.9,
+                estimatedMinutes: calculateEstimatedTime(topic),
+                difficulty: topic.difficulty || 'intermediate',
+                trending: false,
+                matchScore: 0.9
+              })
+            }
+          }
+          
+          // If we still need more, add topics from categories they've shown interest in
+          if (finalRecs.length < 4) {
+            const topCategories = Object.entries(userActivity.categoryFrequency)
+              .sort(([,a], [,b]) => (b as number) - (a as number))
+              .map(([category]) => category)
+            
+            const allTopicsArray = Object.values(allTopics)
+            
+            for (const category of topCategories) {
+              if (finalRecs.length >= 4) break
+              
+              const categoryTopics = allTopicsArray
+                .filter(topic => 
+                  topic.categories?.includes(category) &&
+                  !completedSet.has(topic.topic_id) &&
+                  !finalRecs.some(rec => rec.id === topic.topic_id)
+                )
+              
+              for (const topic of categoryTopics) {
+                if (finalRecs.length >= 4) break
+                
+                finalRecs.push({
+                  id: topic.topic_id,
+                  title: topic.topic_title,
+                  description: topic.description || topic.why_this_matters || `Learn more about ${category}`,
+                  category: category,
+                  emoji: topic.emoji || '📚',
+                  reason: `Based on your interest in ${category}`,
+                  confidence: 0.7,
+                  estimatedMinutes: calculateEstimatedTime(topic),
+                  difficulty: 'intermediate',
+                  trending: false,
+                  matchScore: 0.7
+                })
+              }
+            }
+          }
+        }
+
+        setRecommendations(finalRecs)
       } catch (error) {
         console.error('Error loading recommendations:', error)
         setRecommendations([])
@@ -68,7 +140,24 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
     }
   }, [userId])
 
+  const scrollLeft = () => {
+    const container = document.getElementById('recommendations-container')
+    if (container) {
+      const newPosition = Math.max(0, scrollPosition - 1)
+      container.scrollTo({ left: newPosition * 280, behavior: 'smooth' })
+      setScrollPosition(newPosition)
+    }
+  }
 
+  const scrollRight = () => {
+    const container = document.getElementById('recommendations-container')
+    if (container) {
+      const maxScroll = Math.max(0, recommendations.length - 4)
+      const newPosition = Math.min(maxScroll, scrollPosition + 1)
+      container.scrollTo({ left: newPosition * 280, behavior: 'smooth' })
+      setScrollPosition(newPosition)
+    }
+  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -94,9 +183,9 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
           </div>
           <div className="w-48 h-6 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex gap-4 overflow-hidden">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-slate-50 dark:bg-slate-900 rounded-xl animate-pulse"></div>
+            <div key={i} className="w-64 h-24 bg-slate-50 dark:bg-slate-900 rounded-xl flex-shrink-0 animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -116,7 +205,7 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
         </div>
         
         <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-8 text-center">
-          <div className="text-4xl mb-4">🌟</div>
+          <div className="text-4xl mb-4">��</div>
           <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">
             Building your recommendations
           </h3>
@@ -131,104 +220,85 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
   return (
     <TooltipProvider>
       <div className={`space-y-6 ${className}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-purple-100 dark:bg-purple-950/20 rounded-full flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-950/20 rounded-full flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+              Recommended for you
+            </h2>
           </div>
-          <h2 className="text-2xl font-light text-slate-900 dark:text-white">
-            Recommended for you
-          </h2>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={scrollLeft}
+              disabled={scrollPosition === 0}
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={scrollRight}
+              disabled={scrollPosition >= recommendations.length - 4}
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div 
+          id="recommendations-container"
+          className="grid grid-cols-4 gap-4"
+        >
           {recommendations.map((rec) => (
-            <Link key={rec.id} href={`/quiz/${rec.id}`} className="group block">
-              <Card className="border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 hover:-translate-y-1 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-950 dark:to-slate-900/50 overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="space-y-6">
-                    {/* Header with emoji and action indicator */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200/80 dark:from-slate-800 dark:to-slate-700/80 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+            <Link key={rec.id} href={`/quiz/${rec.id}`} className="group block h-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card className="h-full border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 hover:-translate-y-1 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-950 dark:to-slate-900/50">
+                    <CardContent className="p-4 h-full flex flex-col">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200/80 dark:from-slate-800 dark:to-slate-700/80 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform duration-300">
                           {rec.emoji}
                         </div>
-                        <div className="space-y-1">
-                          <h3 className="text-lg font-medium text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 truncate">
                             {rec.title}
                           </h3>
-                          <div className="flex items-center gap-3">
-                            <Badge className={`${getDifficultyColor(rec.difficulty)} text-xs font-space-mono border-0 px-3 py-1`}>
-                              {rec.difficulty}
-                            </Badge>
-                            <span className="text-sm text-slate-500 dark:text-slate-400 font-light">
+                          <div className="flex items-center gap-2 mt-1">
+                            {rec.trending && (
+                              <Badge className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 text-[10px] font-space-mono border-0 px-2 py-0.5">
+                                <TrendingUp className="w-2.5 h-2.5 mr-1" />
+                                trending
+                              </Badge>
+                            )}
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-light">
                               {rec.estimatedMinutes} min
                             </span>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {rec.trending && (
-                          <Badge className="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 text-xs font-space-mono border-0 px-3 py-1">
-                            <TrendingUp className="w-3 h-3 mr-1" />
-                            trending
-                          </Badge>
-                        )}
-                        
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button 
-                                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                onClick={(e) => e.preventDefault()} // Prevent link navigation
-                              >
-                                <HelpCircle className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent 
-                              side="top" 
-                              className="max-w-sm p-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-xl shadow-slate-900/10 dark:shadow-black/25"
-                            >
-                              <div className="space-y-3">
-                                <div className="font-medium text-slate-900 dark:text-white">
-                                  Why this topic?
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-400 text-sm font-light leading-relaxed">
-                                  {rec.reason}
-                                </p>
-                                <div className="flex items-center justify-between pt-3 border-t border-slate-200/50 dark:border-slate-700/50">
-                                  <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
-                                    {rec.category}
-                                  </span>
-                                  <span className={`text-sm font-medium ${getConfidenceColor(rec.confidence)}`}>
-                                    {Math.round(rec.confidence * 100)}% match
-                                  </span>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                          
-                          <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-950/20 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all duration-300">
-                            <ArrowUpRight className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" />
-                          </div>
-                        </div>
-                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="max-w-[300px] p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-900/5 dark:shadow-black/20"
+                >
+                  <div className="space-y-1.5">
+                    <div className="font-medium text-slate-900 dark:text-white">
+                      {rec.title}
                     </div>
-                    
-                    {/* Bottom section with subtle call-to-action */}
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                          Ready to start learning?
-                        </div>
-                        <div className="text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-1 transition-transform duration-200">
-                          Start now →
-                        </div>
-                      </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                      {rec.description}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </TooltipContent>
+              </Tooltip>
             </Link>
           ))}
         </div>

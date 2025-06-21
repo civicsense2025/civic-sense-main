@@ -2955,6 +2955,7 @@ export type Database = {
       }
       multiplayer_room_players: {
         Row: {
+          character_resources: Json | null
           created_at: string | null
           guest_token: string | null
           id: string
@@ -2969,10 +2970,12 @@ export type Database = {
           questions_correct: number | null
           room_id: string
           score: number | null
+          selected_character_id: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          character_resources?: Json | null
           created_at?: string | null
           guest_token?: string | null
           id?: string
@@ -2987,10 +2990,12 @@ export type Database = {
           questions_correct?: number | null
           room_id: string
           score?: number | null
+          selected_character_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          character_resources?: Json | null
           created_at?: string | null
           guest_token?: string | null
           id?: string
@@ -3005,6 +3010,7 @@ export type Database = {
           questions_correct?: number | null
           room_id?: string
           score?: number | null
+          selected_character_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -3016,6 +3022,13 @@ export type Database = {
             referencedRelation: "multiplayer_rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "multiplayer_room_players_selected_character_id_fkey"
+            columns: ["selected_character_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_characters"
+            referencedColumns: ["id"]
+          },
         ]
       }
       multiplayer_rooms: {
@@ -3025,12 +3038,15 @@ export type Database = {
           current_players: number | null
           expires_at: string | null
           game_mode: string | null
+          game_type: string | null
           host_user_id: string | null
           id: string
           max_players: number | null
           room_code: string
           room_name: string | null
           room_status: string | null
+          scenario_id: string | null
+          scenario_settings: Json | null
           settings: Json | null
           started_at: string | null
           topic_id: string
@@ -3042,12 +3058,15 @@ export type Database = {
           current_players?: number | null
           expires_at?: string | null
           game_mode?: string | null
+          game_type?: string | null
           host_user_id?: string | null
           id?: string
           max_players?: number | null
           room_code: string
           room_name?: string | null
           room_status?: string | null
+          scenario_id?: string | null
+          scenario_settings?: Json | null
           settings?: Json | null
           started_at?: string | null
           topic_id: string
@@ -3059,18 +3078,29 @@ export type Database = {
           current_players?: number | null
           expires_at?: string | null
           game_mode?: string | null
+          game_type?: string | null
           host_user_id?: string | null
           id?: string
           max_players?: number | null
           room_code?: string
           room_name?: string | null
           room_status?: string | null
+          scenario_id?: string | null
+          scenario_settings?: Json | null
           settings?: Json | null
           started_at?: string | null
           topic_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_rooms_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       news_cache: {
         Row: {
@@ -5554,6 +5584,59 @@ export type Database = {
           },
         ]
       }
+      question_topic_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          topic_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          topic_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_topic_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_with_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_without_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       question_topics: {
         Row: {
           categories: Json
@@ -5566,12 +5649,12 @@ export type Database = {
           is_active: boolean | null
           is_breaking: boolean | null
           is_featured: boolean | null
+          key_takeaways: Json | null
           topic_id: string
           topic_title: string
           translations: Json | null
           updated_at: string | null
           why_this_matters: string
-          key_takeaways: Json | null
         }
         Insert: {
           categories?: Json
@@ -5584,12 +5667,12 @@ export type Database = {
           is_active?: boolean | null
           is_breaking?: boolean | null
           is_featured?: boolean | null
+          key_takeaways?: Json | null
           topic_id: string
           topic_title: string
           translations?: Json | null
           updated_at?: string | null
           why_this_matters: string
-          key_takeaways?: Json | null
         }
         Update: {
           categories?: Json
@@ -5602,12 +5685,12 @@ export type Database = {
           is_active?: boolean | null
           is_breaking?: boolean | null
           is_featured?: boolean | null
+          key_takeaways?: Json | null
           topic_id?: string
           topic_title?: string
           translations?: Json | null
           updated_at?: string | null
           why_this_matters?: string
-          key_takeaways?: Json | null
         }
         Relationships: []
       }
@@ -5776,6 +5859,402 @@ export type Database = {
             referencedColumns: ["topic_id"]
           },
         ]
+      }
+      quiz_attempts: {
+        Row: {
+          category: string | null
+          correct_count: number | null
+          created_at: string | null
+          game_mode: string
+          guest_token: string | null
+          id: string
+          max_streak: number | null
+          mode_settings: Json | null
+          platform: string
+          question_count: number | null
+          response_data: Json | null
+          session_id: string
+          skill_id: string | null
+          streak_count: number | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string
+          guest_token?: string | null
+          id?: string
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string
+          question_count?: number | null
+          response_data?: Json | null
+          session_id: string
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string
+          guest_token?: string | null
+          id?: string
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      scenario_characters: {
+        Row: {
+          character_constraints: string[] | null
+          character_emoji: string | null
+          character_name: string
+          character_title: string | null
+          character_type: string | null
+          created_at: string | null
+          id: string
+          inspired_by_figure_id: string | null
+          represents_stakeholder_group: string | null
+          starting_resources: Json | null
+          usable_in_scenario_types: string[] | null
+          victory_conditions: string[] | null
+        }
+        Insert: {
+          character_constraints?: string[] | null
+          character_emoji?: string | null
+          character_name: string
+          character_title?: string | null
+          character_type?: string | null
+          created_at?: string | null
+          id?: string
+          inspired_by_figure_id?: string | null
+          represents_stakeholder_group?: string | null
+          starting_resources?: Json | null
+          usable_in_scenario_types?: string[] | null
+          victory_conditions?: string[] | null
+        }
+        Update: {
+          character_constraints?: string[] | null
+          character_emoji?: string | null
+          character_name?: string
+          character_title?: string | null
+          character_type?: string | null
+          created_at?: string | null
+          id?: string
+          inspired_by_figure_id?: string | null
+          represents_stakeholder_group?: string | null
+          starting_resources?: Json | null
+          usable_in_scenario_types?: string[] | null
+          victory_conditions?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_characters_inspired_by_figure_id_fkey"
+            columns: ["inspired_by_figure_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_decisions: {
+        Row: {
+          created_at: string | null
+          decision_description: string | null
+          decision_order: number
+          decision_text: string
+          democratic_health_impact: number | null
+          id: string
+          immediate_effects: Json | null
+          leads_to_situation_id: string | null
+          real_world_precedent: string | null
+          resource_costs: Json | null
+          situation_id: string | null
+          teaches_concepts: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          decision_description?: string | null
+          decision_order: number
+          decision_text: string
+          democratic_health_impact?: number | null
+          id?: string
+          immediate_effects?: Json | null
+          leads_to_situation_id?: string | null
+          real_world_precedent?: string | null
+          resource_costs?: Json | null
+          situation_id?: string | null
+          teaches_concepts?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          decision_description?: string | null
+          decision_order?: number
+          decision_text?: string
+          democratic_health_impact?: number | null
+          id?: string
+          immediate_effects?: Json | null
+          leads_to_situation_id?: string | null
+          real_world_precedent?: string | null
+          resource_costs?: Json | null
+          situation_id?: string | null
+          teaches_concepts?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_decisions_leads_to_situation_id_fkey"
+            columns: ["leads_to_situation_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_situations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scenario_decisions_situation_id_fkey"
+            columns: ["situation_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_situations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_outcomes: {
+        Row: {
+          created_at: string | null
+          democratic_health_impact: number | null
+          discussion_questions: string[] | null
+          expert_commentary: string | null
+          historical_examples: string[] | null
+          id: string
+          key_lessons: string[] | null
+          outcome_description: string
+          outcome_title: string
+          outcome_type: string | null
+          probability_assessment: string | null
+          recommended_reading: Json | null
+          related_quiz_topics: string[] | null
+          scenario_id: string | null
+          stakeholder_satisfaction: Json | null
+          suggested_actions: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          democratic_health_impact?: number | null
+          discussion_questions?: string[] | null
+          expert_commentary?: string | null
+          historical_examples?: string[] | null
+          id?: string
+          key_lessons?: string[] | null
+          outcome_description: string
+          outcome_title: string
+          outcome_type?: string | null
+          probability_assessment?: string | null
+          recommended_reading?: Json | null
+          related_quiz_topics?: string[] | null
+          scenario_id?: string | null
+          stakeholder_satisfaction?: Json | null
+          suggested_actions?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          democratic_health_impact?: number | null
+          discussion_questions?: string[] | null
+          expert_commentary?: string | null
+          historical_examples?: string[] | null
+          id?: string
+          key_lessons?: string[] | null
+          outcome_description?: string
+          outcome_title?: string
+          outcome_type?: string | null
+          probability_assessment?: string | null
+          recommended_reading?: Json | null
+          related_quiz_topics?: string[] | null
+          scenario_id?: string | null
+          stakeholder_satisfaction?: Json | null
+          suggested_actions?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_outcomes_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenario_resources: {
+        Row: {
+          color_scheme: string | null
+          created_at: string | null
+          default_starting_amount: number | null
+          description: string | null
+          display_name: string
+          examples_in_politics: string[] | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          maximum_amount: number | null
+          real_world_explanation: string | null
+          resource_name: string
+          resource_type: string
+        }
+        Insert: {
+          color_scheme?: string | null
+          created_at?: string | null
+          default_starting_amount?: number | null
+          description?: string | null
+          display_name: string
+          examples_in_politics?: string[] | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          maximum_amount?: number | null
+          real_world_explanation?: string | null
+          resource_name: string
+          resource_type: string
+        }
+        Update: {
+          color_scheme?: string | null
+          created_at?: string | null
+          default_starting_amount?: number | null
+          description?: string | null
+          display_name?: string
+          examples_in_politics?: string[] | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          maximum_amount?: number | null
+          real_world_explanation?: string | null
+          resource_name?: string
+          resource_type?: string
+        }
+        Relationships: []
+      }
+      scenario_situations: {
+        Row: {
+          available_to_characters: string[] | null
+          background_context: string | null
+          created_at: string | null
+          id: string
+          prerequisites: Json | null
+          pressure_level: number | null
+          scenario_id: string | null
+          situation_description: string
+          situation_order: number
+          situation_title: string
+          time_limit_seconds: number | null
+        }
+        Insert: {
+          available_to_characters?: string[] | null
+          background_context?: string | null
+          created_at?: string | null
+          id?: string
+          prerequisites?: Json | null
+          pressure_level?: number | null
+          scenario_id?: string | null
+          situation_description: string
+          situation_order: number
+          situation_title: string
+          time_limit_seconds?: number | null
+        }
+        Update: {
+          available_to_characters?: string[] | null
+          background_context?: string | null
+          created_at?: string | null
+          id?: string
+          prerequisites?: Json | null
+          pressure_level?: number | null
+          scenario_id?: string | null
+          situation_description?: string
+          situation_order?: number
+          situation_title?: string
+          time_limit_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_situations_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenarios: {
+        Row: {
+          civic_categories: string[] | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty_level: number | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          is_premium: boolean | null
+          key_concepts: string[] | null
+          learning_objectives: string[] | null
+          max_players: number | null
+          quiz_topic_connections: string[] | null
+          scenario_slug: string
+          scenario_title: string
+          scenario_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          civic_categories?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          key_concepts?: string[] | null
+          learning_objectives?: string[] | null
+          max_players?: number | null
+          quiz_topic_connections?: string[] | null
+          scenario_slug: string
+          scenario_title: string
+          scenario_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          civic_categories?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          key_concepts?: string[] | null
+          learning_objectives?: string[] | null
+          max_players?: number | null
+          quiz_topic_connections?: string[] | null
+          scenario_slug?: string
+          scenario_title?: string
+          scenario_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       scheduled_content_jobs: {
         Row: {
@@ -8272,8 +8751,6 @@ export type Database = {
       }
       user_quiz_attempts: {
         Row: {
-          clever_assignment_id: string | null
-          clever_section_id: string | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string | null
@@ -8287,11 +8764,10 @@ export type Database = {
           time_spent_seconds: number | null
           topic_id: string
           total_questions: number
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          clever_assignment_id?: string | null
-          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
@@ -8305,11 +8781,10 @@ export type Database = {
           time_spent_seconds?: number | null
           topic_id: string
           total_questions: number
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          clever_assignment_id?: string | null
-          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
@@ -8323,6 +8798,7 @@ export type Database = {
           time_spent_seconds?: number | null
           topic_id?: string
           total_questions?: number
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -8371,6 +8847,167 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_scenario_attempts: {
+        Row: {
+          attempt_number: number
+          character_id: string | null
+          completed_at: string | null
+          completion_percentage: number | null
+          concepts_demonstrated: string[] | null
+          created_at: string | null
+          current_resources: Json | null
+          current_situation_id: string | null
+          decisions_made: Json | null
+          democratic_values_score: number | null
+          difficulty_rating: number | null
+          final_outcome: string | null
+          final_resources: Json | null
+          guest_token: string | null
+          id: string
+          learning_objectives_met: string[] | null
+          scenario_id: string | null
+          session_metadata: Json | null
+          started_at: string | null
+          total_time_spent: unknown | null
+          total_time_spent_seconds: number | null
+          user_id: string | null
+        }
+        Insert: {
+          attempt_number?: number
+          character_id?: string | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          concepts_demonstrated?: string[] | null
+          created_at?: string | null
+          current_resources?: Json | null
+          current_situation_id?: string | null
+          decisions_made?: Json | null
+          democratic_values_score?: number | null
+          difficulty_rating?: number | null
+          final_outcome?: string | null
+          final_resources?: Json | null
+          guest_token?: string | null
+          id?: string
+          learning_objectives_met?: string[] | null
+          scenario_id?: string | null
+          session_metadata?: Json | null
+          started_at?: string | null
+          total_time_spent?: unknown | null
+          total_time_spent_seconds?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          attempt_number?: number
+          character_id?: string | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          concepts_demonstrated?: string[] | null
+          created_at?: string | null
+          current_resources?: Json | null
+          current_situation_id?: string | null
+          decisions_made?: Json | null
+          democratic_values_score?: number | null
+          difficulty_rating?: number | null
+          final_outcome?: string | null
+          final_resources?: Json | null
+          guest_token?: string | null
+          id?: string
+          learning_objectives_met?: string[] | null
+          scenario_id?: string | null
+          session_metadata?: Json | null
+          started_at?: string | null
+          total_time_spent?: unknown | null
+          total_time_spent_seconds?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scenario_attempts_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scenario_attempts_current_situation_id_fkey"
+            columns: ["current_situation_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_situations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scenario_attempts_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_scenario_decisions: {
+        Row: {
+          attempt_id: string | null
+          created_at: string | null
+          decision_id: string | null
+          decision_order: number
+          decision_time_seconds: number | null
+          id: string
+          resource_state_after: Json | null
+          resource_state_before: Json | null
+          situation_id: string | null
+          time_taken_seconds: number | null
+          timestamp: string | null
+        }
+        Insert: {
+          attempt_id?: string | null
+          created_at?: string | null
+          decision_id?: string | null
+          decision_order?: number
+          decision_time_seconds?: number | null
+          id?: string
+          resource_state_after?: Json | null
+          resource_state_before?: Json | null
+          situation_id?: string | null
+          time_taken_seconds?: number | null
+          timestamp?: string | null
+        }
+        Update: {
+          attempt_id?: string | null
+          created_at?: string | null
+          decision_id?: string | null
+          decision_order?: number
+          decision_time_seconds?: number | null
+          id?: string
+          resource_state_after?: Json | null
+          resource_state_before?: Json | null
+          situation_id?: string | null
+          time_taken_seconds?: number | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scenario_decisions_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "user_scenario_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scenario_decisions_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scenario_decisions_situation_id_fkey"
+            columns: ["situation_id"]
+            isOneToOne: false
+            referencedRelation: "scenario_situations"
             referencedColumns: ["id"]
           },
         ]
@@ -8660,6 +9297,66 @@ export type Database = {
         }
         Relationships: []
       }
+      civics_test_attempts: {
+        Row: {
+          category: string | null
+          correct_count: number | null
+          created_at: string | null
+          game_mode: string | null
+          guest_token: string | null
+          id: string | null
+          max_streak: number | null
+          mode_settings: Json | null
+          platform: string | null
+          question_count: number | null
+          response_data: Json | null
+          session_id: string | null
+          skill_id: string | null
+          streak_count: number | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       civics_test_metrics: {
         Row: {
           abandonments: number | null
@@ -8689,6 +9386,66 @@ export type Database = {
           total_columns: number | null
           validation_status: string | null
           validation_target: string | null
+        }
+        Relationships: []
+      }
+      multiplayer_attempts: {
+        Row: {
+          category: string | null
+          correct_count: number | null
+          created_at: string | null
+          game_mode: string | null
+          guest_token: string | null
+          id: string | null
+          max_streak: number | null
+          mode_settings: Json | null
+          platform: string | null
+          question_count: number | null
+          response_data: Json | null
+          session_id: string | null
+          skill_id: string | null
+          streak_count: number | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -8780,6 +9537,66 @@ export type Database = {
           target_age_range?: string | null
           topics_covered?: string[] | null
           total_ratings?: number | null
+        }
+        Relationships: []
+      }
+      practice_attempts: {
+        Row: {
+          category: string | null
+          correct_count: number | null
+          created_at: string | null
+          game_mode: string | null
+          guest_token: string | null
+          id: string | null
+          max_streak: number | null
+          mode_settings: Json | null
+          platform: string | null
+          question_count: number | null
+          response_data: Json | null
+          session_id: string | null
+          skill_id: string | null
+          streak_count: number | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          platform?: string | null
+          question_count?: number | null
+          response_data?: Json | null
+          session_id?: string | null
+          skill_id?: string | null
+          streak_count?: number | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -9103,6 +9920,10 @@ export type Database = {
         Args: { p_pod_id: string; p_date?: string }
         Returns: undefined
       }
+      calculate_scenario_completion: {
+        Args: { p_scenario_id: string; p_decisions_made: Json }
+        Returns: number
+      }
       can_access_room: {
         Args: {
           room_uuid: string
@@ -9260,6 +10081,19 @@ export type Database = {
           invite_code: string
           invite_url: string
           link_id: string
+        }[]
+      }
+      create_scenario_room: {
+        Args: {
+          p_scenario_id: string
+          p_host_user_id: string
+          p_room_name?: string
+          p_max_players?: number
+          p_scenario_settings?: Json
+        }
+        Returns: {
+          room_id: string
+          room_code: string
         }[]
       }
       create_shareable_gift_link: {
@@ -9511,6 +10345,25 @@ export type Database = {
           is_connected: boolean
         }[]
       }
+      get_scenario_characters: {
+        Args: { p_scenario_id: string }
+        Returns: {
+          character_id: string
+          character_name: string
+          character_title: string
+          character_type: string
+          starting_resources: Json
+          is_available: boolean
+        }[]
+      }
+      get_scenario_room_status: {
+        Args: { p_room_id: string }
+        Returns: {
+          room_info: Json
+          players: Json
+          scenario_info: Json
+        }[]
+      }
       get_shareable_link_info: {
         Args: { p_link_code: string }
         Returns: {
@@ -9708,6 +10561,17 @@ export type Database = {
           room_id: string
         }[]
       }
+      get_user_scenario_progress: {
+        Args: { p_user_id: string }
+        Returns: {
+          scenario_id: string
+          scenario_title: string
+          character_name: string
+          completion_percentage: number
+          last_played: string
+          is_completed: boolean
+        }[]
+      }
       get_user_shareable_links: {
         Args: { p_user_id: string }
         Returns: {
@@ -9786,6 +10650,20 @@ export type Database = {
           message: string
           requires_approval: boolean
           pod_id: string
+        }[]
+      }
+      join_scenario_room: {
+        Args: {
+          p_room_code: string
+          p_user_id: string
+          p_player_name: string
+          p_character_id?: string
+        }
+        Returns: {
+          success: boolean
+          room_id: string
+          player_id: string
+          message: string
         }[]
       }
       leave_multiplayer_room: {
@@ -9876,6 +10754,10 @@ export type Database = {
           action_taken: string
           new_host_player_id: string
         }[]
+      }
+      reset_is_breaking_status: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       search_bookmarks: {
         Args: {
@@ -9987,6 +10869,10 @@ export type Database = {
       update_organization_bias_from_articles: {
         Args: { p_organization_id: string }
         Returns: undefined
+      }
+      update_player_character: {
+        Args: { p_room_id: string; p_player_id: string; p_character_id: string }
+        Returns: boolean
       }
       update_player_ready_status: {
         Args: { p_room_id: string; p_player_id: string; p_is_ready: boolean }
@@ -10114,6 +11000,13 @@ export type Database = {
     Enums: {
       course_role: "student" | "teacher" | "teaching_assistant" | "observer"
       enrollment_status: "active" | "dropped" | "completed" | "transferred"
+      quiz_game_mode:
+        | "standard"
+        | "practice"
+        | "challenge"
+        | "assessment"
+        | "multiplayer"
+        | "npc_battle"
       school_user_role:
         | "student"
         | "teacher"
@@ -10249,6 +11142,14 @@ export const Constants = {
     Enums: {
       course_role: ["student", "teacher", "teaching_assistant", "observer"],
       enrollment_status: ["active", "dropped", "completed", "transferred"],
+      quiz_game_mode: [
+        "standard",
+        "practice",
+        "challenge",
+        "assessment",
+        "multiplayer",
+        "npc_battle",
+      ],
       school_user_role: [
         "student",
         "teacher",

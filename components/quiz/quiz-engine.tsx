@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { QuizResults } from "./quiz-results"
+import { QuizResults, QuizTopic } from "@/lib/types/quiz"
 import { MultipleChoiceQuestion } from "./question-types/multiple-choice"
 import { TrueFalseQuestion } from "./question-types/true-false"
 import { ShortAnswerQuestion, checkAnswerIntelligently, checkAnswerDetailed } from "./question-types/short-answer"
@@ -37,20 +37,12 @@ import { SocialProofBubble } from "@/components/social-proof-bubble"
 import { createRegularQuizProgress, type BaseQuizState } from "@/lib/progress-storage"
 import { debug } from "@/lib/debug-config"
 
-interface QuizTopic {
-  id: string
-  title: string
-  emoji: string
-  date: string
-  dayOfWeek: string
-}
-
 interface QuizEngineProps {
   questions: QuizQuestion[]
   topicId: string
   currentTopic: QuizTopic
   availableTopics?: QuizTopic[]
-  onComplete: () => void
+  onComplete: (results: QuizResults) => void
   onTopicChange?: (topicId: string) => void
 }
 
@@ -344,7 +336,7 @@ export function QuizEngine({
           <p className="text-muted-foreground mb-6">
             This quiz doesn't have any valid questions yet. Please try another topic.
           </p>
-          <Button onClick={onComplete} className="rounded-xl">
+          <Button onClick={() => onComplete({ score: 0, correctAnswers: 0, totalQuestions: 0, timeSpentSeconds: 0, answers: [] })} className="rounded-xl">
             Back to Topics
           </Button>
         </div>

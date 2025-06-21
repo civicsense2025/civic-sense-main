@@ -6,7 +6,7 @@ import { useGlobalAudio } from "@/components/global-audio-controls"
 import { StartQuizButton } from "@/components/start-quiz-button"
 import { CreateRoomDialog } from "@/components/multiplayer/create-room-dialog"
 import { JoinRoomDialog } from "@/components/multiplayer/join-room-dialog"
-import { HelpCircle, Info, BookOpen, Users, UserPlus } from "lucide-react"
+import { HelpCircle, Info, BookOpen, Users, UserPlus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,6 +19,8 @@ import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { dataService } from "@/lib/data-service"
 import { questionOperations } from "@/lib/database"
 import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS } from '@/lib/types/quiz'
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -30,6 +32,11 @@ interface TopicInfoProps {
   hasCompletedTopic?: boolean
   questions?: QuizQuestion[] // Optional pre-loaded questions
   className?: string
+  selectedMode?: QuizGameMode
+  onModeChange?: (mode: QuizGameMode) => void
+  modeConfig?: QuizModeConfig
+  onModeConfigChange?: (config: QuizModeConfig) => void
+  isPremium?: boolean
 }
 
 interface ParsedBlurb {
@@ -47,7 +54,12 @@ export function TopicInfo({
   isPartiallyCompleted = false,
   hasCompletedTopic = false,
   questions: preloadedQuestions = [],
-  className
+  className,
+  selectedMode = 'standard',
+  onModeChange,
+  modeConfig = FULL_MODE_CONFIGS.standard,
+  onModeConfigChange,
+  isPremium = false
 }: TopicInfoProps) {
 
   const { autoPlayEnabled, playText } = useGlobalAudio()
@@ -381,7 +393,90 @@ export function TopicInfo({
 
   const topicCompleted = hasCompletedTopic
 
+  const renderModeSelector = () => {
+    return (
+      <div className="space-y-4 min-w-[300px]">
+        <h3 className="text-lg font-semibold">Select Quiz Mode</h3>
+        <div className="space-y-4">
+          {/* Solo Modes */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-500">Solo Modes</h4>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  onModeChange?.('standard');
+                  onModeConfigChange?.(FULL_MODE_CONFIGS.standard);
+                }}
+                className={`w-full p-3 rounded-lg ${
+                  selectedMode === 'standard' ? 'bg-primary text-white' : 'bg-gray-100'
+                }`}
+              >
+                Standard Quiz
+              </button>
+              <button
+                onClick={() => {
+                  onModeChange?.('practice');
+                  onModeConfigChange?.(FULL_MODE_CONFIGS.practice);
+                }}
+                className={`w-full p-3 rounded-lg ${
+                  selectedMode === 'practice' ? 'bg-primary text-white' : 'bg-gray-100'
+                }`}
+              >
+                Practice Mode
+              </button>
+              <button
+                onClick={() => {
+                  onModeChange?.('npc_battle');
+                  onModeConfigChange?.(FULL_MODE_CONFIGS.npc_battle);
+                }}
+                className={`w-full p-3 rounded-lg ${
+                  selectedMode === 'npc_battle' ? 'bg-primary text-white' : 'bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span>NPC Battle</span>
+                  {!isPremium && <Badge variant="outline">Premium</Badge>}
+                </div>
+              </button>
+            </div>
+          </div>
 
+          {/* Difficulty selector for NPC battle */}
+          {selectedMode === 'npc_battle' &&
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Select Difficulty</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'easy' } })}
+                  className={`p-2 rounded-lg ${
+                    modeConfig.settings.npcDifficulty === 'easy' ? 'bg-primary text-white' : 'bg-gray-100'
+                  }`}
+                >
+                  Easy
+                </button>
+                <button
+                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'medium' } })}
+                  className={`p-2 rounded-lg ${
+                    modeConfig.settings.npcDifficulty === 'medium' ? 'bg-primary text-white' : 'bg-gray-100'
+                  }`}
+                >
+                  Medium
+                </button>
+                <button
+                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'hard' } })}
+                  className={`p-2 rounded-lg ${
+                    modeConfig.settings.npcDifficulty === 'hard' ? 'bg-primary text-white' : 'bg-gray-100'
+                  }`}
+                >
+                  Hard
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={cn('flex flex-col h-full px-4 sm:px-8 py-8', className)}>
@@ -406,11 +501,26 @@ export function TopicInfo({
           </>
         )} */}
 
-        {/* Single Player Quiz Button */}
+        {/* Single Player Quiz Button with Mode Selector */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div>
+              <div className="flex items-center gap-2">
+                {/* Mode Selector */}
+                {hasQuestions && !isCheckingQuestions && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-10 w-10">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="p-4">
+                      {renderModeSelector()}
+                    </PopoverContent>
+                  </Popover>
+                )}
+                
+                {/* Quiz Button */}
                 <StartQuizButton
                   label={!hasQuestions ? "Coming Soon" : topicCompleted ? "Retake Quiz" : "Begin Quiz"}
                   onClick={requireAuth ? onAuthRequired : onStartQuiz}
@@ -426,7 +536,7 @@ export function TopicInfo({
               <p>
                 {!hasQuestions
                   ? "This quiz is coming soon! Check back later."
-                  : "Complete today's civic quizzes and stay informed!"}
+                  : `Start ${selectedMode === 'standard' ? 'a' : selectedMode === 'practice' ? 'a practice' : 'an NPC battle'} quiz!`}
               </p>
               {remainingQuizzes !== undefined && hasQuestions && (
                 <p className="text-xs mt-1">You have {remainingQuizzes} quizzes remaining today</p>

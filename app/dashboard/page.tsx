@@ -41,41 +41,29 @@ import { Header } from "@/components/header"
 import { ContinueLearning } from "@/components/continue-learning"
 import { RecommendedTopics } from "@/components/recommended-topics"
 import { EnhancedRecentActivity } from "@/components/enhanced-recent-activity"
-import { GiftCreditsDashboard } from "@/components/gift-credits-dashboard"
 import { LearningPodsDashboard } from "@/components/learning-pods-dashboard"
 import { SurveysDashboard } from "@/components/surveys-dashboard"
 import { AuthDialog } from '@/components/auth/auth-dialog'
 import { FeedbackButton } from '@/components/feedback'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { LearningTrackingDashboard } from "@/components/learning-tracking-dashboard"
 
 interface DashboardData {
-  totalQuizzes: number
-  completedQuizzes: number
+  totalTopics: number
+  completedTopics: number
   averageScore: number
-  currentStreak: number
-  totalXP: number
-  currentLevel: number
-  recentActivity: Array<{
-    attemptId?: string
-    topicId: string
-    topicTitle: string
-    score: number
-    completedAt: string
-    timeSpent?: number
-    isPartial?: boolean
-  }>
-  categoryProgress: Record<string, {
-    completed: number
-    total: number
-    averageScore: number
-  }>
-  weeklyProgress: Array<{
-    date: string
-    quizzesCompleted: number
-    xpGained: number
-  }>
-  achievements: Achievement[]
+  timeLearning: number
+  activeStreak: number
+  level: number
+  xp: number
+}
+
+interface ActivityData {
+  topicId: string
+  completedAt: string
+  timeSpent: number
+  score: number
 }
 
 // Dashboard Stats Skeleton
@@ -317,14 +305,22 @@ export default function DashboardPage() {
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
   const { trackEngagement } = useAnalytics()
 
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalTopics: 0,
+    completedTopics: 0,
+    averageScore: 0,
+    timeLearning: 0,
+    activeStreak: 0,
+    level: 1,
+    xp: 0
+  })
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [enhancedProgress, setEnhancedProgress] = useState<EnhancedUserProgress | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
 
   // Add state for onboarding status
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false)
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true)
 
   // Track dashboard page view
   useEffect(() => {
@@ -355,196 +351,49 @@ export default function DashboardPage() {
   // Load comprehensive dashboard data - only when user is authenticated
   useEffect(() => {
     const loadDashboardData = async () => {
-      if (!user) {
-        return
-      }
-      
-      try {
-        setIsDataLoading(true)
-        
-        // Add timeout protection to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Dashboard loading timeout')), 10000) // 10 second timeout
-        )
-        
-        // Load dashboard data with timeout protection
-        const dashboardPromise = (async () => {
-          // Load enhanced progress data with timeout protection
-          let progress: EnhancedUserProgress | null = null
-          try {
-            const progressTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Progress timeout')), 5000)
-            )
-            const progressPromise = enhancedProgressOperations.getComprehensiveStats(user.id)
-            progress = await Promise.race([progressPromise, progressTimeoutPromise]) as EnhancedUserProgress
-          } catch (error) {
-            console.error('Error loading enhanced progress (using fallback):', error)
-            // Use fallback progress data
-            progress = {
-              totalQuizzesCompleted: 0,
-              accuracyPercentage: 0,
-              currentStreak: 0,
-              totalXp: 0,
-              currentLevel: 1
-            } as EnhancedUserProgress
-          }
-          
-          setEnhancedProgress(progress)
-          
-          // Load all topics for context
-          const allTopics = await dataService.getAllTopics()
-          const topicsArray = Object.values(allTopics)
-          
-          // Get recent activity from database with timeout protection
-          let recentActivity: DashboardData['recentActivity'] = []
-          try {
-            const activityTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Activity timeout')), 5000) // Increased timeout
-            )
-            // Increase limit from 10 to 25 to fetch more recent activities
-            const activityPromise = enhancedQuizDatabase.getRecentActivity(user.id, 25)
-            const dbRecentActivity = await Promise.race([activityPromise, activityTimeoutPromise])
-            recentActivity = dbRecentActivity as DashboardData['recentActivity']
-            
+      if (!user) return
 
-          } catch (error) {
-            console.error('Error loading recent activity from database (using localStorage fallback):', error)
-            
-            // Fallback to localStorage if database fails
-            const recentActivityKey = `civicAppQuizResults_${user.id}_v1`
-            const savedResults = localStorage.getItem(recentActivityKey)
-            
-            if (savedResults) {
-              try {
-                const results = JSON.parse(savedResults)
-                recentActivity = results.slice(-10).map((result: any) => ({
-                  topicId: result.topicId,
-                  topicTitle: allTopics[result.topicId]?.topic_title || 'Unknown Topic',
-                  score: Math.round((result.correctAnswers / result.totalQuestions) * 100),
-                  completedAt: result.completedAt || new Date().toISOString(),
-                  timeSpent: result.timeSpent,
-                  isPartial: result.isPartial
-                })).reverse()
-              } catch (parseError) {
-                console.error('Error parsing localStorage recent activity:', parseError)
-                
-                // If both database and localStorage fail, provide realistic placeholder data
-                // so the UI doesn't look empty - helpful during testing and development
-                if (process.env.NODE_ENV !== 'production') {
-                  const dates = Array.from({length: 5}).map((_, i) => {
-                    const d = new Date()
-                    d.setDate(d.getDate() - i)
-                    return d.toISOString()
-                  })
-                  
-                  const demoTopics = [
-                    { id: 'gov-101', title: 'Government 101' },
-                    { id: 'voting-rights', title: 'Voting Rights' },
-                    { id: 'civic-engagement', title: 'Civic Engagement' },
-                    { id: 'media-literacy', title: 'Media Literacy' },
-                    { id: 'constitutional-rights', title: 'Constitutional Rights' }
-                  ]
-                  
-                  recentActivity = dates.map((date, i) => ({
-                    topicId: demoTopics[i].id,
-                    topicTitle: demoTopics[i].title,
-                    score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-                    completedAt: date,
-                    timeSpent: Math.floor(Math.random() * 300) + 300, // 5-10 min in seconds
-                    isPartial: false
-                  }))
-                }
-              }
-            }
-          }
-          
-          // Get completed topics from database with timeout protection
-          let completedTopicIds: string[] = []
-          try {
-            const completedTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Completed topics timeout')), 3000)
-            )
-            const completedPromise = enhancedQuizDatabase.getCompletedTopics(user.id)
-            completedTopicIds = await Promise.race([completedPromise, completedTimeoutPromise]) as string[]
-          } catch (error) {
-            console.error('Error loading completed topics from database (using localStorage fallback):', error)
-            
-            // Fallback to localStorage
-            const completedTopicsKey = "civicAppCompletedTopics_v1"
-            const savedCompleted = localStorage.getItem(completedTopicsKey)
-            completedTopicIds = savedCompleted ? JSON.parse(savedCompleted) : []
-          }
-          
-          // Calculate category progress
-          const categoryProgress: DashboardData['categoryProgress'] = {}
-          topicsArray.forEach(topic => {
-            topic.categories.forEach(category => {
-              if (!categoryProgress[category]) {
-                categoryProgress[category] = { completed: 0, total: 0, averageScore: 0 }
-              }
-              categoryProgress[category].total++
-              if (completedTopicIds.includes(topic.topic_id)) {
-                categoryProgress[category].completed++
-              }
-            })
-          })
-          
-          // Generate weekly progress (mock data for now - should come from DB)
-          const weeklyProgress: DashboardData['weeklyProgress'] = []
-          for (let i = 6; i >= 0; i--) {
-            const date = new Date()
-            date.setDate(date.getDate() - i)
-            const dateStr = date.toISOString().split('T')[0]
-            
-            // This should be calculated from actual quiz completion data
-            const quizzesForDay = recentActivity.filter(activity => 
-              activity.completedAt.startsWith(dateStr)
-            ).length
-            
-            weeklyProgress.push({
-              date: dateStr,
-              quizzesCompleted: quizzesForDay,
-              xpGained: quizzesForDay * 50 // Approximate XP per quiz
-            })
-          }
-          
-          const data: DashboardData = {
-            totalQuizzes: topicsArray.length,
-            completedQuizzes: progress?.totalQuizzesCompleted || completedTopicIds.length,
-            averageScore: progress?.accuracyPercentage || 0,
-            currentStreak: progress?.currentStreak || 0,
-            totalXP: progress?.totalXp || 0,
-            currentLevel: progress?.currentLevel || 1,
-            recentActivity,
-            categoryProgress,
-            weeklyProgress,
-            achievements: [] // We'll load achievements separately if needed
-          }
-          
-          return data
-        })()
+      try {
+        // Get user's activity data
+        const recentActivity = await enhancedQuizDatabase.getRecentActivity(user.id, 25) as ActivityData[]
         
-        const data = await Promise.race([dashboardPromise, timeoutPromise]) as DashboardData
-        setDashboardData(data)
+        // Calculate total time learning this week
+        const now = new Date()
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+        
+        const weeklyTimeSpent = recentActivity
+          .filter(activity => new Date(activity.completedAt) >= weekStart)
+          .reduce((total: number, activity: ActivityData) => total + (activity.timeSpent || 0), 0)
+        
+        // Calculate other metrics
+        const completedTopics = new Set(recentActivity.map(a => a.topicId)).size
+        const averageScore = recentActivity.length > 0
+          ? recentActivity.reduce((sum: number, a: ActivityData) => sum + a.score, 0) / recentActivity.length
+          : 0
+
+        // Get user progress data
+        const { data: progressData } = await supabase
+          .from('user_progress')
+          .select('current_streak')
+          .eq('user_id', user.id)
+          .single()
+
+        // Get total topics count from database
+        const { count: totalTopics } = await supabase
+          .from('question_topics')
+          .select('*', { count: 'exact', head: true })
+
+        setDashboardData({
+          totalTopics: totalTopics || 0,
+          completedTopics,
+          averageScore,
+          timeLearning: Math.round(weeklyTimeSpent / 60), // Convert to minutes
+          activeStreak: progressData?.current_streak || 0,
+          level: Math.floor(completedTopics / 5) + 1,
+          xp: completedTopics * 100
+        })
       } catch (error) {
-        console.error('Error loading dashboard data (using fallback):', error)
-        
-        // Provide fallback dashboard data so user isn't stuck
-        const fallbackData: DashboardData = {
-          totalQuizzes: 100,
-          completedQuizzes: 0,
-          averageScore: 0,
-          currentStreak: 0,
-          totalXP: 0,
-          currentLevel: 1,
-          recentActivity: [],
-          categoryProgress: {},
-          weeklyProgress: [],
-          achievements: []
-        }
-        setDashboardData(fallbackData)
-      } finally {
-        setIsDataLoading(false)
+        console.error('Error loading dashboard data:', error)
       }
     }
 
@@ -612,7 +461,7 @@ export default function DashboardPage() {
     return <DashboardLoadingSkeleton />
   }
 
-  const completionPercentage = Math.round((dashboardData.completedQuizzes / dashboardData.totalQuizzes) * 100) || 0
+  const completionPercentage = Math.round((dashboardData.completedTopics / dashboardData.totalTopics) * 100) || 0
 
   const getTierBadge = () => {
     if (!subscription) return null
@@ -632,160 +481,80 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
-      <main className="w-full py-8">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-          {/* Onboarding banner - only show if not complete */}
-          {showOnboardingBanner && (
-            <div className="relative rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900/40 p-6 overflow-hidden mb-4">
-              <div className="absolute top-4 right-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 w-8 p-0 rounded-full" 
-                  onClick={dismissOnboardingBanner}
-                >
-                  <X className="h-4 w-4 text-slate-500" />
-                </Button>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                <div className="flex-shrink-0 bg-white dark:bg-slate-800 h-12 w-12 flex items-center justify-center rounded-full shadow-sm">
-                  <Sparkles className="h-6 w-6 text-blue-500" />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="font-medium text-slate-900 dark:text-white mb-1">Complete your personalized setup</h3>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm font-light mb-4">
-                    We noticed you haven't finished onboarding. Take a few minutes to personalize your learning experience.
-                  </p>
-                  <Button
-                    size="sm"
-                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-full px-4 py-1 h-9"
-                    onClick={handleResumeOnboarding}
-                  >
-                    Continue setup
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <Header />
+      <main className="container py-8 space-y-12">
+        {/* Welcome Message and Progress */}
+        <div className="space-y-6">
+          <h1 className="text-3xl font-light text-slate-900 dark:text-white">
+            Welcome back, {user.user_metadata?.full_name || 'there'}
+          </h1>
           
-          {/* Clean header with lots of whitespace */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-              Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}
-            </h1>
-            <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-              Track your civic knowledge and create custom learning experiences
-            </p>
-            <div className="flex justify-center pt-2">
-              {getTierBadge()}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-400 font-light">
+                {dashboardData.completedTopics} of {dashboardData.totalTopics} topics completed
+              </span>
+              <span className="font-medium text-slate-900 dark:text-white">
+                {Math.round((dashboardData.completedTopics / dashboardData.totalTopics) * 100)}%
+              </span>
             </div>
-          </div>
-
-          {/* Main progress section - Apple style */}
-          <div className="text-center space-y-8">
-            <div className="space-y-2">
-              <div className="text-6xl font-light text-slate-900 dark:text-white">
-                {completionPercentage}%
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 font-light">
-                {dashboardData.completedQuizzes} of {dashboardData.totalQuizzes} topics completed
-              </p>
+            <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-600 dark:bg-blue-400 rounded-full transition-all duration-500"
+                style={{ width: `${(dashboardData.completedTopics / dashboardData.totalTopics) * 100}%` }}
+              />
             </div>
-            
-            {/* Clean progress bar */}
-            <div className="max-w-md mx-auto">
-              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1">
-                <div 
-                  className="bg-slate-900 dark:bg-white h-1 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Key stats - minimal design */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            <div className="space-y-2">
-              <div className="text-3xl font-light text-slate-900 dark:text-white">
-                {enhancedProgress?.currentLevel || 1}
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 font-light">Current Level</p>
-              <p className="text-sm text-slate-500 dark:text-slate-500">
-                {enhancedProgress?.totalXp?.toLocaleString() || 0} XP earned
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-3xl font-light text-slate-900 dark:text-white">
-                {dashboardData.currentStreak}
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 font-light">Day Streak</p>
-              <p className="text-sm text-slate-500 dark:text-slate-500">
-                Keep it going!
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-3xl font-light text-slate-900 dark:text-white">
-                {Math.round(dashboardData.averageScore)}%
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 font-light">Average Score</p>
-              <p className="text-sm text-slate-500 dark:text-slate-500">
-                Across all quizzes
-              </p>
-            </div>
-          </div>
-
-          {/* Continue Learning Section */}
-          {user && <ContinueLearning userId={user.id} />}
-
-          {/* Recommended Topics Section */}
-          {user && <RecommendedTopics userId={user.id} />}
-
-          {/* Enhanced Recent Activity */}
-          {user && <EnhancedRecentActivity userId={user.id} />}
-
-          {/* Available Surveys */}
-          <SurveysDashboard />
-
-          {/* Learning Pods Dashboard - temporarily hidden until ready for public use */}
-          {/*
-          <div className="space-y-4">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
-                Learning Pods
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 font-light">
-                Collaborative learning with family, friends, and organizations
-              </p>
-            </div>
-            <LearningPodsDashboard />
-          </div>
-          */}
-
-          {/* Gift Credits Dashboard */}
-          <div className="space-y-4">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
-                Gift CivicSense Access
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 font-light">
-                Share the power of civic education with others
-              </p>
-            </div>
-            <GiftCreditsDashboard />
-          </div>
-
-          {/* Premium features teaser */}
-          <div className="text-center py-12 border-t border-slate-100 dark:border-slate-800">
-            <PremiumDataTeaser 
-              variant="banner"
-            />
           </div>
         </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
+            <div className="text-2xl font-light text-slate-900 dark:text-white">
+              {dashboardData.completedTopics}
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              Topics completed
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
+            <div className="text-2xl font-light text-slate-900 dark:text-white">
+              {Math.round(dashboardData.averageScore)}%
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              Average score
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
+            <div className="text-2xl font-light text-slate-900 dark:text-white">
+              {dashboardData.timeLearning}m
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              Time learning<br />this week
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
+            <div className="text-2xl font-light text-slate-900 dark:text-white">
+              {dashboardData.activeStreak}
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+              Day streak
+            </div>
+          </div>
+        </div>
+
+        {/* Recommended Topics */}
+        <RecommendedTopics userId={user.id} />
+
+        {/* Available Surveys */}
+        <SurveysDashboard />
+
+        {/* Learning Activity */}
+        <LearningTrackingDashboard />
       </main>
     </div>
   )

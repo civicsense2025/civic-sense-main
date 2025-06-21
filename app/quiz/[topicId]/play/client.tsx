@@ -15,13 +15,35 @@ import { useGuestAccess } from "@/hooks/useGuestAccess"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { UserRole } from "@/lib/types/user"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
-import { CleverShareButton } from "@/components/integrations/clever-share-button"
+import { QuizNavigation } from "@/components/quiz/quiz-navigation"
+import { toast } from "@/components/ui/use-toast"
+
+interface QuizResults {
+  score: number
+  correctAnswers: number
+  totalQuestions: number
+  timeSpentSeconds: number
+  answers: Array<{
+    questionId: number
+    answer: string
+    isCorrect: boolean
+    timeSpent: number
+  }>
+}
 
 interface QuizPlayClientProps {
   topicId: string
+  searchParams?: {
+    attempt?: string
+    podId?: string
+    classroomCourseId?: string
+    classroomAssignmentId?: string
+    cleverSectionId?: string
+    cleverAssignmentId?: string
+  }
 }
 
-export default function QuizPlayClient({ topicId }: QuizPlayClientProps) {
+export default function QuizPlayClient({ topicId, searchParams }: QuizPlayClientProps) {
   const router = useRouter()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
@@ -111,23 +133,58 @@ export default function QuizPlayClient({ topicId }: QuizPlayClientProps) {
     }
   }, [topicId, topic, user, recordQuizAttempt])
 
-  const handleQuizComplete = () => {
-    // Handle quiz completion (update localStorage, etc.)
-    const now = new Date()
-    localStorage.setItem("civicAppLastActivity", now.toString())
+  const handleQuizComplete = async (results: QuizResults) => {
+    try {
+      // Save quiz results
+      const response = await fetch('/api/quiz/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          attemptId: searchParams?.attempt,
+          results,
+          // Add pod-related data
+          podId: searchParams?.podId,
+          classroomCourseId: searchParams?.classroomCourseId,
+          classroomAssignmentId: searchParams?.classroomAssignmentId,
+          cleverSectionId: searchParams?.cleverSectionId,
+          cleverAssignmentId: searchParams?.cleverAssignmentId
+        }),
+      });
 
-    // Mark topic as completed
-    const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
-    const completedTopics = savedCompleted ? JSON.parse(savedCompleted) : []
-    if (!completedTopics.includes(topicId)) {
-      completedTopics.push(topicId)
-      localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(completedTopics))
-    }
+      if (!response.ok) {
+        throw new Error('Failed to save quiz results');
+      }
 
-    // Redirect to results page (or back to quiz landing)
-    setTimeout(() => {
+      // Handle quiz completion (update localStorage, etc.)
+      const now = new Date()
+      localStorage.setItem("civicAppLastActivity", now.toString())
+
+      // Mark topic as completed
+      const savedCompleted = localStorage.getItem("civicAppCompletedTopics_v1")
+      const completedTopics = savedCompleted ? JSON.parse(savedCompleted) : []
+      if (!completedTopics.includes(topicId)) {
+        completedTopics.push(topicId)
+        localStorage.setItem("civicAppCompletedTopics_v1", JSON.stringify(completedTopics))
+      }
+
+      // If this was a pod/LMS quiz, redirect to the pod page
+      if (searchParams?.podId) {
+        router.push(`/pods/${searchParams.podId}`)
+        return
+      }
+
+      // For regular quizzes, redirect back to quiz page
       router.push(`/quiz/${topicId}`)
-    }, 3000)
+    } catch (error) {
+      console.error('Error completing quiz:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save quiz results. Please try again.",
+        variant: "destructive"
+      })
+    }
   }
 
   const handleLoadingComplete = () => {
@@ -240,15 +297,6 @@ export default function QuizPlayClient({ topicId }: QuizPlayClientProps) {
                 body={quizDescription}
                 itemType="assignment"
                 size={56}
-              />
-              
-              {/* Clever Share */}
-              <CleverShareButton
-                topicId={topicId}
-                topicTitle={topic?.topic_title ?? ''}
-                description={quizDescription}
-                size="lg"
-                className="shadow-lg"
               />
             </div>
           )

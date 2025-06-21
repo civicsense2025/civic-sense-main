@@ -9,263 +9,181 @@ export interface NPCPersonality {
   id: string
   name: string
   emoji: string
-  description: string
-  skillLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert'
-  accuracyRange: [number, number] // [min%, max%]
-  responseTimeRange: [number, number] // [min seconds, max seconds]
-  traits: {
-    confidenceLevel: number // 0-1, affects response time variance
-    consistency: number // 0-1, how much accuracy varies
-    specialties: string[] // Categories they're better at
-    weaknesses: string[] // Categories they struggle with
+  skillLevel: 'Beginner' | 'Intermediate' | 'Expert'
+  specialties: string[]
+  weaknesses: string[]
+  responseTimeRange: {
+    easy: { min: number; max: number }
+    medium: { min: number; max: number }
+    hard: { min: number; max: number }
+  }
+  accuracyRates: {
+    easy: number
+    medium: number
+    hard: number
+  }
+  powerUpPreferences: {
+    shield: number
+    sword: number
+    brain: number
   }
   chatMessages: {
-    onJoin: string[]
-    onCorrect: string[]
-    onIncorrect: string[]
     onGameStart: string[]
-    onGameEnd: string[]
+    onCorrectAnswer: string[]
+    onIncorrectAnswer: string[]
+    onWinning: string[]
+    onLosing: string[]
   }
 }
 
 export const NPC_PERSONALITIES: NPCPersonality[] = [
   {
-    id: 'civic_scholar',
-    name: 'Dr. Martinez the Civic Scholar',
+    id: 'professor_sage',
+    name: 'Professor Sage',
     emoji: '👨🏽‍🎓',
-    description: 'A political science PhD who knows theory inside and out but sometimes overthinks simple questions',
-    skillLevel: 'advanced',
-    accuracyRange: [75, 90],
-    responseTimeRange: [8, 15],
-    traits: {
-      confidenceLevel: 0.8,
-      consistency: 0.9,
-      specialties: ['government_structure', 'constitutional_law'],
-      weaknesses: ['current_events', 'local_politics']
+    skillLevel: 'Expert',
+    specialties: ['History', 'Government'],
+    weaknesses: ['Technology', 'Pop Culture'],
+    responseTimeRange: {
+      easy: { min: 3, max: 5 },
+      medium: { min: 5, max: 8 },
+      hard: { min: 8, max: 12 }
+    },
+    accuracyRates: {
+      easy: 0.95,
+      medium: 0.85,
+      hard: 0.75
+    },
+    powerUpPreferences: {
+      shield: 0.2,
+      sword: 0.3,
+      brain: 0.5
     },
     chatMessages: {
-      onJoin: [
-        "Ready to test some civic knowledge! 📚",
-        "Hope everyone studied their Constitution! 🇺🇸",
-        "This should be fun - love a good civics challenge!"
-      ],
-      onCorrect: [
-        "Precisely! That's the correct interpretation 👍",
-        "Excellent! You understand the constitutional framework",
-        "Yes! That's exactly what the founders intended"
-      ],
-      onIncorrect: [
-        "Interesting perspective, but let me clarify...",
-        "That's a common misconception, actually",
-        "Close! But the legal precedent says otherwise"
-      ],
       onGameStart: [
-        "Let's explore the depths of our democratic system! 🏛️",
-        "Time to put our constitutional knowledge to the test!"
+        "Let's test your knowledge!",
+        "Ready to learn something new?",
+        "This should be an interesting challenge!"
       ],
-      onGameEnd: [
-        "Fascinating discussion! Democracy thrives on informed discourse 🎓",
-        "Well played! Knowledge is the foundation of citizenship"
+      onCorrectAnswer: [
+        "Well done! That's correct.",
+        "Excellent reasoning!",
+        "Your understanding is impressive."
+      ],
+      onIncorrectAnswer: [
+        "Not quite, but keep learning!",
+        "That's a common misconception.",
+        "Let's review this concept together."
+      ],
+      onWinning: [
+        "A masterful performance!",
+        "Your knowledge is truly impressive!",
+        "You've earned my respect as a scholar."
+      ],
+      onLosing: [
+        "You've shown great potential!",
+        "Keep studying, you're on the right track!",
+        "I look forward to our next intellectual battle!"
       ]
     }
   },
   {
-    id: 'news_junkie',
-    name: 'Sam the News Junkie',
-    emoji: '👩🏻‍💻',
-    description: 'Follows politics religiously and knows all the latest developments but sometimes mixes up historical details',
-    skillLevel: 'intermediate',
-    accuracyRange: [60, 80],
-    responseTimeRange: [5, 12],
-    traits: {
-      confidenceLevel: 0.9,
-      consistency: 0.7,
-      specialties: ['current_events', 'elections', 'media_literacy'],
-      weaknesses: ['government_structure', 'historical_context']
+    id: 'councilor_swift',
+    name: 'Councilor Swift',
+    emoji: '👩🏻‍💼',
+    skillLevel: 'Expert',
+    specialties: ['Politics', 'Current Events'],
+    weaknesses: ['History', 'Science'],
+    responseTimeRange: {
+      easy: { min: 2, max: 4 },
+      medium: { min: 4, max: 7 },
+      hard: { min: 7, max: 10 }
+    },
+    accuracyRates: {
+      easy: 0.90,
+      medium: 0.80,
+      hard: 0.70
+    },
+    powerUpPreferences: {
+      shield: 0.3,
+      sword: 0.5,
+      brain: 0.2
     },
     chatMessages: {
-      onJoin: [
-        "Did you see the latest headlines? 📱",
-        "I've been following this story all week!",
-        "Ready to discuss some breaking news!"
-      ],
-      onCorrect: [
-        "Boom! Nailed it 💯",
-        "Yes! I just read about this on Twitter",
-        "Exactly! That was trending yesterday"
-      ],
-      onIncorrect: [
-        "Ugh, I thought I knew that one 😤",
-        "Wait, really? I need to fact-check that",
-        "Darn, that's not what I saw in my news feed"
-      ],
       onGameStart: [
-        "Time to see who's been paying attention! 📺",
-        "Hope everyone's been reading the news!"
+        "Time to put your knowledge to the test!",
+        "Let's see how well you understand current affairs.",
+        "Ready for a political challenge?"
       ],
-      onGameEnd: [
-        "Good game! Now I have more to research 🔍",
-        "That was enlightening - adding to my reading list!"
+      onCorrectAnswer: [
+        "That's exactly right!",
+        "You clearly understand this topic.",
+        "Excellent analysis!"
+      ],
+      onIncorrectAnswer: [
+        "Consider the broader context.",
+        "Let's look at this from another angle.",
+        "Think about the implications."
+      ],
+      onWinning: [
+        "You've demonstrated remarkable insight!",
+        "Your political acumen is impressive!",
+        "You'd make a fine policy advisor!"
+      ],
+      onLosing: [
+        "Keep engaging with current events!",
+        "Your perspective is valuable!",
+        "Looking forward to our next debate!"
       ]
     }
   },
   {
-    id: 'curious_newcomer',
-    name: 'Riley the Curious Newcomer',
+    id: 'alex_learner',
+    name: 'Alex',
     emoji: '🧑🏾‍🎓',
-    description: 'New to politics but eager to learn and asks great questions. Makes relatable mistakes but shows genuine enthusiasm',
-    skillLevel: 'beginner',
-    accuracyRange: [35, 60],
-    responseTimeRange: [10, 20],
-    traits: {
-      confidenceLevel: 0.4,
-      consistency: 0.6,
-      specialties: ['basic_civics'],
-      weaknesses: ['government_structure', 'current_events', 'policy_analysis', 'legal_concepts']
+    skillLevel: 'Beginner',
+    specialties: ['Social Media', 'Pop Culture'],
+    weaknesses: ['Economics', 'Foreign Policy'],
+    responseTimeRange: {
+      easy: { min: 5, max: 8 },
+      medium: { min: 8, max: 12 },
+      hard: { min: 12, max: 15 }
+    },
+    accuracyRates: {
+      easy: 0.75,
+      medium: 0.60,
+      hard: 0.45
+    },
+    powerUpPreferences: {
+      shield: 0.4,
+      sword: 0.2,
+      brain: 0.4
     },
     chatMessages: {
-      onJoin: [
-        "Hi everyone! Still learning about all this stuff 👋",
-        "Hope it's okay that I'm pretty new to politics!",
-        "Excited to learn from everyone here!"
-      ],
-      onCorrect: [
-        "Oh wow, I actually got that right! 😊",
-        "Yes! I've been studying that!",
-        "Phew, glad I remembered that one"
-      ],
-      onIncorrect: [
-        "Oops! Still learning 😅",
-        "Ah, I'll have to remember that",
-        "Thanks for teaching me something new!"
-      ],
       onGameStart: [
-        "Good luck everyone! I'll do my best 🤞",
-        "Here goes nothing! Let's learn together"
+        "Let's learn together!",
+        "I'm excited to challenge myself!",
+        "This should be fun!"
       ],
-      onGameEnd: [
-        "Wow, I learned so much! Thanks everyone 🙏",
-        "This was really educational - I feel smarter already!"
-      ]
-    }
-  },
-  {
-    id: 'young_voter',
-    name: 'Alex the Young Voter',
-    emoji: '👨🏻‍💼',
-    description: 'First-time voter trying to understand the system. Knows social media politics but struggles with institutional details',
-    skillLevel: 'beginner',
-    accuracyRange: [40, 65],
-    responseTimeRange: [8, 18],
-    traits: {
-      confidenceLevel: 0.5,
-      consistency: 0.7,
-      specialties: ['elections', 'social_media'],
-      weaknesses: ['government_structure', 'historical_context', 'legal_concepts']
-    },
-    chatMessages: {
-      onJoin: [
-        "First time doing this - pretty nervous! 😅",
-        "Hope this helps me understand voting better",
-        "Ready to learn how government actually works!"
+      onCorrectAnswer: [
+        "Nice one! I learned something new!",
+        "That makes sense!",
+        "Thanks for explaining that!"
       ],
-      onCorrect: [
-        "Sweet! That TikTok was actually right 📱",
-        "Yes! Finally understanding this stuff",
-        "Okay that makes sense now"
+      onIncorrectAnswer: [
+        "Oops, still learning!",
+        "That's trickier than I thought!",
+        "Can you explain why?"
       ],
-      onIncorrect: [
-        "Ugh, why is this so complicated? 😩",
-        "I really need to pay more attention in class",
-        "Government is harder than I thought"
+      onWinning: [
+        "Wow, I'm getting better at this!",
+        "Practice makes perfect!",
+        "Thanks for helping me learn!"
       ],
-      onGameStart: [
-        "Okay let's do this! Time to adult 💪",
-        "Hope I don't embarrass myself too much"
-      ],
-      onGameEnd: [
-        "That was actually pretty cool! 🎉",
-        "I feel more ready to vote now"
-      ]
-    }
-  },
-  {
-    id: 'local_activist',
-    name: 'Jordan the Local Activist',
-    emoji: '👩🏿‍🏫',
-    description: 'Passionate about community issues and local politics. Strong on grassroots organizing but still learning federal systems',
-    skillLevel: 'intermediate',
-    accuracyRange: [55, 75],
-    responseTimeRange: [6, 14],
-    traits: {
-      confidenceLevel: 0.7,
-      consistency: 0.8,
-      specialties: ['local_politics', 'civil_rights', 'community_organizing'],
-      weaknesses: ['federal_structure', 'international_relations']
-    },
-    chatMessages: {
-      onJoin: [
-        "Ready to fight for democracy! ✊",
-        "Hope we're covering local issues too",
-        "Let's make sure everyone's voice is heard!"
-      ],
-      onCorrect: [
-        "Yes! That's how we create change! 💪",
-        "Exactly! Knowledge is power",
-        "That's what I've been saying at town halls!"
-      ],
-      onIncorrect: [
-        "Hmm, I need to research that more 🤔",
-        "Good to know - I'll share this with my group",
-        "That's not what I learned at the community meeting"
-      ],
-      onGameStart: [
-        "Time to show what grassroots knowledge looks like! 🌱",
-        "Let's learn together and organize better!"
-      ],
-      onGameEnd: [
-        "Great discussion! Now let's take action! ⚡",
-        "This is why civic education matters!"
-      ]
-    }
-  },
-  {
-    id: 'retired_teacher',
-    name: 'Ms. Chen the Civics Teacher',
-    emoji: '👩🏻‍🏫',
-    description: 'Retired high school civics teacher with solid foundational knowledge. Great at explaining concepts but sometimes outdated on current events',
-    skillLevel: 'intermediate',
-    accuracyRange: [65, 85],
-    responseTimeRange: [7, 13],
-    traits: {
-      confidenceLevel: 0.8,
-      consistency: 0.9,
-      specialties: ['basic_civics', 'government_structure', 'education'],
-      weaknesses: ['current_events', 'social_media', 'modern_politics']
-    },
-    chatMessages: {
-      onJoin: [
-        "Hello class! Ready for today's lesson? 📚",
-        "I hope everyone did their homework!",
-        "Time to put your civics knowledge to the test"
-      ],
-      onCorrect: [
-        "Excellent work! Gold star! ⭐",
-        "That's exactly right - well done!",
-        "Perfect! You've been paying attention"
-      ],
-      onIncorrect: [
-        "Not quite, but good effort. Let me explain...",
-        "Close! Remember what we learned about...",
-        "That's a teachable moment right there"
-      ],
-      onGameStart: [
-        "Class is in session! Let's begin 🔔",
-        "Remember, there are no stupid questions!"
-      ],
-      onGameEnd: [
-        "Class dismissed! Great participation everyone 🎓",
-        "I'm proud of how much you've all learned"
+      onLosing: [
+        "You really know your stuff!",
+        "I'll catch up to you soon!",
+        "Let's play again sometime!"
       ]
     }
   }
@@ -413,4 +331,55 @@ export function createBalancedNPCMix(count: number): NPCPersonality[] {
   }
   
   return selected
+}
+
+export function getRandomNPC(difficulty: 'easy' | 'medium' | 'hard'): NPCPersonality {
+  const filteredNPCs = NPC_PERSONALITIES.filter(npc => {
+    switch (difficulty) {
+      case 'easy':
+        return npc.skillLevel === 'Beginner'
+      case 'medium':
+        return npc.skillLevel === 'Intermediate'
+      case 'hard':
+        return npc.skillLevel === 'Expert'
+      default:
+        return true
+    }
+  })
+
+  const randomIndex = Math.floor(Math.random() * filteredNPCs.length)
+  return filteredNPCs[randomIndex]
+}
+
+export function calculateNPCResponse(
+  npc: NPCPersonality,
+  questionDifficulty: 'easy' | 'medium' | 'hard',
+  correctAnswer: string,
+  timeLimit: number
+): {
+  answer: string,
+  responseTime: number,
+  usedPowerUp: string | null
+} {
+  // Determine if NPC gets it right based on accuracy rates
+  const accuracy = npc.traits.accuracy[questionDifficulty]
+  const isCorrect = Math.random() <= accuracy
+
+  // Calculate response time within NPC's range and time limit
+  const minTime = npc.traits.responseTime.min
+  const maxTime = Math.min(npc.traits.responseTime.max, timeLimit * 1000)
+  const responseTime = Math.floor(Math.random() * (maxTime - minTime) + minTime)
+
+  // Determine power-up usage
+  let usedPowerUp: string | null = null
+  if (Math.random() <= npc.traits.powerUpUsage.frequency) {
+    const preferredPowerUps = npc.traits.powerUpUsage.preferred
+    usedPowerUp = preferredPowerUps[Math.floor(Math.random() * preferredPowerUps.length)]
+  }
+
+  return {
+    answer: isCorrect ? correctAnswer : 'wrong_answer',
+    responseTime,
+    usedPowerUp
+  }
 } 

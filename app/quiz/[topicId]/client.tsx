@@ -19,27 +19,51 @@ import { useIsMobile } from "@/hooks/useIsMobile"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { cn } from "@/lib/utils"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
-import { CleverShareButton } from "@/components/integrations/clever-share-button"
 import { QuizNavigation } from "@/components/quiz/quiz-navigation"
 import { UserRole } from "@/lib/types/user"
+import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS, createModeConfig } from '@/lib/types/quiz'
+import { toast } from '@/components/ui/use-toast'
+import { Badge } from "@/components/ui/badge"
 
 interface QuizPageProps {
   params: {
     topicId: string
   }
+  searchParams?: {
+    mode?: QuizGameMode
+    podId?: string
+    classroomCourseId?: string
+    classroomAssignmentId?: string
+    cleverSectionId?: string
+    cleverAssignmentId?: string
+  }
 }
 
-export default function QuizPageClient({ params }: QuizPageProps) {
+interface QuizResults {
+  score: number
+  correctAnswers: number
+  totalQuestions: number
+  timeSpentSeconds: number
+  answers: Array<{
+    questionId: number
+    answer: string
+    isCorrect: boolean
+    timeSpent: number
+  }>
+}
+
+export default function QuizPageClient({ params, searchParams = {} }: QuizPageProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const urlSearchParams = useSearchParams()
   const { user } = useAuth()
-  const { hasFeatureAccess, isPremium, isPro } = usePremium()
+  const { isPremium, hasFeatureAccess } = usePremium()
   const isMobile = useIsMobile()
+  const { recordQuizAttempt, quizAttemptsToday, hasCompletedTopic, GUEST_DAILY_QUIZ_LIMIT, getRemainingAttempts } = useGuestAccess()
   const [topic, setTopic] = useState<TopicMetadata | null>(null)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showTopicInfo, setShowTopicInfo] = useState(true)
+
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [showPremiumGate, setShowPremiumGate] = useState(false)
   const [completedToday, setCompletedToday] = useState(0)
@@ -47,19 +71,32 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   const [showContinueLoading, setShowContinueLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [selectedMode, setSelectedMode] = useState<QuizGameMode>(searchParams?.mode as QuizGameMode || 'standard')
+  const [modeConfig, setModeConfig] = useState(() => FULL_MODE_CONFIGS[searchParams?.mode as QuizGameMode || 'standard'])
   
-  // Use our new guest access hook
-  const { 
-    quizAttemptsToday, 
-    recordQuizAttempt, 
-    hasReachedDailyLimit, 
-    getRemainingAttempts,
-    GUEST_DAILY_QUIZ_LIMIT,
-    hasCompletedTopic,
-    isInitialized
-  } = useGuestAccess()
-
   const PREMIUM_QUIZ_LIMIT = 20 // Premium users get more quizzes per day
+
+  // Helper function to check if user is in guest mode
+  const isGuestMode = !user
+
+  // Calculate remaining quizzes for guest users
+  const remainingQuizzes = user ? PREMIUM_QUIZ_LIMIT : Math.max(0, GUEST_DAILY_QUIZ_LIMIT - quizAttemptsToday)
+  
+  // Check if quiz is partially completed (placeholder - would need to check localStorage or database)
+  const isPartiallyCompleted = false
+
+  // Helper function to convert database questions to QuizQuestion format
+  const convertToQuizQuestion = (dbQuestion: any): QuizQuestion => {
+    const converted = { ...dbQuestion }
+    
+    // Convert question_type to type if needed
+    if (dbQuestion.question_type && !dbQuestion.type) {
+      converted.type = dbQuestion.question_type
+      delete converted.question_type
+    }
+    
+    return converted as QuizQuestion
+  }
 
   // Set mounted state to avoid hydration mismatches
   useEffect(() => {
@@ -114,7 +151,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           questionsCount: questionsData?.length || 0,
           questionsPreview: questionsData?.slice(0, 2).map(q => ({
             question_number: q.question_number,
-            question_type: q.question_type,
+            question_type: (q as any).question_type || (q as QuizQuestion).type,
             hasQuestion: !!q.question,
             hasCorrectAnswer: !!q.correct_answer,
             sourcesCount: q.sources?.length || 0
@@ -132,13 +169,15 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         
         // Always load questions for sources display and better UX
         if (questionsData && questionsData.length > 0) {
-          setQuestions(questionsData)
+          // Convert database format to QuizQuestion format
+          const convertedQuestions = questionsData.map(convertToQuizQuestion)
+          setQuestions(convertedQuestions)
           console.log(`✅ QuizPageClient: Pre-loaded ${questionsData.length} questions for topic ${params.topicId}`)
           
           // Log detailed question analysis
-          const questionAnalysis = questionsData.map(q => ({
+          const questionAnalysis = convertedQuestions.map(q => ({
             number: q.question_number,
-            type: q.question_type,
+            type: q.type,
             hasQuestion: !!q.question,
             hasAnswer: !!q.correct_answer,
             sourcesCount: q.sources?.length || 0,
@@ -157,7 +196,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         }
         
         // Check if this is a continue request
-        const shouldContinue = searchParams.get('continue') === 'true'
+        const shouldContinue = urlSearchParams?.get('continue') === 'true'
         
         if (shouldContinue) {
           // Show the witty loading screen for 3 seconds
@@ -190,33 +229,84 @@ export default function QuizPageClient({ params }: QuizPageProps) {
     return () => {
       isCancelled = true
     }
-  }, [params.topicId, topic, searchParams, user, recordQuizAttempt])
+  }, [params.topicId, topic, urlSearchParams, user, recordQuizAttempt])
 
   const handleStartQuiz = async () => {
-    // Breaking and featured content is always free to access
-    const isBreakingOrFeatured = topic?.is_breaking || topic?.is_featured
-    
-    // Check quiz limits based on user tier (but skip for breaking/featured content)
-    if (!isBreakingOrFeatured && !user && hasReachedDailyLimit()) {
-      setIsAuthDialogOpen(true)
-      return
-    }
-    
-    // Premium users should have unlimited access (but skip for breaking/featured content)
-    if (!isBreakingOrFeatured && user && !isPremium && !isPro && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT) {
-      setShowPremiumGate(true)
-      return
+    if (!user && !isGuestMode) {
+      setIsAuthDialogOpen(true);
+      return;
     }
 
-    // Check if questions are already loaded (they should be from useEffect)
-    if (!questions || questions.length === 0) {
-      setError("No questions available for this quiz")
-      return
+    // Check premium access for NPC battle mode
+    if (selectedMode === 'npc_battle' && !isPremium) {
+      setShowPremiumGate(true);
+      return;
     }
 
-    // Redirect to the dedicated play page
-    router.push(`/quiz/${params.topicId}/play`)
-  }
+    try {
+      const response = await fetch('/api/quiz/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topicId: params.topicId,
+          gameMode: selectedMode,
+          modeSettings: modeConfig,
+          platform: 'web',
+          // Add pod-related data
+          podId: searchParams?.podId,
+          classroomCourseId: searchParams?.classroomCourseId,
+          classroomAssignmentId: searchParams?.classroomAssignmentId,
+          cleverSectionId: searchParams?.cleverSectionId,
+          cleverAssignmentId: searchParams?.cleverAssignmentId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start quiz');
+      }
+
+      const data = await response.json();
+      
+      // If this is a pod/LMS quiz, include those params in the URL
+      const playParams = new URLSearchParams({
+        attempt: data.attemptId
+      });
+      
+      if (searchParams?.podId) {
+        playParams.set('podId', searchParams.podId);
+      }
+      
+      if (searchParams?.classroomCourseId) {
+        playParams.set('classroomCourseId', searchParams.classroomCourseId);
+        if (searchParams.classroomAssignmentId) {
+          playParams.set('classroomAssignmentId', searchParams.classroomAssignmentId);
+        }
+      }
+      
+      if (searchParams?.cleverSectionId) {
+        playParams.set('cleverSectionId', searchParams.cleverSectionId);
+        if (searchParams.cleverAssignmentId) {
+          playParams.set('cleverAssignmentId', searchParams.cleverAssignmentId);
+        }
+      }
+
+      // For NPC battle mode, redirect to the battle page
+      if (selectedMode === 'npc_battle') {
+        router.push(`/quiz/${params.topicId}/battle?${playParams.toString()}`);
+      } else {
+        router.push(`/quiz/${params.topicId}/play?${playParams.toString()}`);
+      }
+    } catch (error) {
+      console.error('Error starting quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start the quiz. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleQuizComplete = () => {
     // Handle quiz completion (update localStorage, etc.)
@@ -232,11 +322,20 @@ export default function QuizPageClient({ params }: QuizPageProps) {
       setCompletedToday(completedTopics.length)
     }
 
-    // Update streak logic could go here
-    // For now, we'll just redirect back to home after a delay
-    setTimeout(() => {
-      router.push("/")
-    }, 3000)
+    // If this was a pod/LMS quiz, redirect to the pod page
+    if (searchParams?.podId) {
+      router.push(`/pods/${searchParams.podId}`)
+      return
+    }
+
+    // If this was a classroom quiz, show success message
+    if (searchParams?.classroomCourseId) {
+      // Could redirect back to classroom or show success
+      return
+    }
+
+    // Navigate to results page
+    router.push(`/results`)
   }
 
   const handleBackToHome = () => {
@@ -247,157 +346,262 @@ export default function QuizPageClient({ params }: QuizPageProps) {
     setIsAuthDialogOpen(false)
   }
 
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false)
-    setShowTopicInfo(false)
-  }
-
   const handleContinueLoadingComplete = () => {
     setShowContinueLoading(false)
+    setShowLoadingScreen(true)
   }
 
-  // Update the guest access display
-  const remainingQuizzes = user && (isPremium || isPro) 
-    ? undefined // Premium users don't have a limit to display
-    : getRemainingAttempts()
-  
-  // Check if the user has partially completed this quiz
-  const [isPartiallyCompleted, setIsPartiallyCompleted] = useState(false)
-  
-  useEffect(() => {
-    if (isMounted && params.topicId) {
-      // Check local storage for partially completed quizzes
-      const partialQuizzes = localStorage.getItem("civicAppPartialQuizzes")
-      if (partialQuizzes) {
-        try {
-          const partialQuizzesObj = JSON.parse(partialQuizzes)
-          setIsPartiallyCompleted(!!partialQuizzesObj[params.topicId])
-        } catch (error) {
-          console.warn('Error parsing partial quizzes:', error)
-        }
+  // Show loading state while component is mounting or data is loading
+  if (!isMounted || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 mb-8"></div>
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Mode selector component
+  const renderModeSelector = () => {
+    const availableModes: QuizGameMode[] = ['standard', 'practice']
+    
+    // Add NPC battle mode if user has premium access
+    if (isPremium || hasFeatureAccess('spaced_repetition')) {
+      availableModes.push('npc_battle')
+    }
+
+    // Mode display information (since QuizModeConfig doesn't have these)
+    const modeDisplayInfo: Record<QuizGameMode, { name: string; description: string; features: string[] }> = {
+      standard: {
+        name: 'Standard Quiz',
+        description: 'Regular quiz with scoring and time limits',
+        features: ['Timed questions', 'Score tracking']
+      },
+      practice: {
+        name: 'Practice Mode',
+        description: 'Learn at your own pace with hints and explanations',
+        features: ['No time limit', 'Hints available', 'Detailed explanations']
+      },
+      assessment: {
+        name: 'Assessment Mode',
+        description: 'Formal assessment with strict timing',
+        features: ['Timed assessment', 'No hints', 'Formal scoring']
+      },
+      npc_battle: {
+        name: 'NPC Battle',
+        description: 'Challenge AI opponents with different personalities',
+        features: ['AI opponents', 'Power-ups', 'Competitive scoring']
+      },
+      civics_test_quick: {
+        name: 'Quick Civics Test',
+        description: 'Short civics assessment',
+        features: ['Quick test', 'Focused questions']
+      },
+      civics_test_full: {
+        name: 'Full Civics Test',
+        description: 'Comprehensive civics assessment',
+        features: ['Full assessment', 'All topics']
+      },
+      classic_quiz: {
+        name: 'Classic Quiz',
+        description: 'Traditional multiplayer quiz',
+        features: ['Multiplayer', 'Classic format']
+      },
+      speed_round: {
+        name: 'Speed Round',
+        description: 'Fast-paced competitive mode',
+        features: ['Speed focus', 'Quick answers']
+      },
+      matching_challenge: {
+        name: 'Matching Challenge',
+        description: 'Team-based matching game',
+        features: ['Team play', 'Matching format']
+      },
+      debate_mode: {
+        name: 'Debate Mode',
+        description: 'Discussion-based learning',
+        features: ['Discussion', 'Evidence required']
       }
     }
-  }, [isMounted, params.topicId])
 
-  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Loading quiz...</p>
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-3">Choose Game Mode</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {availableModes.map((mode) => {
+            const config = FULL_MODE_CONFIGS[mode]
+            const displayInfo = modeDisplayInfo[mode]
+            const isSelected = selectedMode === mode
+            const isPremiumMode = mode === 'npc_battle'
+            const hasAccess = !isPremiumMode || isPremium || hasFeatureAccess('spaced_repetition')
+            
+            return (
+              <button
+                key={mode}
+                onClick={() => {
+                  if (hasAccess) {
+                    setSelectedMode(mode)
+                    setModeConfig(config)
+                  } else {
+                    setShowPremiumGate(true)
+                  }
+                }}
+                className={cn(
+                  "p-4 rounded-lg border-2 text-left transition-all",
+                  isSelected 
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                    : "border-gray-200 hover:border-gray-300",
+                  !hasAccess && "opacity-50 cursor-not-allowed"
+                )}
+                disabled={!hasAccess}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">{displayInfo.name}</h4>
+                  {isPremiumMode && (
+                    <Badge variant="secondary" className="text-xs">
+                      Premium
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {displayInfo.description}
+                </p>
+                {displayInfo.features && (
+                  <ul className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                    {displayInfo.features.slice(0, 2).map((feature: string, idx: number) => (
+                      <li key={idx}>• {feature}</li>
+                    ))}
+                  </ul>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
     )
   }
 
-  if (error || !topic) {
+  // Show error state
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md mx-auto p-8">
-          <h1 className="text-2xl font-bold mb-4">Quiz Not Found</h1>
-          <p className="text-muted-foreground mb-6">{error || "The requested quiz could not be found."}</p>
-          <Button onClick={handleBackToHome} className="rounded-xl">
-            <Home className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+            <p className="text-gray-600 mb-8">{error}</p>
+            <Button onClick={handleBackToHome}>
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Main app header */}
-      <Header 
-        onSignInClick={() => setIsAuthDialogOpen(true)}
-        showTopBar={true}
-        showMainHeader={true}
+  // Show continue loading screen
+  if (showContinueLoading) {
+    return (
+      <QuizLoadingScreen 
+        onComplete={handleContinueLoadingComplete}
       />
-      
-      <div className={cn(
-        "max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8",
-        // Add bottom padding on mobile to account for fixed navigation
-        isMobile && "pb-24"
-      )}>
-        {showContinueLoading ? (
-          <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
-        ) : showLoadingScreen ? (
-          <QuizLoadingScreen onComplete={handleLoadingComplete} />
-        ) : (
-          <TopicInfo
+    )
+  }
+
+  // Show quiz loading screen when starting quiz
+  if (showLoadingScreen) {
+    return (
+      <QuizLoadingScreen 
+        onComplete={() => setShowLoadingScreen(false)}
+      />
+    )
+  }
+
+  // Main quiz page content
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        {/* Navigation */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={handleBackToHome}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Topics
+          </Button>
+          
+          <QuizNavigation 
+            topicId={params.topicId}
+            showKeyboardHints={false}
+            compact={true}
+            enableKeyboardShortcuts={false}
+          />
+        </div>
+
+        {/* Topic Information */}
+        {topic && (
+          <TopicInfo 
             topicData={topic}
+            questions={questions}
             onStartQuiz={handleStartQuiz}
             requireAuth={!user && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT}
             onAuthRequired={() => setIsAuthDialogOpen(true)}
             remainingQuizzes={remainingQuizzes}
             isPartiallyCompleted={isPartiallyCompleted}
             hasCompletedTopic={hasCompletedTopic(params.topicId)}
-            questions={questions}
+            selectedMode={selectedMode}
+            onModeChange={setSelectedMode}
+            modeConfig={modeConfig}
+            onModeConfigChange={setModeConfig}
+            isPremium={isPremium}
           />
         )}
 
-        {/* Auth Dialog */}
-        <AuthDialog
-          isOpen={isAuthDialogOpen}
-          onClose={() => setIsAuthDialogOpen(false)}
-          onAuthSuccess={handleAuthSuccess}
-          initialMode='sign-up'
-        />
+        {/* Mode Selector */}
+        {renderModeSelector()}
 
-        {/* Premium Gate */}
-        <PremiumGate
-          feature="advanced_analytics"
-          isOpen={showPremiumGate}
-          onClose={() => setShowPremiumGate(false)}
-          title="Unlimited Daily Quizzes"
-          description="Upgrade to Premium for unlimited daily quizzes and advanced learning features"
-        />
-
-        {/* Share to LMS (Google Classroom & Clever) - for educators only */}
-        {(() => {
-          const role = (user?.user_metadata?.role || '') as string
-          const allowed = [
-            UserRole.Teacher,
-            UserRole.Parent,
-            UserRole.Admin,
-            UserRole.Organizer
-          ] as string[]
-          if (!role || !allowed.includes(role)) return null
-
-          const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`
-          const quizTitle = `CivicSense Quiz: ${topic?.topic_title ?? ''}`
-          const quizDescription = topic?.description || "Bite-sized civic knowledge from CivicSense"
-          
-          return (
-            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-              {/* Google Classroom Share */}
-              <ClassroomShareButton
-                url={shareUrl}
-                title={quizTitle}
-                body={quizDescription}
-                itemType="assignment"
-                size={56}
-              />
-              
-              {/* Clever Share */}
-              <CleverShareButton
-                topicId={params.topicId}
-                topicTitle={topic?.topic_title ?? ''}
-                description={quizDescription}
-                size="lg"
-                className="shadow-lg"
-              />
-            </div>
-          )
-        })()}
+        {/* Classroom Integration */}
+        {searchParams?.classroomCourseId && topic && (
+          <div className="mt-6">
+            <ClassroomShareButton
+              url={`${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${params.topicId}`}
+              title={topic.topic_title}
+              body={topic.description || "Civic education quiz from CivicSense"}
+              itemType="assignment"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Quiz Navigation - Moved outside main content area */}
-      <QuizNavigation 
-        topicId={params.topicId}
-        showKeyboardHints={false} // No keyboard hints on landing page
-        compact={true} // Use compact mode on topic info screen
-        enableKeyboardShortcuts={false} // Disable keyboard shortcuts on landing page
+      {/* Auth Dialog */}
+      <AuthDialog
+        isOpen={isAuthDialogOpen}
+        onClose={() => setIsAuthDialogOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+        initialMode="sign-up"
+      />
+
+      {/* Premium Gate */}
+      <PremiumGate
+        isOpen={showPremiumGate}
+        onClose={() => setShowPremiumGate(false)}
+        feature="advanced_analytics"
+        title="Premium Feature"
+        description="Upgrade to access NPC Battle Mode and challenge AI opponents."
       />
     </div>
   )

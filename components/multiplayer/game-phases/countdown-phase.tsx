@@ -1,35 +1,62 @@
-import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
-import type { GamePhaseProps } from "../types/game-types"
+"use client"
 
-interface CountdownPhaseProps extends Pick<GamePhaseProps, 'currentQuestion' | 'countdown'> {}
+import { useState, useEffect } from "react"
+import { NPCPersonality } from "@/lib/multiplayer-npcs"
+import { Card } from "@/components/ui/card"
+import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 
-export function CountdownPhase({
-  currentQuestion,
-  countdown
-}: CountdownPhaseProps) {
+export interface CountdownPhaseProps {
+  opponent: NPCPersonality
+  onComplete: () => void
+}
+
+export function CountdownPhase({ opponent, onComplete }: CountdownPhaseProps) {
+  const [countdown, setCountdown] = useState(3)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          onComplete()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [onComplete])
+
   return (
-    <div className="text-center space-y-8">
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Get Ready!
-        </h2>
-        <div className="text-8xl font-bold text-blue-600 animate-pulse">
-          {countdown}
-        </div>
-        <p className="text-lg text-slate-600 dark:text-slate-400">
-          Game starting in {countdown} second{countdown !== 1 ? 's' : ''}...
-        </p>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <BattlePlayerPanel
+          name="You"
+          score={0}
+          emoji="👤"
+        />
+        <div className="text-2xl font-bold">VS</div>
+        <BattlePlayerPanel
+          name={opponent.name}
+          score={0}
+          emoji={opponent.emoji}
+          isNPC
+        />
       </div>
 
-      {/* Preview of first question */}
-      {currentQuestion && (
-        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border opacity-75">
-          <h3 className="text-lg font-semibold mb-4">First Question Preview:</h3>
-          <p className="text-slate-700 dark:text-slate-300">
-            <GlossaryLinkText text={currentQuestion.question || ''} />
+      <div className="flex flex-col items-center justify-center min-h-[300px] space-y-8">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-bold">Battle Starting</h2>
+          <p className="text-xl text-muted-foreground">
+            {opponent.chatMessages.onGameStart[Math.floor(Math.random() * opponent.chatMessages.onGameStart.length)]}
           </p>
         </div>
-      )}
+
+        <div className="text-7xl font-bold animate-pulse">
+          {countdown}
+        </div>
+      </div>
     </div>
   )
 } 

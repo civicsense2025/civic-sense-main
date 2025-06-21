@@ -372,26 +372,39 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
 
   // Save individual question response to database
   const saveQuestionResponse = async (questionId: string, answer: string, isCorrect: boolean, timeSpent: number) => {
-    if (!testState) return
+    if (!testState || !userId) return // Skip saving if no user ID
     
     try {
-      const response: QuestionResponse = {
-        questionId,
-        questionIndex: testState.currentQuestionIndex,
-        userAnswer: answer,
-        isCorrect,
-        timeSpentSeconds: Math.round(timeSpent / 1000),
-        hintUsed: false
-      }
+      // Save to unified quiz_attempts table
+      const { data, error } = await supabase
+        .from('user_quiz_attempts')
+        .upsert({
+          user_id: userId,
+          topic_id: `civics_test_${testState.testType}`,
+          total_questions: testState.questions.length,
+          correct_answers: Object.values(testState.answers).filter((_, idx) => 
+            testState.questions[idx].correctAnswer === _
+          ).length,
+          score: Math.round((Object.values(testState.answers).filter((_, idx) => 
+            testState.questions[idx].correctAnswer === _
+          ).length / testState.questions.length) * 100),
+          time_spent_seconds: Math.round((Date.now() - testState.startTime) / 1000),
+          started_at: new Date(testState.startTime).toISOString(),
+          is_completed: false,
+          // Optional LMS fields
+          clever_assignment_id: null,
+          clever_section_id: null,
+          grade_posted_to_lms: false
+        }, {
+          onConflict: 'user_id,topic_id',
+          ignoreDuplicates: false
+        })
+
+      if (error) throw error
       
-      const result = await enhancedProgressManager.saveQuestionResponse(testState.sessionId, response)
-      if (result.success) {
-        console.log('✅ Saved question response to database:', questionId)
-      } else {
-        console.warn('⚠️ Failed to save question response:', result.error)
-      }
+      console.log('✅ Saved attempt to unified quiz_attempts table:', testState.sessionId)
     } catch (error) {
-      console.warn('⚠️ Exception saving question response:', error)
+      console.warn('⚠️ Failed to save to quiz_attempts:', error)
     }
   }
 

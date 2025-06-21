@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Enhanced Clever integration with full roster sync and grade passback
- * Implements the complete integration following the same patterns as Google Classroom
+ * Clever integration with SSO and roster sync capabilities
+ * Implements core authentication and roster management functionality
  */
 export class CleverIntegration {
   private supabase
@@ -111,7 +111,6 @@ export class CleverIntegration {
             course_id: courseRecord.id,
             pod_id: podId,
             sync_enabled: true,
-            grade_passback_enabled: true,
             created_by: section.data.teacher
           })
 
@@ -262,207 +261,6 @@ export class CleverIntegration {
     } catch (error) {
       console.error('Error getting teachers:', error)
       throw error
-    }
-  }
-
-  /**
-   * Create assignment tracking in Clever (Note: Clever doesn't have assignment creation API like Classroom)
-   * Instead, we track external assignments that link to CivicSense
-   */
-  async createQuizAssignment(
-    sectionId: string, 
-    topicId: string, 
-    quizTitle: string, 
-    quizDescription: string,
-    dueDate?: Date,
-    maxPoints = 100
-  ): Promise<string> {
-    const linkUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/quiz/${topicId}?clever=${sectionId}`
-    
-    // Since Clever doesn't have assignment creation API, we create internal tracking
-    const { data: assignment, error } = await this.supabase
-      .from('school.assignments')
-      .insert({
-        section_id: sectionId,
-        topic_id: topicId,
-        title: `CivicSense Quiz: ${quizTitle}`,
-        description: quizDescription,
-        due_date: dueDate?.toISOString(),
-        max_points: maxPoints,
-        external_url: linkUrl,
-        lms_platform: 'clever'
-      })
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to create assignment: ${error.message}`)
-    }
-
-    return assignment.id
-  }
-
-  /**
-   * Record grade for Clever integration (since Clever doesn't have gradebook API)
-   * We track grades internally and provide reports for teachers
-   */
-  async recordGrade(
-    sectionId: string, 
-    assignmentId: string, 
-    studentId: string, 
-    grade: number,
-    attemptId?: string
-  ): Promise<void> {
-    // Record grade in our system for Clever integration
-    const { error: gradeError } = await this.supabase
-      .from('school.student_grades')
-      .upsert({
-        section_id: sectionId,
-        assignment_id: assignmentId,
-        student_id: studentId,
-        grade: grade,
-        max_points: 100,
-        recorded_at: new Date().toISOString(),
-        lms_platform: 'clever'
-      }, {
-        onConflict: 'section_id,assignment_id,student_id'
-      })
-
-    if (gradeError) {
-      console.error('Failed to record grade for Clever', gradeError.message)
-      
-      // Update attempt record with error
-      if (attemptId) {
-        await this.supabase
-          .from('user_quiz_attempts')
-          .update({
-            grade_posted_to_lms: false,
-            grade_post_error: gradeError.message,
-            grade_post_timestamp: new Date().toISOString()
-          })
-          .eq('id', attemptId)
-      }
-      
-      throw new Error('Failed to record grade for Clever')
-    }
-
-    // Update attempt record with success
-    if (attemptId) {
-      await this.supabase
-        .from('user_quiz_attempts')
-        .update({
-          clever_section_id: sectionId,
-          clever_assignment_id: assignmentId,
-          grade_posted_to_lms: true,
-          grade_post_timestamp: new Date().toISOString(),
-          grade_post_error: null
-        })
-        .eq('id', attemptId)
-    }
-  }
-
-  /**
-   * Batch process pending grade recordings for a pod
-   */
-  async processPendingGrades(podId: string): Promise<{ processed: number, errors: number }> {
-    // Get pod's clever section ID
-    const { data: pod } = await this.supabase
-      .from('learning_pods')
-      .select('clever_section_id')
-      .eq('id', podId)
-      .single()
-
-    if (!pod?.clever_section_id) {
-      throw new Error('Pod not linked to Clever section')
-    }
-
-    // Get pending grade recordings
-    const { data: pendingAttempts } = await this.supabase
-      .from('user_quiz_attempts')
-      .select(`
-        id,
-        user_id,
-        percentage_score,
-        clever_assignment_id,
-        clever_user_mapping!inner(clever_user_id)
-      `)
-      .eq('clever_section_id', pod.clever_section_id)
-      .eq('grade_posted_to_lms', false)
-      .not('clever_assignment_id', 'is', null)
-
-    let processed = 0
-    let errors = 0
-
-    for (const attempt of pendingAttempts || []) {
-      try {
-        const attemptAny = attempt as any
-        await this.recordGrade(
-          pod.clever_section_id,
-          attemptAny.clever_assignment_id,
-          attemptAny.clever_user_mapping.clever_user_id,
-          attemptAny.percentage_score,
-          attemptAny.id
-        )
-        processed++
-      } catch (error) {
-        console.error('Failed to record grade for attempt', attempt.id, error)
-        errors++
-      }
-    }
-
-    return { processed, errors }
-  }
-
-  /**
-   * Generate grade report for teachers (since Clever doesn't have gradebook)
-   */
-  async generateGradeReport(sectionId: string): Promise<any> {
-    // Get grades data
-    const { data: grades, error: gradesError } = await this.supabase
-      .from('school.student_grades')
-      .select('*')
-      .eq('section_id', sectionId)
-      .eq('lms_platform', 'clever')
-
-    if (gradesError) {
-      console.error('Error fetching grades:', gradesError)
-      throw new Error(`Failed to fetch grades: ${gradesError.message}`)
-    }
-
-    const gradesArray = grades || []
-
-    // Get assignments data separately if needed
-    const assignmentIds = [...new Set(gradesArray.map((g: any) => g.assignment_id).filter(Boolean))]
-    const { data: assignments } = await this.supabase
-      .from('school.assignments')
-      .select('id, title, max_points')
-      .in('id', assignmentIds)
-
-    // Get student data separately if needed  
-    const studentIds = [...new Set(gradesArray.map((g: any) => g.student_id).filter(Boolean))]
-    const { data: students } = await this.supabase
-      .from('school.enrollments')
-      .select('user_id, first_name, last_name, email')
-      .in('user_id', studentIds)
-
-    // Combine the data
-    const enrichedGrades = gradesArray.map((grade: any) => ({
-      ...grade,
-      assignment: assignments?.find((a: any) => a.id === grade.assignment_id),
-      student: students?.find((s: any) => s.user_id === grade.student_id)
-    }))
-
-    return {
-      sectionId,
-      generatedAt: new Date().toISOString(),
-      grades: enrichedGrades,
-      summary: {
-        totalAssignments: assignmentIds.length,
-        totalStudents: studentIds.length,
-        averageGrade: gradesArray.length > 0 
-          ? gradesArray.reduce((sum, g) => sum + (g.grade || 0), 0) / gradesArray.length 
-          : 0
-      }
     }
   }
 
