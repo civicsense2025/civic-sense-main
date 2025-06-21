@@ -174,6 +174,7 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
   const handleComplete = async (responses: SurveyResponse[]) => {
     setIsSubmitting(true)
     try {
+      // Submit survey responses
       const response = await fetch(`/api/surveys/${survey.id}/responses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -185,15 +186,35 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
         })
       })
 
-      if (response.ok) {
-        setIsCompleted(true)
-        toast({
-          title: "Survey completed!",
-          description: "Thank you for your responses. Your input helps improve CivicSense."
-        })
-      } else {
+      if (!response.ok) {
         throw new Error('Failed to submit survey')
       }
+
+      const responseData = await response.json()
+
+      // Create completion record if user is authenticated
+      if (user && responseData.response_id) {
+        const completionResponse = await fetch('/api/user/survey-completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            surveyId: survey.id,
+            responseId: responseData.response_id
+          })
+        })
+
+        if (!completionResponse.ok) {
+          console.error('Failed to create completion record:', await completionResponse.text())
+          throw new Error('Failed to create completion record')
+        }
+      }
+
+      // Only mark as completed after both operations succeed
+      setIsCompleted(true)
+      toast({
+        title: "Survey completed!",
+        description: "Thank you for your responses. Your input helps improve CivicSense."
+      })
     } catch (error) {
       console.error('Error submitting survey:', error)
       toast({

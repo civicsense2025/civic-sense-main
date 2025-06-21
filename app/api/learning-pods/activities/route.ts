@@ -10,72 +10,90 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get recent activities for pods where the user is a member
-    const { data: activities, error } = await supabase
-      .from('pod_activities')
-      .select(`
-        id,
-        activity_type,
-        description,
-        created_at,
-        user_name,
-        pod_id
-      `)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const activityType = searchParams.get('type')
+    const podId = searchParams.get('podId')
+    
+    // Calculate offset
+    const offset = (page - 1) * limit
 
-    if (error) {
-      console.error('Error fetching activities:', error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch activities',
-        activities: []
-      }, { status: 500 })
-    }
-
-    // Get user's pod IDs to filter activities
-    const { data: userPods } = await supabase
+    // Get user's pod memberships first
+    const { data: memberships, error: membershipError } = await supabase
       .from('pod_memberships')
       .select('pod_id')
       .eq('user_id', user.id)
       .eq('membership_status', 'active')
 
-    const userPodIds = userPods?.map(p => p.pod_id) || []
+    if (membershipError) {
+      console.error('Error fetching memberships:', membershipError)
+      return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 })
+    }
 
-    // Filter activities to only those from user's pods
-    const userActivities = (activities || []).filter((activity: any) => 
-      userPodIds.includes(activity.pod_id)
-    )
+    const podIds = memberships?.map(m => m.pod_id) || []
 
-    // Get pod names for the activities
-    const { data: podNames } = await supabase
-      .from('learning_pods')
-      .select('id, pod_name')
-      .in('id', userPodIds)
+    if (podIds.length === 0) {
+      return NextResponse.json({ activities: [], total: 0 })
+    }
 
-    const podNameMap = podNames?.reduce((acc: Record<string, string>, pod: any) => {
-      acc[pod.id] = pod.pod_name
-      return acc
-    }, {}) || {}
+    // Build query
+    let query = supabase
+      .from('pod_activities')
+      .select(`
+        id,
+        activity_type,
+        activity_data,
+        created_at,
+        pod_id,
+        user_id,
+        learning_pods!inner (
+          pod_name
+        ),
+        profiles!inner (
+          full_name
+        )
+      `, { count: 'exact' })
+      .in('pod_id', podIds)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
-    // Format the response
-    const formattedActivities = userActivities.map((activity: any) => ({
+    // Add filters if provided
+    if (activityType) {
+      query = query.eq('activity_type', activityType)
+    }
+    if (podId) {
+      query = query.eq('pod_id', podId)
+    }
+
+    const { data: activities, error: activitiesError, count } = await query
+
+    if (activitiesError) {
+      console.error('Error fetching activities:', activitiesError)
+      return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 })
+    }
+
+    // Transform the data to match the frontend interface
+    const transformedActivities = activities?.map(activity => ({
       id: activity.id,
-      pod_name: podNameMap[activity.pod_id] || 'Unknown Pod',
+      pod_id: activity.pod_id,
+      pod_name: activity.learning_pods.pod_name,
       activity_type: activity.activity_type,
-      description: activity.description,
-      created_at: activity.created_at,
-      user_name: activity.user_name
-    }))
+      user_name: activity.profiles.full_name,
+      activity_data: activity.activity_data,
+      created_at: activity.created_at
+    })) || []
 
     return NextResponse.json({ 
-      success: true, 
-      activities: formattedActivities 
+      activities: transformedActivities,
+      total: count || 0,
+      page,
+      limit
     })
+
   } catch (error) {
-    console.error('Error in activities API:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      activities: []
-    }, { status: 500 })
+    console.error('Error in activities route:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

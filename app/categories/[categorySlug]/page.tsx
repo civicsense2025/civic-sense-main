@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CategoryPageHeader } from "@/components/category-page-header"
-import { BookOpen, Target, Clock, CheckCircle } from "lucide-react"
+import { BookOpen, Target, Clock, CheckCircle, Star, ChevronRight } from "lucide-react"
 
 interface CategoryPageProps {
   params: Promise<{
@@ -46,6 +46,7 @@ interface CategoryData {
   category: Category
   skills: Skill[]
   topics: Topic[]
+  evergreenTopics: Topic[]
 }
 
 // Convert slug back to category name for lookup
@@ -89,10 +90,36 @@ async function getCategoryData(categorySlug: string): Promise<CategoryData | nul
   // Get topics that include this category
   const topics = await topicOperations.getByCategory(category.name)
 
+  // Get evergreen topics for this category
+  const { data: evergreenData, error: evergreenError } = await supabase
+    .from('question_topics')
+    .select('topic_id, topic_title, description, emoji, date, categories')
+    .eq('is_active', true)
+    .is('date', null) // Evergreen topics have no date
+    .order('topic_title', { ascending: true })
+
+  let evergreenTopics: Topic[] = []
+  if (!evergreenError && evergreenData) {
+    // Filter evergreen topics that include this category
+    evergreenTopics = evergreenData
+      .filter(topic => {
+        const categories = topic.categories
+        if (Array.isArray(categories)) {
+          return (categories as string[]).includes(category.name)
+        }
+        return false
+      })
+      .map(topic => ({
+        ...topic,
+        categories: Array.isArray(topic.categories) ? topic.categories as string[] : []
+      }))
+  }
+
   return {
     category,
     skills: skills || [],
-    topics: topics.map(topic => topicOperations.toTopicAppFormat(topic)) || []
+    topics: topics.map(topic => topicOperations.toTopicAppFormat(topic)) || [],
+    evergreenTopics
   }
 }
 
@@ -122,7 +149,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound()
   }
 
-  const { category, skills, topics } = categoryData
+  const { category, skills, topics, evergreenTopics } = categoryData
   const coreSkills = skills.filter(skill => skill.is_core_skill === true)
   const additionalSkills = skills.filter(skill => skill.is_core_skill !== true)
 
@@ -157,12 +184,79 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         categoryEmoji={category.emoji}
         categoryDescription={category.description}
         skillCount={skills.length}
-        topicCount={topics.length}
+        topicCount={topics.length + evergreenTopics.length}
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-8">
         {/* Content sections */}
         <div className="space-y-12">
+          {/* Core Civic Knowledge Section for this category */}
+          {evergreenTopics.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-6">
+                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-2xl font-medium text-slate-900 dark:text-white">
+                  Core Civic Knowledge
+                </h2>
+                <Badge variant="outline" className="font-light">
+                  {evergreenTopics.length} topics
+                </Badge>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-light mb-6">
+                Essential knowledge in {category.name} that remains relevant regardless of current events.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {evergreenTopics.map(topic => (
+                  <Link key={topic.topic_id} href={`/quiz/${topic.topic_id}`}>
+                    <Card className="border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors group cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                            <span className="text-lg">{topic.emoji}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {topic.topic_title}
+                            </CardTitle>
+                            <div className="flex items-center gap-1 mt-2">
+                              <Badge variant="secondary" className="text-xs font-light bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                Core Knowledge
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4">
+                          {topic.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap gap-1">
+                            {topic.categories.slice(0, 2).map(cat => (
+                              <Badge key={cat} variant="outline" className="text-xs font-light">
+                                {cat}
+                              </Badge>
+                            ))}
+                            {topic.categories.length > 2 && (
+                              <Badge variant="outline" className="text-xs font-light">
+                                +{topic.categories.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                            <CheckCircle className="w-3 h-3" />
+                            <span className="font-medium">Study</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Core Skills Section */}
           {coreSkills.length > 0 && (
             <section>
@@ -178,28 +272,45 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {coreSkills.map(skill => (
-                  <Card key={skill.id} className="border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
+                  <Link key={skill.id} href={`/skills/${skill.skill_slug}`}>
+                    <Card className="border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors group cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                              <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <Star className="w-4 h-4 text-yellow-500" />
+                          </div>
+                          <Badge 
+                            className={`font-light ${getDifficultyColor(skill.difficulty_level)}`}
+                            variant="secondary"
+                          >
+                            {getDifficultyLabel(skill.difficulty_level)}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                           {skill.skill_name}
                         </CardTitle>
-                        <Badge 
-                          className={`font-light ${getDifficultyColor(skill.difficulty_level)}`}
-                          variant="secondary"
-                        >
-                          {getDifficultyLabel(skill.difficulty_level)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    {skill.description && (
-                      <CardContent className="pt-0">
-                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                          {skill.description}
-                        </p>
-                      </CardContent>
-                    )}
-                  </Card>
+                      </CardHeader>
+                      {skill.description && (
+                        <CardContent className="pt-0">
+                          <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4">
+                            {skill.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs font-light border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400">
+                              Core Skill
+                            </Badge>
+                            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                              <span className="font-medium">Learn more</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -220,34 +331,45 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {additionalSkills.map(skill => (
-                  <Card key={skill.id} className="border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
+                  <Link key={skill.id} href={`/skills/${skill.skill_slug}`}>
+                    <Card className="border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors group cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                            <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          </div>
+                          <Badge 
+                            className={`font-light ${getDifficultyColor(skill.difficulty_level)}`}
+                            variant="secondary"
+                          >
+                            {getDifficultyLabel(skill.difficulty_level)}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                           {skill.skill_name}
                         </CardTitle>
-                        <Badge 
-                          className={`font-light ${getDifficultyColor(skill.difficulty_level)}`}
-                          variant="secondary"
-                        >
-                          {getDifficultyLabel(skill.difficulty_level)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    {skill.description && (
-                      <CardContent className="pt-0">
-                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                          {skill.description}
-                        </p>
-                      </CardContent>
-                    )}
-                  </Card>
+                      </CardHeader>
+                      {skill.description && (
+                        <CardContent className="pt-0">
+                          <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-4">
+                            {skill.description}
+                          </p>
+                          <div className="flex items-center justify-end">
+                            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                              <span className="font-medium">Learn more</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </section>
           )}
 
-          {/* Topics Section */}
+          {/* Practice Topics Section */}
           {topics.length > 0 && (
             <section>
               <div className="flex items-center gap-3 mb-6">
@@ -312,7 +434,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           )}
 
           {/* Empty state */}
-          {skills.length === 0 && topics.length === 0 && (
+          {skills.length === 0 && topics.length === 0 && evergreenTopics.length === 0 && (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">{category.emoji}</div>
               <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">

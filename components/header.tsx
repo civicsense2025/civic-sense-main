@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X, BarChart3, Settings, Crown, Users, Brain, LogOut } from "lucide-react"
+import { Menu, X, BarChart3, Settings, Crown, Users, Brain, LogOut, Target, BookOpen, Zap } from "lucide-react"
 import { Button } from "./ui/button"
 import { UserMenu } from "./auth/user-menu"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
@@ -14,6 +14,7 @@ import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "./learning-pods-stats"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { GlobalSearch } from "@/components/global-search"
 
 interface HeaderProps {
   onSignInClick?: () => void
@@ -81,15 +82,17 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
   return (
     <div className="px-3 py-4 space-y-4 max-w-7xl mx-auto">
       {/* Main CTA at top of mobile menu */}
-      <div className="pb-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
-        <Link 
-          href="/civics-test"
-          onClick={onClose}
-          className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-4 px-4 rounded-md text-base font-semibold transition-colors"
-        >
-          Take A Civics Test
-        </Link>
-      </div>
+      {!user && (
+        <div className="pb-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
+          <Link 
+            href="/civics-test"
+            onClick={onClose}
+            className="block w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-center py-4 px-4 rounded-md text-base font-semibold transition-colors"
+          >
+            Take A Civics Test
+          </Link>
+        </div>
+      )}
 
       {/* User Info Section - only show if authenticated */}
       {user && (
@@ -200,18 +203,6 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
           </Link>
         )}
 
-        {/* Learning Pods link - feature flagged */}
-        {arePodsEnabled() && (
-          <Link 
-            href="/pods"
-            onClick={onClose}
-            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-          >
-            <Users className="w-5 h-5" />
-            <span>Learning Pods</span>
-          </Link>
-        )}
-
         <Link 
           href="/donate"
           onClick={onClose}
@@ -225,6 +216,33 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
       {/* User Menu Items */}
       {user ? (
         <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+          <Link 
+            href="/civics-test"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors py-2 px-3 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/20"
+          >
+            <Target className="w-5 h-5" />
+            <span>Take A Civics Test</span>
+          </Link>
+
+          <Link 
+            href="/quiz"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Quiz</span>
+          </Link>
+
+          <Link 
+            href="/progress"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <Zap className="w-5 h-5" />
+            <span>Progress</span>
+          </Link>
+
           <Link 
             href="/dashboard"
             onClick={onClose}
@@ -314,12 +332,12 @@ export function Header({
       {/* Unified header with integrated utility bar */}
       {showTopBar && showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
-            {/* Left side - Site branding with inline alpha badge */}
-            <div className="flex items-center">
+          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
+            {/* Left side - Site branding with inline alpha badge and navigation */}
+            <div className="flex items-center gap-8">
               <Link 
                 href="/" 
-                className="group hover:opacity-80 transition-opacity"
+                className="group hover:opacity-80 transition-opacity flex items-center"
               >
                 <div className="flex items-center gap-2">
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -330,42 +348,55 @@ export function Header({
                   </span>
                 </div>
               </Link>
-            </div>
 
-            {/* Center - Empty space for cleaner header */}
-            <div className="hidden sm:flex flex-1 justify-center">
-              {/* Clean header without page titles */}
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center space-x-8">
+                <Link 
+                  href="/multiplayer" 
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                >
+                  Multiplayer
+                </Link>
+                <Link 
+                  href="/categories" 
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                >
+                  Learn
+                </Link>
+              </nav>
             </div>
 
             {/* Right side - Essential controls */}
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-4">
-                {/* Learning Pods Quick Actions - feature flagged */}
-                {arePodsEnabled() && <LearningPodsQuickActions variant="header" />}
+                {/* Global Search */}
+                <GlobalSearch />
                 
                 {/* Login button for non-authenticated users */}
                 {!user && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onSignInClick}
-                    className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                  >
-                    Log In
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSignInClick}
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    >
+                      Log In
+                    </Button>
+                    
+                    {/* Main CTA - Take A Civics Test */}
+                    <Button
+                      asChild
+                      size="default"
+                      className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-6 text-base font-semibold h-10"
+                    >
+                      <Link href="/civics-test">
+                        Take A Civics Test
+                      </Link>
+                    </Button>
+                  </>
                 )}
-                
-                {/* Main CTA - Take A Civics Test */}
-                <Button
-                  asChild
-                  size="default"
-                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-6 py-3 text-base font-semibold"
-                >
-                  <Link href="/civics-test">
-                    Take A Civics Test
-                  </Link>
-                </Button>
                 
                 {/* User menu for authenticated users */}
                 {user && <UserMenu isAdmin={isAdmin} />}
@@ -399,7 +430,7 @@ export function Header({
           {/* Menu content */}
           <div className="sm:hidden fixed top-0 left-0 right-0 z-[95] bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-xl max-h-screen overflow-y-auto">
             {/* Header in mobile menu */}
-            <div className="flex items-center justify-between px-3 py-3 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between px-3 h-16 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2">
                 <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   CivicSense
@@ -432,7 +463,7 @@ export function Header({
       {/* Fallback for individual components */}
       {showTopBar && !showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
             <div className="flex items-center space-x-3 sm:space-x-5">
               <UserMenu isAdmin={isAdmin} />
             </div>
@@ -442,10 +473,10 @@ export function Header({
 
       {!showTopBar && showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
             <Link 
               href="/" 
-              className="group hover:opacity-80 transition-opacity"
+              className="group hover:opacity-80 transition-opacity flex items-center"
             >
               <div className="flex items-center gap-2">
                 <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">

@@ -1,8 +1,14 @@
-import { Metadata } from 'next'
+"use client"
+
+import { useState, useEffect } from 'react'
 import { notFound } from 'next/navigation'
 import { Header } from '@/components/header'
-import { PodManagementDashboard } from '@/components/learning-pods/pod-management-dashboard'
+import { Card } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Users, BarChart3, Star, School, Activity, Settings, Shield } from 'lucide-react'
 import { arePodsEnabled } from '@/lib/feature-flags'
+import { createClient } from '@/lib/supabase/client'
 
 interface PodPageProps {
   params: {
@@ -10,26 +16,75 @@ interface PodPageProps {
   }
 }
 
-export async function generateMetadata({ params }: PodPageProps): Promise<Metadata> {
-  // In a real app, you'd fetch the pod name from the database
-  const { podId } = await params
-  return {
-    title: `Pod Details | CivicSense`,
-    description: 'Manage your learning pod members, settings, and activities.',
-  }
+interface PodDetails {
+  pod_name: string
+  pod_emoji: string | undefined
+  pod_motto: string | undefined
 }
 
-export default async function PodPage({ params }: PodPageProps) {
+export default function PodPage({ params }: PodPageProps) {
+  const [podDetails, setPodDetails] = useState<PodDetails | null>(null)
+  const [activeTab, setActiveTab] = useState('members')
+  const [isLoading, setIsLoading] = useState(true)
+  const [timeRange, setTimeRange] = useState('30')
+  const [memberFilter, setMemberFilter] = useState('all')
+  const [activityFilter, setActivityFilter] = useState('all')
+
   // Feature flag check - hide pods in production
   if (!arePodsEnabled()) {
     notFound()
   }
 
-  const { podId } = await params
-
   // Basic validation
-  if (!podId) {
+  if (!params?.podId) {
     notFound()
+  }
+
+  useEffect(() => {
+    async function loadPodDetails() {
+      try {
+        const supabase = createClient()
+        const { data: pod, error } = await supabase
+          .from('learning_pods')
+          .select('pod_name, pod_emoji, pod_motto')
+          .eq('id', params.podId)
+          .single()
+
+        if (error || !pod) {
+          notFound()
+        }
+
+        // Convert null values to undefined to match our interface
+        setPodDetails({
+          pod_name: pod.pod_name,
+          pod_emoji: pod.pod_emoji || undefined,
+          pod_motto: pod.pod_motto || undefined
+        })
+      } catch (error) {
+        console.error('Failed to load pod details:', error)
+        notFound()
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadPodDetails()
+  }, [params.podId])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <Header />
+        <main className="w-full">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+            <div className="space-y-4 animate-pulse">
+              <div className="h-12 w-96 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+              <div className="h-6 w-72 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -38,7 +93,258 @@ export default async function PodPage({ params }: PodPageProps) {
       
       <main className="w-full">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
-          <PodManagementDashboard podId={podId} />
+          {/* Pod Header */}
+          <div className="mb-12">
+            <h1 className="text-4xl font-light text-slate-900 dark:text-white mb-3 flex items-center gap-3">
+              <span className="text-3xl">{podDetails?.pod_emoji || '👥'}</span>
+              {podDetails?.pod_name}
+            </h1>
+            {podDetails?.pod_motto && (
+              <p className="text-xl text-slate-500 dark:text-slate-400 font-light">
+                {podDetails.pod_motto}
+              </p>
+            )}
+          </div>
+
+          {/* Pod Navigation */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 gap-1">
+              <TabsTrigger value="members" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Members
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="challenges" className="flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                Challenges
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Pod Settings
+              </TabsTrigger>
+              <TabsTrigger value="safety" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Safety
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab Content */}
+            <TabsContent value="members">
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-2">Pod Members</h2>
+                  <p className="text-slate-500 dark:text-slate-400">Manage your pod's members and roles</p>
+                </div>
+
+                {/* Member management content will go here */}
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                  Member management interface coming soon
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <div className="space-y-8">
+                {/* Analytics Overview */}
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-2">Pod Analytics</h2>
+                    <p className="text-slate-500 dark:text-slate-400">Performance insights and member engagement data</p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <Select value={timeRange} onValueChange={setTimeRange}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Time range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">Last 7 days</SelectItem>
+                        <SelectItem value="30">Last 30 days</SelectItem>
+                        <SelectItem value="90">Last 90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={memberFilter} onValueChange={setMemberFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Filter by role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admins</SelectItem>
+                        <SelectItem value="parent">Parents</SelectItem>
+                        <SelectItem value="teacher">Teachers</SelectItem>
+                        <SelectItem value="student">Students</SelectItem>
+                        <SelectItem value="child">Children</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={activityFilter} onValueChange={setActivityFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Members</SelectItem>
+                        <SelectItem value="active">Active Only</SelectItem>
+                        <SelectItem value="inactive">Inactive Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Overview Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="p-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Members</h3>
+                          <Users className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 dark:text-white">1</p>
+                        <p className="text-sm text-green-600">1 active (100.0%)</p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Questions Answered</h3>
+                          <BarChart3 className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 dark:text-white">0</p>
+                        <p className="text-sm text-slate-500">0.0% accuracy</p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Time Spent</h3>
+                          <Activity className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 dark:text-white">0m</p>
+                        <p className="text-sm text-slate-500">0m avg/member</p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Engagement Score</h3>
+                          <School className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 dark:text-white">1.0</p>
+                        <p className="text-sm text-green-600">↑ avg daily active</p>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Activity Section */}
+                  <section className="space-y-6 pt-12">
+                    <div>
+                      <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Daily Activity</h3>
+                      <p className="text-slate-500 dark:text-slate-400">Track member engagement and participation over time</p>
+                    </div>
+                    
+                    <Card className="p-6">
+                      <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+                        Activity chart will be rendered here
+                      </div>
+                    </Card>
+                  </section>
+
+                  {/* Member Performance Section */}
+                  <section className="space-y-6 pt-12">
+                    <div>
+                      <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Member Performance</h3>
+                      <p className="text-slate-500 dark:text-slate-400">Individual member progress and achievements</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="p-6">
+                        <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Role Distribution</h4>
+                        <div className="h-[250px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+                          Role distribution chart will be rendered here
+                        </div>
+                      </Card>
+
+                      <Card className="p-6">
+                        <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Activity Heatmap</h4>
+                        <div className="h-[250px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+                          Activity heatmap will be rendered here
+                        </div>
+                      </Card>
+                    </div>
+                  </section>
+
+                  {/* Learning Progress Section */}
+                  <section className="space-y-6 pt-12">
+                    <div>
+                      <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Learning Progress</h3>
+                      <p className="text-slate-500 dark:text-slate-400">Topic mastery and difficulty progression</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="p-6">
+                        <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Topic Performance</h4>
+                        <div className="h-[250px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+                          Topic performance chart will be rendered here
+                        </div>
+                      </Card>
+
+                      <Card className="p-6">
+                        <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Difficulty Distribution</h4>
+                        <div className="h-[250px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+                          Difficulty distribution chart will be rendered here
+                        </div>
+                      </Card>
+                    </div>
+                  </section>
+
+                  {/* Insights Section */}
+                  <section className="space-y-6 pt-12">
+                    <div>
+                      <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">Key Insights</h3>
+                      <p className="text-slate-500 dark:text-slate-400">AI-powered insights and recommendations</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-medium text-slate-900 dark:text-white">Engagement Patterns</h4>
+                          <p className="text-slate-600 dark:text-slate-300">
+                            No significant patterns detected yet. Continue using the platform to generate insights.
+                          </p>
+                        </div>
+                      </Card>
+
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-medium text-slate-900 dark:text-white">Learning Recommendations</h4>
+                          <p className="text-slate-600 dark:text-slate-300">
+                            Start by completing some activities to receive personalized recommendations.
+                          </p>
+                        </div>
+                      </Card>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="challenges">
+              {/* Challenges content */}
+            </TabsContent>
+
+            <TabsContent value="settings">
+              {/* Settings content */}
+            </TabsContent>
+
+            <TabsContent value="safety">
+              {/* Safety content */}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

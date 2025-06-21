@@ -72,6 +72,8 @@ export function AggregatePodAnalytics() {
   const [analytics, setAnalytics] = useState<AggregateAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('30')
+  const [podTypeFilter, setPodTypeFilter] = useState('all')
+  const [activityFilter, setActivityFilter] = useState('all')
 
   const loadAggregateAnalytics = async () => {
     if (!user) {
@@ -83,7 +85,7 @@ export function AggregatePodAnalytics() {
     try {
       setIsLoading(true)
       
-      const response = await fetch(`/api/learning-pods/aggregate-analytics?days=${timeRange}`)
+      const response = await fetch(`/api/learning-pods/aggregate-analytics?days=${timeRange}&podType=${podTypeFilter}&activity=${activityFilter}`)
       
       if (!response.ok) {
         setAnalytics(null)
@@ -114,11 +116,9 @@ export function AggregatePodAnalytics() {
     }
   }
 
-
-
   useEffect(() => {
     loadAggregateAnalytics()
-  }, [timeRange])
+  }, [timeRange, podTypeFilter, activityFilter])
 
   const formatTime = (minutes: number) => {
     if (minutes < 60) return `${minutes}m`
@@ -264,15 +264,43 @@ export function AggregatePodAnalytics() {
         <p className="text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
           Aggregate insights across all your learning pods and communities
         </p>
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4 flex-wrap">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-40 border-0 bg-slate-100 dark:bg-slate-800 h-10">
-              <SelectValue />
+              <SelectValue placeholder="Time range" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7">Last 7 days</SelectItem>
               <SelectItem value="30">Last 30 days</SelectItem>
               <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={podTypeFilter} onValueChange={setPodTypeFilter}>
+            <SelectTrigger className="w-40 border-0 bg-slate-100 dark:bg-slate-800 h-10">
+              <SelectValue placeholder="Pod type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="family">Family Pods</SelectItem>
+              <SelectItem value="friends">Friend Groups</SelectItem>
+              <SelectItem value="classroom">Classrooms</SelectItem>
+              <SelectItem value="study_group">Study Groups</SelectItem>
+              <SelectItem value="campaign">Campaign Groups</SelectItem>
+              <SelectItem value="organization">Organizations</SelectItem>
+              <SelectItem value="book_club">Book Clubs</SelectItem>
+              <SelectItem value="debate_team">Debate Teams</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={activityFilter} onValueChange={setActivityFilter}>
+            <SelectTrigger className="w-40 border-0 bg-slate-100 dark:bg-slate-800 h-10">
+              <SelectValue placeholder="Activity status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Pods</SelectItem>
+              <SelectItem value="active">Active Pods</SelectItem>
+              <SelectItem value="inactive">Inactive Pods</SelectItem>
             </SelectContent>
           </Select>
         </div>

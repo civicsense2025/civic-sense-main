@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users, Brain } from "lucide-react"
+import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users, Brain, Target, BookOpen, Zap } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
@@ -189,6 +189,48 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
 
         {/* Menu Items */}
         <div className="py-2 px-2">
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/civics-test" 
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all duration-200 rounded-lg text-primary group"
+            >
+              <Target className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Take A Civics Test</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/quiz" 
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
+            >
+              <BookOpen className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Quiz</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/progress" 
+              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
+            >
+              <Zap className="w-4 h-4 group-hover:scale-105 transition-transform" />
+              <span className="font-medium">Progress</span>
+            </Link>
+          </DropdownMenuItem>
+
+          {arePodsEnabled() && (
+            <DropdownMenuItem asChild>
+              <Link 
+                href="/pods" 
+                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
+              >
+                <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
+                <span className="font-medium">Learning Pods</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem asChild>
             <Link 
               href="/dashboard" 

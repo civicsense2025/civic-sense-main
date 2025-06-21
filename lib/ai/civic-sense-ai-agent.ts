@@ -269,15 +269,15 @@ export abstract class CivicSenseAIAgent {
       console.log(`   Iteration ${iteration}/${maxIterations}`)
 
       // Step 1: Initial quality assessment
-      let qualityScore = await this.qualityGate.assessContent(currentContent)
+      let qualityScore = await this.qualityGate.assessContentQuality(currentContent)
       
       // Step 2: Enforce uncomfortable truth requirement
-      if (!qualityScore.uncomfortable_truth_detected) {
+      if (!qualityScore.has_uncomfortable_truth) {
         console.log('   🔥 Adding uncomfortable truth...')
         qualityGatesFailed.push('uncomfortable_truth')
         currentContent = await this.enforceUncomfortableTruth(currentContent, context)
-        qualityScore = await this.qualityGate.assessContent(currentContent)
-        if (qualityScore.uncomfortable_truth_detected) {
+        qualityScore = await this.qualityGate.assessContentQuality(currentContent)
+        if (qualityScore.has_uncomfortable_truth) {
           qualityGatesPassed.push('uncomfortable_truth')
         }
       } else {
@@ -289,7 +289,7 @@ export abstract class CivicSenseAIAgent {
         console.log('   💰 Enhancing power dynamics analysis...')
         qualityGatesFailed.push('power_dynamics')
         currentContent = await this.addPowerDynamicsAnalysis(currentContent, context)
-        qualityScore = await this.qualityGate.assessContent(currentContent)
+        qualityScore = await this.qualityGate.assessContentQuality(currentContent)
         if (qualityScore.power_dynamics_score >= this.config.qualityThresholds.minimumPowerDynamicsScore) {
           qualityGatesPassed.push('power_dynamics')
         }
@@ -302,7 +302,7 @@ export abstract class CivicSenseAIAgent {
         console.log('   🎯 Adding civic action steps...')
         qualityGatesFailed.push('civic_actions')
         currentContent = await this.ensureActionableSteps(currentContent, context)
-        qualityScore = await this.qualityGate.assessContent(currentContent)
+        qualityScore = await this.qualityGate.assessContentQuality(currentContent)
         if (qualityScore.action_steps_count >= this.config.contentRequirements.minimumActionSteps) {
           qualityGatesPassed.push('civic_actions')
         }
@@ -329,11 +329,11 @@ export abstract class CivicSenseAIAgent {
     }
 
     const sourceUrls = factCheckResults
-      .flatMap(fc => fc.supportingEvidence)
-      .map(evidence => evidence.url)
+      .flatMap(fc => fc.sources)
+      .map(source => source.url)
 
     // Step 7: Final quality check
-    const finalQualityScore = await this.qualityGate.assessContent(currentContent)
+    const finalQualityScore = await this.qualityGate.assessContentQuality(currentContent)
     
     // Step 8: Generate warnings and recommendations
     const warningFlags = this.generateWarningFlags(finalQualityScore, factCheckResults)
@@ -428,7 +428,7 @@ export abstract class CivicSenseAIAgent {
       qualityScore.power_dynamics_score >= this.config.qualityThresholds.minimumPowerDynamicsScore &&
       qualityScore.civic_engagement_score >= this.config.qualityThresholds.minimumCivicEngagementScore &&
       qualityScore.accuracy_score >= this.config.qualityThresholds.minimumAccuracyScore &&
-      qualityScore.uncomfortable_truth_detected &&
+      qualityScore.has_uncomfortable_truth &&
       qualityScore.action_steps_count >= this.config.contentRequirements.minimumActionSteps &&
       qualityScore.primary_sources_count >= this.config.contentRequirements.minimumPrimarySources
     )
@@ -443,7 +443,7 @@ export abstract class CivicSenseAIAgent {
   ): string[] {
     const flags: string[] = []
 
-    if (!qualityScore.uncomfortable_truth_detected) {
+    if (!qualityScore.has_uncomfortable_truth) {
       flags.push('🚨 NO UNCOMFORTABLE TRUTH - Required for CivicSense brand')
     }
 
@@ -459,13 +459,15 @@ export abstract class CivicSenseAIAgent {
       flags.push('📊 WEAK SOURCE VERIFICATION - Need more authoritative sources')
     }
 
-    const unverifiedClaims = factCheckResults.filter(fc => !fc.isVerified && fc.confidence < 60)
+    const unverifiedClaims = factCheckResults.filter(fc => 
+      fc.verification_status === 'unverified' && fc.confidence_score < 60
+    )
     if (unverifiedClaims.length > 0) {
       flags.push(`❌ ${unverifiedClaims.length} UNVERIFIED CLAIMS - May contain misinformation`)
     }
 
     const contradictedClaims = factCheckResults.filter(fc => 
-      fc.contradictingEvidence.length > fc.supportingEvidence.length
+      fc.contradictory_sources && fc.contradictory_sources.length > fc.sources.length
     )
     if (contradictedClaims.length > 0) {
       flags.push(`🔍 ${contradictedClaims.length} CONTRADICTED CLAIMS - Evidence conflicts detected`)
@@ -650,7 +652,7 @@ export class AIQualityGateIntegration {
       validation.criticalIssues.push(`Overall score ${output.qualityScore.overall_score} below minimum 70`)
     }
 
-    if (!output.qualityScore.uncomfortable_truth_detected) {
+    if (!output.qualityScore.has_uncomfortable_truth) {
       validation.criticalIssues.push('No uncomfortable truth detected - Required for CivicSense brand')
     }
 
@@ -698,7 +700,7 @@ export class AIQualityGateIntegration {
       validation.recommendations.push('Strengthen brand voice: be more direct, call lies "lies", name specific actors')
     }
 
-    if (output.factCheckResults.some(fc => !fc.isVerified)) {
+    if (output.factCheckResults.some(fc => fc.verification_status === 'unverified')) {
       validation.recommendations.push('Verify or remove unsubstantiated claims before publication')
     }
 

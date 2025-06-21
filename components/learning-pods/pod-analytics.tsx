@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import React from 'react'
 
 interface PodAnalytics {
   pod: {
@@ -72,12 +73,24 @@ interface PodAnalyticsProps {
   podId: string
 }
 
+interface MemberPerformance {
+  userId: string
+  role: string
+  questionsAttempted: number
+  accuracy: number
+  timeSpent: number
+  bestStreak: number
+  isActive: boolean
+}
+
 export function PodAnalytics({ podId }: PodAnalyticsProps) {
   const { toast } = useToast()
   
   const [analytics, setAnalytics] = useState<PodAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('30')
+  const [memberFilter, setMemberFilter] = useState('all')
+  const [activityFilter, setActivityFilter] = useState('all')
 
   const loadAnalytics = async () => {
     try {
@@ -137,6 +150,26 @@ export function PodAnalytics({ podId }: PodAnalyticsProps) {
     return colorMap[role] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }
 
+  const filteredMemberPerformance = React.useMemo(() => {
+    if (!analytics) return []
+    
+    let filtered: MemberPerformance[] = [...analytics.memberPerformance]
+    
+    // Apply member role filter
+    if (memberFilter !== 'all') {
+      filtered = filtered.filter(member => member.role === memberFilter)
+    }
+    
+    // Apply activity filter
+    if (activityFilter === 'active') {
+      filtered = filtered.filter(member => member.isActive)
+    } else if (activityFilter === 'inactive') {
+      filtered = filtered.filter(member => !member.isActive)
+    }
+    
+    return filtered
+  }, [analytics, memberFilter, activityFilter])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -162,24 +195,51 @@ export function PodAnalytics({ podId }: PodAnalyticsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header with Filters */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">{analytics.pod.name} Analytics</h2>
+          <h2 className="text-2xl font-bold">{analytics?.pod.name} Analytics</h2>
           <p className="text-muted-foreground">
             Performance insights and member engagement data
           </p>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-4">
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={memberFilter} onValueChange={setMemberFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="admin">Admins</SelectItem>
+              <SelectItem value="parent">Parents</SelectItem>
+              <SelectItem value="teacher">Teachers</SelectItem>
+              <SelectItem value="student">Students</SelectItem>
+              <SelectItem value="child">Children</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={activityFilter} onValueChange={setActivityFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Members</SelectItem>
+              <SelectItem value="active">Active Only</SelectItem>
+              <SelectItem value="inactive">Inactive Only</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Overview Cards */}
@@ -309,7 +369,7 @@ export function PodAnalytics({ podId }: PodAnalyticsProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {analytics.memberPerformance.map((member, index) => (
+                {filteredMemberPerformance.map((member: MemberPerformance, index: number) => (
                   <div key={member.userId} className="flex items-center gap-4 p-3 border rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
@@ -352,10 +412,10 @@ export function PodAnalytics({ podId }: PodAnalyticsProps) {
                   </div>
                 ))}
                 
-                {analytics.memberPerformance.length === 0 && (
+                {filteredMemberPerformance.length === 0 && (
                   <div className="text-center py-8">
                     <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No performance data yet</p>
+                    <p className="text-muted-foreground">No members match the selected filters</p>
                   </div>
                 )}
               </div>

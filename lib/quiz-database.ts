@@ -1,5 +1,5 @@
 import { supabase } from "./supabase"
-import type { Database } from "./database.types"
+import type { Database, Json } from "./database.types"
 import type { QuizQuestion } from "./quiz-data"
 import { skillOperations, type Skill } from '@/lib/skill-operations'
 import { toQuestionAppFormat, toTopicAppFormat } from './database'
@@ -1270,6 +1270,80 @@ export const enhancedQuizDatabase = {
     } catch (error) {
       console.error('Error in getQuizAttemptDetails:', error)
       return { attempt: null, userAnswers: [], questions: [] }
+    }
+  },
+
+  /**
+   * Get all topics that a user has played (completed or not)
+   */
+  async getPlayedTopics(userId: string): Promise<Array<{
+    id: string
+    title: string
+    description?: string
+    category?: string
+    emoji?: string
+    date?: string
+  }>> {
+    try {
+      type DbResponse = {
+        topic_id: string;
+        topics: {
+          topic_title: string;
+          description: string;
+          categories: Json;
+          emoji: string;
+          date: string | null;
+        }[];
+      }
+
+      // Get all quiz attempts for the user
+      const { data: attempts, error } = await supabase
+        .from('user_quiz_attempts')
+        .select(`
+          topic_id,
+          topics:question_topics!inner (
+            topic_title,
+            description,
+            categories,
+            emoji,
+            date
+          )
+        `)
+        .eq('user_id', userId)
+      
+      if (error) {
+        console.error('Error getting played topics:', error)
+        return []
+      }
+
+      // Convert to expected format and deduplicate by topic_id
+      const seen = new Set<string>()
+      return (attempts || [])
+        .filter(attempt => {
+          if (!attempt.topic_id || seen.has(attempt.topic_id)) return false
+          seen.add(attempt.topic_id)
+          return true
+        })
+        .map(attempt => {
+          const topic = attempt.topics[0] // Take first topic since it's an array
+          // Handle categories which could be Json (string[] | null)
+          const categories = topic?.categories
+          const firstCategory = Array.isArray(categories) && categories.length > 0 
+            ? String(categories[0])  // Convert to string explicitly
+            : undefined
+          
+          return {
+            id: attempt.topic_id,
+            title: topic?.topic_title || '',
+            description: topic?.description,
+            category: firstCategory,
+            emoji: topic?.emoji,
+            date: topic?.date || undefined
+          }
+        })
+    } catch (error) {
+      console.error('Error in getPlayedTopics:', error)
+      return []
     }
   }
 }

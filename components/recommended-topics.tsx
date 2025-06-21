@@ -64,7 +64,7 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
           
           // Get topics they've played but not completed
           const playedTopics = await enhancedQuizDatabase.getPlayedTopics(userId)
-          const incompleteTopics = playedTopics.filter(topic => !completedSet.has(topic.id))
+          const incompleteTopics = playedTopics.filter((topic: { id: string }) => !completedSet.has(topic.id))
           
           // Add incomplete topics until we have at least 4
           for (const topic of incompleteTopics) {
@@ -73,14 +73,14 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
             if (!finalRecs.some(rec => rec.id === topic.id)) {
               finalRecs.push({
                 id: topic.id,
-                title: topic.title,
+                title: topic.title || '',
                 description: topic.description || 'Continue your learning journey',
                 category: topic.category || 'General',
                 emoji: topic.emoji || '📚',
                 reason: 'Continue where you left off',
                 confidence: 0.9,
-                estimatedMinutes: calculateEstimatedTime(topic),
-                difficulty: topic.difficulty || 'intermediate',
+                estimatedMinutes: 6, // Default value since we can't calculate it without full topic data
+                difficulty: 'intermediate' as const, // Default to intermediate
                 trending: false,
                 matchScore: 0.9
               })

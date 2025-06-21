@@ -16,12 +16,31 @@ interface DonationStatus {
 
 interface GiftLink {
   id: string
-  code: string
-  credits: number
-  used_credits: number
+  link_code: string
+  credits_remaining: number
+  total_credits: number
   created_at: string
   expires_at: string | null
-  is_active: boolean
+  is_active: boolean | null
+  donor_user_id: string
+  access_type: string
+  custom_slug: string | null
+  used_credits: number
+}
+
+// Database schema type
+interface DatabaseGiftLink {
+  id: string
+  link_code: string
+  remaining_credits: number
+  total_credits: number
+  created_at: string | null
+  expires_at: string | null
+  is_active: boolean | null
+  donor_user_id: string
+  access_type: string
+  custom_slug: string | null
+  used_credits: number
 }
 
 export function GiftCreditsDashboard() {
@@ -92,15 +111,27 @@ export function GiftCreditsDashboard() {
   }
 
   const loadGiftLinks = async () => {
+    if (!user?.id) return
+
     try {
       setIsLoading(true)
-      const { data: links } = await supabase
+      const { data: dbLinks } = await supabase
         .from('shareable_gift_links')
         .select('*')
-        .eq('created_by', user?.id)
+        .eq('donor_user_id', user.id)
         .order('created_at', { ascending: false })
 
-      setGiftLinks(links || [])
+      // Transform database response to match our interface
+      const transformedLinks = (dbLinks || []).map((dbLink) => {
+        const link = dbLink as unknown as DatabaseGiftLink
+        return {
+          ...link,
+          created_at: link.created_at || new Date().toISOString(),
+          credits_remaining: link.remaining_credits
+        } satisfies GiftLink
+      })
+
+      setGiftLinks(transformedLinks)
     } catch (error) {
       console.error('Error loading gift links:', error)
       toast({
@@ -122,21 +153,31 @@ export function GiftCreditsDashboard() {
       // Generate unique code
       const code = Math.random().toString(36).substring(2, 10).toUpperCase()
 
-      const { data: newLink, error } = await supabase
+      const { data: dbLink, error } = await supabase
         .from('shareable_gift_links')
         .insert({
-          created_by: user.id,
+          donor_user_id: user.id,
           link_code: code,
-          credits_remaining: 1,
+          remaining_credits: 1,
           total_credits: 1,
-          is_active: true
+          is_active: true,
+          access_type: 'standard'
         })
         .select()
         .single()
 
       if (error) throw error
+      if (!dbLink) throw new Error('No link returned from database')
 
-      setGiftLinks(prev => [newLink, ...prev])
+      // Transform the new link to match our interface
+      const link = dbLink as unknown as DatabaseGiftLink
+      const transformedLink: GiftLink = {
+        ...link,
+        created_at: link.created_at || new Date().toISOString(),
+        credits_remaining: link.remaining_credits
+      }
+
+      setGiftLinks(prev => [transformedLink, ...prev])
       toast({
         title: 'Gift link created',
         description: 'Share the code with someone to give them access'
@@ -230,7 +271,7 @@ export function GiftCreditsDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-mono text-lg text-slate-900 dark:text-white">
-                    {link.code}
+                    {link.link_code}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400 font-light mt-1">
                     Created {new Date(link.created_at).toLocaleDateString()}
@@ -238,9 +279,9 @@ export function GiftCreditsDashboard() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => copyToClipboard(link.code)}
+                  onClick={() => copyToClipboard(link.link_code)}
                 >
-                  {isCopied[link.code] ? 'Copied!' : 'Copy Code'}
+                  {isCopied[link.link_code] ? 'Copied!' : 'Copy Code'}
                 </Button>
               </div>
             </CardContent>

@@ -58,8 +58,11 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
       setIsLoading(true)
       setError(null)
 
-      // Fetch available surveys
-      const surveysResponse = await fetch('/api/surveys?status=active')
+      // Fetch available surveys and user's responses in parallel
+      const [surveysResponse, userResponsesResponse] = await Promise.all([
+        fetch('/api/surveys?status=active'),
+        user ? fetch('/api/user/survey-completions') : Promise.resolve({ ok: true, json: () => ({ completions: [] }) })
+      ])
       
       if (!surveysResponse.ok) {
         // Handle different error types
@@ -90,10 +93,14 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
       
       setSurveys(availableSurveys)
 
-      // Fetch user's survey responses to determine completion status
-      // Note: This would need to be implemented in the API to get user's responses across all surveys
-      // For now, we'll skip this and just show all available surveys
-      setUserResponses([])
+      // Set user's completed surveys if available
+      if (userResponsesResponse.ok) {
+        const userResponsesData = await userResponsesResponse.json()
+        setUserResponses(userResponsesData.completions || [])
+      } else if (user && 'text' in userResponsesResponse) {
+        // Only log error if user is authenticated and we expected to get completions
+        console.error('Error fetching user responses:', await userResponsesResponse.text())
+      }
 
     } catch (error) {
       console.error('Error loading surveys:', error)
@@ -110,6 +117,9 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
 
   // Filter surveys to show only those the user hasn't completed
   const availableSurveys = surveys.filter(survey => {
+    // If user is not authenticated, show all available anonymous surveys
+    if (!user) return survey.allow_anonymous
+
     // Check if user has completed this survey
     const userResponse = userResponses.find(response => 
       response.survey_id === survey.id && response.is_complete
@@ -117,9 +127,7 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
     return !userResponse
   })
 
-  // Show surveys even if user is not authenticated (for anonymous surveys)
-  // Only hide if loading and no surveys found
-
+  // Show loading state
   if (isLoading) {
     return (
       <div className={cn("space-y-4", className)}>
@@ -143,6 +151,7 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
     )
   }
 
+  // Show error state
   if (error) {
     return (
       <div className={cn("space-y-4", className)}>
@@ -150,25 +159,13 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
           <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
             Available Surveys
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 font-light">
-            Help improve CivicSense by sharing your insights
-          </p>
         </div>
         <Card>
           <CardContent className="p-6">
             <div className="text-center space-y-4">
-              <div className="flex items-center justify-center space-x-2 text-amber-600 dark:text-amber-400">
-                <AlertCircle className="h-5 w-5" />
-                <span className="text-sm font-medium">{error}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadSurveys}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try again
+              <p className="text-slate-600 dark:text-slate-400">{error}</p>
+              <Button onClick={loadSurveys} variant="outline">
+                Try Again
               </Button>
             </div>
           </CardContent>
@@ -177,6 +174,7 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
     )
   }
 
+  // Show empty state if no surveys available
   if (availableSurveys.length === 0) {
     return (
       <div className={cn("space-y-4", className)}>
@@ -184,27 +182,29 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
           <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
             Available Surveys
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 font-light">
-            Help improve CivicSense by sharing your insights
-          </p>
         </div>
         <Card>
-          <CardContent className="p-6 text-center space-y-3">
-            <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto" />
-            <div>
-              <p className="text-slate-900 dark:text-white font-medium mb-1">
-                All caught up!
-              </p>
-              <p className="text-slate-600 dark:text-slate-400 font-light text-sm">
-                No new surveys available right now. Thanks for your participation!
-              </p>
-            </div>
+          <CardContent className="p-6 text-center">
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              {user ? 
+                "You've completed all available surveys. Check back later for new ones!" :
+                "Sign in to access more surveys and track your progress."
+              }
+            </p>
+            {!user && (
+              <Button asChild>
+                <Link href="/auth/sign-in">
+                  Sign In
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
     )
   }
 
+  // Show available surveys
   return (
     <div className={cn("space-y-4", className)}>
       <div className="text-center space-y-2">
@@ -215,119 +215,45 @@ export function SurveysDashboard({ className }: SurveysDashboardProps) {
           Help improve CivicSense by sharing your insights
         </p>
       </div>
-      
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Card className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg font-medium">
-                      {availableSurveys.length} Survey{availableSurveys.length !== 1 ? 's' : ''} Available
-                    </CardTitle>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 font-light">
-                      Your feedback helps shape the future of civic education
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                    {availableSurveys.length} new
-                  </Badge>
-                  <ChevronDown className={cn(
-                    "h-4 w-4 text-slate-500 transition-transform duration-200",
-                    isOpen && "rotate-180"
-                  )} />
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent className="space-y-3">
-          {availableSurveys.map((survey) => (
-            <Card key={survey.id} className="border border-slate-200 dark:border-slate-800">
+      <div className="grid gap-4">
+        {availableSurveys.map((survey) => (
+          <Card key={survey.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <Link href={`/survey/${survey.id}`} className="block">
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Survey Header */}
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-slate-900 dark:text-white">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                       {survey.title}
                     </h3>
                     {survey.description && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 mb-4">
                         {survey.description}
                       </p>
                     )}
-                  </div>
-
-                  {/* Survey Metadata */}
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-500">
-                    {survey.estimated_time && (
+                    <div className="flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400">
+                      {survey.estimated_time && (
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{survey.estimated_time} min</span>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-1">
-                        <Clock className="h-3 w-3" />
-                        <span>~{survey.estimated_time} min</span>
-                      </div>
-                    )}
-                    
-                    {survey.questions_count > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <FileText className="h-3 w-3" />
+                        <FileText className="w-4 h-4" />
                         <span>{survey.questions_count} questions</span>
                       </div>
-                    )}
-
-                    {survey.allow_anonymous && (
-                      <div className="flex items-center space-x-1">
-                        <Shield className="h-3 w-3" />
-                        <span>Anonymous</span>
-                      </div>
-                    )}
-
-                    {survey.responses_count > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-3 w-3" />
-                        <span>{survey.responses_count} responses</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Survey Features */}
-                  <div className="flex flex-wrap gap-2">
-                    {survey.allow_partial_responses && (
-                      <Badge variant="outline" className="text-xs">
-                        Save progress
-                      </Badge>
-                    )}
-                    {survey.allow_anonymous && (
-                      <Badge variant="outline" className="text-xs">
-                        No account required
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="pt-2">
-                    <Button asChild size="sm" className="w-full sm:w-auto">
-                      <Link 
-                        href={`/survey/${survey.id}${user?.email ? `?email=${encodeURIComponent(user.email)}` : ''}`}
-                        className="flex items-center space-x-2"
-                      >
-                        <span>Take Survey</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </Button>
+                      {!user && survey.allow_anonymous && (
+                        <Badge variant="outline" className="text-xs">
+                          No sign-in required
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
+            </Link>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 } 

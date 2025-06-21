@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense, lazy } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, useRouter, useSearchParams } from 'next/navigation'
 import { arePodsEnabled } from '@/lib/feature-flags'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -82,11 +82,19 @@ interface JoinRequest {
 // Activity Interface
 interface PodActivity {
   id: string
+  pod_id: string
   pod_name: string
-  activity_type: 'member_joined' | 'quiz_completed' | 'achievement_unlocked' | 'milestone_reached'
-  description: string
+  activity_type: string
+  user_name: string
+  activity_data: {
+    message?: string
+    achievement_name?: string
+    milestone_name?: string
+    quiz_name?: string
+    score?: number
+    [key: string]: any
+  }
   created_at: string
-  user_name?: string
 }
 
 // Activity and Join Requests Component
@@ -94,11 +102,15 @@ const PodNotificationsAndActivity = () => {
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([])
   const [activities, setActivities] = useState<PodActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalActivities, setTotalActivities] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const [activeFilter, setActiveFilter] = useState<string>('all')
   const { toast } = useToast()
 
   useEffect(() => {
     loadActivityData()
-  }, [])
+  }, [page, activeFilter])
 
   const loadActivityData = async () => {
     try {
@@ -111,16 +123,36 @@ const PodNotificationsAndActivity = () => {
         setJoinRequests(joinRequestsData.requests || [])
       }
 
-      // Load recent activities
-      const activitiesResponse = await fetch('/api/learning-pods/activities')
+      // Load recent activities with pagination and filtering
+      const activitiesResponse = await fetch(
+        `/api/learning-pods/activities?page=${page}&limit=10${activeFilter !== 'all' ? `&type=${activeFilter}` : ''}`
+      )
+      
       if (activitiesResponse.ok) {
-        const activitiesData = await activitiesResponse.json()
-        setActivities(activitiesData.activities || [])
+        const data = await activitiesResponse.json()
+        if (page === 1) {
+          setActivities(data.activities)
+        } else {
+          setActivities(prev => [...prev, ...data.activities])
+        }
+        setTotalActivities(data.total)
+        setHasMore(data.activities.length === 10)
       }
     } catch (error) {
       console.error('Failed to load activity data:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load activities. Please try again.',
+        variant: 'destructive'
+      })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadMore = () => {
+    if (hasMore && !isLoading) {
+      setPage(prev => prev + 1)
     }
   }
 
@@ -150,7 +182,51 @@ const PodNotificationsAndActivity = () => {
     }
   }
 
-  if (isLoading) {
+  const getActivityDescription = (activity: PodActivity): string => {
+    const data = activity.activity_data || {}
+    
+    switch (activity.activity_type) {
+      case 'joined':
+        return `${activity.user_name} joined the pod`
+      case 'left':
+        return `${activity.user_name} left the pod`
+      case 'quiz_completed':
+        return `${activity.user_name} completed ${data.quiz_name || 'a quiz'} with ${data.score}% score`
+      case 'achievement_earned':
+        return `${activity.user_name} earned the "${data.achievement_name}" achievement`
+      case 'milestone_reached':
+        return `${activity.user_name} reached the "${data.milestone_name}" milestone`
+      case 'helped_member':
+        return `${activity.user_name} helped another member with their learning`
+      case 'content_flagged':
+        return `${activity.user_name} flagged content for review`
+      default:
+        return `${activity.user_name} performed an activity`
+    }
+  }
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'joined':
+        return <UserPlus className="h-4 w-4 text-blue-600" />
+      case 'left':
+        return <UserX className="h-4 w-4 text-red-600" />
+      case 'quiz_completed':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'achievement_earned':
+        return <Trophy className="h-4 w-4 text-yellow-600" />
+      case 'milestone_reached':
+        return <Target className="h-4 w-4 text-purple-600" />
+      case 'helped_member':
+        return <Heart className="h-4 w-4 text-pink-600" />
+      case 'content_flagged':
+        return <AlertCircle className="h-4 w-4 text-orange-600" />
+      default:
+        return <Activity className="h-4 w-4 text-slate-600" />
+    }
+  }
+
+  if (isLoading && page === 1) {
     return (
       <div className="space-y-8">
         <div className="space-y-4">
@@ -193,7 +269,7 @@ const PodNotificationsAndActivity = () => {
 
   return (
     <div className="space-y-8">
-      {/* Join Requests */}
+      {/* Join Requests Section */}
       {hasJoinRequests && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
@@ -243,26 +319,43 @@ const PodNotificationsAndActivity = () => {
         </div>
       )}
 
-      {/* Recent Activities */}
-      {hasActivities && (
+      {/* Activities Section */}
+      {(hasActivities || activeFilter !== 'all') && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Recent Activity
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Recent Activity
+            </h3>
+            <Select value={activeFilter} onValueChange={value => {
+              setActiveFilter(value)
+              setPage(1)
+              setActivities([])
+            }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter activities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Activities</SelectItem>
+                <SelectItem value="joined">Joins & Leaves</SelectItem>
+                <SelectItem value="quiz_completed">Quiz Completions</SelectItem>
+                <SelectItem value="achievement_earned">Achievements</SelectItem>
+                <SelectItem value="milestone_reached">Milestones</SelectItem>
+                <SelectItem value="helped_member">Help & Support</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-3">
             {activities.map((activity) => (
               <Card key={activity.id} className="p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    {activity.activity_type === 'member_joined' && <UserPlus className="h-4 w-4 text-blue-600" />}
-                    {activity.activity_type === 'quiz_completed' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                    {activity.activity_type === 'achievement_unlocked' && <Trophy className="h-4 w-4 text-yellow-600" />}
-                    {activity.activity_type === 'milestone_reached' && <Target className="h-4 w-4 text-purple-600" />}
+                    {getActivityIcon(activity.activity_type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-900 dark:text-white">
-                      {activity.description}
+                      {getActivityDescription(activity)}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {activity.pod_name} • {new Date(activity.created_at).toLocaleDateString()}
@@ -271,6 +364,26 @@ const PodNotificationsAndActivity = () => {
                 </div>
               </Card>
             ))}
+
+            {hasMore && (
+              <div className="pt-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={loadMore}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+                      Loading...
+                    </div>
+                  ) : (
+                    'Load More'
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -343,7 +456,29 @@ interface LearningPod {
   partnership_status?: 'open' | 'closed' | 'invite_only'
 }
 
+interface Pod {
+  id: string
+  pod_name: string
+  pod_type: string
+  member_count: number
+  user_role: string
+  is_admin: boolean
+  content_filter_level: string
+  recent_activity_count: number
+  last_activity_date: string
+}
 
+interface PodStats {
+  totalPods: number
+  activePods: number
+  totalMembers: number
+  adminPods: number
+  recentActivity: number
+  topPerformingPod?: {
+    name: string
+    activityScore: number
+  }
+}
 
 export default function PodsPage() {
   // Feature flag check - hide pods in production
@@ -353,10 +488,13 @@ export default function PodsPage() {
 
   const { user } = useAuth()
   const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState('my-pods')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(searchParams?.get('tab') || 'my-pods')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [pods, setPods] = useState<LearningPod[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState<PodStats | null>(null)
   
   // Dialog states
   const [editTitleDialog, setEditTitleDialog] = useState<{ open: boolean; podId: string; currentTitle: string }>({
@@ -371,6 +509,9 @@ export default function PodsPage() {
   })
   const [newTitle, setNewTitle] = useState('')
   const [transferEmail, setTransferEmail] = useState('')
+  const [timeRange, setTimeRange] = useState('30')
+  const [podTypeFilter, setPodTypeFilter] = useState('all')
+  const [activityFilter, setActivityFilter] = useState('all')
 
   // Create pod form state with enhanced features
   const [createForm, setCreateForm] = useState({
@@ -709,6 +850,43 @@ export default function PodsPage() {
       })
     }
   }
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams?.toString())
+    params.set('tab', value)
+    router.push(`/pods?${params.toString()}`, { scroll: false })
+  }
+
+  // Load analytics data when filters change
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      try {
+        const response = await fetch(
+          `/api/learning-pods/aggregate-analytics?days=${timeRange}&podType=${podTypeFilter}&activity=${activityFilter}`
+        )
+        
+        if (!response.ok) {
+          throw new Error('Failed to load analytics')
+        }
+
+        const data = await response.json()
+        setStats(data.stats)
+      } catch (error) {
+        console.error('Error loading analytics:', error)
+        toast({
+          title: "Error loading analytics",
+          description: "Please try again later.",
+          variant: "destructive"
+        })
+      }
+    }
+
+    if (user) {
+      loadAnalytics()
+    }
+  }, [user, timeRange, podTypeFilter, activityFilter])
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
@@ -1081,8 +1259,7 @@ export default function PodsPage() {
             </div>
           )}
 
-          <PodTabs activeTab={activeTab} onTabChange={setActiveTab}>
-
+          <PodTabs activeTab={activeTab} onTabChange={handleTabChange}>
             <TabsContent value="my-pods">
               <Suspense fallback={
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1115,18 +1292,8 @@ export default function PodsPage() {
                       </div>
                       <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">No pods yet</h3>
                       <p className="text-slate-500 dark:text-slate-400 font-light mb-8 max-w-md mx-auto">
-                        Create your first learning pod to start learning together safely
+                        You haven't created or joined any learning pods yet
                       </p>
-                      <Button 
-                        className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-full px-8 py-3 h-12 font-light"
-                        onClick={() => {
-                          // Switch to my-pods tab and trigger create pod
-                          const createEvent = new CustomEvent('triggerCreatePod')
-                          window.dispatchEvent(createEvent)
-                        }}
-                      >
-                        Create Your First Pod
-                      </Button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1159,8 +1326,6 @@ export default function PodsPage() {
               </Suspense>
             </TabsContent>
 
-
-
             <TabsContent value="notifications">
               <LearningPodsErrorBoundary>
                 <PodNotificationsAndActivity />
@@ -1169,48 +1334,115 @@ export default function PodsPage() {
 
             <TabsContent value="analytics">
               <Suspense fallback={
-                <div className="space-y-8">
-                  {/* Header */}
-                  <div className="space-y-4">
-                    <Skeleton className="h-8 w-48" />
-                    <Skeleton className="h-4 w-96" />
-                  </div>
-                  
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <Card key={i} className="p-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-16" />
-                            <Skeleton className="h-4 w-4 rounded-full" />
+                <div className="space-y-12">
+                  {/* Overview Stats */}
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <Skeleton className="h-8 w-48" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
+                    
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i} className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Skeleton className="h-4 w-16" />
+                              <Skeleton className="h-4 w-4 rounded-full" />
+                            </div>
+                            <Skeleton className="h-8 w-12" />
+                            <Skeleton className="h-3 w-20" />
                           </div>
-                          <Skeleton className="h-8 w-12" />
-                          <Skeleton className="h-3 w-20" />
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Performance Charts */}
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <Skeleton className="h-8 w-48" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Skeleton className="h-6 w-32" />
+                          <Skeleton className="h-64 w-full" />
                         </div>
                       </Card>
-                    ))}
+                      <Card className="p-6">
+                        <div className="space-y-4">
+                          <Skeleton className="h-6 w-32" />
+                          <Skeleton className="h-64 w-full" />
+                        </div>
+                      </Card>
+                    </div>
                   </div>
-                  
-                  {/* Charts */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                  {/* Member Activity */}
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <Skeleton className="h-8 w-48" />
+                      <Skeleton className="h-4 w-96" />
+                    </div>
                     <Card className="p-6">
                       <div className="space-y-4">
                         <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-64 w-full" />
-                      </div>
-                    </Card>
-                    <Card className="p-6">
-                      <div className="space-y-4">
-                        <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-96 w-full" />
                       </div>
                     </Card>
                   </div>
                 </div>
               }>
                 <LearningPodsErrorBoundary>
-                  <AggregatePodAnalytics />
+                  <div className="space-y-12">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-light text-slate-900 dark:text-white">Pod Analytics</h2>
+                      <div className="flex items-center gap-4">
+                        <Select value={timeRange} onValueChange={setTimeRange}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Time range" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7">Last 7 days</SelectItem>
+                            <SelectItem value="30">Last 30 days</SelectItem>
+                            <SelectItem value="90">Last 90 days</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={podTypeFilter} onValueChange={setPodTypeFilter}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Pod type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="family">Family Pods</SelectItem>
+                            <SelectItem value="friends">Friend Groups</SelectItem>
+                            <SelectItem value="classroom">Classrooms</SelectItem>
+                            <SelectItem value="study_group">Study Groups</SelectItem>
+                            <SelectItem value="campaign">Campaign Groups</SelectItem>
+                            <SelectItem value="organization">Organizations</SelectItem>
+                            <SelectItem value="book_club">Book Clubs</SelectItem>
+                            <SelectItem value="debate_team">Debate Teams</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={activityFilter} onValueChange={setActivityFilter}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Activity status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Pods</SelectItem>
+                            <SelectItem value="active">Active Pods</SelectItem>
+                            <SelectItem value="inactive">Inactive Pods</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <AggregatePodAnalytics />
+                  </div>
                 </LearningPodsErrorBoundary>
               </Suspense>
             </TabsContent>

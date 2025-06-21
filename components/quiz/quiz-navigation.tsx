@@ -62,11 +62,18 @@ export function QuizNavigation({
     }
   }, [showKeyboardHints, hasPrevious, hasNext, isMobile])
 
+  // Don't render anything if we're loading or have an error
   if (isLoading || error) {
     return null
   }
 
+  // Don't render if we don't have any navigation options
   if (!hasPrevious && !hasNext) {
+    return null
+  }
+
+  // Don't render if we don't have valid topic data
+  if ((hasPrevious && !previousTopic?.topic_title) || (hasNext && !nextTopic?.topic_title)) {
     return null
   }
 
@@ -91,54 +98,58 @@ export function QuizNavigation({
     direction: 'previous' | 'next'
     onClick: () => void
     icon: React.ReactNode
-  }) => (
-    <Button
-      variant="outline"
-      onClick={onClick}
-      className={cn(
-        "group h-auto py-3 px-4 bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200",
-        "border-2 hover:border-primary/20 rounded-lg opacity-40 hover:opacity-100",
-        direction === 'previous' ? "flex-row" : "flex-row-reverse"
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div className={cn(
-          "text-primary transition-transform duration-200",
-          direction === 'previous' ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"
-        )}>
-          {icon}
+  }) => {
+    if (!topic) return null;
+    
+    return (
+      <Button
+        variant="outline"
+        onClick={onClick}
+        className={cn(
+          "group h-auto py-3 px-4 bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200",
+          "border-2 hover:border-primary/20 rounded-lg opacity-40 hover:opacity-100",
+          direction === 'previous' ? "flex-row" : "flex-row-reverse"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "text-primary transition-transform duration-200",
+            direction === 'previous' ? "group-hover:-translate-x-1" : "group-hover:translate-x-1"
+          )}>
+            {icon}
+          </div>
+          <div className={cn(
+            "overflow-hidden transition-all duration-200",
+            direction === 'next' && "text-right"
+          )}>
+            <div className="text-xs text-muted-foreground mb-1">
+              {direction === 'previous' ? 'Previous' : 'Next'}
+            </div>
+            <div className="font-medium text-sm flex items-center gap-1">
+              {direction === 'previous' ? (
+                <>
+                  <span>{topic.emoji}</span>
+                  <span className="transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
+                    {topic.topic_title}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
+                    {topic.topic_title}
+                  </span>
+                  <span>{topic.emoji}</span>
+                </>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {formatDate(topic.date)}
+            </div>
+          </div>
         </div>
-        <div className={cn(
-          "overflow-hidden transition-all duration-200",
-          direction === 'next' && "text-right"
-        )}>
-          <div className="text-xs text-muted-foreground mb-1">
-            {direction === 'previous' ? 'Previous' : 'Next'}
-          </div>
-          <div className="font-medium text-sm flex items-center gap-1">
-            {direction === 'previous' ? (
-              <>
-                <span>{topic.emoji}</span>
-                <span className="transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
-                  {topic.topic_title}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
-                  {topic.topic_title}
-                </span>
-                <span>{topic.emoji}</span>
-              </>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {formatDate(topic.date)}
-          </div>
-        </div>
-      </div>
-    </Button>
-  )
+      </Button>
+    );
+  }
 
   const MobileNavigationButton = ({ 
     topic, 
@@ -172,9 +183,9 @@ export function QuizNavigation({
         )}>
           {icon}
         </div>
-        {topic && (
+        {topic && topic.topic_title && (
           <span className="text-sm font-medium truncate max-w-[100px]">
-            {topic.emoji} {topic.topic_title?.slice(0, 15)}...
+            {topic.emoji} {topic.topic_title.slice(0, 15)}...
           </span>
         )}
       </div>

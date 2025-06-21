@@ -48,6 +48,8 @@ import { FeedbackButton } from '@/components/feedback'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { LearningTrackingDashboard } from "@/components/learning-tracking-dashboard"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
 
 interface DashboardData {
   totalTopics: number
@@ -317,6 +319,9 @@ export default function DashboardPage() {
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [enhancedProgress, setEnhancedProgress] = useState<EnhancedUserProgress | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [dateRange, setDateRange] = useState('7') // '7', '30', '90' days
+  const [topicFilter, setTopicFilter] = useState('all')
+  const [difficultyFilter, setDifficultyFilter] = useState('all')
 
   // Add state for onboarding status
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
@@ -354,12 +359,20 @@ export default function DashboardPage() {
       if (!user) return
 
       try {
-        // Get user's activity data
-        const recentActivity = await enhancedQuizDatabase.getRecentActivity(user.id, 25) as ActivityData[]
+        setIsDataLoading(true)
+        // Get user's activity data with filters
+        const response = await fetch(`/api/user/activity?days=${dateRange}&topic=${topicFilter}&difficulty=${difficultyFilter}`)
+        const data = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load activity data')
+        }
+
+        const recentActivity = data.activities as ActivityData[]
         
         // Calculate total time learning this week
         const now = new Date()
-        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - parseInt(dateRange))
         
         const weeklyTimeSpent = recentActivity
           .filter(activity => new Date(activity.completedAt) >= weekStart)
@@ -394,11 +407,18 @@ export default function DashboardPage() {
         })
       } catch (error) {
         console.error('Error loading dashboard data:', error)
+        toast({
+          title: "Error loading data",
+          description: "Please try again later.",
+          variant: "destructive"
+        })
+      } finally {
+        setIsDataLoading(false)
       }
     }
 
     loadDashboardData()
-  }, [user])
+  }, [user, dateRange, topicFilter, difficultyFilter])
 
   // Add useEffect to check onboarding status
   useEffect(() => {
@@ -486,9 +506,49 @@ export default function DashboardPage() {
       <main className="container py-8 space-y-12">
         {/* Welcome Message and Progress */}
         <div className="space-y-6">
-          <h1 className="text-3xl font-light text-slate-900 dark:text-white">
-            Welcome back, {user.user_metadata?.full_name || 'there'}
-          </h1>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h1 className="text-3xl font-light text-slate-900 dark:text-white">
+              Welcome back, {user.user_metadata?.full_name || 'there'}
+            </h1>
+            
+            <div className="flex items-center gap-4">
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={topicFilter} onValueChange={setTopicFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Filter by topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Topics</SelectItem>
+                  <SelectItem value="civics">Civics</SelectItem>
+                  <SelectItem value="history">History</SelectItem>
+                  <SelectItem value="government">Government</SelectItem>
+                  <SelectItem value="economics">Economics</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Filter by difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -550,11 +610,11 @@ export default function DashboardPage() {
         {/* Recommended Topics */}
         <RecommendedTopics userId={user.id} />
 
-        {/* Available Surveys */}
-        <SurveysDashboard />
-
         {/* Learning Activity */}
         <LearningTrackingDashboard />
+
+        {/* Available Surveys */}
+        <SurveysDashboard />
       </main>
     </div>
   )

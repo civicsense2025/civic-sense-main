@@ -571,14 +571,16 @@ interface PodTheme {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/pods">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Pods
-            </Link>
-          </Button>
+      <div className="space-y-4">
+        {/* Breadcrumb */}
+        <Button asChild variant="ghost" size="sm" className="text-slate-500 dark:text-slate-400 -ml-2 hover:text-slate-900">
+          <Link href="/pods">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Pods
+          </Link>
+        </Button>
+
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-light text-slate-900 dark:text-white">
               {pod.pod_name}
@@ -589,20 +591,20 @@ interface PodTheme {
               </p>
             )}
           </div>
+          
+          {hasUnsavedChanges && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+              <Button onClick={savePodSettings}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+          )}
         </div>
-        
-        {hasUnsavedChanges && (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-            <Button onClick={savePodSettings}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Quick Stats */}
@@ -662,22 +664,26 @@ interface PodTheme {
             <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="personalization" className="gap-2 font-light">
-            <Palette className="h-4 w-4" />
-            Personalization
+          <TabsTrigger value="challenges" className="gap-2 font-light">
+            <Trophy className="h-4 w-4" />
+            Challenges
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2 font-light">
-            <Settings className="h-4 w-4" />
-            Pod Settings
-          </TabsTrigger>
+          {pod.is_admin && (
+            <TabsTrigger value="settings" className="gap-2 font-light">
+              <Settings className="h-4 w-4" />
+              Pod Settings
+            </TabsTrigger>
+          )}
           <TabsTrigger value="analytics" className="gap-2 font-light">
             <BarChart3 className="h-4 w-4" />
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="safety" className="gap-2 font-light">
-            <Shield className="h-4 w-4" />
-            Safety
-          </TabsTrigger>
+          {pod.is_admin && (
+            <TabsTrigger value="safety" className="gap-2 font-light">
+              <Shield className="h-4 w-4" />
+              Safety
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="members" className="space-y-6">
@@ -782,473 +788,398 @@ interface PodTheme {
           </div>
         </TabsContent>
 
-        <TabsContent value="personalization" className="space-y-6">
+        <TabsContent value="challenges" className="space-y-6">
           <h2 className="text-2xl font-light text-slate-900 dark:text-white">
-            Pod Personalization
+            Pod Challenges
           </h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Personality & Theme */}
             <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
-                  Personality & Theme
+                  <Trophy className="h-5 w-5 text-yellow-600" />
+                  Active Challenges
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Personality Type Selection */}
-                <div className="space-y-4">
-                  <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Personality</Label>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose how your pod approaches learning</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      { 
-                        type: 'collaborative', 
-                        label: 'Collaborative', 
-                        desc: 'Learn together, support each other',
-                        icon: <Heart className="h-5 w-5" />,
-                        color: 'text-pink-600'
-                      },
-                      { 
-                        type: 'competitive', 
-                        label: 'Competitive', 
-                        desc: 'Friendly challenges motivate us',
-                        icon: <Trophy className="h-5 w-5" />,
-                        color: 'text-yellow-600'
-                      },
-                      { 
-                        type: 'exploratory', 
-                        label: 'Exploratory', 
-                        desc: 'Discover new ideas together',
-                        icon: <Lightbulb className="h-5 w-5" />,
-                        color: 'text-blue-600'
-                      },
-                      { 
-                        type: 'structured', 
-                        label: 'Structured', 
-                        desc: 'Step-by-step organized learning',
-                        icon: <BookOpen className="h-5 w-5" />,
-                        color: 'text-green-600'
-                      }
-                    ].map((personality) => (
-                      <div
-                        key={personality.type}
-                        onClick={() => updatePodSettings({ personality_type: personality.type as any })}
-                        className={cn(
-                          'p-3 rounded-lg border cursor-pointer transition-all',
-                          podSettings.personality_type === personality.type
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn('text-lg', personality.color)}>
-                            {personality.icon}
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-900 dark:text-white text-sm">
-                              {personality.label}
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {personality.desc}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                  <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No active challenges yet.</p>
+                  <Button className="mt-4">
+                    Create Challenge
+                  </Button>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Theme Selection */}
-                <div className="space-y-4">
-                  <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Theme</Label>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose a visual theme for your pod</p>
-                  {themesLoading ? (
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
-                      Loading themes...
+            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  Challenge History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No completed challenges yet.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Settings Tab Content - Now includes personalization */}
+        {pod.is_admin && (
+          <TabsContent value="settings" className="space-y-6">
+            <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+              Pod Settings
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Basic Settings */}
+              <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                <CardHeader>
+                  <CardTitle>Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Pod Name</Label>
+                    <Input
+                      value={podSettings.pod_name}
+                      onChange={(e) => updatePodSettings({ pod_name: e.target.value })}
+                      className="border-0 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={podSettings.description || ''}
+                      onChange={(e) => updatePodSettings({ description: e.target.value })}
+                      className="border-0 bg-white dark:bg-slate-800"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Content Filter Level</Label>
+                    <Select 
+                      value={podSettings.content_filter_level} 
+                      onValueChange={(value) => updatePodSettings({ content_filter_level: value as any })}
+                    >
+                      <SelectTrigger className="border-0 bg-white dark:bg-slate-800">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">🔓 None</SelectItem>
+                        <SelectItem value="light">🟡 Light</SelectItem>
+                        <SelectItem value="moderate">🔵 Moderate</SelectItem>
+                        <SelectItem value="strict">🟢 Strict</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Public Pod</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Allow others to discover and join
+                      </p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-3">
-                      {availableThemes.map((theme) => (
+                    <Switch
+                      checked={podSettings.is_public}
+                      onCheckedChange={(checked) => updatePodSettings({ is_public: checked })}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Personalization Settings */}
+              <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    Personality & Theme
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Personality Type Selection */}
+                  <div className="space-y-4">
+                    <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Personality</Label>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Choose how your pod approaches learning</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { 
+                          type: 'collaborative', 
+                          label: 'Collaborative', 
+                          desc: 'Learn together, support each other',
+                          icon: <Heart className="h-5 w-5" />,
+                          color: 'text-pink-600'
+                        },
+                        { 
+                          type: 'competitive', 
+                          label: 'Competitive', 
+                          desc: 'Friendly challenges motivate us',
+                          icon: <Trophy className="h-5 w-5" />,
+                          color: 'text-yellow-600'
+                        },
+                        { 
+                          type: 'exploratory', 
+                          label: 'Exploratory', 
+                          desc: 'Discover new ideas together',
+                          icon: <Lightbulb className="h-5 w-5" />,
+                          color: 'text-blue-600'
+                        },
+                        { 
+                          type: 'structured', 
+                          label: 'Structured', 
+                          desc: 'Step-by-step organized learning',
+                          icon: <BookOpen className="h-5 w-5" />,
+                          color: 'text-green-600'
+                        }
+                      ].map((personality) => (
                         <div
-                          key={theme.id}
-                          onClick={() => updatePodSettings({ 
-                            theme_id: theme.id,
-                            pod_emoji: theme.emoji,
-                            pod_color: theme.primary_color
-                          })}
+                          key={personality.type}
+                          onClick={() => updatePodSettings({ personality_type: personality.type as any })}
                           className={cn(
                             'p-3 rounded-lg border cursor-pointer transition-all',
-                            podSettings.theme_id === theme.id
+                            podSettings.personality_type === personality.type
                               ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
                               : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           )}
-                          style={{
-                            backgroundColor: podSettings.theme_id === theme.id 
-                              ? `${theme.primary_color}10` 
-                              : undefined
-                          }}
                         >
                           <div className="flex items-center gap-3">
-                            <span className="text-lg">{theme.emoji}</span>
+                            <div className={cn('text-lg', personality.color)}>
+                              {personality.icon}
+                            </div>
                             <div>
                               <div className="font-medium text-slate-900 dark:text-white text-sm">
-                                {theme.display_name}
+                                {personality.label}
                               </div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {theme.description}
+                                {personality.desc}
                               </div>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Visual Customization */}
-            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-blue-600" />
-                  Visual Customization
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Pod Emoji */}
-                <div className="space-y-3">
-                  <Label>Pod Emoji</Label>
-                  <Input
-                    value={podSettings.pod_emoji || ''}
-                    onChange={(e) => updatePodSettings({ pod_emoji: e.target.value })}
-                    placeholder="👥"
-                    className="text-2xl text-center h-12 border-0 bg-white dark:bg-slate-800"
-                    maxLength={2}
-                  />
-                </div>
-
-                {/* Pod Color */}
-                <div className="space-y-3">
-                  <Label>Pod Color</Label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={podSettings.pod_color || '#3b82f6'}
-                      onChange={(e) => updatePodSettings({ pod_color: e.target.value })}
-                      className="w-16 h-12 rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer"
-                    />
-                    <Input
-                      value={podSettings.pod_color || ''}
-                      onChange={(e) => updatePodSettings({ pod_color: e.target.value })}
-                      placeholder="#3b82f6"
-                      className="flex-1 font-mono border-0 bg-white dark:bg-slate-800"
-                    />
                   </div>
-                </div>
 
-                {/* Pod Motto */}
-                <div className="space-y-3">
-                  <Label>Pod Motto</Label>
-                  <Input
-                    value={podSettings.pod_motto || ''}
-                    onChange={(e) => updatePodSettings({ pod_motto: e.target.value })}
-                    placeholder="Learning together, growing stronger"
-                    className="border-0 bg-white dark:bg-slate-800"
-                  />
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    A short phrase that captures your pod's mission
-                  </p>
-                </div>
-
-                {/* Pod Slug */}
-                <div className="space-y-3">
-                  <Label>Custom URL Slug</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500 dark:text-slate-400">
-                      civicsense.com/pods/
-                    </span>
-                    <Input
-                      value={podSettings.pod_slug || ''}
-                      onChange={(e) => updatePodSettings({ pod_slug: e.target.value })}
-                      placeholder="my-awesome-pod"
-                      className="flex-1 border-0 bg-white dark:bg-slate-800"
-                    />
-                  </div>
-                </div>
-
-                {/* Accessibility Mode */}
-                <div className="space-y-4">
-                  <Label className="text-slate-700 dark:text-slate-300 font-light">Accessibility Mode</Label>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose accessibility settings for your pod</p>
-                  <div className="grid grid-cols-1 gap-3">
-                    {[
-                      { value: 'standard', icon: Shield, label: 'Standard', desc: 'Default accessibility features' },
-                      { value: 'high_contrast', icon: Accessibility, label: 'High Contrast', desc: 'Enhanced visual contrast' },
-                      { value: 'sensory_friendly', icon: Heart, label: 'Sensory Friendly', desc: 'Reduced animations and effects' }
-                    ].map((mode) => {
-                      const Icon = mode.icon
-                      return (
-                        <div
-                          key={mode.value}
-                          onClick={() => updatePodSettings({ accessibility_mode: mode.value as any })}
-                          className={cn(
-                            'p-3 rounded-lg border cursor-pointer transition-all',
-                            podSettings.accessibility_mode === mode.value
-                              ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
-                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Icon className={cn(
-                              'h-5 w-5',
-                              podSettings.accessibility_mode === mode.value ? 'text-green-600' : 'text-slate-400'
-                            )} />
-                            <div>
-                              <div className="font-medium text-slate-900 dark:text-white text-sm">
-                                {mode.label}
-                              </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {mode.desc}
+                  {/* Theme Selection */}
+                  <div className="space-y-4">
+                    <Label className="text-slate-700 dark:text-slate-300 font-light">Pod Theme</Label>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Choose a visual theme for your pod</p>
+                    {themesLoading ? (
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50"></div>
+                        Loading themes...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {availableThemes.map((theme) => (
+                          <div
+                            key={theme.id}
+                            onClick={() => updatePodSettings({ 
+                              theme_id: theme.id,
+                              pod_emoji: theme.emoji,
+                              pod_color: theme.primary_color
+                            })}
+                            className={cn(
+                              'p-3 rounded-lg border cursor-pointer transition-all',
+                              podSettings.theme_id === theme.id
+                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                            )}
+                            style={{
+                              backgroundColor: podSettings.theme_id === theme.id 
+                                ? `${theme.primary_color}10` 
+                                : undefined
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{theme.emoji}</span>
+                              <div>
+                                <div className="font-medium text-slate-900 dark:text-white text-sm">
+                                  {theme.display_name}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  {theme.description}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+                </CardContent>
+              </Card>
 
-        <TabsContent value="settings" className="space-y-6">
-          <h2 className="text-2xl font-light text-slate-900 dark:text-white">
-            Pod Settings
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Basic Settings */}
-            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Pod Name</Label>
-                  <Input
-                    value={podSettings.pod_name}
-                    onChange={(e) => updatePodSettings({ pod_name: e.target.value })}
-                    className="border-0 bg-white dark:bg-slate-800"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    value={podSettings.description || ''}
-                    onChange={(e) => updatePodSettings({ description: e.target.value })}
-                    className="border-0 bg-white dark:bg-slate-800"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Content Filter Level</Label>
-                  <Select 
-                    value={podSettings.content_filter_level} 
-                    onValueChange={(value) => updatePodSettings({ content_filter_level: value as any })}
-                  >
-                    <SelectTrigger className="border-0 bg-white dark:bg-slate-800">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">🔓 None</SelectItem>
-                      <SelectItem value="light">🟡 Light</SelectItem>
-                      <SelectItem value="moderate">🔵 Moderate</SelectItem>
-                      <SelectItem value="strict">🟢 Strict</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Public Pod</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Allow others to discover and join
-                    </p>
+              {/* Feature Access */}
+              <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                <CardHeader>
+                  <CardTitle>Feature Access</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Multiplayer Quizzes</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Allow members to play together
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.can_access_multiplayer}
+                      onCheckedChange={(checked) => updatePodSettings({ can_access_multiplayer: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.is_public}
-                    onCheckedChange={(checked) => updatePodSettings({ is_public: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature Access */}
-            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader>
-                <CardTitle>Feature Access</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Multiplayer Quizzes</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Allow members to play together
-                    </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Chat Features</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Enable messaging between members
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.can_access_chat}
+                      onCheckedChange={(checked) => updatePodSettings({ can_access_chat: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.can_access_multiplayer}
-                    onCheckedChange={(checked) => updatePodSettings({ can_access_multiplayer: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Chat Features</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Enable messaging between members
-                    </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Progress Sharing</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Share achievements with pod members
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.can_share_progress}
+                      onCheckedChange={(checked) => updatePodSettings({ can_share_progress: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.can_access_chat}
-                    onCheckedChange={(checked) => updatePodSettings({ can_access_chat: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Progress Sharing</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Share achievements with pod members
-                    </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Leaderboards</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Show ranking within the pod
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.can_view_leaderboards}
+                      onCheckedChange={(checked) => updatePodSettings({ can_view_leaderboards: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.can_share_progress}
-                    onCheckedChange={(checked) => updatePodSettings({ can_share_progress: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Leaderboards</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Show ranking within the pod
-                    </p>
-                  </div>
-                  <Switch
-                    checked={podSettings.can_view_leaderboards}
-                    onCheckedChange={(checked) => updatePodSettings({ can_view_leaderboards: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="analytics">
           <EnhancedPodAnalytics podId={pod.id} />
         </TabsContent>
 
-        <TabsContent value="safety" className="space-y-6">
-          <h2 className="text-2xl font-light text-slate-900 dark:text-white">
-            Safety & Monitoring
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader>
-                <CardTitle>Monitoring Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Progress Reports</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Receive regular progress updates
-                    </p>
+        {/* Safety Tab Content */}
+        {pod.is_admin && (
+          <TabsContent value="safety" className="space-y-6">
+            <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+              Safety & Monitoring
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                <CardHeader>
+                  <CardTitle>Monitoring Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Progress Reports</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Receive regular progress updates
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.send_progress_reports}
+                      onCheckedChange={(checked) => updatePodSettings({ send_progress_reports: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.send_progress_reports}
-                    onCheckedChange={(checked) => updatePodSettings({ send_progress_reports: checked })}
-                  />
-                </div>
-                
-                {podSettings.send_progress_reports && (
-                  <div className="space-y-2">
-                    <Label>Report Frequency</Label>
-                    <Select 
-                      value={podSettings.report_frequency} 
-                      onValueChange={(value) => updatePodSettings({ report_frequency: value as any })}
-                    >
-                      <SelectTrigger className="border-0 bg-white dark:bg-slate-800">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  
+                  {podSettings.send_progress_reports && (
+                    <div className="space-y-2">
+                      <Label>Report Frequency</Label>
+                      <Select 
+                        value={podSettings.report_frequency} 
+                        onValueChange={(value) => updatePodSettings({ report_frequency: value as any })}
+                      >
+                        <SelectTrigger className="border-0 bg-white dark:bg-slate-800">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Content Alerts</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Alert when inappropriate content is accessed
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.alert_on_inappropriate_content}
+                      onCheckedChange={(checked) => updatePodSettings({ alert_on_inappropriate_content: checked })}
+                    />
                   </div>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Content Alerts</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Alert when inappropriate content is accessed
-                    </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Detailed Activity Tracking</Label>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Track all quiz attempts and time spent
+                      </p>
+                    </div>
+                    <Switch
+                      checked={podSettings.track_detailed_activity}
+                      onCheckedChange={(checked) => updatePodSettings({ track_detailed_activity: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={podSettings.alert_on_inappropriate_content}
-                    onCheckedChange={(checked) => updatePodSettings({ alert_on_inappropriate_content: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Detailed Activity Tracking</Label>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Track all quiz attempts and time spent
-                    </p>
-                  </div>
-                  <Switch
-                    checked={podSettings.track_detailed_activity}
-                    onCheckedChange={(checked) => updatePodSettings({ track_detailed_activity: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
-              <CardHeader>
-                <CardTitle>Safety Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Alert>
-                  <Shield className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Pod Safety Recommendations:</strong>
-                    <ul className="mt-2 space-y-1 text-sm">
-                      <li>• Verify all members before allowing access</li>
-                      <li>• Monitor chat activity for inappropriate content</li>
-                      <li>• Use appropriate content filtering for younger members</li>
-                      <li>• Review progress reports regularly</li>
-                      <li>• Set individual time limits as needed</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+              <Card className="border-0 bg-slate-50 dark:bg-slate-900/50">
+                <CardHeader>
+                  <CardTitle>Safety Guidelines</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Alert>
+                    <Shield className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Pod Safety Recommendations:</strong>
+                      <ul className="mt-2 space-y-1 text-sm">
+                        <li>• Verify all members before allowing access</li>
+                        <li>• Monitor chat activity for inappropriate content</li>
+                        <li>• Use appropriate content filtering for younger members</li>
+                        <li>• Review progress reports regularly</li>
+                        <li>• Set individual time limits as needed</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Individual Member Settings Modal (placeholder) */}

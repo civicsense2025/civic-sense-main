@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CategoriesPageHeader } from "@/components/categories-page-header"
-import { CategoriesSearchCommand } from "@/components/categories-search-command"
 import { SkillsCarousel } from "@/components/categories/skills-carousel"
-import { BookOpen, Target, Clock, CheckCircle, Search, Play } from "lucide-react"
+import { BookOpen, Target, CheckCircle, Search } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Categories | CivicSense",
@@ -207,13 +206,6 @@ export default async function CategoriesPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <CategoriesPageHeader />
 
-      {/* Command Palette Search */}
-      <CategoriesSearchCommand 
-        categories={categories}
-        skills={Object.values(skillsByCategory).flat()}
-        topics={evergreenTopics}
-      />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {/* Page header with search hint */}
         <div className="text-center space-y-8 mb-16">
@@ -230,16 +222,6 @@ export default async function CategoriesPage() {
             <p className="text-xl text-slate-600 dark:text-slate-400 font-light max-w-3xl mx-auto leading-relaxed">
               Navigate the foundations of civic knowledge. Each category connects skills, topics, and real-world applications to help you understand how democracy actually works.
             </p>
-
-            {/* Search hint */}
-            <div className="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-              <Search className="w-4 h-4" />
-              <span>Press</span>
-              <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-xs font-mono border">
-                ⌘K
-              </kbd>
-              <span>to search</span>
-            </div>
           </div>
           
           {/* Quick stats */}
@@ -344,7 +326,7 @@ export default async function CategoriesPage() {
               </div>
             </section>
 
-            {/* Core Civic Knowledge Section - Moved above skills */}
+            {/* Core Civic Knowledge Section - Already above skills */}
             {evergreenTopics.length > 0 && (
               <section>
                 <div className="flex items-center gap-3 mb-8">
