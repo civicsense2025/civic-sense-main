@@ -15,6 +15,7 @@ import { PremiumGate } from "@/components/premium-gate"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import { cn } from "@/lib/utils"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
@@ -33,6 +34,7 @@ export default function QuizPageClient({ params }: QuizPageProps) {
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
+  const isMobile = useIsMobile()
   const [topic, setTopic] = useState<TopicMetadata | null>(null)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -312,32 +314,27 @@ export default function QuizPageClient({ params }: QuizPageProps) {
         showMainHeader={true}
       />
       
-      {/* Quiz Navigation - Only show on topic info screen, not during gameplay */}
-      <QuizNavigation 
-        topicId={params.topicId}
-        showKeyboardHints={false} // No keyboard hints on landing page
-        compact={true} // Use compact mode on topic info screen
-        enableKeyboardShortcuts={false} // Disable keyboard shortcuts on landing page
-      />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8">
-
-      {showContinueLoading ? (
-        <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
-      ) : showLoadingScreen ? (
-        <QuizLoadingScreen onComplete={handleLoadingComplete} />
-      ) : (
-        <TopicInfo
-          topicData={topic}
-          onStartQuiz={handleStartQuiz}
-          requireAuth={!user && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT}
-          onAuthRequired={() => setIsAuthDialogOpen(true)}
-          remainingQuizzes={remainingQuizzes}
-          isPartiallyCompleted={isPartiallyCompleted}
-          hasCompletedTopic={hasCompletedTopic(params.topicId)}
-          questions={questions}
-        />
-      )}
+      <div className={cn(
+        "max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8",
+        // Add bottom padding on mobile to account for fixed navigation
+        isMobile && "pb-24"
+      )}>
+        {showContinueLoading ? (
+          <QuizLoadingScreen onComplete={handleContinueLoadingComplete} />
+        ) : showLoadingScreen ? (
+          <QuizLoadingScreen onComplete={handleLoadingComplete} />
+        ) : (
+          <TopicInfo
+            topicData={topic}
+            onStartQuiz={handleStartQuiz}
+            requireAuth={!user && quizAttemptsToday >= GUEST_DAILY_QUIZ_LIMIT}
+            onAuthRequired={() => setIsAuthDialogOpen(true)}
+            remainingQuizzes={remainingQuizzes}
+            isPartiallyCompleted={isPartiallyCompleted}
+            hasCompletedTopic={hasCompletedTopic(params.topicId)}
+            questions={questions}
+          />
+        )}
 
         {/* Auth Dialog */}
         <AuthDialog
@@ -394,6 +391,14 @@ export default function QuizPageClient({ params }: QuizPageProps) {
           )
         })()}
       </div>
+
+      {/* Quiz Navigation - Moved outside main content area */}
+      <QuizNavigation 
+        topicId={params.topicId}
+        showKeyboardHints={false} // No keyboard hints on landing page
+        compact={true} // Use compact mode on topic info screen
+        enableKeyboardShortcuts={false} // Disable keyboard shortcuts on landing page
+      />
     </div>
   )
 }  

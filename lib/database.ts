@@ -82,33 +82,61 @@ export const topicOperations = {
   // Get topics by category
   async getByCategory(category: string) {
     try {
-      // Get all active topics and filter client-side to avoid JSON parsing issues
-      const { data, error } = await supabase
-        .from('question_topics')
-        .select('*')
-        .eq('is_active', true)
-        .order('date', { ascending: true })
+      // First check if junction table exists and has data
+      const { data: junctionExists } = await supabase
+        .from('question_topic_categories')
+        .select('topic_id')
+        .limit(1)
+      
+      if (junctionExists && junctionExists.length > 0) {
+        // Use optimized junction table approach
+        const { data: topicIds } = await supabase
+          .from('question_topic_categories')
+          .select('topic_id')
+          .eq('category_id', category)
+        
+        if (!topicIds || topicIds.length === 0) {
+          return []
+        }
+        
+        const { data, error } = await supabase
+          .from('question_topics')
+          .select('*')
+          .in('topic_id', topicIds.map(row => row.topic_id))
+          .eq('is_active', true)
+          .order('date', { ascending: true })
 
-      if (error) throw error
-      
-      // Filter client-side for matching category
-      const filteredData = (data || []).filter(topic => {
-        if (Array.isArray(topic.categories)) {
-          return topic.categories.includes(category)
-        }
-        // Handle case where categories might be stored as string
-        if (typeof topic.categories === 'string') {
-          try {
-            const parsed = JSON.parse(topic.categories)
-            return Array.isArray(parsed) && parsed.includes(category)
-          } catch {
-            return topic.categories === category
+        if (error) throw error
+        return data as DbQuestionTopic[]
+      } else {
+        // Fallback to JSONB approach if junction table not populated yet
+        const { data, error } = await supabase
+          .from('question_topics')
+          .select('*')
+          .eq('is_active', true)
+          .order('date', { ascending: true })
+
+        if (error) throw error
+        
+        // Filter client-side for matching category
+        const filteredData = (data || []).filter(topic => {
+          if (Array.isArray(topic.categories)) {
+            return topic.categories.includes(category)
           }
-        }
-        return false
-      })
-      
-      return filteredData as DbQuestionTopic[]
+          // Handle case where categories might be stored as string
+          if (typeof topic.categories === 'string') {
+            try {
+              const parsed = JSON.parse(topic.categories)
+              return Array.isArray(parsed) && parsed.includes(category)
+            } catch {
+              return topic.categories === category
+            }
+          }
+          return false
+        })
+        
+        return filteredData as DbQuestionTopic[]
+      }
     } catch (error) {
       console.error(`Error getting topics by category '${category}':`, error)
       return []
@@ -847,53 +875,97 @@ export const categoryOperations = {
 
   // Get unique categories from actual topic data (more dynamic)
   async getFromTopics() {
-    const { data, error } = await supabase
-      .from('question_topics')
-      .select('categories')
-      .eq('is_active', true)
+    try {
+      // First check if junction table exists and has data
+      const { data: junctionExists } = await supabase
+        .from('question_topic_categories')
+        .select('category_id')
+        .limit(1)
+      
+      if (junctionExists && junctionExists.length > 0) {
+        // Use optimized junction table approach
+        const { data: categoryIds, error: junctionError } = await supabase
+          .from('question_topic_categories')
+          .select('category_id')
+          .not('category_id', 'is', null)
+        
+        if (junctionError) throw junctionError
+        
+        // Get unique category IDs
+        const uniqueCategoryIds = [...new Set(categoryIds?.map(row => row.category_id) || [])]
+        
+        if (uniqueCategoryIds.length > 0) {
+          // Get category details from the categories table
+          const { data: categoryDetails, error: categoryError } = await supabase
+            .from('categories')
+            .select('name, emoji, description')
+            .in('name', uniqueCategoryIds)
+            .eq('is_active', true)
 
-    if (error) throw error
+          if (categoryError) throw categoryError
 
-    // Extract unique categories from all topics
-    const categorySet = new Set<string>()
-    data.forEach(topic => {
-      if (topic.categories && Array.isArray(topic.categories)) {
-        (topic.categories as string[]).forEach(cat => {
-          if (typeof cat === 'string') {
-            categorySet.add(cat)
+          return (categoryDetails || []).map(cat => ({
+            name: cat.name,
+            emoji: cat.emoji || '📚',
+            description: cat.description || ''
+          }))
+        }
+        
+        return []
+      } else {
+        // Fallback to JSONB approach if junction table not populated yet
+        const { data, error } = await supabase
+          .from('question_topics')
+          .select('categories')
+          .eq('is_active', true)
+
+        if (error) throw error
+
+        // Extract unique categories from all topics
+        const categorySet = new Set<string>()
+        data.forEach(topic => {
+          if (topic.categories && Array.isArray(topic.categories)) {
+            (topic.categories as string[]).forEach(cat => {
+              if (typeof cat === 'string') {
+                categorySet.add(cat)
+              }
+            })
           }
         })
-      }
-    })
 
-    // Convert to array and sort
-    const uniqueCategories = Array.from(categorySet).sort()
+        // Convert to array and sort
+        const uniqueCategories = Array.from(categorySet).sort()
 
-    // Get category details from the categories table for each unique category
-    if (uniqueCategories.length > 0) {
-      const { data: categoryDetails, error: categoryError } = await supabase
-        .from('categories')
-        .select('name, emoji, description')
-        .in('name', uniqueCategories)
-        .eq('is_active', true)
+        // Get category details from the categories table for each unique category
+        if (uniqueCategories.length > 0) {
+          const { data: categoryDetails, error: categoryError } = await supabase
+            .from('categories')
+            .select('name, emoji, description')
+            .in('name', uniqueCategories)
+            .eq('is_active', true)
 
-      if (categoryError) throw categoryError
+          if (categoryError) throw categoryError
 
-      // Create a map for quick lookup
-      const categoryMap = new Map(categoryDetails.map(cat => [cat.name, cat]))
+          // Create a map for quick lookup
+          const categoryMap = new Map(categoryDetails.map(cat => [cat.name, cat]))
 
-      // Return categories with their details, maintaining order
-      return uniqueCategories.map(categoryName => {
-        const details = categoryMap.get(categoryName)
-        return {
-          name: categoryName,
-          emoji: details?.emoji || '📚',
-          description: details?.description || ''
+          // Return categories with their details, maintaining order
+          return uniqueCategories.map(categoryName => {
+            const details = categoryMap.get(categoryName)
+            return {
+              name: categoryName,
+              emoji: details?.emoji || '📚',
+              description: details?.description || ''
+            }
+          })
         }
-      })
-    }
 
-    return []
+        return []
+      }
+    } catch (error) {
+      console.error('Error getting categories from topics:', error)
+      return []
+    }
   },
 
   // Get category by name

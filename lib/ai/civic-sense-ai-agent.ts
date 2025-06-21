@@ -138,12 +138,19 @@ Generate specific, actionable civic engagement steps:
 
 CONTENT: {content}
 
-Provide 3-5 specific actions citizens can take, including:
-- Exact contact information (phone numbers, addresses, emails)
-- Specific language to use when contacting officials
-- Optimal timing for maximum impact
-- How this action connects to broader systemic change
-- What to do if officials don't respond appropriately
+Provide 3-5 specific actions citizens can take, using DIRECT IMPERATIVE LANGUAGE:
+- Use action verbs: "Contact", "Call", "Write", "Track", "Monitor", "Attend"
+- NEVER use "You can", "You should", "You must", "You need to"
+- Include exact contact information (phone numbers, addresses, emails)
+- Provide specific language to use when contacting officials
+- Specify optimal timing for maximum impact
+- Connect each action to broader systemic change
+- Include escalation steps if officials don't respond appropriately
+
+Examples of CORRECT language:
+- "Call Senator Smith at (202) 224-XXXX to demand transparency on healthcare votes"
+- "Contact the Transportation Committee at committee@house.gov before Tuesday's vote"
+- "Track lobbying registrations at senate.gov/legislative/lobbying to spot influence patterns"
 
 Make each action immediately doable within 24-48 hours.
 Return the content with action steps integrated naturally.
@@ -362,7 +369,7 @@ export abstract class CivicSenseAIAgent {
   /**
    * Generate initial content - implement in each AI agent
    */
-  protected abstract async generateInitialContent(
+  protected abstract generateInitialContent(
     input: any, 
     options?: AIGenerationOptions
   ): Promise<string>
@@ -370,7 +377,7 @@ export abstract class CivicSenseAIAgent {
   /**
    * Enforce uncomfortable truth requirement - implement in each AI agent
    */
-  protected abstract async enforceUncomfortableTruth(
+  protected abstract enforceUncomfortableTruth(
     content: string, 
     context?: any
   ): Promise<string>
@@ -378,7 +385,7 @@ export abstract class CivicSenseAIAgent {
   /**
    * Add power dynamics analysis - implement in each AI agent
    */
-  protected abstract async addPowerDynamicsAnalysis(
+  protected abstract addPowerDynamicsAnalysis(
     content: string, 
     context?: any
   ): Promise<string>
@@ -386,7 +393,7 @@ export abstract class CivicSenseAIAgent {
   /**
    * Ensure actionable civic steps - implement in each AI agent
    */
-  protected abstract async ensureActionableSteps(
+  protected abstract ensureActionableSteps(
     content: string, 
     context?: any
   ): Promise<string>
@@ -394,7 +401,7 @@ export abstract class CivicSenseAIAgent {
   /**
    * Call AI with agent-specific configuration - implement in each AI agent
    */
-  protected abstract async callAI(
+  protected abstract callAI(
     prompt: string, 
     maxTokens?: number,
     temperature?: number

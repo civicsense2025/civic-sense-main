@@ -30,9 +30,11 @@
     "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node scripts/generate-enum-exports.js",
     "gen:types": "npm run generate-types",
     "sync:db-constants": "node scripts/sync-database-constants.js",
-    "gen:constants": "npm run sync:db-constants"
+    "gen:constants": "npm run sync:db-constants",
+    "generate-key-takeaways": "tsx scripts/generate-key-takeaways.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
     "@flags-sdk/statsig": "^0.2.2",
     "@google-cloud/text-to-speech": "^6.1.0",
     "@google-cloud/translate": "^9.1.0",
@@ -69,8 +71,9 @@
     "@statsig/web-analytics": "^3.18.0",
     "@stripe/stripe-js": "^7.3.1",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "latest",
+    "@supabase/supabase-js": "^2.50.0",
     "@types/dotenv": "^6.1.1",
+    "@types/node-fetch": "^2.6.12",
     "@vercel/analytics": "^1.5.0",
     "@vercel/og": "^0.6.8",
     "@vercel/speed-insights": "^1.2.0",
@@ -94,8 +97,9 @@
     "mini-css-extract-plugin": "^2.9.2",
     "next": "15.2.4",
     "next-themes": "latest",
+    "node-fetch": "^3.3.2",
     "npm": "^11.4.2",
-    "openai": "^5.5.0",
+    "openai": "^5.6.0",
     "pg": "^8.16.0",
     "plunk": "^0.6.0",
     "react": "^19.1.0",
@@ -113,7 +117,6 @@
     "supabase-cli": "^0.0.21",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "ts-node": "^10.9.2",
     "vaul": "^0.9.6",
     "vercel": "^43.1.0",
     "zod": "^3.24.1"
@@ -127,7 +130,8 @@
     "canvas": "^3.1.0",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.20.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"

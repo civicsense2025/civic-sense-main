@@ -4,8 +4,17 @@ import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { QuizResults } from "@/components/quiz/quiz-results"
-import { Loader2 } from "lucide-react"
+import { Loader2, BookmarkPlus, Check } from "lucide-react"
 import Link from "next/link"
+import { bookmarkOperations } from "@/lib/bookmarks"
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/components/auth/auth-provider"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import type { ContentType } from "@/lib/types/bookmarks"
+import type { QuizQuestion } from "@/lib/quiz-data"
+import type { KeyTakeaways } from "@/lib/types/key-takeaways"
+import { createClient } from "@/lib/supabase/client"
 
 interface ResultsPageProps {
   params: {
@@ -13,152 +22,254 @@ interface ResultsPageProps {
   }
 }
 
-// Add normalization function for assessment questions
-function normalizeAssessmentQuestion(q: any): any {
-  // Map options array to option_a, option_b, etc.
-  const options = Array.isArray(q.options) ? q.options : []
-  return {
-    topic_id: q.category || "assessment",
-    question_number: q.question_number || 0,
-    question_type: q.question_type || "multiple_choice",
-    category: q.category || "",
-    question: q.question,
-    option_a: options[0]?.text || options[0] || undefined,
-    option_b: options[1]?.text || options[1] || undefined,
-    option_c: options[2]?.text || options[2] || undefined,
-    option_d: options[3]?.text || options[3] || undefined,
-    correct_answer: q.correctAnswer || q.correct_answer,
-    hint: q.hint || "",
-    explanation: q.friendlyExplanation || q.friendly_explanation || q.explanation || "",
-    tags: q.tags || [],
-    sources: q.sources || [],
-  }
+interface QuizState {
+  topicId: string
+  questions: QuizQuestion[]
+  userAnswers: Array<{
+    questionId: number
+    answer: string
+    isCorrect: boolean
+    timeSpent: number
+  }>
+  keyTakeaways?: KeyTakeaways
 }
 
 export default function ResultsPageClient({ params }: ResultsPageProps) {
   const attemptId = params.attemptId
   const router = useRouter()
+  const { toast } = useToast()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [state, setState] = useState<{
-    topicId: string
-    userAnswers: Array<{
-      questionId: number
-      answer: string
-      isCorrect: boolean
-      timeSpent: number
-    }>
-    questions: any[]
-  } | null>(null)
+  const [state, setState] = useState<QuizState | null>(null)
+  const [savedTakeaways, setSavedTakeaways] = useState<Set<string>>(new Set())
+  const supabase = createClient()
+
+  const saveTakeaway = async (text: string, type: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Not logged in",
+        description: "Please log in to save takeaways",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      // Create a bookmark for the topic
+      const bookmark = await bookmarkOperations.createBookmark({
+        content_type: 'quiz' as ContentType,
+        content_id: state?.topicId,
+        title: `Quiz Topic: ${state?.questions[0]?.category || 'Untitled'}`,
+        description: 'Key takeaways from quiz topic',
+        tags: ['quiz', 'key-takeaways', type]
+      }, user.id)
+
+      // Create a snippet for the takeaway
+      await bookmarkOperations.createSnippet(
+        bookmark.id,
+        {
+          snippet_text: text,
+          source_type: 'annotation',
+          user_notes: `Key takeaway (${type}) from quiz results`
+        },
+        user.id
+      )
+
+      setSavedTakeaways(prev => new Set([...prev, text]))
+      toast({
+        title: "Saved!",
+        description: "Key takeaway saved to your bookmarks"
+      })
+    } catch (error) {
+      console.error('Failed to save takeaway:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save takeaway",
+        variant: "destructive"
+      })
+    }
+  }
 
   useEffect(() => {
-    if (!attemptId) return
-    const load = async () => {
+    const fetchResults = async () => {
       try {
-        setLoading(true)
         const details = await enhancedQuizDatabase.getQuizAttemptDetails(attemptId)
         if (!details.attempt) {
-          setError("Attempt not found")
+          setError('Quiz attempt not found')
           return
         }
-        const { attempt, userAnswers, questions } = details
 
-        // Convert userAnswers shape to QuizResults expected
-        const convertedAnswers = userAnswers.map(ans => ({
-          questionId: ans.questionNumber,
-          answer: ans.answer,
-          isCorrect: ans.isCorrect,
-          timeSpent: ans.timeSpent
-        }))
+        // Get key takeaways for the topic
+        const { data: topic } = await supabase
+          .from('question_topics')
+          .select('key_takeaways')
+          .eq('topic_id', details.attempt.topicId)
+          .single()
 
-        // Normalize questions if this is an assessment
-        let normalizedQuestions = questions
-        // Type guard: check if question has 'options' property
-        const isAssessmentFormat = (q: any) => q && (Array.isArray(q.options) || q.hasOwnProperty('options'))
-        if (
-          attempt.topicId === 'assessment' ||
-          (questions.length > 0 && isAssessmentFormat(questions[0]))
-        ) {
-          normalizedQuestions = questions.map(normalizeAssessmentQuestion)
-        }
-
-        setState({ topicId: attempt.topicId, userAnswers: convertedAnswers, questions: normalizedQuestions })
-      } catch (e) {
-        console.error(e)
-        setError("Failed to load attempt details")
+        setState({
+          topicId: details.attempt.topicId,
+          questions: details.questions,
+          userAnswers: details.userAnswers.map(a => ({
+            questionId: a.questionNumber,
+            answer: a.answer,
+            isCorrect: a.isCorrect,
+            timeSpent: a.timeSpent
+          })),
+          keyTakeaways: topic?.key_takeaways as KeyTakeaways | undefined
+        })
+      } catch (err) {
+        setError('Failed to load quiz results')
+        console.error(err)
       } finally {
         setLoading(false)
       }
     }
-    load()
+
+    fetchResults()
   }, [attemptId])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-400 font-light">Loading your results...</p>
-        </div>
-      </div>
-    )
+    return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
   }
 
   if (error || !state) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center text-center px-4">
-        <div className="text-4xl mb-6">😕</div>
-        <h1 className="text-2xl font-light text-slate-900 dark:text-white mb-4">
-          {error || "Results Not Found"}
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 font-light mb-8 max-w-md">
-          We couldn't find the quiz results you're looking for. They might have expired or been removed.
-        </p>
-        <Link 
-          href="/dashboard"
-          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-        >
-          Return to Dashboard
-        </Link>
-      </div>
-    )
+    return <div className="text-red-500 p-4">{error || 'No results found'}</div>
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
-      {/* Clean header */}
-      <div className="border-b border-slate-100 dark:border-slate-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Clean branding */}
-            <Link 
-              href="/" 
-              className="group hover:opacity-70 transition-opacity"
-            >
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                CivicSense
-              </h1>
-            </Link>
-            
-            <Link
-              href="/dashboard"
-              className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              Return to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
+    <div className="container mx-auto p-4 space-y-8">
+      <QuizResults 
+        userAnswers={state.userAnswers}
+        questions={state.questions}
+        topicId={state.topicId}
+        onFinish={() => router.push('/dashboard')}
+      />
+      
+      {state.keyTakeaways ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Core Facts */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Core Facts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {state.keyTakeaways.core_facts.map((fact, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
+                    <p>{fact}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveTakeaway(fact, 'Core Fact')}
+                      disabled={savedTakeaways.has(fact)}
+                    >
+                      {savedTakeaways.has(fact) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Results content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <QuizResults
-          userAnswers={state.userAnswers}
-          questions={state.questions as any}
-          topicId={state.topicId}
-          onFinish={() => router.push("/dashboard")}
-        />
-      </div>
+          {/* Uncomfortable Truths */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Uncomfortable Truths</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {state.keyTakeaways.uncomfortable_truths.map((truth, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
+                    <p>{truth}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveTakeaway(truth, 'Uncomfortable Truth')}
+                      disabled={savedTakeaways.has(truth)}
+                    >
+                      {savedTakeaways.has(truth) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Power Dynamics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Power Dynamics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {state.keyTakeaways.power_dynamics.map((dynamic, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
+                    <p>{dynamic}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveTakeaway(dynamic, 'Power Dynamic')}
+                      disabled={savedTakeaways.has(dynamic)}
+                    >
+                      {savedTakeaways.has(dynamic) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Actionable Insights */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Actionable Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {state.keyTakeaways.actionable_insights.map((insight, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
+                    <p>{insight}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveTakeaway(insight, 'Actionable Insight')}
+                      disabled={savedTakeaways.has(insight)}
+                    >
+                      {savedTakeaways.has(insight) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Key Takeaways</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">No key takeaways available for this topic yet. Check back later!</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 } 

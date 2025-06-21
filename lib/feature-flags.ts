@@ -11,6 +11,9 @@ interface FeatureFlags {
   // Learning pods feature
   learningPods: boolean
   
+  // Scenarios feature
+  scenarios: boolean
+  
   // Debug and test routes
   debugRoutes: boolean
   
@@ -39,6 +42,9 @@ class FeatureFlagManager {
       
       // Learning pods - only in development for now  
       learningPods: isDevelopment || process.env.NEXT_PUBLIC_ENABLE_PODS === 'true',
+      
+      // Scenarios - enabled in development and can be enabled via env var
+      scenarios: isDevelopment || process.env.NEXT_PUBLIC_ENABLE_SCENARIOS === 'true',
       
       // Debug routes - only in development
       debugRoutes: isDevelopment,
@@ -125,4 +131,8 @@ export const isAdminAccessEnabled = (): boolean => {
 
 export const areExperimentalFeaturesEnabled = (): boolean => {
   return isFeatureEnabled('experimental')
+}
+
+export const areScenariosEnabled = (): boolean => {
+  return isFeatureEnabled('scenarios')
 } 

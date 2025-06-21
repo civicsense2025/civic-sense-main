@@ -36,11 +36,62 @@ export async function POST(request: NextRequest) {
       query = query.or(`topic_title.ilike.%${params.query}%,description.ilike.%${params.query}%,why_this_matters.ilike.%${params.query}%`)
     }
 
-    // Filter by categories
+    // Filter by categories using junction table (much faster!)
     if (params.categories.length > 0) {
-      // Categories is a JSON field, so we need to check if any of the requested categories are in the JSON array
-      const categoryFilters = params.categories.map(cat => `categories.cs.["${cat}"]`).join(',')
-      query = query.or(categoryFilters)
+      // First check if junction table exists and has data
+      const { data: junctionExists } = await supabase
+        .from('question_topic_categories')
+        .select('topic_id')
+        .limit(1)
+      
+      if (junctionExists && junctionExists.length > 0) {
+        // Get category UUIDs from category names
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('id, name')
+          .in('name', params.categories)
+          .eq('is_active', true)
+        
+        const categoryUUIDs = categoryData?.map(cat => cat.id) || []
+        
+        if (categoryUUIDs.length > 0) {
+          // Get topic UUIDs from junction table
+          const { data: junctionTopics } = await supabase
+            .from('question_topic_categories')
+            .select('topic_id')
+            .in('category_id', categoryUUIDs)
+          
+          const topicUUIDs = junctionTopics?.map(row => row.topic_id) || []
+          
+          if (topicUUIDs.length > 0) {
+            // Convert UUIDs to string topic_ids by querying question_topics
+            const { data: topicData } = await supabase
+              .from('question_topics')
+              .select('topic_id, id')
+              .in('id', topicUUIDs)
+            
+            const stringTopicIds = topicData?.map(topic => topic.topic_id) || []
+            
+            if (stringTopicIds.length > 0) {
+              // Now filter by string topic_ids
+              query = query.in('topic_id', stringTopicIds)
+            } else {
+              // No topics match the categories, return empty result
+              query = query.eq('topic_id', 'no-match-found')
+            }
+          } else {
+            // No topics match the categories, return empty result
+            query = query.eq('topic_id', 'no-match-found')
+          }
+        } else {
+          // No matching categories found, return empty result
+          query = query.eq('topic_id', 'no-match-found')
+        }
+      } else {
+        // Fallback to JSONB approach if junction table not populated yet
+        const categoryFilters = params.categories.map(cat => `categories.cs.["${cat}"]`).join(',')
+        query = query.or(categoryFilters)
+      }
     }
 
     // Note: difficulty filtering will be done post-query based on question difficulty levels

@@ -7,7 +7,7 @@ import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
 import { CivicCard } from "./civic-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ChevronDown, Lock, Clock, Crown, Star, Check } from "lucide-react"
+import { Calendar, ChevronDown, Lock, Clock, Crown, Star, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
@@ -24,6 +24,8 @@ import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { supabase } from "@/lib/supabase/client"
 import { StartQuizButton } from "@/components/start-quiz-button"
+import { UnifiedTopicNavigation } from "@/components/quiz/unified-topic-navigation"
+import { UnlockTimer } from "@/components/ui/unlock-timer"
 
 // Helper to get today's date at midnight in the user's local timezone
 // If you need to mock a date for testing, set NEXT_PUBLIC_MOCK_DATE="YYYY-MM-DD"
@@ -552,6 +554,17 @@ export function DailyCardStack({
     
     return sorted
   }, [organizedTopics])
+
+  // Prepare navigation data for UnifiedTopicNavigation component
+  const navigationTopics = useMemo(() => {
+    return allFilteredTopics.map(topic => ({
+      id: topic.topic_id,
+      title: topic.topic_title,
+      emoji: topic.emoji,
+      date: topic.date,
+      dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'long' }) || ''
+    }))
+  }, [allFilteredTopics])
 
   // Now all useCallback hooks that depend on allFilteredTopics
   const updateUrlWithTopic = useCallback((index: number) => {
@@ -1116,6 +1129,19 @@ export function DailyCardStack({
     }
   }, [])
 
+  // Define handleViewportNavigation before any early returns to maintain hook order
+  const handleViewportNavigation = useCallback((direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentStackIndex < allFilteredTopics.length - 1) {
+      const newIndex = currentStackIndex + 1
+      setCurrentStackIndex(newIndex)
+      updateUrlWithTopic(newIndex)
+    } else if (direction === 'next' && currentStackIndex > 0) {
+      const newIndex = currentStackIndex - 1
+      setCurrentStackIndex(newIndex)
+      updateUrlWithTopic(newIndex)
+    }
+  }, [currentStackIndex, allFilteredTopics.length, updateUrlWithTopic])
+
   // Add missing cardBaseHeight constant
   const cardBaseHeight = "min-h-[400px] sm:min-h-[500px]"
 
@@ -1231,7 +1257,7 @@ export function DailyCardStack({
   const currentAccessStatus = getTopicAccessStatus(currentTopic)
 
   return (
-    <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
+    <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8 relative">
       {showGuestBanner && (
         <GuestAccessBanner 
           user={user}
@@ -1250,214 +1276,28 @@ export function DailyCardStack({
         onAuthRequired={onAuthRequired}
       />
 
-      {/* Navigation - Mobile-friendly stacked layout */}
+      {/* Viewport Edge Navigation - Only show if we have multiple topics */}
+      {allFilteredTopics.length > 1 && navigationTopics.length > 0 && (
+        <UnifiedTopicNavigation
+          currentTopic={navigationTopics[currentStackIndex]}
+          allTopics={navigationTopics}
+          onNavigate={handleViewportNavigation}
+          enableKeyboardShortcuts={true}
+          showKeyboardHints={false}
+          variant="viewport"
+        />
+      )}
+
+      {/* Progress indicator - centered, minimal */}
       {allFilteredTopics.length > 1 && (
-        <div className="mb-6 space-y-4">
-          {/* Current date selector - Full width on mobile, centered on desktop */}
-          <div className="flex justify-center px-4 sm:px-6 lg:px-8">
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center space-x-2 text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-wide hover:opacity-70 transition-opacity px-3 py-2 border-b-2 border-dashed border-slate-300 dark:border-slate-600 bg-transparent">
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg">{currentTopic.emoji}</span>
-                    <span>
-                      {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
-                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-                      })}
-                    </span>
-                  </span>
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="center" 
-                className="w-[90vw] max-w-md max-h-[80vh] overflow-y-auto"
-                ref={dropdownRef}
-                onScroll={handleDropdownScroll}
-              >
-                <div className="p-2">
-                  <div className="mb-2">
-                    <input
-                      type="text"
-                      value={dropdownSearch}
-                      onChange={(e) => setDropdownSearch(e.target.value)}
-                      placeholder={`Search ${(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)} topics...`}
-                      className="w-full bg-slate-100 dark:bg-slate-800 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-                    />
-                  </div>
-                  {/* Trending searches */}
-                  {dropdownSearch === "" && trendingQueries.length > 0 && (
-                    <div className="mb-2 px-1">
-                      <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Trending searches</div>
-                      <div className="flex flex-wrap gap-2">
-                        {trendingQueries.map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => setDropdownSearch(q)}
-                            className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-full px-3 py-1 transition-colors"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* Filter topics by search */}
-                  {(() => {
-                    const filtered = allFilteredTopics.filter(t =>
-                      t.topic_title.toLowerCase().includes(debouncedDropdownSearch.toLowerCase()) ||
-                      (t.description?.toLowerCase() || "").includes(debouncedDropdownSearch.toLowerCase())
-                    )
-                    const topicsToRender = debouncedDropdownSearch ? filtered : filtered.slice(0, visibleTopicsCount)
-                    return topicsToRender.map((topic, idx) => {
-                      const indexInAll = allFilteredTopics.findIndex(tt => tt.topic_id === topic.topic_id)
-                      const accessStatus = getTopicAccessStatus(topic)
-                      const isCurrent = indexInAll === currentStackIndex
-                      const topicDate = parseTopicDate(topic.date)
-                      return (
-                        <DropdownMenuItem
-                          data-topic-index={indexInAll}
-                          key={topic.topic_id}
-                          onClick={() => {
-                            if (accessStatus.accessible) {
-                              handleIndexChange(indexInAll)
-                              recordSearchQuery(dropdownSearch || topic.topic_title)
-                              setDropdownOpen(false)
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center justify-between p-3 transition-colors",
-                            isCurrent && "bg-primary/10 font-medium",
-                            !accessStatus.accessible && "opacity-50 cursor-not-allowed",
-                            "hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white"
-                          )}
-                          disabled={!accessStatus.accessible}
-                        >
-                          <div className="flex items-center space-x-3 flex-grow min-w-0">
-                            <span className="text-lg flex-shrink-0">{topic.emoji}</span>
-                            <div className="flex-grow min-w-0">
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
-                                {topic.is_breaking && (
-                                  <span className="inline-block px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
-                                    Breaking
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 mt-0.5">
-                                <span>{topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                                {topic.is_featured && (
-                                  <span className="inline-flex items-center px-0.5 py-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[8px] font-bold font-space-mono uppercase tracking-wide rounded-sm">
-                                    <Star className="h-1 w-1 mr-0.5" />
-                                    <span className="hidden sm:inline">Featured</span>
-                                    <span className="inline sm:hidden">★</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1 flex-shrink-0">
-                            {accessStatus.reason === 'coming_soon' && <span className="text-xs text-slate-600 dark:text-slate-400">Coming Soon</span>}
-                            {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
-                            {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
-                            {isCurrent && <span className="text-xs text-primary">●</span>}
-                          </div>
-                        </DropdownMenuItem>
-                      )
-                    })
-                  })()}
-                  {!debouncedDropdownSearch && visibleTopicsCount < allFilteredTopics.length && (
-                    <div className="text-center py-2 text-xs text-slate-500">
-                      Scroll to load more topics ({visibleTopicsCount} of {allFilteredTopics.length})...
-                    </div>
-                  )}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Previous/Next navigation */}
-          <div className="relative flex items-center px-4 sm:px-6 lg:px-8">
-            {/* Previous button - goes to older topics (higher index) */}
-            <button
-              onClick={currentStackIndex < allFilteredTopics.length - 1 ? () => {
-                const newIndex = Math.min(allFilteredTopics.length - 1, currentStackIndex + 1)
-                setCurrentStackIndex(newIndex)
-                updateUrlWithTopic(newIndex)
-              } : undefined}
-              disabled={currentStackIndex === allFilteredTopics.length - 1}
-              className={cn(
-                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0",
-                currentStackIndex === allFilteredTopics.length - 1 ? "opacity-70 cursor-default" : "opacity-70 hover:opacity-100 cursor-pointer"
-              )}
-            >
-              {currentStackIndex < allFilteredTopics.length - 1 ? (
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    ← {parseTopicDate(allFilteredTopics[currentStackIndex + 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </div>
-                  <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-base">{allFilteredTopics[currentStackIndex + 1].emoji}</span>
-                    <span className="text-left max-w-[100px] sm:max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex + 1].topic_title, 15)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    ← Previous
-                  </div>
-                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400">No more topics</div>
-                </div>
-              )}
-            </button>
-
-            {/* Progress indicator - absolutely centered, hidden on mobile */}
-            <div className="hidden sm:block absolute left-1/2 transform -translate-x-1/2 text-xs text-slate-500 dark:text-slate-400 font-mono">
-              {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
-            </div>
-
-            {/* Next button - goes to newer topics (lower index) */}
-            <button
-              onClick={currentStackIndex > 0 ? () => {
-                const newIndex = Math.max(0, currentStackIndex - 1)
-                setCurrentStackIndex(newIndex)
-                updateUrlWithTopic(newIndex)
-              } : undefined}
-              disabled={currentStackIndex === 0}
-              className={cn(
-                "text-xs sm:text-sm font-medium tracking-wide transition-opacity min-w-0 flex-shrink-0 ml-auto",
-                currentStackIndex === 0 ? "opacity-30 cursor-not-allowed" : "opacity-70 hover:opacity-100"
-              )}
-            >
-              {currentStackIndex > 0 ? (
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    {parseTopicDate(allFilteredTopics[currentStackIndex - 1].date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →
-                  </div>
-                  <div className="flex items-center gap-1 font-medium text-sm">
-                    <span className="text-right max-w-[100px] sm:max-w-[120px] truncate">
-                      {truncateTitle(allFilteredTopics[currentStackIndex - 1].topic_title, 15)}
-                    </span>
-                    <span className="text-base">{allFilteredTopics[currentStackIndex - 1].emoji}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                    Next →
-                  </div>
-                  <div className="text-sm font-medium text-slate-400">No more topics</div>
-                </div>
-              )}
-            </button>
+        <div className="text-center mb-6">
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+            {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
           </div>
         </div>
       )}
 
-      {/* Single Topic Display - cleaner version without card style */}
+      {/* Single Topic Display */}
       <div className="relative">
         <div
           ref={cardRef}
@@ -1478,7 +1318,9 @@ export function DailyCardStack({
           <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">{currentTopic.emoji}</div>
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              
+              {/* Topic Title */}
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4">
                 <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 max-w-4xl text-center leading-tight">
                   {currentTopic.topic_title}
                 </h2>
@@ -1490,8 +1332,6 @@ export function DailyCardStack({
                   </div>
                 )}
                 
-
-                
                 {/* Completed Badge */}
                 {isTopicCompleted(currentTopic.topic_id) && (
                   <span className="text-green-600" title="Completed">
@@ -1502,6 +1342,133 @@ export function DailyCardStack({
                   </span>
                 )}
               </div>
+
+              {/* Date Selector - Now positioned below the title */}
+              {allFilteredTopics.length > 1 && (
+                <div className="flex justify-center mb-6">
+                  <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center space-x-2 text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {parseTopicDate(currentTopic.date)?.toLocaleDateString('en-US', { 
+                              weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+                            })}
+                          </span>
+                        </span>
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="center" 
+                      className="w-[90vw] max-w-md max-h-[80vh] overflow-y-auto"
+                      ref={dropdownRef}
+                      onScroll={handleDropdownScroll}
+                    >
+                      <div className="p-2">
+                        <div className="mb-2">
+                          <input
+                            type="text"
+                            value={dropdownSearch}
+                            onChange={(e) => setDropdownSearch(e.target.value)}
+                            placeholder={`Search ${(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)} topics...`}
+                            className="w-full bg-slate-100 dark:bg-slate-800 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400"
+                          />
+                        </div>
+                        {/* Trending searches */}
+                        {dropdownSearch === "" && trendingQueries.length > 0 && (
+                          <div className="mb-2 px-1">
+                            <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Trending searches</div>
+                            <div className="flex flex-wrap gap-2">
+                              {trendingQueries.map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => setDropdownSearch(q)}
+                                  className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-full px-3 py-1 transition-colors"
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Filter topics by search */}
+                        {(() => {
+                          const filtered = allFilteredTopics.filter(t =>
+                            t.topic_title.toLowerCase().includes(debouncedDropdownSearch.toLowerCase()) ||
+                            (t.description?.toLowerCase() || "").includes(debouncedDropdownSearch.toLowerCase())
+                          )
+                          const topicsToRender = debouncedDropdownSearch ? filtered : filtered.slice(0, visibleTopicsCount)
+                          return topicsToRender.map((topic, idx) => {
+                            const indexInAll = allFilteredTopics.findIndex(tt => tt.topic_id === topic.topic_id)
+                            const accessStatus = getTopicAccessStatus(topic)
+                            const isCurrent = indexInAll === currentStackIndex
+                            const topicDate = parseTopicDate(topic.date)
+                            return (
+                              <DropdownMenuItem
+                                data-topic-index={indexInAll}
+                                key={topic.topic_id}
+                                onClick={() => {
+                                  if (accessStatus.accessible) {
+                                    handleIndexChange(indexInAll)
+                                    recordSearchQuery(dropdownSearch || topic.topic_title)
+                                    setDropdownOpen(false)
+                                  }
+                                }}
+                                className={cn(
+                                  "flex items-center justify-between p-3 transition-colors",
+                                  isCurrent && "bg-primary/10 font-medium",
+                                  !accessStatus.accessible && "opacity-50 cursor-not-allowed",
+                                  "hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white"
+                                )}
+                                disabled={!accessStatus.accessible}
+                              >
+                                <div className="flex items-center space-x-3 flex-grow min-w-0">
+                                  <span className="text-lg flex-shrink-0">{topic.emoji}</span>
+                                  <div className="flex-grow min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
+                                      {topic.is_breaking && (
+                                        <span className="inline-block px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
+                                          Breaking
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                                      <span>{topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                      {topic.is_featured && (
+                                        <span className="inline-flex items-center px-0.5 py-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[8px] font-bold font-space-mono uppercase tracking-wide rounded-sm">
+                                          <Star className="h-1 w-1 mr-0.5" />
+                                          <span className="hidden sm:inline">Featured</span>
+                                          <span className="inline sm:hidden">★</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-1 flex-shrink-0">
+                                  {accessStatus.reason === 'coming_soon' && <span className="text-xs text-slate-600 dark:text-slate-400">Coming Soon</span>}
+                                  {!accessStatus.accessible && accessStatus.reason !== 'coming_soon' && <Lock className="h-3 w-3" />}
+                                  {isTopicCompleted(topic.topic_id) && <span className="text-xs text-green-600">✓</span>}
+                                  {isCurrent && <span className="text-xs text-primary">●</span>}
+                                </div>
+                              </DropdownMenuItem>
+                            )
+                          })
+                        })()}
+                        {!debouncedDropdownSearch && visibleTopicsCount < allFilteredTopics.length && (
+                          <div className="text-center py-2 text-xs text-slate-500">
+                            Scroll to load more topics ({visibleTopicsCount} of {allFilteredTopics.length})...
+                          </div>
+                        )}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
               {/* Topic categories */}
               {((currentTopic.categories && currentTopic.categories.length > 0) || currentTopic.is_featured) && (
                 <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
@@ -1525,6 +1492,7 @@ export function DailyCardStack({
                   ))}
                 </div>
               )}
+              
               <p className="text-base sm:text-2xl md:text-3xl lg:text-2xl font-light text-slate-800 dark:text-slate-300 max-w-4xl mx-auto">
                 {currentTopic.description}
               </p>
@@ -1579,7 +1547,14 @@ export function DailyCardStack({
                     Completed
                   </Badge>
                 )}
-                {!currentAccessStatus.accessible && (
+                {!currentAccessStatus.accessible && currentAccessStatus.reason === 'future_locked' && (
+                  <UnlockTimer
+                    targetDate={parseTopicDate(currentTopic.date) || new Date()}
+                    label="Unlocks in:"
+                    className="text-amber-700 dark:text-amber-400"
+                  />
+                )}
+                {!currentAccessStatus.accessible && currentAccessStatus.reason !== 'future_locked' && (
                   <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-space-mono">
                     {currentAccessStatus.reason === 'coming_soon' ? 'Coming Soon' : 'Premium Content'}
                   </Badge>

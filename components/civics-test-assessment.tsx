@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -17,6 +17,7 @@ import {
   type EnhancedQuizState, 
   type QuestionResponse 
 } from '@/lib/enhanced-progress-storage'
+import { useKeyboardShortcuts, type KeyboardShortcutGroup } from '@/lib/keyboard-shortcuts'
 
 interface AssessmentQuestion {
   id: string
@@ -729,6 +730,62 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
     }
   }, [])
 
+  // Create keyboard shortcuts for the assessment
+  const keyboardShortcuts = useMemo((): KeyboardShortcutGroup[] => {
+    if (!currentQuestion || showResult || assessmentComplete) return []
+
+    const shortcuts = []
+    
+    // Number key shortcuts (1-4 for multiple choice)
+    for (let i = 0; i < Math.min(currentQuestion.options.length, 9); i++) {
+      shortcuts.push({
+        key: String(i + 1),
+        description: `Select option ${i + 1}: ${currentQuestion.options[i].text}`,
+        action: () => handleAnswer(currentQuestion.options[i].id),
+        condition: () => !showResult && !assessmentComplete
+      })
+    }
+
+    // Letter shortcuts (A, B, C, D)
+    for (let i = 0; i < Math.min(currentQuestion.options.length, 4); i++) {
+      const letter = String.fromCharCode(65 + i) // A, B, C, D
+      shortcuts.push({
+        key: letter.toLowerCase(),
+        description: `Select option ${letter}: ${currentQuestion.options[i].text}`,
+        action: () => handleAnswer(currentQuestion.options[i].id),
+        condition: () => !showResult && !assessmentComplete
+      })
+    }
+
+    // Navigation shortcuts
+    if (showResult && canAdvance) {
+      shortcuts.push({
+        key: 'enter',
+        description: 'Continue to next question',
+        action: () => handleAdvance(),
+        condition: () => showResult && canAdvance
+      })
+      shortcuts.push({
+        key: ' ',
+        description: 'Continue to next question',
+        action: () => handleAdvance(),
+        condition: () => showResult && canAdvance
+      })
+    }
+
+    return [{
+      name: 'civics-test-assessment',
+      shortcuts,
+      enabled: true
+    }]
+  }, [currentQuestion, showResult, assessmentComplete, canAdvance])
+
+  // Use the keyboard shortcuts utility
+  useKeyboardShortcuts(keyboardShortcuts, {
+    enableLogging: false,
+    autoDisableOnInput: true
+  })
+
   // Calculate results
   const calculateResults = () => {
     if (!testState) return { score: 0, correct: 0, total: 0, level: 'beginner' as const, perCategory: {} }
@@ -1150,16 +1207,37 @@ export function CivicsTestAssessment({ onComplete, onBack, testType: initialTest
           )}
           
           {!showResult ? (
-            <div className="space-y-3">
-              {currentQuestion.options.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => handleAnswer(option.id)}
-                  className="w-full px-6 py-4 text-left rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-light"
-                >
-                  {option.text}
-                </button>
-              ))}
+            <div className="space-y-4">
+              {/* Keyboard shortcuts hint */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center space-x-2 bg-blue-50 dark:bg-blue-950/20 px-4 py-2 rounded-full border border-blue-200 dark:border-blue-800">
+                  <kbd className="px-2 py-1 bg-white dark:bg-slate-800 rounded text-xs font-mono">1-{Math.min(currentQuestion.options.length, 9)}</kbd>
+                  <span className="text-xs text-blue-700 dark:text-blue-300">or</span>
+                  <kbd className="px-2 py-1 bg-white dark:bg-slate-800 rounded text-xs font-mono">A-{String.fromCharCode(64 + Math.min(currentQuestion.options.length, 4))}</kbd>
+                  <span className="text-xs text-blue-700 dark:text-blue-300">to select</span>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {currentQuestion.options.map((option, index) => (
+                  <button
+                    key={option.id}
+                    onClick={() => handleAnswer(option.id)}
+                    className="w-full px-6 py-4 text-left rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-light flex items-center space-x-4 group"
+                  >
+                    {/* Keyboard shortcut indicators */}
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg border-2 border-blue-300 dark:border-blue-600 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono text-sm font-bold group-hover:border-blue-500 group-hover:bg-blue-200 dark:group-hover:bg-blue-900 transition-colors">
+                        {index + 1}
+                      </div>
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono text-sm font-bold group-hover:border-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
+                        {String.fromCharCode(65 + index)}
+                      </div>
+                    </div>
+                    <span className="flex-1">{option.text}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

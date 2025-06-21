@@ -22,9 +22,10 @@ import { RoomCard } from '@/components/multiplayer/room-card'
 import { JoinRoomForm } from '@/components/multiplayer/join-room-form'
 import { ProTips } from '@/components/multiplayer/pro-tips'
 import { Header } from '@/components/header'
+import { areScenariosEnabled } from '@/lib/feature-flags'
 
-// Game mode definitions
-const GAME_MODES: GameMode[] = [
+// Base game mode definitions
+const BASE_GAME_MODES: GameMode[] = [
   {
     id: 'classic',
     name: 'Classic Quiz',
@@ -77,6 +78,24 @@ const GAME_MODES: GameMode[] = [
     estimatedTime: '8-12 min'
   }
 ]
+
+// Scenario game mode (conditionally included)
+const SCENARIO_GAME_MODE: GameMode = {
+  id: 'scenario',
+  name: 'Civic Scenarios',
+  description: 'Interactive political simulations where you role-play as government officials, advocates, and citizens',
+  emoji: '🏛️',
+  features: ['Role-playing', 'Decision making', 'Real-world scenarios'],
+  difficulty: 'mixed',
+  playerRange: [1, 4],
+  estimatedTime: '20-45 min',
+  isPremium: true
+}
+
+// Dynamic game modes array that includes scenarios when enabled
+const GAME_MODES: GameMode[] = areScenariosEnabled() 
+  ? [...BASE_GAME_MODES, SCENARIO_GAME_MODE]
+  : BASE_GAME_MODES
 
 interface LobbyState {
   selectedGameMode: string
@@ -159,6 +178,12 @@ export function MultiplayerLobbyClient() {
         description: "This game mode requires a premium subscription.",
         variant: "destructive"
       })
+      return
+    }
+
+    // Handle scenario mode differently - navigate to scenarios page
+    if (selectedMode.id === 'scenario') {
+      router.push('/scenarios')
       return
     }
 
@@ -398,14 +423,24 @@ export function MultiplayerLobbyClient() {
                       </div>
                       
                       <div className="flex justify-center pt-4">
-                        <Button
-                          onClick={() => setCreationStep('settings')}
-                          variant="outline"
-                          className="px-8 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                        >
-                          Next: Configure Settings
-                          <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
+                        {state.selectedGameMode === 'scenario' ? (
+                          <Button
+                            onClick={handleCreateRoom}
+                            className="px-8 bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Start Scenario
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => setCreationStep('settings')}
+                            variant="outline"
+                            className="px-8 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            Next: Configure Settings
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}

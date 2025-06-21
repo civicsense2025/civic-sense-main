@@ -445,6 +445,13 @@ export function TopicInfo({
           <h1 className="text-2xl sm:text-3xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-4">
             {topicData.topic_title}
           </h1>
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-4">
+            <span className="font-mono">{new Date(topicData.date).toLocaleDateString('en-US', { 
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            })}</span>
+          </div>
           {topicData.description && (
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
               {topicData.description}

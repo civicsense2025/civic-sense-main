@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useKeyboardShortcuts, type KeyboardShortcutGroup } from "@/lib/keyboard-shortcuts"
 
 interface MultipleChoiceProps {
   questionId: string
@@ -65,57 +66,92 @@ export function MultipleChoice({ questionId, options, value, onChange, className
     }
   }
 
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!radioGroupRef.current?.contains(e.target as Node)) return
-
-      const currentIndex = currentOption ? options.findIndex(opt => 
-        opt === currentOption || (opt.toLowerCase().includes('other') && currentIsOther)
-      ) : -1
-
-      switch (e.key) {
-        case 'ArrowDown':
-        case 'ArrowRight':
-          e.preventDefault()
-          const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0
-          handleOptionChange(options[nextIndex])
-          break
-        case 'ArrowUp':
-        case 'ArrowLeft':
-          e.preventDefault()
-          const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1
-          handleOptionChange(options[prevIndex])
-          break
-        case ' ':
-        case 'Enter':
-          e.preventDefault()
-          // Focus stays on current item, space/enter confirms selection
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          const optionIndex = parseInt(e.key) - 1
-          if (optionIndex < options.length) {
-            e.preventDefault()
-            handleOptionChange(options[optionIndex])
-          }
-          break
-      }
+  // Create keyboard shortcuts for this multiple choice question
+  const keyboardShortcuts = useMemo((): KeyboardShortcutGroup[] => {
+    const shortcuts = []
+    
+    // Number key shortcuts (1-9)
+    for (let i = 0; i < Math.min(options.length, 9); i++) {
+      shortcuts.push({
+        key: String(i + 1),
+        description: `Select option ${i + 1}: ${options[i]}`,
+        action: () => handleOptionChange(options[i]),
+        condition: () => radioGroupRef.current?.contains(document.activeElement) || 
+                         document.activeElement?.closest(`[data-question-id="${questionId}"]`) !== null
+      })
     }
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [options, currentOption, currentIsOther])
+    // Arrow key navigation
+    shortcuts.push(
+      {
+        key: 'arrowdown',
+        description: 'Next option',
+        action: () => {
+          const currentIndex = currentOption ? options.findIndex(opt => 
+            opt === currentOption || (opt.toLowerCase().includes('other') && currentIsOther)
+          ) : -1
+          const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0
+          handleOptionChange(options[nextIndex])
+        },
+        condition: () => radioGroupRef.current?.contains(document.activeElement) || 
+                         document.activeElement?.closest(`[data-question-id="${questionId}"]`) !== null
+      },
+      {
+        key: 'arrowright',
+        description: 'Next option',
+        action: () => {
+          const currentIndex = currentOption ? options.findIndex(opt => 
+            opt === currentOption || (opt.toLowerCase().includes('other') && currentIsOther)
+          ) : -1
+          const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0
+          handleOptionChange(options[nextIndex])
+        },
+        condition: () => radioGroupRef.current?.contains(document.activeElement) || 
+                         document.activeElement?.closest(`[data-question-id="${questionId}"]`) !== null
+      },
+      {
+        key: 'arrowup',
+        description: 'Previous option',
+        action: () => {
+          const currentIndex = currentOption ? options.findIndex(opt => 
+            opt === currentOption || (opt.toLowerCase().includes('other') && currentIsOther)
+          ) : -1
+          const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1
+          handleOptionChange(options[prevIndex])
+        },
+        condition: () => radioGroupRef.current?.contains(document.activeElement) || 
+                         document.activeElement?.closest(`[data-question-id="${questionId}"]`) !== null
+      },
+      {
+        key: 'arrowleft',
+        description: 'Previous option',
+        action: () => {
+          const currentIndex = currentOption ? options.findIndex(opt => 
+            opt === currentOption || (opt.toLowerCase().includes('other') && currentIsOther)
+          ) : -1
+          const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1
+          handleOptionChange(options[prevIndex])
+        },
+        condition: () => radioGroupRef.current?.contains(document.activeElement) || 
+                         document.activeElement?.closest(`[data-question-id="${questionId}"]`) !== null
+      }
+    )
+
+    return [{
+      name: `multiple-choice-${questionId}`,
+      shortcuts,
+      enabled: true
+    }]
+  }, [options, currentOption, currentIsOther, questionId, handleOptionChange])
+
+  // Use the keyboard shortcuts utility
+  useKeyboardShortcuts(keyboardShortcuts, {
+    enableLogging: false,
+    autoDisableOnInput: true
+  })
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-question-id={questionId}>
       {/* Keyboard instructions - always visible */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center space-x-2 bg-blue-50 dark:bg-blue-950/20 px-4 py-2 rounded-full border border-blue-200 dark:border-blue-800">

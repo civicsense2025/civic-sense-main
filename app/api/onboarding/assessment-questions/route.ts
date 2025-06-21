@@ -293,6 +293,8 @@ export async function GET(request: NextRequest) {
       }
       
       if (categories.length > 0) {
+        // TODO: Optimize with junction table approach for better performance
+        // Similar to app/api/topics/search/route.ts implementation
         query = query.in('category', categories);
       }
       
@@ -421,6 +423,8 @@ export async function POST(request: NextRequest) {
 
       // Focus on specific categories if provided
       if (categories.length > 0) {
+        // TODO: Optimize with junction table approach for better performance
+        // Similar to app/api/topics/search/route.ts implementation
         query = query.in('category', categories);
       }
 

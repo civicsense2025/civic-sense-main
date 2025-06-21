@@ -213,47 +213,63 @@ export function SurveyForm({
   const isLastQuestion = currentQuestionIndex === visibleQuestions.length - 1
   const answeredQuestions = visibleQuestions.filter((q: SurveyQuestion) => responses[q.id]).length
 
-  // Enhanced keyboard shortcuts with better accessibility
+  // Navigation keyboard shortcuts (only for survey-level navigation, not question-level)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't interfere if user is typing in an input
+      // Don't interfere if user is typing in an input or if focus is on a question component
       const activeElement = document.activeElement
       const isTyping = activeElement && (
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName) ||
         activeElement.hasAttribute('contenteditable')
       )
+      
+      // Don't interfere with question-level shortcuts - check if focus is within a question component
+      const isWithinQuestion = activeElement?.closest('[data-question-id]') !== null
 
-      if (isTyping && !['Escape', 'F1'].includes(e.key)) {
+      if (isTyping || isWithinQuestion) {
+        // Only handle global shortcuts that don't conflict with question shortcuts
+        switch (e.key) {
+          case 'Escape':
+            e.preventDefault()
+            setShowKeyboardShortcuts(false)
+            setShowRequiredFeedback(false)
+            // Return focus to question if shortcuts were open
+            if (showKeyboardShortcuts && currentQuestionRef.current) {
+              currentQuestionRef.current.focus()
+            }
+            break
+          case 'F1':
+          case '?':
+            if (!isTyping) {
+              e.preventDefault()
+              setShowKeyboardShortcuts(!showKeyboardShortcuts)
+            }
+            break
+        }
         return
       }
 
       switch (e.key) {
-        case 'ArrowRight':
         case 'n':
         case 'N':
-          if (!isTyping) {
-            e.preventDefault()
-            // Allow advancing if question is answered or not required
-            if (!currentQuestion?.required || responses[currentQuestion.id]) {
-              handleNext()
-            } else {
-              // Show visual feedback for required question
-              setShowRequiredFeedback(true)
-              setTimeout(() => setShowRequiredFeedback(false), 3000)
-            }
+          e.preventDefault()
+          // Allow advancing if question is answered or not required
+          if (!currentQuestion?.required || responses[currentQuestion.id]) {
+            handleNext()
+          } else {
+            // Show visual feedback for required question
+            setShowRequiredFeedback(true)
+            setTimeout(() => setShowRequiredFeedback(false), 3000)
           }
           break
-        case 'ArrowLeft':
         case 'p':
         case 'P':
-          if (!isTyping) {
-            e.preventDefault()
-            handlePrevious()
-          }
+          e.preventDefault()
+          handlePrevious()
           break
         case 's':
         case 'S':
-          if ((e.ctrlKey || e.metaKey) && !isTyping) {
+          if ((e.ctrlKey || e.metaKey)) {
             e.preventDefault()
             if (survey.allow_partial_responses && onSaveProgress) {
               handleSaveProgress()
@@ -261,7 +277,7 @@ export function SurveyForm({
           }
           break
         case 'Enter':
-          if ((e.ctrlKey || e.metaKey) && !isTyping) {
+          if ((e.ctrlKey || e.metaKey)) {
             e.preventDefault()
             if (isLastQuestion) {
               handleSubmit()
@@ -281,25 +297,16 @@ export function SurveyForm({
           break
         case 'F1':
         case '?':
-          if (!isTyping) {
-            e.preventDefault()
-            setShowKeyboardShortcuts(!showKeyboardShortcuts)
-          }
-          break
-        case 'Tab':
-          // Allow normal tab behavior, but track focus for screen readers
+          e.preventDefault()
+          setShowKeyboardShortcuts(!showKeyboardShortcuts)
           break
         case 'Home':
-          if (!isTyping) {
-            e.preventDefault()
-            setCurrentQuestionIndex(0)
-          }
+          e.preventDefault()
+          setCurrentQuestionIndex(0)
           break
         case 'End':
-          if (!isTyping) {
-            e.preventDefault()
-            setCurrentQuestionIndex(visibleQuestions.length - 1)
-          }
+          e.preventDefault()
+          setCurrentQuestionIndex(visibleQuestions.length - 1)
           break
       }
     }

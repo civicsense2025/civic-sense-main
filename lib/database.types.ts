@@ -5571,6 +5571,7 @@ export type Database = {
           translations: Json | null
           updated_at: string | null
           why_this_matters: string
+          key_takeaways: Json | null
         }
         Insert: {
           categories?: Json
@@ -5588,6 +5589,7 @@ export type Database = {
           translations?: Json | null
           updated_at?: string | null
           why_this_matters: string
+          key_takeaways?: Json | null
         }
         Update: {
           categories?: Json
@@ -5605,6 +5607,7 @@ export type Database = {
           translations?: Json | null
           updated_at?: string | null
           why_this_matters?: string
+          key_takeaways?: Json | null
         }
         Relationships: []
       }

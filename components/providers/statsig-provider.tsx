@@ -75,16 +75,21 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
       return;
     }
 
-    if (client && !isLoading) {
-      setIsReady(true);
-      setError(null);
-      debug.log('analytics', 'Client initialized successfully');
+    // Only update state if component is still mounted
+    const timeoutId = setTimeout(() => {
+      if (client && !isLoading) {
+        setIsReady(true);
+        setError(null);
+        debug.log('analytics', 'Client initialized successfully');
 
-      // Expose for non-React consumers (e.g., analytics helper functions)
-      globalStatsigClient = client;
-    } else if (!isLoading && !client) {
-      setError(new Error('Failed to initialize Statsig client'));
-    }
+        // Expose for non-React consumers (e.g., analytics helper functions)
+        globalStatsigClient = client;
+      } else if (!isLoading && !client) {
+        setError(new Error('Failed to initialize Statsig client'));
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [client, isLoading, clientKey]);
 
   // Provide context values

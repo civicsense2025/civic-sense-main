@@ -5,7 +5,7 @@
   },
   "anthropic": {
     "apiKey": "your-anthropic-api-key-here",
-    "model": "claude-sonnet-4-20250514"
+    "model": "claude-3-7-sonnet-20250219"
   },
   "perplexity": {
     "apiKey": "your-perplexity-api-key-here",

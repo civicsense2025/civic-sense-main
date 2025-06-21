@@ -8,7 +8,7 @@ import { UserMenu } from "./auth/user-menu"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
-import { arePodsEnabled, isMultiplayerEnabled } from "@/lib/feature-flags"
+import { arePodsEnabled, isMultiplayerEnabled, areScenariosEnabled } from "@/lib/feature-flags"
 import { useTheme } from "next-themes"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
@@ -175,6 +175,18 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
           <span>📚</span>
           <span>Categories</span>
         </Link>
+
+        {/* Scenarios link - feature flagged */}
+        {areScenariosEnabled() && (
+          <Link 
+            href="/scenarios"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <span>🎭</span>
+            <span>Scenarios</span>
+          </Link>
+        )}
 
         {/* Multiplayer link - feature flagged */}
         {isMultiplayerEnabled() && (

@@ -35,7 +35,7 @@ const GenerationSettingsSchema = z.object({
   }).default({}),
   daysAhead: z.number().min(0).max(7).default(1),
   categories: z.array(z.string()).default([]),
-  aiModel: z.enum(['gpt-4', 'gpt-4-turbo', 'claude-3-opus', 'claude-3-sonnet']).default('gpt-4-turbo'),
+  aiModel: z.enum(['gpt-4', 'gpt-4-turbo', 'claude-3-opus', 'claude-3-sonnet', 'claude-3-7-sonnet-20250219']).default('gpt-4-turbo'),
   temperature: z.number().min(0).max(2).default(0.7),
   autoApprove: z.boolean().default(false)
 })

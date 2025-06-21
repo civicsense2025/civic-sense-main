@@ -2043,10 +2043,10 @@ export function GlobalAudioControls({ className }: GlobalAudioControlsProps) {
     <TooltipProvider>
       <div className={cn(
         "fixed right-6 z-50 transition-all duration-300 ease-out",
-        // Position higher when in mobile quiz to avoid footer
+        // Position higher when in mobile quiz to avoid footer - moved much higher
         isInQuiz && isMinimized 
-          ? "bottom-24" // Higher position to avoid mobile footer in quiz (increased from 20 to 24)
-          : "bottom-16", // Normal position (increased from 6 to 16)
+          ? "bottom-32" // Much higher position to avoid mobile footer in quiz (increased from 24 to 32)
+          : "bottom-24", // Higher normal position (increased from 16 to 24)
         isMinimized ? "w-14 h-14" : "w-80",
         className
       )}>

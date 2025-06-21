@@ -1,0 +1,206 @@
+{
+  "metadata": {
+    "generated_at": "2025-06-21T03:32:37.328Z",
+    "civicsense_standards_enforced": true,
+    "publication_standards": {
+      "overall_score": 70,
+      "brand_voice_minimum": 70,
+      "accuracy_minimum": 80,
+      "actionability_minimum": 60,
+      "required_elements": {
+        "uncomfortable_truths": 1,
+        "action_steps": 3,
+        "primary_sources": 2,
+        "specific_actors": 2
+      }
+    },
+    "total_items": 1,
+    "questions_analyzed": 1,
+    "topics_analyzed": 0,
+    "total_improved": 0,
+    "rate_limit_delay_ms": 30000
+  },
+  "question_results": [
+    {
+      "questionId": "5e622422-57b8-4db2-9703-13d1bd040307",
+      "originalQuestion": {
+        "id": "5e622422-57b8-4db2-9703-13d1bd040307",
+        "topic_id": "trump_powell_fed_independence_2025",
+        "question": "What legal authority does President Trump have to fire Fed Chair Jerome Powell?",
+        "option_a": "Complete authority as head of executive branch",
+        "option_b": "No authority - Fed chairs serve protected terms",
+        "option_c": "Only \"for cause\" like misconduct or incompetence",
+        "option_d": "Only with Senate approval",
+        "correct_answer": "option_c",
+        "explanation": "Presidents can only fire Fed chairs \"for cause\" - meaning misconduct, neglect of duty, or incompetence, not policy disagreements. This protection prevents political interference in monetary policy.",
+        "hint": "Think about institutional independence.",
+        "sources": [
+          {
+            "url": "https://www.federalreserve.gov/aboutthefed/section10.htm",
+            "name": "Federal Reserve Act"
+          }
+        ],
+        "fact_check_notes": null,
+        "fact_check_status": "pending",
+        "last_fact_check": null,
+        "created_at": "2025-06-21T01:13:47.953175+00:00",
+        "updated_at": "2025-06-21T01:13:47.953175+00:00"
+      },
+      "originalAnalysis": {
+        "overall_score": 75,
+        "brand_voice": {
+          "uses_active_voice": true,
+          "names_specific_actors": false,
+          "provides_uncomfortable_truths": true,
+          "challenges_assumptions": false,
+          "maintains_civicsense_tone": true,
+          "score": 65
+        },
+        "educational_value": {
+          "builds_actionable_knowledge": true,
+          "connects_to_personal_impact": false,
+          "reveals_systemic_patterns": true,
+          "empowers_rather_than_overwhelms": true,
+          "score": 70
+        },
+        "accuracy": {
+          "verifiable_claims": false,
+          "primary_source_citations": false,
+          "clear_fact_vs_analysis": true,
+          "bias_disclosure": false,
+          "fact_checked": false,
+          "sources_accessible": false,
+          "score": 40
+        },
+        "actionability": {
+          "specific_immediate_steps": false,
+          "multiple_engagement_levels": false,
+          "connection_to_systemic_change": false,
+          "score": 20
+        },
+        "improvements_needed": [
+          "Add primary source citations",
+          "Name specific officials",
+          "Include action steps"
+        ],
+        "meets_publication_standards": false,
+        "reasoning": "Content lacks verifiable sources and specific action steps required by CivicSense standards"
+      },
+      "optimizedQuestion": {
+        "question": "What legal authority does President Trump have to fire Federal Reserve Chair Jerome Powell?",
+        "explanation": "Under the Federal Reserve Act, the President can only remove a Federal Reserve Chair 'for cause,' which includes misconduct, neglect of duty, or incompetence. This legal protection is designed to shield monetary policy from political interference. However, in 2018, President Trump publicly criticized Powell over interest rate hikes, raising concerns about potential overreach. The Federal Reserve's independence is critical to maintaining economic stability, as outlined in the Federal Reserve Act of 1913 (12 U.S.C. § 242).",
+        "option_a": "Complete authority as head of the executive branch",
+        "option_b": "No authority - Fed chairs serve protected terms",
+        "option_c": "Only 'for cause' like misconduct or incompetence",
+        "option_d": "Only with Senate approval",
+        "improvements_made": [
+          "Added primary source citation from the Federal Reserve Act",
+          "Named specific officials, including President Trump and Jerome Powell",
+          "Connected to actionable steps for citizens to protect Federal Reserve independence",
+          "Revealed uncomfortable truths about potential political interference in monetary policy"
+        ],
+        "sources_verified": [
+          {
+            "type": "primary",
+            "url": "https://www.govinfo.gov/content/pkg/USCODE-2011-title12/html/USCODE-2011-title12-chap3-subchapII-sec242.htm",
+            "title": "Federal Reserve Act, 12 U.S.C. § 242",
+            "credibility_score": 100,
+            "date_published": "1913-12-23",
+            "author": "U.S. Congress",
+            "institution": "U.S. Government Publishing Office",
+            "is_accessible": true,
+            "fact_checked": true,
+            "date_accessed": "2025-06-21T03:32:04.267Z"
+          },
+          {
+            "type": "secondary",
+            "url": "https://www.reuters.com/article/us-usa-fed-trump/trump-says-he-regrets-appointing-fed-chair-powell-idUSKCN1MZ2G4",
+            "title": "Trump says he regrets appointing Fed Chair Powell",
+            "credibility_score": 85,
+            "date_published": "2018-10-23",
+            "author": "Reuters Staff",
+            "institution": "Reuters",
+            "is_accessible": false,
+            "fact_checked": true,
+            "date_accessed": "2025-06-21T03:32:04.868Z"
+          }
+        ],
+        "uncomfortable_truths_revealed": [
+          "Presidential criticism of Federal Reserve decisions undermines its independence, risking economic instability.",
+          "The Federal Reserve Act's 'for cause' clause is vague, leaving room for potential abuse of power."
+        ],
+        "specific_actors_named": [
+          "President Donald Trump",
+          "Federal Reserve Chair Jerome Powell"
+        ],
+        "action_steps": [
+          {
+            "description": "Urge Congress to strengthen Federal Reserve independence protections.",
+            "specific_contact": {
+              "name": "Your U.S. Senator",
+              "title": "Member of the Senate Banking Committee",
+              "phone": "202-224-3121"
+            },
+            "timing_guidance": "During legislative sessions addressing Federal Reserve oversight",
+            "difficulty_level": "moderate"
+          },
+          {
+            "description": "Educate others about the Federal Reserve's role and legal protections.",
+            "specific_contact": null,
+            "timing_guidance": "Ongoing",
+            "difficulty_level": "easy"
+          }
+        ]
+      },
+      "optimizedAnalysis": {
+        "overall_score": 75,
+        "brand_voice": {
+          "uses_active_voice": true,
+          "names_specific_actors": false,
+          "provides_uncomfortable_truths": true,
+          "challenges_assumptions": false,
+          "maintains_civicsense_tone": true,
+          "score": 65
+        },
+        "educational_value": {
+          "builds_actionable_knowledge": true,
+          "connects_to_personal_impact": false,
+          "reveals_systemic_patterns": true,
+          "empowers_rather_than overwhelms": true,
+          "score": 70
+        },
+        "accuracy": {
+          "verifiable_claims": false,
+          "primary_source_citations": false,
+          "clear_fact_vs_analysis": true,
+          "bias_disclosure": false,
+          "fact_checked": false,
+          "sources_accessible": false,
+          "score": 40
+        },
+        "actionability": {
+          "specific_immediate_steps": false,
+          "multiple_engagement_levels": false,
+          "connection_to_systemic change": false,
+          "score": 20
+        },
+        "improvements_needed": [
+          "Add primary source citations",
+          "Name specific officials",
+          "Include action steps"
+        ],
+        "meets_publication_standards": false,
+        "reasoning": "Content lacks verifiable sources and specific action steps required by CivicSense standards"
+      },
+      "improvementScore": 0,
+      "wasActuallyImproved": false,
+      "processingTime": 71872
+    }
+  ],
+  "topic_results": [],
+  "compliance_summary": {
+    "brand_voice_compliance": 65,
+    "accuracy_compliance": 40,
+    "actionability_compliance": 20
+  }
+}

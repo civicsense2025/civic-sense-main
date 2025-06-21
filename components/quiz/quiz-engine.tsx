@@ -15,6 +15,7 @@ import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
 // Removed QuizDateNavigation - now using the new QuizNavigation component in the page layout
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
+import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from "@/lib/keyboard-shortcuts"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -171,8 +172,7 @@ const DebugPanel = memo(({
   getQuestionDifficulty,
   currentAttemptNumber,
   sessionAnalytics,
-  isPremium,
-  keyboardEnabled
+  isPremium
 }: {
   selectedAnswer: string | null
   isAnswerSubmitted: boolean
@@ -185,7 +185,6 @@ const DebugPanel = memo(({
   currentAttemptNumber: number
   sessionAnalytics: any
   isPremium: boolean
-  keyboardEnabled: boolean
 }) => {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -251,7 +250,7 @@ const DebugPanel = memo(({
           <div>Hints Used: {sessionAnalytics.hintsUsed}</div>
           <div>Boosts Used: {sessionAnalytics.boostsUsed.length}</div>
           <div>Premium: {isPremium ? 'Yes' : 'No'}</div>
-          <div>Keyboard: {keyboardEnabled ? 'Enabled' : 'Disabled'}</div>
+          <div>Shortcuts: Active</div>
         </div>
         <div className="mt-2 pt-2 border-t border-white/20">
           <div className="text-xs text-white/60">
@@ -457,9 +456,6 @@ export function QuizEngine({
   const [timeFrozen, setTimeFrozen] = useState(false)
   const [currentAttemptNumber, setCurrentAttemptNumber] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
-
-  // Keyboard interaction state
-  const [keyboardEnabled, setKeyboardEnabled] = useState(true)
 
   // Timer integration
   const initialTime = 60 + currentBoostEffects.extraTimeSeconds
@@ -1094,183 +1090,61 @@ export function QuizEngine({
     }
   }
 
-  // Enhanced keyboard shortcuts - using refs to avoid stale closures
-  const keyboardStateRef = useRef({
-    keyboardEnabled: true,
-    isAnswerSubmitted: false,
-    selectedAnswer: null as string | null,
-    currentQuestion: null as any,
-    showHint: false
-  })
-
-  // Update refs when state changes
-  useEffect(() => {
-    keyboardStateRef.current = {
-      keyboardEnabled,
-      isAnswerSubmitted,
-      selectedAnswer,
-      currentQuestion,
-      showHint
-    }
-  }, [keyboardEnabled, isAnswerSubmitted, selectedAnswer, currentQuestion, showHint])
-
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const state = keyboardStateRef.current
+  // Enhanced keyboard shortcuts using the new utility
+  const handleOptionSelect = useCallback((optionIndex: number) => {
+    if (isAnswerSubmitted || !currentQuestion) return
     
-    if (!state.keyboardEnabled) return
+    const options = [
+      currentQuestion.option_a,
+      currentQuestion.option_b,
+      currentQuestion.option_c,
+      currentQuestion.option_d
+    ].filter(Boolean)
     
-    const target = event.target as HTMLElement
-    if (target && (
-      target.tagName === 'INPUT' || 
-      target.tagName === 'TEXTAREA' || 
-      target.isContentEditable ||
-      target.closest('[contenteditable]')
-    )) {
-      return
+    if (optionIndex < options.length) {
+      const optionId = `option_${String.fromCharCode(97 + optionIndex)}`
+      handleAnswerSelect(optionId)
     }
+  }, [isAnswerSubmitted, currentQuestion, handleAnswerSelect])
 
-    if (state.isAnswerSubmitted && event.key !== ' ') return
-
-    console.log('🎹 Enhanced key pressed:', event.key, 'Answer submitted:', state.isAnswerSubmitted, 'Selected answer:', state.selectedAnswer)
-
-    switch (event.key.toLowerCase()) {
-      case 'enter':
-        if (!state.isAnswerSubmitted && state.selectedAnswer) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('⏎ Submitting answer via Enter key:', state.selectedAnswer)
-          handleSubmitAnswer()
-        }
-        break
-        
-      case ' ':
-        event.preventDefault()
-        event.stopPropagation()
-        setShowHint(prev => {
-          const newShowHint = !prev
-          if (newShowHint && state.currentQuestion) {
-            updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
-          }
-          console.log('💡 Enhanced hint toggled via Space:', newShowHint ? 'shown' : 'hidden')
-          return newShowHint
-        })
-        break
-        
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-        if (state.currentQuestion?.question_type === 'multiple_choice' && !state.isAnswerSubmitted) {
-          event.preventDefault()
-          event.stopPropagation()
-          const optionIndex = parseInt(event.key) - 1
-          const options = [
-            state.currentQuestion.option_a,
-            state.currentQuestion.option_b,
-            state.currentQuestion.option_c,
-            state.currentQuestion.option_d
-          ].filter(Boolean)
-          
-          if (optionIndex < options.length) {
-            const optionId = `option_${String.fromCharCode(97 + optionIndex)}`
-            console.log('🔢 Selecting option via keyboard:', optionId)
-            handleAnswerSelect(optionId)
-          }
-        }
-        break
-        
-      case 't':
-        if (state.currentQuestion?.question_type === 'true_false' && !state.isAnswerSubmitted) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('✅ Selecting True via keyboard')
-          handleAnswerSelect('true')
-        }
-        break
-        
-      case 'f':
-        if (state.currentQuestion?.question_type === 'true_false' && !state.isAnswerSubmitted) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('❌ Selecting False via keyboard')
-          handleAnswerSelect('false')
-        }
-        break
-        
-      case 's':
-        if (!event.ctrlKey && !event.metaKey && !state.isAnswerSubmitted) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('⏭️ Skipping question via keyboard')
-          handleSkipQuestion()
-        }
-        break
-        
-      case 'n':
-        if (state.isAnswerSubmitted) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('➡️ Next question via keyboard')
-          handleNextQuestion()
-        }
-        break
-    }
-  }, [handleAnswerSelect, handleSubmitAnswer, handleSkipQuestion, handleNextQuestion, updateSessionAnalytics, sessionAnalytics.hintsUsed])
-
-  // Keyboard event registration
-  useEffect(() => {
-    setKeyboardEnabled(true)
-    
-    const handleKeyDownWrapper = (event: KeyboardEvent) => {
-      try {
-        handleKeyDown(event)
-      } catch (error) {
-        console.error('Enhanced keyboard handler error:', error)
+  const handleToggleHint = useCallback(() => {
+    setShowHint(prev => {
+      const newShowHint = !prev
+      if (newShowHint && currentQuestion) {
+        updateSessionAnalytics({ hintsUsed: sessionAnalytics.hintsUsed + 1 })
       }
-    }
-    
-    document.addEventListener('keydown', handleKeyDownWrapper, {
-      passive: false,
-      capture: true
+      return newShowHint
     })
-    
-    console.log('🎹 Enhanced keyboard shortcuts enabled')
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDownWrapper, { capture: true })
-      console.log('🎹 Enhanced keyboard shortcuts disabled')
-    }
-  }, [handleKeyDown])
+  }, [currentQuestion, updateSessionAnalytics, sessionAnalytics.hintsUsed])
 
-  // Input focus handlers
-  useEffect(() => {
-    const handleFocusIn = (event: FocusEvent) => {
-      const target = event.target as HTMLElement
-      if (target && (
-        target.tagName === 'INPUT' || 
-        target.tagName === 'TEXTAREA' || 
-        target.isContentEditable
-      )) {
-        setKeyboardEnabled(false)
-        console.log('🎹 Enhanced keyboard shortcuts disabled (input focused)')
-      }
-    }
-    
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        setKeyboardEnabled(true)
-        console.log('🎹 Enhanced keyboard shortcuts re-enabled (input unfocused)')
-      }, 100)
-    }
-    
-    document.addEventListener('focusin', handleFocusIn)
-    document.addEventListener('focusout', handleFocusOut)
-    
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn)
-      document.removeEventListener('focusout', handleFocusOut)
-    }
-  }, [])
+  const quizShortcuts = useMemo(() => createQuizShortcuts({
+    onSelectOption: handleOptionSelect,
+    onSelectTrue: () => handleAnswerSelect('true'),
+    onSelectFalse: () => handleAnswerSelect('false'),
+    onSubmitAnswer: handleSubmitAnswer,
+    onSkipQuestion: handleSkipQuestion,
+    onNextQuestion: handleNextQuestion,
+    onToggleHint: handleToggleHint,
+    currentQuestion,
+    isAnswerSubmitted,
+    selectedAnswer
+  }), [
+    handleOptionSelect,
+    handleAnswerSelect,
+    handleSubmitAnswer,
+    handleSkipQuestion,
+    handleNextQuestion,
+    handleToggleHint,
+    currentQuestion,
+    isAnswerSubmitted,
+    selectedAnswer
+  ])
+
+  const { state: keyboardState } = useKeyboardShortcuts(quizShortcuts, {
+    enableLogging: process.env.NODE_ENV === 'development',
+    autoDisableOnInput: true,
+    captureEvents: true
+  })
 
   // Initialize quiz attempt in database
   const [resumedAttemptId, setResumedAttemptId] = useState<string | null>(null)
@@ -1656,33 +1530,15 @@ export function QuizEngine({
             currentAttemptNumber={currentAttemptNumber}
             sessionAnalytics={sessionAnalytics}
             isPremium={isPremium}
-            keyboardEnabled={keyboardEnabled}
           />
         )}
 
-        {/* Enhanced keyboard shortcuts */}
-        {!isAnswerSubmitted && !isMobile && (
-          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
-            <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
-              {currentQuestion.question_type === 'multiple_choice' && (
-                <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">1-4</span> to select • </>
-              )}
-              {currentQuestion.question_type === 'true_false' && (
-                <>Use <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">T</span>/<span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">F</span> to select • </>
-              )}
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Enter</span> to submit • 
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">Space</span> for hint •
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">S</span> to skip
-            </p>
-          </div>
-        )}
-
-        {isAnswerSubmitted && !isMobile && (
-          <div className="text-center border-t border-slate-100 dark:border-slate-800 pt-4 animate-in fade-in duration-300">
-            <p className="text-sm text-slate-500 dark:text-slate-500 font-light">
-              Press <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-xs">N</span> for next question
-            </p>
-          </div>
+        {/* Enhanced keyboard shortcuts help */}
+        {!isMobile && (
+          <KeyboardShortcutsHelp
+            groups={quizShortcuts}
+            currentState={keyboardState}
+          />
         )}
       </div>
 

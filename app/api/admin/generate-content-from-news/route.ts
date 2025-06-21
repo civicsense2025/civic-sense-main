@@ -388,6 +388,7 @@ async function generateContentFromArticle(
 - Clarity over politeness: Cut through political speak and institutional doublespeak  
 - Action over passive consumption: Connect learning to meaningful civic participation
 - Systems thinking: Address root causes rather than symptoms
+- Current events priority: Focus on what's happening NOW in 2024-2025
 
 **NEWS ARTICLE:**
 Title: ${article.title}
@@ -397,11 +398,17 @@ URL: ${article.url}
 Published: ${article.published_time || 'Recent'}
 Credibility Score: ${article.credibility_score || 'Unknown'}
 
+**CRITICAL: PRIORITIZE CURRENT EVENTS AND RECENT DEVELOPMENTS**
+- Start with what's happening in 2025 and recent developments from 2024-2025
+- Connect current events to broader patterns, but lead with the present
+- Show how recent actions reveal ongoing power dynamics
+- Focus on immediate implications for citizens
+
 **TASK:** Generate ONE comprehensive topic with EXACTLY ${options.questionsPerTopic} questions that:
 
 1. **Topic Requirements:**
-- Focus on HOW power actually works, not just what happened
-- Connect to actionable civic participation
+- Focus on HOW power actually works NOW, not just what happened historically
+- Connect to actionable civic participation relevant to current events
 - Use format: "How [System/Process] Actually Works" or "What They Don't Want You to Know About [Issue]"
 - Include specific "why this matters" that shows real impact on citizens' lives
 - Choose appropriate emoji that represents power/systems/action
@@ -409,20 +416,47 @@ Credibility Score: ${article.credibility_score || 'Unknown'}
 
 2. **Question Requirements:**
 - EXACTLY ${options.questionsPerTopic} questions total
-- Question type distribution: ${options.questionTypeDistribution.multipleChoice}% multiple choice, ${options.questionTypeDistribution.trueFalse}% true/false, ${options.questionTypeDistribution.shortAnswer}% short answer${options.questionTypeDistribution.fillInBlank > 0 ? `, ${options.questionTypeDistribution.fillInBlank}% fill-in-blank` : ''}${options.questionTypeDistribution.matching > 0 ? `, ${options.questionTypeDistribution.matching}% matching` : ''}
+- Question type distribution: ${options.questionTypeDistribution.multipleChoice}% multiple choice, ${options.questionTypeDistribution.trueFalse}% true/false, ${options.questionTypeDistribution.shortAnswer}% short answer${options.questionTypeDistribution.fillInBlank > 0 ? `, ${options.questionTypeDistribution.fillInBlank}% fill-in-blank` : ''}
 - Difficulty levels: ${options.difficultyDistribution.easy}% easy (recall), ${options.difficultyDistribution.medium}% medium (analysis), ${options.difficultyDistribution.hard}% hard (evaluation)
-- Focus on civic mechanisms, not just current events
-- Include questions about: power structures, citizen rights, institutional processes, historical context
-- Each question must teach something actionable about how democracy works
+- Focus on current civic mechanisms and recent developments, not just historical context
+- Include questions about: current power structures, recent policy changes, current institutional processes, recent precedents
+- Each question must teach something actionable about how democracy works NOW
+- Use direct imperative language in explanations: "Watch for", "Track", "Monitor", "Notice" - NEVER "you can/should"
 
 3. **Content Standards:**
 - Write at 8th-10th grade level but don't dumb down concepts
-- Use specific names, dates, and concrete details from the article
-- Connect abstract concepts to daily life impact
-- Include both immediate and long-term consequences
-- Be factual and non-partisan while being direct about power dynamics
+- Use specific names, dates, and concrete details from recent news (2024-2025)
+- Connect abstract concepts to daily life impact in the current political climate
+- Include both immediate and long-term consequences of recent events
+- Be factual and non-partisan while being direct about current power dynamics
 
-4. **Avoid Duplicating Existing Content:**
+4. **Enhanced Metadata Requirements:**
+- Temporal Distribution: Aim for 70% current events (2024-2025), 20% recent history (last 5 years), 10% historical context
+- Skill Focus Areas: Track proficiency levels (1=Basic, 2=Intermediate, 3=Advanced) for:
+  * Critical Analysis
+  * Systems Thinking
+  * Power Structure Analysis
+  * Civic Action Planning
+- Key Figures: For each mentioned political figure, include:
+  * Current position/role
+  * Relevance to the topic
+  * First and last appearance dates
+- Policy Areas: Tag each question with relevant policy domains
+- Bias Analysis:
+  * Political balance (-1 to 1 scale)
+  * Factual accuracy (0 to 1 scale)
+  * Sensationalism level (0 to 1 scale)
+  * Source diversity (0 to 1 scale)
+- Content Timeline:
+  * Track start and end dates
+  * Flag ongoing developments
+- Source Quality:
+  * Government sources (%)
+  * Academic sources (%)
+  * News sources (%)
+  * Primary sources (%)
+
+5. **Avoid Duplicating Existing Content:**
 Here are some existing topic titles to avoid repeating:
 ${Array.from(existingContent.topicTitles).slice(0, 10).join(', ')}
 
@@ -435,7 +469,49 @@ Return JSON in this exact format:
     "why_this_matters": "<ul><li><strong>Your [Right/Issue]:</strong> Specific impact on daily life</li><li><strong>Your [Power]:</strong> What you can do about it</li><li><strong>Your [System]:</strong> How this reveals larger patterns</li></ul>",
     "emoji": "⚡",
     "categories": ["Government", "Constitutional Law", "Power Dynamics"],
-    "source_analysis_id": "${article.id}"
+    "source_analysis_id": "${article.id}",
+    "metadata": {
+      "temporal_distribution": {
+        "current_events": 70,
+        "recent_history": 20,
+        "historical": 10
+      },
+      "skill_focus_areas": [
+        {
+          "name": "Critical Analysis",
+          "proficiency_level": 2,
+          "frequency": 40
+        }
+      ],
+      "key_figures": [
+        {
+          "name": "Full Name",
+          "role": "Current Position",
+          "current_position": "Specific Title",
+          "relevance": "Why this person matters",
+          "first_appearance_date": "YYYY-MM-DD",
+          "last_appearance_date": "YYYY-MM-DD"
+        }
+      ],
+      "policy_areas": ["Area1", "Area2"],
+      "bias_analysis": {
+        "political_balance": 0,
+        "factual_accuracy": 0.9,
+        "sensationalism_level": 0.1,
+        "source_diversity": 0.8,
+        "citation_quality": {
+          "government_sources": 0.3,
+          "academic_sources": 0.3,
+          "news_sources": 0.2,
+          "primary_sources": 0.2
+        }
+      },
+      "content_timeline": {
+        "start_date": "YYYY-MM-DD",
+        "end_date": "YYYY-MM-DD",
+        "is_ongoing": true
+      }
+    }
   },
   "questions": [
     {
@@ -455,7 +531,22 @@ Return JSON in this exact format:
         {"name": "U.S. Constitution Article I", "url": "https://constitution.congress.gov/browse/article-1/"},
         {"name": "${article.title} - ${article.og_site_name || article.domain}", "url": "${article.url}"}
       ],
-      "difficulty_level": 2
+      "difficulty_level": 2,
+      "metadata": {
+        "skill_focus": {
+          "name": "Critical Analysis",
+          "proficiency_level": 2
+        },
+        "key_figures": [
+          {
+            "name": "Full Name",
+            "role": "Current Position",
+            "relevance": "Why this person matters"
+          }
+        ],
+        "policy_areas": ["Area1"],
+        "temporal_focus": "current_events"
+      }
     }
   ]
 }`

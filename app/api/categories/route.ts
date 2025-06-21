@@ -114,56 +114,90 @@ async function getTrendingCategories(allCategories: CategoryType[]): Promise<Cat
       return []
     }
 
-    // Get the categories for these topics
-    const { data: topics, error: topicsError } = await supabaseClient
-      .from('question_topics')
-      .select('topic_id, categories')
-      .in('topic_id', topicIds)
-      .eq('is_active', true)
+    // Check if junction table exists and use it for better performance
+    const { data: junctionExists } = await supabaseClient
+      .from('question_topic_categories')
+      .select('topic_id')
+      .limit(1)
 
-    if (topicsError || !topics) {
-      console.warn('Could not fetch topics for trending:', topicsError)
-      return []
-    }
-
-    // Count attempts per category
     const categoryAttempts = new Map<string, number>()
-    
-    // Create a map of topic_id to categories
-    const topicCategoriesMap = new Map<string, string[]>()
-    topics.forEach(topic => {
-      try {
-        let categories: string[] = []
-        
-        // Handle different JSON formats
-        if (Array.isArray(topic.categories)) {
-          categories = topic.categories
-        } else if (typeof topic.categories === 'string') {
-          try {
-            categories = JSON.parse(topic.categories)
-          } catch {
-            categories = [topic.categories]
-          }
-        }
-        
-        topicCategoriesMap.set(topic.topic_id, categories)
-      } catch (err) {
-        console.warn('Error processing topic categories:', err)
-      }
-    })
 
-    // Count attempts by category
-    recentAttempts.forEach(attempt => {
-      const categories = topicCategoriesMap.get(attempt.topic_id)
-      if (categories) {
-        categories.forEach(category => {
-          if (typeof category === 'string') {
-            const count = categoryAttempts.get(category) || 0
-            categoryAttempts.set(category, count + 1)
+    if (junctionExists && junctionExists.length > 0) {
+      // Use optimized junction table approach
+      const { data: topicCategories, error: junctionError } = await supabaseClient
+        .from('question_topic_categories')
+        .select(`
+          topic_id,
+          category_id,
+          categories(name)
+        `)
+        .in('topic_id', topicIds)
+
+      if (junctionError || !topicCategories) {
+        console.warn('Could not fetch topic categories from junction table:', junctionError)
+        return []
+      }
+
+      // Count attempts by category using junction table data
+      recentAttempts.forEach(attempt => {
+        const topicCategoryRows = topicCategories.filter(tc => tc.topic_id === attempt.topic_id)
+        topicCategoryRows.forEach(row => {
+          const categoryName = (row.categories as any)?.name
+          if (categoryName) {
+            const count = categoryAttempts.get(categoryName) || 0
+            categoryAttempts.set(categoryName, count + 1)
           }
         })
+      })
+    } else {
+      // Fallback to JSONB approach if junction table not populated yet
+      const { data: topics, error: topicsError } = await supabaseClient
+        .from('question_topics')
+        .select('topic_id, categories')
+        .in('topic_id', topicIds)
+        .eq('is_active', true)
+
+      if (topicsError || !topics) {
+        console.warn('Could not fetch topics for trending:', topicsError)
+        return []
       }
-    })
+
+      // Create a map of topic_id to categories (JSONB fallback)
+      const topicCategoriesMap = new Map<string, string[]>()
+      topics.forEach(topic => {
+        try {
+          let categories: string[] = []
+          
+          // Handle different JSON formats
+          if (Array.isArray(topic.categories)) {
+            categories = topic.categories
+          } else if (typeof topic.categories === 'string') {
+            try {
+              categories = JSON.parse(topic.categories)
+            } catch {
+              categories = [topic.categories]
+            }
+          }
+          
+          topicCategoriesMap.set(topic.topic_id, categories)
+        } catch (err) {
+          console.warn('Error processing topic categories:', err)
+        }
+      })
+
+      // Count attempts by category
+      recentAttempts.forEach(attempt => {
+        const categories = topicCategoriesMap.get(attempt.topic_id)
+        if (categories) {
+          categories.forEach(category => {
+            if (typeof category === 'string') {
+              const count = categoryAttempts.get(category) || 0
+              categoryAttempts.set(category, count + 1)
+            }
+          })
+        }
+      })
+    }
 
     // Sort categories by attempt count and randomize ties
     const trendingCategoryNames = Array.from(categoryAttempts.entries())

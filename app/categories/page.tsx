@@ -66,14 +66,53 @@ async function getCategories(): Promise<CategoryWithStats[]> {
     .select('category_id')
     .eq('is_active', true)
 
-  // Get topic counts for each category (topics have categories as array)
-  const { data: topics, error: topicsError } = await supabase
-    .from('question_topics')
-    .select('categories')
-    .eq('is_active', true)
+  // Count topics per category using junction table (much faster!)
+  let topicCountMap = new Map<string, number>()
+  
+  try {
+    // First check if junction table exists and has data
+    const { data: junctionExists } = await supabase
+      .from('question_topic_categories')
+      .select('category_id')
+      .limit(1)
+    
+    if (junctionExists && junctionExists.length > 0) {
+      // Use optimized junction table approach
+      const { data: junctionCounts, error: junctionError } = await supabase
+        .from('question_topic_categories')
+        .select('category_id')
+        .not('category_id', 'is', null)
+      
+      if (!junctionError && junctionCounts) {
+        junctionCounts.forEach(row => {
+          const count = topicCountMap.get(row.category_id) || 0
+          topicCountMap.set(row.category_id, count + 1)
+        })
+      }
+    } else {
+      // Fallback to JSONB approach if junction table not populated yet
+      const { data: topics, error: topicsError } = await supabase
+        .from('question_topics')
+        .select('categories')
+        .eq('is_active', true)
 
-  if (skillError || topicsError) {
-    console.error('Error fetching counts:', { skillError, topicsError })
+      if (!topicsError && topics) {
+        topics.forEach(topic => {
+          if (Array.isArray(topic.categories)) {
+            (topic.categories as string[]).forEach(categoryName => {
+              const count = topicCountMap.get(categoryName) || 0
+              topicCountMap.set(categoryName, count + 1)
+            })
+          }
+        })
+      }
+    }
+  } catch (error) {
+    console.warn('Error counting topics by category:', error)
+  }
+
+  if (skillError) {
+    console.error('Error fetching counts:', { skillError })
   }
 
   // Count skills per category
@@ -82,19 +121,6 @@ async function getCategories(): Promise<CategoryWithStats[]> {
     skillCounts.forEach(skill => {
       const count = skillCountMap.get(skill.category_id) || 0
       skillCountMap.set(skill.category_id, count + 1)
-    })
-  }
-
-  // Count topics per category
-  const topicCountMap = new Map<string, number>()
-  if (topics) {
-    topics.forEach(topic => {
-      if (Array.isArray(topic.categories)) {
-        (topic.categories as string[]).forEach(categoryName => {
-          const count = topicCountMap.get(categoryName) || 0
-          topicCountMap.set(categoryName, count + 1)
-        })
-      }
     })
   }
 
@@ -146,38 +172,98 @@ async function getSkillsByCategory(): Promise<Record<string, Skill[]>> {
 }
 
 async function getTopicsByCategory(): Promise<Record<string, Topic[]>> {
-  const { data: topics, error } = await supabase
-    .from('question_topics')
-    .select('topic_id, topic_title, description, emoji, date, categories')
-    .eq('is_active', true)
-    .not('date', 'is', null) // Only get topics with dates for this function
-    .order('date', { ascending: false })
-    .limit(100) // Limit for performance
+  try {
+    // First check if junction table exists and has data
+    const { data: junctionExists } = await supabase
+      .from('question_topic_categories')
+      .select('category_id')
+      .limit(1)
+    
+    if (junctionExists && junctionExists.length > 0) {
+      // Use optimized junction table approach
+      const { data: junctionData, error: junctionError } = await supabase
+        .from('question_topic_categories')
+        .select(`
+          category_id,
+          question_topics!inner(
+            topic_id,
+            topic_title,
+            description,
+            emoji,
+            date,
+            categories,
+            is_active
+          )
+        `)
+        .eq('question_topics.is_active', true)
+        .not('question_topics.date', 'is', null)
+        .order('question_topics.date', { ascending: false })
+        .limit(100)
+      
+      if (junctionError) {
+        console.error('Junction table error, falling back to JSONB:', junctionError)
+      } else {
+        // Group topics by category using junction table data
+        const topicsByCategory: Record<string, Topic[]> = {}
+        
+        junctionData?.forEach(row => {
+          const categoryId = row.category_id
+          const topic = (row as any).question_topics
+          
+          if (!topicsByCategory[categoryId]) {
+            topicsByCategory[categoryId] = []
+          }
+          
+          // Check if topic already exists to avoid duplicates
+          if (!topicsByCategory[categoryId].find(t => t.topic_id === topic.topic_id)) {
+            topicsByCategory[categoryId].push({
+              ...topic,
+              categories: Array.isArray(topic.categories) ? topic.categories as string[] : []
+            })
+          }
+        })
+        
+        return topicsByCategory
+      }
+    }
+    
+    // Fallback to JSONB approach if junction table not available
+    const { data: topics, error } = await supabase
+      .from('question_topics')
+      .select('topic_id, topic_title, description, emoji, date, categories')
+      .eq('is_active', true)
+      .not('date', 'is', null) // Only get topics with dates for this function
+      .order('date', { ascending: false })
+      .limit(100) // Limit for performance
 
-  if (error) {
-    console.error('Error fetching topics:', error)
+    if (error) {
+      console.error('Error fetching topics:', error)
+      return {}
+    }
+
+    // Group topics by category
+    const topicsByCategory: Record<string, Topic[]> = {}
+    topics?.forEach(topic => {
+      // Handle the Json type properly
+      const categories = topic.categories
+      if (Array.isArray(categories)) {
+        (categories as string[]).forEach(categoryName => {
+          if (!topicsByCategory[categoryName]) {
+            topicsByCategory[categoryName] = []
+          }
+          topicsByCategory[categoryName].push({
+            ...topic,
+            categories: categories as string[]
+          })
+        })
+      }
+    })
+
+    return topicsByCategory
+  } catch (error) {
+    console.error('Error in getTopicsByCategory:', error)
     return {}
   }
-
-  // Group topics by category
-  const topicsByCategory: Record<string, Topic[]> = {}
-  topics?.forEach(topic => {
-    // Handle the Json type properly
-    const categories = topic.categories
-    if (Array.isArray(categories)) {
-      (categories as string[]).forEach(categoryName => {
-        if (!topicsByCategory[categoryName]) {
-          topicsByCategory[categoryName] = []
-        }
-        topicsByCategory[categoryName].push({
-          ...topic,
-          categories: categories as string[]
-        })
-      })
-    }
-  })
-
-  return topicsByCategory
 }
 
 async function getEvergreenTopics(): Promise<Topic[]> {

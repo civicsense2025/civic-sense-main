@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -97,6 +97,130 @@ export function QuizDateNavigation({
 
   const currentDate = formatDate(currentTopic.date, currentTopic.dayOfWeek)
 
+  // Mobile layout - Fixed bottom bar
+  if (isMobile) {
+    return (
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t",
+        "px-3 py-2 flex items-center justify-between",
+        className
+      )}>
+        {/* Previous Topic Button */}
+        <Button
+          variant="ghost"
+          onClick={() => onNavigate('prev')}
+          disabled={!previousTopic}
+          className={cn(
+            "flex-1 h-12 px-2 flex flex-col items-center justify-center",
+            "text-slate-600 dark:text-slate-400",
+            previousTopic 
+              ? "hover:text-slate-900 dark:hover:text-slate-100" 
+              : "opacity-40 cursor-not-allowed"
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span className="text-xs">Older</span>
+        </Button>
+
+        {/* Current Date Display with Dropdown */}
+        <div className="flex-1 px-2">
+          <DropdownMenu onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full h-12 p-2 text-center"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">{currentTopic.emoji}</span>
+                    <Calendar className="h-3 w-3 text-slate-500" />
+                  </div>
+                  <div className="text-xs font-medium text-slate-900 dark:text-slate-100">
+                    {currentDate.month} {currentDate.day}
+                  </div>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="center" 
+              className="w-80 max-h-96 overflow-y-auto mb-2"
+              ref={dropdownRef}
+              onScroll={handleDropdownScroll}
+            >
+              <div className="p-2">
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2 py-1 mb-2">
+                  Available Quiz Topics
+                </div>
+                {availableDates.slice(0, visibleTopics).map((topic) => {
+                  const topicDate = formatDate(topic.date, topic.dayOfWeek)
+                  const isCurrentTopic = topic.id === currentTopic.id
+                  
+                  return (
+                    <DropdownMenuItem
+                      key={topic.id}
+                      onClick={() => onDateSelect(topic.id)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 cursor-pointer transition-all",
+                        "hover:bg-slate-100 dark:hover:bg-slate-800",
+                        isCurrentTopic && "bg-slate-50 dark:bg-slate-900 border-l-2 border-blue-500"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm" style={{ fontSize: '1rem', lineHeight: '1rem' }}>{topic.emoji}</span>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className={cn(
+                              "font-medium text-sm truncate text-black dark:text-white",
+                              isCurrentTopic && "text-blue-600 dark:text-blue-400"
+                            )}>
+                              {topic.title}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 flex-shrink-0">
+                              {topicDate.month} {topicDate.day}, {topicDate.year}
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {topicDate.dayOfWeek}
+                          </span>
+                        </div>
+                      </div>
+                      {isCurrentTopic && (
+                        <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                  )
+                })}
+                {visibleTopics < availableDates.length && (
+                  <div className="text-center py-2 text-xs text-slate-500">
+                    Scroll to load more topics...
+                  </div>
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Next Topic Button */}
+        <Button
+          variant="ghost"
+          onClick={() => nextTopic && onNavigate('next')}
+          disabled={!nextTopic}
+          className={cn(
+            "flex-1 h-12 px-2 flex flex-col items-center justify-center",
+            "text-slate-600 dark:text-slate-400",
+            nextTopic 
+              ? "hover:text-slate-900 dark:hover:text-slate-100" 
+              : "opacity-40 cursor-not-allowed"
+          )}
+        >
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-xs">Newer</span>
+        </Button>
+      </div>
+    )
+  }
+
+  // Desktop layout - Top sticky bar (original behavior)
   return (
     <div className={cn(
       "flex items-center justify-between w-full max-w-4xl mx-auto",
@@ -110,13 +234,13 @@ export function QuizDateNavigation({
         onClick={() => onNavigate('prev')}
         disabled={!previousTopic}
         className={cn(
-          "flex items-center gap-2 h-auto p-3 transition-all hover:scale-105",
+          "flex items-center gap-2 h-auto p-3 group relative",
           "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100",
-          !previousTopic && "opacity-40 cursor-not-allowed hover:scale-100"
+          !previousTopic ? "opacity-40 cursor-not-allowed" : "opacity-40 hover:opacity-100"
         )}
       >
-        <ChevronLeft className="h-4 w-4" />
-        <div className="flex flex-col items-start">
+        <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+        <div className="flex flex-col items-start overflow-hidden">
           {previousTopic ? (
             <>
               <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
@@ -124,17 +248,14 @@ export function QuizDateNavigation({
               </div>
               <div className="flex items-center gap-1 font-medium text-sm">
                 <span className="text-base">{previousTopic.emoji}</span>
-                <span className={cn(
-                  "text-left max-w-[120px] truncate",
-                  isMobile && "max-w-[80px]"
-                )}>
-                  {truncateTitleNav(previousTopic.title, 20)}
+                <span className="text-left transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
+                  {previousTopic.title}
                 </span>
               </div>
             </>
           ) : (
             <div className="text-sm font-medium">
-              {isMobile ? "Older" : "Older Topics"}
+              Older Topics
             </div>
           )}
         </div>
@@ -145,27 +266,18 @@ export function QuizDateNavigation({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className={cn(
-              "flex items-center gap-2 h-auto p-4 transition-all hover:scale-105",
-              "text-slate-900 dark:text-slate-100 font-semibold text-center"
-            )}
+            className="flex items-center gap-2 h-auto p-4 transition-all hover:scale-105 text-slate-900 dark:text-slate-100 font-semibold text-center"
           >
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
                 <span className="text-base">{currentTopic.emoji}</span>
-                <span className={cn(
-                  "text-lg font-bold",
-                  isMobile ? "text-base" : "text-xl"
-                )}>
+                <span className="text-xl font-bold">
                   {currentDate.dayOfWeek}, {currentDate.month} {currentDate.day}, {currentDate.year}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-500" />
               </div>
-              <div className={cn(
-                "text-slate-600 dark:text-slate-400 mt-1 max-w-[200px] text-center",
-                isMobile ? "text-[8px] max-w-[120px] truncate" : "text-xs"
-              )}>
-                {truncateTitle(currentTopic.title, isMobile ? 12 : 30)}
+              <div className="text-slate-600 dark:text-slate-400 mt-1 max-w-[200px] text-center text-xs">
+                {truncateTitle(currentTopic.title, 30)}
               </div>
             </div>
           </Button>
@@ -229,64 +341,37 @@ export function QuizDateNavigation({
       </DropdownMenu>
 
       {/* Next Topic Button - Newer Topics (Right Arrow) */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              onClick={() => nextTopic && onNavigate('next')}
-              disabled={!nextTopic}
-              className={cn(
-                "flex items-center gap-2 h-auto p-3 transition-all",
-                "text-slate-600 dark:text-slate-400",
-                nextTopic 
-                  ? "hover:scale-105 hover:text-slate-900 dark:hover:text-slate-100" 
-                  : "opacity-40 cursor-not-allowed"
-              )}
-            >
-              <div className="flex flex-col items-end">
-                {nextTopic ? (
-                  <>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                      {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}, {formatDate(nextTopic.date, nextTopic.dayOfWeek).year}
-                    </div>
-                    <div className="flex items-center gap-1 font-medium text-sm">
-                      <span className={cn(
-                        "text-right max-w-[120px] truncate",
-                        isMobile && "max-w-[80px]"
-                      )}>
-                        {truncateTitleNav(nextTopic.title, 20)}
-                      </span>
-                      <span className="text-base">{nextTopic.emoji}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
-                      No more topics...
-                    </div>
-                    <div className="flex items-center gap-1 font-medium text-sm">
-                      <span className="text-right">
-                        {isMobile ? "Newer" : "Newer Topics"}
-                      </span>
-                      <span className="text-base">📚</span>
-                    </div>
-                  </>
-                )}
+      <Button
+        variant="ghost"
+        onClick={() => nextTopic && onNavigate('next')}
+        disabled={!nextTopic}
+        className={cn(
+          "flex items-center gap-2 h-auto p-3 group relative",
+          "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100",
+          !nextTopic ? "opacity-40 cursor-not-allowed" : "opacity-40 hover:opacity-100"
+        )}
+      >
+        <div className="flex flex-col items-end overflow-hidden">
+          {nextTopic ? (
+            <>
+              <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-500">
+                {formatDate(nextTopic.date, nextTopic.dayOfWeek).month} {formatDate(nextTopic.date, nextTopic.dayOfWeek).day}, {formatDate(nextTopic.date, nextTopic.dayOfWeek).year}
               </div>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          {!nextTopic && (
-            <TooltipContent side="left" className="max-w-xs">
-              <p className="text-sm">
-                You've reached the end of our current topic collection. 
-                New civic education content is added regularly—check back for more!
-              </p>
-            </TooltipContent>
+              <div className="flex items-center gap-1 font-medium text-sm">
+                <span className="text-right transition-all duration-200 group-hover:max-w-[300px] max-w-[120px] whitespace-normal line-clamp-2">
+                  {nextTopic.title}
+                </span>
+                <span className="text-base">{nextTopic.emoji}</span>
+              </div>
+            </>
+          ) : (
+            <div className="text-sm font-medium">
+              Newer Topics
+            </div>
           )}
-        </Tooltip>
-      </TooltipProvider>
+        </div>
+        <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+      </Button>
     </div>
   )
 }

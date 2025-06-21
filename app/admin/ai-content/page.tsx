@@ -53,7 +53,7 @@ interface GenerationSettings {
   }
   
   // AI Model Configuration
-  aiModel: 'gpt-4' | 'gpt-4-turbo' | 'claude-3-opus' | 'claude-3-sonnet' | 'claude-3-haiku'
+  aiModel: 'gpt-4' | 'gpt-4-turbo' | 'claude-3-opus' | 'claude-3-sonnet' | 'claude-3-haiku' | 'claude-3-7-sonnet-20250219'
   temperature: number
   enableWebSearch: boolean
   maxTokens: number
@@ -1254,6 +1254,7 @@ export default function AIContentAdminPage() {
                         <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Recommended)</SelectItem>
                         <SelectItem value="gpt-4">GPT-4</SelectItem>
                         <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                        <SelectItem value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet (Latest)</SelectItem>
                         <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
                         <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
                       </SelectContent>

@@ -18,6 +18,7 @@ import { NewsTicker } from '@/components/news-ticker'
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 
 type ViewMode = 'cards' | 'calendar'
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [isMobile, setIsMobile] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
   const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([])
@@ -38,6 +40,18 @@ export default function HomePage() {
   const [hasLoadedTopics, setHasLoadedTopics] = useState(false)
   const [dismissModalOpen, setDismissModalOpen] = useState(false)
   const [quizToDismiss, setQuizToDismiss] = useState<{attemptId: string, topicId: string, title: string} | null>(null)
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Set mounted state
   useEffect(() => {
@@ -171,12 +185,16 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className={cn(
+      "min-h-screen bg-white dark:bg-slate-950",
+      // Add bottom padding on mobile to account for bottom navigation bars
+      isMobile && "pb-20"
+    )}>
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
 
       {/* News Ticker Section - Right under header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 py-4">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="border-b border-slate-200 dark:border-slate-800 py-3 md:py-4">
+        <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <NewsTicker 
             sources={['reuters', 'ap-news', 'politico', 'bbc-news']}
             categories={['politics', 'government']}
@@ -195,8 +213,8 @@ export default function HomePage() {
     
       {/* Continue Where You Left Off - Fixed at top */}
       {user && incompleteAttempts.length > 0 && (
-        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 sm:py-4">
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 md:py-4">
+          <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
             <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue where you left off</h2>
             
             {/* Single quiz or horizontal scroll for multiple */}
@@ -235,7 +253,10 @@ export default function HomePage() {
                       description={topic.description}
                       emoji={topic.emoji}
                       onDismiss={handleDismissClick}
-                      className="flex-shrink-0 w-80"
+                      className={cn(
+                        "flex-shrink-0",
+                        isMobile ? "w-72" : "w-80"
+                      )}
                     />
                   )
                 })}
@@ -245,9 +266,18 @@ export default function HomePage() {
         </div>
       )}
       
-      <main className="w-full py-4 sm:py-6 lg:py-8">
-        {/* Main content - use full available width with responsive constraints */}
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
+      <main className={cn(
+        "w-full",
+        // Mobile-first responsive padding
+        "py-3 sm:py-4 md:py-6 lg:py-8"
+      )}>
+        {/* Main content - mobile-first responsive design */}
+        <div className={cn(
+          "w-full max-w-6xl mx-auto",
+          // Mobile-first responsive padding
+          "px-3 sm:px-4 md:px-6 lg:px-8",
+          "py-1 sm:py-2"
+        )}>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -268,13 +298,22 @@ export default function HomePage() {
                 topics={topicsList}
                 onDateSelect={handleDateSelect}
                 selectedDate={selectedDate}
-                className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-8"
+                className={cn(
+                  "bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg",
+                  // Mobile-first responsive padding
+                  "p-3 sm:p-4 md:p-6 lg:p-8"
+                )}
               />
             </div>
           )}
 
-          {/* Categories Section */}
-          <div className="mt-8 sm:mt-12">
+          {/* Categories Section - Mobile optimized */}
+          <div className={cn(
+            // Mobile-first responsive margins
+            "mt-6 sm:mt-8 md:mt-10 lg:mt-12",
+            // Extra bottom margin on mobile for bottom navigation
+            isMobile && "mb-6"
+          )}>
             <CategoryCloud limit={6} showViewAll={true} />
           </div>
         </div>
@@ -289,18 +328,32 @@ export default function HomePage() {
 
       {/* Dismiss Quiz Modal */}
       <Dialog open={dismissModalOpen} onOpenChange={setDismissModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md mx-3 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Hide Quiz from Continue List?</DialogTitle>
             <DialogDescription>
               "{quizToDismiss?.title}" will be hidden from your continue list. Your progress will be saved and you can still access the quiz directly.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={handleDismissCancel}>
+          <DialogFooter className={cn(
+            "gap-2",
+            // Stack buttons vertically on mobile
+            isMobile ? "flex-col" : "flex-row"
+          )}>
+            <Button 
+              variant="outline" 
+              onClick={handleDismissCancel}
+              className={isMobile ? "w-full" : ""}
+            >
               Cancel
             </Button>
-            <Button onClick={handleDismissConfirm} className="bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900">
+            <Button 
+              onClick={handleDismissConfirm} 
+              className={cn(
+                "bg-slate-600 hover:bg-slate-700 dark:bg-slate-300 dark:hover:bg-slate-200 dark:text-slate-900",
+                isMobile && "w-full"
+              )}
+            >
               Hide Quiz
             </Button>
           </DialogFooter>

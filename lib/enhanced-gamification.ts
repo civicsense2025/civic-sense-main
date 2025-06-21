@@ -645,37 +645,61 @@ export const customDeckOperations = {
   },
 
   async generateAdaptiveDeck(userId: string, preferences: CustomDeck['preferences']): Promise<any[]> {
-    // Get user's skill levels and performance history
-    const { data: skills } = await supabaseClient
-      .from('user_category_skills')
-      .select('*')
-      .eq('user_id', userId)
+    try {
+      let questions: any[] = []
+      
+      // First check if junction table exists and has data
+      const { data: junctionExists } = await supabaseClient
+        .from('question_topic_categories')
+        .select('category_id')
+        .limit(1)
+      
+      if (junctionExists && junctionExists.length > 0 && preferences.categories && preferences.categories.length > 0) {
+        // Use optimized junction table approach
+        const { data: topicIds } = await supabaseClient
+          .from('question_topic_categories')
+          .select('topic_id')
+          .in('category_id', preferences.categories)
+        
+        if (topicIds && topicIds.length > 0) {
+          const { data, error } = await supabaseClient
+            .from('questions')
+            .select(`
+              *,
+              question_topics(*)
+            `)
+            .in('topic_id', topicIds.map(row => row.topic_id))
+            .in('difficulty_level', preferences.difficultyLevels || [1, 2, 3, 4])
+            .limit(preferences.maxQuestions || 20)
 
-    const { data: questionMemory } = await supabaseClient
-      .from('user_question_memory')
-      .select('*')
-      .eq('user_id', userId)
-      .lt('next_review_date', new Date().toISOString())
+          if (error) throw error
+          questions = data || []
+        }
+      } else {
+        // Fallback to JSONB approach if junction table not populated yet or no category filter
+        let query = supabaseClient
+          .from('questions')
+          .select(`
+            *,
+            question_topics(*)
+          `)
+          .in('difficulty_level', preferences.difficultyLevels || [1, 2, 3, 4])
+          .limit(preferences.maxQuestions || 20)
 
-    // Complex algorithm to select optimal questions based on:
-    // 1. Spaced repetition needs
-    // 2. Skill level gaps
-    // 3. User preferences
-    // 4. Difficulty progression
-    
-    // This is a simplified version - real implementation would be more sophisticated
-    const { data: questions, error } = await supabaseClient
-      .from('questions')
-      .select(`
-        *,
-        question_topics(*)
-      `)
-      .in('category', preferences.categories || [])
-      .in('difficulty_level', preferences.difficultyLevels || [1, 2, 3, 4])
-      .limit(preferences.maxQuestions || 20)
+        if (preferences.categories && preferences.categories.length > 0) {
+          query = query.in('category', preferences.categories)
+        }
 
-    if (error) throw error
-    return questions || []
+        const { data, error } = await query
+        if (error) throw error
+        questions = data || []
+      }
+
+      return questions
+    } catch (error) {
+      console.error('Error generating adaptive deck:', error)
+      return []
+    }
   }
 }
 

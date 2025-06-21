@@ -4,6 +4,7 @@ import Link from "next/link"
 import { PWAInstallButton } from "@/components/pwa-install-button"
 import { LanguageSwitcher } from "../language-switcher"
 import { ThemeToggle } from "../theme-toggle"
+import NewsletterForm from "@/app/components/NewsletterForm"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -27,6 +28,10 @@ export function Footer() {
               {isDevelopment && <LanguageSwitcher variant="compact" />}
               <ThemeToggle />
             </div>
+          </div>
+
+          <div className="flex justify-center">
+            <NewsletterForm className="w-full max-w-lg" />
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-3 sm:space-y-0">
