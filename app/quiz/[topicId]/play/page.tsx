@@ -2,9 +2,19 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { dataService } from "@/lib/data-service"
 import QuizPlayClient from "./client"
+import type { QuizGameMode } from "@/lib/types/quiz"
 
 interface QuizPlayPageProps {
   params: Promise<{ topicId: string }>
+  searchParams: Promise<{
+    mode?: QuizGameMode
+    attempt?: string
+    podId?: string
+    classroomCourseId?: string
+    classroomAssignmentId?: string
+    cleverSectionId?: string
+    cleverAssignmentId?: string
+  }>
 }
 
 export async function generateMetadata({ params }: QuizPlayPageProps): Promise<Metadata> {
@@ -39,8 +49,9 @@ export async function generateMetadata({ params }: QuizPlayPageProps): Promise<M
   }
 }
 
-export default async function QuizPlayPage({ params }: QuizPlayPageProps) {
+export default async function QuizPlayPage({ params, searchParams }: QuizPlayPageProps) {
   const { topicId } = await params
+  const resolvedSearchParams = await searchParams
   
   try {
     // Fetch topic data to verify it exists
@@ -50,7 +61,7 @@ export default async function QuizPlayPage({ params }: QuizPlayPageProps) {
       notFound()
     }
 
-    return <QuizPlayClient topicId={topicId} />
+    return <QuizPlayClient topicId={topicId} searchParams={resolvedSearchParams} />
   } catch (error) {
     console.error("Error loading quiz play page:", error)
     notFound()

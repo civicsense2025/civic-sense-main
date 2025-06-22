@@ -25,8 +25,9 @@ export function QuestionFeedbackDisplay({
   xpGained = 0
 }: QuestionFeedbackDisplayProps) {
   const [isMobile, setIsMobile] = useState(false)
-  const { autoPlayEnabled, playText, stop } = useGlobalAudio()
   const [showXpAnimation, setShowXpAnimation] = useState(false)
+  const [canAdvance, setCanAdvance] = useState(false)
+  const { autoPlayEnabled, playText, stop } = useGlobalAudio()
 
   // Mobile detection
   useEffect(() => {
@@ -39,22 +40,43 @@ export function QuestionFeedbackDisplay({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Animate XP gained
+  // Animate XP gained and control advancement timing
   useEffect(() => {
     if (xpGained > 0) {
-      setTimeout(() => {
+      // Reset animation state first
+      setShowXpAnimation(false)
+      setCanAdvance(false)
+      
+      // Trigger animation after a short delay
+      const animationTimer = setTimeout(() => {
         setShowXpAnimation(true)
-      }, 300)
+      }, 100)
+
+      // Allow advancement after minimum viewing time
+      const advanceTimer = setTimeout(() => {
+        setCanAdvance(true)
+      }, 4000)
+      
+      return () => {
+        clearTimeout(animationTimer)
+        clearTimeout(advanceTimer)
+      }
     }
   }, [xpGained])
+
+  // Handle next question with timing control
+  const handleNextWithDelay = () => {
+    if (!canAdvance) return
+    onNextQuestion()
+  }
 
   // Determine if answer is correct using same logic as quiz engine
   const isCorrectAnswer = (() => {
     if (!selectedAnswer) return false
     
-    if (question.question_type === 'short_answer') {
+    if (question.type === 'short_answer') {
       return selectedAnswer.toLowerCase().trim() === question.correct_answer.toLowerCase().trim()
-    } else if (question.question_type === 'true_false') {
+    } else if (question.type === 'true_false') {
       return selectedAnswer.toLowerCase() === question.correct_answer.toLowerCase()
     } else {
       return selectedAnswer === question.correct_answer
@@ -130,11 +152,14 @@ export function QuestionFeedbackDisplay({
               {isCorrectAnswer && xpGained > 0 && (
                 <div className="mt-2">
                   <div className={cn(
-                    "inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 font-medium transition-all duration-500",
-                    showXpAnimation ? "opacity-100 transform scale-100" : "opacity-0 transform scale-75"
+                    "inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 font-medium transition-all duration-700",
+                    showXpAnimation 
+                      ? "opacity-100 transform scale-110" 
+                      : "opacity-0 transform scale-75"
                   )}>
-                    <span className="mr-1">+{xpGained}</span>
-                    <span className="text-xs">XP</span>
+                    <span className="text-lg mr-1">+{xpGained}</span>
+                    <span className="text-sm">XP</span>
+                    <span className="ml-2 animate-pulse">⚡</span>
                   </div>
                 </div>
               )}
@@ -151,36 +176,27 @@ export function QuestionFeedbackDisplay({
           
           {/* Explanation and sources */}
           <QuestionExplanation question={question} />
-          
-          {/* Add mobile-specific Next Question button that's fixed at bottom */}
-          {isMobile && (
-            <div className="fixed-bottom-button pointer-events-auto pb-4">
-              <Button 
-                onClick={() => {
-                  stop();
-                  onNextQuestion();
-                }} 
-                className="rounded-full px-8 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium text-base"
-              >
-                {isLastQuestion ? "See Results" : "Next Question"} →
-              </Button>
-            </div>
-          )}
-          
-          {!isMobile && (
-            <div className="flex justify-center pt-3">
-              <Button 
-                onClick={() => {
-                  stop();
-                  onNextQuestion();
-                }} 
-                className="rounded-full px-6 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-light text-sm"
-              >
-                {isLastQuestion ? "See Results" : "Next Question"} →
-              </Button>
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Next question button */}
+      <div className="flex justify-center mt-6">
+        <Button
+          onClick={handleNextWithDelay}
+          disabled={!canAdvance}
+          data-next-question
+          className={cn(
+            "transition-all duration-300",
+            !canAdvance && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {isLastQuestion ? "Finish Quiz" : "Next Question"}
+          {!canAdvance && (
+            <span className="ml-2 text-sm opacity-75">
+              ({Math.ceil((4000 - Date.now()) / 1000)}s)
+            </span>
+          )}
+        </Button>
       </div>
     </div>
   )

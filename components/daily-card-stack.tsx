@@ -513,13 +513,6 @@ export function DailyCardStack({
         breaking: !!t.is_breaking, 
         featured: !!t.is_featured 
       })))
-      
-      // Check for duplicates
-      const uniqueIds = new Set(featuredTopics.map(t => t.topic_id))
-      if (uniqueIds.size !== featuredTopics.length) {
-        console.error(`🚨 DUPLICATE FEATURED TOPICS DETECTED! ${featuredTopics.length} topics but only ${uniqueIds.size} unique IDs`)
-        console.log(`🔍 Duplicate analysis:`, featuredTopics.map(t => t.topic_id))
-      }
     }
     
     const sorted = allTopics.sort((a, b) => {
@@ -530,16 +523,7 @@ export function DailyCardStack({
       if (aIsBreaking && !bIsBreaking) return -1
       if (!aIsBreaking && bIsBreaking) return 1
       
-      // Second priority: Featured topics (is_featured = true) - but only if neither is breaking
-      if (!aIsBreaking && !bIsBreaking) {
-        const aIsFeatured = a.is_featured === true
-        const bIsFeatured = b.is_featured === true
-        
-        if (aIsFeatured && !bIsFeatured) return -1
-        if (!aIsFeatured && bIsFeatured) return 1
-      }
-      
-      // Third priority: Date (most recent first)
+      // If neither is breaking, sort by date (most recent first)
       const dateA = parseTopicDate(a.date)
       const dateB = parseTopicDate(b.date)
       if (!dateA || !dateB) return 0
@@ -555,16 +539,15 @@ export function DailyCardStack({
     return sorted
   }, [organizedTopics])
 
-  // Prepare navigation data for UnifiedTopicNavigation component
-  const navigationTopics = useMemo(() => {
-    return allFilteredTopics.map(topic => ({
-      id: topic.topic_id,
-      title: topic.topic_title,
-      emoji: topic.emoji,
-      date: topic.date,
-      dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'long' }) || ''
-    }))
-  }, [allFilteredTopics])
+  // Create navigation topics array
+  const navigationTopics = allFilteredTopics.map(topic => ({
+    id: topic.topic_id,
+    title: topic.topic_title,
+    emoji: topic.emoji || '📝', // Provide a default emoji if none exists
+    date: topic.date,
+    dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'short' }) || '',
+    description: topic.description
+  }))
 
   // Now all useCallback hooks that depend on allFilteredTopics
   const updateUrlWithTopic = useCallback((index: number) => {
@@ -1324,23 +1307,6 @@ export function DailyCardStack({
                 <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 max-w-4xl text-center leading-tight">
                   {currentTopic.topic_title}
                 </h2>
-                
-                {/* Breaking News Badge */}
-                {currentTopic.is_breaking && (
-                  <div className="inline-block px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-600 text-white text-xs sm:text-xs font-bold font-space-mono uppercase tracking-wider rounded-full animate-pulse">
-                    Breaking
-                  </div>
-                )}
-                
-                {/* Completed Badge */}
-                {isTopicCompleted(currentTopic.topic_id) && (
-                  <span className="text-green-600" title="Completed">
-                    <svg className="inline h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#bbf7d0" />
-                      <path d="M8 12l2 2l4-4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                )}
               </div>
 
               {/* Date Selector - Now positioned below the title */}
@@ -1429,22 +1395,10 @@ export function DailyCardStack({
                                   <div className="flex-grow min-w-0">
                                     <div className="flex items-center gap-2">
                                       <div className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{topic.topic_title}</div>
-                                      {topic.is_breaking && (
-                                        <span className="inline-block px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded animate-pulse">
-                                          Breaking
-                                        </span>
-                                      )}
                                     </div>
                                     <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{topic.description}</div>
                                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 mt-0.5">
                                       <span>{topicDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                                      {topic.is_featured && (
-                                        <span className="inline-flex items-center px-0.5 py-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[8px] font-bold font-space-mono uppercase tracking-wide rounded-sm">
-                                          <Star className="h-1 w-1 mr-0.5" />
-                                          <span className="hidden sm:inline">Featured</span>
-                                          <span className="inline sm:hidden">★</span>
-                                        </span>
-                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1469,11 +1423,18 @@ export function DailyCardStack({
                 </div>
               )}
 
-              {/* Topic categories */}
-              {((currentTopic.categories && currentTopic.categories.length > 0) || currentTopic.is_featured) && (
+              {/* Topic categories and badges */}
+              {((currentTopic.categories && currentTopic.categories.length > 0) || currentTopic.is_breaking || (currentTopic.is_featured && !currentTopic.is_breaking)) && (
                 <div className="flex flex-wrap gap-2 justify-center mt-4 py-4 mb-8">
-                  {/* Featured Badge - show regardless of breaking status */}
-                  {currentTopic.is_featured && (
+                  {/* Breaking Badge - show first */}
+                  {currentTopic.is_breaking && (
+                    <div className="badge badge-breaking">
+                      Breaking
+                    </div>
+                  )}
+                  
+                  {/* Featured Badge - only show if not breaking */}
+                  {currentTopic.is_featured && !currentTopic.is_breaking && (
                     <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold font-space-mono uppercase tracking-wider rounded-full">
                       <Star className="h-3 w-3 mr-1" />
                       Featured

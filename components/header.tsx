@@ -8,13 +8,15 @@ import { UserMenu } from "./auth/user-menu"
 import { LearningPodsQuickActions } from "./learning-pods-quick-actions"
 import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
-import { arePodsEnabled, isMultiplayerEnabled, areScenariosEnabled } from "@/lib/feature-flags"
 import { useTheme } from "next-themes"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "./learning-pods-stats"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
-import { GlobalSearch } from "@/components/global-search"
+import { EnhancedGlobalSearch } from "@/components/enhanced-global-search"
+import { useComprehensiveFeatureFlags } from "@/hooks/useComprehensiveFeatureFlags"
+import { envFeatureFlags } from '@/lib/env-feature-flags'
+import { useFeatureFlag } from '@/hooks/useFeatureFlags'
 
 interface HeaderProps {
   onSignInClick?: () => void
@@ -32,11 +34,17 @@ interface MobileUserMenuProps {
   isAdmin?: boolean
 }
 
-function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdmin = false }: MobileUserMenuProps) {
+export function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdmin = false }: MobileUserMenuProps) {
   const { theme, setTheme } = useTheme()
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { isPremium, subscription } = usePremium()
+
+  // Feature flags - always call hooks at the top level
+  const showScenarios = useFeatureFlag('scenarios')
+  const showMultiplayer = useFeatureFlag('multiplayer')
+  const showLearningPods = useFeatureFlag('learningPods')
+  const showMobileMenu = useFeatureFlag('mobileMenu')
 
   // Load user stats when component mounts
   useEffect(() => {
@@ -149,7 +157,7 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
           )}
 
           {/* Learning Pods Section - feature flagged */}
-          {arePodsEnabled() && (
+          {showLearningPods && (
             <div className="mt-4">
               <LearningPodsStats compact={true} />
             </div>
@@ -159,7 +167,7 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
 
       {/* Navigation Links */}
       <div className="space-y-3">
-        {pathname !== '/' && (
+        {showMobileMenu && pathname !== '/' && (
           <Link 
             href="/"
             onClick={onClose}
@@ -180,7 +188,7 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
         </Link>
 
         {/* Scenarios link - feature flagged */}
-        {areScenariosEnabled() && (
+        {showScenarios && (
           <Link 
             href="/scenarios"
             onClick={onClose}
@@ -192,7 +200,7 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
         )}
 
         {/* Multiplayer link - feature flagged */}
-        {isMultiplayerEnabled() && (
+        {showMultiplayer && (
           <Link 
             href="/multiplayer"
             onClick={onClose}
@@ -203,14 +211,16 @@ function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut, isAdm
           </Link>
         )}
 
-        <Link 
-          href="/donate"
-          onClick={onClose}
-          className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-        >
-          <span>❤️</span>
-          <span>Support</span>
-        </Link>
+        {showLearningPods && (
+          <Link 
+            href="/donate"
+            onClick={onClose}
+            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            <span>❤️</span>
+            <span>Support</span>
+          </Link>
+        )}
       </div>
       
       {/* User Menu Items */}
@@ -326,6 +336,24 @@ export function Header({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isDevelopment = process.env.NODE_ENV !== 'production'
   const { isAdmin } = useAdminAccess()
+  const [mounted, setMounted] = useState(false)
+
+  // Feature flags - always call hooks at the top level
+  const showScenarios = useFeatureFlag('scenarios')
+  const showMultiplayer = useFeatureFlag('multiplayer')
+  const showLearningPods = useFeatureFlag('learningPods')
+  const showMobileMenu = useFeatureFlag('mobileMenu')
+  const showGlobalSearch = useFeatureFlag('globalSearch')
+
+  // Handle mounting state for hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null
+  }
 
   return (
     <div className={className}>
@@ -352,17 +380,19 @@ export function Header({
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-8">
                 <Link 
-                  href="/multiplayer" 
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
-                >
-                  Multiplayer
-                </Link>
-                <Link 
                   href="/categories" 
                   className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
                 >
                   Learn
                 </Link>
+                {showMultiplayer && (
+                  <Link 
+                    href="/multiplayer" 
+                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  >
+                    Multiplayer
+                  </Link>
+                )}
               </nav>
             </div>
 
@@ -370,8 +400,8 @@ export function Header({
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-4">
-                {/* Global Search */}
-                <GlobalSearch />
+                {/* Enhanced Global Search */}
+                {showGlobalSearch && <EnhancedGlobalSearch />}
                 
                 {/* Login button for non-authenticated users */}
                 {!user && (
@@ -403,24 +433,26 @@ export function Header({
               </div>
               
               {/* Mobile menu button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="sm:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-[100]"
-                aria-label="Toggle mobile menu"
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </button>
+              {showMobileMenu && (
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="sm:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-[100]"
+                  aria-label="Toggle mobile menu"
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Mobile menu overlay - highest z-index */}
-      {isMobileMenuOpen && (
+      {showMobileMenu && isMobileMenuOpen && mounted && (
         <>
           {/* Backdrop */}
           <div 
@@ -461,7 +493,7 @@ export function Header({
       )}
 
       {/* Fallback for individual components */}
-      {showTopBar && !showMainHeader && (
+      {showTopBar && !showMainHeader && mounted && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-end w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
             <div className="flex items-center space-x-3 sm:space-x-5">
@@ -471,7 +503,7 @@ export function Header({
         </div>
       )}
 
-      {!showTopBar && showMainHeader && (
+      {!showTopBar && showMainHeader && mounted && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
           <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
             <Link 

@@ -1,11 +1,11 @@
-import { dataService } from '@/lib/data-service'
 import { MetadataRoute } from 'next'
+import { supabase } from '@/lib/supabase'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://civicsense.one'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
-    // Static routes with their last modified date
+    // Static routes
     const staticRoutes = [
       {
         url: SITE_URL,
@@ -14,70 +14,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 1.0,
       },
       {
-        url: `${SITE_URL}/dashboard`,
+        url: `${SITE_URL}/categories`,
         lastModified: new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-      },
-      {
-        url: `${SITE_URL}/civics-test`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.9,
-      },
-      {
-        url: `${SITE_URL}/about`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.7,
-      },
-      {
-        url: `${SITE_URL}/glossary`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.7,
-      },
-      {
-        url: `${SITE_URL}/donate`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.7,
-      },
-      {
-        url: `${SITE_URL}/skills`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-      },
-      {
-        url: `${SITE_URL}/public-figures`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly' as const,
+        changeFrequency: 'daily' as const,
         priority: 0.8,
       },
     ]
 
-    // Get dynamic quiz routes
-    const topicsData = await dataService.getAllTopics()
-    const topicRoutes = Object.values(topicsData).map((topic) => {
-      // Parse the date from the topic or use current date
-      let lastMod: Date
-      try {
-        lastMod = topic.date ? new Date(topic.date) : new Date()
-      } catch {
-        lastMod = new Date() // Fallback to current date if parsing fails
-      }
+    // Get all topics
+    const { data: topicsData } = await supabase
+      .from('question_topics')
+      .select('topic_id, date, updated_at')
+      .eq('is_active', true)
 
-      return {
-        url: `${SITE_URL}/quiz/${topic.topic_id}`,
-        lastModified: lastMod,
-        changeFrequency: 'monthly' as const,
-        priority: 0.9,
-      }
-    })
+    if (!topicsData) {
+      return staticRoutes
+    }
+
+    // Get unique dates for daily topic pages
+    const uniqueDates = [...new Set(topicsData
+      .filter(topic => topic.date)
+      .map(topic => topic.date)
+    )]
+
+    // Create routes for daily topic pages
+    const dailyTopicRoutes = uniqueDates.map(date => ({
+      url: `${SITE_URL}/topics/${date}`,
+      lastModified: new Date(date as string),
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    }))
+
+    // Create routes for individual topic pages
+    const topicRoutes = topicsData.map(topic => ({
+      url: `${SITE_URL}/quiz/${topic.topic_id}`,
+      lastModified: topic.updated_at ? new Date(topic.updated_at) : new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    }))
 
     // Combine all routes
-    return [...staticRoutes, ...topicRoutes]
+    return [...staticRoutes, ...dailyTopicRoutes, ...topicRoutes]
   } catch (error) {
     console.error("Error generating sitemap:", error)
     // Return at least the static routes if there's an error

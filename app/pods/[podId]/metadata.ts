@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 
 interface PodPageProps {
   params: {
@@ -8,7 +8,7 @@ interface PodPageProps {
 }
 
 async function getPodDetails(podId: string) {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   const { data: pod, error } = await supabase
     .from('learning_pods')

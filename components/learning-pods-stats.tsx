@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { Users, Crown, TrendingUp, Trophy, Star, Target, Activity, BarChart3, Shield, Plus, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 
 interface LearningPodsStatsProps {
   className?: string
@@ -30,6 +31,11 @@ interface PodStatsData {
 }
 
 export function LearningPodsStats({ className, compact = false }: LearningPodsStatsProps) {
+  // Check feature flag first
+  if (!envFeatureFlags.getFlag('learningPods')) {
+    return null
+  }
+
   const { user } = useAuth()
   const [podStats, setPodStats] = useState<PodStatsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)

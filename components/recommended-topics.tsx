@@ -253,10 +253,10 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
         
         <div 
           id="recommendations-container"
-          className="grid grid-cols-4 gap-4"
+          className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:overflow-x-visible md:snap-none md:pb-0 md:mx-0 md:px-0"
         >
           {recommendations.map((rec) => (
-            <Link key={rec.id} href={`/quiz/${rec.id}`} className="group block h-full">
+            <Link key={rec.id} href={`/quiz/${rec.id}`} className="group block h-full min-w-full md:min-w-0 snap-center flex-shrink-0 md:flex-shrink-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Card className="h-full border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 hover:-translate-y-1 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-950 dark:to-slate-900/50">

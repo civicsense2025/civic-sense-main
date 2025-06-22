@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { CheckCircle, Shield, Users, BookOpen, Database, Cog, Mail, ExternalLink } from "lucide-react"
+import { isDocumentationSectionEnabled } from "@/lib/comprehensive-feature-flags"
+import { cn } from "@/lib/utils"
 
 interface FeatureSection {
   title: string
@@ -163,6 +165,8 @@ const technicalSpecs = [
 ]
 
 export default function SchoolsPage() {
+  const isDocumentationEnabled = isDocumentationSectionEnabled()
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -432,7 +436,13 @@ export default function SchoolsPage() {
           </Stack>
 
           {/* Documentation & Support */}
-          <Stack spacing="xl" className="mt-16">
+          <Stack 
+            spacing="xl" 
+            className={cn(
+              "mt-16 transition-opacity duration-300",
+              !isDocumentationEnabled && "opacity-50 pointer-events-none select-none"
+            )}
+          >
             <div className="flex items-start gap-4">
               <div className="text-4xl flex-shrink-0 mt-1">📚</div>
               <Stack spacing="sm" className="flex-1">
@@ -442,6 +452,11 @@ export default function SchoolsPage() {
                 <Text className="text-muted-foreground text-lg">
                   Comprehensive resources for IT teams, teachers, and administrators.
                 </Text>
+                {!isDocumentationEnabled && (
+                  <Badge variant="outline" className="w-fit">
+                    Coming Soon
+                  </Badge>
+                )}
               </Stack>
             </div>
 

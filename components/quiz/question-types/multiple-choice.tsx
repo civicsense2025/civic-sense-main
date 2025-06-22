@@ -1,6 +1,6 @@
 "use client"
 
-import type { QuizQuestion } from "@/lib/quiz-data"
+import type { QuizQuestion, MultipleChoiceQuestion } from "@/lib/quiz-data"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { cn, shuffleArray } from "@/lib/utils"
@@ -8,7 +8,7 @@ import { useState, useMemo, useEffect } from "react"
 
 
 interface MultipleChoiceQuestionProps {
-  question: QuizQuestion
+  question: MultipleChoiceQuestion
   selectedAnswer: string | null
   isSubmitted: boolean
   onSelectAnswer: (answer: string) => void
@@ -25,16 +25,11 @@ export function MultipleChoiceQuestion({
 
   // Create and randomize options once per question
   const randomizedOptions = useMemo(() => {
-    const options = [
-      { id: "option_a", label: question.option_a },
-      { id: "option_b", label: question.option_b },
-      { id: "option_c", label: question.option_c },
-      { id: "option_d", label: question.option_d },
-    ].filter((option) => option.label) // Filter out undefined options
-
-    // Shuffle the options to randomize their order
-    return shuffleArray(options)
-  }, [question.option_a, question.option_b, question.option_c, question.option_d])
+    return shuffleArray(question.options.map((label: string, index: number) => ({
+      id: `option_${String.fromCharCode(97 + index)}`, // a, b, c, d...
+      label
+    })))
+  }, [question.options])
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -74,8 +69,6 @@ export function MultipleChoiceQuestion({
     }
     
     console.log('Multiple choice option clicked:', selectedOption.label)
-    
-    // FIXED: Always select the option, don't toggle
     onSelectAnswer(selectedOption.label)
   }
 

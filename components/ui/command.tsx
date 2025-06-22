@@ -42,6 +42,21 @@ const CommandDialog = ({ children, title = "Search", ...props }: CommandDialogPr
   )
 }
 
+const CommandFilter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "flex items-center gap-2 border-b px-3 py-2 sticky top-0 bg-popover z-10",
+      className
+    )}
+    {...props}
+  />
+))
+CommandFilter.displayName = "CommandFilter"
+
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
@@ -161,4 +176,5 @@ export {
   CommandItem,
   CommandShortcut,
   CommandSeparator,
+  CommandFilter,
 } 

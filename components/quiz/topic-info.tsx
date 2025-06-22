@@ -21,6 +21,8 @@ import { questionOperations } from "@/lib/database"
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS } from '@/lib/types/quiz'
+import { PremiumFeature } from '@/lib/premium'
+import { QuizModeSelector } from "@/components/quiz/quiz-mode-selector"
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -37,6 +39,7 @@ interface TopicInfoProps {
   modeConfig?: QuizModeConfig
   onModeConfigChange?: (config: QuizModeConfig) => void
   isPremium?: boolean
+  hasFeatureAccess?: (feature: PremiumFeature) => boolean
 }
 
 interface ParsedBlurb {
@@ -59,7 +62,8 @@ export function TopicInfo({
   onModeChange,
   modeConfig = FULL_MODE_CONFIGS.standard,
   onModeConfigChange,
-  isPremium = false
+  isPremium = false,
+  hasFeatureAccess
 }: TopicInfoProps) {
 
   const { autoPlayEnabled, playText } = useGlobalAudio()
@@ -393,162 +397,12 @@ export function TopicInfo({
 
   const topicCompleted = hasCompletedTopic
 
-  const renderModeSelector = () => {
-    return (
-      <div className="space-y-4 min-w-[300px]">
-        <h3 className="text-lg font-semibold">Select Quiz Mode</h3>
-        <div className="space-y-4">
-          {/* Solo Modes */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-500">Solo Modes</h4>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  onModeChange?.('standard');
-                  onModeConfigChange?.(FULL_MODE_CONFIGS.standard);
-                }}
-                className={`w-full p-3 rounded-lg ${
-                  selectedMode === 'standard' ? 'bg-primary text-white' : 'bg-gray-100'
-                }`}
-              >
-                Standard Quiz
-              </button>
-              <button
-                onClick={() => {
-                  onModeChange?.('practice');
-                  onModeConfigChange?.(FULL_MODE_CONFIGS.practice);
-                }}
-                className={`w-full p-3 rounded-lg ${
-                  selectedMode === 'practice' ? 'bg-primary text-white' : 'bg-gray-100'
-                }`}
-              >
-                Practice Mode
-              </button>
-              <button
-                onClick={() => {
-                  onModeChange?.('npc_battle');
-                  onModeConfigChange?.(FULL_MODE_CONFIGS.npc_battle);
-                }}
-                className={`w-full p-3 rounded-lg ${
-                  selectedMode === 'npc_battle' ? 'bg-primary text-white' : 'bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span>NPC Battle</span>
-                  {!isPremium && <Badge variant="outline">Premium</Badge>}
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Difficulty selector for NPC battle */}
-          {selectedMode === 'npc_battle' &&
-            <div className="mt-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Select Difficulty</h4>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'easy' } })}
-                  className={`p-2 rounded-lg ${
-                    modeConfig.settings.npcDifficulty === 'easy' ? 'bg-primary text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  Easy
-                </button>
-                <button
-                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'medium' } })}
-                  className={`p-2 rounded-lg ${
-                    modeConfig.settings.npcDifficulty === 'medium' ? 'bg-primary text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  Medium
-                </button>
-                <button
-                  onClick={() => onModeConfigChange?.({ ...modeConfig, settings: { ...modeConfig.settings, npcDifficulty: 'hard' } })}
-                  className={`p-2 rounded-lg ${
-                    modeConfig.settings.npcDifficulty === 'hard' ? 'bg-primary text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  Hard
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className={cn('flex flex-col h-full px-4 sm:px-8 py-8', className)}>
-      {/* Quiz Buttons (positioned at the top right) */}
-      <div className="flex justify-end gap-3 mb-6">
-        {/* Multiplayer Options - Temporarily hidden until ready for public use */}
-        {/* {hasQuestions && !isCheckingQuestions && (
-          <>
-            <CreateRoomDialog topicId={topicData.topic_id} topicTitle={topicData.topic_title}>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Create Room
-              </Button>
-            </CreateRoomDialog>
-            
-            <JoinRoomDialog>
-              <Button variant="outline" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                Join Room
-              </Button>
-            </JoinRoomDialog>
-          </>
-        )} */}
-
-        {/* Single Player Quiz Button with Mode Selector */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2">
-                {/* Mode Selector */}
-                {hasQuestions && !isCheckingQuestions && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end" className="p-4">
-                      {renderModeSelector()}
-                    </PopoverContent>
-                  </Popover>
-                )}
-                
-                {/* Quiz Button */}
-                <StartQuizButton
-                  label={!hasQuestions ? "Coming Soon" : topicCompleted ? "Retake Quiz" : "Begin Quiz"}
-                  onClick={requireAuth ? onAuthRequired : onStartQuiz}
-                  showPulse={!topicCompleted && hasQuestions}
-                  remainingQuizzes={remainingQuizzes}
-                  completed={topicCompleted}
-                  isPartiallyCompleted={isPartiallyCompleted}
-                  disabled={!hasQuestions || isCheckingQuestions}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {!hasQuestions
-                  ? "This quiz is coming soon! Check back later."
-                  : `Start ${selectedMode === 'standard' ? 'a' : selectedMode === 'practice' ? 'a practice' : 'an NPC battle'} quiz!`}
-              </p>
-              {remainingQuizzes !== undefined && hasQuestions && (
-                <p className="text-xs mt-1">You have {remainingQuizzes} quizzes remaining today</p>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="mb-8">
-        {/* Header section with title, emoji, and description - full width */}
-        <div className="mb-10">
+      {/* Header section with title, emoji, description, and quiz selector in a flex row */}
+      <div className="flex flex-col lg:flex-row gap-8 mb-10">
+        {/* Title and description section - 2/3 width */}
+        <div className="flex-grow lg:w-2/3">
           <div className="text-5xl sm:text-6xl mb-4">
             {topicData.emoji}
           </div>
@@ -563,22 +417,86 @@ export function TopicInfo({
             })}</span>
           </div>
           {topicData.description && (
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
               {topicData.description}
             </p>
           )}
-          
-          {/* Social Sharing Section */}
-          <div className="mt-6">
-            <EnhancedSocialShare
-              title={topicData.topic_title}
-              description={topicData.description || "Test your civic knowledge with this important topic"}
-              emoji={topicData.emoji || "🏛️"}
-              type="topic"
-            />
-          </div>
         </div>
 
+        {/* Quiz selector section - 1/3 width */}
+        <div className="lg:w-1/3">
+          <div className="sticky top-4">
+            <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-4 backdrop-blur-sm">
+              {hasQuestions && !isCheckingQuestions ? (
+                <>
+                  {/* Premium features gate */}
+                  {isPremium ? (
+                    <QuizModeSelector
+                      selectedMode={selectedMode}
+                      onModeSelect={onStartQuiz}
+                      isPremium={isPremium}
+                      hasFeatureAccess={hasFeatureAccess || (() => false)}
+                    />
+                  ) : (
+                    <QuizModeSelector
+                      selectedMode={selectedMode}
+                      onModeSelect={onStartQuiz}
+                      isPremium={false}
+                      hasFeatureAccess={(feature) => {
+                        // Individual feature flags for free tier
+                        switch (feature) {
+                          case 'custom_decks':
+                          case 'historical_progress':
+                          case 'advanced_analytics':
+                          case 'spaced_repetition':
+                          case 'learning_insights':
+                          case 'priority_support':
+                          case 'offline_mode':
+                          case 'export_data':
+                            return false;
+                          default:
+                            return true; // Allow basic features by default
+                        }
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {!hasQuestions ? "Quiz coming soon!" : "Loading quiz options..."}
+                  </p>
+                </div>
+              )}
+              
+              {/* Quiz count display - only show for non-premium users */}
+              {remainingQuizzes !== undefined && hasQuestions && !isPremium && (
+                <div className="mt-3 text-center">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {remainingQuizzes} quizzes remaining today
+                    <span className="block mt-1 text-xs">
+                      Upgrade to premium for unlimited quizzes
+                    </span>
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Social Sharing Section */}
+      <div className="mb-10">
+        <EnhancedSocialShare
+          title={topicData.topic_title}
+          description={topicData.description || "Test your civic knowledge with this important topic"}
+          emoji={topicData.emoji || "🏛️"}
+          type="topic"
+        />
+      </div>
+
+      {/* Rest of the content */}
+      <div className="mb-8">
         {/* Tabbed interface for "Why This Matters" and "Sources & Citations" */}
         <div className="mb-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -618,7 +536,7 @@ export function TopicInfo({
                       <h4 className="font-semibold font-mono text-slate-900 dark:text-slate-100 mb-2 text-base sm:text-lg">
                         {blurb.title}
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-xs sm:text-sm">
+                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm sm:text-base">
                         {blurb.content}
                       </p>
                     </div>

@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { arePodsEnabled, isMultiplayerEnabled, areScenariosEnabled } from '@/lib/comprehensive-feature-flags'
 
 interface PodActivity {
   questions_answered: number
@@ -8,34 +8,46 @@ interface PodActivity {
   accuracy: number
 }
 
-interface LearningPod {
+interface Pod {
   id: string
   pod_name: string
   pod_type: string
   member_count: number
   active_members: number
-  created_at: string
   last_activity_at: string | null
-  pod_activity: PodActivity | null
+  pod_activity?: PodActivity[] | null
 }
 
 export async function GET(request: Request) {
+  // Feature flag check - disable analytics API when pods are disabled
+  if (!arePodsEnabled()) {
+    return NextResponse.json({ 
+      stats: {
+        totalPods: 0,
+        activePods: 0,
+        totalMembers: 0,
+        questionsAnswered: 0,
+        totalTimeSpent: 0,
+        averageAccuracy: 0,
+        recentActivity: 0
+      }
+    })
+  }
+
   try {
-    // Get user from session using server-side auth
-    const supabaseServer = await createClient()
-    const { data: { user }, error: authError } = await supabaseServer.auth.getUser()
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get query parameters
-    const url = new URL(request.url)
-    const days = parseInt(url.searchParams.get('days') || '30')
-    const podType = url.searchParams.get('podType') || 'all'
-    const activity = url.searchParams.get('activity') || 'all'
+    const { searchParams } = new URL(request.url)
+    const days = parseInt(searchParams.get('days') || '30')
+    const podType = searchParams.get('podType') || 'all'
+    const activity = searchParams.get('activity') || 'all'
 
-    // Get user's pods
+    // Get user's pods with activity data
     const { data: pods, error: podsError } = await supabase
       .from('learning_pods')
       .select(`
@@ -44,7 +56,6 @@ export async function GET(request: Request) {
         pod_type,
         member_count,
         active_members,
-        created_at,
         last_activity_at,
         pod_activity (
           questions_answered,
@@ -52,26 +63,29 @@ export async function GET(request: Request) {
           accuracy
         )
       `)
-      .eq('user_id', user.id)
-      .not('archived_at', 'is', null) as { data: LearningPod[] | null, error: any }
+      .eq('is_active', true)
 
     if (podsError) {
       console.error('Error fetching pods:', podsError)
       return NextResponse.json({ error: 'Failed to fetch pods' }, { status: 500 })
     }
 
-    // Apply filters
-    let filteredPods = pods || []
-    
-    if (podType !== 'all') {
-      filteredPods = filteredPods.filter(pod => pod.pod_type === podType)
-    }
+    // Filter pods based on type and activity
+    const filteredPods = (pods || []).filter(pod => {
+      // Type filter
+      if (podType !== 'all' && pod.pod_type !== podType) {
+        return false
+      }
 
-    if (activity === 'active') {
-      filteredPods = filteredPods.filter(pod => pod.active_members > 0)
-    } else if (activity === 'inactive') {
-      filteredPods = filteredPods.filter(pod => pod.active_members === 0)
-    }
+      // Activity filter
+      if (activity === 'active') {
+        return pod.active_members > 0
+      } else if (activity === 'inactive') {
+        return pod.active_members === 0
+      }
+
+      return true
+    }) as Pod[]
 
     // Calculate aggregate stats
     const stats = {
@@ -79,13 +93,16 @@ export async function GET(request: Request) {
       activePods: filteredPods.filter(pod => pod.active_members > 0).length,
       totalMembers: filteredPods.reduce((sum, pod) => sum + (pod.member_count || 0), 0),
       questionsAnswered: filteredPods.reduce((sum, pod) => {
-        return sum + (pod.pod_activity?.questions_answered || 0)
+        const activity = pod.pod_activity?.[0]
+        return sum + (activity?.questions_answered || 0)
       }, 0),
       totalTimeSpent: filteredPods.reduce((sum, pod) => {
-        return sum + (pod.pod_activity?.time_spent || 0)
+        const activity = pod.pod_activity?.[0]
+        return sum + (activity?.time_spent || 0)
       }, 0),
       averageAccuracy: filteredPods.reduce((sum, pod) => {
-        return sum + (pod.pod_activity?.accuracy || 0)
+        const activity = pod.pod_activity?.[0]
+        return sum + (activity?.accuracy || 0)
       }, 0) / (filteredPods.length || 1),
       recentActivity: filteredPods.filter(pod => {
         if (!pod.last_activity_at) return false

@@ -96,39 +96,24 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
  * Transform database question to app format with enhanced source handling
  */
 function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
-  // Enhanced source parsing with better error handling
-  let sources = []
+  let tags: string[] = []
+  let sources: any[] = []
+
+  // Parse sources if they exist
   if (dbQuestion.sources) {
     try {
       if (typeof dbQuestion.sources === 'string') {
         sources = JSON.parse(dbQuestion.sources)
-        console.log(`📊 Parsed sources from string for question ${dbQuestion.question_number}:`, sources.length, 'sources')
       } else if (Array.isArray(dbQuestion.sources)) {
         sources = dbQuestion.sources
-        console.log(`📊 Using array sources for question ${dbQuestion.question_number}:`, sources.length, 'sources')
-      } else if (typeof dbQuestion.sources === 'object') {
-        // Handle case where it might be a single object
-        sources = [dbQuestion.sources]
-        console.log(`📊 Converted object to array for question ${dbQuestion.question_number}:`, sources.length, 'sources')
       }
-      
-      // Validate source structure
-      sources = sources.filter((source: any) => {
-        if (!source || typeof source !== 'object') return false
-        if (!source.url && !source.name) return false
-        return true
-      })
-      
-      console.log(`📊 Valid sources after filtering for question ${dbQuestion.question_number}:`, sources.length)
-      
     } catch (e) {
-      console.warn(`Failed to parse question sources for question ${dbQuestion.question_number}:`, e, 'Raw sources:', dbQuestion.sources)
+      console.warn(`Failed to parse question sources for question ${dbQuestion.question_number}:`, e)
       sources = []
     }
   }
 
-  // Enhanced tag parsing with better error handling
-  let tags = []
+  // Parse tags if they exist
   if (dbQuestion.tags) {
     try {
       if (typeof dbQuestion.tags === 'string') {
@@ -146,34 +131,91 @@ function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
     }
   }
 
-  const question: QuizQuestion = {
+  // Map difficulty level from number to string
+  let difficulty: 'easy' | 'medium' | 'hard'
+  switch (dbQuestion.difficulty_level) {
+    case 1:
+      difficulty = 'easy'
+      break
+    case 3:
+    case 4:
+      difficulty = 'hard'
+      break
+    case 2:
+    default:
+      difficulty = 'medium'
+  }
+
+  // Create base question properties
+  const baseQuestion = {
     topic_id: dbQuestion.topic_id,
     question_number: dbQuestion.question_number || 1,
-    question_type: dbQuestion.question_type || 'multiple_choice',
-    category: dbQuestion.category || 'General',
     question: dbQuestion.question || '',
-    option_a: dbQuestion.option_a || null,
-    option_b: dbQuestion.option_b || null,
-    option_c: dbQuestion.option_c || null,
-    option_d: dbQuestion.option_d || null,
     correct_answer: dbQuestion.correct_answer || '',
-    hint: dbQuestion.hint || '',
     explanation: dbQuestion.explanation || '',
-    tags: tags,
-    sources: sources
+    hint: dbQuestion.hint || '',
+    tags,
+    sources,
+    difficulty,
+    category: dbQuestion.category || 'General',
+    type: dbQuestion.question_type || 'multiple_choice'
+  }
+
+  // Create the specific question type based on question_type
+  let question: QuizQuestion
+  switch (dbQuestion.question_type) {
+    case 'multiple_choice':
+      const options = [
+        dbQuestion.option_a,
+        dbQuestion.option_b,
+        dbQuestion.option_c,
+        dbQuestion.option_d
+      ].filter((opt): opt is string => typeof opt === 'string')
+      
+      question = {
+        ...baseQuestion,
+        type: 'multiple_choice' as const,
+        options,
+        // Keep the individual option fields for backward compatibility
+        option_a: dbQuestion.option_a || undefined,
+        option_b: dbQuestion.option_b || undefined,
+        option_c: dbQuestion.option_c || undefined,
+        option_d: dbQuestion.option_d || undefined
+      }
+      break
+    case 'true_false':
+      question = {
+        ...baseQuestion,
+        type: 'true_false' as const,
+        options: ['True', 'False']
+      }
+      break
+    default:
+      // Default to multiple choice if type is unknown
+      question = {
+        ...baseQuestion,
+        type: 'multiple_choice' as const,
+        options: [
+          dbQuestion.option_a,
+          dbQuestion.option_b,
+          dbQuestion.option_c,
+          dbQuestion.option_d
+        ].filter((opt): opt is string => typeof opt === 'string')
+      }
   }
   
   // Log the final transformed question for debugging
   console.log(`📊 Transformed question ${dbQuestion.question_number}:`, {
     topic_id: question.topic_id,
     question_number: question.question_number,
-    question_type: question.question_type,
+    type: question.type,
     hasQuestion: !!question.question,
     hasCorrectAnswer: !!question.correct_answer,
-    sourcesCount: question.sources.length,
-    tagsCount: question.tags.length,
+    sourcesCount: sources.length,
+    tagsCount: tags.length,
     hasExplanation: !!question.explanation,
-    hasHint: !!question.hint
+    hasHint: !!question.hint,
+    difficulty: question.difficulty
   })
   
   return cleanObjectContent(question)
@@ -679,7 +721,7 @@ export const dataService = {
         firstQuestion: dbQuestions[0] ? {
           id: dbQuestions[0].id,
           question_number: dbQuestions[0].question_number,
-          question_type: dbQuestions[0].question_type,
+          type: dbQuestions[0].question_type,
           hasOptions: !!(dbQuestions[0].option_a && dbQuestions[0].option_b),
           question: dbQuestions[0].question ? dbQuestions[0].question.substring(0, 100) + '...' : 'No question text',
           hasSources: !!dbQuestions[0].sources,
@@ -720,13 +762,14 @@ export const dataService = {
       
       console.log('📊 dataService.getQuestionsByTopic - Transformed questions:', {
         count: questions.length,
-        firstTransformed: questions[0] ? {
-          question_number: questions[0].question_number,
-          question_type: questions[0].question_type,
-          hasOptions: !!(questions[0].option_a && questions[0].option_b),
-          correct_answer: questions[0].correct_answer,
-          sourcesCount: questions[0].sources?.length || 0,
-          tagsCount: questions[0].tags?.length || 0
+        firstQuestion: dbQuestions[0] ? {
+          id: dbQuestions[0].id,
+          question_number: dbQuestions[0].question_number,
+          type: dbQuestions[0].question_type,
+          hasOptions: !!(dbQuestions[0].option_a && dbQuestions[0].option_b),
+          question: dbQuestions[0].question ? dbQuestions[0].question.substring(0, 100) + '...' : 'No question text',
+          hasSources: !!dbQuestions[0].sources,
+          sourcesType: typeof dbQuestions[0].sources
         } : null
       })
       

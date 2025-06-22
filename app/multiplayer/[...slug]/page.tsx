@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { isMultiplayerEnabled } from '@/lib/feature-flags'
+import { isMultiplayerEnabled } from '@/lib/comprehensive-feature-flags'
 
 interface PageProps {
   params: Promise<{ slug: string[] }>

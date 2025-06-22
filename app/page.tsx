@@ -14,7 +14,8 @@ import { useRouter } from "next/navigation"
 import { Header } from '@/components/header'
 import { CategoryCloud } from '@/components/category-cloud'
 import { ContinueQuizCard } from '@/components/continue-quiz-card'
-import { NewsTicker } from '@/components/news-ticker'
+import { FeaturesShowcase } from '@/components/features-showcase'
+
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -192,24 +193,7 @@ export default function HomePage() {
     )}>
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
 
-      {/* News Ticker Section - Right under header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 py-3 md:py-4">
-        <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <NewsTicker 
-            sources={['reuters', 'ap-news', 'politico', 'bbc-news']}
-            categories={['politics', 'government']}
-            maxArticles={15}
-            autoScroll={true}
-            scrollSpeed={40}
-            showHeader={false}
-            showControls={false}
-            showStats={false}
-            compact={true}
-            titleLineLimit={2}
-            className="w-full"
-          />
-        </div>
-      </div>
+      {/* News Ticker moved to search dialog */}
     
       {/* Continue Where You Left Off - Fixed at top */}
       {user && incompleteAttempts.length > 0 && (
@@ -317,6 +301,9 @@ export default function HomePage() {
             <CategoryCloud limit={6} showViewAll={true} />
           </div>
         </div>
+
+        {/* Features Showcase Section */}
+        <FeaturesShowcase />
 
         <AuthDialog
           isOpen={isAuthDialogOpen}

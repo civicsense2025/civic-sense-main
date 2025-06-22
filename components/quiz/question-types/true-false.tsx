@@ -37,16 +37,14 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
       }
 
       const key = event.key.toUpperCase()
-      if (key === 'T' || key === 'F') {
+      const option = randomizedOptions.find(opt => opt.key === key)
+      if (option) {
         event.preventDefault()
-        const option = randomizedOptions.find(opt => opt.key === key)
-        if (option) {
-          setKeyboardHighlight(option.id)
-          onSelectAnswer(option.id)
-          
-          // Clear highlight after a short delay
-          setTimeout(() => setKeyboardHighlight(null), 200)
-        }
+        setKeyboardHighlight(option.id)
+        onSelectAnswer(option.id)
+        
+        // Clear highlight after a short delay
+        setTimeout(() => setKeyboardHighlight(null), 200)
       }
     }
 
@@ -106,7 +104,7 @@ export function TrueFalseQuestion({ question, selectedAnswer, isSubmitted, onSel
               isKeyboardHighlighted && "ring-2 ring-blue-400 ring-opacity-75"
             )}>
               <span className="text-sm font-bold">
-                {index + 1}
+                {option.key}
               </span>
             </div>
 

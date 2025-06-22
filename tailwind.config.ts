@@ -28,9 +28,9 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
+        sans: ['Helvetica', 'Arial', ...fontFamily.sans],
         mono: ['Monaco', 'Menlo', 'Courier New', 'monospace'],
-        'space-mono': ['var(--font-space-mono)', 'monospace'],
+        'space-mono': ['var(--font-space-mono)', 'Monaco', 'Menlo', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

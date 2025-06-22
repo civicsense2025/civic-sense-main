@@ -6,6 +6,12 @@ import { usePremium } from "@/hooks/usePremium"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { 
+  isPremiumBadgesEnabled,
+  isUpgradePromptsEnabled,
+  isPremiumOnboardingEnabled,
+  isBillingManagementEnabled
+} from "@/lib/comprehensive-feature-flags"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
@@ -174,7 +180,7 @@ export function PremiumSubscriptionCard({ className }: PremiumSubscriptionCardPr
   return (
     <div className={cn("space-y-8", className)}>
       {/* Upgrade to Lifetime Card - Only show to premium users who don't have lifetime or educational */}
-      {shouldShowUpgradeToLifetime() && (
+      {isUpgradePromptsEnabled() && shouldShowUpgradeToLifetime() && (
         <Card className="border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -216,7 +222,7 @@ export function PremiumSubscriptionCard({ className }: PremiumSubscriptionCardPr
               <CardDescription className="text-slate-600 dark:text-slate-400">Manage your CivicSense subscription</CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              {getSubscriptionStatusBadge()}
+              {isPremiumBadgesEnabled() && getSubscriptionStatusBadge()}
               <Button
                 variant="ghost"
                 size="sm"
@@ -366,7 +372,7 @@ export function PremiumSubscriptionCard({ className }: PremiumSubscriptionCardPr
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            {shouldShowBillingManagement() ? (
+            {isBillingManagementEnabled() && shouldShowBillingManagement() ? (
               <>
                 <Button
                   onClick={handleManageBilling}

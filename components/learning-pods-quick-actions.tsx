@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import Link from 'next/link'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 
 interface QuickActionsProps {
   className?: string
@@ -28,6 +29,11 @@ interface QuickStats {
 }
 
 export function LearningPodsQuickActions({ className, variant = 'header' }: QuickActionsProps) {
+  // Check feature flag first
+  if (!envFeatureFlags.getFlag('learningPods')) {
+    return null
+  }
+
   const { user } = useAuth()
   const [stats, setStats] = useState<QuickStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)

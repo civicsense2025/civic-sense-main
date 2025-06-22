@@ -113,7 +113,7 @@ export const multiplayerOperations = {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
 
     try {
-      // Create the room
+      // Start a Supabase transaction
       const { data: roomData, error: roomError } = await supabase
         .from('multiplayer_rooms')
         .insert({
@@ -122,7 +122,7 @@ export const multiplayerOperations = {
           topic_id: options.topicId,
           room_name: options.roomName || 'Quiz Room',
           max_players: options.maxPlayers || 6,
-          current_players: 0,
+          current_players: 0, // Start with 0, will be updated by trigger
           room_status: 'waiting',
           game_mode: options.gameMode || 'classic',
           settings: {},
@@ -131,36 +131,29 @@ export const multiplayerOperations = {
         .select()
         .single()
 
-      if (roomError) throw roomError
+      if (roomError) {
+        console.error('Failed to create room:', roomError)
+        throw roomError
+      }
 
-      // Create the host player
-      const { data: playerData, error: playerError } = await supabase
-        .from('multiplayer_room_players')
-        .insert({
-          room_id: roomData.id,
-          user_id: hostUserId || null,
-          guest_token: guestToken || null,
-          player_name: 'Host',
-          player_emoji: '👑',
-          is_host: true,
-          is_ready: false,
-          is_connected: true,
-          join_order: 1,
-          score: 0,
-          questions_answered: 0,
-          questions_correct: 0,
-          last_activity_at: new Date().toISOString()
+      // Join the room as host using our atomic join function
+      const { data: joinData, error: joinError } = await supabase
+        .rpc('join_multiplayer_room_v2', {
+          p_room_code: roomCode,
+          p_player_name: 'Host',
+          p_player_emoji: '👑',
+          p_user_id: hostUserId,
+          p_guest_token: guestToken
         })
-        .select()
-        .single()
 
-      if (playerError) throw playerError
-
-      // Update room player count
-      await supabase
-        .from('multiplayer_rooms')
-        .update({ current_players: 1 })
-        .eq('id', roomData.id)
+      if (joinError) {
+        // Cleanup the room if join fails
+        await supabase
+          .from('multiplayer_rooms')
+          .delete()
+          .eq('id', roomData.id)
+        throw joinError
+      }
 
       // Create initial game session
       const { data: sessionData, error: sessionError } = await supabase
@@ -180,15 +173,27 @@ export const multiplayerOperations = {
         .select()
         .single()
 
-      if (sessionError) throw sessionError
+      if (sessionError) {
+        console.error('Failed to create game session:', sessionError)
+        // Cleanup the room and player if session creation fails
+        await supabase
+          .from('multiplayer_room_players')
+          .delete()
+          .eq('id', joinData.player.id)
+        await supabase
+          .from('multiplayer_rooms')
+          .delete()
+          .eq('id', roomData.id)
+        throw sessionError
+      }
 
       // Log room creation event
-      await supabase
+      const { error: eventError } = await supabase
         .from('multiplayer_room_events')
         .insert({
           room_id: roomData.id,
           event_type: 'room_created',
-          player_id: playerData.id,
+          player_id: joinData.player.id,
           event_data: { 
             room_code: roomCode, 
             topic_id: options.topicId,
@@ -196,23 +201,52 @@ export const multiplayerOperations = {
           }
         })
 
+      if (eventError) {
+        console.error('Failed to log room creation event:', eventError)
+        // Don't rollback for event logging failure
+        // The room is still usable even if the event wasn't logged
+      }
+
       // Cache player ID locally
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(`multiplayerPlayer_${roomCode}`, playerData.id)
+          localStorage.setItem(`multiplayerPlayer_${roomCode}`, joinData.player.id)
         } catch {
           /* ignore */
         }
       }
 
       return {
-        room: roomData as MultiplayerRoom,
-        player: playerData as MultiplayerPlayer,
+        room: joinData.room as MultiplayerRoom,
+        player: joinData.player as MultiplayerPlayer,
         session: sessionData as MultiplayerGameSession
       }
     } catch (error) {
-      console.error('Database error in createRoom:', error)
-      throw new Error(`Failed to create room: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorDetails = {
+        error,
+        errorType: error?.constructor?.name,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        options,
+        hostUserId,
+        guestToken: guestToken ? '[REDACTED]' : undefined
+      }
+      
+      console.error('Database error in createRoom:', errorDetails)
+
+      // Check for specific Supabase errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        const dbError = error as { code: string; message: string; details?: string; hint?: string }
+        throw new Error(`Database error (${dbError.code}): ${dbError.message}${dbError.hint ? ` - ${dbError.hint}` : ''}${dbError.details ? `\nDetails: ${dbError.details}` : ''}`)
+      }
+      
+      // Handle other types of errors
+      if (error instanceof Error) {
+        throw error // Preserve the original error
+      }
+      
+      // Fallback for unknown error types
+      throw new Error(`Failed to create room: ${String(error)}`)
     }
   },
 
@@ -223,125 +257,55 @@ export const multiplayerOperations = {
     room: MultiplayerRoom
     player: MultiplayerPlayer
   }> {
-    // Ensure we have either userId or guestToken (but not both)
-    let finalUserId: string | undefined = undefined
-    let finalGuestToken: string | undefined = undefined
-    
-    if (userId) {
-      finalUserId = userId
-      finalGuestToken = undefined
-    } else {
-      finalUserId = undefined
-      finalGuestToken = guestToken || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    }
-
     try {
-      // Get room data
-      const { data: roomData, error: roomError } = await supabase
-        .from('multiplayer_rooms')
-        .select('*')
-        .eq('room_code', options.roomCode.toUpperCase())
-        .single()
-
-      if (roomError || !roomData) {
-        throw new Error('Room not found')
-      }
-
-      if (roomData.room_status !== 'waiting') {
-        throw new Error('Room is not accepting new players')
-      }
-
-      if ((roomData.current_players || 0) >= (roomData.max_players || 6)) {
-        throw new Error('Room is full')
-      }
-
-      // Check if player already exists in room
-      const { data: existingPlayer } = await supabase
-        .from('multiplayer_room_players')
-        .select('*')
-        .eq('room_id', roomData.id)
-        .or(
-          finalUserId ? `user_id.eq.${finalUserId}` : `guest_token.eq.${finalGuestToken}`
-        )
-        .single()
-
-      if (existingPlayer) {
-        // Update existing player
-        const { data: updatedPlayer, error: updateError } = await supabase
-          .from('multiplayer_room_players')
-          .update({
-            player_name: options.playerName,
-            player_emoji: options.playerEmoji || '😊',
-            is_connected: true,
-            last_activity_at: new Date().toISOString()
-          })
-          .eq('id', existingPlayer.id)
-          .select()
-          .single()
-
-        if (updateError) throw updateError
-
-        return {
-          room: roomData as MultiplayerRoom,
-          player: updatedPlayer as MultiplayerPlayer
-        }
-      }
-
-      // Create new player
-      const { data: playerData, error: playerError } = await supabase
-        .from('multiplayer_room_players')
-        .insert({
-          room_id: roomData.id,
-          user_id: finalUserId,
-          guest_token: finalGuestToken,
-          player_name: options.playerName,
-          player_emoji: options.playerEmoji || '😊',
-          is_host: false,
-          is_ready: false,
-          is_connected: true,
-          join_order: (roomData.current_players || 0) + 1,
-          score: 0,
-          questions_answered: 0,
-          questions_correct: 0,
-          last_activity_at: new Date().toISOString()
+      // Call the atomic join function
+      const { data, error } = await supabase
+        .rpc('join_multiplayer_room_v2', {
+          p_room_code: options.roomCode.toUpperCase(),
+          p_player_name: options.playerName,
+          p_player_emoji: options.playerEmoji || '😊',
+          p_user_id: userId,
+          p_guest_token: guestToken
         })
-        .select()
-        .single()
 
-      if (playerError) throw playerError
-
-             // Update room player count
-       await supabase
-         .from('multiplayer_rooms')
-         .update({ current_players: (roomData.current_players || 0) + 1 })
-         .eq('id', roomData.id)
+      if (error) {
+        // Handle specific error cases
+        if (error.message.includes('ROOM_NOT_FOUND')) {
+          throw new Error('Room not found')
+        }
+        if (error.message.includes('ROOM_FULL')) {
+          throw new Error('Room is full')
+        }
+        throw error
+      }
 
       // Log player join event
       await supabase
         .from('multiplayer_room_events')
         .insert({
-          room_id: roomData.id,
+          room_id: data.room.id,
           event_type: 'player_joined',
-          player_id: playerData.id,
+          player_id: data.player.id,
           event_data: { player_name: options.playerName }
         })
+        .throwOnError()
 
       // Cache player ID locally
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(`multiplayerPlayer_${roomData.room_code}`, playerData.id)
+          localStorage.setItem(`multiplayerPlayer_${data.room.room_code}`, data.player.id)
         } catch {
           /* ignore */
         }
       }
 
       return {
-        room: roomData as MultiplayerRoom,
-        player: playerData as MultiplayerPlayer
+        room: data.room as MultiplayerRoom,
+        player: data.player as MultiplayerPlayer
       }
     } catch (error) {
       console.error('Error joining room:', error)
-      throw new Error(`Failed to join room: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw error instanceof Error ? error : new Error('Failed to join room')
     }
   },
 
@@ -974,39 +938,93 @@ export const multiplayerOperations = {
   /**
    * Get user rooms
    */
-  async getUserRooms(userId?: string, guestToken?: string): Promise<MultiplayerRoom[]> {
+  async getUserRooms(userId?: string, guestToken?: string): Promise<{ room: MultiplayerRoom; player: MultiplayerPlayer; topic?: { emoji: string; topic_title: string } }[]> {
+    /**
+     * Defensive guard clauses -------------------------------------------------
+     */
+    if (!userId && !guestToken) {
+      // Neither authenticated user nor guest – nothing to fetch.
+      return []
+    }
+
+    // Helper to surface Supabase errors with maximum details.
+    const formatDbError = (err: any): Error => {
+      if (!err) return new Error('Unknown database error')
+      if (err instanceof Error) return err
+      const { code, message, hint, details } = err as Record<string, any>
+      return new Error(`DB-Error${code ? ` [${code}]` : ''}: ${message || 'Unknown'}${hint ? ` – ${hint}` : ''}${details ? `\nDetails: ${details}` : ''}`)
+    }
+
     try {
-      let query = supabase
-        .from('multiplayer_rooms')
+      /**
+       * STEP 1 – Fetch all player rows visible to the current session.
+       * We rely on RLS to restrict rows by auth.uid()/guest_token, so we keep
+       * additional filters minimal to avoid accidental policy conflicts.
+       */
+      let playersQuery = supabase
+        .from('multiplayer_room_players')
         .select('*')
-        .order('created_at', { ascending: false })
 
-      if (userId) {
-        query = query.eq('host_user_id', userId)
-      } else if (guestToken) {
-        // For guest users, we need to check through player memberships
-        const { data: playerRooms } = await supabase
-          .from('multiplayer_room_players')
-          .select('room_id')
-          .eq('guest_token', guestToken)
-
-        if (playerRooms && playerRooms.length > 0) {
-          const roomIds = playerRooms.map(p => p.room_id)
-          query = query.in('id', roomIds)
-        } else {
-          return []
-        }
-      } else {
-        return []
+      // Apply a filter only if necessary – avoid conflicting with RLS policies.
+      if (!userId && guestToken) {
+        playersQuery = playersQuery.eq('guest_token', guestToken)
+      } else if (userId) {
+        // For authenticated sessions this is usually redundant (RLS already
+        // limits by auth.uid()), but keeping it narrows the result set and
+        // avoids mixing guest rows when a user is logged-in on the same device.
+        playersQuery = playersQuery.eq('user_id', userId)
       }
 
-      const { data, error } = await query
+      const { data: playerRows } = await playersQuery.throwOnError()
 
-      if (error) throw error
-      return data as MultiplayerRoom[]
-    } catch (error) {
-      console.error('Error getting user rooms:', error)
-      return []
+      if (!playerRows || playerRows.length === 0) {
+        return [] // User simply has no rooms – not an error.
+      }
+
+      /**
+       * STEP 2 – Fetch all related rooms.
+       */
+      const roomIds = [...new Set(playerRows.map((p: DbMultiplayerRoomPlayer) => p.room_id))]
+      const { data: roomRows, error: roomsErr } = await supabase
+        .from('multiplayer_rooms')
+        .select('*')
+        .in('id', roomIds)
+        .throwOnError()
+      if (roomsErr) throw roomsErr
+
+      /**
+       * STEP 3 – Fetch topic meta (emoji + title). This is *nice-to-have* and we
+       * swallow failures here because missing topic info should not block the
+       * lobby.
+       */
+      const topicIds = [...new Set(roomRows.map((r: DbMultiplayerRoom) => r.topic_id).filter(Boolean))]
+      let topicMap: Record<string, { emoji: string; topic_title: string }> = {}
+      if (topicIds.length) {
+        const { data: topicRows, error: topicErr } = await supabase
+          .from('question_topics')
+          .select('topic_id, emoji, topic_title')
+          .in('topic_id', topicIds)
+        if (!topicErr && topicRows) {
+          topicRows.forEach((t) => {
+            topicMap[t.topic_id] = { emoji: t.emoji, topic_title: t.topic_title }
+          })
+        }
+      }
+
+      /**
+       * STEP 4 – Zip everything into the expected shape (strongly typed).
+       */
+      return roomRows.map((room: DbMultiplayerRoom) => {
+        const player = playerRows.find((p: DbMultiplayerRoomPlayer) => p.room_id === room.id) as MultiplayerPlayer
+        return {
+          room: room as MultiplayerRoom,
+          player,
+          topic: topicMap[room.topic_id]
+        }
+      })
+    } catch (rawErr) {
+      console.error('🎮 getUserRooms – fatal error:', rawErr)
+      throw formatDbError(rawErr)
     }
   },
 

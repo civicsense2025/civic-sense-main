@@ -16,6 +16,7 @@ export type PremiumFeature =
   | 'priority_support'
   | 'offline_mode'
   | 'export_data'
+  | 'npc_battle'
 
 export interface UserSubscription {
   id: string
@@ -432,7 +433,8 @@ export const premiumFeatures = {
       'learning_insights',
       'priority_support',
       'offline_mode',
-      'export_data'
+      'export_data',
+      'npc_battle'
     ]
 
     const accessPromises = features.map(async (feature) => {

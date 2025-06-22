@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense, lazy } from 'react'
-import { notFound, useRouter, useSearchParams } from 'next/navigation'
-import { arePodsEnabled } from '@/lib/feature-flags'
+import { notFound, useRouter, useSearchParams, redirect } from 'next/navigation'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -481,9 +481,9 @@ interface PodStats {
 }
 
 export default function PodsPage() {
-  // Feature flag check - hide pods in production
-  if (!arePodsEnabled()) {
-    notFound()
+  // Check feature flag first
+  if (!envFeatureFlags.getFlag('learningPods')) {
+    redirect('/')
   }
 
   const { user } = useAuth()

@@ -68,7 +68,8 @@ export function usePremium(): UsePremiumReturn {
     learning_insights: false,
     priority_support: false,
     offline_mode: false,
-    export_data: false
+    export_data: false,
+    npc_battle: false
   })
 
   // Load subscription data

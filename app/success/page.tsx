@@ -13,7 +13,7 @@ function SuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
-  const { subscription, refreshSubscription } = usePremium()
+  const { subscription, refreshSubscription, isPremium } = usePremium()
   const [isLoading, setIsLoading] = useState(true)
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false)
 
@@ -42,12 +42,14 @@ function SuccessPageContent() {
   }, [isLoading, cancelled, hasTriggeredConfetti])
 
   const triggerConfetti = () => {
-    // Simple, elegant confetti - not overwhelming
+    // Elegant, minimal confetti - matches our design philosophy
     confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#64748b', '#94a3b8', '#cbd5e1']
+      particleCount: 30,
+      spread: 45,
+      origin: { y: 0.8 },
+      colors: ['#64748b', '#94a3b8', '#cbd5e1'],
+      gravity: 0.6,
+      scalar: 0.8
     })
   }
 
@@ -76,23 +78,36 @@ function SuccessPageContent() {
     router.push('/settings')
   }
 
+  // Check if user already has premium and redirect
+  useEffect(() => {
+    if (!sessionId && subscription && isPremium) {
+      // User already has premium and is accessing success page directly
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 3000) // Redirect after 3 seconds
+    }
+  }, [sessionId, subscription, isPremium, router])
+
   if (cancelled) {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950">
-        <div className="max-w-2xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-          <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-50 mb-4">
-              Payment Cancelled
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 mb-8">
-              No worries! You can upgrade to premium anytime.
-            </p>
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="container py-24">
+          <div className="max-w-2xl mx-auto text-center space-y-12">
+            <div className="space-y-6">
+              <h1 className="text-5xl font-light text-slate-900 dark:text-white tracking-tight">
+                No worries
+              </h1>
+              <p className="text-xl text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                You can upgrade to premium anytime when you're ready.
+              </p>
+            </div>
+            
             <Button 
               onClick={handleContinueToQuizzes}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900"
+              className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full px-8 py-4 h-auto text-lg"
             >
               Continue Learning
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -102,11 +117,13 @@ function SuccessPageContent() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950">
-        <div className="max-w-2xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-            <p className="text-slate-600 dark:text-slate-400">Confirming your subscription...</p>
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="container py-24">
+          <div className="max-w-2xl mx-auto text-center space-y-8">
+            <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 rounded-full animate-spin mx-auto"></div>
+            <p className="text-lg text-slate-500 dark:text-slate-400 font-light">
+              Confirming your subscription...
+            </p>
           </div>
         </div>
       </main>
@@ -115,77 +132,98 @@ function SuccessPageContent() {
 
   const details = getSubscriptionDetails()
 
+  // Handle users who already have premium (prevent refresh abuse)
+  if (!sessionId && subscription && isPremium) {
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="container py-24">
+          <div className="max-w-2xl mx-auto text-center space-y-12">
+            <div className="space-y-6">
+              <h1 className="text-5xl font-light text-slate-900 dark:text-white tracking-tight">
+                You're already premium!
+              </h1>
+              <p className="text-xl text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                You already have {subscription.subscription_tier} membership. Redirecting you to your dashboard...
+              </p>
+            </div>
+            
+            <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // Handle donation success
   if (type === 'donation') {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950">
-        {/* Clean header */}
-        <div className="border-b border-slate-100 dark:border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-            <Link 
-              href="/" 
-              className="group hover:opacity-70 transition-opacity"
-            >
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-                CivicSense
-              </h1>
-            </Link>
-          </div>
-        </div>
-
-        {/* Donation success content */}
-        <div className="max-w-2xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-          <div className="text-center">
-            {/* Success emoji */}
-            <div className="mb-8">
-              <div className="text-6xl">💝</div>
-            </div>
-
-            {/* Main message */}
-            <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-slate-50 mb-4 tracking-tight">
-              Thank You!
-            </h1>
-            
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
-              Your ${amount} donation helps us build a more informed society.
-            </p>
-
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 mb-12 text-left">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4 text-center">
-                Your Impact
-              </h2>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🎯</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Supporting fact-checked civic education</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🌐</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Helping citizens make informed decisions</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🚀</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Enabling platform improvements and new features</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">🏛️</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Strengthening democratic participation</span>
-                </div>
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="container py-24">
+          <div className="max-w-3xl mx-auto text-center space-y-16">
+            {/* Hero section */}
+            <div className="space-y-8">
+              <div className="text-8xl font-light">💝</div>
+              <div className="space-y-4">
+                <h1 className="text-6xl font-light text-slate-900 dark:text-white tracking-tight">
+                  Thank You
+                </h1>
+                <p className="text-2xl text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                  Your ${amount} donation helps us build civic education that politicians don't want you to have.
+                </p>
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="space-y-4">
+                         {/* Impact section - clean single column layout */}
+             <div className="space-y-8">
+               <div className="text-center space-y-2">
+                 <div className="text-3xl font-light text-slate-900 dark:text-white">
+                   Fact-checked
+                 </div>
+                 <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                   Supporting verified civic education
+                 </div>
+               </div>
+               
+               <div className="text-center space-y-2">
+                 <div className="text-3xl font-light text-slate-900 dark:text-white">
+                   Informed
+                 </div>
+                 <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                   Helping citizens make better decisions
+                 </div>
+               </div>
+               
+               <div className="text-center space-y-2">
+                 <div className="text-3xl font-light text-slate-900 dark:text-white">
+                   Independent
+                 </div>
+                 <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                   Platform improvements and new features
+                 </div>
+               </div>
+               
+               <div className="text-center space-y-2">
+                 <div className="text-3xl font-light text-slate-900 dark:text-white">
+                   Democratic
+                 </div>
+                 <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                   Strengthening civic participation
+                 </div>
+               </div>
+             </div>
+
+            {/* Action section */}
+            <div className="space-y-6">
               <Button 
                 onClick={handleContinueToQuizzes}
-                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full px-8 py-4 h-auto text-lg"
               >
                 Continue Learning
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Share CivicSense with friends to multiply your impact!
+              <p className="text-lg text-slate-500 dark:text-slate-400 font-light">
+                Share CivicSense with friends to multiply your impact
               </p>
             </div>
           </div>
@@ -194,121 +232,166 @@ function SuccessPageContent() {
     )
   }
 
-  return (
-    <main className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Clean header */}
-      <div className="border-b border-slate-100 dark:border-slate-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <Link 
-            href="/" 
-            className="group hover:opacity-70 transition-opacity"
-          >
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight">
-              CivicSense
-            </h1>
-          </Link>
-        </div>
-      </div>
-
-      {/* Main content with lots of whitespace */}
-      <div className="max-w-2xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-        <div className="text-center">
-          {/* Success emoji */}
-          <div className="mb-8">
-            <div className="text-6xl">🎉</div>
+    return (
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="container py-24">
+        <div className="max-w-7xl mx-auto space-y-16">
+          {/* Hero section */}
+          <div className="text-center space-y-8">
+            <div className="text-8xl font-light">🎉</div>
+            <div className="space-y-4">
+              <h1 className="text-6xl font-light text-slate-900 dark:text-white tracking-tight">
+                Welcome to Premium
+              </h1>
+              <p className="text-2xl text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                Your payment was successful. You now have access to all premium features.
+              </p>
+            </div>
           </div>
 
-          {/* Main message */}
-          <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-slate-50 mb-4 tracking-tight">
-            Welcome to Premium
-          </h1>
-          
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-12">
-            Your payment was successful. You now have access to all premium features.
-          </p>
-
-          {/* Subscription details - clean and minimal */}
-          {details && (
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 mb-12 text-left">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-50">Plan</span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Premium {details.isLifetime ? 'Lifetime' : 'Yearly'}
-                  </span>
-                </div>
-                {details.amount && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-900 dark:text-slate-50">Amount</span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {details.amount} {details.isLifetime ? 'one-time' : '/year'}
-                    </span>
+          {/* Two column layout: Subscription details + Features */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+            {/* Left column: Subscription details */}
+            <div className="space-y-12">
+              <div className="space-y-8">
+                <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
+                  Confirmation
+                </h2>
+                
+                {details && (
+                  <div className="space-y-6">
+                    <div className="space-y-1">
+                      <div className="text-sm uppercase tracking-widest text-slate-400 dark:text-slate-500 font-medium">
+                        Plan
+                      </div>
+                      <div className="text-2xl font-light text-slate-900 dark:text-white">
+                        Premium {details.isLifetime ? 'Lifetime' : 'Yearly'}
+                      </div>
+                    </div>
+                    
+                    {details.amount && (
+                      <div className="space-y-1">
+                        <div className="text-sm uppercase tracking-widest text-slate-400 dark:text-slate-500 font-medium">
+                          Amount
+                        </div>
+                        <div className="text-2xl font-light text-slate-900 dark:text-white">
+                          {details.amount} {details.isLifetime ? 'one-time' : '/year'}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-1">
+                      <div className="text-sm uppercase tracking-widest text-slate-400 dark:text-slate-500 font-medium">
+                        Status
+                      </div>
+                      <div className="text-2xl font-light text-slate-900 dark:text-white">
+                        Active
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-50">Status</span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Active</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="space-y-6">
+                <Button 
+                  onClick={handleContinueToQuizzes}
+                  className="group w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full px-8 py-4 h-auto text-lg transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  <span className="group-hover:mr-1 transition-all duration-300">Start Learning</span>
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </Button>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleViewDashboard}
+                    className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-full px-6 py-3 h-auto"
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    View Analytics
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={handleManageSubscription}
+                    className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-full px-6 py-3 h-auto"
+                  >
+                    Manage Account
+                  </Button>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* What's included - simple list with checkmark emojis */}
-          <div className="text-left mb-12">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-6 text-center">
-              What's included
-            </h2>
-            <div className="space-y-3">
-              {[
-                'Unlimited custom learning decks',
-                'Advanced analytics and insights',
-                'Complete progress history',
-                'Spaced repetition learning',
-                'Data export capabilities',
-                'Priority support'
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <span className="text-lg">✅</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action buttons - clean and minimal */}
-          <div className="space-y-4">
-            <Button 
-              onClick={handleContinueToQuizzes}
-              className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 dark:text-slate-900"
-            >
-              Start Learning
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            
-            <div className="flex space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={handleViewDashboard}
-                className="flex-1 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900"
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                View Analytics
-              </Button>
+            {/* Right column: Features */}
+            <div className="space-y-12">
+              <h2 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight">
+                What's included
+              </h2>
               
-              <Button 
-                variant="outline" 
-                onClick={handleManageSubscription}
-                className="flex-1 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900"
-              >
-                Manage Account
-              </Button>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                <div className="py-8 first:pt-0 last:pb-0 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Unlimited custom learning decks
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    Create personalized quizzes on any civic topic
+                  </div>
+                </div>
+                
+                <div className="py-8 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Advanced analytics and insights
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    Track your progress and identify knowledge gaps
+                  </div>
+                </div>
+                
+                <div className="py-8 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Complete progress history
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    View your entire learning journey
+                  </div>
+                </div>
+                
+                <div className="py-8 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Spaced repetition learning
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    Scientifically optimized review scheduling
+                  </div>
+                </div>
+                
+                <div className="py-8 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Data export capabilities
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    Download your data and progress reports
+                  </div>
+                </div>
+                
+                <div className="py-8 last:pb-0 space-y-3 group hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors duration-300 rounded-lg px-6 -mx-6">
+                  <div className="text-2xl font-light text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors duration-300">
+                    Priority support access
+                  </div>
+                  <div className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+                    Get help faster when you need it
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Simple footer message */}
-          <div className="mt-16 pt-8 border-t border-slate-100 dark:border-slate-900">
-            <p className="text-sm text-slate-500 dark:text-slate-500">
-              Thank you for supporting CivicSense. Your subscription helps us create better civic education content for everyone.
+          {/* Footer message */}
+          <div className="text-center pt-16">
+            <p className="text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
+              Thank you for supporting CivicSense.<br />
+              Your subscription helps us create civic education that politicians don't want you to have.
             </p>
           </div>
         </div>
@@ -320,11 +403,13 @@ function SuccessPageContent() {
 // Loading fallback for Suspense
 function LoadingFallback() {
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950">
-      <div className="max-w-2xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Loading payment details...</p>
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="container py-24">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 rounded-full animate-spin mx-auto"></div>
+          <p className="text-lg text-slate-500 dark:text-slate-400 font-light">
+            Loading payment details...
+          </p>
         </div>
       </div>
     </main>

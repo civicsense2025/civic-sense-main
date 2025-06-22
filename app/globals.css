@@ -549,8 +549,8 @@ a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent) {
   aspect-ratio: 1 / 1 !important;
 }
 
-/* Apply circular aspect ratio only to specific circular elements, not badges/buttons (except notification badges) */
-.rounded-full:not([class*="badge"]):not(button):not([role="button"]):not(.btn):not(.inline-flex):not(.badge-pill),
+/* Apply circular aspect ratio only to avatars and specific circular elements */
+.avatar.rounded-full,
 .notification-badge {
   aspect-ratio: 1 / 1 !important;
 }
@@ -630,9 +630,10 @@ div[class*="inline-flex"][class*="rounded-full"][class*="border"] {
   max-width: 1.25rem !important;
 }
 
-/* Force all badge-like elements to be pill-shaped */
-div[class*="inline-flex"][class*="items-center"][class*="rounded-full"][class*="border"],
-div[class*="inline-flex"][class*="items-center"][class*="rounded-full"]:not(.avatar):not([class*="w-"]):not([class*="h-"]) {
+/* Ensure badges and pill-shaped elements are not forced into circles */
+.badge,
+[class*="badge"],
+div[class*="inline-flex"][class*="items-center"][class*="rounded-full"][class*="border"] {
   aspect-ratio: auto !important;
   width: auto !important;
   height: auto !important;
@@ -657,4 +658,25 @@ input[type="checkbox"] {
 
 .timer-component.rounded-lg {
   border-radius: 0.5rem !important;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+.badge-breaking {
+  @apply bg-gradient-to-r from-red-500 to-rose-600 text-white text-xs font-bold font-['Space_Mono'] uppercase tracking-wider rounded-full animate-pulse;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

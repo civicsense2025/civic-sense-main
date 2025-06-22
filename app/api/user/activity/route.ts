@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { enhancedQuizDatabase } from '@/lib/enhanced-quiz'
+import { enhancedQuizDatabase } from '@/lib/quiz-database'
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
     // Apply filters
     let filteredActivity = recentActivity.filter(activity => {
-      const activityDate = new Date(activity.timestamp)
+      const activityDate = new Date(activity.completedAt)
       const cutoffDate = new Date()
       cutoffDate.setDate(cutoffDate.getDate() - days)
       return activityDate >= cutoffDate
@@ -34,13 +34,13 @@ export async function GET(request: Request) {
 
     if (topic !== 'all') {
       filteredActivity = filteredActivity.filter(activity => 
-        activity.topic?.toLowerCase() === topic.toLowerCase()
+        activity.topicTitle?.toLowerCase().includes(topic.toLowerCase())
       )
     }
 
     if (difficulty !== 'all') {
       filteredActivity = filteredActivity.filter(activity => 
-        activity.difficulty?.toLowerCase() === difficulty.toLowerCase()
+        activity.level?.toLowerCase() === difficulty.toLowerCase()
       )
     }
 

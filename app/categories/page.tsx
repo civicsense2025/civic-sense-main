@@ -288,17 +288,17 @@ export default async function CategoriesPage() {
                                 
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
                                   {category.skillCount > 0 && (
-                                    <Badge variant="secondary" className="text-xs font-light bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-0">
+                                    <Badge variant="secondary" className="text-xs font-light bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-0 rounded-lg">
                                       {category.skillCount} skill{category.skillCount !== 1 ? 's' : ''}
                                     </Badge>
                                   )}
                                   {category.topicCount > 0 && (
-                                    <Badge variant="outline" className="text-xs font-light border-slate-200 dark:border-slate-600">
+                                    <Badge variant="outline" className="text-xs font-light border-slate-200 dark:border-slate-600 rounded-lg">
                                       {category.topicCount} topic{category.topicCount !== 1 ? 's' : ''}
                                     </Badge>
                                   )}
                                   {!hasContent && (
-                                    <Badge variant="secondary" className="text-xs font-light text-slate-500 bg-slate-100 dark:bg-slate-800">
+                                    <Badge variant="secondary" className="text-xs font-light text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                       Coming soon
                                     </Badge>
                                   )}
@@ -334,7 +334,7 @@ export default async function CategoriesPage() {
                   <h2 className="text-3xl font-light text-slate-900 dark:text-white">
                     Core Civic Knowledge
                   </h2>
-                  <Badge variant="outline" className="font-light">
+                  <Badge variant="outline" className="font-light rounded-lg">
                     {evergreenTopics.length} topics
                   </Badge>
                 </div>
@@ -357,7 +357,7 @@ export default async function CategoriesPage() {
                                 {topic.topic_title}
                               </CardTitle>
                               <div className="flex items-center gap-1 mt-2">
-                                <Badge variant="secondary" className="text-xs font-light bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                <Badge variant="secondary" className="text-xs font-light bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg">
                                   Core Knowledge
                                 </Badge>
                               </div>
@@ -373,12 +373,12 @@ export default async function CategoriesPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-wrap gap-1">
                               {topic.categories.slice(0, 2).map(cat => (
-                                <Badge key={cat} variant="outline" className="text-xs font-light">
+                                <Badge key={cat} variant="outline" className="text-xs font-light rounded-lg">
                                   {cat}
                                 </Badge>
                               ))}
                               {topic.categories.length > 2 && (
-                                <Badge variant="outline" className="text-xs font-light">
+                                <Badge variant="outline" className="text-xs font-light rounded-lg">
                                   +{topic.categories.length - 2}
                                 </Badge>
                               )}

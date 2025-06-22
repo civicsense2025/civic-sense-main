@@ -1,229 +1,473 @@
 "use client"
 
-import { useEffect } from "react"
-import { useAuth } from "@/components/auth/auth-provider"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
-import { Header } from "@/components/header"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
-  Brain, 
-  MessageSquare, 
-  FileText, 
-  BarChart3, 
   Users, 
-  Settings,
+  FileText, 
+  Calendar, 
+  BarChart3, 
+  TrendingUp, 
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Target,
+  Star,
+  MessageSquare,
+  Brain,
+  Globe,
+  Zap,
   ArrowRight,
-  Shield
-} from "lucide-react"
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Activity,
+  Shield,
+  Database,
+  Award,
+  Plus
+} from 'lucide-react'
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
 
-export default function AdminDashboardPage() {
-  const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading, error: adminError } = useAdminAccess()
-  const { toast } = useToast()
+interface DashboardStats {
+  users: {
+    total: number
+    active_last_30_days: number
+    new_this_week: number
+    verified_count: number
+    admin_count: number
+  }
+  content: {
+    total_topics: number
+    total_questions: number
+    pending_events: number
+    ai_generated_today: number
+    surveys_active: number
+    scenarios_available: number
+  }
+  engagement: {
+    quiz_attempts_today: number
+    quiz_attempts_week: number
+    survey_responses_today: number
+    avg_completion_rate: number
+    multiplayer_sessions_active: number
+  }
+  system: {
+    pending_feedback: number
+    system_alerts: number
+    last_backup: string
+    storage_usage: number
+    api_calls_today: number
+  }
+  analytics: {
+    civic_engagement_score: number
+    knowledge_improvement_rate: number
+    content_quality_score: number
+    user_satisfaction_rate: number
+  }
+}
 
-  // Check admin access and redirect if unauthorized
+interface RecentActivity {
+  id: string
+  type: 'user_signup' | 'content_created' | 'quiz_completed' | 'event_submitted' | 'feedback_received' | 'survey_completed' | 'multiplayer_session'
+  description: string
+  timestamp: string
+  user_email?: string
+  metadata?: Record<string, any>
+}
+
+interface SystemAlert {
+  id: string
+  type: 'error' | 'warning' | 'info'
+  title: string
+  description: string
+  timestamp: string
+  resolved: boolean
+}
+
+interface QuickAction {
+  title: string
+  description: string
+  href: string
+  icon: any
+  variant: 'primary' | 'secondary' | 'urgent'
+  count?: number
+}
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([])
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
-    if (!user) return
-    
-    if (adminError) {
-      console.error('Admin access error:', adminError)
-      toast({
-        title: "Access Error",
-        description: "Could not verify admin permissions",
-        variant: "destructive"
-      })
-      window.location.href = '/dashboard'
-      return
-    }
-    
-    // Only redirect if we're done loading AND the user is definitely not an admin
-    if (!adminLoading && isAdmin === false) {
-      console.log('User is not admin, redirecting to dashboard')
-      toast({
-        title: "Access Denied",
-        description: "You don't have admin permissions to access this panel",
-        variant: "destructive"
-      })
-      window.location.href = '/dashboard'
-      return
-    }
-    
-    // Log admin status for debugging
-    if (!adminLoading) {
-      console.log('Admin access check complete:', { isAdmin, user: user.email })
-    }
-  }, [user, isAdmin, adminLoading, adminError, toast])
+    loadDashboardData()
+  }, [])
 
-  // Show loading while checking admin status OR if user is not admin
-  if (adminLoading || isAdmin === false) {
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/admin/dashboard?timeRange=7d&includeDetails=true`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setStats(data.data.stats)
+        setRecentActivity(data.data.recentActivity)
+        setSystemAlerts(data.data.systemAlerts)
+      } else {
+        console.error('Failed to load dashboard data:', data.error)
+      }
+    } catch (error) {
+      console.error('Error loading dashboard:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const quickActions: QuickAction[] = [
+    {
+      title: 'Review Events',
+      description: 'Approve pending submissions',
+      href: '/admin/events',
+      icon: Calendar,
+      variant: 'urgent',
+      count: stats?.content.pending_events || 0
+    },
+    {
+      title: 'Generate Content',
+      description: 'Create with AI',
+      href: '/admin/ai-content',
+      icon: Brain,
+      variant: 'primary'
+    },
+    {
+      title: 'User Feedback',
+      description: 'Address support requests',
+      href: '/admin/feedback',
+      icon: MessageSquare,
+      variant: 'secondary',
+      count: stats?.system.pending_feedback || 0
+    },
+    {
+      title: 'Analytics',
+      description: 'View performance',
+      href: '/admin/analytics/content',
+      icon: BarChart3,
+      variant: 'secondary'
+    }
+  ]
+
+  const getActivityIcon = (type: RecentActivity['type']) => {
+    switch (type) {
+      case 'user_signup': return Users
+      case 'quiz_completed': return Target
+      case 'event_submitted': return Calendar
+      case 'feedback_received': return MessageSquare
+      case 'survey_completed': return FileText
+      case 'multiplayer_session': return Globe
+      default: return Activity
+    }
+  }
+
+  const getActivityColor = (type: RecentActivity['type']) => {
+    switch (type) {
+      case 'user_signup': return 'text-emerald-600'
+      case 'quiz_completed': return 'text-blue-600'
+      case 'event_submitted': return 'text-amber-600'
+      case 'feedback_received': return 'text-purple-600'
+      case 'survey_completed': return 'text-indigo-600'
+      case 'multiplayer_session': return 'text-cyan-600'
+      default: return 'text-slate-600'
+    }
+  }
+
+  const getAlertIcon = (type: SystemAlert['type']) => {
+    switch (type) {
+      case 'error': return AlertCircle
+      case 'warning': return AlertCircle
+      case 'info': return CheckCircle
+      default: return AlertCircle
+    }
+  }
+
+  const getAlertColor = (type: SystemAlert['type']) => {
+    switch (type) {
+      case 'error': return 'text-red-600 bg-red-50'
+      case 'warning': return 'text-amber-600 bg-amber-50'
+      case 'info': return 'text-blue-600 bg-blue-50'
+      default: return 'text-slate-600 bg-slate-50'
+    }
+  }
+
+  const getTrendIcon = (value: number, threshold: number = 0) => {
+    if (value > threshold) return ArrowUp
+    if (value < threshold) return ArrowDown
+    return Minus
+  }
+
+  const getTrendColor = (value: number, threshold: number = 0) => {
+    if (value > threshold) return 'text-emerald-600'
+    if (value < threshold) return 'text-red-600'
+    return 'text-slate-600'
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-slate-50 mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-400 font-light">
-            {adminLoading ? 'Verifying admin access...' : 'Redirecting...'}
-          </p>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse"></div>
+          <div className="h-5 w-96 bg-slate-200 rounded animate-pulse"></div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-slate-200 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="h-96 bg-slate-200 rounded-xl animate-pulse"></div>
+          <div className="h-96 bg-slate-200 rounded-xl animate-pulse"></div>
         </div>
       </div>
     )
   }
 
-  const adminTools = [
-    {
-      title: "AI Content Review",
-      description: "Review and manage civic education content extracted from news articles",
-      icon: Brain,
-      href: "/admin/ai-content",
-      color: "text-blue-500",
-      bgColor: "bg-blue-50 dark:bg-blue-950/20",
-      primary: true
-    },
-    {
-      title: "Survey Management",
-      description: "Manage surveys and collect user feedback",
-      icon: FileText,
-      href: "/admin/surveys",
-      color: "text-green-500",
-      bgColor: "bg-green-50 dark:bg-green-950/20"
-    },
-    {
-      title: "Feedback Review",
-      description: "Review user feedback and support requests",
-      icon: MessageSquare,
-      href: "/admin/feedback",
-      color: "text-purple-500",
-      bgColor: "bg-purple-50 dark:bg-purple-950/20"
-    }
-  ]
-
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
-      <main className="w-full py-8">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-          
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-full">
-                <Shield className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-              </div>
-              <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-                Admin Dashboard
-              </h1>
-            </div>
-            <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-              Manage and oversee CivicSense platform operations
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-slate-600">
+          Overview of your CivicSense administration
+        </p>
+      </div>
 
-          {/* Welcome Message */}
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h2 className="text-lg font-medium text-slate-900 dark:text-white">
-                  Welcome back, {user?.email?.split('@')[0]}
-                </h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  You have admin access to all platform management tools
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Admin Tools Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {adminTools.map((tool) => {
-              const Icon = tool.icon
-              return (
-                <Card 
-                  key={tool.href}
-                  className={`border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-200 ${
-                    tool.primary ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                  }`}
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${tool.bgColor}`}>
-                        <Icon className={`h-5 w-5 ${tool.color}`} />
-                      </div>
-                      <CardTitle className="text-lg font-medium">
-                        {tool.title}
-                        {tool.primary && (
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-0.5 rounded-full">
-                            Primary
-                          </span>
-                        )}
-                      </CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                      {tool.description}
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {quickActions.map((action) => (
+          <Link key={action.href} href={action.href}>
+            <div className={cn(
+              "group relative p-6 rounded-xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5",
+              action.variant === 'urgent' && action.count && action.count > 0
+                ? "bg-red-50 border-red-200 hover:bg-red-100"
+                : action.variant === 'primary'
+                ? "bg-slate-900 text-white border-slate-900 hover:bg-slate-800"
+                : "bg-white border-slate-200 hover:bg-slate-50"
+            )}>
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <action.icon className={cn(
+                    "h-5 w-5",
+                    action.variant === 'urgent' && action.count && action.count > 0
+                      ? "text-red-600"
+                      : action.variant === 'primary'
+                      ? "text-white"
+                      : "text-slate-600"
+                  )} />
+                  <div>
+                    <h3 className={cn(
+                      "font-semibold text-sm",
+                      action.variant === 'primary' ? "text-white" : "text-slate-900"
+                    )}>
+                      {action.title}
+                    </h3>
+                    <p className={cn(
+                      "text-xs",
+                      action.variant === 'urgent' && action.count && action.count > 0
+                        ? "text-red-600"
+                        : action.variant === 'primary'
+                        ? "text-white/70"
+                        : "text-slate-500"
+                    )}>
+                      {action.description}
                     </p>
-                    <Button asChild className="w-full">
-                      <Link href={tool.href} className="flex items-center justify-center gap-2">
-                        Open Tool
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                  </div>
+                </div>
+                {action.count !== undefined && action.count > 0 && (
+                  <Badge variant={action.variant === 'urgent' ? 'destructive' : 'secondary'} className="text-xs">
+                    {action.count}
+                  </Badge>
+                )}
+              </div>
+              <ArrowRight className={cn(
+                "absolute bottom-4 right-4 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity",
+                action.variant === 'primary' ? "text-white/70" : "text-slate-400"
+              )} />
+            </div>
+          </Link>
+        ))}
+      </div>
 
-          {/* Quick Stats */}
-          <Card className="border-slate-200 dark:border-slate-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                Quick Overview
-              </CardTitle>
+      {/* Key Metrics */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-600">Total Users</CardTitle>
+                <Users className="h-4 w-4 text-slate-400" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <div className="space-y-2">
-                  <div className="text-2xl font-light text-slate-900 dark:text-white">
-                    Active
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">System Status</p>
-                  <div className="w-2 h-2 bg-green-500 rounded-full mx-auto"></div>
+            <CardContent className="pt-0">
+              <div className="space-y-1">
+                <div className="text-2xl font-semibold text-slate-900">
+                  {stats.users.total.toLocaleString()}
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="text-2xl font-light text-slate-900 dark:text-white">
-                    {adminTools.length}
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">Admin Tools</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="text-2xl font-light text-slate-900 dark:text-white">
-                    Latest
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-light">Platform Version</p>
+                <div className="flex items-center text-xs text-emerald-600">
+                  <ArrowUp className="h-3 w-3 mr-1" />
+                  {stats.users.new_this_week} this week
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Navigation Hint */}
-          <div className="text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Use the navigation above or select a tool to get started. 
-              Need help? Check the documentation or contact support.
-            </p>
-          </div>
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-600">Content</CardTitle>
+                <FileText className="h-4 w-4 text-slate-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-1">
+                <div className="text-2xl font-semibold text-slate-900">
+                  {stats.content.total_topics.toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-500">
+                  topics, {stats.content.total_questions.toLocaleString()} questions
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-600">Engagement</CardTitle>
+                <TrendingUp className="h-4 w-4 text-slate-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-1">
+                <div className="text-2xl font-semibold text-slate-900">
+                  {Math.round(stats.engagement.avg_completion_rate * 100)}%
+                </div>
+                <div className="text-xs text-slate-500">
+                  completion rate
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-600">Civic Impact</CardTitle>
+                <Star className="h-4 w-4 text-slate-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-1">
+                <div className="text-2xl font-semibold text-slate-900">
+                  {Math.round(stats.analytics.civic_engagement_score)}
+                </div>
+                <div className="text-xs text-slate-500">
+                  engagement score
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      )}
+
+      {/* Recent Activity & Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Activity */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-slate-900">Recent Activity</CardTitle>
+            <CardDescription>Latest user actions and system events</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentActivity.length > 0 ? (
+              recentActivity.slice(0, 6).map((activity) => {
+                const Icon = getActivityIcon(activity.type)
+                return (
+                  <div key={activity.id} className="flex items-start space-x-3">
+                    <div className={cn(
+                      "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+                      getActivityColor(activity.type).replace('text-', 'bg-').replace('-600', '-100')
+                    )}>
+                      <Icon className={cn("h-4 w-4", getActivityColor(activity.type))} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-900 truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {format(new Date(activity.timestamp), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-8">
+                <Activity className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">No recent activity</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* System Alerts */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-slate-900">System Status</CardTitle>
+            <CardDescription>Alerts and system health information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {systemAlerts.length > 0 ? (
+              systemAlerts.slice(0, 6).map((alert) => {
+                const Icon = getAlertIcon(alert.type)
+                return (
+                  <div key={alert.id} className={cn(
+                    "p-4 rounded-lg border",
+                    getAlertColor(alert.type)
+                  )}>
+                    <div className="flex items-start space-x-3">
+                      <Icon className={cn("h-4 w-4 mt-0.5", getAlertColor(alert.type).split(' ')[0])} />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {alert.title}
+                        </p>
+                        <p className="text-xs opacity-75">
+                          {alert.description}
+                        </p>
+                        <p className="text-xs opacity-60 mt-1">
+                          {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-8">
+                <CheckCircle className="h-8 w-8 text-emerald-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">All systems operational</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 } 

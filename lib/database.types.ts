@@ -109,6 +109,53 @@ export type Database = {
           },
         ]
       }
+      assessed_entities: {
+        Row: {
+          created_at: string | null
+          entity_name: string
+          entity_slug: string
+          entity_type: string
+          id: string
+          is_active: boolean | null
+          iso_code: string | null
+          metadata: Json | null
+          parent_entity_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_name: string
+          entity_slug: string
+          entity_type: string
+          id?: string
+          is_active?: boolean | null
+          iso_code?: string | null
+          metadata?: Json | null
+          parent_entity_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_name?: string
+          entity_slug?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean | null
+          iso_code?: string | null
+          metadata?: Json | null
+          parent_entity_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessed_entities_parent_entity_id_fkey"
+            columns: ["parent_entity_id"]
+            isOneToOne: false
+            referencedRelation: "assessed_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_analytics: {
         Row: {
           event_type: string | null
@@ -136,6 +183,145 @@ export type Database = {
           session_id?: string | null
           timestamp?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      assessment_engagement: {
+        Row: {
+          assessment_id: string
+          created_at: string | null
+          engagement_data: Json | null
+          engagement_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string | null
+          engagement_data?: Json | null
+          engagement_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string | null
+          engagement_data?: Json | null
+          engagement_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_engagement_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_evidence: {
+        Row: {
+          created_at: string | null
+          credibility_score: number | null
+          evidence_type: string
+          excerpt: string | null
+          id: string
+          indicator_assessment_id: string
+          relevance_notes: string | null
+          source_date: string | null
+          source_organization: string | null
+          source_title: string
+          source_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credibility_score?: number | null
+          evidence_type: string
+          excerpt?: string | null
+          id?: string
+          indicator_assessment_id: string
+          relevance_notes?: string | null
+          source_date?: string | null
+          source_organization?: string | null
+          source_title: string
+          source_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credibility_score?: number | null
+          evidence_type?: string
+          excerpt?: string | null
+          id?: string
+          indicator_assessment_id?: string
+          relevance_notes?: string | null
+          source_date?: string | null
+          source_organization?: string | null
+          source_title?: string
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_evidence_indicator_assessment_id_fkey"
+            columns: ["indicator_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "indicator_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_frameworks: {
+        Row: {
+          academic_sources: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          framework_name: string
+          framework_slug: string
+          framework_type: string
+          id: string
+          is_active: boolean | null
+          methodology_url: string | null
+          scoring_system: Json
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          academic_sources?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          framework_name: string
+          framework_slug: string
+          framework_type: string
+          id?: string
+          is_active?: boolean | null
+          methodology_url?: string | null
+          scoring_system: Json
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          academic_sources?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          framework_name?: string
+          framework_slug?: string
+          framework_type?: string
+          id?: string
+          is_active?: boolean | null
+          methodology_url?: string | null
+          scoring_system?: Json
+          updated_at?: string | null
+          version?: string | null
         }
         Relationships: []
       }
@@ -227,6 +413,147 @@ export type Database = {
           skill_level?: string
         }
         Relationships: []
+      }
+      assessment_summaries: {
+        Row: {
+          assessment_count: number | null
+          average_score: number | null
+          created_at: string | null
+          data_quality_score: number | null
+          end_date: string
+          entity_id: string
+          framework_id: string
+          highest_score: number | null
+          id: string
+          indicators_improved: number | null
+          indicators_triggered: number | null
+          indicators_worsened: number | null
+          lowest_score: number | null
+          most_concerning_indicators: Json | null
+          score_trend: string | null
+          start_date: string
+          summary_period: string
+        }
+        Insert: {
+          assessment_count?: number | null
+          average_score?: number | null
+          created_at?: string | null
+          data_quality_score?: number | null
+          end_date: string
+          entity_id: string
+          framework_id: string
+          highest_score?: number | null
+          id?: string
+          indicators_improved?: number | null
+          indicators_triggered?: number | null
+          indicators_worsened?: number | null
+          lowest_score?: number | null
+          most_concerning_indicators?: Json | null
+          score_trend?: string | null
+          start_date: string
+          summary_period: string
+        }
+        Update: {
+          assessment_count?: number | null
+          average_score?: number | null
+          created_at?: string | null
+          data_quality_score?: number | null
+          end_date?: string
+          entity_id?: string
+          framework_id?: string
+          highest_score?: number | null
+          id?: string
+          indicators_improved?: number | null
+          indicators_triggered?: number | null
+          indicators_worsened?: number | null
+          lowest_score?: number | null
+          most_concerning_indicators?: Json | null
+          score_trend?: string | null
+          start_date?: string
+          summary_period?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_summaries_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "assessed_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_summaries_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          assessment_date: string
+          assessment_period: string | null
+          assessor_name: string | null
+          confidence_level: number | null
+          created_at: string | null
+          entity_id: string
+          framework_id: string
+          id: string
+          methodology_notes: string | null
+          overall_score: number | null
+          overall_status: string | null
+          published_at: string | null
+          review_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_date: string
+          assessment_period?: string | null
+          assessor_name?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          entity_id: string
+          framework_id: string
+          id?: string
+          methodology_notes?: string | null
+          overall_score?: number | null
+          overall_status?: string | null
+          published_at?: string | null
+          review_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_date?: string
+          assessment_period?: string | null
+          assessor_name?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          entity_id?: string
+          framework_id?: string
+          id?: string
+          methodology_notes?: string | null
+          overall_score?: number | null
+          overall_status?: string | null
+          published_at?: string | null
+          review_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "assessed_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       badge_requirements: {
         Row: {
@@ -1253,13 +1580,6 @@ export type Database = {
             foreignKeyName: "fact_check_logs_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "fact_check_logs_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -1493,27 +1813,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_identifier"]
-          },
-          {
-            foreignKeyName: "figure_quiz_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
-            referencedColumns: ["topic_id"]
           },
         ]
       }
@@ -1995,6 +2294,276 @@ export type Database = {
           variant?: string
         }
         Relationships: []
+      }
+      indicator_actions: {
+        Row: {
+          action_description: string | null
+          action_title: string
+          action_type: string
+          created_at: string | null
+          difficulty_level: number | null
+          effectiveness_notes: string | null
+          id: string
+          indicator_id: string
+          is_active: boolean | null
+          resources_needed: string | null
+          success_examples: string | null
+          target_audience: string | null
+          time_commitment: string | null
+        }
+        Insert: {
+          action_description?: string | null
+          action_title: string
+          action_type: string
+          created_at?: string | null
+          difficulty_level?: number | null
+          effectiveness_notes?: string | null
+          id?: string
+          indicator_id: string
+          is_active?: boolean | null
+          resources_needed?: string | null
+          success_examples?: string | null
+          target_audience?: string | null
+          time_commitment?: string | null
+        }
+        Update: {
+          action_description?: string | null
+          action_title?: string
+          action_type?: string
+          created_at?: string | null
+          difficulty_level?: number | null
+          effectiveness_notes?: string | null
+          id?: string
+          indicator_id?: string
+          is_active?: boolean | null
+          resources_needed?: string | null
+          success_examples?: string | null
+          target_audience?: string | null
+          time_commitment?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicator_actions_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "indicators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicator_assessments: {
+        Row: {
+          analyst_notes: string | null
+          assessment_id: string
+          change_from_previous: Json | null
+          confidence_level: number | null
+          created_at: string | null
+          id: string
+          indicator_id: string
+          measured_value: Json
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          analyst_notes?: string | null
+          assessment_id: string
+          change_from_previous?: Json | null
+          confidence_level?: number | null
+          created_at?: string | null
+          id?: string
+          indicator_id: string
+          measured_value: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          analyst_notes?: string | null
+          assessment_id?: string
+          change_from_previous?: Json | null
+          confidence_level?: number | null
+          created_at?: string | null
+          id?: string
+          indicator_id?: string
+          measured_value?: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicator_assessments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicator_assessments_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "indicators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicator_categories: {
+        Row: {
+          category_name: string
+          category_slug: string
+          color_code: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          framework_id: string
+          icon: string | null
+          id: string
+          severity_level: number | null
+          threshold_description: string | null
+        }
+        Insert: {
+          category_name: string
+          category_slug: string
+          color_code?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          framework_id: string
+          icon?: string | null
+          id?: string
+          severity_level?: number | null
+          threshold_description?: string | null
+        }
+        Update: {
+          category_name?: string
+          category_slug?: string
+          color_code?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          framework_id?: string
+          icon?: string | null
+          id?: string
+          severity_level?: number | null
+          threshold_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicator_categories_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicator_content_links: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string | null
+          id: string
+          indicator_id: string
+          relationship_type: string | null
+          relevance_score: number | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          id?: string
+          indicator_id: string
+          relationship_type?: string | null
+          relevance_score?: number | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+          indicator_id?: string
+          relationship_type?: string | null
+          relevance_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicator_content_links_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "indicators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicators: {
+        Row: {
+          category_id: string | null
+          civic_education_angle: string | null
+          created_at: string | null
+          description: string
+          display_order: number | null
+          evidence_threshold: string | null
+          framework_id: string
+          historical_context: string | null
+          id: string
+          indicator_name: string
+          indicator_slug: string
+          is_active: boolean | null
+          measurement_config: Json | null
+          measurement_type: string
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          civic_education_angle?: string | null
+          created_at?: string | null
+          description: string
+          display_order?: number | null
+          evidence_threshold?: string | null
+          framework_id: string
+          historical_context?: string | null
+          id?: string
+          indicator_name: string
+          indicator_slug: string
+          is_active?: boolean | null
+          measurement_config?: Json | null
+          measurement_type: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          civic_education_angle?: string | null
+          created_at?: string | null
+          description?: string
+          display_order?: number | null
+          evidence_threshold?: string | null
+          framework_id?: string
+          historical_context?: string | null
+          id?: string
+          indicator_name?: string
+          indicator_slug?: string
+          is_active?: boolean | null
+          measurement_config?: Json | null
+          measurement_type?: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicators_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "indicator_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicators_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_execution_logs: {
         Row: {
@@ -4964,6 +5533,7 @@ export type Database = {
           is_admin: boolean | null
           preferred_language: string | null
           preferred_pod_personality: string | null
+          role: string | null
           sensory_friendly_mode: boolean | null
           total_achievements: number | null
           updated_at: string | null
@@ -4981,6 +5551,7 @@ export type Database = {
           is_admin?: boolean | null
           preferred_language?: string | null
           preferred_pod_personality?: string | null
+          role?: string | null
           sensory_friendly_mode?: boolean | null
           total_achievements?: number | null
           updated_at?: string | null
@@ -4998,6 +5569,7 @@ export type Database = {
           is_admin?: boolean | null
           preferred_language?: string | null
           preferred_pod_personality?: string | null
+          role?: string | null
           sensory_friendly_mode?: boolean | null
           total_achievements?: number | null
           updated_at?: string | null
@@ -5073,13 +5645,6 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "progress_question_responses_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -5173,20 +5738,6 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_identifier"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -5410,13 +5961,6 @@ export type Database = {
             foreignKeyName: "question_feedback_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "question_feedback_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -5467,13 +6011,6 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "question_skills_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -5558,13 +6095,6 @@ export type Database = {
             foreignKeyName: "question_source_links_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "question_source_links_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -5619,20 +6149,6 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_topic_categories_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "question_topic_categories_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -5712,7 +6228,7 @@ export type Database = {
           option_c: string | null
           option_d: string | null
           question: string
-          question_number: number
+          question_number: number | null
           question_type: string
           sources: Json | null
           tags: Json | null
@@ -5737,7 +6253,7 @@ export type Database = {
           option_c?: string | null
           option_d?: string | null
           question: string
-          question_number: number
+          question_number?: number | null
           question_type: string
           sources?: Json | null
           tags?: Json | null
@@ -5762,7 +6278,7 @@ export type Database = {
           option_c?: string | null
           option_d?: string | null
           question?: string
-          question_number?: number
+          question_number?: number | null
           question_type?: string
           sources?: Json | null
           tags?: Json | null
@@ -5842,20 +6358,6 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_identifier"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -7512,6 +8014,59 @@ export type Database = {
         }
         Relationships: []
       }
+      tags: {
+        Row: {
+          created_at: string | null
+          entity_type: string
+          id: number
+          question_id: string
+          tag_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_type?: string
+          id?: never
+          question_id: string
+          tag_name: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_type?: string
+          id?: never
+          question_id?: string
+          tag_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       translation_jobs: {
         Row: {
           character_count: number | null
@@ -7952,13 +8507,6 @@ export type Database = {
             foreignKeyName: "user_deck_content_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "user_deck_content_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -7967,20 +8515,6 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "user_deck_content_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_identifier"]
-          },
-          {
-            foreignKeyName: "user_deck_content_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -8060,6 +8594,51 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weekly_digest?: boolean | null
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          event_date: string
+          event_description: string | null
+          event_title: string | null
+          id: string
+          source_metadata: Json | null
+          source_type: string | null
+          status: string
+          updated_at: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          event_date: string
+          event_description?: string | null
+          event_title?: string | null
+          id?: string
+          source_metadata?: Json | null
+          source_type?: string | null
+          status?: string
+          updated_at?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          event_date?: string
+          event_description?: string | null
+          event_title?: string | null
+          id?: string
+          source_metadata?: Json | null
+          source_type?: string | null
+          status?: string
+          updated_at?: string | null
+          url?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -8566,13 +9145,6 @@ export type Database = {
             foreignKeyName: "user_question_memory_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "user_question_memory_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
@@ -8636,13 +9208,6 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "question_sources_enhanced"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "user_question_responses_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
             referencedColumns: ["question_id"]
           },
           {
@@ -8733,34 +9298,37 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
-          {
-            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_with_questions"
-            referencedColumns: ["topic_identifier"]
-          },
-          {
-            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics_without_questions"
-            referencedColumns: ["topic_id"]
-          },
         ]
       }
       user_quiz_attempts: {
         Row: {
+          classroom_assignment_id: string | null
+          classroom_course_id: string | null
+          clever_section_id: string | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string | null
+          game_metadata: Json | null
+          game_mode: string | null
           grade_post_error: string | null
           grade_post_timestamp: string | null
           grade_posted_to_lms: boolean | null
+          guest_token: string | null
           id: string
           is_completed: boolean | null
+          max_streak: number | null
+          mode_settings: Json | null
+          participants: Json | null
+          platform: string | null
+          pod_id: string | null
+          response_data: Json | null
           score: number | null
+          session_id: string | null
+          social_interactions: Json | null
           started_at: string | null
+          streak_count: number | null
+          team_id: string | null
+          team_role: string | null
           time_spent_seconds: number | null
           topic_id: string
           total_questions: number
@@ -8768,16 +9336,33 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          classroom_assignment_id?: string | null
+          classroom_course_id?: string | null
+          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
+          game_metadata?: Json | null
+          game_mode?: string | null
           grade_post_error?: string | null
           grade_post_timestamp?: string | null
           grade_posted_to_lms?: boolean | null
+          guest_token?: string | null
           id?: string
           is_completed?: boolean | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          participants?: Json | null
+          platform?: string | null
+          pod_id?: string | null
+          response_data?: Json | null
           score?: number | null
+          session_id?: string | null
+          social_interactions?: Json | null
           started_at?: string | null
+          streak_count?: number | null
+          team_id?: string | null
+          team_role?: string | null
           time_spent_seconds?: number | null
           topic_id: string
           total_questions: number
@@ -8785,23 +9370,62 @@ export type Database = {
           user_id: string
         }
         Update: {
+          classroom_assignment_id?: string | null
+          classroom_course_id?: string | null
+          clever_section_id?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string | null
+          game_metadata?: Json | null
+          game_mode?: string | null
           grade_post_error?: string | null
           grade_post_timestamp?: string | null
           grade_posted_to_lms?: boolean | null
+          guest_token?: string | null
           id?: string
           is_completed?: boolean | null
+          max_streak?: number | null
+          mode_settings?: Json | null
+          participants?: Json | null
+          platform?: string | null
+          pod_id?: string | null
+          response_data?: Json | null
           score?: number | null
+          session_id?: string | null
+          social_interactions?: Json | null
           started_at?: string | null
+          streak_count?: number | null
+          team_id?: string | null
+          team_role?: string | null
           time_spent_seconds?: number | null
           topic_id?: string
           total_questions?: number
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_quiz_attempts_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_quiz_attempts_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_quiz_attempts_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -9371,6 +9995,19 @@ export type Database = {
         }
         Relationships: []
       }
+      current_assessment_status: {
+        Row: {
+          assessment_date: string | null
+          entity_name: string | null
+          framework_name: string | null
+          overall_score: number | null
+          overall_status: string | null
+          partial_indicators: number | null
+          total_indicators: number | null
+          triggered_indicators: number | null
+        }
+        Relationships: []
+      }
       function_type_validation: {
         Row: {
           column_types: string[] | null
@@ -9388,6 +10025,42 @@ export type Database = {
           validation_target: string | null
         }
         Relationships: []
+      }
+      indicator_trends: {
+        Row: {
+          assessment_date: string | null
+          entity_id: string | null
+          framework_id: string | null
+          indicator_id: string | null
+          indicator_name: string | null
+          measured_value: Json | null
+          previous_status: string | null
+          status: string | null
+          trend: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "assessed_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicator_assessments_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicators_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       multiplayer_attempts: {
         Row: {
@@ -9479,6 +10152,37 @@ export type Database = {
           total_quizzes: number | null
         }
         Relationships: []
+      }
+      pod_activity: {
+        Row: {
+          accuracy: number | null
+          pod_id: string | null
+          questions_answered: number | null
+          time_spent: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+        ]
       }
       pod_discovery: {
         Row: {
@@ -9657,54 +10361,6 @@ export type Database = {
           title: string | null
           topic_id: string | null
           url: string | null
-        }
-        Relationships: []
-      }
-      question_topics_with_questions: {
-        Row: {
-          categories: Json | null
-          correct_answer: string | null
-          date: string | null
-          day_of_week: string | null
-          description: string | null
-          difficulty_level: number | null
-          emoji: string | null
-          explanation: string | null
-          hint: string | null
-          option_a: string | null
-          option_b: string | null
-          option_c: string | null
-          option_d: string | null
-          question_active: boolean | null
-          question_category: string | null
-          question_id: string | null
-          question_number: number | null
-          question_sources: Json | null
-          question_tags: Json | null
-          question_text: string | null
-          question_type: string | null
-          topic_active: boolean | null
-          topic_id: string | null
-          topic_identifier: string | null
-          topic_title: string | null
-          why_this_matters: string | null
-        }
-        Relationships: []
-      }
-      question_topics_without_questions: {
-        Row: {
-          categories: Json | null
-          created_at: string | null
-          date: string | null
-          day_of_week: string | null
-          description: string | null
-          emoji: string | null
-          id: string | null
-          is_active: boolean | null
-          topic_id: string | null
-          topic_title: string | null
-          updated_at: string | null
-          why_this_matters: string | null
         }
         Relationships: []
       }
@@ -9891,6 +10547,10 @@ export type Database = {
           avg_generation_time: number
         }[]
       }
+      calculate_assessment_score: {
+        Args: { assessment_id_param: string }
+        Returns: number
+      }
       calculate_bias_consensus: {
         Args: {
           p_organization_id: string
@@ -9969,6 +10629,10 @@ export type Database = {
           last_message_at: string
           participant_count: number
         }[]
+      }
+      check_user_role: {
+        Args: { user_id: string; required_role: string }
+        Returns: boolean
       }
       claim_shareable_gift_link: {
         Args: {
@@ -10119,6 +10783,15 @@ export type Database = {
           table_name: string
           mismatch_count: number
           mismatch_details: string[]
+        }[]
+      }
+      find_potential_friends: {
+        Args: { p_user_id: string }
+        Returns: {
+          friend_id: string
+          interaction_count: number
+          last_played_together: string
+          shared_games: Json
         }[]
       }
       generate_invite_code: {
@@ -10628,20 +11301,20 @@ export type Database = {
         Returns: boolean
       }
       join_multiplayer_room: {
-        Args: {
-          p_room_code: string
-          p_player_name: string
-          p_user_id?: string
-          p_guest_token?: string
-          p_player_emoji?: string
-        }
-        Returns: {
-          success: boolean
-          message: string
-          room_id: string
-          player_id: string
-          join_order: number
-        }[]
+        Args:
+          | {
+              p_room_code: string
+              p_player_name: string
+              p_player_emoji?: string
+            }
+          | {
+              p_room_code: string
+              p_player_name: string
+              p_user_id?: string
+              p_guest_token?: string
+              p_player_emoji?: string
+            }
+        Returns: Json
       }
       join_pod_via_invite: {
         Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }

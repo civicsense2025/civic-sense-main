@@ -83,7 +83,7 @@ export function TopicsCarousel({ topicsByCategory }: TopicsCarouselProps) {
             className="font-light"
           >
             {category}
-            <Badge variant="secondary" className="ml-2 font-light">
+            <Badge variant="secondary" className="ml-2 font-light rounded-lg">
               {topicsByCategory[category].length}
             </Badge>
           </Button>
@@ -129,16 +129,16 @@ export function TopicsCarousel({ topicsByCategory }: TopicsCarouselProps) {
                     
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-1">
-                        {topic.categories.slice(0, 2).map(cat => (
-                          <Badge key={cat} variant="outline" className="text-xs font-light">
-                            {cat}
-                          </Badge>
-                        ))}
-                        {topic.categories.length > 2 && (
-                          <Badge variant="outline" className="text-xs font-light">
-                            +{topic.categories.length - 2}
-                          </Badge>
-                        )}
+                                                  {topic.categories.slice(0, 2).map(cat => (
+                            <Badge key={cat} variant="outline" className="text-xs font-light rounded-lg">
+                              {cat}
+                            </Badge>
+                          ))}
+                          {topic.categories.length > 2 && (
+                            <Badge variant="outline" className="text-xs font-light rounded-lg">
+                              +{topic.categories.length - 2}
+                            </Badge>
+                          )}
                       </div>
                       
                       <div className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">

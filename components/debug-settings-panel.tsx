@@ -5,30 +5,49 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Settings, X, RotateCcw } from "lucide-react"
+import { Settings, X, RotateCcw, Bug, Flag, Terminal, Navigation, Crown, Cog, Info } from "lucide-react"
 import { debug } from "@/lib/debug-config"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { envFeatureFlags, type AllFeatureFlags, type NavigationFeatureFlags, type PremiumFeatureFlags, type CoreFeatureFlags } from '@/lib/env-feature-flags'
+import { debugFeatureFlags } from "@/lib/debug-feature-flags"
 
 interface DebugSettingsPanelProps {
   className?: string
 }
 
+type DebugCategory = 'quiz' | 'multiplayer' | 'pwa' | 'storage' | 'analytics' | 'auth' | 'api' | 'premium' | 'general'
+
+type FlagCategory = 'navigation' | 'premium' | 'core'
+
+type FlagCategoryMap = {
+  navigation: NavigationFeatureFlags;
+  premium: PremiumFeatureFlags;
+  core: CoreFeatureFlags;
+}
+
 export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [config, setConfig] = useState(debug.getConfig())
-
-  // Only show in development
-  // Only show in development
-  if (process.env.NODE_ENV !== 'development') {
-    return null
-  }
+  const [flags, setFlags] = useState<AllFeatureFlags>(envFeatureFlags.getAllFlags())
+  const [overrides, setOverrides] = useState(envFeatureFlags.getOverrides())
+  const [activeTab, setActiveTab] = useState('features')
+  const [selectedFlagCategory, setSelectedFlagCategory] = useState<FlagCategory>('navigation')
+  const [mounted, setMounted] = useState(false)
 
   const updateConfig = () => {
     setConfig(debug.getConfig())
   }
 
-  const handleToggleCategory = (category: keyof typeof config.categories) => {
-    debug.toggle(category as keyof typeof config.categories)
+  const updateFlags = () => {
+    setFlags(envFeatureFlags.getAllFlags())
+    setOverrides(envFeatureFlags.getOverrides())
+  }
+
+  const handleToggleCategory = (category: DebugCategory) => {
+    debug.toggle(category)
     updateConfig()
   }
 
@@ -37,8 +56,26 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     updateConfig()
   }
 
+  const handleToggleFeature = (feature: keyof AllFeatureFlags) => {
+    envFeatureFlags.setFlag(feature, !flags[feature])
+    setFlags(envFeatureFlags.getAllFlags())
+  }
+
+  const handleResetFlag = (feature: keyof AllFeatureFlags) => {
+    envFeatureFlags.resetFlag(feature)
+    setFlags(envFeatureFlags.getAllFlags())
+  }
+
   const handleReset = () => {
-    // Reset all categories to default
+    // Only reset if user confirms
+    if (!confirm('Are you sure you want to reset all feature flags and debug settings to defaults?')) {
+      return
+    }
+    
+    envFeatureFlags.resetToDefaults()
+    setFlags(envFeatureFlags.getAllFlags())
+    
+    // Reset debug categories
     debug.enable()
     debug.enable('quiz')
     debug.enable('multiplayer')
@@ -52,6 +89,44 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     updateConfig()
   }
 
+  const handleClearCache = () => {
+    envFeatureFlags.clearCache()
+    setFlags(envFeatureFlags.getAllFlags())
+  }
+
+  // Only show in development
+  if (process.env.NODE_ENV !== 'development') {
+    return null
+  }
+
+  // Initialize flags when component mounts and handle localStorage changes
+  useEffect(() => {
+    setMounted(true)
+    updateFlags()
+
+    // Set up storage event listener for feature flag changes
+    const handleFeatureFlagsChange = () => {
+      updateFlags()
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'civicsense-feature-flags-overrides') {
+        updateFlags()
+      }
+    }
+
+    window.addEventListener('featureFlagsChanged', handleFeatureFlagsChange)
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('featureFlagsChanged', handleFeatureFlagsChange)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) return null
+
   const categoryDescriptions = {
     quiz: "Quiz engine, question processing, and quiz flow",
     multiplayer: "Multiplayer rooms, game modes, and real-time updates",
@@ -64,16 +139,132 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     general: "General application debug messages"
   }
 
-  const categoryColors = {
-    quiz: "bg-blue-100 text-blue-800 border-blue-200",
-    multiplayer: "bg-green-100 text-green-800 border-green-200",
-    pwa: "bg-purple-100 text-purple-800 border-purple-200",
-    storage: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    analytics: "bg-pink-100 text-pink-800 border-pink-200",
-    auth: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    api: "bg-orange-100 text-orange-800 border-orange-200",
-    premium: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    general: "bg-gray-100 text-gray-800 border-gray-200"
+  const flagCategoryDescriptions: Record<FlagCategory, string> = {
+    navigation: "Control visibility and access to navigation items and menus",
+    premium: "Toggle premium features and subscription-related functionality",
+    core: "Manage core application features and system capabilities"
+  }
+
+  const getFlagDescription = (flag: keyof AllFeatureFlags): string => {
+    const descriptions: Record<string, string> = {
+      // Navigation flags
+      globalSearch: "Global search functionality",
+      userMenu: "User dropdown menu in header",
+      civicsTestMenuItem: "Civics test menu item",
+      quizMenuItem: "Quiz menu item",
+      scenariosMenuItem: "Scenarios menu item",
+      progressMenuItem: "Progress menu item",
+      learningPodsMenuItem: "Learning pods menu item",
+      dashboardMenuItem: "Dashboard menu item",
+      settingsMenuItem: "Settings menu item",
+      adminMenuItem: "Admin menu item",
+      themeToggleMenuItem: "Theme toggle menu item",
+      mobileMenu: "Mobile navigation menu",
+      
+      // Premium flags
+      customDecks: "Create and manage custom question decks",
+      historicalProgress: "View detailed historical progress",
+      advancedAnalytics: "Advanced analytics and insights",
+      spacedRepetition: "Spaced repetition learning system",
+      learningInsights: "Personalized learning insights",
+      prioritySupport: "Priority customer support",
+      offlineMode: "Offline access to content",
+      dataExport: "Export learning data",
+      premiumBadges: "Premium user badges",
+      upgradePrompts: "Premium upgrade prompts",
+      premiumOnboarding: "Premium user onboarding",
+      billingManagement: "Billing and subscription management",
+      
+      // Core flags
+      multiplayer: "Multiplayer quiz modes",
+      learningPods: "Learning pods feature",
+      scenarios: "Interactive scenarios",
+      civicsTest: "Civics test module",
+      quizzes: "Quiz system",
+      surveys: "User surveys",
+      adminAccess: "Admin panel access",
+      debugRoutes: "Debug routes",
+      debugPanels: "Debug panels",
+      signUpFlow: "User registration flow",
+      socialLogin: "Social media login",
+      guestAccess: "Guest user access",
+      notifications: "User notifications",
+      emailMarketing: "Email marketing",
+      chatSupport: "Chat support system",
+      analyticsTracking: "Analytics tracking",
+      errorReporting: "Error reporting",
+      performanceMonitoring: "Performance monitoring",
+      experimentalFeatures: "Experimental features",
+      betaFeatures: "Beta features",
+      alphaFeatures: "Alpha features"
+    }
+    
+    return descriptions[flag] || "No description available"
+  }
+
+  const getFlagSource = (flag: keyof AllFeatureFlags): 'env' | 'default' | 'override' => {
+    return envFeatureFlags.getEnvironmentSource(flag)
+  }
+
+  const getSourceBadge = (source: 'env' | 'default' | 'override') => {
+    switch (source) {
+      case 'env':
+        return <Badge variant="default" className="text-xs">ENV</Badge>
+      case 'override':
+        return <Badge variant="secondary" className="text-xs">DEV</Badge>
+      case 'default':
+        return <Badge variant="outline" className="text-xs">DEFAULT</Badge>
+    }
+  }
+
+  const getFlagsForCategory = (category: FlagCategory): FlagCategoryMap[FlagCategory] => {
+    switch (category) {
+      case 'navigation':
+        return envFeatureFlags.getNavigationFlags()
+      case 'premium':
+        return envFeatureFlags.getPremiumFlags()
+      case 'core':
+        return envFeatureFlags.getCoreFlags()
+    }
+  }
+
+  const renderFlagSection = (category: FlagCategory) => {
+    const flagsToShow = getFlagsForCategory(category)
+    const entries = Object.entries(flagsToShow) as Array<[keyof FlagCategoryMap[FlagCategory], boolean]>
+
+    return (
+      <div className="space-y-4">
+        {entries.map(([flag, value]) => (
+          <div key={String(flag)} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="space-y-1">
+              <div className="font-medium">{String(flag)}</div>
+              <p className="text-sm text-muted-foreground">
+                {getFlagDescription(flag as keyof AllFeatureFlags)}
+              </p>
+              <div className="flex items-center space-x-2 mt-2">
+                <Badge variant="outline" className="text-xs">
+                  {getFlagSource(flag as keyof AllFeatureFlags)}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={value}
+                onCheckedChange={() => handleToggleFeature(flag as keyof AllFeatureFlags)}
+              />
+              <Button
+                onClick={() => handleResetFlag(flag as keyof AllFeatureFlags)}
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   if (!isOpen) {
@@ -86,118 +277,308 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
           className="bg-black/80 text-white border-white/20 hover:bg-black/90 backdrop-blur-sm"
         >
           <Settings className="h-4 w-4 mr-2" />
-          Debug Settings
+          Debug Panel
         </Button>
       </div>
     )
   }
 
   return (
-    <div className={cn("fixed bottom-4 left-4 z-50 w-80", className)}>
-      <Card className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border-gray-200 dark:border-gray-700 shadow-lg">
-        <CardHeader className="pb-3">
+    <div className={cn(
+      "fixed inset-0 z-50 bg-white dark:bg-gray-950",
+      "flex flex-col",
+      className
+    )}>
+      <div className="border-b border-gray-200 dark:border-gray-800">
+        <div className="container max-w-7xl mx-auto py-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Debug Settings</CardTitle>
             <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              <h1 className="text-lg font-medium">Debug Settings</h1>
+              <Badge variant="outline" className="ml-2">Development Mode</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleClearCache}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Overrides
+              </Button>
+              <Button
+                onClick={updateFlags}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Refresh
+              </Button>
+              <Button
+                onClick={() => debugFeatureFlags()}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <Bug className="h-4 w-4" />
+                Debug Console
+              </Button>
               <Button
                 onClick={handleReset}
                 size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0"
-                title="Reset to defaults"
+                variant="outline"
+                className="gap-2"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-4 w-4" />
+                Reset All
               </Button>
               <Button
                 onClick={() => setIsOpen(false)}
                 size="sm"
                 variant="ghost"
-                className="h-6 w-6 p-0"
+                className="h-9 w-9 p-0"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Global debug toggle */}
-          <div className="flex items-center justify-between pb-2 border-b">
-            <div>
-              <div className="text-sm font-medium">Debug Enabled</div>
-              <div className="text-xs text-muted-foreground">
-                Master toggle for all debug messages
-              </div>
-            </div>
-            <Switch
-              checked={config.enabled}
-              onCheckedChange={() => {
-                debug.toggle()
-                updateConfig()
-              }}
-            />
-          </div>
+        </div>
+      </div>
+      
+      <div className="flex-1 container max-w-7xl mx-auto py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+          <div className="flex h-full gap-6">
+            <div className="w-64 flex flex-col">
+              <TabsList className="flex flex-col h-auto gap-2 bg-transparent">
+                <TabsTrigger 
+                  value="features" 
+                  className="w-full justify-start gap-2 h-9"
+                >
+                  <Flag className="h-4 w-4" />
+                  Feature Flags
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="debug" 
+                  className="w-full justify-start gap-2 h-9"
+                >
+                  <Bug className="h-4 w-4" />
+                  Debug Categories
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="console" 
+                  className="w-full justify-start gap-2 h-9"
+                >
+                  <Terminal className="h-4 w-4" />
+                  Environment
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Minimized toggle */}
-          <div className="flex items-center justify-between pb-2 border-b">
-            <div>
-              <div className="text-sm font-medium">Minimized Logs</div>
-              <div className="text-xs text-muted-foreground">
-                Show condensed debug messages
-              </div>
+              {activeTab === 'features' && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-1">
+                    <div className="px-3 text-sm font-medium text-muted-foreground mb-2">
+                      Categories
+                    </div>
+                    <Button
+                      variant={selectedFlagCategory === 'navigation' ? 'secondary' : 'ghost'}
+                      className="w-full justify-start gap-2"
+                      onClick={() => setSelectedFlagCategory('navigation')}
+                    >
+                      <Navigation className="h-4 w-4" />
+                      Navigation
+                    </Button>
+                    <Button
+                      variant={selectedFlagCategory === 'premium' ? 'secondary' : 'ghost'}
+                      className="w-full justify-start gap-2"
+                      onClick={() => setSelectedFlagCategory('premium')}
+                    >
+                      <Crown className="h-4 w-4" />
+                      Premium
+                    </Button>
+                    <Button
+                      variant={selectedFlagCategory === 'core' ? 'secondary' : 'ghost'}
+                      className="w-full justify-start gap-2"
+                      onClick={() => setSelectedFlagCategory('core')}
+                    >
+                      <Cog className="h-4 w-4" />
+                      Core
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
-            <Switch
-              checked={config.minimized}
-              onCheckedChange={handleToggleMinimized}
-              disabled={!config.enabled}
-            />
-          </div>
 
-          {/* Category toggles */}
-          <div className="space-y-3">
-            <div className="text-sm font-medium">Categories</div>
-            <div className="grid gap-2">
-              {(Object.entries(config.categories) as Array<[keyof typeof config.categories, boolean]>).map(([category, enabled]) => (
-                <div key={category} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "text-xs font-mono",
-                          categoryColors[category]
-                        )}
-                      >
-                        {category}
-                      </Badge>
-                      <Switch
-                        checked={enabled && config.enabled}
-                        onCheckedChange={() => handleToggleCategory(category)}
-                        disabled={!config.enabled}
-                        className="scale-75"
-                      />
+            <div className="flex-1 border rounded-lg border-gray-200 dark:border-gray-800">
+              <ScrollArea className="h-[calc(100vh-12rem)]">
+                {activeTab === 'features' && (
+                  <div className="p-4">
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-lg font-medium mb-1">
+                            {selectedFlagCategory.charAt(0).toUpperCase() + selectedFlagCategory.slice(1)} Features
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {flagCategoryDescriptions[selectedFlagCategory]}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="default" className="text-xs">ENV</Badge>
+                            <span className="text-xs text-muted-foreground">Environment variable</span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="secondary" className="text-xs">DEV</Badge>
+                            <span className="text-xs text-muted-foreground">Development override</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">DEFAULT</Badge>
+                            <span className="text-xs text-muted-foreground">Default value</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {renderFlagSection(selectedFlagCategory)}
+                  </div>
+                )}
+
+                {activeTab === 'debug' && (
+                  <div className="p-4">
+                    <div className="mb-6">
+                      <h2 className="text-lg font-medium mb-1">Debug Categories</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Control debug logging for different parts of the application
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium">Debug Enabled</div>
+                          <Switch
+                            checked={config.enabled}
+                            onCheckedChange={() => {
+                              debug.toggle()
+                              updateConfig()
+                            }}
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Master toggle for all debug messages
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium">Minimized Logs</div>
+                          <Switch
+                            checked={config.minimized}
+                            onCheckedChange={handleToggleMinimized}
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Show condensed debug information
+                        </p>
+                      </div>
+
+                      {Object.entries(categoryDescriptions).map(([category, description]) => (
+                        <div 
+                          key={category}
+                          className="p-4 rounded-lg border border-gray-200 dark:border-gray-800"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium">{category}</div>
+                            <Switch
+                              checked={config.categories[category as keyof typeof config.categories]}
+                              onCheckedChange={() => handleToggleCategory(category as DebugCategory)}
+                            />
+                          </div>
+                          <p className="text-sm text-muted-foreground">{description}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground ml-2">
-                    {categoryDescriptions[category]}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                )}
 
-          {/* Console help */}
-          <div className="pt-2 border-t">
-            <div className="text-xs text-muted-foreground">
-              <div className="font-medium mb-1">Console Commands:</div>
-              <div className="font-mono space-y-0.5">
-                <div>window.debug.help()</div>
-                <div>window.debug.showStatus()</div>
-                <div>window.debug.toggle("quiz")</div>
-              </div>
+                {activeTab === 'console' && (
+                  <div className="p-4">
+                    <div className="mb-6">
+                      <h2 className="text-lg font-medium mb-1">Environment Information</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Environment variables and system status
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Info className="h-4 w-4" />
+                            Feature Flag System Status
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Environment:</span>
+                              <div className="font-mono text-xs mt-1 p-1 bg-gray-100 dark:bg-gray-800 rounded">
+                                {process.env.NODE_ENV}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Override Storage:</span>
+                              <div className="mt-1">
+                                {typeof window !== 'undefined' && localStorage.getItem('civicsense-feature-flags-overrides') 
+                                  ? <span className="text-blue-600 dark:text-blue-400">✓ Active</span>
+                                  : <span className="text-gray-600 dark:text-gray-400">○ None</span>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Current Overrides ({Object.keys(overrides).length}):</span>
+                            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded border text-xs font-mono max-h-32 overflow-y-auto">
+                              <pre>{Object.keys(overrides).length > 0 ? JSON.stringify(overrides, null, 2) : 'No development overrides'}</pre>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">All Current Values:</span>
+                            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded border text-xs font-mono max-h-40 overflow-y-auto">
+                              <pre>{JSON.stringify(flags, null, 2)}</pre>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Console Access</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Access debugging tools in browser console:
+                          </p>
+                          <div className="space-y-2">
+                            <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono">
+                              window.debug
+                            </div>
+                            <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono">
+                              window.envFeatureFlags
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+              </ScrollArea>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </Tabs>
+      </div>
     </div>
   )
-} 
+}

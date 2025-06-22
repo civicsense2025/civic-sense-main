@@ -1,34 +1,42 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import { QuizResults, QuizTopic } from "@/lib/types/quiz"
-import { MultipleChoiceQuestion } from "./question-types/multiple-choice"
-import { TrueFalseQuestion } from "./question-types/true-false"
-import { ShortAnswerQuestion, checkAnswerIntelligently, checkAnswerDetailed } from "./question-types/short-answer"
+import type { QuizResults, QuizTopic, QuizQuestion, QuizGameMode, MultipleChoiceQuestion, TrueFalseQuestion, ShortAnswerQuestion } from "@/lib/types/quiz"
+import type { Question } from "@/lib/types/key-takeaways"
+import { DEFAULT_MODE_CONFIGS, type QuizModeConfig } from "@/lib/quiz-mode-config"
+import { MultipleChoiceQuestion as MultipleChoiceQuestionComponent } from "./question-types/multiple-choice"
+import { TrueFalseQuestion as TrueFalseQuestionComponent } from "./question-types/true-false"
+import { ShortAnswerQuestion as ShortAnswerQuestionComponent, checkAnswerIntelligently, checkAnswerDetailed } from "./question-types/short-answer"
 import { FillInBlankQuestion } from "./question-types/fill-in-blank"
 import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
 import { CrosswordQuestion } from "./question-types/crossword"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
+// Removed QuestionFeedback - only needed on results screen
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
+import { QuizResults as QuizResultsComponent } from "./quiz-results"
 // Removed QuizDateNavigation - now using the new QuizNavigation component in the page layout
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from "@/lib/keyboard-shortcuts"
+import { AdminEditPanel } from "./admin-edit-panel"
+import { useAdminAccess } from "@/lib/hooks/use-admin-access"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye, Minimize2, Maximize2 } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye, Minimize2, Maximize2, Edit2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { QuizQuestion } from "@/lib/quiz-data"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { quizAttemptOperations } from "@/lib/database"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from "@/hooks/useGamification"
 import { usePremium } from "@/hooks/usePremium"
 import type { BoostEffects } from "@/lib/game-boosts"
+import { useFeatureFlag } from "@/hooks/useFeatureFlags"
 import { BoostManager } from "@/lib/game-boosts"
 import { enhancedProgressOperations, updateEnhancedProgress } from "@/lib/enhanced-gamification"
 import { useAnalytics, mapCategoryToAnalytics } from "@/utils/analytics"
@@ -36,6 +44,36 @@ import { supabase } from "@/lib/supabase"
 import { SocialProofBubble } from "@/components/social-proof-bubble"
 import { createRegularQuizProgress, type BaseQuizState } from "@/lib/progress-storage"
 import { debug } from "@/lib/debug-config"
+import { QuizLoadingScreen } from "./quiz-loading-screen"
+import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
+import { dataService } from "@/lib/data-service"
+
+// Helper function to safely get question options
+const getQuestionOptions = (question: QuizQuestion): string[] => {
+  if (!question) return []
+  
+  if ('options' in question && Array.isArray(question.options)) {
+    return question.options
+  }
+  
+  // Handle specific question types that might have options stored differently
+  if (question.type === 'multiple_choice' && 'option_a' in question) {
+    const options = []
+    if (question.option_a) options.push(question.option_a)
+    if (question.option_b) options.push(question.option_b)
+    if (question.option_c) options.push(question.option_c)
+    if (question.option_d) options.push(question.option_d)
+    return options
+  }
+  
+  // For true/false questions
+  if (question.type === 'true_false') {
+    return ['true', 'false']
+  }
+  
+  // For other question types that don't have options
+  return []
+}
 
 interface QuizEngineProps {
   questions: QuizQuestion[]
@@ -44,6 +82,8 @@ interface QuizEngineProps {
   availableTopics?: QuizTopic[]
   onComplete: (results: QuizResults) => void
   onTopicChange?: (topicId: string) => void
+  practiceMode?: boolean
+  mode?: QuizGameMode
 }
 
 interface EnhancedUserAnswer {
@@ -85,15 +125,20 @@ function validateAndDeduplicateQuestions(questions: QuizQuestion[]): QuizQuestio
   const uniqueQuestions: QuizQuestion[] = []
   
   for (const question of questions) {
+    if (!question || !question.question || !question.type) {
+      debug.warn('quiz', 'Skipping invalid question:', question)
+      continue
+    }
+    
     const questionContent = question.question.toLowerCase().replace(/\s+/g, ' ').trim()
+    const options = getQuestionOptions(question)
     const questionKey = [
-      question.topic_id,
-      question.question_number,
-      question.question_type,
+      question.topic_id || '',
+      question.question_number || 0,
+      question.type,
       questionContent.slice(0, 100),
-      question.correct_answer,
-      question.option_a || '',
-      question.option_b || ''
+      question.correct_answer || '',
+      ...options.slice(0, 2)
     ].join('|')
     
     if (!seen.has(questionKey)) {
@@ -135,14 +180,14 @@ const MemoizedQuestionDisplay = memo(({
 }) => (
   <>
     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <GlossaryLinkText text={question.question} />
+      {question.question}
     </h1>
     
-    {showHint && (
+    {showHint && question.hint && (
       <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
           <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-            💡 <GlossaryLinkText text={question.hint} />
+            💡 {question.hint}
           </p>
         </div>
       </div>
@@ -235,7 +280,7 @@ const DebugPanel = memo(({
           <div>Submitted: {isAnswerSubmitted ? 'Yes' : 'No'}</div>
           <div>Timer: {timeLeft}s {timeFrozen && '(Frozen)'}</div>
           <div>Question: {currentQuestionIndex + 1}/{totalQuestions}</div>
-          <div>Type: {currentQuestion?.question_type}</div>
+          <div>Type: {currentQuestion?.type}</div>
           <div>Difficulty: {getQuestionDifficulty(currentQuestion)}</div>
           <div>Category: {currentQuestion?.category}</div>
           <div>Attempt: {currentAttemptNumber}</div>
@@ -262,9 +307,12 @@ export function QuizEngine({
   currentTopic,
   availableTopics = [],
   onComplete,
-  onTopicChange 
+  onTopicChange,
+  practiceMode = false,
+  mode = 'standard'
 }: QuizEngineProps) {
   const { user } = useAuth()
+  const { isAdmin } = useAdminAccess()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
   
   // Analytics integration
@@ -306,17 +354,17 @@ export function QuizEngine({
     
     debug.log('quiz', `Final randomized questions:`, shuffled.length)
     debug.log('quiz', `Question numbers:`, shuffled.map(q => q.question_number))
-    debug.log('quiz', `Question types:`, shuffled.map(q => q.question_type))
+    debug.log('quiz', `Question types:`, shuffled.map(q => q.type))
     
     // Validate final questions
     const validQuestions = shuffled.filter(q => {
-      const isValid = q.question && q.question_type && q.correct_answer
+      const isValid = q.question && q.type && q.correct_answer
       if (!isValid) {
         debug.warn('quiz', `Invalid question filtered out:`, {
           topic_id: q.topic_id,
           question_number: q.question_number,
           has_question: !!q.question,
-          has_type: !!q.question_type,
+          has_type: !!q.type,
           has_answer: !!q.correct_answer
         })
       }
@@ -336,7 +384,7 @@ export function QuizEngine({
           <p className="text-muted-foreground mb-6">
             This quiz doesn't have any valid questions yet. Please try another topic.
           </p>
-          <Button onClick={() => onComplete({ score: 0, correctAnswers: 0, totalQuestions: 0, timeSpentSeconds: 0, answers: [] })} className="rounded-xl">
+          <Button onClick={() => onComplete({ score: 0, correctAnswers: 0, incorrectAnswers: 0, totalQuestions: 0, timeSpentSeconds: 0, timeTaken: 0, questions: [] })} className="rounded-xl">
             Back to Topics
           </Button>
         </div>
@@ -354,6 +402,7 @@ export function QuizEngine({
   const [questionStartTime, setQuestionStartTime] = useState(Date.now())
   const [showFeedback, setShowFeedback] = useState(false)
   const [hasRestoredState, setHasRestoredState] = useState(false)
+  const [autoAdvance, setAutoAdvance] = useState(mode !== 'practice' && !practiceMode)
 
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
@@ -427,7 +476,10 @@ export function QuizEngine({
     boostsUsed: [] as string[],
     categoryPerformance: {} as Record<string, { correct: number; total: number; avgTime: number }>,
     difficultyDistribution: { easy: 0, medium: 0, hard: 0 },
-    questionAttempts: [] as Array<{ questionId: number; attempts: number; finalCorrect: boolean }>
+    questionAttempts: [] as Array<{ questionId: number; attempts: number; finalCorrect: boolean }>,
+    timeoutsCount: 0,
+    skipsCount: 0,
+    correctAnswers: 0
   })
   
   // Boost system state
@@ -450,8 +502,16 @@ export function QuizEngine({
   const [isMobile, setIsMobile] = useState(false)
 
   // Timer integration
-  const initialTime = 60 + currentBoostEffects.extraTimeSeconds
-  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer(initialTime)
+  const initialTime = useMemo(() => {
+    if (mode === 'practice' || practiceMode) return 0
+    return DEFAULT_MODE_CONFIGS[mode]?.timeLimit || 60
+  }, [mode, practiceMode])
+
+  const { timeLeft, isActive: isTimerActive, resetTimer, stopTimer } = useQuestionTimer({
+    initialTime,
+    onTimeUp: mode === 'practice' || practiceMode ? undefined : handleTimeUp,
+    frozen: timeFrozen
+  })
 
   // Memoized values
   const currentQuestion = useMemo(() => randomizedQuestions[currentQuestionIndex], [randomizedQuestions, currentQuestionIndex])
@@ -467,8 +527,8 @@ export function QuizEngine({
     
     // Default based on question complexity
     const questionLength = question.question.length
-    const hasMultipleChoices = question.question_type === 'multiple_choice' && 
-                              [question.option_a, question.option_b, question.option_c, question.option_d].filter(Boolean).length >= 4
+    const hasMultipleChoices = question.type === 'multiple_choice' && 
+                              getQuestionOptions(question).length >= 4
     
     if (questionLength > 200 || !hasMultipleChoices) return 'hard'
     if (questionLength > 100) return 'medium'
@@ -487,11 +547,11 @@ export function QuizEngine({
 
   // Mobile detection
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout
+    let timeoutId: number
     
     const checkMobile = () => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         setIsMobile(window.innerWidth < 768)
       }, 150)
     }
@@ -757,8 +817,13 @@ export function QuizEngine({
     return () => clearTimeout(timer)
   }, [currentQuestionIndex, autoPlayEnabled, currentQuestion?.question, playText])
 
+  // Determine if we should use timers and auto-advance based on mode
+  const shouldUseTimer = !practiceMode && mode !== 'practice' && (mode === 'standard' || mode === 'classic_quiz' || mode === 'npc_battle')
+  const shouldAutoAdvance = !practiceMode && mode !== 'practice' && (mode === 'standard' || mode === 'classic_quiz' || mode === 'npc_battle')
+
   // Enhanced event handlers
   function handleTimeUp() {
+    if (!shouldUseTimer) return
     if (isAnswerSubmitted) return
     
     console.log('⏰ Time up for question:', currentQuestion?.question_number)
@@ -829,32 +894,43 @@ export function QuizEngine({
     setShowFeedback(true)
   }
 
+  // Handle answer selection
   function handleAnswerSelect(answer: string) {
     if (isAnswerSubmitted || !currentQuestion) return
-
-    setSelectedAnswer(answer)
-    stopTimer()
-  }
-
-  function handleInteractiveAnswer(answer: string, isCorrect: boolean) {
-    if (isAnswerSubmitted || !currentQuestion) return
-
-    setSelectedAnswer(answer)
-    stopTimer()
-  }
-
-  function handleSubmitAnswer() {
-    if (!selectedAnswer || isAnswerSubmitted) return
     
+    setSelectedAnswer(answer)
+    
+    // In practice mode, don't auto-submit - wait for manual submission
+    if (mode === 'practice' || practiceMode) {
+      return
+    }
+    
+    // For true/false questions, submit immediately
+    if (currentQuestion.type === 'true_false') {
+      handleSubmitAnswer()
+      return
+    }
+    
+    // In other modes, auto-submit after a short delay
+    setTimeout(() => {
+      handleSubmitAnswer()
+    }, 100)
+  }
+
+  // Submit answer with enhanced feedback
+  function handleSubmitAnswer() {
+    if (!selectedAnswer || !currentQuestion || isAnswerSubmitted) return
+
     console.log('📤 Submitting enhanced answer:', selectedAnswer)
+    setIsAnswerSubmitted(true)
     stopTimer()
     
     // Determine if answer is correct
     let isCorrect = false
-    if (currentQuestion.question_type === 'short_answer') {
+    if (currentQuestion.type === 'short_answer') {
       const answerStatus = checkAnswerDetailed(selectedAnswer, currentQuestion.correct_answer)
       isCorrect = answerStatus === 'correct'
-    } else if (currentQuestion.question_type === 'true_false') {
+    } else if (currentQuestion.type === 'true_false') {
       isCorrect = selectedAnswer.toLowerCase() === currentQuestion.correct_answer.toLowerCase()
     } else {
       isCorrect = selectedAnswer === currentQuestion.correct_answer
@@ -877,7 +953,7 @@ export function QuizEngine({
     
     // Update enhanced analytics
     updateCategoryPerformance(currentQuestion, isCorrect, timeSpent)
-    
+
     // Update difficulty distribution
     setSessionAnalytics(prev => ({
       ...prev,
@@ -888,14 +964,10 @@ export function QuizEngine({
     }))
     
     setUserAnswers(prev => [...prev, newAnswer])
-    setIsAnswerSubmitted(true)
     setShowFeedback(true)
     
     // Save state after answering
     setTimeout(() => saveQuizState(), 100)
-    
-    // Note: Streak is now managed by the gamification system
-    // The actual streak update will happen when the quiz is completed
     
     setAnimateProgress(true)
     setTimeout(() => setAnimateProgress(false), 1000)
@@ -927,11 +999,42 @@ export function QuizEngine({
     if (autoPlayEnabled && currentQuestion?.explanation) {
       setTimeout(() => {
         try {
-          playText(currentQuestion.explanation, { autoPlay: true })
+          playText(currentQuestion.explanation || '', { autoPlay: true })
         } catch (error) {
           console.warn('Auto-play explanation failed:', error)
         }
       }, 800)
+    }
+
+    // In practice mode, always show feedback
+    // In standard mode with auto-advance disabled, show feedback
+    const shouldShowFeedback = mode === 'practice' || practiceMode || !shouldAutoAdvance
+    
+    if (!shouldShowFeedback && shouldAutoAdvance) {
+      // Auto-advance after showing the result briefly
+      setTimeout(() => {
+        handleNextQuestion()
+      }, 2000)
+    }
+  }
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < randomizedQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1)
+      setSelectedAnswer(null)
+      setIsAnswerSubmitted(false)
+      resetTimer() // Use resetTimer from the hook instead of setTimeLeft
+      setShowHint(false)
+      setQuestionStartTime(Date.now())
+      setCurrentAttemptNumber(1)
+      setHasUsedSecondChance(false)
+      setAnswerRevealUsed(false)
+      setTimeFrozen(false)
+      
+      // Save state after moving to next question
+      saveQuizState()
+    } else {
+      handleFinishQuiz()
     }
   }
 
@@ -1007,7 +1110,7 @@ export function QuizEngine({
               ? skillResults.masteryChanges 
               : 'No mastery changes'
           })
-          
+     
           // If there were mastery changes, we could notify the user here
           
         } catch (skillError) {
@@ -1073,31 +1176,39 @@ export function QuizEngine({
     setShowResults(true)
   }
 
-  function handleNextQuestion() {
-    if (isLastQuestion) {
-      handleFinishQuiz()
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      setCurrentQuestionIndex(prev => prev + 1)
-    }
+  const [showAdminEdit, setShowAdminEdit] = useState(false)
+
+  const handleQuestionUpdate = (updatedQuestion: QuizQuestion) => {
+    // Update the questions array with the updated question
+    const newQuestions = [...questions];
+    newQuestions[currentQuestionIndex] = updatedQuestion;
+    // Note: You might want to add a prop to handle this at a higher level
   }
+
+  const isAdvancedAnalytics = useFeatureFlag('advancedAnalytics')
+  const isSpacedRepetition = useFeatureFlag('spacedRepetition')
+  const isLearningInsights = useFeatureFlag('learningInsights')
+  const areDebugPanels = useFeatureFlag('debugPanels')
 
   // Enhanced keyboard shortcuts using the new utility
   const handleOptionSelect = useCallback((optionIndex: number) => {
     if (isAnswerSubmitted || !currentQuestion) return
     
-    const options = [
-      currentQuestion.option_a,
-      currentQuestion.option_b,
-      currentQuestion.option_c,
-      currentQuestion.option_d
-    ].filter(Boolean)
+    const options = getQuestionOptions(currentQuestion)
     
     if (optionIndex < options.length) {
-      const optionId = `option_${String.fromCharCode(97 + optionIndex)}`
-      handleAnswerSelect(optionId)
+      // For multiple choice questions, use the actual option text
+      if (currentQuestion.type === 'multiple_choice') {
+        handleAnswerSelect(options[optionIndex])
+      } else if (currentQuestion.type === 'true_false') {
+        // For true/false, map 0->True, 1->False
+        handleAnswerSelect(optionIndex === 0 ? 'True' : 'False')
+      } else {
+        // For other question types, use the option directly
+        handleAnswerSelect(options[optionIndex])
+      }
     }
-  }, [isAnswerSubmitted, currentQuestion, handleAnswerSelect])
+  }, [isAnswerSubmitted, currentQuestion])
 
   const handleToggleHint = useCallback(() => {
     setShowHint(prev => {
@@ -1122,10 +1233,8 @@ export function QuizEngine({
     selectedAnswer
   }), [
     handleOptionSelect,
-    handleAnswerSelect,
     handleSubmitAnswer,
     handleSkipQuestion,
-    handleNextQuestion,
     handleToggleHint,
     currentQuestion,
     isAnswerSubmitted,
@@ -1193,6 +1302,12 @@ export function QuizEngine({
             
             // Handle RLS policy violations gracefully
             if (dbError.code === '42501' || dbError.message?.includes('row-level security policy')) {
+              // This error occurs because we're trying to insert into pod_analytics table
+              // but the user doesn't have the proper permissions. This is expected for:
+              // 1. Users not in a pod (solo quiz)
+              // 2. Users without proper pod role
+              // 3. Missing RLS policy for analytics
+              // This is non-blocking - quiz can continue without analytics
               console.warn('🔒 RLS policy violation when creating quiz attempt - continuing with quiz anyway:', {
                 code: dbError.code,
                 message: dbError.message,
@@ -1222,23 +1337,10 @@ export function QuizEngine({
                 error: err,
                 userId: user.id,
                 topicId,
-                questionCount: randomizedQuestions.length,
-                errorType: typeof err,
-                errorMessage: err.toString()
+                questionCount: randomizedQuestions.length
               })
             }
-          } else {
-            console.error('💥 Non-object error creating quiz attempt:', {
-              error: err,
-              userId: user.id,
-              topicId,
-              questionCount: randomizedQuestions.length
-            })
           }
-          
-          // Only allow retry for non-RLS errors
-          // The core quiz functionality should not be blocked by analytics issues
-          attemptCreatedRef.current = false
         }
       }
     }
@@ -1246,9 +1348,20 @@ export function QuizEngine({
     initializeAttempt()
   }, [user, topicId, randomizedQuestions.length])
 
+  // Disable auto-advance - let users control when to move on
+  // useEffect(() => {
+  //   if (isAnswerSubmitted && autoAdvance && !practiceMode) {
+  //     const timer = setTimeout(() => {
+  //       handleNextQuestion()
+  //     }, 4000) // Increased from default to give more time to read feedback and see animations
+
+  //     return () => clearTimeout(timer)
+  //   }
+  // }, [isAnswerSubmitted, autoAdvance, practiceMode])
+
   if (showResults) {
     return (
-      <QuizResults
+      <QuizResultsComponent
         userAnswers={userAnswers}
         questions={randomizedQuestions}
         onFinish={onComplete}
@@ -1259,25 +1372,39 @@ export function QuizEngine({
   }
 
   const renderQuestion = () => {
-    const questionProps = {
-      question: currentQuestion,
-      selectedAnswer,
-      isSubmitted: isAnswerSubmitted,
-      onSelectAnswer: handleAnswerSelect
-    }
-
-    switch (currentQuestion.question_type) {
+    switch (currentQuestion.type) {
       case "multiple_choice":
-        return <MultipleChoiceQuestion {...questionProps} />
+        return (
+          <MultipleChoiceQuestionComponent
+            question={currentQuestion as any}
+            selectedAnswer={selectedAnswer}
+            isSubmitted={isAnswerSubmitted}
+            onSelectAnswer={handleAnswerSelect}
+          />
+        )
       case "true_false":
-        return <TrueFalseQuestion {...questionProps} />
+        return (
+          <TrueFalseQuestionComponent
+            question={currentQuestion as any}
+            selectedAnswer={selectedAnswer}
+            isSubmitted={isAnswerSubmitted}
+            onSelectAnswer={handleAnswerSelect}
+          />
+        )
       case "short_answer":
-        return <ShortAnswerQuestion {...questionProps} />
+        return (
+          <ShortAnswerQuestionComponent
+            question={currentQuestion as any}
+            selectedAnswer={selectedAnswer}
+            isSubmitted={isAnswerSubmitted}
+            onSelectAnswer={handleAnswerSelect}
+          />
+        )
       case "fill_in_blank":
         return (
           <FillInBlankQuestion
             question={currentQuestion}
-            onAnswer={handleInteractiveAnswer}
+            onAnswer={handleAnswerSelect}
             showHint={showHint}
             disabled={isAnswerSubmitted}
           />
@@ -1286,7 +1413,7 @@ export function QuizEngine({
         return (
           <MatchingQuestion
             question={currentQuestion}
-            onAnswer={handleInteractiveAnswer}
+            onAnswer={handleAnswerSelect}
             showHint={showHint}
             disabled={isAnswerSubmitted}
           />
@@ -1295,7 +1422,7 @@ export function QuizEngine({
         return (
           <OrderingQuestion
             question={currentQuestion}
-            onAnswer={handleInteractiveAnswer}
+            onAnswer={handleAnswerSelect}
             showHint={showHint}
             disabled={isAnswerSubmitted}
           />
@@ -1304,18 +1431,76 @@ export function QuizEngine({
         return (
           <CrosswordQuestion
             question={currentQuestion}
-            onAnswer={handleInteractiveAnswer}
+            onAnswer={handleAnswerSelect}
             showHint={showHint}
             disabled={isAnswerSubmitted}
           />
         )
       default:
-        return <div>Unsupported question type: {currentQuestion.question_type}</div>
+        return <div>Unsupported question type: {currentQuestion.type}</div>
+    }
+  }
+
+  // Add XP calculation function
+  const calculateXpGained = () => {
+    if (!isAnswerSubmitted || !selectedAnswer || !currentQuestion) return 0
+    
+    // Base XP for answering
+    let xp = 10
+
+    // Use the same answer checking logic as the rest of the component
+    const isAnswerCorrect = selectedAnswer === currentQuestion.correct_answer
+
+    // Correct answer bonus
+    if (isAnswerCorrect) {
+      xp += 20
+
+      // Time bonus (if more than 45 seconds left)
+      if (timeLeft > 45) {
+        xp += 10
+      }
+    }
+
+    return xp
+  }
+
+  const handleAnswerSubmit = (answer: string) => {
+    if (isAnswerSubmitted) return
+
+    setSelectedAnswer(answer)
+    setIsAnswerSubmitted(true)
+
+    // Update analytics
+    if (answer === "timeout") {
+      setSessionAnalytics(prev => ({
+        ...prev,
+        timeoutsCount: prev.timeoutsCount + 1
+      }))
+    } else if (answer === "skipped") {
+      setSessionAnalytics(prev => ({
+        ...prev,
+        skipsCount: prev.skipsCount + 1
+      }))
+    } else if (answer === currentQuestion.correct_answer) {
+      setSessionAnalytics(prev => ({
+        ...prev,
+        correctAnswers: prev.correctAnswers + 1
+      }))
+    }
+
+    // Add delay before allowing next question
+    const minViewTime = 4000 // 4 seconds minimum to read feedback
+    const nextButton = document.querySelector('[data-next-question]')
+    if (nextButton) {
+      nextButton.setAttribute('disabled', 'true')
+      setTimeout(() => {
+        nextButton.removeAttribute('disabled')
+      }, minViewTime)
     }
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen bg-white dark:bg-slate-900">
       {/* Topic Navigation is now handled by the new QuizNavigation component in the page layout */}
       
       <div className={cn(
@@ -1325,7 +1510,7 @@ export function QuizEngine({
         {/* Quiz title display */}
         <div className="text-xs text-center mb-3 text-slate-500 dark:text-slate-400">
           <span className="mr-1">{currentTopic.emoji}</span>
-          <span>{currentTopic.title}</span>
+          <span>{currentTopic.topic_title}</span>
         </div>
         
         {/* Question number and timer */}
@@ -1349,12 +1534,14 @@ export function QuizEngine({
             )}
           </div>
           
-          <QuestionTimer
-            key={`timer-${currentQuestionIndex}-${currentAttemptNumber}`}
-            initialTime={60}
-            isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
-            onTimeUp={handleTimeUp}
-          />
+          {shouldUseTimer && (
+            <QuestionTimer
+              key={`timer-${currentQuestionIndex}-${currentAttemptNumber}`}
+              initialTime={initialTime}
+              isActive={isTimerActive && !isAnswerSubmitted && !timeFrozen}
+              onTimeUp={handleTimeUp}
+            />
+          )}
         </div>
 
         {/* Enhanced progress bar */}
@@ -1419,14 +1606,18 @@ export function QuizEngine({
           )}
 
           {isAnswerSubmitted && (
-            <QuestionFeedbackDisplay
-              question={currentQuestion}
-              selectedAnswer={selectedAnswer}
-              timeLeft={timeLeft}
-              isLastQuestion={isLastQuestion}
-              onNextQuestion={handleNextQuestion}
-              xpGained={0} // Will be calculated in results
-            />
+            <div className="space-y-6">
+              <QuestionFeedbackDisplay
+                question={currentQuestion}
+                selectedAnswer={selectedAnswer}
+                timeLeft={timeLeft}
+                isLastQuestion={isLastQuestion}
+                onNextQuestion={handleNextQuestion}
+                xpGained={calculateXpGained()} // Calculate XP based on time and correctness
+              />
+              
+              {/* QuestionFeedback (for rating/reporting) is only shown on quiz results screen */}
+            </div>
           )}
         </div>
 
@@ -1452,7 +1643,7 @@ export function QuizEngine({
                 
                 {currentBoostEffects.answerRevealAvailable && 
                  !answerRevealUsed && 
-                 currentQuestion.question_type === 'multiple_choice' && (
+                 currentQuestion.type === 'multiple_choice' && (
                   <Button 
                     onClick={handleUseAnswerReveal}
                     variant="outline"
@@ -1509,7 +1700,7 @@ export function QuizEngine({
 
 
         {/* Enhanced debug panel with minimize toggle */}
-        {process.env.NODE_ENV === 'development' && !isMobile && debug.isEnabled('quiz') && (
+        {process.env.NODE_ENV === 'development' && !isMobile && debug.isEnabled('quiz') && areDebugPanels && (
           <DebugPanel
             selectedAnswer={selectedAnswer}
             isAnswerSubmitted={isAnswerSubmitted}
@@ -1589,6 +1780,29 @@ export function QuizEngine({
           onXPChanged={setUserXP}
           onBoostActivated={handleBoostActivated}
         />
+      )}
+
+      {/* Admin Edit Panel */}
+      {isAdmin && (
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            className="fixed bottom-4 right-4 z-50"
+            onClick={() => setShowAdminEdit(!showAdminEdit)}
+          >
+            <Edit2 className="w-4 h-4 mr-1" />
+            {showAdminEdit ? "Hide Edit" : "Edit Question"}
+          </Button>
+          
+          {showAdminEdit && (
+            <AdminEditPanel
+              question={questions[currentQuestionIndex]}
+              topicId={topicId}
+              onQuestionUpdate={handleQuestionUpdate}
+            />
+          )}
+        </>
       )}
     </div>
   )

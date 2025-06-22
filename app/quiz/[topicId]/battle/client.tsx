@@ -18,6 +18,7 @@ interface BattleClientProps {
   }
   searchParams: {
     attempt: string
+    difficulty?: 'easy' | 'medium' | 'hard'
     podId?: string
     classroomCourseId?: string
     classroomAssignmentId?: string
@@ -34,16 +35,16 @@ export function BattleClient({
 }: BattleClientProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { isPremium } = usePremium()
+  const { hasFeatureAccess } = usePremium()
   const { recordQuizAttempt } = useGuestAccess()
   const [showPremiumGate, setShowPremiumGate] = useState(false)
 
   // Check premium access
   useEffect(() => {
-    if (!isPremium) {
+    if (!hasFeatureAccess('npc_battle')) {
       setShowPremiumGate(true)
     }
-  }, [isPremium])
+  }, [hasFeatureAccess])
 
   const handleExit = () => {
     router.push(`/quiz/${params.topicId}`)
@@ -68,9 +69,9 @@ export function BattleClient({
       <div className="container mx-auto py-8">
         <Header />
         <PremiumGate
-          feature="spaced_repetition"
-          title="Premium Feature"
-          description="NPC Battle mode is available for premium users only."
+          feature="npc_battle"
+          title="NPC Battle Mode"
+          description="Challenge AI-powered opponents and test your knowledge in an engaging battle format."
           isOpen={showPremiumGate}
           onClose={handleExit}
         />
@@ -83,7 +84,7 @@ export function BattleClient({
       <Header />
       <NPCBattleEngine
         questions={formattedQuestions}
-        difficulty="medium"
+        difficulty={searchParams.difficulty || 'medium'}
         timeLimit={30}
         onExit={handleExit}
       />

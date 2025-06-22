@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, ChevronDown, Clock, Users, Zap, Target, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface TopicData {
   topic_id: string
@@ -36,6 +42,7 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
   const [offset, setOffset] = useState(0)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [sortBy, setSortBy] = useState<'date' | 'questions' | 'difficulty' | 'relevance'>('date')
+  const [error, setError] = useState<string | null>(null)
   
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const limit = 24 // Increased for grid layout
@@ -44,6 +51,7 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
   const searchTopics = useCallback(async (query: string, currentOffset: number, isNewSearch = false) => {
     try {
       setIsLoading(true)
+      setError(null)
       
       const response = await fetch('/api/topics/search', {
         method: 'POST',
@@ -55,7 +63,8 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
           sortBy: query.trim() ? 'relevance' : sortBy,
           hasQuestions: true, // Only show topics with questions for multiplayer
           categories: [],
-          difficulty: []
+          difficulty: [],
+          includeAll: true // Add this to ensure we get all topics
         })
       })
 
@@ -76,6 +85,7 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
       
     } catch (error) {
       console.error('Error searching topics:', error)
+      setError('Failed to load topics. Please try again.')
     } finally {
       setIsLoading(false)
       setIsInitialLoading(false)
@@ -153,39 +163,75 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
               className="pl-10 border-slate-200 dark:border-slate-800 focus:border-slate-400 dark:focus:border-slate-600"
             />
           </div>
-          <button
-            onClick={() => onTopicSelect(null)}
-            className={cn(
-              "px-4 py-2 rounded-lg border transition-all flex items-center gap-2 whitespace-nowrap",
-              !selectedTopic 
-                ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 text-slate-900 dark:text-white" 
-                : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30"
-            )}
-          >
-            <span className="text-base">🎲</span>
-            <span className="text-sm">Random</span>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onTopicSelect(null)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg border transition-all flex items-center gap-2 whitespace-nowrap",
+                    !selectedTopic 
+                      ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 text-slate-900 dark:text-white" 
+                      : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                  )}
+                >
+                  <span className="text-base">🎲</span>
+                  <span className="text-sm">Random</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Choose a random topic</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Sort Options */}
         <div className="flex items-center gap-2 text-sm">
           <span className="text-slate-600 dark:text-slate-400">Sort:</span>
           {['date', 'questions', 'difficulty'].map((sort) => (
-            <button
-              key={sort}
-              onClick={() => setSortBy(sort as any)}
-              className={cn(
-                "px-3 py-1 rounded-full border transition-colors capitalize",
-                sortBy === sort
-                  ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                  : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
-              )}
-            >
-              {sort}
-            </button>
+            <TooltipProvider key={sort}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSortBy(sort as any)}
+                    className={cn(
+                      "px-3 py-1 rounded-full border transition-colors capitalize",
+                      sortBy === sort
+                        ? "border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                  >
+                    {sort}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {sort === 'date' && 'Sort by newest first'}
+                    {sort === 'questions' && 'Sort by number of questions'}
+                    {sort === 'difficulty' && 'Sort by difficulty level'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
         </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-4">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <Button
+            onClick={() => searchTopics(searchQuery, 0, true)}
+            variant="outline"
+            size="sm"
+            className="mt-2"
+          >
+            Try Again
+          </Button>
+        </div>
+      )}
 
       {/* Topics Grid */}
       <div 
@@ -194,55 +240,90 @@ export function TopicSelector({ selectedTopic, onTopicSelect, className }: Topic
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
           {topics.map((topic) => (
-            <button
-              key={topic.topic_id}
-              onClick={() => onTopicSelect(topic.topic_id)}
-              className={cn(
-                "text-left p-4 rounded-xl transition-all duration-200 border group hover:shadow-sm",
-                selectedTopic === topic.topic_id
-                  ? "border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-950/50 shadow-sm"
-                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-              )}
-            >
-              <div className="space-y-3">
-                {/* Header */}
-                <div className="flex items-start gap-2">
-                  <span className="text-lg flex-shrink-0 mt-0.5">{topic.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 dark:text-white text-sm leading-tight line-clamp-2">
-                      {topic.topic_title}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Compact Metadata */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                    <Target className="h-3 w-3" />
-                    <span>{topic.questionCount}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Category badge - only show first one */}
-                    {topic.categoryDetails[0] && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                        {topic.categoryDetails[0].emoji}
-                      </Badge>
+            <TooltipProvider key={topic.topic_id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => onTopicSelect(topic.topic_id)}
+                    className={cn(
+                      "text-left p-4 rounded-xl transition-all duration-200 border group hover:shadow-sm w-full",
+                      selectedTopic === topic.topic_id
+                        ? "border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-950/50 shadow-sm"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     )}
+                  >
+                    <div className="space-y-3">
+                      {/* Header */}
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg flex-shrink-0 mt-0.5">{topic.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-slate-900 dark:text-white text-sm leading-tight line-clamp-2">
+                            {topic.topic_title}
+                          </div>
+                        </div>
+                      </div>
 
-                    {/* Difficulty */}
-                    <Badge 
-                      className={cn(
-                        "text-xs px-1.5 py-0.5 border-0",
-                        getDifficultyColor(topic.averageDifficulty)
-                      )}
-                    >
-                      {topic.difficultyLabel.charAt(0)}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </button>
+                      {/* Compact Metadata */}
+                      <div className="flex items-center justify-between text-xs">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                <Target className="h-3 w-3" />
+                                <span>{topic.questionCount}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{topic.questionCount} questions available</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <div className="flex items-center gap-2">
+                          {/* Category badge - only show first one */}
+                          {topic.categoryDetails[0] && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                                    {topic.categoryDetails[0].emoji}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{topic.categoryDetails[0].name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+
+                          {/* Difficulty */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge 
+                                  className={cn(
+                                    "text-xs px-1.5 py-0.5 border-0",
+                                    getDifficultyColor(topic.averageDifficulty)
+                                  )}
+                                >
+                                  {topic.difficultyLabel.charAt(0)}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{topic.difficultyLabel} Difficulty</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{topic.description || topic.topic_title}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
         </div>
 

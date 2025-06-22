@@ -40,6 +40,17 @@ const FEATURE_DETAILS = {
       "Share decks with friends and study groups"
     ]
   },
+  npc_battle: {
+    icon: Brain,
+    title: "NPC Battle Mode",
+    description: "Challenge AI-powered opponents and test your knowledge in an engaging battle format.",
+    benefits: [
+      "Battle against AI opponents of varying difficulty",
+      "Adaptive difficulty based on your performance",
+      "Unique opponent personalities and strategies",
+      "Track your battle history and progress"
+    ]
+  },
   historical_progress: {
     icon: TrendingUp,
     title: "Historical Progress Tracking",

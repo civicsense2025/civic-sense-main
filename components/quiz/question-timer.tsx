@@ -107,11 +107,25 @@ export function QuestionTimer({
   )
 }
 
+interface QuestionTimerConfig {
+  initialTime: number
+  onTimeUp?: () => void
+  frozen?: boolean
+}
+
 // Hook to use timer state
-export function useQuestionTimer(initialTime: number = 60) {
+export function useQuestionTimer(config: number | QuestionTimerConfig) {
+  // Handle both old and new config formats
+  const {
+    initialTime,
+    onTimeUp,
+    frozen = false
+  } = typeof config === 'number' ? { initialTime: config, onTimeUp: undefined, frozen: false } : config
+
   const [timeLeft, setTimeLeft] = useState(initialTime)
-  const [isActive, setIsActive] = useState(true)
+  const [isActive, setIsActive] = useState(!frozen)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const hasCalledTimeUp = useRef(false)
 
   // Clear timer on cleanup
   useEffect(() => {
@@ -124,7 +138,7 @@ export function useQuestionTimer(initialTime: number = 60) {
 
   // Main timer effect
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || frozen) {
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
@@ -137,15 +151,17 @@ export function useQuestionTimer(initialTime: number = 60) {
       clearInterval(timerRef.current)
     }
 
-    // Start new timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
+    // Start new timer if we have an initial time
+    if (initialTime > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
 
     return () => {
       if (timerRef.current) {
@@ -153,19 +169,33 @@ export function useQuestionTimer(initialTime: number = 60) {
         timerRef.current = null
       }
     }
-  }, [isActive, initialTime]) // Added initialTime to dependencies
+  }, [isActive, initialTime, frozen])
+
+  // Handle time up callback
+  useEffect(() => {
+    if (timeLeft === 0 && isActive && !hasCalledTimeUp.current && onTimeUp) {
+      hasCalledTimeUp.current = true
+      console.log('Timer: Time up!')
+      
+      // Use setTimeout to ensure this runs after the current render cycle
+      setTimeout(() => {
+        onTimeUp()
+      }, 0)
+    }
+  }, [timeLeft, isActive, onTimeUp])
 
   const resetTimer = useCallback(() => {
     console.log('Resetting timer to:', initialTime)
     setTimeLeft(initialTime)
-    setIsActive(true)
+    setIsActive(!frozen)
+    hasCalledTimeUp.current = false
     
     // Clear existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
     }
-  }, [initialTime])
+  }, [initialTime, frozen])
 
   const stopTimer = useCallback(() => {
     console.log('Stopping timer')
@@ -178,8 +208,8 @@ export function useQuestionTimer(initialTime: number = 60) {
 
   const startTimer = useCallback(() => {
     console.log('Starting timer')
-    setIsActive(true)
-  }, [])
+    setIsActive(!frozen)
+  }, [frozen])
 
   return {
     timeLeft,

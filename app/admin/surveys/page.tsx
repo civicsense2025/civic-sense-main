@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
+import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,7 +25,8 @@ import {
   XCircle,
   TrendingUp,
   MessageSquare,
-  Download
+  Download,
+  FileText
 } from "lucide-react"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -123,21 +125,21 @@ export default function SurveysAdminPage() {
   useEffect(() => {
     const fetchSurveys = async () => {
       try {
-        const response = await fetch('/api/admin/surveys')
+        const response = await fetch('/api/surveys?status=all')
         
         if (response.ok) {
           const data = await response.json()
           setSurveys(data.surveys || [])
         } else {
-          throw new Error('Failed to fetch surveys')
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Survey fetch error:', errorData)
+          // Don't throw error if no surveys exist, just show empty state
+          setSurveys([])
         }
       } catch (error) {
         console.error('Error fetching surveys:', error)
-        toast({
-          title: "Error loading surveys",
-          description: "Failed to load surveys. Please try again.",
-          variant: "destructive"
-        })
+        // Don't show error toast for empty surveys, just log it
+        setSurveys([])
       } finally {
         setLoading(false)
       }
@@ -302,27 +304,36 @@ export default function SurveysAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-light text-slate-900 dark:text-white">
-              Survey Management
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
-              Create and manage surveys for CivicSense users
-            </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <Header />
+      <main className="container mx-auto px-6 py-12 sm:py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Header */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-xl shadow-sm flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-light text-slate-900 dark:text-white">
+                    Survey Management
+                  </h1>
+                  <p className="text-slate-500 dark:text-slate-400 font-light">
+                    Create and manage surveys for CivicSense users
+                  </p>
+                </div>
+              </div>
+              
+              <Button
+                onClick={() => router.push('/admin/surveys/create')}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Survey
+              </Button>
+            </div>
           </div>
-          
-          <Button
-            onClick={() => router.push('/admin/surveys/create')}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Survey
-          </Button>
-        </div>
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -646,7 +657,8 @@ export default function SurveysAdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+        </div>
+      </main>
     </div>
   )
 } 

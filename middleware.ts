@@ -1,9 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
   })
 
   const supabase = createServerClient(
@@ -11,39 +13,94 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
+        get(name: string) {
+          return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
         },
       },
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // Get user session
+  const { data: { session } } = await supabase.auth.getSession()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Check if this is an admin route
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    // If no session, redirect to sign in
+    if (!session?.user) {
+      const redirectUrl = new URL('/auth/signin', request.url)
+      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
-  // creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object instead of the supabaseResponse object
+    // Check if user has admin privileges
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single()
 
-  return supabaseResponse
+      if (error) {
+        console.error('Error checking admin status in middleware:', error)
+        // On error, redirect to dashboard with error message
+        const redirectUrl = new URL('/dashboard', request.url)
+        redirectUrl.searchParams.set('error', 'admin_check_failed')
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      // If user is not admin, redirect to dashboard
+      if (!profile?.is_admin) {
+        console.log(`🚫 Non-admin user ${session.user.email} attempted to access ${request.nextUrl.pathname}`)
+        const redirectUrl = new URL('/dashboard', request.url)
+        redirectUrl.searchParams.set('error', 'admin_access_denied')
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      // User is admin, allow access
+      console.log(`✅ Admin user ${session.user.email} accessing ${request.nextUrl.pathname}`)
+    } catch (err) {
+      console.error('Error in admin middleware check:', err)
+      const redirectUrl = new URL('/dashboard', request.url)
+      redirectUrl.searchParams.set('error', 'admin_check_error')
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  return response
 }
 
 export const config = {
@@ -55,6 +112,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 } 

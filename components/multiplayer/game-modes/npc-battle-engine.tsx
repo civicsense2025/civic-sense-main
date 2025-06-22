@@ -35,6 +35,9 @@ export function NPCBattleEngine({
   const router = useRouter()
   const [phase, setPhase] = useState<GamePhase>('waiting')
   const [opponent] = useState<NPCPersonality>(() => {
+    // Default to Professor Sage if no NPCs match the difficulty
+    const defaultNPC = NPC_PERSONALITIES.find(npc => npc.id === 'professor_sage') || NPC_PERSONALITIES[0]
+    
     const availableNPCs = NPC_PERSONALITIES.filter(npc => {
       switch (difficulty) {
         case 'easy':
@@ -47,6 +50,13 @@ export function NPCBattleEngine({
           return false
       }
     })
+    
+    // If no NPCs match the difficulty, use the default NPC
+    if (availableNPCs.length === 0) {
+      console.warn('No NPCs found for difficulty level:', difficulty)
+      return defaultNPC
+    }
+    
     return availableNPCs[Math.floor(Math.random() * availableNPCs.length)]
   })
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)

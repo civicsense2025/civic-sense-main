@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { usePremium } from '@/hooks/usePremium'
-import { areScenariosEnabled } from '@/lib/feature-flags'
+import { areScenariosEnabled } from '@/lib/comprehensive-feature-flags'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

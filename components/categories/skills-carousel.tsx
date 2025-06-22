@@ -97,7 +97,7 @@ export function SkillsCarousel({ skillsByCategory }: SkillsCarouselProps) {
             className="font-light"
           >
             {category}
-            <Badge variant="secondary" className="ml-2 font-light">
+            <Badge variant="secondary" className="ml-2 font-light rounded-lg">
               {skillsByCategory[category].length}
             </Badge>
           </Button>
@@ -128,7 +128,7 @@ export function SkillsCarousel({ skillsByCategory }: SkillsCarouselProps) {
                         )}
                       </div>
                       <Badge 
-                        className={`text-xs font-light ${getDifficultyColor(skill.difficulty_level)}`}
+                        className={`text-xs font-light rounded-lg ${getDifficultyColor(skill.difficulty_level)}`}
                         variant="secondary"
                       >
                         {getDifficultyLabel(skill.difficulty_level)}
@@ -149,7 +149,7 @@ export function SkillsCarousel({ skillsByCategory }: SkillsCarouselProps) {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {skill.is_core_skill && (
-                            <Badge variant="outline" className="text-xs font-light border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400">
+                            <Badge variant="outline" className="text-xs font-light border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400 rounded-lg">
                               Core Skill
                             </Badge>
                           )}

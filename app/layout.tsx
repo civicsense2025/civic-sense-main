@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter, Space_Mono } from "next/font/google"
+import { Space_Mono } from "next/font/google"
 import "./globals.css"
 import "../styles/accessibility.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -13,21 +13,25 @@ import { ConnectionProvider } from "@/components/providers/connection-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PWAStatus } from "@/components/pwa-status"
 import { DebugSettingsPanel } from "@/components/debug-settings-panel"
+import { cn } from '@/lib/utils'
 
 // Import cache debug utilities in development
 if (process.env.NODE_ENV === 'development') {
-  import('@/lib/cache-debug').catch(() => {})
+  import('@/lib/cache-debug').then(() => {
+    console.log('Cache debugging loaded')
+  }).catch(err => {
+    console.warn('Failed to load cache debugging:', err)
+  })
 }
 
-const inter = Inter({ subsets: ["latin"] })
-const spaceMono = Space_Mono({ 
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-space-mono"
+const spaceMono = Space_Mono({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  variable: '--font-space-mono',
 })
 
 const getBaseUrl = () => {
@@ -37,9 +41,12 @@ const getBaseUrl = () => {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getBaseUrl()),
-  title: "CivicSense - Civic Education Made Simple",
-  description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
+  title: {
+    template: '%s | CivicSense',
+    default: 'CivicSense - Learn Civics Through Current Events',
+  },
+  description: 'Learn civics through current events. Stay informed and understand how democracy works.',
+  metadataBase: new URL('https://civicsense.org'),
   manifest: "/manifest.json",
   applicationName: "CivicSense",
   appleWebApp: {
@@ -103,24 +110,32 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-  themeColor: "#1e40af",
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
+        {/* Essential icons only */}
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
         <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
+        
+        {/* PWA meta tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        
+        {/* Preload critical resources only */}
+        <link rel="preload" href="/icons/icon-32x32.png" as="image" type="image/png" />
+        <link rel="preload" href="/icons/icon-180x180.png" as="image" type="image/png" />
       </head>
-      <body className={`${inter.className} ${spaceMono.variable} bg-white dark:bg-slate-950 min-h-screen antialiased overflow-x-hidden`}>
+      <body className={cn(
+        'min-h-screen bg-background font-sans antialiased',
+        spaceMono.variable
+      )}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -137,12 +152,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <a href="#main-content" className="skip-link">
                         Skip to main content
                       </a>
-                    <div className="min-h-screen flex flex-col w-full">
-                      <main id="main-content" className="flex-1 w-full">
-                        {children}
-                      </main>
-                      <Footer />
-                    </div>
+                      <div className="min-h-screen flex flex-col w-full">
+                        <main id="main-content" className="flex-1 w-full">
+                          {children}
+                        </main>
+                        <Footer />
+                      </div>
                       <Toaster />
                       <GlobalAudioWrapper />
                       <Analytics />

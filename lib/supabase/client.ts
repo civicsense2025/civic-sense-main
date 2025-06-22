@@ -5,26 +5,10 @@ import type { Database } from '../database.types'
 let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null
 
 export const createClient = () => {
-  // Return existing instance if it exists
-  if (clientInstance) {
-    return clientInstance
-  }
-
-  // Create new instance only if one doesn't exist
-  clientInstance = createBrowserClient<Database>(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce'
-      }
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
-  
-  return clientInstance
 }
 
 // Create and export the single client instance for the app

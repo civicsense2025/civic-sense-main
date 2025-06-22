@@ -1,6 +1,7 @@
 "use client"
 
-import type { QuizQuestion } from "@/lib/quiz-data"
+import type { QuizQuestion, QuizResults } from "@/lib/types/quiz"
+import type { QuizGameMode } from "@/lib/types/quiz"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, EyeOff, Sparkles } from "lucide-react"
 import confetti from "canvas-confetti"
@@ -23,6 +24,7 @@ import { usePremium } from "@/hooks/usePremium"
 import { useAnalytics } from "@/utils/analytics"
 import { useTopicTitle } from "@/hooks/useTopicTitle"
 import { skillOperations } from "@/lib/skill-operations"
+import { Badge } from "@/components/ui/badge"
 
 interface UserAnswer {
   questionId: number
@@ -36,12 +38,15 @@ interface UserAnswer {
 interface QuizResultsProps {
   userAnswers: UserAnswer[]
   questions: QuizQuestion[]
-  onFinish: () => void
+  onFinish: (results: QuizResults) => void
   topicId: string
   resumedAttemptId?: string | null
+  mode?: QuizGameMode
+  npcScore?: number // For NPC battle mode
+  npcName?: string // For NPC battle mode
 }
 
-// Memoized components for performance (keeping existing ones)
+// Memoized components for performance
 const MemoizedScoreDisplay = memo(({ 
   animatedScore, 
   score, 
@@ -115,7 +120,10 @@ export function QuizResults({
   questions, 
   onFinish, 
   topicId,
-  resumedAttemptId
+  resumedAttemptId,
+  mode = 'standard',
+  npcScore,
+  npcName
 }: QuizResultsProps) {
   const { user } = useAuth()
   const { isPremium, isPro, hasFeatureAccess } = usePremium()
@@ -203,10 +211,16 @@ export function QuizResults({
     })
 
     // Calculate averages
-    Object.keys(categoryPerformance).forEach(category => {
-      const data = categoryPerformance[category]
-      data.avgTime = data.avgTime / data.total
+    Object.values(categoryPerformance).forEach(cat => {
+      cat.avgTime = Math.round(cat.avgTime / cat.total)
     })
+
+    // Calculate difficulty distribution
+    const difficultyDistribution = questions.reduce((acc, question) => {
+      const difficulty = question.difficulty || 'medium'
+      acc[difficulty] = (acc[difficulty] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
 
     // Determine time pattern
     const currentHour = new Date().getHours()
@@ -225,6 +239,7 @@ export function QuizResults({
     const consistencyScore = Math.max(0, 1 - (Math.sqrt(timeVariance) / averageTime))
 
     return {
+      difficultyDistribution,
       categoryPerformance,
       timePattern: timePattern as 'morning' | 'afternoon' | 'evening' | 'night',
       improvementTrend,
@@ -240,31 +255,85 @@ export function QuizResults({
     return `${minutes}m ${remainingSeconds}s`
   }, [])
 
-  const getSelectedAnswerText = useCallback((question: QuizQuestion, answerKey: string): string => {
-    const optionMap: Record<string, string> = {
-      option_a: question.option_a || "",
-      option_b: question.option_b || "",
-      option_c: question.option_c || "",
-      option_d: question.option_d || "",
+  const getSelectedAnswerText = (question: QuizQuestion, answer: string) => {
+    if (question.type === 'multiple_choice') {
+      return question.options[parseInt(answer, 10)] || answer
     }
-    return optionMap[answerKey] || answerKey
-  }, [])
+    return answer
+  }
 
-  const getScoreBadge = useCallback(() => {
-    if (score >= 90) return { text: "Excellent!", emoji: "🏆", color: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" }
-    if (score >= 80) return { text: "Great Job!", emoji: "🎉", color: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" }
-    if (score >= 70) return { text: "Good Work!", emoji: "👍", color: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300" }
-    return { text: "Keep Trying!", emoji: "💪", color: "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" }
-  }, [score])
+  // Get result badge based on mode and score
+  const getResultBadge = useCallback(() => {
+    if (mode === 'npc_battle' && npcScore !== undefined) {
+      if (score > npcScore) {
+        return {
+          text: `Victory! You beat ${npcName}`,
+          emoji: '🏆',
+          color: 'text-green-600'
+        }
+      } else if (score < npcScore) {
+        return {
+          text: `${npcName} wins this round`,
+          emoji: '😔',
+          color: 'text-red-600'
+        }
+      } else {
+        return {
+          text: 'It\'s a tie!',
+          emoji: '🤝',
+          color: 'text-blue-600'
+        }
+      }
+    }
 
-  const getPerformanceMessage = useCallback(() => {
-    if (score >= 90) return "Outstanding performance! You've mastered this topic! 🌟"
-    if (score >= 80) return "Excellent work! You have a strong understanding! 🎯"
-    if (score >= 70) return "Good job! You're on the right track! 📈"
-    return "Keep studying! Practice makes perfect! 💪"
-  }, [score])
+    if (mode === 'practice') {
+      return {
+        text: 'Practice Complete',
+        emoji: '🎯',
+        color: 'text-blue-600'
+      }
+    }
 
-  const badge = getScoreBadge()
+    if (isPerfectScore) {
+      return {
+        text: 'Perfect Score!',
+        emoji: '🌟',
+        color: 'text-yellow-600'
+      }
+    }
+
+    if (score >= 90) {
+      return {
+        text: 'Excellent!',
+        emoji: '🎯',
+        color: 'text-green-600'
+      }
+    }
+
+    if (score >= 80) {
+      return {
+        text: 'Great Job!',
+        emoji: '👏',
+        color: 'text-blue-600'
+      }
+    }
+
+    if (score >= 70) {
+      return {
+        text: 'Good Work!',
+        emoji: '👍',
+        color: 'text-yellow-600'
+      }
+    }
+
+    return {
+      text: 'Keep Practicing!',
+      emoji: '💪',
+      color: 'text-red-600'
+    }
+  }, [mode, score, npcScore, npcName, isPerfectScore])
+
+  const badge = getResultBadge()
 
   // Load topic title
   useEffect(() => {
@@ -312,7 +381,7 @@ export function QuizResults({
         })),
         attemptId: resumedAttemptId,
         sessionData: sessionAnalysis ? {
-          difficultyDistribution: { easy: 0, medium: 0, hard: 0 }, // Would be calculated from question data
+          difficultyDistribution: sessionAnalysis.difficultyDistribution,
           categoryPerformance: sessionAnalysis.categoryPerformance,
           timePattern: sessionAnalysis.timePattern,
           improvementTrend: sessionAnalysis.improvementTrend,
@@ -585,279 +654,274 @@ export function QuizResults({
     return "Civic Quest Completed! 🔍"
   }, [score])
 
-  // Render save status indicator
+  // Render save status
   const renderSaveStatus = () => {
     if (saveStatus === 'idle') return null
-    
+
     return (
       <div className={cn(
-        "fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-        saveStatus === 'saving' && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-        saveStatus === 'saved' && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-        saveStatus === 'error' && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+        "fixed bottom-4 right-4 p-4 rounded-lg shadow-lg",
+        "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
+        "animate-in slide-in-from-bottom-4 duration-500"
       )}>
-        {saveStatus === 'saving' && "💾 Saving results..."}
-        {saveStatus === 'saved' && analyticsCreated && isPremium && "✅ Premium analytics saved"}
-        {saveStatus === 'saved' && !analyticsCreated && "✅ Results saved"}
-        {saveStatus === 'error' && "⚠️ Save failed (cached locally)"}
+        <div className="flex items-center gap-2">
+          {saveStatus === 'saving' && (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
+              <span className="text-sm text-slate-600 dark:text-slate-400">Saving results...</span>
+            </>
+          )}
+          {saveStatus === 'saved' && (
+            <>
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm text-green-600 dark:text-green-400">Results saved!</span>
+            </>
+          )}
+          {saveStatus === 'error' && (
+            <>
+              <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <span className="text-sm text-red-600 dark:text-red-400">Error saving results</span>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Render share section
+  const renderShareSection = () => {
+    return (
+      <div className="mt-8">
+        <h3 className="text-xl font-bold mb-4">Share Your Results</h3>
+        <EnhancedSocialShare
+          title={`${topicTitle} Quiz Results`}
+          description={`I scored ${score}% on the ${topicTitle} quiz!`}
+          score={score}
+          totalQuestions={totalQuestions}
+          type="result"
+          emoji={isPerfectScore ? '🌟' : score >= 80 ? '🎯' : '📚'}
+          category={questions[0]?.category}
+          userName={user?.email?.split('@')[0]}
+          badge={badge.text}
+          allowCustomization={true}
+          trackEngagement={true}
+        />
+      </div>
+    )
+  }
+
+  // Render session analysis
+  const renderSessionAnalysis = () => {
+    if (!sessionAnalysis) return null
+
+    return (
+      <div className="mt-8">
+        <h3 className="text-xl font-bold mb-4">Session Analysis</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="font-medium text-purple-800 dark:text-purple-200">Study Time</div>
+            <div className="text-purple-600 dark:text-purple-300 capitalize">
+              {sessionAnalysis.timePattern === 'morning' ? 'Morning' : 
+               sessionAnalysis.timePattern === 'afternoon' ? 'Afternoon' : 
+               sessionAnalysis.timePattern === 'evening' ? 'Evening' : 'Night'}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="font-medium text-purple-800 dark:text-purple-200">Consistency</div>
+            <div className="text-purple-600 dark:text-purple-300">
+              {Math.round(sessionAnalysis.consistencyScore * 100)}%
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="font-medium text-purple-800 dark:text-purple-200">Improvement</div>
+            <div className="text-purple-600 dark:text-purple-300">
+              {sessionAnalysis.improvementTrend > 0 ? 'Improving' : 
+               sessionAnalysis.improvementTrend < 0 ? 'Worsening' : 'Stable'}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render question review
+  const renderQuestionReview = () => {
+    return (
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">Question Review</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowExplanations(!showExplanations)}
+            className="flex items-center gap-2"
+          >
+            {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <span>{showExplanations ? 'Hide' : 'Show'} Explanations</span>
+          </Button>
+        </div>
+
+        <div className="space-y-8">
+          {questions.map((question, index) => {
+            const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
+            const isCorrect = userAnswer?.isCorrect || false
+            const selectedAnswer = userAnswer?.answer || ""
+            const timeSpent = userAnswer?.timeSpent || 0
+
+            return (
+              <div
+                key={question.question_number}
+                className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700"
+              >
+                {/* Question Header */}
+                <div className="flex items-start gap-3 mb-4">
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 flex-shrink-0 text-lg",
+                    isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                  )}>
+                    {isCorrect ? "✓" : "✗"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
+                      {question.question}
+                    </p>
+                  </div>
+                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {Math.round(timeSpent)} seconds
+                  </div>
+                </div>
+
+                {/* Answer Section */}
+                <div className="space-y-2 mb-6">
+                  {/* Your answer */}
+                  <p className="text-sm">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Your answer:</span>{" "}
+                    <span className={cn(
+                      "font-medium",
+                      isCorrect 
+                        ? "text-green-600 dark:text-green-400" 
+                        : "text-red-600 dark:text-red-400 line-through"
+                    )}>
+                      {getSelectedAnswerText(question, selectedAnswer)}
+                    </span>
+                  </p>
+                  
+                  {/* Correct answer (if incorrect) */}
+                  {!isCorrect && (
+                    <p className="text-sm">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Correct answer:</span>{" "}
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        {getSelectedAnswerText(question, question.correct_answer)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Explanation */}
+                {showExplanations && question.explanation && (
+                  <div className="mb-6">
+                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                      {question.explanation}
+                    </p>
+                  </div>
+                )}
+
+                {/* Sources */}
+                {question.sources && question.sources.length > 0 && (
+                  <div className="mb-6">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
+                      Sources:
+                    </p>
+                    <div className="space-y-3">
+                      {question.sources.map((source, idx) => (
+                        <a
+                          key={idx}
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {source.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      {renderSaveStatus()}
-      
-      <div className="max-w-4xl mx-auto px-4 py-12 space-y-16">
-        {/* Clean header with lots of whitespace */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-            {getCompletionMessage()}
-          </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
-            {topicTitle}
-          </p>
-        </div>
-
-        {/* Score Display */}
-        <div className="text-center space-y-8">
-          <MemoizedScoreDisplay 
-            animatedScore={animatedScore} 
-            score={score} 
-            badge={badge} 
-          />
-          
-          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto font-light">
-            {getPerformanceMessage()}
-          </p>
-        </div>
-
-        {/* Enhanced Stats Cards */}
-        {showStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="text-lg mb-2">⏱️</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Avg Time</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(averageTime)}</div>
+      {/* Header */}
+      <div className="bg-gradient-to-b from-slate-100 to-white dark:from-slate-900 dark:to-black py-12">
+        <div className="container max-w-4xl mx-auto px-4">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold">{topicTitle}</h1>
+            <div className="flex justify-center items-center gap-2">
+              <Badge variant="outline" className="text-lg">
+                {correctAnswers} / {totalQuestions} correct
+              </Badge>
+              <Badge variant="outline" className="text-lg">
+                {score}% score
+              </Badge>
             </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
-              <div className="text-lg mb-2">⚡</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fastest</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{formatTime(fastestAnswer)}</div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
-              <div className="text-lg mb-2">🔥</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Quiz Streak</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">{streak}</div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-center transition-all hover:scale-105 hover:shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
-              <div className="text-lg mb-2">✨</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">XP Earned</div>
-              <div className="text-lg font-medium text-slate-900 dark:text-slate-50">+{xpGained}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Premium Analytics Preview */}
-        {isPremium && analyticsCreated && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800 animate-in fade-in duration-500">
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-2">
-                🎯 Premium Analytics Created
-              </h3>
-              <p className="text-purple-600 dark:text-purple-300 text-sm mb-4">
-                Your detailed performance data has been analyzed and is available in your dashboard.
-              </p>
-              {sessionAnalysis && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="font-medium text-purple-800 dark:text-purple-200">Study Time</div>
-                    <div className="text-purple-600 dark:text-purple-300 capitalize">{sessionAnalysis.timePattern}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-medium text-purple-800 dark:text-purple-200">Consistency</div>
-                    <div className="text-purple-600 dark:text-purple-300">{Math.round(sessionAnalysis.consistencyScore * 100)}%</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-medium text-purple-800 dark:text-purple-200">Categories</div>
-                    <div className="text-purple-600 dark:text-purple-300">{Object.keys(sessionAnalysis.categoryPerformance).length} analyzed</div>
-                  </div>
-                </div>
-              )}
+              <MemoizedScoreDisplay
+                animatedScore={animatedScore}
+                score={score}
+                badge={badge}
+              />
             </div>
           </div>
-        )}
-
-        {/* Question Review Section */}
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-light text-slate-900 dark:text-slate-50">
-              Question Review
-              <span className="ml-2 text-sm font-mono text-slate-500 dark:text-slate-400">
-                ({correctAnswers}/{totalQuestions} correct)
-              </span>
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowExplanations(!showExplanations)}
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-            >
-              {showExplanations ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span>{showExplanations ? 'Hide' : 'Show'} Explanations</span>
-            </Button>
-          </div>
-
-          <div className="space-y-8">
-            {questions.map((question, index) => {
-              const userAnswer = userAnswers.find((a) => a.questionId === question.question_number)
-              const isCorrect = userAnswer?.isCorrect || false
-              const selectedAnswer = userAnswer?.answer || ""
-              const timeSpent = userAnswer?.timeSpent || 0
-              
-              return (
-                <div 
-                  key={question.question_number}
-                  className="animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  {/* Question Header */}
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className={cn(
-                      "flex items-center justify-center w-6 h-6 flex-shrink-0 text-lg",
-                      isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                    )}>
-                      {isCorrect ? "✓" : "✗"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 dark:text-slate-50 leading-relaxed">
-                        {question.question}
-                      </p>
-                    </div>
-                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {formatTime(timeSpent)}
-                    </div>
-                  </div>
-
-                  {/* Answer Section */}
-                  <div className="space-y-2 mb-6">
-                    {/* Your answer */}
-                    <p className="text-sm">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">Your answer:</span>{" "}
-                      <span className={cn(
-                        "font-medium",
-                        isCorrect 
-                          ? "text-green-600 dark:text-green-400" 
-                          : "text-red-600 dark:text-red-400 line-through"
-                      )}>
-                        {question.question_type === "multiple_choice"
-                          ? getSelectedAnswerText(question, selectedAnswer)
-                          : selectedAnswer || "(no answer)"}
-                      </span>
-                    </p>
-                    
-                    {/* Correct answer (if incorrect) */}
-                    {!isCorrect && (
-                      <p className="text-sm">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">Correct answer:</span>{" "}
-                        <span className="font-medium text-green-600 dark:text-green-400">
-                          {question.question_type === "multiple_choice"
-                            ? getSelectedAnswerText(question, question.correct_answer)
-                            : question.correct_answer}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Separator */}
-                  <div className="border-t border-slate-200 dark:border-slate-700 my-6"></div>
-
-                  {/* Explanation */}
-                  {showExplanations && (
-                    <div className="mb-6">
-                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                        {question.explanation}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Sources - Always show if available */}
-                  {question.sources.length > 0 && (
-                    <div className="mb-6">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-3">
-                        Sources:
-                      </p>
-                      <div className="space-y-3">
-                        {question.sources.map((source, idx) => (
-                          <SourceMetadataCard
-                            key={idx}
-                            source={source}
-                            showThumbnail={true}
-                            compact={true}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Separator */}
-                  <div className="border-t border-slate-200 dark:border-slate-700 my-6"></div>
-
-                  {/* Question Feedback */}
-                  <QuestionFeedback 
-                    questionId={question.question_number?.toString() || `${question.question_number}`}
-                    questionText={question.question}
-                    topicId={topicId}
-                  />
-                </div>
-              )
-            })}
-          </div>
         </div>
+      </div>
 
-        {/* Premium Data Teaser for free users */}
-        {!isPremium && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <PremiumDataTeaser 
-              variant="banner"
-              className="mb-6"
-            />
-          </div>
-        )}
+      {/* Content */}
+      <div className="container max-w-4xl mx-auto px-4 py-8">
+        {/* Session Analysis */}
+        {renderSessionAnalysis()}
+
+        {/* Question Review */}
+        {renderQuestionReview()}
+
+        {/* Share Section */}
+        {renderShareSection()}
 
         {/* Actions */}
-        <div className="space-y-6">
-          <div className="flex justify-center">
-            <EnhancedSocialShare 
-              title={topicTitle} 
-              score={score} 
-              totalQuestions={totalQuestions}
-              type="result"
-              emoji="🏛️"
-              showImageOptions={true}
-            />
-          </div>
-
-          <Button 
-            onClick={onFinish} 
-            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white h-12 text-lg font-light transition-all hover:scale-[1.02]"
-          >
-            Return to Dashboard
+        <div className="mt-8 flex justify-center gap-4">
+          <Button onClick={() => onFinish({
+            totalQuestions,
+            correctAnswers,
+            incorrectAnswers: totalQuestions - correctAnswers,
+            score,
+            timeTaken: totalTime,
+            timeSpentSeconds: totalTime,
+            questions: questions.map((question, index) => ({
+              question,
+              userAnswer: userAnswers[index]?.answer || '',
+              isCorrect: userAnswers[index]?.isCorrect || false
+            }))
+          })} size="lg">
+            Continue Learning
           </Button>
         </div>
       </div>
 
+      {renderSaveStatus()}
+
       {/* Achievement Notifications */}
-      {showAchievements && (
+      {showAchievements && newAchievements.length > 0 && (
         <AchievementNotification
           achievements={newAchievements}
           levelUpInfo={levelUpInfo}
           isOpen={showAchievements}
-          onClose={handleCloseAchievements}
+          onClose={() => setShowAchievements(false)}
         />
       )}
     </div>

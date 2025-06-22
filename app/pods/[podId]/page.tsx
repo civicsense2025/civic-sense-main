@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, useParams } from 'next/navigation'
 import { Header } from '@/components/header'
 import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -10,25 +10,16 @@ import { Users, BarChart3, Star, School, Activity, Settings, Shield } from 'luci
 import { arePodsEnabled } from '@/lib/feature-flags'
 import { createClient } from '@/lib/supabase/client'
 
-interface PodPageProps {
-  params: {
-    podId: string
-  }
-}
-
 interface PodDetails {
   pod_name: string
   pod_emoji: string | undefined
   pod_motto: string | undefined
 }
 
-export default function PodPage({ params }: PodPageProps) {
+export default function PodPage() {
+  const params = useParams()
   const [podDetails, setPodDetails] = useState<PodDetails | null>(null)
-  const [activeTab, setActiveTab] = useState('members')
   const [isLoading, setIsLoading] = useState(true)
-  const [timeRange, setTimeRange] = useState('30')
-  const [memberFilter, setMemberFilter] = useState('all')
-  const [activityFilter, setActivityFilter] = useState('all')
 
   // Feature flag check - hide pods in production
   if (!arePodsEnabled()) {
@@ -54,7 +45,6 @@ export default function PodPage({ params }: PodPageProps) {
           notFound()
         }
 
-        // Convert null values to undefined to match our interface
         setPodDetails({
           pod_name: pod.pod_name,
           pod_emoji: pod.pod_emoji || undefined,
@@ -107,7 +97,7 @@ export default function PodPage({ params }: PodPageProps) {
           </div>
 
           {/* Pod Navigation */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <Tabs defaultValue="members" className="space-y-8">
             <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 gap-1">
               <TabsTrigger value="members" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -153,44 +143,6 @@ export default function PodPage({ params }: PodPageProps) {
                   <div>
                     <h2 className="text-2xl font-light text-slate-900 dark:text-white mb-2">Pod Analytics</h2>
                     <p className="text-slate-500 dark:text-slate-400">Performance insights and member engagement data</p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <Select value={timeRange} onValueChange={setTimeRange}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Time range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7">Last 7 days</SelectItem>
-                        <SelectItem value="30">Last 30 days</SelectItem>
-                        <SelectItem value="90">Last 90 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={memberFilter} onValueChange={setMemberFilter}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Filter by role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Roles</SelectItem>
-                        <SelectItem value="admin">Admins</SelectItem>
-                        <SelectItem value="parent">Parents</SelectItem>
-                        <SelectItem value="teacher">Teachers</SelectItem>
-                        <SelectItem value="student">Students</SelectItem>
-                        <SelectItem value="child">Children</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={activityFilter} onValueChange={setActivityFilter}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Filter by status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Members</SelectItem>
-                        <SelectItem value="active">Active Only</SelectItem>
-                        <SelectItem value="inactive">Inactive Only</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   {/* Overview Stats */}

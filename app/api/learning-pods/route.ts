@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { arePodsEnabled } from '@/lib/feature-flags'
+import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
 
 // Helper function to get default emoji for pod type
 function getPodDefaultEmoji(podType: string): string {

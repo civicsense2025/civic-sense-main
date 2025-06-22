@@ -19,8 +19,9 @@ export function Footer() {
               <div className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1 sm:mb-2">
                 CivicSense
               </div>
-              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium mb-3">
                 Your daily dose of civic engagement
+                <NewsletterForm className="w-full max-w-xs mt-3" />
               </div>
             </div>
             
@@ -28,10 +29,6 @@ export function Footer() {
               {isDevelopment && <LanguageSwitcher variant="compact" />}
               <ThemeToggle />
             </div>
-          </div>
-
-          <div className="flex justify-center">
-            <NewsletterForm className="w-full max-w-lg" />
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-3 sm:space-y-0">

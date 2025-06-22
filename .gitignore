@@ -84,3 +84,4 @@ lib/database.types.ts.backup.*
 /app/test-tts/
 /apps/*
 /packages/
+/migrations/

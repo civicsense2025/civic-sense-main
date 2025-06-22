@@ -68,26 +68,16 @@ interface ActivityData {
   score: number
 }
 
-// Dashboard Stats Skeleton
+// Dashboard Stats Skeleton - More minimal design
 function DashboardStatsSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="border-0 shadow-sm bg-white dark:bg-slate-900">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-              </div>
-              <Skeleton className="h-8 w-16" />
-              <div className="space-y-1">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div key={i} className="space-y-3">
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-2 w-full" />
+        </div>
       ))}
     </div>
   )
@@ -99,163 +89,125 @@ function WeeklyProgressSkeleton() {
   const staticHeights = [80, 120, 60, 100, 90, 110, 70]
   
   return (
-    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <Skeleton className="h-8 w-24 rounded-full" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+      
+      {/* Chart area */}
+      <div className="h-64 flex items-end justify-center">
+        <div className="flex items-end gap-3 w-full max-w-md">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton 
+              key={i} 
+              className="flex-1 rounded-t-lg" 
+              style={{ height: `${staticHeights[i]}px` }}
+            />
+          ))}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Chart area */}
-          <div className="h-64 bg-slate-50 dark:bg-slate-800 rounded-lg flex items-end justify-center p-4">
-            <div className="flex items-end gap-2 w-full max-w-md">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <Skeleton 
-                  key={i} 
-                  className="flex-1 rounded-t-sm" 
-                  style={{ height: `${staticHeights[i]}px` }}
-                />
-              ))}
-            </div>
-          </div>
-          
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-3 w-3 rounded-sm" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-3 w-3 rounded-sm" />
-              <Skeleton className="h-3 w-12" />
-            </div>
-          </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-3 rounded-sm" />
+          <Skeleton className="h-3 w-16" />
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-3 rounded-sm" />
+          <Skeleton className="h-3 w-12" />
+        </div>
+      </div>
+    </div>
   )
 }
 
-// Recent Activity Skeleton
+// Recent Activity Skeleton - More minimal
 function RecentActivitySkeleton() {
   return (
-    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-4 w-40" />
-          </div>
-          <Skeleton className="h-8 w-20 rounded-full" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-4 w-12" />
-                </div>
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-12" />
-                </div>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-28" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+      
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-12" />
               </div>
-              <Skeleton className="h-8 w-16 rounded-full" />
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <Skeleton className="h-6 w-12 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
 // Category Progress Skeleton
 function CategoryProgressSkeleton() {
   return (
-    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
-      <CardHeader>
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-4 w-52" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-6 w-6 rounded-lg" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-4 w-12" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-4 w-52" />
+      </div>
+      
+      <div className="space-y-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-4 w-24" />
               </div>
-              <Skeleton className="h-2 w-full rounded-full" />
-              <div className="flex justify-between">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-3 w-20" />
-              </div>
+              <Skeleton className="h-4 w-12" />
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <Skeleton className="h-1.5 w-full rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
 // Complete Dashboard Loading Skeleton
 function DashboardLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header onSignInClick={() => {}} />
       
-      <main className="w-full py-8">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-          {/* Header skeleton */}
-          <div className="text-center space-y-4">
-            <Skeleton className="h-12 w-64 mx-auto" />
-            <Skeleton className="h-6 w-96 mx-auto" />
+      <main className="container py-8 space-y-16">
+        {/* Header skeleton */}
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-80" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-2 w-full" />
+          </div>
+        </div>
+
+        {/* Stats overview */}
+        <DashboardStatsSkeleton />
+
+        {/* Main content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Left column - Charts */}
+          <div className="lg:col-span-2 space-y-12">
+            <WeeklyProgressSkeleton />
+            <CategoryProgressSkeleton />
           </div>
 
-          {/* Stats overview */}
-          <DashboardStatsSkeleton />
-
-          {/* Main content grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left column - Charts */}
-            <div className="lg:col-span-2 space-y-8">
-              <WeeklyProgressSkeleton />
-              <CategoryProgressSkeleton />
-            </div>
-
-            {/* Right column - Activity */}
-            <div className="space-y-8">
-              <RecentActivitySkeleton />
-              
-              {/* Quick actions skeleton */}
-              <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
-                <CardHeader>
-                  <Skeleton className="h-6 w-28" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-10 w-full rounded-full" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Right column - Activity */}
+          <div className="space-y-12">
+            <RecentActivitySkeleton />
           </div>
         </div>
       </main>
@@ -268,23 +220,23 @@ function UnauthenticatedDashboard() {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header onSignInClick={() => setShowAuthDialog(true)} />
       
-      <main className="w-full py-8">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center space-y-8">
+      <main className="container py-16">
+        <div className="text-center space-y-8 max-w-2xl mx-auto">
           <div className="space-y-4">
-            <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-5xl font-light text-slate-900 dark:text-white tracking-tight">
               Welcome to CivicSense
             </h1>
-            <p className="text-lg text-slate-500 dark:text-slate-400 font-light max-w-2xl mx-auto">
+            <p className="text-xl text-slate-500 dark:text-slate-400 font-light leading-relaxed">
               Sign in to track your civic knowledge and create custom learning experiences
             </p>
           </div>
           
           <Button 
             onClick={() => setShowAuthDialog(true)}
-            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-medium rounded-full px-8 py-3 h-auto"
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-medium rounded-full px-8 py-4 h-auto text-lg"
           >
             Sign In to Continue
           </Button>
@@ -306,6 +258,43 @@ export default function DashboardPage() {
   const router = useRouter()
   const { subscription, isPremium, isPro, isActive, hasFeatureAccess, refreshSubscription } = usePremium()
   const { trackEngagement } = useAnalytics()
+
+  // Handle admin access error messages from middleware
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const error = urlParams.get('error')
+    
+    if (error) {
+      let title = "Access Error"
+      let description = "An error occurred"
+      
+      switch (error) {
+        case 'admin_access_denied':
+          title = "Admin Access Denied"
+          description = "You don't have admin permissions to access the admin panel"
+          break
+        case 'admin_check_failed':
+          title = "Admin Check Failed"
+          description = "Could not verify admin permissions. Please try again later."
+          break
+        case 'admin_check_error':
+          title = "System Error"
+          description = "A system error occurred while checking admin access"
+          break
+      }
+      
+      toast({
+        title,
+        description,
+        variant: "destructive"
+      })
+      
+      // Clean up the URL
+      const cleanUrl = new URL(window.location.href)
+      cleanUrl.searchParams.delete('error')
+      window.history.replaceState({}, '', cleanUrl.toString())
+    }
+  }, [])
 
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalTopics: 0,
@@ -503,17 +492,23 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header />
-      <main className="container py-8 space-y-12">
-        {/* Welcome Message and Progress */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <h1 className="text-3xl font-light text-slate-900 dark:text-white">
-              Welcome back, {user.user_metadata?.full_name || 'there'}
-            </h1>
+      <main className="container py-8 space-y-16">
+        {/* Welcome Message and Progress - More minimal */}
+        <div className="space-y-8">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="space-y-2">
+              <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+                Welcome back, {user.user_metadata?.full_name || 'Tán Ho'}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-light">
+                {dashboardData.completedTopics} of {dashboardData.totalTopics} topics completed
+              </p>
+            </div>
             
-            <div className="flex items-center gap-4">
+            {/* Filters - More minimal */}
+            <div className="flex items-center gap-3">
               <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-36 border-0 bg-white dark:bg-slate-900 shadow-sm">
                   <SelectValue placeholder="Time range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -524,8 +519,8 @@ export default function DashboardPage() {
               </Select>
 
               <Select value={topicFilter} onValueChange={setTopicFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Filter by topic" />
+                <SelectTrigger className="w-36 border-0 bg-white dark:bg-slate-900 shadow-sm">
+                  <SelectValue placeholder="All Topics" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Topics</SelectItem>
@@ -537,8 +532,8 @@ export default function DashboardPage() {
               </Select>
 
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Filter by difficulty" />
+                <SelectTrigger className="w-36 border-0 bg-white dark:bg-slate-900 shadow-sm">
+                  <SelectValue placeholder="All Levels" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
@@ -550,71 +545,82 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600 dark:text-slate-400 font-light">
-                {dashboardData.completedTopics} of {dashboardData.totalTopics} topics completed
-              </span>
-              <span className="font-medium text-slate-900 dark:text-white">
-                {Math.round((dashboardData.completedTopics / dashboardData.totalTopics) * 100)}%
-              </span>
-            </div>
-            <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+          {/* Progress bar - More minimal */}
+          <div className="space-y-3">
+            <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-blue-600 dark:bg-blue-400 rounded-full transition-all duration-500"
-                style={{ width: `${(dashboardData.completedTopics / dashboardData.totalTopics) * 100}%` }}
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${completionPercentage}%` }}
               />
             </div>
+            <div className="text-right">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                {completionPercentage}%
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
-            <div className="text-2xl font-light text-slate-900 dark:text-white">
+        {/* Stats Grid - Completely redesigned to be minimal */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <div className="text-3xl font-light text-slate-900 dark:text-white">
               {dashboardData.completedTopics}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+            <div className="text-sm text-slate-500 dark:text-slate-400 font-light leading-relaxed">
               Topics completed
             </div>
+            <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
           </div>
           
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
-            <div className="text-2xl font-light text-slate-900 dark:text-white">
-              {Math.round(dashboardData.averageScore)}%
+          <div className="space-y-3">
+            <div className="text-3xl font-light text-slate-900 dark:text-white">
+              {dashboardData.averageScore > 0 ? `${Math.round(dashboardData.averageScore)}%` : 'NaN%'}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+            <div className="text-sm text-slate-500 dark:text-slate-400 font-light leading-relaxed">
               Average score
             </div>
+            <div className="h-1 w-12 bg-green-500 rounded-full"></div>
           </div>
           
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
-            <div className="text-2xl font-light text-slate-900 dark:text-white">
+          <div className="space-y-3">
+            <div className="text-3xl font-light text-slate-900 dark:text-white">
               {dashboardData.timeLearning}m
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+            <div className="text-sm text-slate-500 dark:text-slate-400 font-light leading-relaxed">
               Time learning<br />this week
             </div>
+            <div className="h-1 w-12 bg-purple-500 rounded-full"></div>
           </div>
           
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-1">
-            <div className="text-2xl font-light text-slate-900 dark:text-white">
+          <div className="space-y-3">
+            <div className="text-3xl font-light text-slate-900 dark:text-white">
               {dashboardData.activeStreak}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 font-light">
+            <div className="text-sm text-slate-500 dark:text-slate-400 font-light leading-relaxed">
               Day streak
             </div>
+            <div className="h-1 w-12 bg-orange-500 rounded-full"></div>
           </div>
         </div>
 
-        {/* Recommended Topics */}
-        <RecommendedTopics userId={user.id} />
+        {/* Content sections with more spacing */}
+        <div className="space-y-16">
+          {/* Recommended Topics */}
+          <section>
+            <RecommendedTopics userId={user.id} />
+          </section>
 
-        {/* Learning Activity */}
-        <LearningTrackingDashboard />
+          {/* Learning Activity */}
+          <section>
+            <LearningTrackingDashboard />
+          </section>
 
-        {/* Available Surveys */}
-        <SurveysDashboard />
+          {/* Available Surveys */}
+          <section>
+            <SurveysDashboard />
+          </section>
+        </div>
       </main>
     </div>
   )

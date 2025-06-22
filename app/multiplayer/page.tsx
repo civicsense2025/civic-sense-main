@@ -1,12 +1,15 @@
 import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
-import { isMultiplayerEnabled } from '@/lib/feature-flags'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 import { createClient } from '@/lib/supabase/server'
 import { MultiplayerMarketingClient } from './marketing-client'
 
+// Replace isMultiplayerEnabled with direct usage
+const isMultiplayerEnabled = envFeatureFlags.getFlag('multiplayer')
+
 export default async function MultiplayerMarketingPage() {
-  // Feature flag check - hide multiplayer in production
-  if (!isMultiplayerEnabled()) {
+  // Feature flag check
+  if (!isMultiplayerEnabled) {
     notFound()
   }
 

@@ -15,8 +15,10 @@ import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
-import { arePodsEnabled } from "@/lib/feature-flags"
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 import Link from "next/link"
+import { Icons } from "@/components/icons"
+import { useFeatureFlag } from '@/hooks/useFeatureFlags'
 
 interface UserMenuProps {
   onSignInClick?: () => void
@@ -63,6 +65,11 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { isPremium, subscription } = usePremium()
+
+  // Feature flags
+  const showScenarios = useFeatureFlag('scenarios')
+  const showMultiplayer = useFeatureFlag('multiplayer')
+  const showLearningPods = useFeatureFlag('learningPods')
 
   // Load user stats when component mounts
   useEffect(() => {
@@ -111,13 +118,18 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
   }
 
   const getTierBadge = () => {
-    if (subscription?.subscription_tier === 'pro') return { icon: Crown, color: 'text-accent', label: 'Pro' }
-    if (isPremium) return { icon: Crown, color: 'text-primary', label: 'Premium' }
+    if (subscription?.subscription_tier === 'pro') return { icon: Icons.crown, color: 'text-accent', label: 'Pro' }
+    if (isPremium) return { icon: Icons.crown, color: 'text-primary', label: 'Premium' }
     return null
   }
 
   const userEmail = user.email || 'user@example.com'
   const tierBadge = getTierBadge()
+
+  // Don't render if user menu is disabled
+  if (!envFeatureFlags.getFlag('userMenu')) {
+    return null
+  }
 
   return (
     <DropdownMenu>
@@ -188,95 +200,107 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
         )}
 
         {/* Menu Items */}
-        <div className="py-2 px-2">
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/civics-test" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all duration-200 rounded-lg text-primary group"
-            >
-              <Target className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Take A Civics Test</span>
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/quiz" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-            >
-              <BookOpen className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Quiz</span>
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/progress" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-            >
-              <Zap className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Progress</span>
-            </Link>
-          </DropdownMenuItem>
-
-          {arePodsEnabled() && (
+        <div className="p-2">
+          {envFeatureFlags.getFlag('civicsTest') && (
             <DropdownMenuItem asChild>
-              <Link 
-                href="/pods" 
-                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-              >
-                <Users className="w-4 h-4 group-hover:scale-105 transition-transform" />
-                <span className="font-medium">Learning Pods</span>
+              <Link href="/civics-test">
+                <Icons.flag className="mr-2 h-4 w-4" />
+                <span>Civics Test</span>
               </Link>
             </DropdownMenuItem>
           )}
 
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/dashboard" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-            >
-              <BarChart3 className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Dashboard</span>
-            </Link>
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem asChild>
-            <Link 
-              href="/settings" 
-              className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-            >
-              <Settings className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="font-medium">Settings</span>
-            </Link>
-          </DropdownMenuItem>
-
-          {/* Admin Panel - Only show for authorized users */}
-          {isAdmin && (
+                      {envFeatureFlags.getFlag('quizzes') && (
             <DropdownMenuItem asChild>
-              <Link 
-                href="/admin/ai-content" 
-                className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 transition-all duration-200 rounded-lg text-primary group"
-              >
-                <Brain className="w-4 h-4 group-hover:scale-105 transition-transform" />
-                <span className="font-medium">AI Content Review</span>
+              <Link href="/quiz">
+                <Icons.brain className="mr-2 h-4 w-4" />
+                <span>Quiz</span>
               </Link>
             </DropdownMenuItem>
           )}
 
-          <DropdownMenuItem 
-            onClick={toggleTheme} 
-            className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-muted/20 hover:text-foreground focus:bg-muted/20 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 transition-all duration-200 rounded-lg group"
-          >
-            <span className="text-base group-hover:scale-105 transition-transform">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </DropdownMenuItem>
+          {showScenarios && (
+            <DropdownMenuItem asChild>
+              <Link href="/scenarios" className="w-full">
+                <div className="flex items-center">
+                  <span className="mr-2">🎭</span>
+                  <span>Scenarios</span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {showMultiplayer && (
+            <DropdownMenuItem asChild>
+              <Link href="/multiplayer" className="w-full">
+                <div className="flex items-center">
+                  <span className="mr-2">🎮</span>
+                  <span>Multiplayer</span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {showLearningPods && (
+            <DropdownMenuItem asChild>
+              <Link href="/pods" className="w-full">
+                <div className="flex items-center">
+                  <Users className="w-4 h-4 mr-2" />
+                  <span>Learning Pods</span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {envFeatureFlags.getFlag('progressMenuItem') && (
+            <DropdownMenuItem asChild>
+              <Link href="/progress">
+                <Icons.activity className="mr-2 h-4 w-4" />
+                <span>Progress</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {envFeatureFlags.getFlag('dashboardMenuItem') && (
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <Icons.layout className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {envFeatureFlags.getFlag('settingsMenuItem') && (
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Icons.settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {envFeatureFlags.getFlag('adminAccess') && isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                <Icons.shield className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+
+          {envFeatureFlags.getFlag('themeToggleMenuItem') && (
+            <DropdownMenuItem onClick={toggleTheme}>
+              <Icons.sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Icons.moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span>Toggle theme</span>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuItem 
             onClick={handleSignOut} 
             className="flex items-center space-x-3 px-4 py-3 cursor-pointer hover:bg-destructive/5 hover:text-destructive focus:bg-destructive/5 focus:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/20 focus:ring-offset-0 text-destructive transition-all duration-200 rounded-lg group"
           >
-            <LogOut className="w-4 h-4 group-hover:scale-105 transition-transform" />
+            <Icons.logOut className="w-4 h-4 group-hover:scale-105 transition-transform" />
             <span className="font-medium">Sign Out</span>
           </DropdownMenuItem>
         </div>

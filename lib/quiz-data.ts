@@ -63,6 +63,11 @@ export type QuestionType =
 export interface MultipleChoiceQuestion extends BaseQuestion {
   type: 'multiple_choice'
   options: string[]
+  // Legacy fields for backward compatibility
+  option_a?: string
+  option_b?: string
+  option_c?: string
+  option_d?: string
 }
 
 // True/False question

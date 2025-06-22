@@ -13,23 +13,11 @@ import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
+import type { QuizGameMode, QuizResults } from "@/lib/types/quiz"
 import { UserRole } from "@/lib/types/user"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
 import { QuizNavigation } from "@/components/quiz/quiz-navigation"
 import { toast } from "@/components/ui/use-toast"
-
-interface QuizResults {
-  score: number
-  correctAnswers: number
-  totalQuestions: number
-  timeSpentSeconds: number
-  answers: Array<{
-    questionId: number
-    answer: string
-    isCorrect: boolean
-    timeSpent: number
-  }>
-}
 
 interface QuizPlayClientProps {
   topicId: string
@@ -40,6 +28,7 @@ interface QuizPlayClientProps {
     classroomAssignmentId?: string
     cleverSectionId?: string
     cleverAssignmentId?: string
+    mode?: QuizGameMode
   }
 }
 
@@ -244,13 +233,17 @@ export default function QuizPlayClient({ topicId, searchParams }: QuizPlayClient
                 questions={questions}
                 topicId={topicId}
                 currentTopic={{
-                  id: topic?.topic_id || "",
-                  title: topic?.topic_title || "",
+                  topic_id: topic?.topic_id || "",
+                  topic_title: topic?.topic_title || "",
                   emoji: topic?.emoji || "",
                   date: topic?.date || "",
-                  dayOfWeek: topic?.date ? new Date(topic.date).toLocaleDateString('en-US', { weekday: 'long' }) : ""
+                  description: topic?.description || "",
+                  categories: topic?.categories || [],
+                  difficulty: topic?.difficulty || "intermediate"
                 }}
                 onComplete={handleQuizComplete}
+                practiceMode={searchParams?.mode === 'practice'}
+                mode={searchParams?.mode as QuizGameMode || 'standard'}
               />
             </QuizErrorBoundary>
           </div>

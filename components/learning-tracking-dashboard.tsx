@@ -107,10 +107,10 @@ export function LearningTrackingDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/20 rounded-full flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 dark:shadow-blue-700/20">
+          <BookOpen className="w-4 h-4 text-white" />
         </div>
-        <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+        <h2 className="text-2xl font-light text-slate-900 dark:text-white tracking-tight">
           Learning Activity
         </h2>
       </div>
@@ -118,19 +118,27 @@ export function LearningTrackingDashboard() {
       <Tabs 
         defaultValue="quiz-results" 
         value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'quiz-results' | 'bookmarks')}
+        className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-1"
       >
-        <TabsList>
-          <TabsTrigger value="quiz-results" className="flex items-center gap-2">
+        <TabsList className="grid grid-cols-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-lg p-1 mb-4">
+          <TabsTrigger 
+            value="quiz-results" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-blue-700 rounded-md"
+          >
             <Target className="w-4 h-4" />
             Quiz Results
           </TabsTrigger>
-          <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="bookmarks" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white dark:data-[state=active]:from-blue-600 dark:data-[state=active]:to-blue-700 rounded-md"
+          >
             <BookmarkIcon className="w-4 h-4" />
             Bookmarks
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="quiz-results" className="space-y-4">
+        <TabsContent value="quiz-results" className="space-y-4 px-4 pb-4">
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4">
               {[1, 2, 3].map((i) => (
@@ -143,16 +151,16 @@ export function LearningTrackingDashboard() {
               ))}
             </div>
           ) : quizResults.length === 0 ? (
-            <Card>
+            <Card className="border-0 shadow-none bg-transparent">
               <CardContent className="p-6 text-center">
-                <div className="text-4xl mb-4">📊</div>
+                <div className="text-4xl mb-4 bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto">📊</div>
                 <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">
                   No Quiz Results Yet
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 font-light mb-6">
                   Complete your first quiz to start tracking your learning progress
                 </p>
-                <Button asChild>
+                <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                   <Link href="/">Start a Quiz</Link>
                 </Button>
               </CardContent>
@@ -160,7 +168,7 @@ export function LearningTrackingDashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {quizResults.map((result) => (
-                <Card key={result.id}>
+                <Card key={result.id} className="border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/30 transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
                       <Link 
@@ -169,7 +177,7 @@ export function LearningTrackingDashboard() {
                       >
                         {result.topicTitle}
                       </Link>
-                      <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">
+                      <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-sm">
                         {result.score}%
                       </Badge>
                     </div>
@@ -184,7 +192,7 @@ export function LearningTrackingDashboard() {
           )}
         </TabsContent>
 
-        <TabsContent value="bookmarks" className="space-y-4">
+        <TabsContent value="bookmarks" className="space-y-4 px-4 pb-4">
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4">
               {[1, 2, 3].map((i) => (
@@ -197,16 +205,16 @@ export function LearningTrackingDashboard() {
               ))}
             </div>
           ) : savedTakeaways.length === 0 ? (
-            <Card>
+            <Card className="border-0 shadow-none bg-transparent">
               <CardContent className="p-6 text-center">
-                <div className="text-4xl mb-4">📚</div>
+                <div className="text-4xl mb-4 bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto">📚</div>
                 <h3 className="text-xl font-light text-slate-900 dark:text-white mb-2">
                   No Saved Takeaways
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 font-light mb-6">
                   Save key takeaways from quizzes to review them later
                 </p>
-                <Button asChild>
+                <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                   <Link href="/">Explore Topics</Link>
                 </Button>
               </CardContent>
@@ -214,12 +222,12 @@ export function LearningTrackingDashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {savedTakeaways.map((takeaway) => (
-                <Card key={takeaway.id}>
+                <Card key={takeaway.id} className="border border-slate-100 dark:border-slate-800 hover:border-purple-200 dark:hover:border-purple-800/30 transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
                       <Link 
                         href={`/quiz/${takeaway.topicId}`}
-                        className="text-lg font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        className="text-lg font-medium text-slate-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                       >
                         {takeaway.topicTitle}
                       </Link>
@@ -227,6 +235,7 @@ export function LearningTrackingDashboard() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleDeleteTakeaway(takeaway.id)}
+                        className="text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -234,7 +243,7 @@ export function LearningTrackingDashboard() {
                     <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                       Saved {formatDistanceToNow(new Date(takeaway.savedAt))} ago
                     </div>
-                    <div className="text-slate-700 dark:text-slate-300 text-sm">
+                    <div className="text-slate-700 dark:text-slate-300 text-sm bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border-l-2 border-purple-400 dark:border-purple-500">
                       {takeaway.content}
                     </div>
                   </CardContent>

@@ -1,46 +1,45 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import {
-  LogLevel,
-  StatsigProvider as BaseStatsigProvider,
-  useClientAsyncInit,
-} from '@statsig/react-bindings'
-import { StatsigAutoCapturePlugin } from '@statsig/web-analytics'
+import { ReactNode, useEffect, useState } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { StatsigProvider as BaseStatsigProvider, useClientAsyncInit } from '@statsig/react-bindings'
 import { debug } from '@/lib/debug-config'
 
-// Store Statsig client in module scope so non-React callers can use it safely
-let globalStatsigClient: any = null;
-
-// Create a context for Statsig status (and optionally expose client)
-type StatsigContextType = {
-  isReady: boolean;
-  error: Error | null;
-  client?: any;
-};
-
-const StatsigContext = createContext<StatsigContextType>({
-  isReady: false,
-  error: null,
-  client: null as any,
-});
-
-// Hook to use Statsig context
-export const useStatsigStatus = () => useContext(StatsigContext);
+// Global reference for non-React usage
+let globalStatsigClient: any = null
 
 interface StatsigWrapperProps {
-  children: React.ReactNode;
+  children: ReactNode
+}
+
+// Hook to track Statsig status
+function useStatsigStatus() {
+  const [isReady, setIsReady] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    // Check if Statsig client is available
+    if (globalStatsigClient) {
+      setIsReady(true)
+      setError(null)
+    }
+  }, [])
+
+  return { isReady, error }
 }
 
 function StatsigClientProvider({ children }: StatsigWrapperProps) {
   const { user } = useAuth();
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Get client key
   const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
 
+  // Disable Statsig in development with dummy key to prevent network errors
+  const isDummyKey = clientKey === 'dummy_key' || !clientKey || clientKey.includes('dummy');
+  
   // Create user object for Statsig
   const statsigUser = user ? {
     userID: user.id,
@@ -54,71 +53,67 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
     userID: 'anonymous'
   };
 
-  // Initialize Statsig client only if we have a client key
-  const { client, isLoading } = useClientAsyncInit(
-    clientKey || 'dummy_key', // Provide dummy key to avoid hook issues
-    statsigUser,
-    {
-      environment: { 
-        tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' 
-      },
-      logLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Warn,
-      plugins: clientKey ? [new StatsigAutoCapturePlugin()] : [],
-    }
-  );
-
-  // Update ready state when client is ready
-  useEffect(() => {
-    if (!clientKey) {
-      debug.warn('analytics', 'NEXT_PUBLIC_STATSIG_CLIENT_KEY is not configured. Statsig features will be disabled.');
-      setError(new Error('Statsig client key not configured'));
-      return;
-    }
-
-    // Only update state if component is still mounted
-    const timeoutId = setTimeout(() => {
-      if (client && !isLoading) {
-        setIsReady(true);
-        setError(null);
-        debug.log('analytics', 'Client initialized successfully');
-
-        // Expose for non-React consumers (e.g., analytics helper functions)
-        globalStatsigClient = client;
-      } else if (!isLoading && !client) {
-        setError(new Error('Failed to initialize Statsig client'));
-      }
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [client, isLoading, clientKey]);
-
-  // Provide context values
-  return (
-    <StatsigContext.Provider value={{ isReady, error, client }}>
-      <BaseStatsigProvider client={client}>
-        {children}
-      </BaseStatsigProvider>
-    </StatsigContext.Provider>
-  );
-}
-
-export function StatsigProvider({ children }: StatsigWrapperProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Set mounted state to avoid hydration issues
+  // Mount check to prevent hydration issues
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Don't render provider until mounted to avoid hydration issues
+  // Initialize Statsig client if not using dummy key
+  const { client, isLoading } = useClientAsyncInit(
+    isDummyKey ? '' : clientKey || '', // Use empty string if dummy key
+    statsigUser,
+    {
+      environment: { tier: process.env.NODE_ENV === 'production' ? 'production' : 'development' },
+    }
+  );
+
+  // Handle client initialization
+  useEffect(() => {
+    if (!isMounted) return;
+
+    if (isDummyKey) {
+      // Skip Statsig initialization for dummy keys
+      console.log('[Statsig] Skipping initialization with dummy key');
+      setIsReady(true);
+      return;
+    }
+
+    if (client && !isLoading) {
+      setIsReady(true);
+      setError(null);
+      globalStatsigClient = client;
+    }
+  }, [client, isLoading, isMounted, isDummyKey]);
+
+  // Don't render anything until mounted
   if (!isMounted) {
-    return (
-      <StatsigContext.Provider value={{ isReady: false, error: null }}>
-        {children}
-      </StatsigContext.Provider>
-    );
+    return null;
   }
 
+  // If using dummy key, render children without Statsig provider
+  if (isDummyKey) {
+    return <>{children}</>;
+  }
+
+  // Handle errors
+  if (error) {
+    console.error('[Statsig] Provider error:', error);
+    return <>{children}</>;
+  }
+
+  // Wait for client to be ready
+  if (!isReady || !client) {
+    return <>{children}</>;
+  }
+
+  return (
+    <BaseStatsigProvider client={client}>
+      {children}
+    </BaseStatsigProvider>
+  );
+}
+
+export function StatsigProvider({ children }: StatsigWrapperProps) {
   return (
     <StatsigClientProvider>
       {children}
