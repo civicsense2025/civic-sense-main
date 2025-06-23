@@ -606,6 +606,11 @@ export default function DashboardPage() {
 
         {/* Content sections with more spacing */}
         <div className="space-y-16">
+          {/* Continue Learning - Most important for retention */}
+          <section>
+            <ContinueLearning userId={user.id} />
+          </section>
+
           {/* Recommended Topics */}
           <section>
             <RecommendedTopics userId={user.id} />

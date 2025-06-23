@@ -81,16 +81,9 @@ export function usePremium(): UsePremiumReturn {
       return
     }
 
-    // Attempt to serve from cache first
+    // Clear cache for this user to force fresh data
     const cacheKey = user?.id
-    const cacheEntry = subscriptionCache.get(cacheKey)
-    if (cacheEntry && Date.now() - cacheEntry.fetchedAt < CACHE_TTL) {
-      setSubscription(cacheEntry.subscription)
-      setLimits(cacheEntry.limits)
-      setFeatureAccess(cacheEntry.featureAccess)
-      setIsLoading(false)
-      return
-    }
+    subscriptionCache.delete(cacheKey)
 
     setIsLoading(true)
     try {
@@ -135,7 +128,9 @@ export function usePremium(): UsePremiumReturn {
 
   // Feature access helpers
   const hasFeatureAccess = useCallback((feature: PremiumFeature): boolean => {
-    return featureAccess[feature] || false
+    const access = featureAccess[feature] || false
+    debug.log('premium', `🔍 Feature access check: ${feature} = ${access}`)
+    return access
   }, [featureAccess])
 
   const checkFeatureAccess = useCallback(async (feature: PremiumFeature): Promise<PremiumFeatureAccess> => {
@@ -164,10 +159,27 @@ export function usePremium(): UsePremiumReturn {
   }, [user, loadSubscriptionData])
 
   // Subscription utilities
-  const isActive = premiumUtils.isSubscriptionActive(subscription)
-  const isPremium = (subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro') && isActive
+  const isActive = subscription ? premiumUtils.isSubscriptionActive(subscription) : false
+  const isPremium = subscription && (subscription.subscription_tier === 'premium' || subscription.subscription_tier === 'pro') && isActive
   const isPro = subscription?.subscription_tier === 'pro' && isActive
-  const daysUntilExpiry = premiumUtils.getDaysUntilExpiry(subscription)
+  const daysUntilExpiry = subscription ? premiumUtils.getDaysUntilExpiry(subscription) : null
+
+  // Debug subscription status
+  useEffect(() => {
+    if (user) {
+      debug.log('premium', '🔍 Current subscription status:', {
+        userId: user.id,
+        hasSubscription: !!subscription,
+        tier: subscription?.subscription_tier,
+        status: subscription?.subscription_status,
+        endDate: subscription?.subscription_end_date,
+        isActive,
+        isPremium,
+        isPro,
+        featureAccess: Object.entries(featureAccess).filter(([, hasAccess]) => hasAccess).map(([feature]) => feature)
+      })
+    }
+  }, [user, subscription, isActive, isPremium, isPro, featureAccess])
 
   // Actions
   const refreshSubscription = useCallback(async () => {

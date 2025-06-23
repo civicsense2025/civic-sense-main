@@ -15,6 +15,8 @@ import type { ContentType } from "@/lib/types/bookmarks"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import type { KeyTakeaways } from "@/lib/types/key-takeaways"
 import { createClient } from "@/lib/supabase/client"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { HighlightColorPicker } from "@/components/bookmarks/highlight-color-picker"
 
 interface ResultsPageProps {
   params: {
@@ -45,7 +47,7 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
   const [savedTakeaways, setSavedTakeaways] = useState<Set<string>>(new Set())
   const supabase = createClient()
 
-  const saveTakeaway = async (text: string, type: string) => {
+  const saveTakeaway = async (text: string, type: string, highlightColor: string = "#FEF08A") => {
     if (!user?.id) {
       toast({
         title: "Not logged in",
@@ -71,7 +73,8 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
         {
           snippet_text: text,
           source_type: 'annotation',
-          user_notes: `Key takeaway (${type}) from quiz results`
+          user_notes: `Key takeaway (${type}) from quiz results`,
+          highlight_color: highlightColor
         },
         user.id
       )
@@ -90,6 +93,8 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
       })
     }
   }
+
+  const handleInteraction = (content: string, type: string, color: string) => saveTakeaway(content, type, color)
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -158,18 +163,28 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
                 {state.keyTakeaways.core_facts.map((fact, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
                     <p>{fact}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveTakeaway(fact, 'Core Fact')}
-                      disabled={savedTakeaways.has(fact)}
-                    >
-                      {savedTakeaways.has(fact) ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <BookmarkPlus className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={savedTakeaways.has(fact)}
+                        >
+                          {savedTakeaways.has(fact) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <BookmarkPlus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="end">
+                        <HighlightColorPicker
+                          onSelect={(c) => {
+                            handleInteraction(fact, 'Core Fact', c)
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ))}
               </div>
@@ -186,18 +201,28 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
                 {state.keyTakeaways.uncomfortable_truths.map((truth, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
                     <p>{truth}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveTakeaway(truth, 'Uncomfortable Truth')}
-                      disabled={savedTakeaways.has(truth)}
-                    >
-                      {savedTakeaways.has(truth) ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <BookmarkPlus className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={savedTakeaways.has(truth)}
+                        >
+                          {savedTakeaways.has(truth) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <BookmarkPlus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="end">
+                        <HighlightColorPicker
+                          onSelect={(c) => {
+                            handleInteraction(truth, 'Uncomfortable Truth', c)
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ))}
               </div>
@@ -214,18 +239,28 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
                 {state.keyTakeaways.power_dynamics.map((dynamic, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
                     <p>{dynamic}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveTakeaway(dynamic, 'Power Dynamic')}
-                      disabled={savedTakeaways.has(dynamic)}
-                    >
-                      {savedTakeaways.has(dynamic) ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <BookmarkPlus className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={savedTakeaways.has(dynamic)}
+                        >
+                          {savedTakeaways.has(dynamic) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <BookmarkPlus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="end">
+                        <HighlightColorPicker
+                          onSelect={(c) => {
+                            handleInteraction(dynamic, 'Power Dynamic', c)
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ))}
               </div>
@@ -242,18 +277,28 @@ export default function ResultsPageClient({ params }: ResultsPageProps) {
                 {state.keyTakeaways.actionable_insights.map((insight, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-muted rounded-lg">
                     <p>{insight}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveTakeaway(insight, 'Actionable Insight')}
-                      disabled={savedTakeaways.has(insight)}
-                    >
-                      {savedTakeaways.has(insight) ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <BookmarkPlus className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={savedTakeaways.has(insight)}
+                        >
+                          {savedTakeaways.has(insight) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <BookmarkPlus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="end">
+                        <HighlightColorPicker
+                          onSelect={(c) => {
+                            handleInteraction(insight, 'Actionable Insight', c)
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ))}
               </div>

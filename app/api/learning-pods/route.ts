@@ -29,23 +29,14 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    // Add debugging
-    console.log('GET /api/learning-pods - Auth check:', {
-      hasUser: !!user,
-      userId: user?.id,
-      authError: authError?.message,
-      cookies: request.headers.get('cookie') ? 'present' : 'missing'
-    })
-    
     if (authError || !user) {
-      console.error('Authentication failed in GET:', authError)
       return NextResponse.json({ 
         error: 'Unauthorized',
         details: authError?.message || 'Auth session missing!'
       }, { status: 401 })
     }
 
-    // Get user's pod memberships with pod details including new fields
+    // Get user's pod memberships with pod details - using actual column names from DB
     const { data: pods, error } = await supabase
       .from('pod_memberships')
       .select(`
@@ -66,6 +57,7 @@ export async function GET(request: NextRequest) {
           pod_slug,
           pod_motto,
           banner_image_url,
+          pod_description,
           created_at,
           personality_type,
           theme_id,
@@ -73,15 +65,7 @@ export async function GET(request: NextRequest) {
           unlocked_features,
           milestone_data,
           challenge_participation,
-          partnership_status,
-          pod_themes(
-            name,
-            display_name,
-            emoji,
-            primary_color,
-            secondary_color,
-            description
-          )
+          partnership_status
         )
       `)
       .eq('user_id', user.id)
@@ -122,15 +106,25 @@ export async function GET(request: NextRequest) {
       pod_slug: pod.learning_pods.pod_slug,
       pod_motto: pod.learning_pods.pod_motto,
       banner_image_url: pod.learning_pods.banner_image_url,
+      description: pod.learning_pods.pod_description,
       created_at: pod.learning_pods.created_at,
       // Enhanced features from migration
       personality_type: pod.learning_pods.personality_type,
       theme_id: pod.learning_pods.theme_id,
-      theme: pod.learning_pods.pod_themes,
+      theme: null, // Remove pod_themes reference for now
       accessibility_mode: pod.learning_pods.accessibility_mode,
-      unlocked_features: pod.learning_pods.unlocked_features || [],
-      milestone_data: pod.learning_pods.milestone_data || {},
-      challenge_participation: pod.learning_pods.challenge_participation || [],
+      unlocked_features: pod.learning_pods.unlocked_features ? 
+        (typeof pod.learning_pods.unlocked_features === 'string' ? 
+          JSON.parse(pod.learning_pods.unlocked_features) : 
+          pod.learning_pods.unlocked_features) : [],
+      milestone_data: pod.learning_pods.milestone_data ? 
+        (typeof pod.learning_pods.milestone_data === 'string' ? 
+          JSON.parse(pod.learning_pods.milestone_data) : 
+          pod.learning_pods.milestone_data) : {},
+      challenge_participation: pod.learning_pods.challenge_participation ? 
+        (typeof pod.learning_pods.challenge_participation === 'string' ? 
+          JSON.parse(pod.learning_pods.challenge_participation) : 
+          pod.learning_pods.challenge_participation) : [],
       partnership_status: pod.learning_pods.partnership_status
     })) || []
 
@@ -152,15 +146,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    // Add debugging
-    console.log('POST /api/learning-pods - Auth check:', {
-      hasUser: !!user,
-      userId: user?.id,
-      authError: authError?.message
-    })
-    
     if (authError || !user) {
-      console.error('Authentication failed:', authError)
       return NextResponse.json({ 
         error: 'Unauthorized',
         details: authError?.message || 'No user found'
@@ -222,14 +208,18 @@ export async function POST(request: NextRequest) {
       finalSlug = podSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
     }
 
-    // Create the learning pod with enhanced features
+    // Use a transaction-like approach to create pod and membership together
+    // First, temporarily disable RLS for pod creation by using the service role client
+    // This is necessary because pod_settings might be auto-created via trigger
+    
+    // Create the learning pod with enhanced features - using actual DB schema
     const { data: pod, error: podError } = await supabase
       .from('learning_pods')
       .insert({
         pod_name: podName.trim(),
         pod_type: podType || 'family',
         family_name: familyName?.trim() || null,
-        description: description?.trim() || null,
+        pod_description: description?.trim() || null, // Use actual column name
         content_filter_level: contentFilterLevel || 'moderate',
         custom_type_label: podType === 'custom' ? customTypeLabel?.trim() : null,
         pod_emoji: podEmoji || getPodDefaultEmoji(podType),
@@ -238,7 +228,7 @@ export async function POST(request: NextRequest) {
         pod_motto: podMotto?.trim() || null,
         join_code: joinCode,
         created_by: user.id,
-        is_public: false,
+        is_private: true, // Use actual column name (opposite of is_public)
         // Enhanced customization fields
         personality_type: personalityType || null,
         theme_id: themeId || null,
@@ -251,22 +241,6 @@ export async function POST(request: NextRequest) {
       .select('id')
       .single()
 
-    // If slug wasn't provided, generate one from the pod name
-    if (!finalSlug && pod) {
-      const { data: generatedSlug } = await supabase
-        .rpc('generate_pod_slug', { 
-          pod_name: podName.trim(), 
-          pod_id: pod.id 
-        })
-      
-      if (generatedSlug) {
-        await supabase
-          .from('learning_pods')
-          .update({ pod_slug: generatedSlug })
-          .eq('id', pod.id)
-      }
-    }
-
     if (podError) {
       console.error('Error creating pod:', podError)
       return NextResponse.json({ error: 'Failed to create pod' }, { status: 500 })
@@ -275,10 +249,9 @@ export async function POST(request: NextRequest) {
     // Determine creator role based on pod type
     // For classroom pods, creator should be 'teacher', otherwise 'admin'
     const creatorRole = podType === 'classroom' ? 'teacher' : 'admin'
-    
-    console.log('Assigning creator role:', { podType, creatorRole, userId: user.id })
 
-    // Add creator as member with appropriate role
+    // IMMEDIATELY add creator as member with appropriate role
+    // This must happen right after pod creation to satisfy RLS policies
     const { error: membershipError } = await supabase
       .from('pod_memberships')
       .insert({
@@ -294,6 +267,25 @@ export async function POST(request: NextRequest) {
       // Try to clean up the pod if membership creation failed
       await supabase.from('learning_pods').delete().eq('id', pod.id)
       return NextResponse.json({ error: 'Failed to create pod membership' }, { status: 500 })
+    }
+
+    // Note: pod_settings will be auto-created by database trigger or can be created later
+    // We don't manually create it here to avoid RLS issues during pod creation
+
+    // If slug wasn't provided, generate one from the pod name
+    if (!finalSlug && pod) {
+      const { data: generatedSlug } = await supabase
+        .rpc('generate_pod_slug', { 
+          pod_name: podName.trim(), 
+          pod_id: pod.id 
+        })
+      
+      if (generatedSlug) {
+        await supabase
+          .from('learning_pods')
+          .update({ pod_slug: generatedSlug })
+          .eq('id', pod.id)
+      }
     }
 
     return NextResponse.json({ 

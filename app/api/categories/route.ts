@@ -1,245 +1,90 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-const supabaseClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://example.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "example-anon-key"
-)
+// Simple in-memory cache for categories
+let categoriesCache: {
+  data: any[] | null
+  timestamp: number
+} | null = null
+
+const CACHE_DURATION = 3600000 // 1 hour cache for categories (they rarely change)
 
 export async function GET() {
   try {
-    // Test direct access to question_topics table
-    console.log('🔍 Testing question_topics table access...')
-    
-    const { data: topicsTest, error: topicsError, count } = await supabase
-      .from('question_topics')
-      .select('topic_id, topic_title, emoji', { count: 'exact' })
-      .limit(5)
-
-    console.log('🔍 Topics test result:', { 
-      data: topicsTest, 
-      error: topicsError, 
-      count,
-      hasData: !!topicsTest,
-      dataLength: topicsTest?.length 
-    })
-
-    // Get categories as originally intended
-    const { data: categories, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name')
-
-    if (error) {
-      console.error('Categories error:', error)
-      // Return hardcoded categories as fallback
+    // Check cache first
+    const now = Date.now()
+    if (categoriesCache && (now - categoriesCache.timestamp) < CACHE_DURATION) {
+      console.log('🔍 Using cached categories data')
       return NextResponse.json({
-        categories: [
-          { name: 'Government', emoji: '🏛️' },
-          { name: 'Elections', emoji: '🗳️' },
-          { name: 'Economy', emoji: '💰' },
-          { name: 'Civil Rights', emoji: '⚖️' },
-          { name: 'Environment', emoji: '🌍' },
-          { name: 'Foreign Policy', emoji: '🌐' },
-          { name: 'Media Literacy', emoji: '📰' },
-          { name: 'Local Issues', emoji: '🏘️' }
-        ],
+        success: true,
+        categories: categoriesCache.data,
+        cached: true,
         debug: {
-          topicsTableAccess: {
-            hasData: !!topicsTest,
-            count,
-            error: topicsError?.message,
-            sampleData: topicsTest?.slice(0, 2)
-          }
+          totalCount: categoriesCache.data?.length || 0,
+          activeOnly: true,
+          orderedBy: 'display_order',
+          cacheAge: Math.round((now - categoriesCache.timestamp) / 1000)
         }
       })
+    }
+
+    console.log('🔍 Fetching categories from database...')
+
+    // Get categories from the actual categories table
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('id, name, emoji, description, display_order, is_active')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    if (error) {
+      console.error('❌ Categories error:', error)
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Failed to fetch categories',
+          details: error.message 
+        },
+        { status: 500 }
+      )
+    }
+
+    console.log(`✅ Found ${categories?.length || 0} categories`)
+
+    // Transform categories to match the expected frontend format
+    const transformedCategories = (categories || []).map(category => ({
+      id: category.id,
+      name: category.name,
+      emoji: category.emoji,
+      description: category.description,
+      display_order: category.display_order
+    }))
+
+    // Cache the transformed data
+    categoriesCache = {
+      data: transformedCategories,
+      timestamp: now
     }
 
     return NextResponse.json({
-      categories: categories || [],
+      success: true,
+      categories: transformedCategories,
+      cached: false,
       debug: {
-        topicsTableAccess: {
-          hasData: !!topicsTest,
-          count,
-          error: topicsError?.message,
-          sampleData: topicsTest?.slice(0, 2)
-        }
+        totalCount: categories?.length || 0,
+        activeOnly: true,
+        orderedBy: 'display_order'
       }
     })
   } catch (error) {
-    console.error('API error:', error)
+    console.error('❌ API error:', error)
     return NextResponse.json(
       { 
+        success: false,
         error: 'Failed to fetch categories',
-        debug: {
-          errorMessage: error instanceof Error ? error.message : String(error)
-        }
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     )
-  }
-}
-
-interface CategoryType {
-  id: string
-  name: string
-  emoji: string
-  description: string | null
-  display_order: number | null
-}
-
-async function getTrendingCategories(allCategories: CategoryType[]): Promise<CategoryType[]> {
-  try {
-    // Get quiz attempts from the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-    // First get recent quiz attempts
-    const { data: recentAttempts, error: attemptsError } = await supabaseClient
-      .from('user_quiz_attempts')
-      .select('topic_id, completed_at')
-      .gte('completed_at', thirtyDaysAgo.toISOString())
-      .eq('is_completed', true)
-
-    if (attemptsError || !recentAttempts) {
-      console.warn('Could not fetch recent quiz attempts for trending:', attemptsError)
-      return []
-    }
-
-    // Get unique topic IDs from attempts
-    const topicIds = Array.from(new Set(recentAttempts.map(attempt => attempt.topic_id)))
-    
-    if (topicIds.length === 0) {
-      return []
-    }
-
-    // Check if junction table exists and use it for better performance
-    const { data: junctionExists } = await supabaseClient
-      .from('question_topic_categories')
-      .select('topic_id')
-      .limit(1)
-
-    const categoryAttempts = new Map<string, number>()
-
-    if (junctionExists && junctionExists.length > 0) {
-      // Use optimized junction table approach
-      const { data: topicCategories, error: junctionError } = await supabaseClient
-        .from('question_topic_categories')
-        .select(`
-          topic_id,
-          category_id,
-          categories(name)
-        `)
-        .in('topic_id', topicIds)
-
-      if (junctionError || !topicCategories) {
-        console.warn('Could not fetch topic categories from junction table:', junctionError)
-        return []
-      }
-
-      // Count attempts by category using junction table data
-      recentAttempts.forEach(attempt => {
-        const topicCategoryRows = topicCategories.filter(tc => tc.topic_id === attempt.topic_id)
-        topicCategoryRows.forEach(row => {
-          const categoryName = (row.categories as any)?.name
-          if (categoryName) {
-            const count = categoryAttempts.get(categoryName) || 0
-            categoryAttempts.set(categoryName, count + 1)
-          }
-        })
-      })
-    } else {
-      // Fallback to JSONB approach if junction table not populated yet
-      const { data: topics, error: topicsError } = await supabaseClient
-        .from('question_topics')
-        .select('topic_id, categories')
-        .in('topic_id', topicIds)
-        .eq('is_active', true)
-
-      if (topicsError || !topics) {
-        console.warn('Could not fetch topics for trending:', topicsError)
-        return []
-      }
-
-      // Create a map of topic_id to categories (JSONB fallback)
-      const topicCategoriesMap = new Map<string, string[]>()
-      topics.forEach(topic => {
-        try {
-          let categories: string[] = []
-          
-          // Handle different JSON formats
-          if (Array.isArray(topic.categories)) {
-            categories = topic.categories
-          } else if (typeof topic.categories === 'string') {
-            try {
-              categories = JSON.parse(topic.categories)
-            } catch {
-              categories = [topic.categories]
-            }
-          }
-          
-          topicCategoriesMap.set(topic.topic_id, categories)
-        } catch (err) {
-          console.warn('Error processing topic categories:', err)
-        }
-      })
-
-      // Count attempts by category
-      recentAttempts.forEach(attempt => {
-        const categories = topicCategoriesMap.get(attempt.topic_id)
-        if (categories) {
-          categories.forEach(category => {
-            if (typeof category === 'string') {
-              const count = categoryAttempts.get(category) || 0
-              categoryAttempts.set(category, count + 1)
-            }
-          })
-        }
-      })
-    }
-
-    // Sort categories by attempt count and randomize ties
-    const trendingCategoryNames = Array.from(categoryAttempts.entries())
-      .sort((a, b) => {
-        const countDiff = b[1] - a[1]
-        // If counts are equal, randomize order
-        if (countDiff === 0) {
-          return Math.random() - 0.5
-        }
-        return countDiff
-      })
-      .map(([categoryName]) => categoryName)
-
-    // Filter and reorder the categories based on trending data
-    const trendingCategories: CategoryType[] = []
-    const categoriesByName = new Map(
-      allCategories.map(cat => [cat.name.toLowerCase(), cat])
-    )
-
-    // Add trending categories first
-    for (const trendingName of trendingCategoryNames) {
-      const category = categoriesByName.get(trendingName.toLowerCase())
-      if (category && !trendingCategories.includes(category)) {
-        trendingCategories.push(category)
-      }
-    }
-
-    // Add remaining categories in random order as fallback
-    const remainingCategories = allCategories.filter(
-      cat => !trendingCategories.includes(cat)
-    )
-    
-    // Shuffle remaining categories randomly
-    for (let i = remainingCategories.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[remainingCategories[i], remainingCategories[j]] = [remainingCategories[j], remainingCategories[i]]
-    }
-
-    return [...trendingCategories, ...remainingCategories]
-    
-  } catch (error) {
-    console.error('Error calculating trending categories:', error)
-    return []
   }
 } 

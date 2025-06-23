@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { NPCPersonality, NPC_PERSONALITIES } from "@/lib/multiplayer-npcs"
+import { NPCPersonality } from "@/lib/multiplayer-npcs"
+import { NPCSelectionPhase } from "../game-phases/npc-selection-phase"
 import { WaitingPhase } from "../game-phases/waiting-phase"
 import { CountdownPhase } from "../game-phases/countdown-phase"
 import { QuestionPhase } from "../game-phases/question-phase"
 import { CompletedPhase } from "../game-phases/completed-phase"
+import { RealtimeChatbox } from "../realtime-chatbox"
 
-type GamePhase = 'waiting' | 'countdown' | 'question' | 'completed'
+type GamePhase = 'npc_selection' | 'waiting' | 'countdown' | 'question' | 'completed'
 
 interface Question {
   id: string
@@ -33,33 +35,17 @@ export function NPCBattleEngine({
   onExit
 }: NPCBattleEngineProps) {
   const router = useRouter()
-  const [phase, setPhase] = useState<GamePhase>('waiting')
-  const [opponent] = useState<NPCPersonality>(() => {
-    // Default to Professor Sage if no NPCs match the difficulty
-    const defaultNPC = NPC_PERSONALITIES.find(npc => npc.id === 'professor_sage') || NPC_PERSONALITIES[0]
-    
-    const availableNPCs = NPC_PERSONALITIES.filter(npc => {
-      switch (difficulty) {
-        case 'easy':
-          return npc.skillLevel === 'Beginner'
-        case 'medium':
-          return npc.skillLevel === 'Intermediate'
-        case 'hard':
-          return npc.skillLevel === 'Expert'
-        default:
-          return false
-      }
-    })
-    
-    // If no NPCs match the difficulty, use the default NPC
-    if (availableNPCs.length === 0) {
-      console.warn('No NPCs found for difficulty level:', difficulty)
-      return defaultNPC
-    }
-    
-    return availableNPCs[Math.floor(Math.random() * availableNPCs.length)]
-  })
+  const [phase, setPhase] = useState<GamePhase>('npc_selection')
+  const [opponent, setOpponent] = useState<NPCPersonality | null>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [isChatVisible, setIsChatVisible] = useState(false)
+
+  // Handle NPC selection
+  const handleNPCSelect = (selectedNPC: NPCPersonality) => {
+    console.log(`✅ Selected NPC: ${selectedNPC.name} (${selectedNPC.skillLevel})`)
+    setOpponent(selectedNPC)
+    setPhase('waiting')
+  }
   const [playerScore, setPlayerScore] = useState(0)
   const [opponentScore, setOpponentScore] = useState(0)
   const [correctAnswers, setCorrectAnswers] = useState(0)
@@ -133,9 +119,9 @@ export function NPCBattleEngine({
       }]
     }))
 
-    // Calculate NPC's response
+    // Calculate NPC's response (opponent is guaranteed to be non-null at this point)
     const npcResponse = calculateNPCResponse(
-      opponent,
+      opponent!,
       currentQuestion.difficulty,
       currentQuestion.correctAnswer,
       currentQuestion.options,
@@ -167,7 +153,8 @@ export function NPCBattleEngine({
   }
 
   const handlePlayAgain = () => {
-    setPhase('waiting')
+    setPhase('npc_selection')
+    setOpponent(null)
     setCurrentQuestionIndex(0)
     setPlayerScore(0)
     setOpponentScore(0)
@@ -180,24 +167,33 @@ export function NPCBattleEngine({
     })
   }
 
+
+
   const renderPhase = () => {
     switch (phase) {
-      case 'waiting':
+      case 'npc_selection':
         return (
+          <NPCSelectionPhase
+            difficulty={difficulty}
+            onNPCSelect={handleNPCSelect}
+          />
+        )
+      case 'waiting':
+        return opponent ? (
           <WaitingPhase
             opponent={opponent}
             onStart={() => setPhase('countdown')}
           />
-        )
+        ) : null
       case 'countdown':
-        return (
+        return opponent ? (
           <CountdownPhase
             opponent={opponent}
             onComplete={() => setPhase('question')}
           />
-        )
+        ) : null
       case 'question':
-        return (
+        return opponent ? (
           <QuestionPhase
             opponent={opponent}
             question={currentQuestion}
@@ -206,9 +202,9 @@ export function NPCBattleEngine({
             playerScore={playerScore}
             opponentScore={opponentScore}
           />
-        )
+        ) : null
       case 'completed':
-        return (
+        return opponent ? (
           <CompletedPhase
             opponent={opponent}
             playerScore={playerScore}
@@ -218,7 +214,7 @@ export function NPCBattleEngine({
             onPlayAgain={handlePlayAgain}
             onExit={onExit}
           />
-        )
+        ) : null
       default:
         return null
     }
@@ -227,6 +223,16 @@ export function NPCBattleEngine({
   return (
     <div className="container max-w-4xl mx-auto py-8">
       {renderPhase()}
+      
+      {/* Realtime Chatbox - only show when opponent is selected */}
+      {opponent && (
+        <RealtimeChatbox
+          opponent={opponent}
+          isVisible={isChatVisible}
+          onToggle={() => setIsChatVisible(!isChatVisible)}
+          gamePhase={phase}
+        />
+      )}
     </div>
   )
 } 

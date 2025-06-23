@@ -27,7 +27,7 @@ import { useAdminAccess } from "@/lib/hooks/use-admin-access"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye, Minimize2, Maximize2, Edit2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
@@ -47,6 +47,8 @@ import { debug } from "@/lib/debug-config"
 import { QuizLoadingScreen } from "./quiz-loading-screen"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from "@/lib/data-service"
+import { PodQuizIntegration, createQuizCompletionData, extractPodIdFromQuizContext } from '@/lib/pod-quiz-integration'
+import { useGuestAccess } from "@/hooks/useGuestAccess"
 
 // Helper function to safely get question options
 const getQuestionOptions = (question: QuizQuestion): string[] => {
@@ -311,7 +313,9 @@ export function QuizEngine({
   practiceMode = false,
   mode = 'standard'
 }: QuizEngineProps) {
+  const searchParams = useSearchParams()
   const { user } = useAuth()
+  const { getOrCreateGuestToken } = useGuestAccess()
   const { isAdmin } = useAdminAccess()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
   
@@ -402,16 +406,45 @@ export function QuizEngine({
   const [questionStartTime, setQuestionStartTime] = useState(Date.now())
   const [showFeedback, setShowFeedback] = useState(false)
   const [hasRestoredState, setHasRestoredState] = useState(false)
-  const [autoAdvance, setAutoAdvance] = useState(mode !== 'practice' && !practiceMode)
+  const [results, setResults] = useState<QuizResults | null>(null)
+  const [isFinishing, setIsFinishing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [animateProgress, setAnimateProgress] = useState(false)
   const [quizStartTime] = useState(Date.now())
 
   // Initialize progress manager for regular quizzes
-  const progressManager = createRegularQuizProgress(user?.id, undefined, topicId)
+  const guestToken = user ? undefined : getOrCreateGuestToken()
+  const progressManager = createRegularQuizProgress(user?.id, guestToken, topicId)
 
   // Generate session ID for state persistence
   const sessionId = useRef<string>(`quiz-${topicId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+
+  // Calculate quiz results
+  const calculateResults = useCallback((userAnswers: EnhancedUserAnswer[], questions: QuizQuestion[]): QuizResults => {
+    const correctAnswers = userAnswers.filter(answer => answer.isCorrect).length
+    const incorrectAnswers = userAnswers.length - correctAnswers
+    const totalQuestions = questions.length
+    const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0
+    const totalTimeSpent = userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0)
+    
+    return {
+      totalQuestions,
+      correctAnswers,
+      incorrectAnswers,
+      score,
+      timeTaken: totalTimeSpent,
+      timeSpentSeconds: totalTimeSpent,
+      questions: questions.map((question, index) => {
+        const userAnswer = userAnswers.find(answer => answer.questionId === question.question_number)
+        return {
+          question,
+          userAnswer: userAnswer?.answer || '',
+          isCorrect: userAnswer?.isCorrect || false
+        }
+      })
+    }
+  }, [])
 
   // Convert quiz state to BaseQuizState
   const convertToBaseQuizState = (): BaseQuizState => ({
@@ -434,22 +467,226 @@ export function QuizEngine({
     savedAt: Date.now()
   })
 
-  // Save quiz state
-  const saveQuizState = () => {
-    if (randomizedQuestions.length > 0 && userAnswers.length > 0) {
-      const baseState = convertToBaseQuizState()
-      progressManager.save(baseState)
+  // Save quiz state with dual storage (localStorage + database)
+  const saveQuizState = useCallback(async () => {
+    const baseState = convertToBaseQuizState()
+    
+    // Always save to localStorage for immediate access
+    progressManager.save(baseState)
+    
+    // Also save to progress_sessions table if user is authenticated
+    if (user) {
+      try {
+        await supabase
+          .from('progress_sessions')
+          .upsert({
+            session_id: sessionId.current,
+            session_type: 'regular_quiz',
+            user_id: user.id,
+            topic_id: topicId,
+            questions: questions,
+            current_question_index: currentQuestionIndex,
+            answers: Object.fromEntries(
+              userAnswers.map(answer => [answer.questionId.toString(), answer.answer])
+            ),
+            streak: 0, // Regular quiz doesn't track streak
+            max_streak: 0,
+            response_times: Object.fromEntries(
+              userAnswers.map(answer => [answer.questionId.toString(), answer.timeSpent])
+            ),
+            category_performance: {},
+            metadata: {
+              practiceMode,
+              mode,
+              questionType: 'multiple-choice'
+            },
+            expires_at: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString() // 24 hours
+          }, {
+            onConflict: 'session_id'
+          })
+      } catch (error) {
+        debug.warn('quiz', 'Failed to save to progress_sessions:', error)
+        // Continue without blocking - localStorage is still saved
+      }
     }
-  }
+  }, [convertToBaseQuizState, progressManager, user, sessionId, topicId, questions, currentQuestionIndex, userAnswers, practiceMode, mode])
+
+  // Clear quiz state from both storage locations
+  const clearQuizState = useCallback(async () => {
+    progressManager.clear()
+    
+    // Also clear from progress_sessions if user is authenticated
+    if (user) {
+      try {
+        await supabase
+          .from('progress_sessions')
+          .delete()
+          .eq('session_id', sessionId.current)
+          .eq('user_id', user.id)
+      } catch (error) {
+        debug.warn('quiz', 'Failed to clear from progress_sessions:', error)
+      }
+    }
+  }, [progressManager, user, sessionId])
+
+  // Auto-save progress on state changes
+  useEffect(() => {
+    if (userAnswers.length > 0 || currentQuestionIndex > 0) {
+      saveQuizState()
+    }
+  }, [userAnswers, currentQuestionIndex, saveQuizState])
 
   // Load quiz state
-  const loadQuizState = (): boolean => {
-    const baseState = progressManager.load()
-    if (baseState && baseState.questions.length > 0) {
-      setCurrentQuestionIndex(baseState.currentQuestionIndex)
+  const loadQuizState = async (): Promise<boolean> => {
+    // Check if we should restore from database attempt
+    const shouldRestore = searchParams?.get('restore') === 'progress'
+    const attemptId = searchParams?.get('attemptId')
+    const urlSessionId = searchParams?.get('sessionId')
+    const source = searchParams?.get('source') || 'auto' // auto, progress_sessions, user_quiz_attempts
+    
+    if (shouldRestore && user) {
+      try {
+        // Try progress_sessions first (if sessionId provided or source is progress_sessions)
+        if ((urlSessionId && source !== 'user_quiz_attempts') || source === 'progress_sessions') {
+          debug.log('quiz', 'Attempting to restore from progress_sessions:', { urlSessionId, topicId })
+          
+          const { data: session, error: sessionError } = await supabase
+            .from('progress_sessions')
+            .select('*')
+            .eq('session_id', urlSessionId || `quiz-${topicId}-${user.id}`)
+            .eq('user_id', user.id)
+            .eq('topic_id', topicId)
+            .gt('expires_at', new Date().toISOString())
+            .single()
+          
+          if (session && !sessionError) {
+            // Convert progress session to quiz state
+            const dbRestoredAnswers: EnhancedUserAnswer[] = Object.entries(session.answers || {}).map(([questionId, answer]) => ({
+              questionId: parseInt(questionId),
+              answer: answer as string,
+              isCorrect: false, // Will be recalculated
+              timeSpent: (session.response_times as any)?.[questionId] || 30,
+              hintUsed: false,
+              boostUsed: null
+            }))
+            
+            setUserAnswers(dbRestoredAnswers)
+            setCurrentQuestionIndex(session.current_question_index || 0)
+            
+            // Update sessionId to match the restored session
+            sessionId.current = session.session_id
+            
+            debug.log('quiz', 'Successfully restored from progress_sessions:', {
+              sessionId: session.session_id,
+              questionIndex: session.current_question_index,
+              answersCount: dbRestoredAnswers.length
+            })
+            return true
+          }
+        }
+        
+        // Fallback: Try user_quiz_attempts (if attemptId provided or no session found)
+        if ((attemptId && source !== 'progress_sessions') || source === 'user_quiz_attempts' || !urlSessionId) {
+          debug.log('quiz', 'Attempting to restore from user_quiz_attempts:', { attemptId, topicId })
+          
+          let query = supabase
+            .from('user_quiz_attempts')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('topic_id', topicId)
+            .eq('is_completed', false)
+            .order('created_at', { ascending: false })
+          
+          // If attemptId is specified, use it; otherwise get the most recent attempt
+          if (attemptId) {
+            query = query.eq('id', attemptId)
+          }
+          
+          const { data: attempts, error: attemptError } = await query.limit(1)
+          const attempt = attempts?.[0]
+          
+          if (attempt && !attemptError) {
+            debug.log('quiz', 'Restoring from user_quiz_attempts:', attempt.id)
+            
+            // Try to restore from response_data if available (newer format)
+            if (attempt.response_data && typeof attempt.response_data === 'object') {
+              const responseData = attempt.response_data as any
+              
+              if (responseData.answers && responseData.currentQuestionIndex !== undefined) {
+                const dbRestoredAnswers: EnhancedUserAnswer[] = Object.entries(responseData.answers).map(([questionId, answer]) => ({
+                  questionId: parseInt(questionId),
+                  answer: answer as string,
+                  isCorrect: false, // Will be recalculated
+                  timeSpent: responseData.responseTimes?.[questionId] || 30,
+                  hintUsed: false,
+                  boostUsed: null
+                }))
+                
+                setUserAnswers(dbRestoredAnswers)
+                setCurrentQuestionIndex(responseData.currentQuestionIndex)
+                
+                if (responseData.sessionId) {
+                  sessionId.current = responseData.sessionId
+                }
+                
+                debug.log('quiz', 'Successfully restored from response_data:', {
+                  attemptId: attempt.id,
+                  questionIndex: responseData.currentQuestionIndex,
+                  answersCount: dbRestoredAnswers.length
+                })
+                return true
+              }
+            }
+            
+            // Fallback: Use legacy format (less detailed restoration)
+            if (attempt.answers && typeof attempt.answers === 'object') {
+              const storedAnswers = attempt.answers as Record<string, string>
+              const dbRestoredAnswers: EnhancedUserAnswer[] = Object.entries(storedAnswers).map(([questionId, answer]) => ({
+                questionId: parseInt(questionId),
+                answer: answer as string,
+                isCorrect: false, // Will be recalculated
+                timeSpent: 30, // Default time
+                hintUsed: false,
+                boostUsed: null
+              }))
+              
+              setUserAnswers(dbRestoredAnswers)
+              // Try to infer current question from answer count
+              setCurrentQuestionIndex(Math.min(dbRestoredAnswers.length, questions.length - 1))
+              
+              debug.log('quiz', 'Successfully restored from legacy format:', {
+                attemptId: attempt.id,
+                answersCount: dbRestoredAnswers.length
+              })
+              return true
+            }
+          }
+        }
+        
+        debug.log('quiz', 'No suitable progress data found for restoration')
+      } catch (error) {
+        debug.warn('quiz', 'Failed to restore from database:', error)
+      }
+    }
+    
+    // Try localStorage restoration (existing logic)
+    try {
+      const baseState = progressManager.load()
+      if (!baseState || !baseState.questions || baseState.questions.length !== questions.length) {
+        debug.log('quiz', 'No valid localStorage state found')
+        return false
+      }
+      
+      debug.log('quiz', 'Restoring from localStorage:', {
+        sessionId: baseState.sessionId,
+        questionIndex: baseState.currentQuestionIndex,
+        answersCount: Object.keys(baseState.answers).length
+      })
+      
+             setCurrentQuestionIndex(baseState.currentQuestionIndex)
       
       // Convert answers back to EnhancedUserAnswer format
-      const restoredAnswers: EnhancedUserAnswer[] = Object.entries(baseState.answers).map(([questionId, answer]) => ({
+      const localRestoredAnswers: EnhancedUserAnswer[] = Object.entries(baseState.answers).map(([questionId, answer]) => ({
         questionId: parseInt(questionId),
         answer,
         isCorrect: false, // Will be recalculated
@@ -458,17 +695,17 @@ export function QuizEngine({
         boostUsed: null
       }))
       
-      setUserAnswers(restoredAnswers)
+      setUserAnswers(localRestoredAnswers)
       sessionId.current = baseState.sessionId
       return true
+    } catch (error) {
+      debug.warn('quiz', 'Failed to restore from localStorage:', error)
     }
+    
     return false
   }
 
-  // Clear quiz state
-  const clearQuizState = () => {
-    progressManager.clear()
-  }
+
   
   // Enhanced analytics tracking
   const [sessionAnalytics, setSessionAnalytics] = useState({
@@ -600,7 +837,7 @@ export function QuizEngine({
       
       // First, try to restore saved state (only once)
       if (!hasRestoredState && randomizedQuestions.length > 0) {
-        const restored = loadQuizState()
+        const restored = await loadQuizState()
         if (restored) {
           debug.log('quiz', 'Restored quiz state')
           setHasRestoredState(true)
@@ -817,9 +1054,8 @@ export function QuizEngine({
     return () => clearTimeout(timer)
   }, [currentQuestionIndex, autoPlayEnabled, currentQuestion?.question, playText])
 
-  // Determine if we should use timers and auto-advance based on mode
+  // Determine if we should use timers based on mode
   const shouldUseTimer = !practiceMode && mode !== 'practice' && (mode === 'standard' || mode === 'classic_quiz' || mode === 'npc_battle')
-  const shouldAutoAdvance = !practiceMode && mode !== 'practice' && (mode === 'standard' || mode === 'classic_quiz' || mode === 'npc_battle')
 
   // Enhanced event handlers
   function handleTimeUp() {
@@ -900,21 +1136,8 @@ export function QuizEngine({
     
     setSelectedAnswer(answer)
     
-    // In practice mode, don't auto-submit - wait for manual submission
-    if (mode === 'practice' || practiceMode) {
-      return
-    }
-    
-    // For true/false questions, submit immediately
-    if (currentQuestion.type === 'true_false') {
-      handleSubmitAnswer()
-      return
-    }
-    
-    // In other modes, auto-submit after a short delay
-    setTimeout(() => {
-      handleSubmitAnswer()
-    }, 100)
+    // Never auto-submit - always wait for manual submission
+    // This gives users full control over when to submit their answer
   }
 
   // Submit answer with enhanced feedback
@@ -1006,16 +1229,8 @@ export function QuizEngine({
       }, 800)
     }
 
-    // In practice mode, always show feedback
-    // In standard mode with auto-advance disabled, show feedback
-    const shouldShowFeedback = mode === 'practice' || practiceMode || !shouldAutoAdvance
-    
-    if (!shouldShowFeedback && shouldAutoAdvance) {
-      // Auto-advance after showing the result briefly
-      setTimeout(() => {
-        handleNextQuestion()
-      }, 2000)
-    }
+    // Always show feedback and never auto-advance
+    // Users control when to move to the next question
   }
 
   const handleNextQuestion = () => {
@@ -1039,141 +1254,162 @@ export function QuizEngine({
   }
 
   async function handleFinishQuiz() {
-    // Clear saved state on completion
-    clearQuizState()
-    
-    // Enhanced quiz completion with analytics
-    const totalQuestions = randomizedQuestions.length
-    const correctAnswers = userAnswers.filter(a => a.isCorrect).length
-    const totalTimeSeconds = userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0)
-    const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100)
-    
-    // Track completion with enhanced data
-    trackQuiz.quizCompleted({
-      quiz_id: topicId,
-      quiz_category: mapCategoryToAnalytics(currentQuestion?.category || 'General'),
-      score_percentage: scorePercentage,
-      total_questions: totalQuestions,
-      correct_answers: correctAnswers,
-      total_time_seconds: totalTimeSeconds,
-      user_level: currentLevel,
-      active_boosts: sessionAnalytics.boostsUsed,
-      streak_count: currentStreak,
-      xp_earned: correctAnswers * 10 * currentBoostEffects.xpMultiplier,
-      streak_maintained: correctAnswers > 0,
-      new_level_reached: false,
-      boosts_used: sessionAnalytics.boostsUsed
-    })
+    if (results || userAnswers.length === 0) return
 
-    // Prepare question responses for skill tracking and pending attribution
-    const questionResponses = userAnswers.map(answer => {
-      const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
-      return {
-        questionId: answer.questionId.toString(),
-        category: question?.category || 'General',
-        isCorrect: answer.isCorrect,
-        timeSpent: answer.timeSpent
-      }
-    })
+    setIsFinishing(true)
 
-    // Update enhanced gamification progress
-    if (user) {
-      try {
-        // 1. Update gamification progress
-        const quizData = {
-          topicId,
-          totalQuestions: randomizedQuestions.length,
-          correctAnswers: userAnswers.filter(a => a.isCorrect).length,
-          timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
-          questionResponses
+    try {
+      // Calculate final results
+      const calculatedResults = calculateResults(userAnswers, randomizedQuestions)
+      setResults(calculatedResults)
+
+      // Clear any existing localStorage data since quiz is completed
+      const storageKey = `civicSenseQuizProgress_${topicId}`
+      localStorage.removeItem(storageKey)
+
+      console.log("🎯 Quiz completed successfully:", {
+        score: calculatedResults.score,
+        correctAnswers: calculatedResults.correctAnswers,
+        totalQuestions: calculatedResults.totalQuestions,
+        timeSpent: calculatedResults.timeSpentSeconds,
+        userId: user?.id
+      })
+
+      // Prepare question responses for skill tracking and pending attribution
+      const questionResponses = userAnswers.map(answer => {
+        const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
+        return {
+          questionId: answer.questionId.toString(),
+          category: question?.category || 'General',
+          isCorrect: answer.isCorrect,
+          timeSpent: answer.timeSpent
         }
+      })
 
-        console.log('🎮 Updating enhanced gamification progress:', quizData)
-        const results = await updateProgress(quizData)
-        console.log('✅ Enhanced gamification progress updated:', {
-          achievements: results.newAchievements?.length || 0,
-          levelUp: results.levelUp || false,
-          skillUpdates: results.skillUpdates?.length || 0
-        })
-
-        // 2. Update skill progress with our new skill tracking system
+      // Update enhanced gamification progress
+      if (user) {
         try {
-          console.log('🔄 Updating skill progress...')
-          const skillResults = await enhancedQuizDatabase.updateSkillProgress(
-            user.id,
+          // 1. Update gamification progress
+          const quizData = {
+            topicId,
+            totalQuestions: randomizedQuestions.length,
+            correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+            timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
             questionResponses
-          )
-          
-          console.log('✅ Skill progress updated:', {
-            updatedSkills: skillResults.updatedSkills.length,
-            masteryChanges: Object.keys(skillResults.masteryChanges).length > 0 
-              ? skillResults.masteryChanges 
-              : 'No mastery changes'
-          })
-     
-          // If there were mastery changes, we could notify the user here
-          
-        } catch (skillError) {
-          console.error('❌ Error updating skill progress:', skillError)
-          // Continue despite error
-        }
+          }
 
-        // Track achievements and level ups
-        if (results.newAchievements && results.newAchievements.length > 0) {
-          results.newAchievements.forEach(achievement => {
-            trackGameification.achievementUnlocked({
-              achievement_type: achievement.type || 'quiz_completion',
-              achievement_category: 'quiz',
-              total_achievements: results.newAchievements?.length || 0
+          console.log('🎮 Updating enhanced gamification progress:', quizData)
+          const results = await updateProgress(quizData)
+          console.log('✅ Enhanced gamification progress updated:', {
+            achievements: results.newAchievements?.length || 0,
+            levelUp: results.levelUp || false,
+            skillUpdates: results.skillUpdates?.length || 0
+          })
+
+          // 2. Update skill progress with our new skill tracking system
+          try {
+            console.log('🔄 Updating skill progress...')
+            const skillResults = await enhancedQuizDatabase.updateSkillProgress(
+              user.id,
+              questionResponses
+            )
+            
+            console.log('✅ Skill progress updated:', {
+              updatedSkills: skillResults.updatedSkills.length,
+              masteryChanges: Object.keys(skillResults.masteryChanges).length > 0 
+                ? skillResults.masteryChanges 
+                : 'No mastery changes'
             })
-          })
-        }
+       
+            // If there were mastery changes, we could notify the user here
+            
+          } catch (skillError) {
+            console.error('❌ Error updating skill progress:', skillError)
+            // Continue despite error
+          }
 
-        if (results.levelUp) {
-          trackGameification.levelUp({
-            new_level: currentLevel + 1,
-            xp_total: 0,
-            primary_activity: 'quiz'
-          })
-        }
-      } catch (error) {
-        console.error('❌ Failed to update enhanced gamification progress:', error)
-      }
-    } else {
-      // User is not logged in - store quiz result for pending attribution
-      try {
-        // Import the pending attribution module dynamically to avoid SSR issues
-        const { pendingUserAttribution } = await import('@/lib/pending-user-attribution')
-        
-        const sessionId = `quiz-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        
-        pendingUserAttribution.storePendingQuiz({
-          topicId,
-          sessionId,
-          completedAt: Date.now(),
-          score: scorePercentage,
-          correctAnswers,
-          totalQuestions,
-          timeSpentSeconds: totalTimeSeconds,
-          questionResponses
-        })
+          // 3. **NEW: Pod Integration** - Update pod analytics if user is in a pod
+          try {
+            // Extract pod ID from URL search params or quiz context
+            const urlParams = new URLSearchParams(window.location.search)
+            const podId = extractPodIdFromQuizContext(urlParams)
+            
+            if (podId) {
+              console.log('🏫 Processing quiz completion for pod:', podId)
+              
+              const podIntegration = new PodQuizIntegration()
+              const podQuizData = createQuizCompletionData(
+                user.id,
+                topicId,
+                {
+                  score: calculatedResults.score,
+                  totalQuestions: calculatedResults.totalQuestions,
+                  correctAnswers: calculatedResults.correctAnswers,
+                  timeSpent: calculatedResults.timeSpentSeconds
+                },
+                {
+                  podId,
+                  gameMode: mode || 'standard',
+                  sessionId: sessionId.current
+                }
+              )
 
-        console.log('📝 Stored quiz result for pending attribution')
-      } catch (error) {
-        console.error('Error storing pending quiz result:', error)
+              const podResult = await podIntegration.processQuizCompletion(podQuizData)
+              
+              console.log('🎉 Pod integration completed:', {
+                activityLogged: podResult.activityLogged,
+                analyticsUpdated: podResult.analyticsUpdated,
+                achievementsEarned: podResult.achievementsEarned.length,
+                errors: podResult.errors.length
+              })
+
+              // Show user feedback for pod-related achievements
+              if (podResult.achievementsEarned.length > 0) {
+                const achievementMessages = podResult.achievementsEarned.map(achievement => {
+                  switch (achievement) {
+                    case 'perfect_score': return '🎯 Perfect Score Achievement!'
+                    case 'speed_learner': return '⚡ Speed Learner Achievement!'
+                    case 'century_learner': return '💯 Century Learner Achievement!'
+                    case 'dedicated_learner': return '🏆 Dedicated Learner Achievement!'
+                    case 'accuracy_expert': return '🎯 Accuracy Expert Achievement!'
+                    default: return `🏅 ${achievement} Achievement!`
+                  }
+                })
+
+                // Show achievements in UI (you could add a toast or modal here)
+                console.log('🏆 Pod achievements earned:', achievementMessages)
+              }
+
+              // Handle any errors but don't block the quiz completion
+              if (podResult.errors.length > 0) {
+                console.warn('⚠️ Pod integration had some errors:', podResult.errors)
+              }
+            } else {
+              console.log('📝 No pod context found, skipping pod integration')
+            }
+            
+          } catch (podError) {
+            console.error('❌ Error in pod integration (non-blocking):', podError)
+            // Continue with quiz completion even if pod integration fails
+          }
+
+        } catch (progressError) {
+          console.error('❌ Error updating progress:', progressError)
+          // Continue despite error - quiz completion should not fail due to progress issues
+        }
       }
+
+      // Call completion handler with results
+      if (onComplete) {
+        onComplete(calculatedResults)
+      }
+
+    } catch (error) {
+      console.error("❌ Error finishing quiz:", error)
+      setError("Failed to complete quiz. Please try again.")
+    } finally {
+      setIsFinishing(false)
     }
-    
-    console.log('🎯 Enhanced quiz completion with analytics:', {
-      totalQuestions,
-      correctAnswers,
-      scorePercentage,
-      sessionAnalytics,
-      categoryPerformance: sessionAnalytics.categoryPerformance,
-      boostsUsed: sessionAnalytics.boostsUsed
-    })
-    
-    setShowResults(true)
   }
 
   const [showAdminEdit, setShowAdminEdit] = useState(false)

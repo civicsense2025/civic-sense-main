@@ -236,7 +236,7 @@ export default function AIToolsManagement() {
           name: 'Bias Analyzer',
           type: 'bias_analyzer',
           provider: 'anthropic',
-          model: 'claude-3-sonnet',
+          model: 'claude-sonnet-4-20250514',
           status: 'active',
           description: 'Analyzes political bias in news articles and content',
           created_at: '2024-01-01T00:00:00Z',

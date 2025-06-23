@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
+import { subscriptionOperations } from "@/lib/premium"
 import type { TopicMetadata, QuizQuestion, MultipleChoiceQuestion } from "@/lib/quiz-data"
 
 interface BattleClientProps {
@@ -35,16 +36,66 @@ export function BattleClient({
 }: BattleClientProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { hasFeatureAccess } = usePremium()
+  const { hasFeatureAccess, subscription, isPremium, isLoading, refreshSubscription } = usePremium()
   const { recordQuizAttempt } = useGuestAccess()
   const [showPremiumGate, setShowPremiumGate] = useState(false)
+  const [directDbCheck, setDirectDbCheck] = useState<{tier?: string, status?: string} | null>(null)
+
+  // Direct database check to bypass any caching issues
+  useEffect(() => {
+    if (user) {
+      subscriptionOperations.getUserSubscription(user.id).then(sub => {
+        console.log('🔍 Direct DB subscription check:', sub)
+        setDirectDbCheck(sub ? { tier: sub.subscription_tier, status: sub.subscription_status } : null)
+      })
+    }
+  }, [user])
+
+  // Debug current state
+  useEffect(() => {
+    if (user) {
+      console.log('🎮 Battle Mode - Premium Check:', {
+        userId: user.id,
+        hasSubscription: !!subscription,
+        subscriptionTier: subscription?.subscription_tier,
+        subscriptionStatus: subscription?.subscription_status,
+        directDbTier: directDbCheck?.tier,
+        directDbStatus: directDbCheck?.status,
+        isPremium,
+        isLoading,
+        hasNPCBattleAccess: hasFeatureAccess('npc_battle')
+      })
+    }
+  }, [user, subscription, isPremium, isLoading, hasFeatureAccess, directDbCheck])
 
   // Check premium access
   useEffect(() => {
-    if (!hasFeatureAccess('npc_battle')) {
-      setShowPremiumGate(true)
+    // Don't check until loading is complete
+    if (isLoading) return
+    
+    // If direct DB check shows pro/premium, grant access regardless of hook state
+    if (directDbCheck && (directDbCheck.tier === 'pro' || directDbCheck.tier === 'premium') && directDbCheck.status === 'active') {
+      console.log('✅ Direct DB check: Granting access based on database subscription')
+      setShowPremiumGate(false)
+      return
     }
-  }, [hasFeatureAccess])
+    
+    // Force a subscription refresh if we have a user but no subscription
+    if (user && !subscription) {
+      console.log('🔄 No subscription found, refreshing...')
+      refreshSubscription()
+      return
+    }
+    
+    const hasAccess = hasFeatureAccess('npc_battle')
+    console.log('🎯 Final access check:', { hasAccess, isPremium })
+    
+    if (!hasAccess) {
+      setShowPremiumGate(true)
+    } else {
+      setShowPremiumGate(false)
+    }
+  }, [hasFeatureAccess, isLoading, user, subscription, isPremium, refreshSubscription, directDbCheck])
 
   const handleExit = () => {
     router.push(`/quiz/${params.topicId}`)

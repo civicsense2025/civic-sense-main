@@ -147,6 +147,13 @@ export function TopicInfo({
     const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
     const parsed: ParsedBlurb[] = []
     
+    // Helper function to capitalize first actual word
+    const capitalizeFirstWord = (text: string): string => {
+      return text.replace(/^([^a-zA-Z]*)(.)/, (match, punctuation, firstLetter) => {
+        return punctuation + firstLetter.toUpperCase()
+      })
+    }
+    
     // Create a temporary div to parse HTML
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = topicData.why_this_matters
@@ -167,8 +174,8 @@ export function TopicInfo({
             const content = text.substring(colonIndex + 1).trim()
             
             parsed.push({
-              title: title.replace(/^(Your|The)\s+/i, ''), // Clean up common prefixes
-              content,
+              title: capitalizeFirstWord(title.replace(/^(Your|The)\s+/i, '')), // Clean up common prefixes and capitalize
+              content: capitalizeFirstWord(content),
               emoji: numberEmojis[index]
             })
           } else {
@@ -178,8 +185,8 @@ export function TopicInfo({
             const content = words.slice(2).join(' ')
             
             parsed.push({
-              title,
-              content,
+              title: capitalizeFirstWord(title),
+              content: capitalizeFirstWord(content),
               emoji: numberEmojis[index]
             })
           }
@@ -197,8 +204,8 @@ export function TopicInfo({
             const content = sentences.slice(1).join('.').trim()
             
             parsed.push({
-              title: title.length > 50 ? title.substring(0, 47) + '...' : title,
-              content: content || title,
+              title: capitalizeFirstWord(title.length > 50 ? title.substring(0, 47) + '...' : title),
+              content: capitalizeFirstWord(content || title),
               emoji: numberEmojis[index]
             })
           }
@@ -219,8 +226,8 @@ export function TopicInfo({
               const content = section.substring(colonIndex + 1).trim()
               
               parsed.push({
-                title: title.replace(/^(Your|The)\s+/i, ''),
-                content,
+                title: capitalizeFirstWord(title.replace(/^(Your|The)\s+/i, '')),
+                content: capitalizeFirstWord(content),
                 emoji: numberEmojis[index]
               })
             } else {
@@ -229,8 +236,8 @@ export function TopicInfo({
               const content = words.slice(3).join(' ') || title
               
               parsed.push({
-                title,
-                content,
+                title: capitalizeFirstWord(title),
+                content: capitalizeFirstWord(content),
                 emoji: numberEmojis[index]
               })
             }
@@ -503,18 +510,20 @@ export function TopicInfo({
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger 
                 value="why-this-matters"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm"
               >
                 <Info className="h-4 w-4" />
-                Why This Matters
+                <span className="hidden xs:inline">Why This Matters</span>
+                <span className="xs:hidden">Why This Matters</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="sources-citations"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm"
               >
                 <BookOpen className="h-4 w-4" />
-                Sources & Citations
-                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-sm font-mono font-semibold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <span className="hidden xs:inline">Sources & Citations</span>
+                <span className="xs:hidden">Sources</span>
+                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                   {allSources.length}
                 </span>
               </TabsTrigger>

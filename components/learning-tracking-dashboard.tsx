@@ -20,6 +20,10 @@ interface QuizResult {
   score: number
   completedAt: string
   timeSpent: number
+  isCompleted: boolean
+  progress?: number
+  currentQuestionIndex?: number
+  totalQuestions?: number
 }
 
 interface SavedTakeaway {
@@ -55,7 +59,11 @@ export function LearningTrackingDashboard() {
             topicTitle: activity.topicTitle,
             score: activity.score,
             completedAt: activity.completedAt,
-            timeSpent: activity.timeSpent || 0
+            timeSpent: activity.timeSpent || 0,
+            isCompleted: !activity.isPartial,
+            progress: activity.isPartial ? Math.round((activity.score / 100) * 100) : 100,
+            currentQuestionIndex: undefined,
+            totalQuestions: undefined
           }))
 
         // Get saved takeaways from bookmarks
@@ -170,20 +178,55 @@ export function LearningTrackingDashboard() {
               {quizResults.map((result) => (
                 <Card key={result.id} className="border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/30 transition-colors">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-3">
                       <Link 
                         href={`/quiz/${result.topicId}`}
                         className="text-lg font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
                         {result.topicTitle}
                       </Link>
-                      <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-sm">
-                        {result.score}%
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {!result.isCompleted && (
+                          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300 border-0">
+                            In Progress
+                          </Badge>
+                        )}
+                        <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-sm">
+                          {result.isCompleted ? `${result.score}%` : `${result.progress || 0}% complete`}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Completed {formatDistanceToNow(new Date(result.completedAt))} ago • 
-                      {Math.round(result.timeSpent / 60)} minutes
+                    
+                    {/* Progress bar for incomplete attempts */}
+                    {!result.isCompleted && result.progress !== undefined && (
+                      <div className="mb-3">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-400 dark:to-orange-500 h-full rounded-full transition-all duration-700 ease-out"
+                            style={{ width: `${result.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {result.isCompleted ? 'Completed' : 'Started'} {formatDistanceToNow(new Date(result.completedAt))} ago
+                        {result.timeSpent > 0 && ` • ${Math.round(result.timeSpent / 60)} minutes`}
+                      </div>
+                      
+                      {/* Continue button for incomplete attempts */}
+                      {!result.isCompleted && (
+                        <Button
+                          asChild
+                          size="sm"
+                          className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-4 py-2 text-xs"
+                        >
+                          <Link href={`/quiz/${result.topicId}?continue=true&restore=progress`}>
+                            Continue Quiz
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

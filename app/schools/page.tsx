@@ -353,6 +353,168 @@ export default function SchoolsPage() {
             </div>
           </Stack>
 
+          {/* Research-Based Case Study */}
+          <Stack spacing="xl" className="mt-16">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl flex-shrink-0 mt-1">📊</div>
+              <Stack spacing="sm" className="flex-1">
+                <Text as="h2" size="2xl" weight="normal" className="text-foreground">
+                  The Research Case for CivicSense in Schools
+                </Text>
+                <Text className="text-muted-foreground text-lg">
+                  New data reveals the urgent need for better civic education—and why CivicSense works.
+                </Text>
+              </Stack>
+            </div>
+
+            <div className="ml-0 sm:ml-16">
+              <div className="space-y-8">
+                {/* Crisis Statistics */}
+                <Card className="border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-red-600 text-lg">🚨</span>
+                        </div>
+                        <Text size="lg" weight="medium" className="text-red-900 dark:text-red-200">
+                          The Civic Knowledge Crisis
+                        </Text>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-red-600 mb-2">70%</div>
+                          <Text size="sm" className="text-red-800 dark:text-red-300">
+                            of Americans fail basic civic literacy tests
+                          </Text>
+                          <Text size="xs" className="text-red-600 mt-1">
+                            <a href="https://www.uschamberfoundation.org/civics/new-study-finds-alarming-lack-of-civic-literacy-among-americans" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">
+                              U.S. Chamber Foundation, 2024
+                            </a>
+                          </Text>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-red-600 mb-2">&lt;10%</div>
+                          <Text size="sm" className="text-red-800 dark:text-red-300">
+                            of young adults meet informed engagement standards
+                          </Text>
+                          <Text size="xs" className="text-red-600 mt-1">
+                            <a href="https://citizensandscholars.org/research/civic-outlook-of-young-adults/civic-readiness-insights/" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">
+                              Institute for Citizens & Scholars, 2025
+                            </a>
+                          </Text>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-red-600 mb-2">66%</div>
+                          <Text size="sm" className="text-red-800 dark:text-red-300">
+                            can name all three branches of government
+                          </Text>
+                          <Text size="xs" className="text-red-600 mt-1">
+                            <a href="https://www.annenbergpublicpolicycenter.org/most-americans-cant-recall-most-first-amendment-rights/" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">
+                              Annenberg Public Policy Center, 2024
+                            </a>
+                          </Text>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Opportunity Statistics */}
+                <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-green-600 text-lg">📈</span>
+                        </div>
+                        <Text size="lg" weight="medium" className="text-green-900 dark:text-green-200">
+                          The CivicSense Opportunity
+                        </Text>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <div className="text-2xl font-bold text-green-600 mb-2">22-Point Boost</div>
+                          <Text size="sm" className="text-green-800 dark:text-green-300 mb-3">
+                            Students with high civic knowledge show 22% higher voting intent compared to those with low civic knowledge.
+                          </Text>
+                          <div className="text-2xl font-bold text-green-600 mb-2">16-Point Increase</div>
+                          <Text size="sm" className="text-green-800 dark:text-green-300">
+                            High civic knowledge correlates with 16% more planned civic activities.
+                          </Text>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-green-600 mb-2">90% Retention</div>
+                          <Text size="sm" className="text-green-800 dark:text-green-300 mb-3">
+                            People retain 90% when they teach others or apply learning immediately—exactly how CivicSense works.
+                          </Text>
+                          <div className="text-2xl font-bold text-green-600 mb-2">Free for .edu</div>
+                          <Text size="sm" className="text-green-800 dark:text-green-300">
+                            Students with .edu emails get full access at no cost to schools or families.
+                          </Text>
+                        </div>
+                      </div>
+                      <Text size="xs" className="text-green-600 mt-4 border-t border-green-200 dark:border-green-800 pt-2">
+                        Sources: <a href="https://citizensandscholars.org/research/civic-outlook-of-young-adults/civic-readiness-insights/" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">Institute for Citizens & Scholars</a>, <a href="https://www.ferris.edu/university-college/firstgen/student-handbook/howtoretain90.pdf" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">Learning Pyramid Research</a>
+                      </Text>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Implementation Options */}
+                <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-blue-600 text-lg">🎯</span>
+                        </div>
+                        <Text size="lg" weight="medium" className="text-blue-900 dark:text-blue-200">
+                          Three Ways to Bring CivicSense to Your Students
+                        </Text>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto">
+                            <span className="text-2xl">🏫</span>
+                          </div>
+                                                     <Text size="lg" weight="medium" className="text-center text-blue-900 dark:text-blue-200">
+                             Full Integration
+                           </Text>
+                          <Text size="sm" className="text-blue-800 dark:text-blue-300 text-center">
+                            Google Classroom sync, teacher controls, grade passback, and learning pods for collaborative civic education.
+                          </Text>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto">
+                            <span className="text-2xl">📚</span>
+                          </div>
+                                                     <Text size="lg" weight="medium" className="text-center text-blue-900 dark:text-blue-200">
+                             Supplemental Resource
+                           </Text>
+                          <Text size="sm" className="text-blue-800 dark:text-blue-300 text-center">
+                            Recommend CivicSense to students as homework or extra credit. They access it free with their .edu email.
+                          </Text>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mx-auto">
+                            <span className="text-2xl">🎓</span>
+                          </div>
+                                                     <Text size="lg" weight="medium" className="text-center text-blue-900 dark:text-blue-200">
+                             Teacher Professional Development
+                           </Text>
+                          <Text size="sm" className="text-blue-800 dark:text-blue-300 text-center">
+                            Use CivicSense yourself to stay current on civic affairs and bring real-world examples to your teaching.
+                          </Text>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </Stack>
+
           {/* Getting Started */}
           <Stack spacing="xl" className="mt-16">
             <div className="flex items-start gap-4">

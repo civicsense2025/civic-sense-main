@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_generation_jobs: {
+        Row: {
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          error: string | null
+          id: string
+          input_data: Json | null
+          progress: number | null
+          provider: string
+          results: Json | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_data?: Json | null
+          progress?: number | null
+          provider: string
+          results?: Json | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_data?: Json | null
+          progress?: number | null
+          provider?: string
+          results?: Json | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       article_bias_analysis: {
         Row: {
           ai_analysis_version: string | null
@@ -1195,6 +1243,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           translations: Json | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1205,6 +1254,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           translations?: Json | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1215,6 +1265,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           translations?: Json | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2056,44 +2107,383 @@ export type Database = {
           },
         ]
       }
-      glossary_terms: {
+      glossary_content_references: {
         Row: {
-          category: string | null
+          auto_generated: boolean | null
+          content_id: string
+          content_table: string | null
+          content_type: string
+          context_snippet: string | null
           created_at: string
-          definition: string
-          examples: Json | null
+          id: string
+          reference_type: string | null
+          relevance_score: number | null
+          term_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          auto_generated?: boolean | null
+          content_id: string
+          content_table?: string | null
+          content_type: string
+          context_snippet?: string | null
+          created_at?: string
+          id?: string
+          reference_type?: string | null
+          relevance_score?: number | null
+          term_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          auto_generated?: boolean | null
+          content_id?: string
+          content_table?: string | null
+          content_type?: string
+          context_snippet?: string | null
+          created_at?: string
+          id?: string
+          reference_type?: string | null
+          relevance_score?: number | null
+          term_id?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_content_references_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glossary_game_sessions: {
+        Row: {
+          completed_at: string | null
+          correct_answers: number | null
+          game_data: Json | null
+          game_id: string
+          guest_token: string | null
+          hints_used: number | null
+          id: string
+          incorrect_answers: number | null
+          max_score: number | null
+          score: number | null
+          session_token: string
+          started_at: string
+          status: string | null
+          terms_used: Json | null
+          time_spent_seconds: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          correct_answers?: number | null
+          game_data?: Json | null
+          game_id: string
+          guest_token?: string | null
+          hints_used?: number | null
+          id?: string
+          incorrect_answers?: number | null
+          max_score?: number | null
+          score?: number | null
+          session_token: string
+          started_at?: string
+          status?: string | null
+          terms_used?: Json | null
+          time_spent_seconds?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          correct_answers?: number | null
+          game_data?: Json | null
+          game_id?: string
+          guest_token?: string | null
+          hints_used?: number | null
+          id?: string
+          incorrect_answers?: number | null
+          max_score?: number | null
+          score?: number | null
+          session_token?: string
+          started_at?: string
+          status?: string | null
+          terms_used?: Json | null
+          time_spent_seconds?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_game_sessions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glossary_games: {
+        Row: {
+          category_filters: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty_level: number | null
+          game_config: Json | null
+          game_type: string
           id: string
           is_active: boolean | null
+          max_attempts: number | null
+          max_terms: number | null
+          min_terms: number | null
+          term_filters: Json | null
+          time_limit_seconds: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_filters?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          game_config?: Json | null
+          game_type: string
+          id?: string
+          is_active?: boolean | null
+          max_attempts?: number | null
+          max_terms?: number | null
+          min_terms?: number | null
+          term_filters?: Json | null
+          time_limit_seconds?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_filters?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          game_config?: Json | null
+          game_type?: string
+          id?: string
+          is_active?: boolean | null
+          max_attempts?: number | null
+          max_terms?: number | null
+          min_terms?: number | null
+          term_filters?: Json | null
+          time_limit_seconds?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      glossary_term_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          relevance_score: number | null
+          term_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          relevance_score?: number | null
+          term_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          relevance_score?: number | null
+          term_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_term_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glossary_term_categories_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glossary_term_relationships: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          notes: string | null
+          relationship_type: string
+          source_term_id: string
+          strength: number | null
+          target_term_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          notes?: string | null
+          relationship_type: string
+          source_term_id: string
+          strength?: number | null
+          target_term_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          notes?: string | null
+          relationship_type?: string
+          source_term_id?: string
+          strength?: number | null
+          target_term_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_term_relationships_source_term_id_fkey"
+            columns: ["source_term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glossary_term_relationships_target_term_id_fkey"
+            columns: ["target_term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glossary_terms: {
+        Row: {
+          ai_generated: boolean | null
+          created_at: string
+          definition: string
+          difficulty_level: number | null
+          educational_context: Json | null
+          examples: Json | null
+          game_data: Json | null
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          metadata: Json | null
           part_of_speech: string | null
+          quality_score: number | null
+          source_info: Json | null
           synonyms: string[] | null
           term: string
           updated_at: string
         }
         Insert: {
-          category?: string | null
+          ai_generated?: boolean | null
           created_at?: string
           definition: string
+          difficulty_level?: number | null
+          educational_context?: Json | null
           examples?: Json | null
+          game_data?: Json | null
           id?: string
           is_active?: boolean | null
+          is_verified?: boolean | null
+          metadata?: Json | null
           part_of_speech?: string | null
+          quality_score?: number | null
+          source_info?: Json | null
           synonyms?: string[] | null
           term: string
           updated_at?: string
         }
         Update: {
-          category?: string | null
+          ai_generated?: boolean | null
           created_at?: string
           definition?: string
+          difficulty_level?: number | null
+          educational_context?: Json | null
           examples?: Json | null
+          game_data?: Json | null
           id?: string
           is_active?: boolean | null
+          is_verified?: boolean | null
+          metadata?: Json | null
           part_of_speech?: string | null
+          quality_score?: number | null
+          source_info?: Json | null
           synonyms?: string[] | null
           term?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      glossary_usage_analytics: {
+        Row: {
+          context_id: string | null
+          context_type: string | null
+          created_at: string
+          duration_seconds: number | null
+          guest_token: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          term_id: string
+          usage_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context_id?: string | null
+          context_type?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          term_id: string
+          usage_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context_id?: string | null
+          context_type?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          guest_token?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          term_id?: string
+          usage_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_usage_analytics_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guest_civics_test_results: {
         Row: {
@@ -3106,6 +3496,13 @@ export type Database = {
             foreignKeyName: "member_settings_membership_fkey"
             columns: ["pod_id", "user_id"]
             isOneToOne: true
+            referencedRelation: "pod_member_details"
+            referencedColumns: ["pod_id", "user_id"]
+          },
+          {
+            foreignKeyName: "member_settings_membership_fkey"
+            columns: ["pod_id", "user_id"]
+            isOneToOne: true
             referencedRelation: "pod_memberships"
             referencedColumns: ["pod_id", "user_id"]
           },
@@ -3352,6 +3749,13 @@ export type Database = {
             referencedRelation: "multiplayer_rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "multiplayer_npc_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       multiplayer_question_responses: {
@@ -3429,6 +3833,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "multiplayer_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_question_responses_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms_view"
             referencedColumns: ["id"]
           },
         ]
@@ -3592,6 +4003,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "multiplayer_room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_rooms_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "multiplayer_room_players_selected_character_id_fkey"
             columns: ["selected_character_id"]
             isOneToOne: false
@@ -3608,6 +4026,7 @@ export type Database = {
           expires_at: string | null
           game_mode: string | null
           game_type: string | null
+          host_display_name: string | null
           host_user_id: string | null
           id: string
           max_players: number | null
@@ -3618,6 +4037,7 @@ export type Database = {
           scenario_settings: Json | null
           settings: Json | null
           started_at: string | null
+          status: string | null
           topic_id: string
           updated_at: string | null
         }
@@ -3628,6 +4048,7 @@ export type Database = {
           expires_at?: string | null
           game_mode?: string | null
           game_type?: string | null
+          host_display_name?: string | null
           host_user_id?: string | null
           id?: string
           max_players?: number | null
@@ -3638,6 +4059,7 @@ export type Database = {
           scenario_settings?: Json | null
           settings?: Json | null
           started_at?: string | null
+          status?: string | null
           topic_id: string
           updated_at?: string | null
         }
@@ -3648,6 +4070,7 @@ export type Database = {
           expires_at?: string | null
           game_mode?: string | null
           game_type?: string | null
+          host_display_name?: string | null
           host_user_id?: string | null
           id?: string
           max_players?: number | null
@@ -3658,6 +4081,7 @@ export type Database = {
           scenario_settings?: Json | null
           settings?: Json | null
           started_at?: string | null
+          status?: string | null
           topic_id?: string
           updated_at?: string | null
         }
@@ -4485,6 +4909,7 @@ export type Database = {
           activity_data: Json | null
           activity_type: string
           created_at: string | null
+          description: string | null
           id: string
           is_shared_publicly: boolean | null
           is_visible_to_pod: boolean | null
@@ -4495,6 +4920,7 @@ export type Database = {
           activity_data?: Json | null
           activity_type: string
           created_at?: string | null
+          description?: string | null
           id?: string
           is_shared_publicly?: boolean | null
           is_visible_to_pod?: boolean | null
@@ -4505,6 +4931,7 @@ export type Database = {
           activity_data?: Json | null
           activity_type?: string
           created_at?: string | null
+          description?: string | null
           id?: string
           is_shared_publicly?: boolean | null
           is_visible_to_pod?: boolean | null
@@ -4532,6 +4959,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pod_discovery"
             referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "pod_activities_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5046,6 +5480,13 @@ export type Database = {
             referencedRelation: "pod_discovery"
             referencedColumns: ["pod_id"]
           },
+          {
+            foreignKeyName: "pod_member_analytics_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pod_member_settings: {
@@ -5227,6 +5668,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pod_discovery"
             referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "pod_memberships_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5525,6 +5973,7 @@ export type Database = {
         Row: {
           achievement_badges: Json | null
           avatar_url: string | null
+          display_name: string | null
           engagement_level: string | null
           focus_areas: string[] | null
           full_name: string | null
@@ -5543,6 +5992,7 @@ export type Database = {
         Insert: {
           achievement_badges?: Json | null
           avatar_url?: string | null
+          display_name?: string | null
           engagement_level?: string | null
           focus_areas?: string[] | null
           full_name?: string | null
@@ -5561,6 +6011,7 @@ export type Database = {
         Update: {
           achievement_badges?: Json | null
           avatar_url?: string | null
+          display_name?: string | null
           engagement_level?: string | null
           focus_areas?: string[] | null
           full_name?: string | null
@@ -10134,6 +10585,63 @@ export type Database = {
         }
         Relationships: []
       }
+      multiplayer_rooms_view: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          current_players: number | null
+          expires_at: string | null
+          game_mode: string | null
+          host_display_name: string | null
+          host_user_id: string | null
+          id: string | null
+          max_players: number | null
+          room_code: string | null
+          room_name: string | null
+          settings: Json | null
+          started_at: string | null
+          status: string | null
+          topic_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_players?: number | null
+          expires_at?: string | null
+          game_mode?: string | null
+          host_display_name?: string | null
+          host_user_id?: string | null
+          id?: string | null
+          max_players?: number | null
+          room_code?: string | null
+          room_name?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          status?: string | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_players?: number | null
+          expires_at?: string | null
+          game_mode?: string | null
+          host_display_name?: string | null
+          host_user_id?: string | null
+          id?: string | null
+          max_players?: number | null
+          room_code?: string | null
+          room_name?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          status?: string | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       npc_vs_human_analytics: {
         Row: {
           accuracy_improvement: number | null
@@ -10181,6 +10689,49 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pod_discovery"
             referencedColumns: ["pod_id"]
+          },
+        ]
+      }
+      pod_activity_details: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string | null
+          created_at: string | null
+          id: string | null
+          pod_id: string | null
+          pod_name: string | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_activities_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "pod_activities_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -10243,6 +10794,52 @@ export type Database = {
           total_ratings?: number | null
         }
         Relationships: []
+      }
+      pod_member_details: {
+        Row: {
+          avatar_url: string | null
+          can_invite_members: boolean | null
+          can_message: boolean | null
+          can_modify_settings: boolean | null
+          can_view_progress: boolean | null
+          email: string | null
+          full_name: string | null
+          joined_at: string | null
+          membership_status: string | null
+          pod_id: string | null
+          role: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pod_memberships_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "pod_discovery"
+            referencedColumns: ["pod_id"]
+          },
+          {
+            foreignKeyName: "pod_memberships_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       practice_attempts: {
         Row: {
@@ -10721,13 +11318,14 @@ export type Database = {
         Returns: {
           id: string
           room_code: string
-          topic_id: string
           room_name: string
+          topic_id: string
+          host_user_id: string
+          host_display_name: string
           max_players: number
           current_players: number
-          game_mode: string
           room_status: string
-          host_user_id: string
+          game_mode: string
           created_at: string
         }[]
       }
@@ -10821,6 +11419,22 @@ export type Database = {
           current_question_number: number
           total_questions: number
           started_at: string
+        }[]
+      }
+      get_active_multiplayer_rooms: {
+        Args: { room_limit?: number }
+        Returns: {
+          id: string
+          room_code: string
+          room_name: string
+          status: string
+          current_players: number
+          max_players: number
+          topic_id: string
+          host_user_id: string
+          host_display_name: string
+          game_mode: string
+          created_at: string
         }[]
       }
       get_assessment_question_social_proof_stats: {
@@ -10949,6 +11563,10 @@ export type Database = {
       }
       get_or_create_media_organization: {
         Args: { p_domain: string; p_name?: string }
+        Returns: string
+      }
+      get_or_create_pod_analytics_today: {
+        Args: { p_pod_id: string }
         Returns: string
       }
       get_or_create_source_metadata: {
@@ -11085,6 +11703,28 @@ export type Database = {
           is_nullable: string
           column_default: string
           ordinal_position: number
+        }[]
+      }
+      get_terms_by_category: {
+        Args: { category_name_param: string }
+        Returns: {
+          term_id: string
+          term: string
+          definition: string
+          difficulty_level: number
+          is_primary: boolean
+          category_name: string
+          category_emoji: string
+        }[]
+      }
+      get_terms_with_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          term_id: string
+          term: string
+          definition: string
+          difficulty_level: number
+          categories: Json
         }[]
       }
       get_translatable_content_summary: {
@@ -11552,7 +12192,15 @@ export type Database = {
         Returns: boolean
       }
       update_pod_analytics: {
-        Args: { pod_uuid: string }
+        Args:
+          | {
+              p_pod_id: string
+              p_questions_answered?: number
+              p_correct_answers?: number
+              p_quiz_attempts?: number
+              p_time_spent_minutes?: number
+            }
+          | { pod_uuid: string }
         Returns: undefined
       }
       update_user_skill_progress: {

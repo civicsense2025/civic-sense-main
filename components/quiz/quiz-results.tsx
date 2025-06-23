@@ -3,7 +3,7 @@
 import type { QuizQuestion, QuizResults } from "@/lib/types/quiz"
 import type { QuizGameMode } from "@/lib/types/quiz"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, EyeOff, Sparkles } from "lucide-react"
+import { CheckCircle, XCircle, ExternalLink, Trophy, Target, Clock, Zap, Eye, EyeOff, Sparkles, Check, BookmarkPlus } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useEffect, useState, useMemo, useCallback, memo, useRef } from "react"
 import { SocialShare } from "@/components/social-share"
@@ -25,6 +25,9 @@ import { useAnalytics } from "@/utils/analytics"
 import { useTopicTitle } from "@/hooks/useTopicTitle"
 import { skillOperations } from "@/lib/skill-operations"
 import { Badge } from "@/components/ui/badge"
+import { bookmarkOperations } from "@/lib/bookmarks"
+import { useToast } from "@/components/ui/use-toast"
+import type { ContentType } from "@/lib/types/bookmarks"
 
 interface UserAnswer {
   questionId: number
@@ -33,6 +36,7 @@ interface UserAnswer {
   timeSpent: number
   hintUsed?: boolean
   boostUsed?: string | null
+  npcName?: string // For NPC battle mode
 }
 
 interface QuizResultsProps {
@@ -130,6 +134,7 @@ export function QuizResults({
   const { trackQuiz } = useAnalytics()
   const { topicTitle, setTopicTitle } = useTopicTitle(topicId)
   const { progress, refreshProgress } = useGamification()
+  const { toast } = useToast()
   
   // State management
   const [showStats, setShowStats] = useState(false)
@@ -141,6 +146,7 @@ export function QuizResults({
   const [showExplanations, setShowExplanations] = useState(true)
   const [xpGained, setXpGained] = useState(0)
   const [analyticsCreated, setAnalyticsCreated] = useState(false)
+  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<number>>(new Set())
   
   // Refs for cleanup
   const savePromiseRef = useRef<Promise<void> | null>(null)
@@ -767,6 +773,7 @@ export function QuizResults({
             const isCorrect = userAnswer?.isCorrect || false
             const selectedAnswer = userAnswer?.answer || ""
             const timeSpent = userAnswer?.timeSpent || 0
+            const isBookmarked = bookmarkedQuestions.has(question.question_number)
 
             return (
               <div
@@ -787,6 +794,20 @@ export function QuizResults({
                     </p>
                   </div>
                   <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleBookmarkQuestion(question)}
+                        disabled={isBookmarked}
+                        aria-label={isBookmarked ? "Question bookmarked" : "Bookmark this question"}
+                    >
+                        {isBookmarked ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                            <BookmarkPlus className="h-4 w-4" />
+                        )}
+                        <span className="ml-2 sr-only">{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
+                    </Button>
                     <Clock className="h-4 w-4 mr-1" />
                     {Math.round(timeSpent)} seconds
                   </div>
@@ -855,6 +876,30 @@ export function QuizResults({
       </div>
     )
   }
+
+  const handleBookmarkQuestion = useCallback(async (question: QuizQuestion) => {
+    if (!user) {
+        toast({ title: "Please sign in to bookmark questions.", variant: "destructive" });
+        return;
+    }
+
+    try {
+        await bookmarkOperations.createBookmark({
+            content_type: 'quiz_question' as ContentType,
+            content_id: `${topicId}-${question.question_number}`,
+            title: question.question,
+            description: `Question from "${topicTitle}" quiz. Correct answer: ${getSelectedAnswerText(question, question.correct_answer)}`,
+            tags: ['quiz', 'question', question.category || 'general']
+        }, user.id);
+        
+        setBookmarkedQuestions(prev => new Set(prev).add(question.question_number));
+        toast({ title: "Question bookmarked!", description: "You can find it in your bookmarks." });
+
+    } catch (error) {
+        console.error("Failed to bookmark question:", error);
+        toast({ title: "Error", description: "Could not bookmark the question.", variant: "destructive" });
+    }
+}, [user, topicId, topicTitle, toast, getSelectedAnswerText]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">

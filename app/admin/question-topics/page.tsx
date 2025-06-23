@@ -156,19 +156,38 @@ export default function AdminQuestionTopicsPage() {
       // Load topics and question counts in parallel for better performance
       console.log('📊 Fetching topics and questions data...')
       
-      const [topicsResult, questionsCountResult] = await Promise.all([
+      // FIX 1: Add proper limits and use count queries instead of loading all data
+      const [topicsResult, questionsCountResult, totalQuestionsCount] = await Promise.all([
+        // Get all topics with proper limit
         supabase
           .from('question_topics')
           .select('*')
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(1000), // Explicit limit for safety
         
+        // Get question counts per topic efficiently
+        (async () => {
+          try {
+            return await supabase.rpc('get_questions_count_by_topic')
+          } catch (error) {
+            console.log('RPC function not available, using fallback query')
+            // Fallback: get topic_id with count
+            return await supabase
+              .from('questions')
+              .select('topic_id')
+              .limit(50000) // Explicit high limit to avoid truncation
+          }
+        })(),
+          
+        // Get total questions count
         supabase
           .from('questions')
-          .select('topic_id')
+          .select('*', { count: 'exact', head: true })
       ])
 
       const { data: topicsData, error: topicsError } = topicsResult
       const { data: questionsData, error: questionsError } = questionsCountResult
+      const { count: totalQuestionsCountValue, error: totalCountError } = totalQuestionsCount
 
       console.log('📋 Topics result:', { 
         data: topicsData?.length, 
@@ -176,7 +195,8 @@ export default function AdminQuestionTopicsPage() {
       })
       console.log('❓ Questions result:', { 
         data: questionsData?.length, 
-        error: questionsError 
+        error: questionsError,
+        totalCount: totalQuestionsCountValue
       })
 
       if (topicsError) {
@@ -189,12 +209,21 @@ export default function AdminQuestionTopicsPage() {
         // Don't throw here, just log and continue without question counts
       }
 
-      // Count questions per topic
+      if (totalCountError) {
+        console.error('⚠️ Total count error:', totalCountError)
+      }
+
+      // FIX 2: Better question counting logic
       const questionCounts: Record<string, number> = {}
       if (questionsData) {
-        questionsData.forEach((question: any) => {
-          questionCounts[question.topic_id] = (questionCounts[question.topic_id] || 0) + 1
-        })
+        // Handle both RPC result and fallback result
+        if (Array.isArray(questionsData)) {
+          questionsData.forEach((question: any) => {
+            if (question.topic_id) {
+              questionCounts[question.topic_id] = (questionCounts[question.topic_id] || 0) + 1
+            }
+          })
+        }
         console.log('📊 Question counts calculated:', Object.keys(questionCounts).length, 'topics have questions')
       } else {
         console.log('⚠️ No questions data available')
@@ -216,7 +245,11 @@ export default function AdminQuestionTopicsPage() {
       const topicsWithQuestions = processedTopics.filter((t: any) => t.has_questions).length
       const topicsWithoutQuestions = totalTopics - topicsWithQuestions
       const topicsWithKeyTakeaways = processedTopics.filter((t: any) => t.key_takeaways).length
-      const totalQuestions = processedTopics.reduce((sum: number, t: any) => sum + (t.question_count || 0), 0)
+      
+      // FIX 3: Use actual total count if available, otherwise sum from topics
+      const totalQuestions = totalQuestionsCountValue || 
+        processedTopics.reduce((sum: number, t: any) => sum + (t.question_count || 0), 0)
+      
       const avgQuestionsPerTopic = totalTopics > 0 ? totalQuestions / totalTopics : 0
 
       // Category counts
@@ -241,6 +274,25 @@ export default function AdminQuestionTopicsPage() {
 
       console.log('📈 Calculated stats:', calculatedStats)
       setStats(calculatedStats)
+
+      // FIX 4: Alert if we hit limits
+      if (topicsData && topicsData.length >= 1000) {
+        console.warn('⚠️ Topics may be truncated at 1000 limit')
+        toast({
+          title: "Data Notice",
+          description: "Showing first 1000 topics. Use filters to narrow results.",
+          variant: "default"
+        })
+      }
+
+      if (totalQuestions === 1000) {
+        console.warn('⚠️ Questions count may be capped at 1000')
+        toast({
+          title: "Questions Count Notice", 
+          description: "Questions count may be limited. Actual count could be higher.",
+          variant: "default"
+        })
+      }
 
       console.log('✅ Data loading completed successfully')
 

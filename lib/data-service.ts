@@ -11,6 +11,15 @@ let isDatabaseAvailable: boolean | null = null
 let lastDbCheck = 0
 const DB_CHECK_INTERVAL = 30000 // 30 seconds
 
+// Cache for topic data to prevent duplicate fetches
+const topicCache = new Map<string, { data: TopicMetadata | null; timestamp: number }>()
+const CACHE_DURATION = 3600000 // 1 hour cache for topics (they rarely change)
+const MAX_CACHE_SIZE = 100 // Maximum number of cached topics
+
+// Cache for categories data
+let categoriesGlobalCache: { data: any[] | null; timestamp: number } | null = null
+const CATEGORIES_CACHE_DURATION = 3600000 // 1 hour cache for categories
+
 /**
  * Check if the database is available with timeout
  */
@@ -524,6 +533,101 @@ async function checkTopicHasQuestions(topicId: string): Promise<boolean> {
 }
 
 /**
+ * Helper function to get cached topic or fetch if not cached/expired
+ */
+const getCachedTopic = async (topicId: string): Promise<TopicMetadata | null> => {
+  const now = Date.now()
+  
+  // Clean up expired entries periodically
+  if (Math.random() < 0.1) { // 10% chance to trigger cleanup
+    cleanupCache()
+  }
+  
+  const cached = topicCache.get(topicId)
+  
+  // Return cached data if it exists and is fresh
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    console.log('📊 dataService.getTopicById - Using cached data for:', topicId)
+    return cached.data
+  }
+  
+  // Fetch fresh data
+  console.log('📊 dataService.getTopicById - Called with:', topicId)
+  
+  const isDbAvailable = await checkDatabaseAvailability()
+  console.log('📊 dataService.getTopicById - Database available:', isDbAvailable)
+  
+  if (!isDbAvailable) {
+    console.error('Database not available for getTopicById')
+    return null
+  }
+
+  try {
+    console.log('📊 dataService.getTopicById - Querying database for topic:', topicId)
+    
+    const { data: dbTopic, error } = await supabase
+      .from('question_topics')
+      .select('*')
+      .eq('topic_id', topicId)
+      .eq('is_active', true)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        console.log('📊 dataService.getTopicById - Topic not found:', topicId)
+        // Cache null result to prevent repeated failed fetches
+        topicCache.set(topicId, { data: null, timestamp: now })
+        return null
+      }
+      throw error
+    }
+    
+    console.log('📊 dataService.getTopicById - Database result:', {
+      found: !!dbTopic,
+      topicData: dbTopic ? {
+        topic_id: dbTopic.topic_id,
+        topic_title: dbTopic.topic_title,
+        emoji: dbTopic.emoji,
+        date: dbTopic.date
+      } : null
+    })
+    
+    const result = dbTopic ? dbTopicToAppFormat(dbTopic) : null
+    
+    // Cache the result
+    topicCache.set(topicId, { data: result, timestamp: now })
+    
+    console.log('📊 dataService.getTopicById - Returning from database:', !!result)
+    return result
+  } catch (error) {
+    console.error('📊 dataService.getTopicById - Database error:', error)
+    return null
+  }
+}
+
+// Helper function to clean up old cache entries
+const cleanupCache = () => {
+  const now = Date.now()
+  const entriesToDelete: string[] = []
+  
+  for (const [key, value] of topicCache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      entriesToDelete.push(key)
+    }
+  }
+  
+  entriesToDelete.forEach(key => topicCache.delete(key))
+  
+  // If cache is still too large, remove oldest entries
+  if (topicCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(topicCache.entries())
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
+    const toRemove = entries.slice(0, topicCache.size - MAX_CACHE_SIZE)
+    toRemove.forEach(([key]) => topicCache.delete(key))
+  }
+}
+
+/**
  * Data service with proper database queries and foreign key relationships
  */
 export const dataService = {
@@ -644,51 +748,7 @@ export const dataService = {
    * Get topic by ID
    */
   async getTopicById(topicId: string): Promise<TopicMetadata | null> {
-    console.log('📊 dataService.getTopicById - Called with:', topicId)
-    
-    const isDbAvailable = await checkDatabaseAvailability()
-    console.log('📊 dataService.getTopicById - Database available:', isDbAvailable)
-    
-    if (!isDbAvailable) {
-      console.error('Database not available for getTopicById')
-      return null
-    }
-
-    try {
-      console.log('📊 dataService.getTopicById - Querying database for topic:', topicId)
-      
-      const { data: dbTopic, error } = await supabase
-        .from('question_topics')
-        .select('*')
-        .eq('topic_id', topicId)
-        .eq('is_active', true)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('📊 dataService.getTopicById - Topic not found:', topicId)
-          return null
-        }
-        throw error
-      }
-      
-      console.log('📊 dataService.getTopicById - Database result:', {
-        found: !!dbTopic,
-        topicData: dbTopic ? {
-          topic_id: dbTopic.topic_id,
-          topic_title: dbTopic.topic_title,
-          emoji: dbTopic.emoji,
-          date: dbTopic.date
-        } : null
-      })
-      
-      const result = dbTopic ? dbTopicToAppFormat(dbTopic) : null
-      console.log('📊 dataService.getTopicById - Returning from database:', !!result)
-      return result
-    } catch (error) {
-      console.error('📊 dataService.getTopicById - Database error:', error)
-      return null
-    }
+    return getCachedTopic(topicId)
   },
 
   /**
@@ -866,5 +926,70 @@ export const dataService = {
       console.error('Error checking if topic has questions:', error)
       return false
     }
+  },
+
+  /**
+   * Clear the topic cache (useful for development or when data changes)
+   */
+  clearTopicCache(): void {
+    topicCache.clear()
+    console.log('📊 dataService: Topic cache cleared')
+  },
+
+  /**
+   * Get categories with caching
+   */
+  async getCachedCategories(): Promise<any[]> {
+    const now = Date.now()
+    
+    // Return cached data if available and fresh
+    if (categoriesGlobalCache && (now - categoriesGlobalCache.timestamp) < CATEGORIES_CACHE_DURATION) {
+      console.log('📊 dataService.getCachedCategories - Using cached data')
+      return categoriesGlobalCache.data || []
+    }
+    
+    try {
+      console.log('📊 dataService.getCachedCategories - Fetching from API')
+      const response = await fetch('/api/categories')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'API returned error')
+      }
+      
+      const categories = data.categories || []
+      
+      // Cache the data
+      categoriesGlobalCache = {
+        data: categories,
+        timestamp: now
+      }
+      
+      console.log(`📊 dataService.getCachedCategories - Cached ${categories.length} categories`)
+      return categories
+    } catch (error) {
+      console.error('📊 dataService.getCachedCategories - Error:', error)
+      
+      // Return cached data even if stale, as fallback
+      if (categoriesGlobalCache?.data) {
+        console.log('📊 dataService.getCachedCategories - Using stale cache as fallback')
+        return categoriesGlobalCache.data
+      }
+      
+      return []
+    }
+  },
+
+  /**
+   * Clear the categories cache
+   */
+  clearCategoriesCache(): void {
+    categoriesGlobalCache = null
+    console.log('📊 dataService: Categories cache cleared')
   }
 }

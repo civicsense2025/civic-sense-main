@@ -29,7 +29,8 @@ import {
   Home,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -49,6 +50,12 @@ const adminNavigation = [
     name: 'Topics & Questions',
     href: '/admin/question-topics',
     icon: Target,
+    category: 'Content'
+  },
+  {
+    name: 'Glossary',
+    href: '/admin/glossary',
+    icon: BookOpen,
     category: 'Content'
   },
   {

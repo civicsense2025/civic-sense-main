@@ -1,37 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { arePodsEnabled, isMultiplayerEnabled, areScenariosEnabled } from '@/lib/comprehensive-feature-flags'
+import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
 
-interface PodActivity {
-  questions_answered: number
-  time_spent: number
-  accuracy: number
-}
-
-interface Pod {
-  id: string
-  pod_name: string
-  pod_type: string
-  member_count: number
-  active_members: number
-  last_activity_at: string | null
-  pod_activity?: PodActivity[] | null
-}
-
-export async function GET(request: Request) {
-  // Feature flag check - disable analytics API when pods are disabled
+// GET /api/learning-pods/aggregate-analytics - Get aggregate analytics for user's pods
+export async function GET(request: NextRequest) {
+  // Feature flag check
   if (!arePodsEnabled()) {
-    return NextResponse.json({ 
-      stats: {
-        totalPods: 0,
-        activePods: 0,
-        totalMembers: 0,
-        questionsAnswered: 0,
-        totalTimeSpent: 0,
-        averageAccuracy: 0,
-        recentActivity: 0
-      }
-    })
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
   try {
@@ -42,83 +17,87 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
-    const podType = searchParams.get('podType') || 'all'
-    const activity = searchParams.get('activity') || 'all'
+    const url = new URL(request.url)
+    const days = url.searchParams.get('days') || '30'
+    const podType = url.searchParams.get('podType') || 'all'
+    const activity = url.searchParams.get('activity') || 'all'
 
-    // Get user's pods with activity data
-    const { data: pods, error: podsError } = await supabase
-      .from('learning_pods')
+    // Get user's pods
+    const { data: userPods, error: podsError } = await supabase
+      .from('pod_memberships')
       .select(`
-        id,
-        pod_name,
-        pod_type,
-        member_count,
-        active_members,
-        last_activity_at,
-        pod_activity (
-          questions_answered,
-          time_spent,
-          accuracy
+        pod_id,
+        role,
+        learning_pods!inner(
+          id,
+          pod_name,
+          pod_type,
+          created_at
         )
       `)
-      .eq('is_active', true)
+      .eq('user_id', user.id)
+      .eq('membership_status', 'active')
 
     if (podsError) {
-      console.error('Error fetching pods:', podsError)
+      console.error('Error fetching user pods:', podsError)
       return NextResponse.json({ error: 'Failed to fetch pods' }, { status: 500 })
     }
 
-    // Filter pods based on type and activity
-    const filteredPods = (pods || []).filter(pod => {
-      // Type filter
-      if (podType !== 'all' && pod.pod_type !== podType) {
-        return false
-      }
+    const podIds = userPods?.map((p: any) => p.learning_pods.id) || []
+    
+    if (podIds.length === 0) {
+      return NextResponse.json({
+        stats: {
+          totalPods: 0,
+          activePods: 0,
+          totalMembers: 0,
+          adminPods: 0,
+          recentActivity: 0
+        }
+      })
+    }
 
-      // Activity filter
-      if (activity === 'active') {
-        return pod.active_members > 0
-      } else if (activity === 'inactive') {
-        return pod.active_members === 0
-      }
+    // Calculate member counts
+    const { data: memberCounts } = await supabase
+      .from('pod_memberships')
+      .select('pod_id')
+      .in('pod_id', podIds)
+      .eq('membership_status', 'active')
 
-      return true
-    }) as Pod[]
+    const memberCountMap = memberCounts?.reduce((acc: Record<string, number>, m: { pod_id: string }) => {
+      acc[m.pod_id] = (acc[m.pod_id] || 0) + 1
+      return acc
+    }, {} as Record<string, number>) || {}
 
-    // Calculate aggregate stats
+    // Calculate basic stats
+    const totalMembers = Object.values(memberCountMap).reduce((sum: number, count: number) => sum + count, 0)
+    const adminPods = userPods?.filter((p: any) => ['admin', 'parent', 'organizer', 'teacher'].includes(p.role)).length || 0
+    
+    // Get recent activity (last 7 days)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    
+    const { data: recentActivity } = await supabase
+      .from('pod_activities')
+      .select('id')
+      .in('pod_id', podIds)
+      .gte('created_at', sevenDaysAgo.toISOString())
+
     const stats = {
-      totalPods: filteredPods.length,
-      activePods: filteredPods.filter(pod => pod.active_members > 0).length,
-      totalMembers: filteredPods.reduce((sum, pod) => sum + (pod.member_count || 0), 0),
-      questionsAnswered: filteredPods.reduce((sum, pod) => {
-        const activity = pod.pod_activity?.[0]
-        return sum + (activity?.questions_answered || 0)
-      }, 0),
-      totalTimeSpent: filteredPods.reduce((sum, pod) => {
-        const activity = pod.pod_activity?.[0]
-        return sum + (activity?.time_spent || 0)
-      }, 0),
-      averageAccuracy: filteredPods.reduce((sum, pod) => {
-        const activity = pod.pod_activity?.[0]
-        return sum + (activity?.accuracy || 0)
-      }, 0) / (filteredPods.length || 1),
-      recentActivity: filteredPods.filter(pod => {
-        if (!pod.last_activity_at) return false
-        const activityDate = new Date(pod.last_activity_at)
-        const cutoffDate = new Date()
-        cutoffDate.setDate(cutoffDate.getDate() - days)
-        return activityDate >= cutoffDate
-      }).length
+      totalPods: podIds.length,
+      activePods: podIds.length, // For now, assume all pods are active
+      totalMembers,
+      adminPods,
+      recentActivity: recentActivity?.length || 0,
+      topPerformingPod: userPods && userPods.length > 0 ? {
+        name: (userPods[0] as any).learning_pods.pod_name,
+        activityScore: 85 // Mock score for now
+      } : undefined
     }
 
     return NextResponse.json({ stats })
   } catch (error) {
     console.error('Error in aggregate analytics:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

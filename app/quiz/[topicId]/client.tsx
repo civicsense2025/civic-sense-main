@@ -66,7 +66,6 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
-  const [showContinueLoading, setShowContinueLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [selectedMode, setSelectedMode] = useState<QuizGameMode>(isPracticeMode ? 'practice' : 'standard')
   const [modeConfig, setModeConfig] = useState(() => FULL_MODE_CONFIGS[searchParams?.mode as QuizGameMode || 'standard'])
@@ -155,16 +154,26 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
         const shouldContinue = urlSearchParams?.get('continue') === 'true'
         
         if (shouldContinue) {
-          // Show the witty loading screen for 3 seconds
-          setShowContinueLoading(true)
+          // For continue requests, skip the loading screen and go directly to play
+          console.log('🔄 Continue request detected, redirecting to play immediately')
           
-          // Record the quiz attempt if questions are available
-          if (questionsData && questionsData.length > 0) {
-            if (!user) {
-              recordQuizAttempt()
-            }
-            await recordQuizAttempt(params.topicId)
-          }
+          // Build continue parameters
+          const continueParams = new URLSearchParams()
+          continueParams.set('mode', 'standard') // Default mode for continue
+          continueParams.set('continue', 'true')
+          continueParams.set('restore', 'progress')
+          
+          const sessionId = urlSearchParams?.get('sessionId')
+          const attemptId = urlSearchParams?.get('attemptId')
+          const source = urlSearchParams?.get('source')
+          
+          if (sessionId) continueParams.set('sessionId', sessionId)
+          if (attemptId) continueParams.set('attemptId', attemptId)
+          if (source) continueParams.set('source', source)
+          
+          // Immediately redirect to play route with continue parameters
+          router.replace(`/quiz/${params.topicId}/play?${continueParams.toString()}`)
+          return // Exit early to prevent further loading
         }
         
       } catch (error) {
@@ -184,7 +193,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     return () => {
       isCancelled = true
     }
-  }, [params.topicId, urlSearchParams, user, recordQuizAttempt, convertToQuizQuestion])
+  }, [params.topicId, urlSearchParams, user, recordQuizAttempt, convertToQuizQuestion, router])
 
   // Handle starting quiz by navigating to appropriate quiz page
   const handleStartQuiz = useCallback(async (overrideMode?: QuizGameMode) => {
@@ -203,6 +212,19 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
       // Build play parameters
       const playParams = new URLSearchParams()
       playParams.set('mode', gameMode)
+      
+      // CRITICAL: Preserve continue/restore parameters to prevent redirect loop
+      const continueParam = urlSearchParams?.get('continue')
+      const restoreParam = urlSearchParams?.get('restore')
+      const sessionIdParam = urlSearchParams?.get('sessionId')
+      const attemptIdParam = urlSearchParams?.get('attemptId')
+      const sourceParam = urlSearchParams?.get('source')
+      
+      if (continueParam) playParams.set('continue', continueParam)
+      if (restoreParam) playParams.set('restore', restoreParam)
+      if (sessionIdParam) playParams.set('sessionId', sessionIdParam)
+      if (attemptIdParam) playParams.set('attemptId', attemptIdParam)
+      if (sourceParam) playParams.set('source', sourceParam)
       
       // Add pod/LMS integration parameters if present
       if (searchParams?.podId) {
@@ -245,7 +267,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
         variant: "destructive"
       })
     }
-  }, [selectedMode, params.topicId, trackEvent, user, searchParams, router])
+  }, [selectedMode, params.topicId, trackEvent, user, searchParams, router, urlSearchParams])
 
   const handleBackToHome = useCallback(() => {
     router.push("/")
@@ -254,12 +276,6 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   const handleAuthSuccess = useCallback(() => {
     setIsAuthDialogOpen(false)
   }, [])
-
-  const handleContinueLoadingComplete = useCallback(() => {
-    setShowContinueLoading(false)
-    // After continue loading, start the quiz
-    handleStartQuiz()
-  }, [handleStartQuiz])
 
   // Handle mode selection
   const handleModeSelect = useCallback(async (mode: QuizGameMode) => {
@@ -276,22 +292,12 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     setShowPvPGame(false)
   }, [])
 
-  // Show continue loading screen
-  if (showContinueLoading) {
-    return (
-      <QuizLoadingScreen 
-        onComplete={handleContinueLoadingComplete}
-        duration={3000}
-      />
-    )
-  }
-
   // Show loading state while component is mounting or data is loading
   if (!isMounted || isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header />
-        <main className="max-w-4xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
+        <main className="max-w-6xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
           <div className="animate-pulse space-y-8">
             <div className="space-y-3">
               <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/4"></div>
@@ -314,7 +320,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header />
-        <main className="max-w-2xl mx-auto px-6 sm:px-8 py-16 sm:py-24">
+        <main className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-24">
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
@@ -352,7 +358,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
-      <main className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-12">
+      <main className="max-w-6xl mx-auto px-6 sm:px-8 py-8 sm:py-12">
         {/* Navigation */}
         <nav className="mb-8 sm:mb-12">
           <Button

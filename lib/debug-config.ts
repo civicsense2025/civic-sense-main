@@ -15,6 +15,7 @@ interface DebugConfig {
     api: boolean
     premium: boolean
     general: boolean
+    'pattern-recognition': boolean
   }
   minimized: boolean // Show condensed logs when true
 }
@@ -68,7 +69,8 @@ class DebugManager {
         auth: false,
         api: false,
         premium: true, // Enabled by default for subscription debugging
-        general: true
+        general: true,
+        'pattern-recognition': true // Enabled by default for pattern recognition debugging
       },
       minimized: false
     }
@@ -131,7 +133,8 @@ class DebugManager {
       auth: '🔐',
       api: '🌐',
       premium: '💵',
-      general: '🔧'
+      general: '🔧',
+      'pattern-recognition': '🤖'
     }
     return `${prefixes[category]} [${category.toUpperCase()}]`
   }

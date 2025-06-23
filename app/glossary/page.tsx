@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { AutoReadPage } from '@/components/auto-read-page'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Header } from "@/components/header"
+import { SimpleBookmarkButton } from '@/components/bookmarks/simple-bookmark-button'
 
 interface GlossaryTerm {
   id: string
@@ -217,12 +218,22 @@ export default function GlossaryPage() {
         <div className="space-y-4">
           {terms.map((term) => (
             <Card key={term.id} className="p-4">
-              <h2 className="text-xl font-medium text-slate-900 dark:text-slate-50 mb-2">
-                {term.term}
-                {term.part_of_speech && (
-                  <span className="text-sm text-slate-500 dark:text-slate-400 ml-2">({term.part_of_speech})</span>
-                )}
-              </h2>
+              <div className="flex items-start justify-between mb-2">
+                <h2 className="text-xl font-medium text-slate-900 dark:text-slate-50">
+                  {term.term}
+                  {term.part_of_speech && (
+                    <span className="text-sm text-slate-500 dark:text-slate-400 ml-2">({term.part_of_speech})</span>
+                  )}
+                </h2>
+                <SimpleBookmarkButton
+                  contentType="glossary"
+                  contentId={term.id}
+                  title={term.term}
+                  description={term.definition}
+                  tags={term.category ? [term.category] : []}
+                  variant="icon"
+                />
+              </div>
               <p className="text-slate-700 dark:text-slate-300 mb-2">{term.definition}</p>
               {term.examples && term.examples.length > 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400"><strong>Examples:</strong> {term.examples.join('; ')}</p>

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { dataService } from "@/lib/data-service"
 
 interface Category {
   id: string
@@ -29,19 +30,12 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        setLoading(true)
-        // Use trending categories to randomly surface popular categories as fallback
-        const response = await fetch('/api/categories?trending=true')
-        if (!response.ok) {
-          throw new Error('Failed to fetch categories')
-        }
-        const data = await response.json()
-        
-        // Categories are already sorted by trending logic in the API
-        // Just take the first 'limit' categories
-        const selectedCategories = (data.categories || []).slice(0, limit)
-        
+        // Use centralized caching from dataService
+        const allCategories = await dataService.getCachedCategories()
+        const selectedCategories = allCategories.slice(0, limit)
+
         setCategories(selectedCategories)
+        console.log(`📊 CategoryCloud: Loaded ${selectedCategories.length} categories`)
       } catch (err) {
         console.error('Error fetching categories:', err)
         setError('Failed to load categories')
@@ -117,7 +111,9 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
       {/* Mobile: Horizontal scroll, Desktop: Grid layout */}
       <div className="sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-4 hidden sm:block">
         {categories.map((category) => {
-          const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-')
+          const categorySlug = category.name
+            ? category.name.toLowerCase().replace(/\s+/g, '-')
+            : category.id
           
           return (
             <Link
@@ -127,11 +123,11 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
             >
               <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm group-hover:scale-105 duration-200">
                 <div className="text-center space-y-2">
-                  <div className="text-2xl" role="img" aria-label={category.name}>
+                  <div className="text-2xl" role="img" aria-label={category.name ?? 'Category'}>
                     {category.emoji}
                   </div>
                   <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
-                    {category.name}
+                    {category.name ?? 'Unnamed'}
                   </div>
                 </div>
               </div>
@@ -143,7 +139,9 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
       {/* Mobile horizontal scroll */}
       <div className="flex overflow-x-auto gap-3 px-4 pb-2 sm:hidden scrollbar-hide">
         {categories.map((category) => {
-          const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-')
+          const categorySlug = category.name
+            ? category.name.toLowerCase().replace(/\s+/g, '-')
+            : category.id
           
           return (
             <Link
@@ -153,11 +151,11 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
             >
               <div className="w-32 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all hover:shadow-sm group-hover:scale-105 duration-200">
                 <div className="text-center space-y-2">
-                  <div className="text-2xl" role="img" aria-label={category.name}>
+                  <div className="text-2xl" role="img" aria-label={category.name ?? 'Category'}>
                     {category.emoji}
                   </div>
                   <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
-                    {category.name}
+                    {category.name ?? 'Unnamed'}
                   </div>
                 </div>
               </div>

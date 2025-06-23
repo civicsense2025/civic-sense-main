@@ -1,15 +1,28 @@
+/**
+ * ============================================================================
+ * ADMIN TRANSLATIONS PAGE
+ * ============================================================================
+ * Main page for translation and localization management in CivicSense admin panel.
+ * Provides comprehensive DeepL integration and bulk translation capabilities.
+ */
+
 import { Metadata } from 'next'
-import { ContentTranslationDashboard } from '@/components/admin/content-translation-dashboard'
+import { TranslationAdminDashboard } from '@/components/admin/translation-admin-dashboard'
 
 export const metadata: Metadata = {
-  title: 'Content Translation Management | CivicSense Admin',
-  description: 'Manage and monitor bulk content translations across all languages',
+  title: 'Translation & Localization Management | CivicSense Admin',
+  description: 'Manage multilingual content translation with DeepL integration for civic education platform',
+  keywords: ['translation', 'localization', 'DeepL', 'multilingual', 'civic education', 'admin'],
 }
 
 export default function AdminTranslationsPage() {
   return (
-    <div className="container mx-auto py-6 px-4">
-      <ContentTranslationDashboard />
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+      <main className="w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <TranslationAdminDashboard />
+        </div>
+      </main>
     </div>
   )
 } 

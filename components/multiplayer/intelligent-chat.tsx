@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChatFeed, type ChatMessage, type ChatPlayer, createNPCReactionMessage } from './chat-feed'
 import { conversationEngine, type ConversationContext } from '@/lib/multiplayer-conversation-engine'
-import { enhancedNPCService } from '@/lib/enhanced-npc-service'
+// Removed server-side import - using API routes instead
 import { NPC_PERSONALITIES } from '@/lib/multiplayer-npcs'
 
 interface IntelligentChatProps {
@@ -114,24 +114,26 @@ export function IntelligentChat({
             
             setMessages(prev => [...prev, npcMessage])
             
-            // Record the conversation in the NPC service
-            await enhancedNPCService.recordConversation(
-              npcId,
-              roomId,
-              currentPlayerId,
-              response.message,
-              {
-                npcId,
-                roomId,
-                playerId: currentPlayerId,
-                triggerType: 'on_help_request', // Simplified
-                conversationHistory: context.recentMessages.map(m => ({
-                  speaker: m.isFromNPC ? 'npc' : 'user',
-                  message: m.text,
-                  timestamp: m.timestamp
-                }))
-              }
-            )
+            // Record the conversation via API
+            try {
+              await fetch('/api/npc/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  npcId,
+                  roomId,
+                  playerId: currentPlayerId,
+                  triggerType: 'on_help_request',
+                  conversationHistory: context.recentMessages.map(m => ({
+                    speaker: m.isFromNPC ? 'npc' : 'user',
+                    message: m.text,
+                    timestamp: m.timestamp
+                  }))
+                })
+              })
+            } catch (error) {
+              console.warn('Failed to record NPC conversation:', error)
+            }
           }
         }
       }
@@ -189,7 +191,7 @@ export function IntelligentChat({
       if (!hasWelcomed && npcPlayer.npcId) {
         const npc = NPC_PERSONALITIES.find(n => n.id === npcPlayer.npcId)
         if (npc) {
-          const welcomeMessages = npc.chatMessages.onJoin
+          const welcomeMessages = npc.chatMessages.onGameStart
           const welcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
           
           setTimeout(() => {

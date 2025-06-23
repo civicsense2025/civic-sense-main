@@ -3,21 +3,23 @@ import { BattleClient } from "./client"
 import { dataService } from "@/lib/data-service"
 
 interface BattlePageProps {
-  params: {
+  params: Promise<{
     topicId: string
-  }
-  searchParams: {
+  }>
+  searchParams: Promise<{
     attempt: string
+    difficulty?: 'easy' | 'medium' | 'hard'
     podId?: string
     classroomCourseId?: string
     classroomAssignmentId?: string
     cleverSectionId?: string
     cleverAssignmentId?: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: BattlePageProps): Promise<Metadata> {
-  const topic = await dataService.getTopicById(params.topicId)
+  const { topicId } = await params
+  const topic = await dataService.getTopicById(topicId)
   
   return {
     title: topic ? `${topic.topic_title} - NPC Battle` : 'NPC Battle',
@@ -26,8 +28,10 @@ export async function generateMetadata({ params }: BattlePageProps): Promise<Met
 }
 
 export default async function BattlePage({ params, searchParams }: BattlePageProps) {
-  const topic = await dataService.getTopicById(params.topicId)
-  const questions = await dataService.getQuestionsByTopic(params.topicId)
+  const { topicId } = await params
+  const resolvedSearchParams = await searchParams
+  const topic = await dataService.getTopicById(topicId)
+  const questions = await dataService.getQuestionsByTopic(topicId)
 
   if (!topic || !questions) {
     return (
@@ -42,8 +46,8 @@ export default async function BattlePage({ params, searchParams }: BattlePagePro
     <BattleClient
       topic={topic}
       questions={questions}
-      params={params}
-      searchParams={searchParams}
+      params={{ topicId }}
+      searchParams={resolvedSearchParams}
     />
   )
 } 

@@ -277,18 +277,17 @@ body {
   color: hsl(var(--foreground-secondary));
 }
 
-/* Apple-inspired component styles */
+/* Apple-inspired component styles - NO TRANSFORM/TRANSLATE HOVER EFFECTS */
 .apple-card {
   background: hsla(var(--card), 0.8);
   backdrop-filter: blur(20px);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   box-shadow: 0 8px 32px hsla(var(--foreground), 0.1);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
 }
 
 .apple-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 12px 40px hsla(var(--foreground), 0.15);
   border-color: hsl(var(--border));
   background: hsl(var(--muted) / 0.5);
@@ -302,12 +301,11 @@ body {
   padding: var(--space-3) var(--space-6);
   font-weight: 600;
   font-size: var(--text-base);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 4px 12px hsla(var(--primary), 0.3);
 }
 
 .apple-button-primary:hover {
-  transform: translateY(-1px);
   box-shadow: 0 6px 16px hsla(var(--primary), 0.4);
   background: hsl(var(--primary) / 0.9);
 }
@@ -320,14 +318,13 @@ body {
   padding: var(--space-3) var(--space-6);
   font-weight: 500;
   font-size: var(--text-base);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   backdrop-filter: blur(10px);
 }
 
 .apple-button-secondary:hover {
   background: hsl(var(--secondary) / 0.8);
   border-color: hsl(var(--primary));
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px hsla(var(--foreground), 0.1);
 }
 
@@ -399,7 +396,7 @@ body {
   color: hsl(var(--foreground));
 }
 
-/* Apple-like animations */
+/* Apple-like animations - NO TRANSFORM/TRANSLATE */
 .apple-animate-in {
   animation: apple-fade-in 0.6s ease-out;
 }
@@ -415,22 +412,18 @@ body {
 @keyframes apple-fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes apple-slide-up {
   from {
     opacity: 0;
-    transform: translateY(40px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -443,6 +436,43 @@ body {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Accordion animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.3s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.3s ease-out;
+}
+
+/* Accordion content styling */
+.accordion-content {
+  overflow: hidden;
+  transition: height 0.3s ease-out, opacity 0.2s ease-out;
 }
 
 /* WCAG compliant focus states */
@@ -492,7 +522,7 @@ html {
   }
 }
 
-/* Subtle hover effects for cards and interactive elements */
+/* Subtle hover effects for cards and interactive elements - NO TRANSFORM */
 .hover\\:bg-muted:hover,
 [class*="hover:bg-"]:hover:not(.hover\\:bg-primary):not(.hover\\:bg-destructive):not(.hover\\:bg-accent) {
   background-color: hsl(var(--muted) / 0.5) !important;
@@ -504,7 +534,7 @@ html {
   background-color: hsl(var(--muted) / 0.3) !important;
 }
 
-/* Subtle hover for buttons and links */
+/* Subtle hover for buttons and links - NO TRANSFORM */
 button:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent),
 a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent) {
   background-color: hsl(var(--muted) / 0.4);

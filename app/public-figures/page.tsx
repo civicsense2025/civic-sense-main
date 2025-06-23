@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SimpleBookmarkButton } from '@/components/bookmarks/simple-bookmark-button'
 
 // Define types for public figures data
 interface PublicFigure {
@@ -301,11 +302,21 @@ export default function PublicFiguresPage() {
                           <h2 className="text-xl font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {figure.display_name || figure.full_name}
                           </h2>
-                          {figure.influence_level && (
-                            <Badge variant={figure.influence_level >= 4 ? "destructive" : "outline"} className="font-light">
-                              Level {figure.influence_level}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <SimpleBookmarkButton
+                              contentType="figure"
+                              contentId={figure.id}
+                              title={figure.display_name || figure.full_name}
+                              description={`${figure.primary_role_category} - ${figure.party_affiliation || 'Unknown party'}`}
+                              tags={[figure.primary_role_category, figure.party_affiliation || 'Unknown'].filter(Boolean)}
+                              variant="icon"
+                            />
+                            {figure.influence_level && (
+                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                Level {figure.influence_level}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         
                         <p className="text-slate-600 dark:text-slate-400 font-light">

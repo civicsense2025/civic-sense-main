@@ -458,21 +458,56 @@ Response format: Just the message content, no quotes or formatting.`
     // Generate chat messages based on personality
     const chatMessages = this.generateChatMessagesForNPC(dbNpc)
 
+    // Convert skill level to match expected format
+    const skillLevel = (() => {
+      const baseSkill = dbNpc.base_skill_level.toLowerCase()
+      switch (baseSkill) {
+        case 'beginner': return 'Beginner'
+        case 'intermediate': return 'Intermediate'
+        case 'expert': return 'Expert'
+        case 'advanced': return 'Expert' // Map advanced to Expert
+        default: return 'Intermediate'
+      }
+    })() as 'Beginner' | 'Intermediate' | 'Expert'
+
     return {
       id: dbNpc.npc_code,
       name: dbNpc.display_name,
       emoji: dbNpc.emoji || '🤖',
+      skillLevel,
+      specialties,
+      weaknesses,
+      responseTimeRange: {
+        easy: { min: Math.max(dbNpc.response_time_min, 3), max: Math.min(dbNpc.response_time_max, 8) },
+        medium: { min: Math.max(dbNpc.response_time_min + 2, 5), max: Math.min(dbNpc.response_time_max + 2, 10) },
+        hard: { min: Math.max(dbNpc.response_time_min + 4, 7), max: Math.min(dbNpc.response_time_max + 4, 15) }
+      },
+      accuracyRates: {
+        easy: Math.min(dbNpc.base_accuracy_max / 100, 0.95),
+        medium: Math.min((dbNpc.base_accuracy_min + dbNpc.base_accuracy_max) / 200, 0.85),
+        hard: Math.min(dbNpc.base_accuracy_min / 100, 0.75)
+      },
+      powerUpPreferences: {
+        shield: 0.33,
+        sword: 0.33,
+        brain: 0.34
+      },
+      chatMessages: {
+        onGameStart: chatMessages.onGameStart,
+        onCorrectAnswer: chatMessages.onCorrect,
+        onIncorrectAnswer: chatMessages.onIncorrect,
+        onWinning: chatMessages.onGameEnd,
+        onLosing: chatMessages.onGameEnd
+      },
+      // Additional properties for enhanced functionality
       description: dbNpc.description || 'A helpful civic learning companion',
-      skillLevel: dbNpc.base_skill_level as 'beginner' | 'intermediate' | 'advanced' | 'expert',
       accuracyRange: [dbNpc.base_accuracy_min, dbNpc.base_accuracy_max],
-      responseTimeRange: [dbNpc.response_time_min, dbNpc.response_time_max],
       traits: {
         confidenceLevel: dbNpc.confidence_level,
         consistency: dbNpc.consistency_factor,
         specialties,
         weaknesses
-      },
-      chatMessages
+      }
     }
   }
 

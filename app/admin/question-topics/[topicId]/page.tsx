@@ -133,15 +133,25 @@ export default function TopicDetailPage() {
 
       if (topicError) throw new Error(`Failed to load topic: ${topicError.message}`)
 
-      // Load questions
+      // Load questions with explicit limit and better error handling
+      console.log(`🔍 Loading questions for topic: ${topicId}`)
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select('*')
         .eq('topic_id', topicId)
+        .eq('is_active', true) // Only load active questions
         .order('question_number', { ascending: true })
+        .limit(1000) // Explicit limit
 
       if (questionsError) {
-        console.error('Error loading questions:', questionsError)
+        console.error('❌ Error loading questions:', questionsError)
+        toast({
+          title: "Warning",
+          description: `Could not load questions: ${questionsError.message}`,
+          variant: "default"
+        })
+      } else {
+        console.log(`✅ Loaded ${questionsData?.length || 0} questions for topic ${topicId}`)
       }
 
       // Calculate stats

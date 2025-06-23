@@ -347,6 +347,27 @@ export interface AllFeatureFlags {
   // Export singleton instance
   export const envFeatureFlags = new EnvironmentFeatureFlags()
   
+  // Convenience functions for commonly checked flags
+export function arePodsEnabled(): boolean {
+  return envFeatureFlags.getFlag('learningPods')
+}
+  
+  export function isMultiplayerEnabled(): boolean {
+    return envFeatureFlags.getFlag('multiplayer')
+  }
+  
+  export function areScenariosEnabled(): boolean {
+    return envFeatureFlags.getFlag('scenarios')
+  }
+  
+  export function isCivicsTestEnabled(): boolean {
+    return envFeatureFlags.getFlag('civicsTest')
+  }
+  
+  export function areQuizzesEnabled(): boolean {
+    return envFeatureFlags.getFlag('quizzes')
+  }
+  
   // Make available globally in development
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     (window as any).envFeatureFlags = envFeatureFlags

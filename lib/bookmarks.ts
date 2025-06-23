@@ -69,7 +69,9 @@ export const bookmarkOperations = {
    */
   async getUserBookmarks(
     userId: string,
-    filters?: BookmarkSearchFilters
+    filters?: BookmarkSearchFilters,
+    limit: number = 20,
+    page: number = 1
   ): Promise<{ bookmarks: Bookmark[]; total: number }> {
     let query = supabase
       .from('bookmarks')
@@ -94,9 +96,7 @@ export const bookmarkOperations = {
       query = query.or(`title.ilike.%${filters.query}%,description.ilike.%${filters.query}%`)
     }
 
-    // Apply pagination - use default values since filters may not have these properties
-    const limit = 20
-    const page = 1
+    // Apply pagination
     const offset = (page - 1) * limit
     query = query.range(offset, offset + limit - 1)
 
@@ -516,6 +516,31 @@ export const bookmarkOperations = {
     }
 
     return data as Bookmark
+  },
+
+  /**
+   * Get bookmarks for a list of content IDs
+   */
+  async getBookmarksByContentIds(
+    contentType: string,
+    contentIds: string[],
+    userId: string
+  ): Promise<Bookmark[]> {
+    if (!contentIds || contentIds.length === 0) {
+      return []
+    }
+    const { data, error } = await supabase
+      .from('bookmarks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('content_type', contentType)
+      .in('content_id', contentIds)
+
+    if (error) {
+      console.error('Error fetching bookmarks by content IDs:', error)
+      return []
+    }
+    return (data as Bookmark[]) || []
   },
 
   /**

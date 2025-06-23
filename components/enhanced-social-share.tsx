@@ -199,7 +199,7 @@ export function EnhancedSocialShare({
 
   // --- Engagement batching to avoid excessive updates ---
   const metricsBufferRef = useRef<Partial<PerformanceMetrics>>({})
-  const flushTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const flushTimerRef = useRef<number | null>(null)
 
   const flushMetricsBuffer = useCallback(() => {
     if (!onAnalyticsUpdate) return
@@ -396,9 +396,9 @@ export function EnhancedSocialShare({
 
   if (!isValid) {
     return (
-      <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-        <p className="text-sm font-medium text-red-800 mb-2">Image Generation Errors:</p>
-        <ul className="text-sm text-red-600 list-disc list-inside space-y-1">
+      <div className="p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20">
+        <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">Image Generation Errors:</p>
+        <ul className="text-sm text-red-600 dark:text-red-400 list-disc list-inside space-y-1">
           {validationErrors.map((error: string, index: number) => (
             <li key={index}>{error}</li>
           ))}
@@ -412,7 +412,7 @@ export function EnhancedSocialShare({
       {/* Main Share Button */}
       <Button 
         variant="outline" 
-        className="w-full sm:w-auto bg-white border-authority-blue-300 text-authority-blue-700 hover:bg-authority-blue-50 font-medium"
+        className="w-full sm:w-auto bg-white dark:bg-slate-800 border-authority-blue-300 dark:border-slate-600 text-authority-blue-700 dark:text-slate-300 hover:bg-authority-blue-50 dark:hover:bg-slate-700 font-medium"
         onClick={() => setIsPopoverOpen(true)}
       >
         <Share2 className="w-4 h-4 mr-2" />
@@ -436,19 +436,19 @@ export function EnhancedSocialShare({
           {/* Popover Content */}
           <div 
             ref={popoverRef}
-            className="relative bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md max-h-[90vh] overflow-y-auto"
+            className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-600 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-authority-blue-50 dark:bg-authority-blue-950/20 rounded-t-xl">
+            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-600 bg-authority-blue-50 dark:bg-slate-700 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-authority-blue-900 dark:text-authority-blue-100">
+                <h3 className="text-base font-semibold text-authority-blue-900 dark:text-white">
                   Share to Social Media
                 </h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsPopoverOpen(false)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -456,18 +456,18 @@ export function EnhancedSocialShare({
             </div>
             
             {/* Quick Share Options */}
-            <div className="p-4">
+            <div className="p-4 bg-white dark:bg-slate-800">
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => shareToPopular('x', imageSet['twitter-card'])}
-                  className="justify-start h-auto py-3 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="justify-start h-auto py-3 px-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <PlatformIcon platform="x" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">X</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x675</div>
+                    <div className="font-medium text-sm text-slate-900 dark:text-slate-100">X</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">1200x675</div>
                   </div>
                 </Button>
                 
@@ -475,12 +475,12 @@ export function EnhancedSocialShare({
                   variant="ghost"
                   size="sm"
                   onClick={() => shareToPopular('facebook', imageSet['facebook-post'])}
-                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <PlatformIcon platform="facebook" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Facebook</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x630</div>
+                    <div className="font-medium text-sm text-slate-900 dark:text-slate-100">Facebook</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">1200x630</div>
                   </div>
                 </Button>
                 
@@ -488,12 +488,12 @@ export function EnhancedSocialShare({
                   variant="ghost"
                   size="sm"
                   onClick={() => shareToPopular('linkedin', imageSet['linkedin-post'])}
-                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                  className="justify-start h-auto py-3 px-3 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <PlatformIcon platform="linkedin" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">LinkedIn</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">1200x627</div>
+                    <div className="font-medium text-sm text-slate-900 dark:text-slate-100">LinkedIn</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">1200x627</div>
                   </div>
                 </Button>
                 
@@ -501,19 +501,19 @@ export function EnhancedSocialShare({
                   variant="ghost"
                   size="sm"
                   onClick={() => handlePreview('instagram-story')}
-                  className="justify-start h-auto py-3 px-3 hover:bg-pink-50 dark:hover:bg-pink-950/20"
+                  className="justify-start h-auto py-3 px-3 hover:bg-pink-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <PlatformIcon platform="instagram" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Instagram</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Story & Post</div>
+                    <div className="font-medium text-sm text-slate-900 dark:text-slate-100">Instagram</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Story & Post</div>
                   </div>
                 </Button>
               </div>
               
               {/* Download Options */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mb-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              <div className="border-t border-slate-200 dark:border-slate-600 pt-4 mb-4">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">
                   Download Images
                 </h4>
                 
@@ -524,14 +524,14 @@ export function EnhancedSocialShare({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDownload(template as keyof typeof IMAGE_TEMPLATES)}
-                      className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                     >
                       <Download className="w-4 h-4 mr-3" />
                       <div className="flex-1 text-left">
-                        <div className="font-medium text-sm capitalize">
+                        <div className="font-medium text-sm capitalize text-slate-900 dark:text-slate-100">
                           {template.replace('-', ' ')}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {dimensions.width}x{dimensions.height} • {dimensions.platform}
                         </div>
                       </div>
@@ -542,12 +542,12 @@ export function EnhancedSocialShare({
               
               {/* Advanced Options */}
               {allowCustomization && (
-                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowCustomization(!showCustomization)}
-                    className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="w-full justify-start h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
                   >
                     <Settings className="w-4 h-4 mr-3" />
                     <span>Customize Design</span>
@@ -562,9 +562,9 @@ export function EnhancedSocialShare({
 
       {/* Customization Panel */}
       {showCustomization && allowCustomization && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+        <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-900 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Customize Your Image</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Customize Your Image</h3>
             <Badge variant="outline" className="text-xs">
               <Zap className="w-3 h-3 mr-1" />
               Live Preview
@@ -647,22 +647,22 @@ export function EnhancedSocialShare({
 
       {/* Performance Metrics Display */}
       {generationMetrics && (
-        <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <TrendingUp className="w-4 h-4 text-green-600" />
+        <div className="flex items-center gap-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
           <div className="flex-1 grid grid-cols-3 gap-4 text-sm">
             <div>
-              <div className="font-medium text-green-800">Generation Time</div>
-              <div className="text-green-600">{generationMetrics.generationTime}ms</div>
+              <div className="font-medium text-green-800 dark:text-green-300">Generation Time</div>
+              <div className="text-green-600 dark:text-green-400">{generationMetrics.generationTime}ms</div>
             </div>
             <div>
-              <div className="font-medium text-green-800">Cache Status</div>
-              <div className="text-green-600">
+              <div className="font-medium text-green-800 dark:text-green-300">Cache Status</div>
+              <div className="text-green-600 dark:text-green-400">
                 {generationMetrics.cacheHit ? 'Hit' : 'Miss'}
               </div>
             </div>
             <div>
-              <div className="font-medium text-green-800">Config</div>
-              <div className="text-green-600">
+              <div className="font-medium text-green-800 dark:text-green-300">Config</div>
+              <div className="text-green-600 dark:text-green-400">
                 {generationMetrics.variant} • {generationMetrics.theme}
               </div>
             </div>
@@ -676,9 +676,9 @@ export function EnhancedSocialShare({
           className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setPreviewImage(null)}
         >
-          <div className="bg-white rounded-lg p-4 max-w-4xl max-h-full overflow-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 max-w-4xl max-h-full overflow-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-lg">Image Preview</h3>
+              <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">Image Preview</h3>
               <Button variant="ghost" size="sm" onClick={() => setPreviewImage(null)}>
                 ×
               </Button>
@@ -785,8 +785,8 @@ export function SocialShareWithPreview({
   return (
     <div className="space-y-4">
       {/* Image Preview */}
-      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-        <div className="aspect-[1200/630] bg-white rounded border overflow-hidden">
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+        <div className="aspect-[1200/630] bg-white dark:bg-gray-800 rounded border dark:border-gray-600 overflow-hidden">
           {imageUrl && (
             <img 
               src={imageUrl} 
@@ -795,7 +795,7 @@ export function SocialShareWithPreview({
             />
           )}
         </div>
-        <div className="mt-2 text-sm text-gray-600 text-center">
+        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 text-center">
           Preview: {template.replace('-', ' ')} format
         </div>
       </div>

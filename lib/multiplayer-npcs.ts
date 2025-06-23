@@ -9,7 +9,7 @@ export interface NPCPersonality {
   id: string
   name: string
   emoji: string
-  skillLevel: 'Beginner' | 'Intermediate' | 'Expert'
+  skillLevel: 'Beginner' | 'Intermediate' | 'Expert' | 'beginner' | 'intermediate' | 'expert' | 'advanced' | 'Advanced'
   specialties: string[]
   weaknesses: string[]
   responseTimeRange: {
@@ -33,6 +33,15 @@ export interface NPCPersonality {
     onIncorrectAnswer: string[]
     onWinning: string[]
     onLosing: string[]
+  }
+  // Additional properties for database compatibility
+  description?: string
+  accuracyRange?: [number, number]
+  traits?: {
+    confidenceLevel: number
+    consistency: number
+    specialties: string[]
+    weaknesses: string[]
   }
 }
 

@@ -353,7 +353,7 @@ export const premiumFeatures = {
         
         // Get subscription directly and do basic check
         const subscription = await subscriptionOperations.getUserSubscription(userId)
-        const isPremium = subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro'
+        const isPremiumOrPro = subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro'
         const isActive = subscription?.subscription_status === 'active'
         
         // For free tier features, return true
@@ -363,11 +363,12 @@ export const premiumFeatures = {
         }
         
         // For premium features, check if user has active premium subscription
-        const hasAccess = isPremium && isActive
+        const hasAccess = isPremiumOrPro && isActive
         debug.log('premium', `Fallback check for ${feature}: ${hasAccess ? 'granted' : 'denied'}`, {
-          isPremium,
+          isPremiumOrPro,
           isActive,
-          tier: subscription?.subscription_tier
+          tier: subscription?.subscription_tier,
+          status: subscription?.subscription_status
         })
         return hasAccess
       }

@@ -356,12 +356,12 @@ export function EnhancedGlobalSearch({
       {trigger || (
         <button
           onClick={() => setOpen(true)}
-          className="relative flex items-center gap-3 w-full max-w-md px-4 py-2.5 text-left text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="relative flex items-center gap-2 w-full max-w-xs px-3 py-1.5 text-left text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
-          <Search className="w-4 h-4 flex-shrink-0" />
-          <span className="flex-1 truncate">{placeholder}</span>
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded">
-            <span className="text-xs">⌘</span>K
+          <Search className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="flex-1 truncate text-xs">Search...</span>
+          <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-slate-400 dark:text-slate-500">
+            ⌘K
           </kbd>
         </button>
       )}

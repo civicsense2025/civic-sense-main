@@ -138,11 +138,18 @@ export default function AdminDashboard() {
       count: stats?.content.pending_events || 0
     },
     {
+      title: 'Weekly Recaps',
+      description: 'Auto-generated collections',
+      href: '/admin/weekly-recap',
+      icon: Clock,
+      variant: 'primary'
+    },
+    {
       title: 'Generate Content',
       description: 'Create with AI',
       href: '/admin/ai-content',
       icon: Brain,
-      variant: 'primary'
+      variant: 'secondary'
     },
     {
       title: 'User Feedback',

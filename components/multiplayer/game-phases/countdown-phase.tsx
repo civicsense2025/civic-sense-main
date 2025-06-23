@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { NPCPersonality } from "@/lib/multiplayer-npcs"
 import { Card } from "@/components/ui/card"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
@@ -12,13 +12,14 @@ export interface CountdownPhaseProps {
 
 export function CountdownPhase({ opponent, onComplete }: CountdownPhaseProps) {
   const [countdown, setCountdown] = useState(3)
+  const hasCompleted = useRef(false)
 
+  // Countdown timer effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer)
-          onComplete()
           return 0
         }
         return prev - 1
@@ -26,7 +27,18 @@ export function CountdownPhase({ opponent, onComplete }: CountdownPhaseProps) {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [onComplete])
+  }, [])
+
+  // Separate effect to handle completion
+  useEffect(() => {
+    if (countdown === 0 && !hasCompleted.current) {
+      hasCompleted.current = true
+      // Use setTimeout to ensure this runs after the current render cycle
+      setTimeout(() => {
+        onComplete()
+      }, 0)
+    }
+  }, [countdown, onComplete])
 
   return (
     <div className="space-y-8">

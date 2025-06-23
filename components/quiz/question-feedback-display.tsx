@@ -29,6 +29,38 @@ export function QuestionFeedbackDisplay({
   const [canAdvance, setCanAdvance] = useState(false)
   const { autoPlayEnabled, playText, stop } = useGlobalAudio()
 
+  // Countdown state for the "Next Question" button
+  // We start at 4 seconds (matches the 4000 ms delay used elsewhere)
+  const INITIAL_COUNTDOWN = 4
+  const [countdown, setCountdown] = useState<number>(INITIAL_COUNTDOWN)
+  
+  // Reset and start countdown whenever a new feedback screen is shown
+  // (xpGained or selected answer changes) and until the user can advance.
+  useEffect(() => {
+    // If the button is already enabled we don't need a countdown.
+    if (canAdvance) {
+      setCountdown(0)
+      return
+    }
+
+    // Reset countdown to initial value
+    setCountdown(INITIAL_COUNTDOWN)
+
+    const intervalId = setInterval(() => {
+      setCountdown((prev) => {
+        // Stop at 0 to avoid negative values
+        if (prev <= 1) {
+          clearInterval(intervalId)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    // Cleanup on unmount or when dependencies change
+    return () => clearInterval(intervalId)
+  }, [question.question, xpGained, canAdvance])
+
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -191,9 +223,10 @@ export function QuestionFeedbackDisplay({
           )}
         >
           {isLastQuestion ? "Finish Quiz" : "Next Question"}
-          {!canAdvance && (
+          {/* Countdown timer shown until the button becomes active */}
+          {!canAdvance && countdown > 0 && (
             <span className="ml-2 text-sm opacity-75">
-              ({Math.ceil((4000 - Date.now()) / 1000)}s)
+              ({countdown}s)
             </span>
           )}
         </Button>

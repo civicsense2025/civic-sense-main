@@ -438,6 +438,10 @@ export function DailyCardStack({
   const [trendingQueries, setTrendingQueries] = useState<string[]>([])
   const prevIndexRef = useRef(0)
   
+  // Intersection Observer for navigation visibility
+  const [showNavigation, setShowNavigation] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
+  
   // Touch/swipe handling for mobile
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
   const touchEndRef = useRef<{ x: number; y: number; time: number } | null>(null)
@@ -452,6 +456,32 @@ export function DailyCardStack({
     }, 300)
     return () => clearTimeout(timer)
   }, [dropdownSearch])
+
+  // Intersection Observer to control navigation visibility
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        // Show navigation when component is in view, hide when scrolled past
+        setShowNavigation(entry.isIntersecting)
+      },
+      {
+        // Trigger when 20% of the component is visible
+        threshold: 0.2,
+        // Add some margin to the root for better UX
+        rootMargin: '-10% 0px -10% 0px'
+      }
+    )
+
+    observer.observe(container)
+    
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   // Move all useMemo hooks here BEFORE useCallback hooks
   const organizedTopics = useMemo(() => {
@@ -1240,7 +1270,10 @@ export function DailyCardStack({
   const currentAccessStatus = getTopicAccessStatus(currentTopic)
 
   return (
-    <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8 relative">
+    <div 
+      ref={containerRef}
+      className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8 relative"
+    >
       {showGuestBanner && (
         <GuestAccessBanner 
           user={user}
@@ -1259,16 +1292,23 @@ export function DailyCardStack({
         onAuthRequired={onAuthRequired}
       />
 
-      {/* Viewport Edge Navigation - Only show if we have multiple topics */}
+      {/* Viewport Edge Navigation - Only show if we have multiple topics and component is in view */}
       {allFilteredTopics.length > 1 && navigationTopics.length > 0 && (
-        <UnifiedTopicNavigation
-          currentTopic={navigationTopics[currentStackIndex]}
-          allTopics={navigationTopics}
-          onNavigate={handleViewportNavigation}
-          enableKeyboardShortcuts={true}
-          showKeyboardHints={false}
-          variant="viewport"
-        />
+        <div 
+          className={cn(
+            "transition-opacity duration-300",
+            showNavigation ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
+        >
+          <UnifiedTopicNavigation
+            currentTopic={navigationTopics[currentStackIndex]}
+            allTopics={navigationTopics}
+            onNavigate={handleViewportNavigation}
+            enableKeyboardShortcuts={true}
+            showKeyboardHints={false}
+            variant="viewport"
+          />
+        </div>
       )}
 
       {/* Progress indicator - centered, minimal */}
