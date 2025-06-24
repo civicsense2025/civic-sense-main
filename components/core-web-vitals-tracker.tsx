@@ -79,43 +79,53 @@ export function CoreWebVitalsTracker() {
         // Set up metrics collection
         try {
           // Cumulative Layout Shift
-          webVitalsModule.getCLS((metric: WebVitalsMetric) => {
-            if (!mounted) return
-            setMetrics(prev => ({ ...prev, CLS: metric.value }))
-            logMetric('CLS', metric.value)
-          })
+          if ('onCLS' in webVitalsModule && typeof webVitalsModule.onCLS === 'function') {
+            webVitalsModule.onCLS((metric: WebVitalsMetric) => {
+              if (!mounted) return
+              setMetrics(prev => ({ ...prev, CLS: metric.value }))
+              logMetric('CLS', metric.value)
+            })
+          }
 
           // First Contentful Paint
-          webVitalsModule.getFCP((metric: WebVitalsMetric) => {
-            if (!mounted) return
-            setMetrics(prev => ({ ...prev, FCP: metric.value }))
-            logMetric('FCP', metric.value)
-          })
+          if ('onFCP' in webVitalsModule && typeof webVitalsModule.onFCP === 'function') {
+            webVitalsModule.onFCP((metric: WebVitalsMetric) => {
+              if (!mounted) return
+              setMetrics(prev => ({ ...prev, FCP: metric.value }))
+              logMetric('FCP', metric.value)
+            })
+          }
 
           // First Input Delay
-          webVitalsModule.getFID((metric: WebVitalsMetric) => {
-            if (!mounted) return
-            setMetrics(prev => ({ ...prev, FID: metric.value }))
-            logMetric('FID', metric.value)
-          })
+          if ('onFID' in webVitalsModule && typeof webVitalsModule.onFID === 'function') {
+            webVitalsModule.onFID((metric: WebVitalsMetric) => {
+              if (!mounted) return
+              setMetrics(prev => ({ ...prev, FID: metric.value }))
+              logMetric('FID', metric.value)
+            })
+          }
 
           // Largest Contentful Paint
-          webVitalsModule.getLCP((metric: WebVitalsMetric) => {
-            if (!mounted) return
-            setMetrics(prev => ({ ...prev, LCP: metric.value }))
-            logMetric('LCP', metric.value)
-          })
+          if ('onLCP' in webVitalsModule && typeof webVitalsModule.onLCP === 'function') {
+            webVitalsModule.onLCP((metric: WebVitalsMetric) => {
+              if (!mounted) return
+              setMetrics(prev => ({ ...prev, LCP: metric.value }))
+              logMetric('LCP', metric.value)
+            })
+          }
 
           // Time to First Byte
-          webVitalsModule.getTTFB((metric: WebVitalsMetric) => {
-            if (!mounted) return
-            setMetrics(prev => ({ ...prev, TTFB: metric.value }))
-            logMetric('TTFB', metric.value)
-          })
+          if ('onTTFB' in webVitalsModule && typeof webVitalsModule.onTTFB === 'function') {
+            webVitalsModule.onTTFB((metric: WebVitalsMetric) => {
+              if (!mounted) return
+              setMetrics(prev => ({ ...prev, TTFB: metric.value }))
+              logMetric('TTFB', metric.value)
+            })
+          }
 
           // Interaction to Next Paint (new Core Web Vital) - check if available
-          if ('getINP' in webVitalsModule && typeof webVitalsModule.getINP === 'function') {
-            webVitalsModule.getINP((metric: WebVitalsMetric) => {
+          if ('onINP' in webVitalsModule && typeof webVitalsModule.onINP === 'function') {
+            webVitalsModule.onINP((metric: WebVitalsMetric) => {
               if (!mounted) return
               setMetrics(prev => ({ ...prev, INP: metric.value }))
               logMetric('INP', metric.value)
@@ -149,19 +159,7 @@ export function CoreWebVitalsTracker() {
   // Show loading state
   if (!isLoaded) {
     return (
-      <div style={{
-        position: 'fixed',
-        bottom: '120px',
-        right: '20px',
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '8px 12px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        zIndex: 9999,
-        border: '1px solid #333'
-      }}>
+      <div className="p-3 rounded-lg border bg-muted text-sm font-mono">
         📊 Loading Web Vitals...
       </div>
     )
@@ -170,19 +168,7 @@ export function CoreWebVitalsTracker() {
   // Show unavailable state
   if (!hasWebVitals) {
     return (
-      <div style={{
-        position: 'fixed',
-        bottom: '120px',
-        right: '20px',
-        background: 'rgba(120, 120, 120, 0.8)',
-        color: 'white',
-        padding: '8px 12px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        zIndex: 9999,
-        border: '1px solid #666'
-      }}>
+      <div className="p-3 rounded-lg border bg-muted text-sm font-mono text-muted-foreground">
         📊 Web Vitals: N/A
       </div>
     )
@@ -192,45 +178,54 @@ export function CoreWebVitalsTracker() {
   const metricsCount = Object.keys(metrics).length
   
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '120px',
-      right: '20px',
-      background: 'rgba(0, 0, 0, 0.8)',
-      color: 'white',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      zIndex: 9999,
-      border: '1px solid #333',
-      minWidth: '200px'
-    }}>
-      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+    <div className="p-3 rounded-lg border bg-muted">
+      <div className="font-semibold text-sm mb-3 flex items-center gap-2">
         📊 Core Web Vitals ({metricsCount})
       </div>
       
-      {metrics.FCP && (
-        <div>FCP: {Math.round(metrics.FCP)}ms</div>
-      )}
-      {metrics.LCP && (
-        <div>LCP: {Math.round(metrics.LCP)}ms</div>
-      )}
-      {metrics.FID && (
-        <div>FID: {Math.round(metrics.FID)}ms</div>
-      )}
-      {metrics.CLS && (
-        <div>CLS: {Math.round(metrics.CLS * 1000) / 1000}</div>
-      )}
-      {metrics.TTFB && (
-        <div>TTFB: {Math.round(metrics.TTFB)}ms</div>
-      )}
-      {metrics.INP && (
-        <div>INP: {Math.round(metrics.INP)}ms</div>
-      )}
+      <div className="grid grid-cols-2 gap-3 text-sm font-mono">
+        {metrics.FCP && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">FCP:</span>
+            <span>{Math.round(metrics.FCP)}ms</span>
+          </div>
+        )}
+        {metrics.LCP && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">LCP:</span>
+            <span>{Math.round(metrics.LCP)}ms</span>
+          </div>
+        )}
+        {metrics.FID && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">FID:</span>
+            <span>{Math.round(metrics.FID)}ms</span>
+          </div>
+        )}
+        {metrics.CLS && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">CLS:</span>
+            <span>{Math.round(metrics.CLS * 1000) / 1000}</span>
+          </div>
+        )}
+        {metrics.TTFB && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">TTFB:</span>
+            <span>{Math.round(metrics.TTFB)}ms</span>
+          </div>
+        )}
+        {metrics.INP && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">INP:</span>
+            <span>{Math.round(metrics.INP)}ms</span>
+          </div>
+        )}
+      </div>
       
       {metricsCount === 0 && (
-        <div style={{ opacity: 0.7 }}>Collecting metrics...</div>
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Collecting metrics...
+        </div>
       )}
     </div>
   )

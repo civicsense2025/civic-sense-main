@@ -1309,14 +1309,7 @@ export function DailyCardStack({
         </div>
       )}
 
-      {/* Progress indicator - centered, minimal */}
-      {allFilteredTopics.length > 1 && (
-        <div className="text-center mb-6">
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-            {currentStackIndex + 1} of {(selectedCategory || searchQuery) ? allFilteredTopics.length : (totalTopicsCount > 0 ? totalTopicsCount : allFilteredTopics.length)}
-          </div>
-        </div>
-      )}
+
 
       {/* Single Topic Display */}
       <div className="relative">
@@ -1342,7 +1335,7 @@ export function DailyCardStack({
               
               {/* Topic Title */}
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4">
-                <h2 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-slate-900 dark:text-slate-100 max-w-4xl text-center leading-tight">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-slate-900 dark:text-slate-100 max-w-4xl text-center leading-tight">
                   {currentTopic.topic_title}
                 </h2>
               </div>
@@ -1492,7 +1485,7 @@ export function DailyCardStack({
                 </div>
               )}
               
-              <p className="text-base sm:text-2xl md:text-3xl lg:text-2xl font-light text-slate-800 dark:text-slate-300 max-w-4xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl lg:text-xl font-light text-slate-800 dark:text-slate-300 max-w-4xl mx-auto">
                 {currentTopic.description}
               </p>
               

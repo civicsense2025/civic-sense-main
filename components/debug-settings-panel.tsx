@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Settings, X, RotateCcw, Bug, Flag, Terminal, Navigation, Crown, Cog, Info } from "lucide-react"
+import { Settings, X, RotateCcw, Bug, Flag, Terminal, Navigation, Crown, Cog, Info, Activity } from "lucide-react"
 import { debug } from "@/lib/debug-config"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { envFeatureFlags, type AllFeatureFlags, type NavigationFeatureFlags, type PremiumFeatureFlags, type CoreFeatureFlags } from '@/lib/env-feature-flags'
 import { debugFeatureFlags } from "@/lib/debug-feature-flags"
+import { CoreWebVitalsTracker, usePerformanceOptimizations } from "@/components/core-web-vitals-tracker"
 
 interface DebugSettingsPanelProps {
   className?: string
@@ -36,6 +37,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
   const [activeTab, setActiveTab] = useState('features')
   const [selectedFlagCategory, setSelectedFlagCategory] = useState<FlagCategory>('navigation')
   const [mounted, setMounted] = useState(false)
+  const performanceOptimizations = usePerformanceOptimizations()
 
   const updateConfig = () => {
     setConfig(debug.getConfig())
@@ -367,6 +369,13 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                   Debug Categories
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="performance" 
+                  className="w-full justify-start gap-2 h-9"
+                >
+                  <Activity className="h-4 w-4" />
+                  Performance
+                </TabsTrigger>
+                <TabsTrigger 
                   value="console" 
                   className="w-full justify-start gap-2 h-9"
                 >
@@ -498,6 +507,110 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                           <p className="text-sm text-muted-foreground">{description}</p>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'performance' && (
+                  <div className="p-4">
+                    <div className="mb-6">
+                      <h2 className="text-lg font-medium mb-1">Performance Monitoring</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Real-time Core Web Vitals and performance optimization suggestions
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {/* Core Web Vitals Display */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Activity className="h-4 w-4" />
+                            Core Web Vitals
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="mb-4">
+                            <CoreWebVitalsTracker />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Metrics are collected automatically and logged to console with color-coded ratings.
+                            <br />
+                            🟢 Good • 🟡 Needs Improvement • 🔴 Poor
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Performance Optimization Suggestions */}
+                      {performanceOptimizations.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              <Info className="h-4 w-4" />
+                              Optimization Suggestions ({performanceOptimizations.length})
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {performanceOptimizations.map((suggestion, index) => (
+                                <div 
+                                  key={index}
+                                  className="p-3 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30"
+                                >
+                                  <div className="text-sm text-orange-800 dark:text-orange-200">
+                                    • {suggestion}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-3 text-xs text-muted-foreground">
+                              These suggestions are automatically detected based on current page analysis.
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Performance Tips */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Performance Guidelines</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3 text-sm">
+                            <div>
+                              <div className="font-medium mb-1">Core Web Vitals Targets:</div>
+                              <div className="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">LCP (Largest Contentful Paint):</span>
+                                  <div className="font-mono">Good: &lt;2.5s</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">FID (First Input Delay):</span>
+                                  <div className="font-mono">Good: &lt;100ms</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">CLS (Cumulative Layout Shift):</span>
+                                  <div className="font-mono">Good: &lt;0.1</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">FCP (First Contentful Paint):</span>
+                                  <div className="font-mono">Good: &lt;1.8s</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="font-medium mb-1">Quick Tips:</div>
+                              <ul className="text-xs space-y-1 text-muted-foreground">
+                                <li>• Add width/height to images to prevent layout shifts</li>
+                                <li>• Use Next.js Image component for optimization</li>
+                                <li>• Minimize render-blocking JavaScript</li>
+                                <li>• Implement proper font loading strategies</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 )}

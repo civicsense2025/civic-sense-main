@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createAdminClient, requireAdmin } from '@/lib/auth-utils'
 
 interface WeeklyRecapConfig {
   id: string
@@ -34,284 +35,161 @@ interface ContentMetric {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    console.log('🔄 Starting weekly recap generation...')
 
-    // Check authentication and admin role
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Check admin authentication using secure getUser() method
+    const { user, response } = await requireAdmin()
+    if (response) {
+      return response // Return 401 if not admin
     }
 
-    // Check if user has admin role (simplified check - in production would check role table)
-    if (!user.email?.includes('admin')) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
-    }
+    console.log(`✅ Admin user ${user.email} authenticated for weekly recap generation`)
 
-    // Get week from request body, or default to previous week
-    const body = await request.json().catch(() => ({}))
-    const { week_start } = body
+    const adminClient = createAdminClient()
+    const { startDate, endDate, configName } = await request.json()
 
-    let weekStart: Date
-    let weekEnd: Date
+    console.log(`Generating weekly recap for ${startDate} to ${endDate}`)
 
-    if (week_start) {
-      weekStart = new Date(week_start)
-      weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
-    } else {
-      // Default to previous week
-      const now = new Date()
-      weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - 7)
-      weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
-    }
-    
-    const weekStartStr = weekStart.toISOString().split('T')[0]
-    const weekEndStr = weekEnd.toISOString().split('T')[0]
-
-    console.log(`Generating weekly recap for ${weekStartStr} to ${weekEndStr}`)
-
-    // Get active configuration
-    const { data: config, error: configError } = await supabase
+    // Get configuration
+    const { data: config, error: configError } = await adminClient
       .from('weekly_recap_configs')
       .select('*')
-      .eq('is_active', true)
+      .eq('config_name', configName || 'default')
       .single()
 
     if (configError || !config) {
-      return NextResponse.json(
-        { error: `No active configuration found: ${configError?.message}` },
-        { status: 400 }
-      )
-    }
-
-    // Check if recap already exists for this week
-    const { data: existingRecap } = await supabase
-      .from('weekly_recap_collections')
-      .select('id, collection_id')
-      .eq('week_start_date', weekStartStr)
-      .eq('config_used', config.id)
-      .single()
-
-    if (existingRecap) {
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Weekly recap already exists for this week',
-        week_start: weekStartStr,
-        collection_id: existingRecap.collection_id
-      })
-    }
-
-    // Update weekly metrics first (simulate with random data for now)
-    await updateWeeklyMetrics(supabase, weekStartStr, weekEndStr)
-
-    // Get content metrics for the week
-    const { data: contentMetrics, error: metricsError } = await supabase
-      .from('weekly_content_metrics')
-      .select('*')
-      .eq('week_start_date', weekStartStr)
-      .gte('total_views', config.min_engagement_threshold)
-      .gte('completion_rate', config.min_completion_rate)
-
-    if (metricsError) {
-      return NextResponse.json(
-        { error: `Failed to fetch content metrics: ${metricsError.message}` },
-        { status: 500 }
-      )
-    }
-
-    if (!contentMetrics || contentMetrics.length === 0) {
-      console.log('No content met the minimum engagement thresholds')
+      console.error('Error fetching config:', configError)
       return NextResponse.json({ 
         success: false, 
-        message: 'No content met minimum engagement thresholds',
-        threshold: config.min_engagement_threshold 
-      })
+        error: 'Configuration not found' 
+      }, { status: 400 })
     }
 
-    // Calculate scores for each content item
-    const scoredContent: ContentMetric[] = contentMetrics.map((metric: any) => {
-      // Normalize scores to 0-100 scale
-      const engagementScore = Math.min(100, (metric.total_views / 100) * 100)
-      const currentEventsScore = metric.trending_score
-      const userRatingScore = (metric.user_ratings_avg / 5) * 100
-      const civicActionScore = Math.min(100, (metric.follow_up_actions / 10) * 100)
+    // Get content metrics for the date range
+    const { data: metrics, error: metricsError } = await adminClient
+      .from('weekly_content_metrics')
+      .select('*')
+      .gte('metric_date', startDate)
+      .lte('metric_date', endDate)
+      .order('overall_score', { ascending: false })
 
-      // Calculate weighted score using the configuration
-      const calculatedScore = (
-        (engagementScore * config.engagement_weight) +
-        (currentEventsScore * config.current_events_weight) +
-        (userRatingScore * config.user_rating_weight) +
-        (civicActionScore * config.civic_action_weight)
-      )
-
-      return {
-        content_id: metric.content_id,
-        content_type: metric.content_type,
-        total_views: metric.total_views,
-        total_completions: metric.total_completions,
-        completion_rate: metric.completion_rate,
-        user_ratings_avg: metric.user_ratings_avg,
-        trending_score: metric.trending_score,
-        civic_importance_score: metric.civic_importance_score,
-        follow_up_actions: metric.follow_up_actions,
-        calculated_score: Math.round(calculatedScore * 100) / 100
-      }
-    })
-
-    // Sort by calculated score
-    scoredContent.sort((a, b) => b.calculated_score - a.calculated_score)
-
-    // Select content based on type percentages
-    const maxItems = config.max_items_per_collection
-    const topicsCount = Math.ceil(maxItems * (config.topics_percentage / 100))
-    const questionsCount = Math.ceil(maxItems * (config.questions_percentage / 100))
-    const glossaryCount = maxItems - topicsCount - questionsCount
-
-    const selectedContent = [
-      ...scoredContent.filter(c => c.content_type === 'topic').slice(0, topicsCount),
-      ...scoredContent.filter(c => c.content_type === 'question').slice(0, questionsCount),
-      ...scoredContent.filter(c => c.content_type === 'glossary_term').slice(0, glossaryCount)
-    ]
-
-    if (selectedContent.length === 0) {
-      return NextResponse.json(
-        { error: 'No content selected for recap collection' },
-        { status: 400 }
-      )
+    if (metricsError) {
+      console.error('Error fetching metrics:', metricsError)
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to fetch content metrics' 
+      }, { status: 500 })
     }
 
-    // Get trending themes (simulate for now)
-    const topThemes = ['civic engagement', 'current events', 'democracy']
-    const primaryTheme = topThemes[0]
+    // Filter and categorize content
+    const qualifiedMetrics = (metrics || []).filter(m => 
+      m.completion_rate >= config.min_completion_rate &&
+      m.engagement_score >= config.min_engagement_threshold
+    )
 
-    // Generate collection metadata
-    const emojis = config.emoji_pool.split(',')
-    const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)]
-    
-    const title = config.title_template
-      .replace('{week_start}', formatDate(weekStart))
-      .replace('{theme}', primaryTheme)
-      .replace('{item_count}', selectedContent.length.toString())
+    const topicMetrics = qualifiedMetrics
+      .filter(m => m.content_type === 'topic')
+      .slice(0, Math.ceil(config.max_items_per_collection * config.topics_percentage / 100))
 
-    const description = config.description_template
-      .replace('{top_themes}', topThemes.slice(0, 2).join(' and '))
-      .replace('{item_count}', selectedContent.length.toString())
+    const questionMetrics = qualifiedMetrics
+      .filter(m => m.content_type === 'question')
+      .slice(0, Math.ceil(config.max_items_per_collection * config.questions_percentage / 100))
 
-    const slug = `weekly-recap-${weekStartStr}`
+    const glossaryMetrics = qualifiedMetrics
+      .filter(m => m.content_type === 'glossary')
+      .slice(0, Math.ceil(config.max_items_per_collection * config.glossary_percentage / 100))
 
-    // Create the collection
-    const { data: newCollection, error: collectionError } = await supabase
-      .from('collections')
-      .insert({
-        title,
-        slug,
-        description,
-        emoji: selectedEmoji,
-        difficulty_level: 3,
-        estimated_minutes: selectedContent.length * 5, // Estimate 5 minutes per item
-        categories: ['weekly-recap', 'current-events'],
-        tags: ['auto-generated', 'weekly', ...topThemes.slice(0, 2)],
-        learning_objectives: [
-          `Stay current with this week's most engaging civic education topics`,
-          `Learn from ${selectedContent.length} carefully curated pieces of content`,
-          `Build knowledge in ${primaryTheme} and related areas`
-        ],
-        action_items: [
-          'Complete the weekly recap to stay informed',
-          'Share insights with your community',
-          'Take action on current events topics'
-        ],
-        current_events_relevance: 5,
-        political_balance_score: 0,
-        status: 'published',
-        is_featured: true,
-        visibility: 'public',
-        created_by: user.id
-      })
+    // Generate collection data
+    const recapData = {
+      title: config.title_template.replace('{date_range}', `${startDate} to ${endDate}`),
+      description: config.description_template.replace('{date_range}', `${startDate} to ${endDate}`),
+      emoji: config.emoji_pool.split(',')[Math.floor(Math.random() * config.emoji_pool.split(',').length)].trim(),
+      start_date: startDate,
+      end_date: endDate,
+      config_used: configName || 'default',
+      total_items: topicMetrics.length + questionMetrics.length + glossaryMetrics.length,
+      topics_count: topicMetrics.length,
+      questions_count: questionMetrics.length,
+      glossary_count: glossaryMetrics.length,
+      generated_by: user.id,
+      generated_at: new Date().toISOString()
+    }
+
+    // Save to database
+    const { data: collection, error: saveError } = await adminClient
+      .from('weekly_recap_collections')
+      .insert(recapData)
       .select()
       .single()
 
-    if (collectionError) {
-      return NextResponse.json(
-        { error: `Failed to create collection: ${collectionError.message}` },
-        { status: 500 }
-      )
+    if (saveError) {
+      console.error('Error saving weekly recap:', saveError)
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to save weekly recap' 
+      }, { status: 500 })
     }
 
-    // Add items to the collection
-    const collectionItems = selectedContent.map((content, index) => ({
-      collection_id: newCollection.id,
-      item_type: content.content_type,
-      item_id: content.content_id,
-      order_index: index + 1,
-      is_featured: index < 3, // First 3 items are featured
-      is_required: true
-    }))
-
-    const { error: itemsError } = await supabase
-      .from('collection_items')
-      .insert(collectionItems)
-
-    if (itemsError) {
-      return NextResponse.json(
-        { error: `Failed to add items to collection: ${itemsError.message}` },
-        { status: 500 }
-      )
-    }
-
-    // Record the recap generation
-    const avgEngagementScore = selectedContent.reduce((sum, c) => sum + c.calculated_score, 0) / selectedContent.length
-
-    const { error: recapError } = await supabase
-      .from('weekly_recap_collections')
-      .insert({
-        collection_id: newCollection.id,
-        week_start_date: weekStartStr,
-        week_end_date: weekEndStr,
-        config_used: config.id,
-        total_content_analyzed: contentMetrics.length,
-        content_selected: selectedContent.length,
-        avg_engagement_score: Math.round(avgEngagementScore * 100) / 100,
-        top_themes: topThemes
-      })
-
-    if (recapError) {
-      console.error('Failed to record recap generation:', recapError)
-    }
-
-    console.log(`Successfully created weekly recap collection: ${newCollection.id}`)
+    console.log('✅ Weekly recap generated successfully:', collection.id)
 
     return NextResponse.json({
       success: true,
-      collection_id: newCollection.id,
-      collection_slug: slug,
-      week_start: weekStartStr,
-      week_end: weekEndStr,
-      items_count: selectedContent.length,
-      top_themes: topThemes,
-      avg_engagement_score: avgEngagementScore,
-      message: `Created weekly recap "${title}" with ${selectedContent.length} items`
+      data: {
+        collection,
+        metrics: {
+          topics: topicMetrics,
+          questions: questionMetrics,
+          glossary: glossaryMetrics
+        }
+      }
     })
 
   } catch (error) {
-    console.error('Error generating weekly recap:', error)
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    console.error('Error in weekly recap generation:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
+}
+
+export async function GET() {
+  try {
+    // Check admin authentication
+    const { user, response } = await requireAdmin()
+    if (response) {
+      return response
+    }
+
+    const adminClient = createAdminClient()
+
+    // Get recent weekly recaps
+    const { data: recaps, error } = await adminClient
+      .from('weekly_recap_collections')
+      .select('*')
+      .order('generated_at', { ascending: false })
+      .limit(10)
+
+    if (error) {
+      console.error('Error fetching weekly recaps:', error)
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to fetch weekly recaps' 
+      }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: recaps
+    })
+
+  } catch (error) {
+    console.error('Error fetching weekly recaps:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 })
   }
 }
 

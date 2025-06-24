@@ -100,7 +100,17 @@ body {
   --ring: 217 91% 60%;
   --radius: 0.5rem;
 
-  /* Apple-inspired spacing scale */
+  /* CivicSense 8px Grid System - Replaces Apple spacing */
+  --space-xs: 4px;    /* 0.5 units */
+  --space-sm: 8px;    /* 1 unit */
+  --space-md: 16px;   /* 2 units */
+  --space-lg: 24px;   /* 3 units */
+  --space-xl: 32px;   /* 4 units */
+  --space-2xl: 48px;  /* 6 units */
+  --space-3xl: 64px;  /* 8 units */
+  --space-4xl: 96px;  /* 12 units */
+  
+  /* Legacy Apple spacing for compatibility */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -114,18 +124,86 @@ body {
   --space-20: 5rem;
   --space-24: 6rem;
 
-  /* Typography scale */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  --text-5xl: 3rem;
-  --text-6xl: 3.75rem;
+  /* Typography scale - Base (Mobile) */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  --text-6xl: 3.75rem;   /* 60px */
+  
+  /* Button Heights (44px minimum touch target) */
+  --btn-height-sm: 36px;
+  --btn-height-md: 44px;
+  --btn-height-lg: 52px;
+  
+  /* Component Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
 
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY SCALING
+   ============================================================================ */
+
+/* Tablet and up (768px+) - Scale up typography by ~12% */
+@media (min-width: 768px) {
+  :root {
+    --text-xs: 0.84rem;    /* 13.4px */
+    --text-sm: 0.98rem;    /* 15.7px */
+    --text-base: 1.12rem;  /* 17.9px */
+    --text-lg: 1.26rem;    /* 20.2px */
+    --text-xl: 1.4rem;     /* 22.4px */
+    --text-2xl: 1.68rem;   /* 26.9px */
+    --text-3xl: 2.1rem;    /* 33.6px */
+    --text-4xl: 2.52rem;   /* 40.3px */
+    --text-5xl: 3.36rem;   /* 53.8px */
+    --text-6xl: 4.2rem;    /* 67.2px */
+  }
+}
+
+/* Desktop and up (1024px+) - Scale up typography by ~20% from base */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 0.9rem;     /* 14.4px */
+    --text-sm: 1.05rem;    /* 16.8px */
+    --text-base: 1.2rem;   /* 19.2px */
+    --text-lg: 1.35rem;    /* 21.6px */
+    --text-xl: 1.5rem;     /* 24px */
+    --text-2xl: 1.8rem;    /* 28.8px */
+    --text-3xl: 2.25rem;   /* 36px */
+    --text-4xl: 2.7rem;    /* 43.2px */
+    --text-5xl: 3.6rem;    /* 57.6px */
+    --text-6xl: 4.5rem;    /* 72px */
+  }
+}
+
+/* Large desktop and up (1280px+) - Scale up typography by ~30% from base */
+@media (min-width: 1280px) {
+  :root {
+    --text-xs: 0.98rem;    /* 15.7px */
+    --text-sm: 1.14rem;    /* 18.2px */
+    --text-base: 1.3rem;   /* 20.8px */
+    --text-lg: 1.46rem;    /* 23.4px */
+    --text-xl: 1.63rem;    /* 26px */
+    --text-2xl: 1.95rem;   /* 31.2px */
+    --text-3xl: 2.44rem;   /* 39px */
+    --text-4xl: 2.93rem;   /* 46.8px */
+    --text-5xl: 3.9rem;    /* 62.4px */
+    --text-6xl: 4.88rem;   /* 78px */
+  }
+}
+
+/* ============================================================================
+   BASE THEME VARIABLES
+   ============================================================================ */
+:root {
   /* Enhanced multiplayer theme variables */
   --multiplayer-bg: 210 40% 98%;
   --multiplayer-card: 0 0% 100%;

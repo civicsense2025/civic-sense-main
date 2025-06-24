@@ -743,28 +743,23 @@ class NewsAIAgent {
       event.contentGenerationStatus = 'processing'
       await this.saveNewsEvent(event)
 
-      // Trigger content package generation API
-      const response = await fetch('/api/admin/news-agent/generate-package', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          newsEvent: event,
-          config: this.config
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`Content generation failed: ${response.statusText}`)
-      }
-
-      const contentPackage = await response.json()
+      // Instead of making an HTTP call, directly instantiate the content generator
+      // This avoids the fetch URL issue and is more efficient
+      const { ContentPackageGenerator } = await import('../content-generator')
+      const generator = new ContentPackageGenerator(this.supabase, this.config.aiProvider)
+      
+      const { packageId, content, qualityScores } = await generator.generateContentPackage(
+        event,
+        this.config.contentGeneration,
+        this.config.qualityControl.minQualityScore
+      )
 
       // Update event status
       event.contentGenerationStatus = 'completed'
-      event.contentPackageId = contentPackage.id
+      event.contentPackageId = packageId
       await this.saveNewsEvent(event)
 
-      console.log(`✅ Content package generated successfully: ${contentPackage.id}`)
+      console.log(`✅ Content package generated successfully: ${packageId}`)
 
     } catch (error) {
       console.error(`❌ Failed to generate content package for ${event.id}:`, error)

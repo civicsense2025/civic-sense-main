@@ -199,11 +199,6 @@ export default function SchoolsPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="px-8" asChild>
-                <Link href="/test-classroom-setup">
-                  Test Integration
-                </Link>
-              </Button>
               <Button variant="outline" size="lg" className="px-8" asChild>
                 <Link href="mailto:schools@civicsense.com">
                   Schedule Demo

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { createAdminClient, requireAdmin } from '@/lib/auth-utils'
 import OpenAI from 'openai'
 
 const openai = new OpenAI()
@@ -55,16 +56,16 @@ ${html.substring(0, 4000)} // Limit content length for token constraints`
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Check admin authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user?.email?.endsWith('@civicsense.org')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Create admin client and check authentication
+    const supabase = createAdminClient()
+    
+    const authCheck = await requireAdmin(supabase)
+    if (authCheck.response) {
+      return authCheck.response
     }
+    
+    const adminUser = authCheck.user
+    console.log(`✅ Admin user ${adminUser?.email} performing bulk event import`)
 
     // Get pending events
     const { data: pendingEvents, error: fetchError } = await supabase
@@ -128,6 +129,8 @@ export async function POST(request: Request) {
 
       return extractedData
     }))
+
+    console.log(`✅ Bulk import completed: ${results.filter(Boolean).length}/${results.length} successful`)
 
     return NextResponse.json({
       success: true,

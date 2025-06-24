@@ -360,14 +360,14 @@ export function Header({
       {/* Unified header with integrated utility bar */}
       {showTopBar && showMainHeader && (
         <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
+          <div className="flex items-center justify-between w-full max-w-8xl mx-auto px-4 sm:px-8 lg:px-12 h-16">
             {/* Left side - Site branding with inline alpha badge and navigation */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-8 min-w-0 flex-1">
               <Link 
                 href="/" 
-                className="group hover:opacity-80 transition-opacity flex items-center link-none"
+                className="group hover:opacity-80 transition-opacity flex items-center link-none flex-shrink-0"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                     CivicSense
                   </div>
@@ -377,66 +377,73 @@ export function Header({
                 </div>
               </Link>
 
-              {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center space-x-8">
+              {/* Desktop Navigation - Better spacing and typography */}
+              <nav className="hidden lg:flex items-center space-x-8">
                 <Link 
                   href="/categories" 
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Learn
                 </Link>
                 {showMultiplayer && (
                   <Link 
                     href="/multiplayer" 
-                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                    className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                   >
                     Multiplayer
+                  </Link>
+                )}
+                {showScenarios && (
+                  <Link 
+                    href="/scenarios" 
+                    className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                  >
+                    Scenarios
                   </Link>
                 )}
               </nav>
             </div>
 
-            {/* Right side - Essential controls */}
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              {/* Desktop controls */}
-              <div className="hidden sm:flex items-center space-x-4">
-                {/* Enhanced Global Search */}
-                {showGlobalSearch && <EnhancedGlobalSearch />}
-                
-                {/* Login button for non-authenticated users */}
-                {!user && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onSignInClick}
-                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                    >
-                      Log In
-                    </Button>
-                    
-                    {/* Main CTA - Take A Civics Test */}
-                    <Button
-                      asChild
-                      size="default"
-                      className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-6 text-base font-semibold h-10"
-                    >
-                      <Link href="/civics-test">
-                        Take A Civics Test
-                      </Link>
-                    </Button>
-                  </>
-                )}
-                
-                {/* User menu for authenticated users */}
-                {user && <UserMenu isAdmin={isAdmin} />}
-              </div>
+            {/* Right side - Actions and User Menu */}
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {/* Search - moved closer to user menu */}
+              {showGlobalSearch && <EnhancedGlobalSearch />}
+              
+              {/* Authentication Controls */}
+              {!user ? (
+                <div className="flex items-center gap-3">
+                  {/* Login button - Hidden on mobile to save space */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onSignInClick}
+                    className="hidden sm:flex text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                  >
+                    Log In
+                  </Button>
+                  
+                  {/* Main CTA - Responsive sizing */}
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-4 text-sm font-semibold h-10 whitespace-nowrap"
+                  >
+                    <Link href="/civics-test" className="flex items-center justify-center">
+                      <span className="hidden sm:inline">Take Civics Test</span>
+                      <span className="sm:hidden">Test</span>
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                /* User menu for authenticated users */
+                <UserMenu isAdmin={isAdmin} />
+              )}
               
               {/* Mobile menu button */}
               {showMobileMenu && (
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="sm:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-[100]"
+                  className="lg:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-[100]"
                   aria-label="Toggle mobile menu"
                 >
                   {isMobileMenuOpen ? (
