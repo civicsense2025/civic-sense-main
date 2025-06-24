@@ -9,9 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useGuestAccess } from "@/hooks/useGuestAccess"
+import { useGuestAccess } from "@/hooks/use-guest-access"
 import { useToast } from "@/components/ui/use-toast"
 import { Clock, Users, Shield, Play, CheckCircle2 } from "lucide-react"
+import { SurveyIncentiveDisplay } from "@/components/survey/survey-incentive-display"
+import { SurveyRewardsCompletion } from "@/components/survey/survey-rewards-completion"
+import { UnclaimedRewardsNotification } from "@/components/survey/unclaimed-rewards-notification"
+import { useSurveyIncentive } from "@/hooks/use-survey-incentives"
 
 interface SurveyTakerProps {
   survey: Survey

@@ -82,11 +82,11 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <Label htmlFor="reset-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Email address
             </Label>
             <Input
-              id="email"
+              id="reset-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

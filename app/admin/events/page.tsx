@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command'
@@ -156,7 +156,8 @@ function GapAnalysisTab({
   availableCategories,
   onRunGapAnalysis,
   onRunDiagnostic,
-  onApplySuggestion
+  onApplySuggestion,
+  onClearCache
 }: {
   eventsData: EventsData | null
   gapAnalysis: any
@@ -167,6 +168,7 @@ function GapAnalysisTab({
   onRunGapAnalysis: () => void
   onRunDiagnostic: () => void
   onApplySuggestion: (suggestion: any) => void
+  onClearCache?: () => void
 }) {
   return (
     <div className="space-y-6">
@@ -181,6 +183,30 @@ function GapAnalysisTab({
             Analyze your civic education database to identify content gaps and research opportunities
           </p>
         </div>
+        {(gapAnalysis || diagnostic) && (
+          <Button
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                const cached = localStorage.getItem('civic-sense-gap-analysis')
+                if (cached) {
+                  const gapAnalysisCache = JSON.parse(cached)
+                  const age = Math.round((Date.now() - gapAnalysisCache.timestamp) / (60 * 60 * 1000))
+                  const confirmed = confirm(`Clear cached gap analysis data?\n\nThis will remove:\n• ${gapAnalysis?.length || 0} research opportunities\n• Database diagnostic results\n• Cache age: ${age} hours\n\nYou can run a fresh analysis anytime.`)
+                  if (confirmed) {
+                    onClearCache?.()
+                  }
+                } else {
+                  onClearCache?.()
+                }
+              }
+            }}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Clear Cache
+          </Button>
+        )}
       </div>
 
       {/* Agent Learning Context Display */}
@@ -457,6 +483,9 @@ function CreateHistoricalEventForm({ onSubmit }: { onSubmit: (data: any) => void
     <form onSubmit={handleSubmit} className="space-y-4">
       <DialogHeader>
         <DialogTitle>Create Historical Event</DialogTitle>
+        <DialogDescription>
+          Add a new historical event to the CivicSense database for civic education content.
+        </DialogDescription>
       </DialogHeader>
       
       <div className="grid grid-cols-2 gap-4">
@@ -952,6 +981,69 @@ export default function EventsAdminPage() {
     researchSummary: null as any
   })
 
+  // Save gap analysis to localStorage
+  const saveGapAnalysis = (gapData: any, diagnosticData: any) => {
+    try {
+      const gapAnalysisCache = {
+        data: gapData,
+        diagnostic: diagnosticData,
+        timestamp: Date.now(),
+        version: '1.0'
+      }
+      localStorage.setItem('civic-sense-gap-analysis', JSON.stringify(gapAnalysisCache))
+      console.log('✅ Gap analysis saved to cache')
+    } catch (error) {
+      console.warn('⚠️ Failed to save gap analysis to cache:', error)
+    }
+  }
+
+  // Load gap analysis from localStorage
+  const loadGapAnalysis = () => {
+    try {
+      const cached = localStorage.getItem('civic-sense-gap-analysis')
+      if (cached) {
+        const gapAnalysisCache = JSON.parse(cached)
+        
+        // Check if cache is less than 24 hours old
+        const isRecent = (Date.now() - gapAnalysisCache.timestamp) < 24 * 60 * 60 * 1000
+        
+        if (isRecent && gapAnalysisCache.data) {
+          setGapAnalysis(gapAnalysisCache.data)
+          setDiagnostic(gapAnalysisCache.diagnostic)
+          console.log('✅ Loaded cached gap analysis:', {
+            gaps: gapAnalysisCache.data?.length || 0,
+            age: Math.round((Date.now() - gapAnalysisCache.timestamp) / (60 * 60 * 1000)) + ' hours'
+          })
+          
+          toast({
+            title: "Gap Analysis Restored",
+            description: `Loaded ${gapAnalysisCache.data?.length || 0} research opportunities from cache.`,
+            duration: 3000
+          })
+        } else {
+          // Clear old cache
+          localStorage.removeItem('civic-sense-gap-analysis')
+          console.log('🧹 Cleared old gap analysis cache')
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load gap analysis from cache:', error)
+      localStorage.removeItem('civic-sense-gap-analysis')
+    }
+  }
+
+  // Clear gap analysis cache
+  const clearGapAnalysisCache = () => {
+    localStorage.removeItem('civic-sense-gap-analysis')
+    setGapAnalysis(null)
+    setDiagnostic(null)
+    toast({
+      title: "Gap Analysis Cleared",
+      description: "Cleared cached gap analysis data. Run a new analysis to get fresh results.",
+      duration: 3000
+    })
+  }
+
   // Load events data
   const loadEventsData = async () => {
     try {
@@ -1042,10 +1134,13 @@ export default function EventsAdminPage() {
         
         setGapAnalysis(Array.isArray(gaps) ? gaps : [])
         
+        // Save results to cache for persistence
+        saveGapAnalysis(gaps, diagnostic)
+        
         // Show success feedback
         toast({
           title: "Gap Analysis Complete!",
-          description: `🤖 Found ${gaps.length} research opportunities using ${data.summary?.ai_powered ? 'AI-powered' : 'systematic'} analysis of ${data.summary?.database_categories || 0} real categories.`,
+          description: `🤖 Found ${gaps.length} research opportunities using ${data.summary?.ai_powered ? 'AI-powered' : 'systematic'} analysis of ${data.summary?.database_categories || 0} real categories. Results saved for 24 hours.`,
           duration: 5000
         })
         
@@ -1093,14 +1188,16 @@ export default function EventsAdminPage() {
       if (data.success) {
         setDiagnostic(data.diagnostic)
         
+        // Save diagnostic to cache (update existing gap analysis cache)
+        saveGapAnalysis(gapAnalysis, data.diagnostic)
+        
         // Show diagnostic summary
         const summary = data.summary
-        alert(`🔍 Database Diagnostic Complete!\n\n` +
-              `Verdict: ${summary.verdict}\n` +
-              `Total Content: ${summary.total_content_items} items\n` +
-              `Real Categories: ${summary.real_categories_found}\n` +
-              `Real Data: ${summary.percentage_real_data}%\n` +
-              `Gap Analysis Reliable: ${summary.gap_analysis_reliable ? 'Yes' : 'No'}`)
+        toast({
+          title: "Database Diagnostic Complete!",
+          description: `${summary.verdict} - ${summary.percentage_real_data}% real data. ${summary.total_content_items} items analyzed.`,
+          duration: 5000
+        })
       } else {
         console.error('Database diagnostic API error:', data)
         alert('Failed to run database diagnostic: ' + data.error)
@@ -1116,21 +1213,46 @@ export default function EventsAdminPage() {
   const applySuggestion = (suggestion: any) => {
     setSelectedSuggestion(suggestion)
     
-    // Auto-fill the form with suggestion data
-    setHistoricalResearchState(prev => ({
-      ...prev,
-      mode: suggestion.suggested_approach.research_mode,
-      themes: suggestion.suggested_approach.focus_areas,
-      maxEvents: suggestion.suggested_approach.expected_events || 10
-    }))
+    // Auto-fill the form with suggestion data (with proper null checking)
+    if (suggestion?.suggested_research) {
+      setHistoricalResearchState(prev => ({
+        ...prev,
+        query: suggestion.suggested_research.mode || 'thematic_research',
+        focusAreas: suggestion.suggested_research.themes || [suggestion.title],
+        timeframe: {
+          start: suggestion.suggested_research.start_year?.toString() || '',
+          end: suggestion.suggested_research.end_year?.toString() || ''
+        }
+      }))
+    } else {
+      // Fallback: use the gap analysis data to set research parameters
+      setHistoricalResearchState(prev => ({
+        ...prev,
+        query: 'thematic_research',
+        focusAreas: [suggestion.title || 'Historical Research'],
+        timeframe: { start: '', end: '' }
+      }))
+    }
     
     // Scroll to research configuration
     document.getElementById('research-config')?.scrollIntoView({ behavior: 'smooth' })
+    
+    // Show a helpful message
+    toast({
+      title: "Research Suggestion Applied",
+      description: `Set up research for: ${suggestion.title}. You can modify the parameters below.`,
+      duration: 3000
+    })
   }
 
   useEffect(() => {
     loadEventsData()
   }, [selectedEventType])
+
+  // Load cached gap analysis on component mount
+  useEffect(() => {
+    loadGapAnalysis()
+  }, [])
 
   // Filter events based on search
   const filteredEvents = eventsData?.events.filter(event =>
@@ -1476,6 +1598,7 @@ export default function EventsAdminPage() {
             onRunGapAnalysis={runGapAnalysis}
             onRunDiagnostic={runDatabaseDiagnostic}
             onApplySuggestion={applySuggestion}
+            onClearCache={clearGapAnalysisCache}
           />
         </TabsContent>
 
@@ -1500,9 +1623,9 @@ export default function EventsAdminPage() {
               <Brain className="h-5 w-5 text-blue-600" />
               Historical Research AI Agent
             </DialogTitle>
-            <p className="text-sm text-slate-600">
+            <DialogDescription>
               Advanced AI agent that learns from existing database content to generate new historical events and build knowledge connections
-            </p>
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
@@ -2158,9 +2281,9 @@ export default function EventsAdminPage() {
               <Database className="h-5 w-5 text-purple-600" />
               Research Suggestion
             </DialogTitle>
-            <p className="text-sm text-slate-600">
-              AI-generated research suggestion
-            </p>
+            <DialogDescription>
+              AI-generated research suggestion based on content gap analysis
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">

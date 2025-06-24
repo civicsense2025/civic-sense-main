@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ConsolidatedAuthForm } from "./consolidated-auth-form"
 import { DonationForm } from "./donation-form"
 import { PasswordResetForm } from "./password-reset-form"
@@ -40,17 +40,23 @@ export function AuthDialog({ isOpen, onClose, onAuthSuccess, initialMode = 'sign
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      {/* Remove the duplicate DialogOverlay - it's already included in DialogContent */}
       <DialogContent className="sm:max-w-md">
-        {/* Visually hidden DialogTitle for accessibility */}
-        <span className="sr-only">
+        <DialogHeader className="sr-only">
           <DialogTitle>
             {activeTab === "donate" ? "Support CivicSense" : 
              activeTab === "reset-password" ? "Reset Your Password" : "Join CivicSense"}
           </DialogTitle>
-        </span>
+          <DialogDescription>
+            {activeTab === "donate"
+              ? "Support the civic education politicians don't want you to have."
+              : activeTab === "reset-password"
+              ? "Enter your email and we'll send you a reset link."
+              : "Track your civic knowledge. Hold democracy accountable."}
+          </DialogDescription>
+        </DialogHeader>
+        
         <div className="space-y-6">
-          {/* Header */}
+          {/* Visual Header */}
           <div className="text-center space-y-3">
             <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
               {activeTab === "donate" ? "Support CivicSense" : 

@@ -122,10 +122,6 @@ export function FeedbackDialog({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
-        {/* Visually hidden DialogTitle for accessibility */}
-        <span className="sr-only">
-          <DialogTitle>Feedback</DialogTitle>
-        </span>
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-slate-50">Share your feedback</DialogTitle>
           <DialogDescription className="text-slate-600 dark:text-slate-400">
@@ -195,11 +191,11 @@ export function FeedbackDialog({
 
           {!user && (
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-1 text-slate-900 dark:text-slate-50">
+              <Label htmlFor="feedback-email" className="flex items-center gap-1 text-slate-900 dark:text-slate-50">
                 Email <span className="text-xs text-slate-500 dark:text-slate-400">(optional)</span>
               </Label>
               <Input
-                id="email"
+                id="feedback-email"
                 type="email"
                 placeholder="your@email.com"
                 value={email}

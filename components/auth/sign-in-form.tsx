@@ -91,12 +91,12 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          <Label htmlFor="signin-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
           <div className="relative">
             <Input
-              id="email"
+              id="signin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,7 +119,7 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <Label htmlFor="signin-password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Password
             </Label>
             <Button 
@@ -133,7 +133,7 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
           </div>
           <div className="relative">
             <Input
-              id="password"
+              id="signin-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -155,13 +155,13 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
 
         <div className="flex items-center space-x-3 py-2">
           <Checkbox
-            id="remember-me"
+            id="signin-remember-me"
             checked={rememberMe}
             onCheckedChange={handleRememberMeChange}
             className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 dark:data-[state=checked]:bg-white dark:data-[state=checked]:border-white"
           />
           <Label 
-            htmlFor="remember-me" 
+            htmlFor="signin-remember-me" 
             className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none"
           >
             Keep me signed in
