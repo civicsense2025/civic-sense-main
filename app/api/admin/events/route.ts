@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin-middleware'
 
 /**
  * Events Management API
@@ -12,6 +13,15 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
+    // Use improved admin middleware that bypasses RLS recursion
+    const adminCheck = await requireAdmin(request)
+    if (!adminCheck.success || adminCheck.response) {
+      return adminCheck.response || NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const { user, role } = adminCheck
+    console.log(`✅ Admin user ${user.email} (${role}) accessing events API`)
+
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const eventType = searchParams.get('type') || 'all'
@@ -20,22 +30,6 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
     const significance = parseInt(searchParams.get('min_significance') || '1')
     const featured = searchParams.get('featured') === 'true'
-
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!userRole || userRole.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
 
     const result = {
       events: [] as any[],
@@ -198,25 +192,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Use improved admin middleware that bypasses RLS recursion
+    const adminCheck = await requireAdmin(request)
+    if (!adminCheck.success || adminCheck.response) {
+      return adminCheck.response || NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const { user, role } = adminCheck
     const body = await request.json()
     const { action, ...data } = body
 
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    console.log(`✅ Admin user ${user.email} (${role}) performing action: ${action}`)
 
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!userRole || userRole.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const supabase = await createClient()
 
     switch (action) {
       case 'create_historical_event':

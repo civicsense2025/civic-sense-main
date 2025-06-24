@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +11,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command'
+import { toast } from '@/components/ui/use-toast'
+import { Checkbox } from '@/components/ui/checkbox'
 // Simple loading spinner component
 const LoadingSpinner = () => (
   <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent" />
@@ -32,7 +37,15 @@ import {
   RefreshCw,
   Brain,
   Target,
-  LinkIcon
+  LinkIcon,
+  ChevronDown,
+  Check,
+  X,
+  Lightbulb,
+  Sparkles,
+  Database,
+  TrendingDown,
+  AlertTriangle
 } from 'lucide-react'
 
 // Types based on our actual schema
@@ -111,273 +124,304 @@ interface EventsData {
   }
 }
 
-export default function EventsAdminPage() {
-  const [eventsData, setEventsData] = useState<EventsData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
-  const [selectedEventType, setSelectedEventType] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Load events data
-  const loadEventsData = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const params = new URLSearchParams({
-        type: selectedEventType,
-        limit: '50',
-        min_significance: '1'
-      })
-      
-      const response = await fetch(`/api/admin/events?${params}`)
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to load events')
-      }
-      
-      const data: EventsData = await response.json()
-      setEventsData(data)
-      
-    } catch (err) {
-      console.error('Error loading events:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load events')
-    } finally {
-      setIsLoading(false)
-    }
+interface GapAnalysis {
+  id: string
+  type: 'time_period' | 'topic_theme' | 'category' | 'connection_opportunity'
+  title: string
+  description: string
+  priority: 'high' | 'medium' | 'low'
+  confidence: number
+  evidence: {
+    current_content_count: number
+    related_content_found: number
+    gap_size_estimate: string
+    civic_importance: string
+  } | string[] // Support both new object format and legacy array format
+  suggested_research: {
+    mode: string
+    themes: string[]
+    start_year?: number
+    end_year?: number
   }
-
-  useEffect(() => {
-    loadEventsData()
-  }, [selectedEventType])
-
-  // Filter events based on search
-  const filteredEvents = eventsData?.events.filter(event =>
-    event.topic_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.key_figures?.some(figure => figure.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || []
-
-  const filteredUserEvents = eventsData?.user_events.filter(event =>
-    event.event_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.event_description?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []
-
-  const filteredNewsEvents = eventsData?.news_events.filter(event =>
-    event.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.content.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []
-
-  const handleCreateHistoricalEvent = async (eventData: any) => {
-    try {
-      const response = await fetch('/api/admin/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create_historical_event',
-          ...eventData
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create event')
-      }
-
-      const result = await response.json()
-      console.log('Event created successfully:', result)
-      
-      // Reload data
-      await loadEventsData()
-      setIsCreateDialogOpen(false)
-      
-    } catch (err) {
-      console.error('Error creating event:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create event')
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
-        <span className="ml-2">Loading events system...</span>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertDescription>
-            {error}
-            <Button 
-              onClick={loadEventsData} 
-              className="ml-4" 
-              size="sm"
-            >
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
+  impact_potential: number
+}
+  
+// Component for Gap Analysis tab
+function GapAnalysisTab({ 
+  eventsData, 
+  gapAnalysis, 
+  isRunningGapAnalysis, 
+  diagnostic, 
+  isRunningDiagnostic, 
+  availableCategories,
+  onRunGapAnalysis,
+  onRunDiagnostic,
+  onApplySuggestion
+}: {
+  eventsData: EventsData | null
+  gapAnalysis: any
+  isRunningGapAnalysis: boolean
+  diagnostic: any
+  isRunningDiagnostic: boolean
+  availableCategories: string[]
+  onRunGapAnalysis: () => void
+  onRunDiagnostic: () => void
+  onApplySuggestion: (suggestion: any) => void
+}) {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Events Management
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
-            Manage historical events, user submissions, and AI-discovered news for civic education content
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Brain className="h-6 w-6 text-blue-600" />
+            AI-Powered Content Gap Analysis
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            Analyze your civic education database to identify content gaps and research opportunities
           </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={loadEventsData}
-            variant="outline"
-            size="sm"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Historical Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <CreateHistoricalEventForm onSubmit={handleCreateHistoricalEvent} />
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Agent Learning Context Display */}
       {eventsData && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">Total Events</p>
-                  <p className="text-2xl font-bold">{eventsData.stats.total_events}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm font-medium">Historical</p>
-                  <p className="text-2xl font-bold">{eventsData.stats.historical_events}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">Current Events</p>
-                  <p className="text-2xl font-bold">{eventsData.stats.current_events}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm font-medium">User Submitted</p>
-                  <p className="text-2xl font-bold">{eventsData.stats.total_user_events}</p>
-                  <p className="text-xs text-slate-500">({eventsData.stats.pending_user_events} pending)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm font-medium">AI Research</p>
-                  <p className="text-2xl font-bold">{eventsData.stats.ai_research_results}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Database Analysis Context
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Total Events</p>
+              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{eventsData.stats.total_events}</p>
+            </div>
+            <div className="text-center p-4 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Historical Events</p>
+              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{eventsData.stats.historical_events}</p>
+            </div>
+            <div className="text-center p-4 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Content Patterns</p>
+              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                {Math.floor(eventsData.stats.total_events / 10)}+
+              </p>
+            </div>
+            <div className="text-center p-4 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Categories</p>
+              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                {availableCategories.length}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-800/30 rounded text-sm text-blue-800 dark:text-blue-200">
+            <p className="font-medium mb-1">AI Analysis Features:</p>
+            <p>• Analyzes existing content patterns and themes • Identifies content gaps systematically • Builds knowledge relationships • Generates contextually relevant content</p>
+          </div>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search events, people, or topics..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+      {/* Database Reality Check */}
+      <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-lg border border-orange-200 dark:border-orange-800">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Database Reality Check
+            </h3>
+            <p className="text-sm text-orange-700 dark:text-orange-300">
+              Verify what's actually in your database vs hardcoded fallback data
+            </p>
           </div>
+          <Button
+            onClick={onRunDiagnostic}
+            disabled={isRunningDiagnostic}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            {isRunningDiagnostic ? (
+              <>
+                <LoadingSpinner />
+                <span className="ml-2">Analyzing...</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Check Database
+              </>
+            )}
+          </Button>
         </div>
-        <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-          <SelectTrigger className="w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Events</SelectItem>
-            <SelectItem value="historical">Historical Events</SelectItem>
-            <SelectItem value="events">Current Events</SelectItem>
-            <SelectItem value="user_events">User Submissions</SelectItem>
-            <SelectItem value="news_events">AI News Events</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        {diagnostic && (
+          <div className="space-y-4">
+            {/* Reality Check Summary */}
+            <div className="bg-white dark:bg-orange-900/30 p-4 rounded border border-orange-200 dark:border-orange-700">
+              <div className="flex items-center gap-2 mb-3">
+                <h4 className="font-medium text-orange-800 dark:text-orange-200">
+                  Database Analysis Results
+                </h4>
+                <Badge 
+                  variant={diagnostic.reality_check.has_real_content ? 'default' : 'destructive'}
+                  className="text-xs"
+                >
+                  {diagnostic.reality_check.has_real_content ? 'Has Real Content' : 'Mostly Fake Data'}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-800/20 rounded">
+                  <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Topics</p>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {diagnostic.reality_check.content_sources.question_topics.count}
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-800/20 rounded">
+                  <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Events</p>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {diagnostic.reality_check.content_sources.events.count}
+                  </p>
+                </div>
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-800/20 rounded">
+                  <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Questions</p>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {diagnostic.reality_check.content_sources.questions.count}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center p-2 bg-orange-100 dark:bg-orange-800/30 rounded">
+                  <span className="font-medium text-orange-800 dark:text-orange-200">
+                    Real vs Hardcoded Categories:
+                  </span>
+                  <span className="font-bold text-orange-900 dark:text-orange-100">
+                    {diagnostic.reality_check.hardcoded_vs_real.percentage_real}% real
+                  </span>
+                </div>
+                <div className="p-2 bg-orange-100 dark:bg-orange-800/30 rounded">
+                  <p className="font-medium text-orange-800 dark:text-orange-200 mb-1">Recommendation:</p>
+                  <p className="text-orange-700 dark:text-orange-300">
+                    {diagnostic.gap_analysis_validity.recommended_action}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="events">Events ({filteredEvents.length})</TabsTrigger>
-          <TabsTrigger value="user-events">User Events ({filteredUserEvents.length})</TabsTrigger>
-          <TabsTrigger value="news-events">News Events ({filteredNewsEvents.length})</TabsTrigger>
-        </TabsList>
+      {/* Smart Gap Analysis Section */}
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              AI-Powered Content Gap Analysis
+            </h3>
+            <p className="text-sm text-purple-700 dark:text-purple-300">
+              Using OpenAI to analyze {diagnostic ? diagnostic.summary.total_content_items : 'your'} database items and {diagnostic ? diagnostic.reality_check.hardcoded_vs_real.real_from_database : availableCategories.length} real categories
+            </p>
+            {diagnostic && (
+              <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                Database Quality: {diagnostic.summary.verdict} • {diagnostic.summary.percentage_real_data}% real data
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={onRunGapAnalysis}
+            disabled={isRunningGapAnalysis}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            size="lg"
+          >
+            {isRunningGapAnalysis ? (
+              <>
+                <LoadingSpinner />
+                <span className="ml-2">AI Analyzing...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Run AI Analysis
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {gapAnalysis && Array.isArray(gapAnalysis) && gapAnalysis.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <h4 className="text-lg font-medium text-purple-800 dark:text-purple-200">
+                Found {gapAnalysis.length} Research Opportunities:
+              </h4>
+              <Badge className="bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300">
+                🤖 AI-Powered
+              </Badge>
+            </div>
+            
+            <div className="grid gap-4">
+              {gapAnalysis.map((gap: any, index: number) => (
+                <div key={gap.id || index} className="bg-white dark:bg-purple-900/30 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h5 className="font-medium text-purple-900 dark:text-purple-100">{gap.title}</h5>
+                        <Badge variant={gap.priority === 'high' ? 'destructive' : gap.priority === 'medium' ? 'default' : 'secondary'}>
+                          {gap.priority} priority
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {gap.confidence}% confidence
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {gap.impact_potential}/10 impact
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">{gap.description}</p>
+                      <div className="text-xs text-purple-600 dark:text-purple-400">
+                        <strong>Evidence:</strong>{' '}
+                        {gap.evidence && typeof gap.evidence === 'object' ? (
+                          <>
+                            {gap.evidence.current_content_count || 0} current items, 
+                            {gap.evidence.related_content_found || 0} related found, 
+                            gap size: {gap.evidence.gap_size_estimate || 'unknown'}
+                          </>
+                        ) : (
+                          Array.isArray(gap.evidence) ? (
+                            <>
+                              {gap.evidence.slice(0, 2).join('; ')}
+                              {gap.evidence.length > 2 && ` +${gap.evidence.length - 2} more`}
+                            </>
+                          ) : (
+                            'No evidence data available'
+                          )
+                        )}
+                      </div>
+                      {gap.ai_reasoning && (
+                        <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                          <strong>AI Analysis:</strong> {gap.ai_reasoning}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => onApplySuggestion(gap)}
+                      size="sm"
+                      className="ml-4"
+                    >
+                      <Target className="h-3 w-3 mr-1" />
+                      Research This
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="overview" className="space-y-6">
-          <EventsOverview eventsData={eventsData} />
-        </TabsContent>
-
-        <TabsContent value="events" className="space-y-4">
-          <EventsList events={filteredEvents} onRefresh={loadEventsData} />
-        </TabsContent>
-
-        <TabsContent value="user-events" className="space-y-4">
-          <UserEventsList events={filteredUserEvents} onRefresh={loadEventsData} />
-        </TabsContent>
-
-        <TabsContent value="news-events" className="space-y-4">
-          <NewsEventsList events={filteredNewsEvents} onRefresh={loadEventsData} />
-        </TabsContent>
-      </Tabs>
+        {gapAnalysis && Array.isArray(gapAnalysis) && gapAnalysis.length === 0 && !isRunningGapAnalysis && (
+          <div className="text-center py-8">
+            <Brain className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-purple-900 dark:text-purple-100 mb-2">No Analysis Yet</h4>
+            <p className="text-purple-700 dark:text-purple-300">Click "Run AI Analysis" to identify content gaps and research opportunities.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -645,9 +689,7 @@ function EventsList({ events, onRefresh }: { events: Event[], onRefresh: () => v
                   
                   {event.why_this_matters && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-3">
-                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                        Why This Matters:
-                      </p>
+                      <p className="text-sm font-medium">Why This Matters:</p>
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         {event.why_this_matters}
                       </p>
@@ -683,8 +725,8 @@ function EventsList({ events, onRefresh }: { events: Event[], onRefresh: () => v
                   
                   {event.tags && event.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {event.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                      {event.tags.map((tag: string, tagIndex: number) => (
+                        <Badge key={tagIndex} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
@@ -850,4 +892,1340 @@ function NewsEventsList({ events, onRefresh }: { events: NewsEvent[], onRefresh:
       )}
     </div>
   )
-} 
+}
+
+interface DatabaseAnalysis {
+  total_topics: number
+  total_events: number
+  category_distribution: Record<string, number>
+  time_period_gaps: Array<{
+    start_year: number
+    end_year: number
+    event_count: number
+    significance: 'major_gap' | 'minor_gap' | 'well_covered'
+  }>
+  theme_analysis: Array<{
+    theme: string
+    coverage: number
+    quality_score: number
+    gap_type: 'missing' | 'shallow' | 'outdated'
+  }>
+  connection_opportunities: Array<{
+    topic_a: string
+    topic_b: string
+    connection_strength: number
+    connection_type: string
+  }>
+}
+
+export default function EventsAdminPage() {
+  const [eventsData, setEventsData] = useState<EventsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('overview')
+  const [selectedEventType, setSelectedEventType] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showHistoricalResearchDialog, setShowHistoricalResearchDialog] = useState(false)
+  
+  // Enhanced state for better UX
+  const [availableCategories, setAvailableCategories] = useState<string[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
+  const [gapAnalysis, setGapAnalysis] = useState<any>(null)
+  const [isRunningGapAnalysis, setIsRunningGapAnalysis] = useState(false)
+  const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null)
+  
+  // Database diagnostic state
+  const [diagnostic, setDiagnostic] = useState<any>(null)
+  const [isRunningDiagnostic, setIsRunningDiagnostic] = useState(false)
+  
+  const [historicalResearchState, setHistoricalResearchState] = useState({
+    query: '',
+    timeframe: { start: '', end: '' },
+    focusAreas: [] as string[],
+    isResearching: false,
+    results: [] as any[],
+    selectedResults: [] as string[],
+    contentConnections: [] as any[],
+    newsConnections: [] as any[],
+    contentPackages: [] as any[],
+    researchSummary: null as any
+  })
+
+  // Load events data
+  const loadEventsData = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const params = new URLSearchParams({
+        type: selectedEventType,
+        limit: '50',
+        min_significance: '1'
+      })
+      
+      const response = await fetch(`/api/admin/events?${params}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to load events')
+      }
+      
+      const data: EventsData = await response.json()
+      setEventsData(data)
+      
+    } catch (err) {
+      console.error('Error loading events:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load events')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Load available categories when dialog opens
+  useEffect(() => {
+    if (showHistoricalResearchDialog && availableCategories.length === 0) {
+      loadCategories()
+    }
+  }, [showHistoricalResearchDialog])
+
+  const loadCategories = async () => {
+    try {
+      setIsLoadingCategories(true)
+      const response = await fetch('/api/admin/categories')
+      const data = await response.json()
+      
+      if (data.success) {
+        setAvailableCategories(data.categories)
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error)
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }
+
+  const runGapAnalysis = async () => {
+    try {
+      setIsRunningGapAnalysis(true)
+      setGapAnalysis(null)
+      
+      console.log('🔍 Starting gap analysis...')
+      
+      const response = await fetch('/api/admin/historical-research-agent/analyze-gaps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('📡 API Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ API Error:', response.status, errorText)
+        throw new Error(`API returned ${response.status}: ${errorText}`)
+      }
+      
+      const data = await response.json()
+      console.log('📊 Gap analysis response:', data)
+      
+      if (data.success) {
+        // Extract the content_gaps array from the response
+        const gaps = data.data?.content_gaps || []
+        console.log('✅ AI Gap analysis complete:', {
+          gaps_found: gaps.length,
+          ai_powered: data.summary?.ai_powered,
+          database_categories: data.summary?.database_categories,
+          content_quality: data.summary?.content_quality
+        })
+        
+        setGapAnalysis(Array.isArray(gaps) ? gaps : [])
+        
+        // Show success feedback
+        toast({
+          title: "Gap Analysis Complete!",
+          description: `🤖 Found ${gaps.length} research opportunities using ${data.summary?.ai_powered ? 'AI-powered' : 'systematic'} analysis of ${data.summary?.database_categories || 0} real categories.`,
+          duration: 5000
+        })
+        
+      } else {
+        console.error('❌ Gap analysis failed:', data.error, data.details)
+        throw new Error(data.details || data.error || 'Unknown error')
+      }
+      
+    } catch (error) {
+      console.error('❌ Error in gap analysis:', error)
+      
+      let errorMessage = 'Failed to run gap analysis'
+      if (error instanceof Error) {
+        if (error.message.includes('Authentication required')) {
+          errorMessage = 'Authentication required - please refresh the page and try again'
+        } else if (error.message.includes('fetch failed')) {
+          errorMessage = 'Network connection failed - check your internet connection'
+        } else {
+          errorMessage = `Gap analysis error: ${error.message}`
+        }
+      }
+      
+      toast({
+        title: "Gap Analysis Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 6000
+      })
+      setGapAnalysis([]) // Set empty array so UI knows it failed
+      
+    } finally {
+      setIsRunningGapAnalysis(false)
+    }
+  }
+
+  const runDatabaseDiagnostic = async () => {
+    try {
+      setIsRunningDiagnostic(true)
+      setDiagnostic(null)
+      
+      const response = await fetch('/api/admin/historical-research-agent/database-diagnostic')
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setDiagnostic(data.diagnostic)
+        
+        // Show diagnostic summary
+        const summary = data.summary
+        alert(`🔍 Database Diagnostic Complete!\n\n` +
+              `Verdict: ${summary.verdict}\n` +
+              `Total Content: ${summary.total_content_items} items\n` +
+              `Real Categories: ${summary.real_categories_found}\n` +
+              `Real Data: ${summary.percentage_real_data}%\n` +
+              `Gap Analysis Reliable: ${summary.gap_analysis_reliable ? 'Yes' : 'No'}`)
+      } else {
+        console.error('Database diagnostic API error:', data)
+        alert('Failed to run database diagnostic: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error running database diagnostic:', error)
+      alert('Error running database diagnostic. Please try again.')
+    } finally {
+      setIsRunningDiagnostic(false)
+    }
+  }
+
+  const applySuggestion = (suggestion: any) => {
+    setSelectedSuggestion(suggestion)
+    
+    // Auto-fill the form with suggestion data
+    setHistoricalResearchState(prev => ({
+      ...prev,
+      mode: suggestion.suggested_approach.research_mode,
+      themes: suggestion.suggested_approach.focus_areas,
+      maxEvents: suggestion.suggested_approach.expected_events || 10
+    }))
+    
+    // Scroll to research configuration
+    document.getElementById('research-config')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    loadEventsData()
+  }, [selectedEventType])
+
+  // Filter events based on search
+  const filteredEvents = eventsData?.events.filter(event =>
+    event.topic_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.key_figures?.some(figure => figure.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) || []
+
+  const filteredUserEvents = eventsData?.user_events.filter(event =>
+    event.event_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.event_description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || []
+
+  const filteredNewsEvents = eventsData?.news_events.filter(event =>
+    event.headline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.content.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || []
+
+  const handleCreateHistoricalEvent = async (eventData: any) => {
+    try {
+      const response = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_historical_event',
+          ...eventData
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create event')
+      }
+
+      const result = await response.json()
+      console.log('Event created successfully:', result)
+      
+      // Reload data
+      await loadEventsData()
+      setIsCreateDialogOpen(false)
+      
+    } catch (err) {
+      console.error('Error creating event:', err)
+      setError(err instanceof Error ? err.message : 'Failed to create event')
+    }
+  }
+
+  const handleHistoricalResearch = async () => {
+    try {
+      setHistoricalResearchState(prev => ({ ...prev, isResearching: true, results: [] }))
+      
+      // Determine research mode based on user input
+      let researchMode = 'systematic_survey'
+      if (historicalResearchState.timeframe.start || historicalResearchState.timeframe.end) {
+        researchMode = 'period_focus'
+      }
+      if (historicalResearchState.focusAreas.length > 0) {
+        researchMode = 'thematic_research'
+      }
+      
+      const response = await fetch('/api/admin/historical-research-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: researchMode,
+          themes: historicalResearchState.focusAreas,
+          start_year: historicalResearchState.timeframe.start ? parseInt(historicalResearchState.timeframe.start) : undefined,
+          end_year: historicalResearchState.timeframe.end ? parseInt(historicalResearchState.timeframe.end) : undefined,
+          max_events: 50,
+          include_content_relationships: true,
+          include_news_connections: true,
+          generate_content_packages: true,
+          learning_context: {
+            use_existing_content: true,
+            analyze_patterns: true,
+            build_knowledge_graph: true
+          }
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'AI Agent research failed')
+      }
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setHistoricalResearchState(prev => ({
+          ...prev,
+          results: result.data?.events || [],
+          contentConnections: result.data?.content_connections || [],
+          newsConnections: result.data?.news_connections || [],
+          contentPackages: result.data?.content_packages || [],
+          researchSummary: result.summary,
+          isResearching: false
+        }))
+      } else {
+        throw new Error(result.error || 'AI Agent research failed')
+      }
+      
+    } catch (error) {
+      console.error('AI Agent research error:', error)
+      setHistoricalResearchState(prev => ({ ...prev, isResearching: false }))
+      setError(error instanceof Error ? error.message : 'AI Agent research failed')
+    }
+  }
+
+  const handleSaveHistoricalEvents = async () => {
+    try {
+      const selectedEvents = historicalResearchState.results.filter(
+        event => historicalResearchState.selectedResults.includes(event.title)
+      )
+      
+      if (selectedEvents.length === 0) {
+        setError('Please select at least one event to save')
+        return
+      }
+      
+      // Save each selected event
+      for (const event of selectedEvents) {
+        await handleCreateHistoricalEvent({
+          title: event.title,
+          description: event.description,
+          event_date: event.event_date,
+          event_type: event.event_type,
+          significance_level: event.significance_level,
+          key_figures: event.key_figures,
+          impact_summary: event.impact_summary,
+          why_this_matters: `This ${event.event_type} event demonstrates ${event.civic_education_relevance.government_structure ? 'government structure, ' : ''}${event.civic_education_relevance.checks_and_balances ? 'checks and balances, ' : ''}${event.civic_education_relevance.democratic_processes ? 'democratic processes, ' : ''}and other key civic concepts that help citizens understand how power actually works in American democracy.`,
+          tags: event.tags,
+          is_featured: event.significance_level >= 9
+        })
+      }
+      
+      // Close dialog and refresh
+      setShowHistoricalResearchDialog(false)
+      setHistoricalResearchState({
+        query: '',
+        timeframe: { start: '', end: '' },
+        focusAreas: [],
+        isResearching: false,
+        results: [],
+        selectedResults: [],
+        contentConnections: [],
+        newsConnections: [],
+        contentPackages: [],
+        researchSummary: null
+      })
+      
+      await loadEventsData()
+      
+    } catch (error) {
+      console.error('Error saving historical events:', error)
+      setError(error instanceof Error ? error.message : 'Failed to save events')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+        <span className="ml-2">Loading events system...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error}
+            <Button 
+              onClick={loadEventsData} 
+              className="ml-4" 
+              size="sm"
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Events Management
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
+            Manage historical events, user submissions, and AI-discovered news for civic education content
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={loadEventsData}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={() => setShowHistoricalResearchDialog(true)}>
+            <Brain className="h-4 w-4 mr-2" />
+            AI Research Agent
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Historical Event
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <CreateHistoricalEventForm onSubmit={handleCreateHistoricalEvent} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      {eventsData && (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium">Total Events</p>
+                  <p className="text-2xl font-bold">{eventsData.stats.total_events}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-sm font-medium">Historical</p>
+                  <p className="text-2xl font-bold">{eventsData.stats.historical_events}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium">Current Events</p>
+                  <p className="text-2xl font-bold">{eventsData.stats.current_events}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium">User Submitted</p>
+                  <p className="text-2xl font-bold">{eventsData.stats.total_user_events}</p>
+                  <p className="text-xs text-slate-500">({eventsData.stats.pending_user_events} pending)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="text-sm font-medium">AI Research</p>
+                  <p className="text-2xl font-bold">{eventsData.stats.ai_research_results}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search events, people, or topics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <Select value={selectedEventType} onValueChange={setSelectedEventType}>
+          <SelectTrigger className="w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Events</SelectItem>
+            <SelectItem value="historical">Historical Events</SelectItem>
+            <SelectItem value="events">Current Events</SelectItem>
+            <SelectItem value="user_events">User Submissions</SelectItem>
+            <SelectItem value="news_events">AI News Events</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="gap-analysis">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              Gap Analysis
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="events">Events ({filteredEvents.length})</TabsTrigger>
+          <TabsTrigger value="user-events">User Events ({filteredUserEvents.length})</TabsTrigger>
+          <TabsTrigger value="news-events">News Events ({filteredNewsEvents.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <EventsOverview eventsData={eventsData} />
+        </TabsContent>
+
+        <TabsContent value="gap-analysis" className="space-y-6">
+          <GapAnalysisTab 
+            eventsData={eventsData}
+            gapAnalysis={gapAnalysis}
+            isRunningGapAnalysis={isRunningGapAnalysis}
+            diagnostic={diagnostic}
+            isRunningDiagnostic={isRunningDiagnostic}
+            availableCategories={availableCategories}
+            onRunGapAnalysis={runGapAnalysis}
+            onRunDiagnostic={runDatabaseDiagnostic}
+            onApplySuggestion={applySuggestion}
+          />
+        </TabsContent>
+
+        <TabsContent value="events" className="space-y-4">
+          <EventsList events={filteredEvents} onRefresh={loadEventsData} />
+        </TabsContent>
+
+        <TabsContent value="user-events" className="space-y-4">
+          <UserEventsList events={filteredUserEvents} onRefresh={loadEventsData} />
+        </TabsContent>
+
+        <TabsContent value="news-events" className="space-y-4">
+          <NewsEventsList events={filteredNewsEvents} onRefresh={loadEventsData} />
+        </TabsContent>
+      </Tabs>
+
+      {/* Historical Research Dialog */}
+      <Dialog open={showHistoricalResearchDialog} onOpenChange={setShowHistoricalResearchDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              Historical Research AI Agent
+            </DialogTitle>
+            <p className="text-sm text-slate-600">
+              Advanced AI agent that learns from existing database content to generate new historical events and build knowledge connections
+            </p>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Agent Learning Context Display */}
+            {eventsData && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  AI Agent Learning Context
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-blue-800 dark:text-blue-200">Database Topics</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{eventsData.stats.total_events}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-800 dark:text-blue-200">Historical Events</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{eventsData.stats.historical_events}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-800 dark:text-blue-200">Content Patterns</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {Math.floor(eventsData.stats.total_events / 10)}+
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-800 dark:text-blue-200">Available Categories</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {availableCategories.length}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 p-2 bg-blue-100 dark:bg-blue-800/30 rounded text-xs text-blue-800 dark:text-blue-200">
+                  <p className="font-medium mb-1">Agent Learning Features:</p>
+                  <p>• Analyzes existing content patterns and themes • Identifies content gaps systematically • Builds knowledge relationships • Generates contextually relevant content</p>
+                </div>
+              </div>
+            )}
+
+            {/* Database Reality Check */}
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+                    <Database className="h-4 w-4" />
+                    Database Reality Check
+                  </h4>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Verify what's actually in your database vs hardcoded fallback data
+                  </p>
+                </div>
+                <Button
+                  onClick={runDatabaseDiagnostic}
+                  disabled={isRunningDiagnostic}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  size="sm"
+                >
+                  {isRunningDiagnostic ? (
+                    <>
+                      <LoadingSpinner />
+                      <span className="ml-2">Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Check Database
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {diagnostic && (
+                <div className="mt-4 space-y-3">
+                  {/* Reality Check Summary */}
+                  <div className="bg-white dark:bg-orange-900/30 p-3 rounded border border-orange-200 dark:border-orange-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h5 className="font-medium text-orange-800 dark:text-orange-200">
+                        Database Analysis Results
+                      </h5>
+                      <Badge 
+                        variant={diagnostic.reality_check.has_real_content ? 'default' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {diagnostic.reality_check.has_real_content ? 'Has Real Content' : 'Mostly Fake Data'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="font-medium text-orange-700 dark:text-orange-300">Question Topics</p>
+                        <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                          {diagnostic.reality_check.content_sources.question_topics.count}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-orange-700 dark:text-orange-300">Events</p>
+                        <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                          {diagnostic.reality_check.content_sources.events.count}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-orange-700 dark:text-orange-300">Questions</p>
+                        <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                          {diagnostic.reality_check.content_sources.questions.count}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 p-2 bg-orange-100 dark:bg-orange-800/30 rounded text-xs">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium text-orange-800 dark:text-orange-200">
+                          Real vs Hardcoded Categories:
+                        </span>
+                        <span className="font-bold text-orange-900 dark:text-orange-100">
+                          {diagnostic.reality_check.hardcoded_vs_real.percentage_real}% real
+                        </span>
+                      </div>
+                      <div className="text-orange-700 dark:text-orange-300">
+                        {diagnostic.reality_check.hardcoded_vs_real.real_from_database} real categories + {diagnostic.reality_check.hardcoded_vs_real.hardcoded_fallbacks} hardcoded fallbacks
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 p-2 bg-orange-100 dark:bg-orange-800/30 rounded text-xs">
+                      <p className="font-medium text-orange-800 dark:text-orange-200 mb-1">Recommendation:</p>
+                      <p className="text-orange-700 dark:text-orange-300">
+                        {diagnostic.gap_analysis_validity.recommended_action}
+                      </p>
+                    </div>
+                    
+                    {diagnostic.content_analysis.time_coverage.earliest_event && (
+                      <div className="mt-3 p-2 bg-orange-100 dark:bg-orange-800/30 rounded text-xs">
+                        <p className="font-medium text-orange-800 dark:text-orange-200 mb-1">Time Coverage:</p>
+                        <p className="text-orange-700 dark:text-orange-300">
+                          {diagnostic.content_analysis.time_coverage.earliest_event} to {diagnostic.content_analysis.time_coverage.latest_event} 
+                          ({diagnostic.content_analysis.time_coverage.time_span_years} years)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Smart Gap Analysis Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    AI-Powered Content Gap Analysis
+                  </h4>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    Using OpenAI to analyze {diagnostic ? diagnostic.summary.total_content_items : 'your'} database items and {diagnostic ? diagnostic.reality_check.hardcoded_vs_real.real_from_database : availableCategories.length} real categories
+                  </p>
+                  {diagnostic && (
+                    <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                      Database Quality: {diagnostic.summary.verdict} • {diagnostic.summary.percentage_real_data}% real data
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={runGapAnalysis}
+                  disabled={isRunningGapAnalysis}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  size="sm"
+                >
+                  {isRunningGapAnalysis ? (
+                    <>
+                      <LoadingSpinner />
+                      <span className="ml-2">AI Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Run AI Analysis
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {gapAnalysis && Array.isArray(gapAnalysis) && gapAnalysis.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <h5 className="font-medium text-purple-800 dark:text-purple-200 flex items-center gap-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300">
+                      🤖 AI-Powered
+                    </span>
+                    Found {gapAnalysis.length} Intelligent Research Opportunities:
+                  </h5>
+                  {gapAnalysis.slice(0, 3).map((gap: any) => (
+                    <div key={gap.id} className="bg-white dark:bg-purple-900/30 p-3 rounded border border-purple-200 dark:border-purple-700">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h6 className="font-medium text-purple-900 dark:text-purple-100">{gap.title}</h6>
+                            <Badge variant={gap.priority === 'high' ? 'destructive' : gap.priority === 'medium' ? 'default' : 'secondary'} className="text-xs">
+                              {gap.priority} priority
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {gap.confidence}% confidence
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {gap.impact_potential}/10 impact
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-purple-700 dark:text-purple-300">{gap.description}</p>
+                          <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                            <strong>Evidence:</strong>{' '}
+                            {gap.evidence && typeof gap.evidence === 'object' ? (
+                              <>
+                                {gap.evidence.current_content_count || 0} current items, 
+                                {gap.evidence.related_content_found || 0} related found, 
+                                gap size: {gap.evidence.gap_size_estimate || 'unknown'}
+                              </>
+                            ) : (
+                              Array.isArray(gap.evidence) ? (
+                                <>
+                                  {gap.evidence.slice(0, 2).join('; ')}
+                                  {gap.evidence.length > 2 && ` +${gap.evidence.length - 2} more`}
+                                </>
+                              ) : (
+                                'No evidence data available'
+                              )
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => applySuggestion(gap as any)}
+                          size="sm"
+                          className="ml-4"
+                        >
+                          <Target className="h-3 w-3 mr-1" />
+                          Research This
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {Array.isArray(gapAnalysis) && gapAnalysis.length > 3 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowHistoricalResearchDialog(true)}
+                      className="text-purple-700 hover:text-purple-900"
+                    >
+                      View All {gapAnalysis.length} Opportunities
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Enhanced Research Configuration */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Research Mode</label>
+                  <Select 
+                    value={historicalResearchState.query} 
+                    onValueChange={(value) => setHistoricalResearchState(prev => ({ ...prev, query: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select AI research mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="systematic_survey">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Systematic Survey</span>
+                          <span className="text-xs text-slate-500">Comprehensive analysis of historical gaps</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="period_focus">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Period Focus</span>
+                          <span className="text-xs text-slate-500">Deep dive into specific time periods</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="thematic_research">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Thematic Research</span>
+                          <span className="text-xs text-slate-500">Focus on specific civic themes</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gap_analysis">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Gap Analysis</span>
+                          <span className="text-xs text-slate-500">Identify and fill content gaps</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="relationship_discovery">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Relationship Discovery</span>
+                          <span className="text-xs text-slate-500">Build knowledge connections</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Start Year</label>
+                    <Input
+                      type="number"
+                      placeholder="1789"
+                      min="1600"
+                      max="2024"
+                      value={historicalResearchState.timeframe.start}
+                      onChange={(e) => setHistoricalResearchState(prev => ({
+                        ...prev,
+                        timeframe: { ...prev.timeframe, start: e.target.value }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">End Year</label>
+                    <Input
+                      type="number"
+                      placeholder="2024"
+                      min="1600"
+                      max="2024"
+                      value={historicalResearchState.timeframe.end}
+                      onChange={(e) => setHistoricalResearchState(prev => ({
+                        ...prev,
+                        timeframe: { ...prev.timeframe, end: e.target.value }
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Focus Areas</label>
+                  
+                  {/* Enhanced Focus Areas Input */}
+                  <div className="space-y-3" id="research-config">
+                    <Textarea
+                      placeholder="Type focus areas separated by commas (e.g., Civil Rights Movement, Presidential Powers, Supreme Court Decisions)"
+                      value={historicalResearchState.focusAreas.join(', ')}
+                      onChange={(e) => setHistoricalResearchState(prev => ({
+                        ...prev,
+                        focusAreas: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                      }))}
+                      rows={2}
+                      className="resize-none"
+                    />
+                    
+                    {/* Quick Add Categories */}
+                    <div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="w-full justify-between" disabled={isLoadingCategories}>
+                            <span className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              {isLoadingCategories ? 'Loading categories...' : `Add from ${availableCategories.length} existing categories`}
+                            </span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search categories..." />
+                            <CommandList>
+                              <CommandEmpty>No categories found.</CommandEmpty>
+                              <CommandGroup>
+                                {availableCategories.map((category) => (
+                                  <CommandItem
+                                    key={category}
+                                    onSelect={() => {
+                                      if (!historicalResearchState.focusAreas.includes(category)) {
+                                        setHistoricalResearchState(prev => ({
+                                          ...prev,
+                                          focusAreas: [...prev.focusAreas, category]
+                                        }))
+                                      }
+                                    }}
+                                    className="flex items-center justify-between"
+                                  >
+                                    <span>{category}</span>
+                                    {historicalResearchState.focusAreas.includes(category) && (
+                                      <Check className="h-4 w-4" />
+                                    )}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    {/* Selected Focus Areas Tags */}
+                    {historicalResearchState.focusAreas.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {historicalResearchState.focusAreas.map((area) => (
+                          <Badge key={area} variant="secondary" className="flex items-center gap-1">
+                            {area}
+                            <button
+                              onClick={() => {
+                                setHistoricalResearchState(prev => ({
+                                  ...prev,
+                                  focusAreas: prev.focusAreas.filter(f => f !== area)
+                                }))
+                              }}
+                              className="ml-1 hover:text-red-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    AI Agent Capabilities
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Learns from {eventsData?.stats.total_events || 0} existing database topics</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Identifies content gaps and patterns automatically</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Builds knowledge relationships and connections</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Generates civic education focused content</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Creates thematic content packages</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span>Smart gap analysis with {diagnostic ? diagnostic.reality_check.hardcoded_vs_real.real_from_database : availableCategories.length} real categories</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleHistoricalResearch}
+                  disabled={historicalResearchState.isResearching || !historicalResearchState.query}
+                  className="w-full"
+                  size="lg"
+                >
+                  {historicalResearchState.isResearching ? (
+                    <>
+                      <LoadingSpinner />
+                      <span className="ml-2">AI Agent Learning & Researching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4 mr-2" />
+                      Start AI Research Agent
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Research Progress & Results */}
+            {historicalResearchState.isResearching && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <LoadingSpinner />
+                  <span className="font-medium text-blue-900 dark:text-blue-100">AI Agent Working...</span>
+                </div>
+                <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                  <p>• Loading database context and analyzing existing content patterns</p>
+                  <p>• Identifying content gaps and relationship opportunities</p>
+                  <p>• Generating contextually aware historical events</p>
+                  <p>• Building knowledge connections and content packages</p>
+                </div>
+              </div>
+            )}
+
+            {/* Research Summary */}
+            {historicalResearchState.researchSummary && (
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  AI Research Summary
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-200">Events Generated</p>
+                    <p className="text-xl font-bold text-green-900 dark:text-green-100">
+                      {historicalResearchState.researchSummary.total_events}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-200">Content Connections</p>
+                    <p className="text-xl font-bold text-green-900 dark:text-green-100">
+                      {historicalResearchState.researchSummary.content_connections}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-200">Content Packages</p>
+                    <p className="text-xl font-bold text-green-900 dark:text-green-100">
+                      {historicalResearchState.researchSummary.content_packages}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-200">Confidence Score</p>
+                    <p className="text-xl font-bold text-green-900 dark:text-green-100">
+                      {historicalResearchState.researchSummary.confidence_score}%
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-green-700 dark:text-green-300">
+                  <p><strong>Database Context:</strong> {historicalResearchState.researchSummary.database_context_utilized}</p>
+                  <p><strong>Patterns Discovered:</strong> {historicalResearchState.researchSummary.patterns_discovered}</p>
+                  <p><strong>Gaps Identified:</strong> {historicalResearchState.researchSummary.gaps_identified}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Research Results */}
+            {historicalResearchState.results.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Generated Historical Events ({historicalResearchState.results.length})
+                  </h4>
+                  <div className="text-sm text-slate-600">
+                    Select events to add to database
+                  </div>
+                </div>
+                
+                <div className="max-h-96 overflow-y-auto space-y-3 border rounded-lg p-4">
+                  {historicalResearchState.results.map((event, index) => (
+                    <div key={index} className="border rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-800">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={historicalResearchState.selectedResults.includes(event.title)}
+                          onChange={(e) => {
+                            setHistoricalResearchState(prev => ({
+                              ...prev,
+                              selectedResults: e.target.checked
+                                ? [...prev.selectedResults, event.title]
+                                : prev.selectedResults.filter(title => title !== event.title)
+                            }))
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h5 className="font-medium">{event.title}</h5>
+                            <Badge variant="outline" className="text-xs">
+                              {event.event_type}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              Significance: {event.significance_level}/10
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Confidence: {event.confidence_score}%
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                            {event.description}
+                          </p>
+                          <div className="text-xs text-slate-500 space-y-1">
+                            <p><strong>Date:</strong> {event.event_date}</p>
+                            {event.key_figures && event.key_figures.length > 0 && (
+                              <p><strong>Key Figures:</strong> {event.key_figures.join(', ')}</p>
+                            )}
+                            <p><strong>Impact:</strong> {event.impact_summary}</p>
+                            <p><strong>Civic Relevance:</strong> {event.why_this_matters}</p>
+                            {event.related_existing_content && event.related_existing_content.length > 0 && (
+                              <div className="flex items-center gap-1 mt-2">
+                                <LinkIcon className="h-3 w-3" />
+                                <span className="text-xs">Connects to {event.related_existing_content.length} existing topics</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content Packages */}
+            {historicalResearchState.contentPackages.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Generated Content Packages ({historicalResearchState.contentPackages.length})
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {historicalResearchState.contentPackages.map((pkg, index) => (
+                    <Card key={index}>
+                      <CardContent className="p-4">
+                        <h5 className="font-medium mb-2">{pkg.title}</h5>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{pkg.description}</p>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span>Theme:</span>
+                            <Badge variant="outline">{pkg.theme}</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Time Period:</span>
+                            <span>{pkg.time_period}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Civic Relevance:</span>
+                            <span>{pkg.civic_relevance_score}/10</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowHistoricalResearchDialog(false)}
+            >
+              Cancel
+            </Button>
+            {historicalResearchState.results.length > 0 && (
+              <Button
+                onClick={handleSaveHistoricalEvents}
+                disabled={historicalResearchState.selectedResults.length === 0}
+              >
+                Save Selected Events ({historicalResearchState.selectedResults.length})
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gap Analysis Detail Dialog */}
+      <Dialog open={selectedSuggestion !== null} onOpenChange={() => setSelectedSuggestion(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-purple-600" />
+              Research Suggestion
+            </DialogTitle>
+            <p className="text-sm text-slate-600">
+              AI-generated research suggestion
+            </p>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Suggestion Details */}
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
+              <h4 className="font-semibold mb-3">Research Suggestion</h4>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <strong>Title:</strong>
+                  <p>{selectedSuggestion?.title}</p>
+                </div>
+                <div>
+                  <strong>Description:</strong>
+                  <p>{selectedSuggestion?.description}</p>
+                </div>
+                <div>
+                  <strong>Research Mode:</strong>
+                  <p>{selectedSuggestion?.suggested_approach.research_mode}</p>
+                </div>
+                <div>
+                  <strong>Focus Areas:</strong>
+                  <p>{selectedSuggestion?.suggested_approach.focus_areas.join(', ')}</p>
+                </div>
+                <div>
+                  <strong>Expected Events:</strong>
+                  <p>{selectedSuggestion?.suggested_approach.expected_events}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Research Summary */}
+            {selectedSuggestion && (
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  AI Research Summary
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <strong>Database Context:</strong>
+                    <p>{selectedSuggestion.research_summary.database_context_utilized}</p>
+                  </div>
+                  <div>
+                    <strong>Patterns Discovered:</strong>
+                    <p>{selectedSuggestion.research_summary.patterns_discovered}</p>
+                  </div>
+                  <div>
+                    <strong>Gaps Identified:</strong>
+                    <p>{selectedSuggestion.research_summary.gaps_identified}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedSuggestion(null)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

@@ -14,7 +14,7 @@
 
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,8 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle, Bot, Settings, Play, Pause, RefreshCw, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react'
+import { AlertCircle, Bot, Settings, Play, Pause, RefreshCw, CheckCircle, XCircle, Clock, TrendingUp, Square, Database, FileText, Users, BookOpen, Calendar, User, Package, Activity, ChevronRight, Zap, Target, Globe, Brain, Save, RotateCcw, AlertTriangle, Info } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ============================================================================
 // INTERFACES AND TYPES
@@ -34,7 +35,10 @@ import { AlertCircle, Bot, Settings, Play, Pause, RefreshCw, CheckCircle, XCircl
 
 interface AgentStatus {
   isRunning: boolean
-  config: AgentConfig
+  lastRun?: string
+  articlesProcessed: number
+  contentGenerated: number
+  errors: string[]
 }
 
 interface AgentConfig {
@@ -45,15 +49,32 @@ interface AgentConfig {
   contentGeneration: {
     generateQuestions: boolean
     generateSkills: boolean
-    generateGlossary: boolean
+    generateGlossaryTerms: boolean
     generateEvents: boolean
     generatePublicFigures: boolean
   }
-  aiProvider: 'openai' | 'anthropic'
-  aiModel: string
+  databaseTargets: {
+    saveToContentPackages: boolean
+    saveToContentTables: boolean
+    targetTables: {
+      question_topics: boolean
+      questions: boolean
+      skills: boolean
+      glossary_terms: boolean
+      events: boolean
+      public_figures: boolean
+    }
+    customTableMappings: Record<string, string>
+    schemaConfig: {
+      schemaName: string
+      useCustomFieldMappings: boolean
+      customFieldMappings: Record<string, Record<string, string>>
+    }
+  }
   qualityControl: {
-    minQualityScore: number
-    requireHumanReview: boolean
+    publishAsActive: boolean
+    validateSchema: boolean
+    requireMinimumFields: boolean
   }
 }
 
@@ -85,19 +106,16 @@ interface MonitoringLog {
 
 interface ContentPackage {
   id: string
-  news_event_id: string
-  news_headline: string
-  generated_content: any
-  quality_scores: {
-    overall: number
-    brandVoiceCompliance: number
-    factualAccuracy: number
-    civicActionability: number
-    uncomfortableTruthsRevealed: number
-    powerDynamicsExplained: number
-  }
-  status: 'draft' | 'review' | 'published' | 'rejected'
-  created_at: string
+  title: string
+  status: 'processing' | 'completed' | 'failed'
+  contentTypes: string[]
+  createdAt: string
+  error?: string
+  news_headline?: string
+  civicRelevanceScore?: number
+  source?: string
+  contentGenerationStatus?: string
+  powerDynamicsRevealed?: string[]
 }
 
 interface ContentStats {
@@ -109,24 +127,345 @@ interface ContentStats {
 }
 
 interface SourceStats {
+  totalSources: number
   activeSources: number
-  totalArticles: number
-  credibilityDistribution: {
-    high: number
-    medium: number
-    low: number
-  }
-  topSources: {
-    domain: string
-    articleCount: number
-    avgCredibilityScore: number
-    biasRating?: string
-  }[]
+  recentArticles: number
+  lastUpdate?: string
 }
 
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
+
+// Default configuration
+const DEFAULT_CONFIG: AgentConfig = {
+  isActive: false,
+  monitoringIntervalMinutes: 30,
+  minCivicRelevanceScore: 70,
+  maxEventsPerCycle: 10,
+  contentGeneration: {
+    generateQuestions: true,
+    generateSkills: true,
+    generateGlossaryTerms: true,
+    generateEvents: true,
+    generatePublicFigures: true
+  },
+  databaseTargets: {
+    saveToContentPackages: true,
+    saveToContentTables: true,
+    targetTables: {
+      question_topics: true,
+      questions: true,
+      skills: true,
+      glossary_terms: true,
+      events: true,
+      public_figures: true
+    },
+    customTableMappings: {},
+    schemaConfig: {
+      schemaName: 'public',
+      useCustomFieldMappings: false,
+      customFieldMappings: {}
+    }
+  },
+  qualityControl: {
+    publishAsActive: true,
+    validateSchema: true,
+    requireMinimumFields: true
+  }
+}
+
+// Configuration Panel Component
+function AgentConfigPanel({ 
+  config, 
+  onConfigChange, 
+  onSave 
+}: { 
+  config: AgentConfig
+  onConfigChange: (config: AgentConfig) => void
+  onSave: () => void
+}) {
+  const [localConfig, setLocalConfig] = useState(config)
+  const [hasChanges, setHasChanges] = useState(false)
+
+  useEffect(() => {
+    setHasChanges(JSON.stringify(localConfig) !== JSON.stringify(config))
+  }, [localConfig, config])
+
+  const updateConfig = (updates: Partial<AgentConfig>) => {
+    const newConfig = { ...localConfig, ...updates }
+    setLocalConfig(newConfig)
+    onConfigChange(newConfig)
+  }
+
+  const updateNestedConfig = (path: string, value: any) => {
+    const keys = path.split('.')
+    const newConfig = { ...localConfig }
+    let current: any = newConfig
+    
+    for (let i = 0; i < keys.length - 1; i++) {
+      current = current[keys[i]]
+    }
+    current[keys[keys.length - 1]] = value
+    
+    setLocalConfig(newConfig)
+    onConfigChange(newConfig)
+  }
+
+  const resetToDefaults = () => {
+    setLocalConfig(DEFAULT_CONFIG)
+    onConfigChange(DEFAULT_CONFIG)
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header with Save Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Agent Configuration</h3>
+          <p className="text-sm text-gray-600">Configure how the News AI Agent processes content and populates your database</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {hasChanges && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 text-amber-600 text-sm"
+            >
+              <AlertTriangle size={16} />
+              Unsaved changes
+            </motion.div>
+          )}
+          <button
+            onClick={resetToDefaults}
+            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <RotateCcw size={16} />
+            Reset to Defaults
+          </button>
+          <button
+            onClick={onSave}
+            disabled={!hasChanges}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+              hasChanges
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            <Save size={16} />
+            Save Configuration
+          </button>
+        </div>
+      </div>
+
+      {/* Basic Settings */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Settings size={18} />
+          Basic Settings
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Monitoring Interval (minutes)
+            </label>
+            <input
+              type="number"
+              value={localConfig.monitoringIntervalMinutes}
+              onChange={(e) => updateConfig({ monitoringIntervalMinutes: parseInt(e.target.value) || 30 })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="5"
+              max="1440"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Minimum Civic Relevance Score (%)
+            </label>
+            <input
+              type="number"
+              value={localConfig.minCivicRelevanceScore}
+              onChange={(e) => updateConfig({ minCivicRelevanceScore: parseInt(e.target.value) || 70 })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="0"
+              max="100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Max Events Per Cycle
+            </label>
+            <input
+              type="number"
+              value={localConfig.maxEventsPerCycle}
+              onChange={(e) => updateConfig({ maxEventsPerCycle: parseInt(e.target.value) || 10 })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              min="1"
+              max="100"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Generation Settings */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Brain size={18} />
+          Content Generation
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries({
+            generateQuestions: 'Quiz Questions',
+            generateSkills: 'Civic Skills',
+            generateGlossaryTerms: 'Glossary Terms',
+            generateEvents: 'Events',
+            generatePublicFigures: 'Public Figures'
+          }).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localConfig.contentGeneration[key as keyof typeof localConfig.contentGeneration]}
+                onChange={(e) => updateNestedConfig(`contentGeneration.${key}`, e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Database Targets */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Database size={18} />
+          Database Targets
+        </h4>
+        
+        {/* Storage Options */}
+        <div className="mb-6">
+          <h5 className="font-medium text-gray-800 mb-3">Storage Options</h5>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={localConfig.databaseTargets.saveToContentPackages}
+                onChange={(e) => updateNestedConfig('databaseTargets.saveToContentPackages', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Save to Content Packages Table</span>
+              <span className="text-xs text-gray-500">(Tracks generated content metadata)</span>
+            </label>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={localConfig.databaseTargets.saveToContentTables}
+                onChange={(e) => updateNestedConfig('databaseTargets.saveToContentTables', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Save to Individual Content Tables</span>
+              <span className="text-xs text-gray-500">(Direct insertion into target tables)</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Target Tables */}
+        <div className="mb-6">
+          <h5 className="font-medium text-gray-800 mb-3">Target Tables</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries({
+              question_topics: 'Question Topics',
+              questions: 'Questions',
+              skills: 'Skills',
+              glossary_terms: 'Glossary Terms',
+              events: 'Events',
+              public_figures: 'Public Figures'
+            }).map(([table, label]) => (
+              <label key={table} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localConfig.databaseTargets.targetTables[table as keyof typeof localConfig.databaseTargets.targetTables]}
+                  onChange={(e) => updateNestedConfig(`databaseTargets.targetTables.${table}`, e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Schema Configuration */}
+        <div>
+          <h5 className="font-medium text-gray-800 mb-3">Schema Configuration</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Schema Name
+              </label>
+              <input
+                type="text"
+                value={localConfig.databaseTargets.schemaConfig.schemaName}
+                onChange={(e) => updateNestedConfig('databaseTargets.schemaConfig.schemaName', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="public"
+              />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={localConfig.databaseTargets.schemaConfig.useCustomFieldMappings}
+                  onChange={(e) => updateNestedConfig('databaseTargets.schemaConfig.useCustomFieldMappings', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Use Custom Field Mappings</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quality Control */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Target size={18} />
+          Quality Control
+        </h4>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={localConfig.qualityControl.publishAsActive}
+              onChange={(e) => updateNestedConfig('qualityControl.publishAsActive', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Publish Content as Active</span>
+            <span className="text-xs text-gray-500">(Uncheck to create as drafts)</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={localConfig.qualityControl.validateSchema}
+              onChange={(e) => updateNestedConfig('qualityControl.validateSchema', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Validate Schema Before Insert</span>
+            <span className="text-xs text-gray-500">(Recommended to prevent database errors)</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={localConfig.qualityControl.requireMinimumFields}
+              onChange={(e) => updateNestedConfig('qualityControl.requireMinimumFields', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Require Minimum Fields</span>
+            <span className="text-xs text-gray-500">(Ensure content meets minimum quality standards)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function NewsAgentDashboard() {
   const router = useRouter()
@@ -134,24 +473,22 @@ export default function NewsAgentDashboard() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
   
   // Agent status and control
-  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isControlling, setIsControlling] = useState(false)
-  
-  // Configuration management
-  const [configChanges, setConfigChanges] = useState<Partial<AgentConfig>>({})
-  const [isSavingConfig, setIsSavingConfig] = useState(false)
-  
-  // Monitoring data
-  const [recentLogs, setRecentLogs] = useState<MonitoringLog[]>([])
-  const [recentEvents, setRecentEvents] = useState<NewsEvent[]>([])
+  const [agentStatus, setAgentStatus] = useState<AgentStatus>({ 
+    isRunning: false, 
+    articlesProcessed: 0, 
+    contentGenerated: 0,
+    errors: []
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [sourceStats, setSourceStats] = useState<SourceStats>({ 
+    totalSources: 0, 
+    activeSources: 0, 
+    recentArticles: 0 
+  })
   const [contentPackages, setContentPackages] = useState<ContentPackage[]>([])
-  const [contentStats, setContentStats] = useState<ContentStats | null>(null)
-  const [sourceStats, setSourceStats] = useState<SourceStats | null>(null)
-  
-  // UI state
-  const [error, setError] = useState<string | null>(null)
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [config, setConfig] = useState<AgentConfig>(DEFAULT_CONFIG)
+  const [logs, setLogs] = useState<string[]>([])
+  const sseRef = useRef<EventSource | null>(null)
 
   // ============================================================================
   // DATA LOADING AND REFRESHING
@@ -162,7 +499,7 @@ export default function NewsAgentDashboard() {
    */
   const loadDashboardData = useCallback(async () => {
     try {
-      setError(null)
+      setIsLoading(true)
       console.log('🔄 Loading dashboard data...')
       
       // Load agent status and recent activity
@@ -175,23 +512,9 @@ export default function NewsAgentDashboard() {
       
       if (statusData.success) {
         setAgentStatus(statusData.data.agent)
-        setRecentLogs(statusData.data.recentLogs)
-        setRecentEvents(statusData.data.recentEvents)
+        setLogs(statusData.data.recentLogs)
+        setContentPackages(statusData.data.contentPackages)
         console.log('✅ Agent status updated:', statusData.data.agent.isRunning ? 'Running' : 'Stopped')
-      }
-
-      // Load content package data
-      const packagesResponse = await fetch('/api/admin/news-agent/generate-package')
-      if (!packagesResponse.ok) {
-        console.warn('⚠️ Packages request failed:', packagesResponse.status)
-      } else {
-        const packagesData = await packagesResponse.json()
-        console.log('📦 Packages data received:', packagesData)
-        
-        if (packagesData.success) {
-          setContentPackages(packagesData.data.packages)
-          setContentStats(packagesData.data.statistics)
-        }
       }
 
       // Load source stats
@@ -207,28 +530,68 @@ export default function NewsAgentDashboard() {
         }
       }
 
-      setLastRefresh(new Date())
+      setIsLoading(false)
       console.log('✅ Dashboard data loaded successfully')
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard data'
-      setError(errorMessage)
+      setLogs(prev => [...prev, errorMessage])
       console.error('❌ Dashboard loading error:', err)
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
+  // Update tab from URL changes (must be before conditional rendering)
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab)
+    }
+  }, [searchParams, activeTab])
+
   /**
-   * Initialize dashboard data on mount
+   * Initialize dashboard data with SSE streaming
    */
   useEffect(() => {
-    loadDashboardData()
+    console.log('🔴 Setting up SSE connection for real-time updates...')
     
-    // Set up auto-refresh every 30 seconds
-    const interval = setInterval(loadDashboardData, 30000)
-    return () => clearInterval(interval)
-  }, [loadDashboardData])
+    const eventSource = new EventSource('/api/admin/news-agent/stream')
+    sseRef.current = eventSource
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📡 SSE data received:', data)
+        
+        if (data.type === 'status') {
+          setAgentStatus(data.status)
+        } else if (data.type === 'log') {
+          setLogs(prev => [...prev, data.message])
+        } else if (data.type === 'content_package') {
+          setContentPackages(prev => {
+            const updated = prev.filter(p => p.id !== data.package.id)
+            return [...updated, data.package]
+          })
+        }
+      } catch (error) {
+        console.error('❌ Error parsing SSE data:', error)
+      }
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('❌ SSE connection error:', error)
+      eventSource.close()
+      
+      // Fall back to polling if SSE fails
+      console.log('📡 Falling back to polling...')
+      const fallbackInterval = setInterval(loadDashboardData, 30000)
+      return () => clearInterval(fallbackInterval)
+    }
+
+    return () => {
+      console.log('🔴 Closing SSE connection')
+      eventSource.close()
+    }
+  }, []) // Remove loadDashboardData dependency to prevent reconnections
 
   // ============================================================================
   // AGENT CONTROL FUNCTIONS
@@ -239,16 +602,15 @@ export default function NewsAgentDashboard() {
    */
   const startAgent = async () => {
     try {
-      setIsControlling(true)
-      setError(null)
-      console.log('🚀 Starting news agent...')
+      setIsLoading(true)
+      setLogs(prev => [...prev, '🚀 Starting news agent...'])
 
       const response = await fetch('/api/admin/news-agent/monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           action: 'start',
-          config: { ...agentStatus?.config, ...configChanges }
+          config: { ...config }
         })
       })
 
@@ -261,6 +623,7 @@ export default function NewsAgentDashboard() {
       
       if (result.success) {
         console.log('✅ Agent started successfully')
+        setLogs(prev => [...prev, '✅ Agent started successfully'])
         await loadDashboardData() // Refresh data
       } else {
         throw new Error(result.error || 'Failed to start agent')
@@ -268,10 +631,10 @@ export default function NewsAgentDashboard() {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start agent'
-      setError(errorMessage)
+      setLogs(prev => [...prev, errorMessage])
       console.error('❌ Agent start error:', err)
     } finally {
-      setIsControlling(false)
+      setIsLoading(false)
     }
   }
 
@@ -280,9 +643,8 @@ export default function NewsAgentDashboard() {
    */
   const stopAgent = async () => {
     try {
-      setIsControlling(true)
-      setError(null)
-      console.log('⏹️ Stopping news agent...')
+      setIsLoading(true)
+      setLogs(prev => [...prev, '⏹️ Stopping news agent...'])
 
       const response = await fetch('/api/admin/news-agent/monitor', {
         method: 'POST',
@@ -299,6 +661,7 @@ export default function NewsAgentDashboard() {
       
       if (result.success) {
         console.log('✅ Agent stopped successfully')
+        setLogs(prev => [...prev, '✅ Agent stopped successfully'])
         await loadDashboardData() // Refresh data
       } else {
         throw new Error(result.error || 'Failed to stop agent')
@@ -306,184 +669,81 @@ export default function NewsAgentDashboard() {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to stop agent'
-      setError(errorMessage)
+      setLogs(prev => [...prev, errorMessage])
       console.error('❌ Agent stop error:', err)
     } finally {
-      setIsControlling(false)
+      setIsLoading(false)
     }
   }
 
-  /**
-   * Save configuration changes
-   */
-  const saveConfiguration = async () => {
+  const loadConfig = async () => {
     try {
-      setIsSavingConfig(true)
-      setError(null)
-      console.log('💾 Saving configuration...')
-
-      const newConfig = { ...agentStatus?.config, ...configChanges }
-
-      const response = await fetch('/api/admin/news-agent/monitor', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig)
-      })
-
-      if (!response.ok) {
-        throw new Error(`Config save failed: ${response.status} ${response.statusText}`)
-      }
-      
-      const result = await response.json()
-      console.log('💾 Config save response:', result)
-      
-      if (result.success) {
-        setConfigChanges({}) // Clear pending changes
-        console.log('✅ Configuration saved successfully')
-        await loadDashboardData() // Refresh data
-      } else {
-        throw new Error(result.error || 'Failed to save configuration')
-      }
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save configuration'
-      setError(errorMessage)
-      console.error('❌ Config save error:', err)
-    } finally {
-      setIsSavingConfig(false)
-    }
-  }
-
-  /**
-   * Trigger manual news fetch
-   */
-  const triggerNewsFetch = async () => {
-    try {
-      setError(null)
-      console.log('📰 Triggering manual news fetch...')
-      
-      const response = await fetch('/api/news/headlines?maxArticles=50', {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'CivicSense-NewsAgent/1.0'
+      // Try to load from API first
+      const response = await fetch('/api/admin/news-agent/config')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.config) {
+          setConfig(data.config)
+          return
         }
+      }
+      
+      // Fallback to localStorage
+      const savedConfig = localStorage.getItem('news-agent-config')
+      if (savedConfig) {
+        setConfig(JSON.parse(savedConfig))
+      }
+    } catch (error) {
+      console.error('Failed to load config:', error)
+      // Use localStorage as fallback
+      try {
+        const savedConfig = localStorage.getItem('news-agent-config')
+        if (savedConfig) {
+          setConfig(JSON.parse(savedConfig))
+        }
+      } catch (localError) {
+        console.error('Failed to load from localStorage:', localError)
+      }
+    }
+  }
+
+  const saveConfig = async () => {
+    try {
+      setIsLoading(true)
+      setLogs(prev => [...prev, '💾 Saving configuration...'])
+      
+      // Try to save to API first
+      const response = await fetch('/api/admin/news-agent/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config })
       })
       
       if (response.ok) {
-        const result = await response.json()
-        console.log('📰 News fetch result:', result)
-        
-        // Refresh dashboard data after news fetch
-        setTimeout(() => loadDashboardData(), 2000)
-      } else {
-        console.warn('⚠️ News fetch failed:', response.statusText)
+        const data = await response.json()
+        if (data.success) {
+          setLogs(prev => [...prev, '✅ Configuration saved to database successfully!'])
+          return
+        }
       }
+      
+      // Fallback to localStorage
+      localStorage.setItem('news-agent-config', JSON.stringify(config))
+      setLogs(prev => [...prev, '✅ Configuration saved locally (database not available)'])
       
     } catch (error) {
-      console.error('❌ Manual news fetch error:', error)
-    }
-  }
-
-  // ============================================================================
-  // CONFIGURATION HELPERS
-  // ============================================================================
-
-  /**
-   * Update configuration value
-   */
-  const updateConfig = (path: string, value: any) => {
-    setConfigChanges(prev => {
-      const newChanges = { ...prev }
+      console.error('Failed to save config:', error)
       
-      // Handle nested paths like 'contentGeneration.generateQuestions'
-      const keys = path.split('.')
-      let current: any = newChanges
-      
-      // Navigate to parent object
-      for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) {
-          current[keys[i]] = {}
-        }
-        current = current[keys[i]]
+      // Emergency fallback to localStorage
+      try {
+        localStorage.setItem('news-agent-config', JSON.stringify(config))
+        setLogs(prev => [...prev, '⚠️ Configuration saved to localStorage only'])
+      } catch (localError) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to save configuration'
+        setLogs(prev => [...prev, `❌ Error saving configuration: ${errorMessage}`])
       }
-      
-      // Set the final value
-      current[keys[keys.length - 1]] = value
-      
-      return newChanges
-    })
-  }
-
-  /**
-   * Get current config value (including unsaved changes)
-   */
-  const getCurrentConfigValue = (path: string): any => {
-    const keys = path.split('.')
-    
-    // Check pending changes first
-    let changeValue: any = configChanges
-    for (const key of keys) {
-      if (changeValue && typeof changeValue === 'object' && key in changeValue) {
-        changeValue = changeValue[key]
-      } else {
-        changeValue = undefined
-        break
-      }
-    }
-    
-    if (changeValue !== undefined) return changeValue
-    
-    // Fall back to current config
-    let currentValue: any = agentStatus?.config
-    for (const key of keys) {
-      if (currentValue && typeof currentValue === 'object' && key in currentValue) {
-        currentValue = currentValue[key]
-      } else {
-        return undefined
-      }
-    }
-    
-    return currentValue
-  }
-
-  // ============================================================================
-  // UTILITY FUNCTIONS
-  // ============================================================================
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString()
-  }
-
-  const getStatusBadge = (status: string, isRunning?: boolean) => {
-    if (isRunning !== undefined) {
-      return isRunning ? (
-        <Badge variant="default" className="bg-green-500">
-          <Bot className="w-3 h-3 mr-1" />
-          Running
-        </Badge>
-      ) : (
-        <Badge variant="secondary">
-          <Bot className="w-3 h-3 mr-1" />
-          Stopped
-        </Badge>
-      )
-    }
-
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>
-      case 'processing':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Processing</Badge>
-      case 'published':
-        return <Badge variant="default" className="bg-blue-500">Published</Badge>
-      case 'review':
-        return <Badge variant="secondary">In Review</Badge>
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -510,13 +770,13 @@ export default function NewsAgentDashboard() {
     router.push(`?${newParams.toString()}`, { scroll: false })
   }
 
-  // Update tab from URL changes
-  useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab && tab !== activeTab) {
-      setActiveTab(tab)
-    }
-  }, [searchParams, activeTab])
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'packages', label: 'Content Packages', icon: Package },
+    { id: 'sources', label: 'Sources', icon: Globe },
+    { id: 'configuration', label: 'Configuration', icon: Settings },
+    { id: 'logs', label: 'Logs', icon: FileText }
+  ]
 
   return (
     <div className="min-h-screen bg-slate-50/30 dark:bg-slate-950/50">
@@ -543,7 +803,7 @@ export default function NewsAgentDashboard() {
             <div className="text-right">
               <div className="text-xs text-slate-400 dark:text-slate-500">Last updated</div>
               <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                {formatTimestamp(lastRefresh.toISOString()).split(',')[1]?.trim()}
+                {new Date().toLocaleString()}
               </div>
             </div>
             <Button
@@ -559,142 +819,32 @@ export default function NewsAgentDashboard() {
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {logs.length > 0 && (
           <Alert variant="destructive" className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
+            <AlertDescription className="font-medium">{logs[logs.length - 1]}</AlertDescription>
           </Alert>
         )}
-
-        {/* Minimal Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-3">
-                  <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
-                    Agent Status
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {agentStatus?.isRunning ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Running</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full" />
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Stopped</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {agentStatus?.isRunning ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={stopAgent}
-                    disabled={isControlling}
-                    className="h-8 px-3 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                  >
-                    <Pause className="w-3 h-3" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={startAgent}
-                    disabled={isControlling}
-                    className="h-8 px-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100"
-                  >
-                    <Play className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
-                  News Sources Active
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                    {sourceStats?.activeSources || 0}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {sourceStats?.totalArticles || 0} articles in last 24h
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
-                  Content Generated
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                    {contentStats?.total || 0}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {contentStats?.published || 0} published, {contentStats?.inReview || 0} in review
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
-                  Average Quality
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                    {contentStats?.averageQuality || 0}%
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    Content quality score
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Enhanced Tabs with proper navigation - Consolidated */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-slate-100/60 dark:bg-slate-800/60 backdrop-blur-sm border-0 p-1">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm font-medium"
-            >
-              Overview & Monitoring
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sources" 
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm font-medium"
-            >
-              Sources
-            </TabsTrigger>
-            <TabsTrigger 
-              value="configuration" 
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm font-medium"
-            >
-              Configuration
-            </TabsTrigger>
+            {tabs.map((tab) => (
+              <TabsTrigger 
+                key={tab.id}
+                value={tab.id} 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm font-medium"
+              >
+                <tab.icon size={16} className="mr-2" />
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* Consolidated Overview Tab with Real-time Monitoring */}
           <TabsContent value="overview" className="space-y-6 mt-8">
             {/* Live Agent Status */}
-            {agentStatus?.isRunning && (
+            {agentStatus.isRunning && (
               <Card className="border-0 shadow-sm bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 backdrop-blur-sm border-green-200 dark:border-green-800">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -709,10 +859,10 @@ export default function NewsAgentDashboard() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-green-900 dark:text-green-100">
-                        {getCurrentConfigValue('monitoringIntervalMinutes') || 15} min intervals
+                        {config.monitoringIntervalMinutes} min intervals
                       </div>
                       <div className="text-xs text-green-700 dark:text-green-300">
-                        {getCurrentConfigValue('minCivicRelevanceScore') || 70}% relevance threshold
+                        {config.minCivicRelevanceScore}% relevance threshold
                       </div>
                     </div>
                   </div>
@@ -728,7 +878,7 @@ export default function NewsAgentDashboard() {
                     <div className="space-y-1">
                       <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         Recent News Events
-                        {agentStatus?.isRunning && (
+                        {agentStatus.isRunning && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                         )}
                       </CardTitle>
@@ -739,7 +889,7 @@ export default function NewsAgentDashboard() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={triggerNewsFetch}
+                      onClick={() => {}}
                       className="text-xs"
                     >
                       Fetch News
@@ -749,20 +899,20 @@ export default function NewsAgentDashboard() {
                 <CardContent className="pt-0">
                   <ScrollArea className="h-96">
                     <div className="space-y-3">
-                      {recentEvents.length > 0 ? recentEvents.map((event) => (
+                      {contentPackages.length > 0 ? contentPackages.map((event) => (
                         <div key={event.id} className="group p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
                           <div className="flex items-start justify-between mb-3">
                             <h4 className="font-medium text-sm leading-5 text-slate-900 dark:text-slate-100 line-clamp-2 pr-3">
-                              {event.headline}
+                              {event.news_headline}
                             </h4>
                             <div className="flex items-center gap-2 shrink-0">
                               <div className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-300">
-                                {event.civicRelevanceScore}%
+                                {event.civicRelevanceScore || 'N/A'}%
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center justify-between text-xs mb-2">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">{event.source}</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">{event.source || 'N/A'}</span>
                             <div className="flex items-center gap-2">
                               {event.contentGenerationStatus === 'completed' && (
                                 <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -774,32 +924,33 @@ export default function NewsAgentDashboard() {
                                 <div className="w-2 h-2 bg-red-500 rounded-full" />
                               )}
                               <span className="text-slate-400 dark:text-slate-500 capitalize">
-                                {event.contentGenerationStatus}
+                                {event.contentGenerationStatus || 'Pending'}
                               </span>
                             </div>
                           </div>
                           
-                          {/* Progress bar for processing events */}
-                          {event.contentGenerationStatus === 'processing' && (
-                            <div className="mt-3 space-y-2">
-                              <div className="flex justify-between text-xs">
-                                <span className="text-slate-600 dark:text-slate-400">Generating content...</span>
-                                <span className="text-blue-600 dark:text-blue-400">{Math.floor(Math.random() * 60) + 20}%</span>
-                              </div>
-                              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
-                                <div 
-                                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000 ease-out animate-pulse"
-                                  style={{ width: `${Math.floor(Math.random() * 60) + 20}%` }}
-                                />
-                              </div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Civic Score: {event.civicRelevanceScore || 'N/A'}%
                             </div>
-                          )}
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Source: {event.source || 'N/A'}
+                            </div>
+                          </div>
 
-                          {event.powerDynamicsRevealed.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Content Generation Status:</div>
+                            <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                              {event.contentGenerationStatus || 'Pending'}
+                            </div>
+                          </div>
+
+                          {event.powerDynamicsRevealed && event.powerDynamicsRevealed.length > 0 && (
                             <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                <span className="font-medium">Power Dynamics:</span> {event.powerDynamicsRevealed.slice(0, 2).join(', ')}
-                                {event.powerDynamicsRevealed.length > 2 && '...'}
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Power Dynamics Revealed:</div>
+                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                                {event.powerDynamicsRevealed.slice(0, 2).join(', ')}
+                                {event.powerDynamicsRevealed.length > 2 && ` +${event.powerDynamicsRevealed.length - 2} more`}
                               </div>
                             </div>
                           )}
@@ -824,7 +975,7 @@ export default function NewsAgentDashboard() {
                   <div className="space-y-1">
                     <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       Live Processing Activity
-                      {agentStatus?.isRunning && (
+                      {agentStatus.isRunning && (
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                       )}
                     </CardTitle>
@@ -837,71 +988,45 @@ export default function NewsAgentDashboard() {
                   <ScrollArea className="h-96">
                     <div className="space-y-3">
                       {/* Current processing status if agent is running */}
-                      {agentStatus?.isRunning && (
+                      {agentStatus.isRunning && (
                         <div className="p-4 rounded-lg border-2 border-dashed border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
                               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                              Currently Processing
+                              Agent is Running
                             </span>
                             <div className="text-xs text-blue-700 dark:text-blue-300">
-                              {new Date().toLocaleTimeString()}
+                              Monitoring every {config.monitoringIntervalMinutes} minutes
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-blue-800 dark:text-blue-200">
-                              <span>Analyzing news sources...</span>
-                              <span>{Math.floor(Math.random() * 40) + 30}%</span>
-                            </div>
-                            <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5">
-                              <div 
-                                className="bg-blue-500 h-1.5 rounded-full transition-all duration-2000 ease-out"
-                                style={{ width: `${Math.floor(Math.random() * 40) + 30}%` }}
-                              />
-                            </div>
+                          <div className="text-xs text-blue-800 dark:text-blue-200">
+                            Next cycle will begin automatically based on your monitoring interval settings.
                           </div>
                         </div>
                       )}
 
-                      {recentLogs.length > 0 ? recentLogs.map((log, index) => (
+                      {/* Show stopped message when agent is not running */}
+                      {!agentStatus.isRunning && logs.length === 0 && (
+                        <div className="p-4 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/20">
+                          <div className="flex items-center justify-center gap-3">
+                            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+                            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                              Agent Stopped - No Active Monitoring
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-500 text-center mt-2">
+                            Start the agent to begin processing news articles
+                          </p>
+                        </div>
+                      )}
+
+                      {logs.length > 0 ? logs.map((log, index) => (
                         <div key={index} className="p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                              {formatTimestamp(log.timestamp).split(',')[1]?.trim()}
+                              {log}
                             </span>
-                            <div className="flex items-center gap-2">
-                              {log.status === 'completed' && (
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                              )}
-                              {log.status === 'failed' && (
-                                <div className="w-2 h-2 bg-red-500 rounded-full" />
-                              )}
-                              <span className="text-xs text-slate-500 dark:text-slate-400 capitalize font-medium">
-                                {log.status}
-                              </span>
-                            </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-xs">
-                            <div className="text-center">
-                              <div className="font-semibold text-slate-900 dark:text-slate-100">{log.eventsFound}</div>
-                              <div className="text-slate-500 dark:text-slate-400">Found</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-semibold text-slate-900 dark:text-slate-100">{log.relevantEvents}</div>
-                              <div className="text-slate-500 dark:text-slate-400">Relevant</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-semibold text-slate-900 dark:text-slate-100">{log.eventsProcessed}</div>
-                              <div className="text-slate-500 dark:text-slate-400">Processed</div>
-                            </div>
-                          </div>
-                          {log.error && (
-                            <div className="mt-3 pt-3 border-t border-red-200/60 dark:border-red-800/60">
-                              <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                                {log.error}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )) : (
                         <div className="text-center py-12">
@@ -910,152 +1035,6 @@ export default function NewsAgentDashboard() {
                           </div>
                           <p className="text-sm text-slate-500 dark:text-slate-400">No processing logs yet</p>
                           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Activity will appear here once monitoring starts</p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Content Generation Stats with Real-time Updates */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    Content Generation Pipeline
-                  </CardTitle>
-                  <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
-                    Real-time content creation progress and quality metrics
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-6">
-                    {/* Pipeline Progress */}
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Content Packages</span>
-                        <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{contentStats?.total || 0}</span>
-                      </div>
-                      
-                      {contentStats && contentStats.total > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-green-600">Published: {contentStats.published}</span>
-                            <span className="text-yellow-600">In Review: {contentStats.inReview}</span>
-                            <span className="text-red-600">Rejected: {contentStats.rejected}</span>
-                          </div>
-                          
-                          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                            <div className="flex h-2 rounded-full overflow-hidden">
-                              <div 
-                                className="bg-green-500 transition-all duration-1000"
-                                style={{ width: `${(contentStats.published / contentStats.total) * 100}%` }}
-                              />
-                              <div 
-                                className="bg-yellow-500 transition-all duration-1000"
-                                style={{ width: `${(contentStats.inReview / contentStats.total) * 100}%` }}
-                              />
-                              <div 
-                                className="bg-red-500 transition-all duration-1000"
-                                style={{ width: `${(contentStats.rejected / contentStats.total) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Quality Score */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Average Quality</span>
-                        <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{contentStats?.averageQuality || 0}%</span>
-                      </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-1000 ${
-                            (contentStats?.averageQuality || 0) >= 80 ? 'bg-green-500' :
-                            (contentStats?.averageQuality || 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${contentStats?.averageQuality || 0}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Recent Generation Activity */}
-                    {agentStatus?.isRunning && (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                            Content Generation Active
-                          </span>
-                        </div>
-                        <div className="text-xs text-blue-700 dark:text-blue-300">
-                          Processing {Math.floor(Math.random() * 3) + 1} news events for content creation...
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Content Packages with Live Updates */}
-              <Card className="border-0 shadow-sm bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    Recent Content Packages
-                  </CardTitle>
-                  <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
-                    Latest generated content with quality scores and status
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ScrollArea className="h-80">
-                    <div className="space-y-3">
-                      {contentPackages.length > 0 ? contentPackages.map((pkg) => (
-                        <div key={pkg.id} className="p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-sm line-clamp-2 text-slate-900 dark:text-slate-100">
-                              {pkg.news_headline}
-                            </h4>
-                            {getStatusBadge(pkg.status)}
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                            <span>{formatTimestamp(pkg.created_at)}</span>
-                            <Badge variant="outline">
-                              Quality: {pkg.quality_scores.overall}%
-                            </Badge>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-slate-500 dark:text-slate-400">Brand Voice:</span>
-                              <span className="font-medium">{pkg.quality_scores.brandVoiceCompliance}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500 dark:text-slate-400">Accuracy:</span>
-                              <span className="font-medium">{pkg.quality_scores.factualAccuracy}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500 dark:text-slate-400">Actionability:</span>
-                              <span className="font-medium">{pkg.quality_scores.civicActionability}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500 dark:text-slate-400">Power Analysis:</span>
-                              <span className="font-medium">{pkg.quality_scores.powerDynamicsExplained}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="text-center py-12">
-                          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center mx-auto mb-3">
-                            <TrendingUp className="w-6 h-6 text-slate-400" />
-                          </div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">No content packages yet</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Generated content will appear here</p>
                         </div>
                       )}
                     </div>
@@ -1080,34 +1059,14 @@ export default function NewsAgentDashboard() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{sourceStats?.activeSources || 0}</div>
+                        <div className="text-2xl font-bold text-blue-600">{sourceStats.activeSources || 0}</div>
                         <div className="text-sm text-muted-foreground">Active Sources</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{sourceStats?.totalArticles || 0}</div>
+                        <div className="text-2xl font-bold text-green-600">{sourceStats.recentArticles || 0}</div>
                         <div className="text-sm text-muted-foreground">Articles (24h)</div>
                       </div>
                     </div>
-                    
-                    {sourceStats?.credibilityDistribution && (
-                      <div>
-                        <h4 className="font-medium mb-2">Source Credibility Distribution</h4>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="text-center p-2 bg-green-50 rounded">
-                            <div className="font-bold text-green-700">{sourceStats.credibilityDistribution.high}</div>
-                            <div className="text-green-600">High (80+)</div>
-                          </div>
-                          <div className="text-center p-2 bg-yellow-50 rounded">
-                            <div className="font-bold text-yellow-700">{sourceStats.credibilityDistribution.medium}</div>
-                            <div className="text-yellow-600">Medium (60-79)</div>
-                          </div>
-                          <div className="text-center p-2 bg-red-50 rounded">
-                            <div className="font-bold text-red-700">{sourceStats.credibilityDistribution.low}</div>
-                            <div className="text-red-600">Low (&lt;60)</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1123,231 +1082,21 @@ export default function NewsAgentDashboard() {
                 <CardContent>
                   <ScrollArea className="h-80">
                     <div className="space-y-3">
-                      {sourceStats?.topSources?.map((source, index) => (
-                        <div key={source.domain} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{source.domain}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {source.articleCount} articles • Credibility: {source.avgCredibilityScore}%
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {source.biasRating || 'unknown'}
-                            </Badge>
-                            <div className="text-lg font-bold text-blue-600">#{index + 1}</div>
-                          </div>
-                        </div>
-                      )) || (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No source data available. The news ticker will populate this when articles are fetched.
-                        </div>
-                      )}
+                      {/* Source data will be populated here */}
                     </div>
                   </ScrollArea>
                 </CardContent>
               </Card>
             </div>
-
-            {/* Integration Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>News Ticker → AI Agent Integration</CardTitle>
-                <CardDescription>
-                  How the news ticker feeds articles to the AI agent for content generation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-lg font-semibold text-blue-600 mb-2">📰 News Ticker</div>
-                      <div className="text-sm text-muted-foreground">
-                        Fetches articles from RSS feeds and saves to source_metadata table
-                      </div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-lg font-semibold text-purple-600 mb-2">🔍 AI Agent</div>
-                      <div className="text-sm text-muted-foreground">
-                        Monitors source_metadata for civic-relevant articles
-                      </div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="text-lg font-semibold text-green-600 mb-2">📚 Content</div>
-                      <div className="text-sm text-muted-foreground">
-                        Generates quiz questions, skills, and educational content
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <h4 className="font-medium mb-2">Integration Benefits:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Real-time news monitoring without API rate limits</li>
-                      <li>• Credibility scoring and bias analysis for source filtering</li>
-                      <li>• Automatic civic relevance detection</li>
-                      <li>• Seamless content generation from breaking news</li>
-                      <li>• Shared source metadata for consistent quality</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Configuration Tab - Same as before */}
           <TabsContent value="configuration" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Agent Configuration</CardTitle>
-                <CardDescription>
-                  Configure monitoring settings, content generation options, and quality controls
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Monitoring Settings */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Monitoring Settings</h3>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="monitoring-interval">Monitoring Interval (minutes)</Label>
-                      <Input
-                        id="monitoring-interval"
-                        type="number"
-                        min="5"
-                        max="120"
-                        value={getCurrentConfigValue('monitoringIntervalMinutes') || 15}
-                        onChange={(e) => updateConfig('monitoringIntervalMinutes', parseInt(e.target.value))}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="relevance-threshold">Min Civic Relevance Score</Label>
-                      <Input
-                        id="relevance-threshold"
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={getCurrentConfigValue('minCivicRelevanceScore') || 70}
-                        onChange={(e) => updateConfig('minCivicRelevanceScore', parseInt(e.target.value))}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="max-events">Max Events Per Cycle</Label>
-                      <Input
-                        id="max-events"
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={getCurrentConfigValue('maxEventsPerCycle') || 5}
-                        onChange={(e) => updateConfig('maxEventsPerCycle', parseInt(e.target.value))}
-                      />
-                    </div>
-                  </div>
-
-                  {/* AI Provider Settings */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">AI Provider</h3>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-provider">Provider</Label>
-                      <Select 
-                        value={getCurrentConfigValue('aiProvider') || 'openai'}
-                        onValueChange={(value) => updateConfig('aiProvider', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="openai">OpenAI</SelectItem>
-                          <SelectItem value="anthropic">Anthropic</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-model">Model</Label>
-                      <Input
-                        id="ai-model"
-                        value={getCurrentConfigValue('aiModel') || 'gpt-4'}
-                        onChange={(e) => updateConfig('aiModel', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Generation Settings */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Content Generation</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {[
-                      { key: 'generateQuestions', label: 'Questions' },
-                      { key: 'generateSkills', label: 'Skills' },
-                      { key: 'generateGlossary', label: 'Glossary Terms' },
-                      { key: 'generateEvents', label: 'Events' },
-                      { key: 'generatePublicFigures', label: 'Public Figures' }
-                    ].map(({ key, label }) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Switch
-                          id={key}
-                          checked={getCurrentConfigValue(`contentGeneration.${key}`) ?? true}
-                          onCheckedChange={(checked) => updateConfig(`contentGeneration.${key}`, checked)}
-                        />
-                        <Label htmlFor={key}>{label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quality Control */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Quality Control</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="min-quality">Min Quality Score for Auto-Publish</Label>
-                      <Input
-                        id="min-quality"
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={getCurrentConfigValue('qualityControl.minQualityScore') || 75}
-                        onChange={(e) => updateConfig('qualityControl.minQualityScore', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="require-review"
-                        checked={getCurrentConfigValue('qualityControl.requireHumanReview') ?? true}
-                        onCheckedChange={(checked) => updateConfig('qualityControl.requireHumanReview', checked)}
-                      />
-                      <Label htmlFor="require-review">Require Human Review</Label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Save Button */}
-                <div className="flex justify-end pt-4">
-                  <Button
-                    onClick={saveConfiguration}
-                    disabled={isSavingConfig || Object.keys(configChanges).length === 0}
-                  >
-                    {isSavingConfig ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Save Configuration
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AgentConfigPanel
+              config={config}
+              onConfigChange={setConfig}
+              onSave={saveConfig}
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -17,11 +17,14 @@ const AIGenerationRequestSchema = z.object({
   })).optional(),
   custom_content: z.string().optional(),
   options: z.object({
-    count: z.number().min(1).max(50).optional().default(5),
+    count: z.number().min(1).max(50).default(5),
     categories: z.array(z.string()).optional(),
     difficulty_level: z.number().min(1).max(5).optional(),
-    include_web_search: z.boolean().optional().default(true),
-  }).optional()
+    include_web_search: z.boolean().default(true),
+  }).optional().default({
+    count: 5,
+    include_web_search: true
+  })
 })
 
 // Initialize AI clients
@@ -907,8 +910,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Parse and validate request body
     const body = await request.json()
-    const validatedData = AIGenerationRequestSchema.parse(body)
+    console.log('📥 Received request body:', JSON.stringify(body, null, 2))
+    
+    // Add detailed validation logging
+    let validatedData
+    try {
+      validatedData = AIGenerationRequestSchema.parse(body)
+      console.log('✅ Request validation successful:', JSON.stringify(validatedData, null, 2))
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        console.error('❌ Validation failed:', validationError.errors)
+        return NextResponse.json({ 
+          error: 'Invalid request data',
+          details: validationError.errors 
+        }, { status: 400 })
+      }
+      throw validationError
+    }
     
     // Check if streaming mode is requested
     const { searchParams } = new URL(request.url)

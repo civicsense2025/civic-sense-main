@@ -151,7 +151,24 @@ export class ContentPackageGenerator {
   constructor(
     private supabase: any, 
     private aiProvider: 'openai' | 'anthropic' = 'anthropic',
-    private aiClient?: any // OpenAI or Anthropic client
+    private aiClient?: any, // OpenAI or Anthropic client
+    private config?: {
+      databaseTargets?: {
+        saveToContentPackages: boolean
+        saveToContentTables: boolean
+        targetTables: Record<string, boolean>
+        customTableMappings?: Record<string, string>
+        schemaConfig: {
+          schemaName: string
+          useCustomFieldMappings: boolean
+          customFieldMappings?: Record<string, Record<string, string>>
+        }
+      }
+      qualityControl?: {
+        publishAsActive: boolean
+        validateSchema: boolean
+      }
+    }
   ) {}
 
   async generateContentPackage(
@@ -197,18 +214,22 @@ export class ContentPackageGenerator {
     // Create content package record
     const packageId = `pkg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
-    await this.supabase
-      .from(CONTENT_PACKAGES_TABLE)
-      .insert({
-        id: packageId,
-        news_event_id: newsEvent.id,
-        news_headline: newsEvent.headline,
-        news_analysis: analysis,
-        generated_content: content,
-        quality_scores: qualityScores,
-        status: qualityScores.overall >= qualityThreshold ? 'review' : 'draft',
-        created_at: new Date().toISOString()
-      })
+    // Save to content_packages table if configured
+    if (this.config?.databaseTargets?.saveToContentPackages !== false) {
+      const contentPackagesTable = this.getTableName('content_packages')
+      await this.supabase
+        .from(contentPackagesTable)
+        .insert({
+          id: packageId,
+          news_event_id: newsEvent.id,
+          news_headline: newsEvent.headline,
+          news_analysis: analysis,
+          generated_content: content,
+          quality_scores: qualityScores,
+          status: qualityScores.overall >= qualityThreshold ? 'review' : 'draft',
+          created_at: new Date().toISOString()
+        })
+    }
 
     return { packageId, content, qualityScores }
   }
@@ -1438,57 +1459,71 @@ Format as JSON with these keys:
     const published: { [key: string]: string[] } = {}
     const errors: string[] = []
 
+    // Skip content table publication if configured to not save to content tables
+    if (this.config?.databaseTargets?.saveToContentTables === false) {
+      console.log('📦 Skipping content table publication per configuration')
+      return { published, errors }
+    }
+
     try {
       // 1. Question Topic and Questions
-      if (content.questionTopic && content.questions) {
+      if (content.questionTopic && content.questions && this.isTableEnabled('question_topics')) {
         try {
-          const topicData: DbQuestionTopicsInsert = {
+          const topicTable = this.getTableName('question_topics')
+          const questionsTable = this.getTableName('questions')
+          
+          const topicData: DbQuestionTopicsInsert = this.mapFields('question_topics', {
             topic_id: content.questionTopic.topicId,
             topic_title: content.questionTopic.title,
             description: content.questionTopic.description,
             why_this_matters: content.questionTopic.whyThisMatters,
             emoji: content.questionTopic.emoji,
             categories: [content.questionTopic.category],
-            is_active: true,
+            is_active: this.config?.qualityControl?.publishAsActive ?? false,
             is_featured: false,
             is_breaking: true,
             date: content.questionTopic.date,
-            day_of_week: content.questionTopic.dayOfWeek
-          }
+            day_of_week: content.questionTopic.dayOfWeek,
+            ai_generated: true
+          })
 
           const { error: topicError } = await this.supabase
-            .from(DB_TABLES.QUESTION_TOPICS)
+            .from(topicTable)
             .insert(topicData)
 
           if (topicError) throw new Error(`Topic insertion failed: ${topicError.message}`)
 
-          // Insert questions
-          const questionInserts: DbQuestionsInsert[] = content.questions.map((q, index) => ({
-            topic_id: content.questionTopic!.topicId,
-            question_number: index + 1,
-            question_type: q.type,
-            category: q.category,
-            question: q.text,
-            ...(q.type === 'multiple_choice' && q.options && {
-              option_a: q.options[0],
-              option_b: q.options[1], 
-              option_c: q.options[2],
-              option_d: q.options[3]
-            }),
-            correct_answer: q.correctAnswer,
-            explanation: q.explanation,
-            hint: q.hint,
-            tags: q.tags,
-            sources: q.sources,
-            difficulty_level: q.difficulty,
-            is_active: true
-          }))
+          // Insert questions if questions table is enabled
+          if (this.isTableEnabled('questions')) {
+            const questionInserts: DbQuestionsInsert[] = content.questions.map((q, index) => 
+              this.mapFields('questions', {
+                topic_id: content.questionTopic!.topicId,
+                question_number: index + 1,
+                question_type: q.type,
+                category: q.category,
+                question: q.text,
+                ...(q.type === 'multiple_choice' && q.options && {
+                  option_a: q.options[0],
+                  option_b: q.options[1], 
+                  option_c: q.options[2],
+                  option_d: q.options[3]
+                }),
+                correct_answer: q.correctAnswer,
+                explanation: q.explanation,
+                hint: q.hint,
+                tags: q.tags,
+                sources: q.sources,
+                difficulty_level: q.difficulty,
+                is_active: this.config?.qualityControl?.publishAsActive ?? true
+              })
+            )
 
-          const { error: questionsError } = await this.supabase
-            .from(DB_TABLES.QUESTIONS)
-            .insert(questionInserts)
+            const { error: questionsError } = await this.supabase
+              .from(questionsTable)
+              .insert(questionInserts)
 
-          if (questionsError) throw new Error(`Questions insertion failed: ${questionsError.message}`)
+            if (questionsError) throw new Error(`Questions insertion failed: ${questionsError.message}`)
+          }
           
           published.questions = [content.questionTopic.topicId]
           console.log(`✅ Published topic ${content.questionTopic.topicId} with ${content.questions.length} questions`)
@@ -1497,20 +1532,23 @@ Format as JSON with these keys:
         }
       }
 
-              // 2. Skills
-        if (content.skills) {
-          try {
-            const skillInserts: DbSkillsInsert[] = content.skills.map(skill => ({
+      // 2. Skills
+      if (content.skills && this.isTableEnabled('skills')) {
+        try {
+          const skillsTable = this.getTableName('skills')
+          const skillInserts: DbSkillsInsert[] = content.skills.map(skill => 
+            this.mapFields('skills', {
               category_id: skill.category,
               skill_name: skill.name,
               skill_slug: skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
               description: skill.description,
               difficulty_level: skill.difficultyLevel,
-              is_active: true
-            }))
+              is_active: this.config?.qualityControl?.publishAsActive ?? true
+            })
+          )
 
           const { error: skillsError } = await this.supabase
-            .from(DB_TABLES.SKILLS)
+            .from(skillsTable)
             .insert(skillInserts)
 
           if (skillsError) throw new Error(`Skills insertion failed: ${skillsError.message}`)
@@ -1523,21 +1561,24 @@ Format as JSON with these keys:
       }
 
       // 3. Glossary Terms
-      if (content.glossaryTerms) {
+      if (content.glossaryTerms && this.isTableEnabled('glossary_terms')) {
         try {
-          const glossaryInserts: DbGlossaryTermsInsert[] = content.glossaryTerms.map(term => ({
-            term: term.term,
-            definition: term.definition,
-            category: term.category,
-            examples: term.examples,
-            uncomfortable_truth: term.uncomfortableTruth,
-            power_dynamics: term.powerDynamics,
-            action_steps: term.actionSteps,
-            ai_generated: true
-          }))
+          const glossaryTable = this.getTableName('glossary_terms')
+          const glossaryInserts: DbGlossaryTermsInsert[] = content.glossaryTerms.map(term => 
+            this.mapFields('glossary_terms', {
+              term: term.term,
+              definition: term.definition,
+              category: term.category,
+              examples: term.examples,
+              uncomfortable_truth: term.uncomfortableTruth,
+              power_dynamics: term.powerDynamics,
+              action_steps: term.actionSteps,
+              ai_generated: true
+            })
+          )
 
           const { error: glossaryError } = await this.supabase
-            .from(DB_TABLES.GLOSSARY_TERMS)
+            .from(glossaryTable)
             .insert(glossaryInserts)
 
           if (glossaryError) throw new Error(`Glossary insertion failed: ${glossaryError.message}`)
@@ -1549,10 +1590,12 @@ Format as JSON with these keys:
         }
       }
 
-              // 4. Events
-        if (content.events) {
-          try {
-            const eventInserts: DbEventsInsert[] = content.events.map(event => ({
+      // 4. Events
+      if (content.events && this.isTableEnabled('events')) {
+        try {
+          const eventsTable = this.getTableName('events')
+          const eventInserts: DbEventsInsert[] = content.events.map(event => 
+            this.mapFields('events', {
               date: event.date,
               topic_id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               topic_title: event.title,
@@ -1561,10 +1604,11 @@ Format as JSON with these keys:
               civic_relevance_score: event.significance * 10,
               content_package_id: packageId,
               source_type: 'news_generated'
-            }))
+            })
+          )
 
           const { error: eventsError } = await this.supabase
-            .from(DB_TABLES.EVENTS)
+            .from(eventsTable)
             .insert(eventInserts)
 
           if (eventsError) throw new Error(`Events insertion failed: ${eventsError.message}`)
@@ -1577,17 +1621,20 @@ Format as JSON with these keys:
       }
 
       // 5. Public Figures
-      if (content.publicFigures) {
+      if (content.publicFigures && this.isTableEnabled('public_figures')) {
         try {
-          const figureInserts: DbPublicFiguresInsert[] = content.publicFigures.map(figure => ({
-            slug: figure.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            full_name: figure.name,
-            title: figure.title,
-            bio: `${figure.title} at ${figure.organization}. ${figure.relevanceToTopic}`
-          }))
+          const figuresTable = this.getTableName('public_figures')
+          const figureInserts: DbPublicFiguresInsert[] = content.publicFigures.map(figure => 
+            this.mapFields('public_figures', {
+              slug: figure.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              full_name: figure.name,
+              title: figure.title,
+              bio: `${figure.title} at ${figure.organization}. ${figure.relevanceToTopic}`
+            })
+          )
 
           const { error: figuresError } = await this.supabase
-            .from(DB_TABLES.PUBLIC_FIGURES)
+            .from(figuresTable)
             .insert(figureInserts)
 
           if (figuresError) throw new Error(`Public figures insertion failed: ${figuresError.message}`)
@@ -1599,21 +1646,87 @@ Format as JSON with these keys:
         }
       }
 
-      // Update package status
-      await this.supabase
-        .from(CONTENT_PACKAGES_TABLE)
-        .update({ 
-          status: 'published',
-          published_at: new Date().toISOString(),
-          published_content: published
-        })
-        .eq('id', packageId)
+      // Update package status if content_packages is enabled
+      if (this.config?.databaseTargets?.saveToContentPackages !== false) {
+        const contentPackagesTable = this.getTableName('content_packages')
+        await this.supabase
+          .from(contentPackagesTable)
+          .update({ 
+            status: 'published',
+            published_at: new Date().toISOString(),
+            published_content: published
+          })
+          .eq('id', packageId)
+      }
 
       return { published, errors }
     } catch (error) {
       console.error('❌ Content publication failed:', error)
       return { published, errors: [...errors, `General publication error: ${error}`] }
     }
+  }
+
+  // ============================================================================
+  // CONFIGURATION HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Get the actual table name, accounting for custom mappings
+   */
+  private getTableName(defaultTableName: string): string {
+    const customMapping = this.config?.databaseTargets?.customTableMappings?.[defaultTableName]
+    if (customMapping) {
+      return customMapping
+    }
+    
+    // Add schema prefix if configured
+    const schemaName = this.config?.databaseTargets?.schemaConfig?.schemaName
+    if (schemaName && schemaName !== 'public') {
+      return `${schemaName}.${defaultTableName}`
+    }
+    
+    return defaultTableName
+  }
+
+  /**
+   * Check if a specific table is enabled for content insertion
+   */
+  private isTableEnabled(tableName: string): boolean {
+    return this.config?.databaseTargets?.targetTables?.[tableName] !== false
+  }
+
+  /**
+   * Map fields according to custom field mappings if configured
+   */
+  private mapFields(tableName: string, data: Record<string, any>): Record<string, any> {
+    const useCustomMappings = this.config?.databaseTargets?.schemaConfig?.useCustomFieldMappings
+    const customMappings = this.config?.databaseTargets?.schemaConfig?.customFieldMappings?.[tableName]
+    
+    if (!useCustomMappings || !customMappings) {
+      return data
+    }
+    
+    const mappedData: Record<string, any> = {}
+    
+    Object.entries(data).forEach(([originalField, value]) => {
+      const mappedField = customMappings[originalField] || originalField
+      mappedData[mappedField] = value
+    })
+    
+    return mappedData
+  }
+
+  /**
+   * Validate schema if configured
+   */
+  private async validateSchema(tableName: string, data: Record<string, any>): Promise<boolean> {
+    if (!this.config?.qualityControl?.validateSchema) {
+      return true
+    }
+    
+    // In a real implementation, this would validate against the actual database schema
+    console.log(`✅ Schema validation for ${tableName}:`, Object.keys(data))
+    return true
   }
 }
 

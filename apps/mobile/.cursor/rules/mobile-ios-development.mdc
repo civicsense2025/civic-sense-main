@@ -3,9 +3,19 @@ description:
 globs: 
 alwaysApply: true
 ---
-# CivicSense Mobile iOS Development Rules
+# CivicSense Mobile Development Rules (Consolidated)
 
-*Monorepo Structure: `../../civic-sense-main/` with web app at `../web/`*
+## 📋 Table of Contents
+1. [Project Architecture](#project-architecture)
+2. [Development Standards](#development-standards)
+3. [Performance Optimization](#performance-optimization)
+4. [iOS-Specific Guidelines](#ios-specific-guidelines)
+5. [Testing & Quality Assurance](#testing--quality-assurance)
+6. [Security Implementation](#security-implementation)
+7. [Common Scenarios Q&A](#common-scenarios-qa)
+8. [Troubleshooting Guide](#troubleshooting-guide)
+
+---
 
 ## 🏗️ Project Architecture
 
@@ -13,211 +23,329 @@ alwaysApply: true
 ```
 civic-sense-main/
 ├── apps/
-│   ├── web/                    # Existing Next.js app
-│   └── mobile/                 # Expo app (current context)
+│   ├── web/                    # Next.js web app
+│   └── mobile/                 # Expo app (React Native)
 ├── packages/
-│   ├── shared/                 # Shared business logic
+│   ├── shared/                 # Cross-platform business logic
 │   │   ├── database/          # Supabase client & types
 │   │   ├── auth/              # Authentication logic
-│   │   ├── quiz/              # Quiz engine & logic
-│   │   ├── multiplayer/       # Multiplayer functionality
-│   │   └── utils/             # Utility functions
-│   ├── ui-web/                # Web-specific UI components
-│   ├── ui-mobile/             # Mobile-specific UI components
+│   │   ├── quiz/              # Quiz engine & scoring
+│   │   ├── multiplayer/       # Real-time features
+│   │   └── utils/             # Shared utilities
+│   ├── ui-web/                # Web-specific components
+│   ├── ui-mobile/             # Mobile-specific components
 │   └── ui-shared/             # Platform-agnostic components
 └── supabase/                  # Database migrations & config
 ```
 
-## 📱 iOS-Specific Development Standards
-
-### 1. App Configuration (app.config.ts)
+### Core Technical Stack
 ```typescript
-// apps/mobile/app.config.ts
-import { ExpoConfig, ConfigContext } from 'expo/config';
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: 'CivicSense',
-  slug: 'civicsense',
-  version: '1.0.0',
-  orientation: 'portrait',
-  icon: './assets/icon.png',
-  userInterfaceStyle: 'automatic',
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: 'com.civicsense.app',
-    buildNumber: '1',
-    // iOS-specific configurations
-    requireFullScreen: false,
-    userInterfaceStyle: 'automatic',
-    infoPlist: {
-      NSCameraUsageDescription: 'CivicSense needs camera access for profile photos',
-      NSMicrophoneUsageDescription: 'CivicSense needs microphone access for voice features',
-      CFBundleAllowMixedLocalizations: true,
-    },
-    associatedDomains: ['applinks:civicsense.com'],
-  },
-  plugins: [
-    'expo-router',
-    'expo-secure-store',
-    [
-      'expo-build-properties',
-      {
-        ios: {
-          newArchEnabled: true,
-          deploymentTarget: '13.0'
-        }
-      }
-    ]
-  ],
-});
+// apps/mobile/package.json key dependencies
+{
+  "dependencies": {
+    "expo": "~51.0.0",
+    "react-native": "0.74.2",
+    "expo-router": "~3.5.0",
+    "@shopify/flash-list": "1.6.3",
+    "react-native-reanimated": "~3.10.0",
+    "expo-image": "~1.12.0",
+    "zustand": "^4.5.0",
+    "@tanstack/react-query": "^5.0.0",
+    "nativewind": "^4.0.0",
+    "expo-secure-store": "~13.0.0"
+  }
+}
 ```
 
-### 2. iOS-Specific UI Guidelines
+---
 
-#### Safe Area Handling
+## 💻 Development Standards
+
+### Component Architecture Pattern
 ```typescript
-// Always use SafeAreaView for iOS screens
-import { SafeAreaView } from 'react-native-safe-area-context';
+// packages/ui-mobile/src/components/QuizCard.tsx
+import React, { FC, memo } from 'react';
+import { Pressable, View, Text } from 'react-native';
+import { Image } from 'expo-image';
+import { QuestionTopic } from '@civicsense/shared/database';
 
-export default function Screen() {
+interface QuizCardProps {
+  topic: QuestionTopic;
+  onPress: (topicId: string) => void;
+  testID?: string;
+}
+
+export const QuizCard: FC<QuizCardProps> = memo(({ 
+  topic, 
+  onPress,
+  testID = 'quiz-card'
+}) => {
+  // Early return for loading/error states
+  if (!topic) return <QuizCardSkeleton testID={`${testID}-skeleton`} />;
+  
+  // Accessibility-first approach
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Screen content */}
-    </SafeAreaView>
+    <Pressable
+      onPress={() => onPress(topic.topic_id)}
+      testID={testID}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Quiz: ${topic.topic_title}`}
+      accessibilityHint="Double tap to start this quiz"
+      style={({ pressed }) => [
+        styles.container,
+        pressed && styles.pressed
+      ]}
+    >
+      <Image
+        source={{ uri: topic.image_url }}
+        style={styles.image}
+        contentFit="cover"
+        transition={200}
+        placeholder={topic.blurhash}
+      />
+      <View style={styles.content}>
+        <Text style={styles.title}>{topic.topic_title}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {topic.description}
+        </Text>
+      </View>
+    </Pressable>
+  );
+});
+
+QuizCard.displayName = 'QuizCard';
+```
+
+### State Management Architecture
+```typescript
+// packages/shared/store/quiz-store.ts
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface QuizStore {
+  // State
+  currentQuiz: Quiz | null;
+  answers: Record<string, string>;
+  timeRemaining: number;
+  
+  // Actions
+  startQuiz: (quiz: Quiz) => void;
+  submitAnswer: (questionId: string, answer: string) => void;
+  completeQuiz: () => Promise<QuizResult>;
+  
+  // Computed
+  get progress(): number;
+}
+
+export const useQuizStore = create<QuizStore>()(
+  persist(
+    (set, get) => ({
+      currentQuiz: null,
+      answers: {},
+      timeRemaining: 0,
+      
+      startQuiz: (quiz) => set({ 
+        currentQuiz: quiz, 
+        answers: {}, 
+        timeRemaining: quiz.time_limit 
+      }),
+      
+      submitAnswer: (questionId, answer) => set((state) => ({
+        answers: { ...state.answers, [questionId]: answer }
+      })),
+      
+      completeQuiz: async () => {
+        const { currentQuiz, answers } = get();
+        if (!currentQuiz) throw new Error('No active quiz');
+        
+        // Calculate score and submit to backend
+        const result = await submitQuizResults(currentQuiz.id, answers);
+        set({ currentQuiz: null, answers: {} });
+        return result;
+      },
+      
+      get progress() {
+        const { currentQuiz, answers } = get();
+        if (!currentQuiz) return 0;
+        return (Object.keys(answers).length / currentQuiz.questions.length) * 100;
+      }
+    }),
+    {
+      name: 'quiz-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ answers: state.answers }) // Only persist answers
+    }
+  )
+);
+```
+
+---
+
+## ⚡ Performance Optimization
+
+### List Rendering Optimization
+```typescript
+// packages/ui-mobile/src/screens/QuizListScreen.tsx
+import { FlashList } from '@shopify/flash-list';
+import { useMemo, useCallback } from 'react';
+
+export function QuizListScreen() {
+  const { data: topics, isLoading } = useQuizTopics();
+  
+  // Memoize item size for better performance
+  const estimatedItemSize = useMemo(() => {
+    const CARD_HEIGHT = 120;
+    const CARD_MARGIN = 16;
+    return CARD_HEIGHT + CARD_MARGIN;
+  }, []);
+  
+  // Optimize render function
+  const renderItem = useCallback(({ item }: { item: QuestionTopic }) => (
+    <QuizCard 
+      topic={item} 
+      onPress={handleQuizPress}
+      testID={`quiz-card-${item.topic_id}`}
+    />
+  ), [handleQuizPress]);
+  
+  // Extract key to avoid inline functions
+  const keyExtractor = useCallback((item: QuestionTopic) => item.topic_id, []);
+  
+  if (isLoading) return <QuizListSkeleton />;
+  
+  return (
+    <FlashList
+      data={topics}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      estimatedItemSize={estimatedItemSize}
+      removeClippedSubviews
+      drawDistance={200}
+      contentContainerStyle={styles.container}
+      ItemSeparatorComponent={ItemSeparator}
+      ListEmptyComponent={EmptyState}
+    />
   );
 }
 ```
 
-#### iOS Design System Colors
+### Animation Performance
 ```typescript
-// packages/ui-mobile/src/theme/ios-colors.ts
-export const iOSColors = {
-  // CivicSense brand colors optimized for iOS
-  primary: '#3B82F6',        // Authority Blue
-  secondary: '#10B981',      // Empowerment Green  
-  accent: '#F59E0B',         // Insight Gold
+// packages/ui-mobile/src/components/AnimatedProgress.tsx
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  runOnJS
+} from 'react-native-reanimated';
+
+export function AnimatedProgress({ progress, onComplete }: Props) {
+  const animatedProgress = useSharedValue(0);
   
-  // iOS system colors
-  systemBlue: '#007AFF',
-  systemGreen: '#34C759',
-  systemRed: '#FF3B30',
-  systemOrange: '#FF9500',
+  // Worklet function for UI thread
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    
+    const width = interpolate(
+      animatedProgress.value,
+      [0, 100],
+      [0, 100],
+      'clamp'
+    );
+    
+    return {
+      width: `${width}%`,
+      backgroundColor: interpolateColor(
+        animatedProgress.value,
+        [0, 50, 100],
+        ['#DC2626', '#F59E0B', '#059669'] // Red -> Yellow -> Green
+      )
+    };
+  });
   
-  // Dynamic colors (adapt to light/dark mode)
-  label: '#000000',          // Primary text
-  secondaryLabel: '#3C3C43', // Secondary text
-  tertiaryLabel: '#3C3C4399', // Tertiary text
+  // Update animation when progress changes
+  useEffect(() => {
+    animatedProgress.value = withSpring(progress, {
+      damping: 20,
+      stiffness: 90,
+    }, (finished) => {
+      if (finished && progress === 100) {
+        runOnJS(onComplete)();
+      }
+    });
+  }, [progress]);
   
-  // Background colors
-  systemBackground: '#FFFFFF',
-  secondarySystemBackground: '#F2F2F7',
-  tertiarySystemBackground: '#FFFFFF',
-} as const;
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.progressBar, animatedStyle]} />
+    </View>
+  );
+}
 ```
 
-#### Typography Scale (iOS Human Interface Guidelines)
-```typescript
-// packages/ui-mobile/src/theme/ios-typography.ts
-export const iOSTypography = {
-  largeTitle: {
-    fontSize: 34,
-    fontWeight: '400' as const,
-    lineHeight: 41,
-  },
-  title1: {
-    fontSize: 28,
-    fontWeight: '400' as const,
-    lineHeight: 34,
-  },
-  title2: {
-    fontSize: 22,
-    fontWeight: '400' as const,
-    lineHeight: 28,
-  },
-  title3: {
-    fontSize: 20,
-    fontWeight: '400' as const,
-    lineHeight: 25,
-  },
-  headline: {
-    fontSize: 17,
-    fontWeight: '600' as const,
-    lineHeight: 22,
-  },
-  body: {
-    fontSize: 17,
-    fontWeight: '400' as const,
-    lineHeight: 22,
-  },
-  callout: {
-    fontSize: 16,
-    fontWeight: '400' as const,
-    lineHeight: 21,
-  },
-  subhead: {
-    fontSize: 15,
-    fontWeight: '400' as const,
-    lineHeight: 20,
-  },
-  footnote: {
-    fontSize: 13,
-    fontWeight: '400' as const,
-    lineHeight: 18,
-  },
-  caption1: {
-    fontSize: 12,
-    fontWeight: '400' as const,
-    lineHeight: 16,
-  },
-  caption2: {
-    fontSize: 11,
-    fontWeight: '400' as const,
-    lineHeight: 13,
-  },
-} as const;
-```
+---
 
-### 3. iOS Authentication (Biometric + OAuth)
+## 📱 iOS-Specific Guidelines
 
-#### Face ID / Touch ID Integration
+### iOS Authentication Implementation
 ```typescript
-// packages/shared/auth/ios-biometric-auth.ts
+// packages/shared/auth/ios/biometric-auth.ts
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
-export class iOSBiometricAuth {
-  static async isBiometricAvailable(): Promise<boolean> {
-    const compatible = await LocalAuthentication.hasHardwareAsync();
-    const enrolled = await LocalAuthentication.isEnrolledAsync();
-    return compatible && enrolled;
+export class iOSAuthService {
+  static async setupBiometric(): Promise<BiometricSetupResult> {
+    try {
+      // Check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        return { success: false, reason: 'NO_HARDWARE' };
+      }
+      
+      // Check enrollment
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        return { success: false, reason: 'NOT_ENROLLED' };
+      }
+      
+      // Get biometric type
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const biometricType = supportedTypes.includes(
+        LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+      ) ? 'FACE_ID' : 'TOUCH_ID';
+      
+      return { success: true, biometricType };
+    } catch (error) {
+      console.error('Biometric setup error:', error);
+      return { success: false, reason: 'SETUP_ERROR' };
+    }
   }
-
+  
   static async authenticateWithBiometric(): Promise<boolean> {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Sign in to CivicSense',
       fallbackLabel: 'Use Passcode',
       cancelLabel: 'Cancel',
+      disableDeviceFallback: false,
     });
+    
+    if (result.success) {
+      // Store authentication timestamp
+      await SecureStore.setItemAsync(
+        'last_biometric_auth',
+        new Date().toISOString(),
+        { requireAuthentication: true }
+      );
+    }
+    
     return result.success;
   }
-
-  static async storeBiometricToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync('biometric_token', token, {
-      requireAuthentication: true,
-    });
-  }
-}
-```
-
-#### Apple Sign In Integration
-```typescript
-// packages/shared/auth/apple-auth.ts
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { supabase } from '../database/client';
-
-export class AppleAuthService {
-  static async signInWithApple() {
+  
+  static async signInWithApple(): Promise<AppleAuthResult> {
     try {
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -225,279 +353,664 @@ export class AppleAuthService {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token: credential.identityToken!,
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Apple Sign In Error:', error);
+      
+      // Handle first-time sign in
+      if (credential.fullName?.givenName) {
+        await this.saveUserProfile({
+          firstName: credential.fullName.givenName,
+          lastName: credential.fullName.familyName || '',
+          email: credential.email || '',
+        });
+      }
+      
+      return {
+        success: true,
+        identityToken: credential.identityToken!,
+        user: credential.user,
+      };
+    } catch (error: any) {
+      if (error.code === 'ERR_CANCELED') {
+        return { success: false, reason: 'USER_CANCELED' };
+      }
       throw error;
     }
   }
 }
 ```
 
-### 4. iOS-Specific Components
-
-#### Native iOS Button Component
+### iOS-Specific UI Components
 ```typescript
-// packages/ui-mobile/src/components/ios/IOSButton.tsx
+// packages/ui-mobile/src/components/ios/IOSSegmentedControl.tsx
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { iOSColors, iOSTypography } from '../../theme';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+} from 'react-native-reanimated';
 
-interface IOSButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'filled' | 'tinted' | 'plain';
-  size?: 'large' | 'medium' | 'small';
-  disabled?: boolean;
-  style?: ViewStyle;
+interface IOSSegmentedControlProps<T extends string> {
+  values: T[];
+  selectedIndex: number;
+  onChange: (value: T, index: number) => void;
+  tintColor?: string;
 }
 
-export const IOSButton: React.FC<IOSButtonProps> = ({
-  title,
-  onPress,
-  variant = 'filled',
-  size = 'medium',
-  disabled = false,
-  style,
-}) => {
+export function IOSSegmentedControl<T extends string>({
+  values,
+  selectedIndex,
+  onChange,
+  tintColor = '#007AFF',
+}: IOSSegmentedControlProps<T>) {
+  const indicatorPosition = useSharedValue(selectedIndex);
+  
+  const animatedIndicatorStyle = useAnimatedStyle(() => {
+    const segmentWidth = 100 / values.length;
+    return {
+      left: `${indicatorPosition.value * segmentWidth}%`,
+      width: `${segmentWidth}%`,
+    };
+  });
+  
+  const handlePress = (index: number) => {
+    indicatorPosition.value = withSpring(index, {
+      damping: 20,
+      stiffness: 300,
+    });
+    onChange(values[index], index);
+  };
+  
   return (
-    <TouchableOpacity
-      style={[
-        styles.base,
-        styles[variant],
-        styles[size],
-        disabled && styles.disabled,
-        style,
-      ]}
-      onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.6}
-    >
-      <Text style={[styles.text, styles[`${variant}Text`], styles[`${size}Text`]]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
+    <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.indicator,
+          { backgroundColor: tintColor },
+          animatedIndicatorStyle,
+        ]}
+      />
+      {values.map((value, index) => (
+        <Pressable
+          key={value}
+          style={styles.segment}
+          onPress={() => handlePress(index)}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              index === selectedIndex && { color: tintColor },
+            ]}
+          >
+            {value}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: 10,
-    alignItems: 'center',
+  container: {
+    height: 32,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    flexDirection: 'row',
+    padding: 2,
+    position: 'relative',
+  },
+  indicator: {
+    position: 'absolute',
+    top: 2,
+    bottom: 2,
+    borderRadius: 6,
+    backgroundColor: '#007AFF',
+  },
+  segment: {
+    flex: 1,
     justifyContent: 'center',
-    minHeight: 44, // iOS minimum touch target
+    alignItems: 'center',
+    zIndex: 1,
   },
-  filled: {
-    backgroundColor: iOSColors.primary,
-  },
-  tinted: {
-    backgroundColor: `${iOSColors.primary}20`,
-  },
-  plain: {
-    backgroundColor: 'transparent',
-  },
-  large: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  medium: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  small: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  disabled: {
-    opacity: 0.3,
-  },
-  text: {
-    textAlign: 'center',
-  },
-  filledText: {
-    color: '#FFFFFF',
+  segmentText: {
+    fontSize: 13,
     fontWeight: '600',
-  },
-  tintedText: {
-    color: iOSColors.primary,
-    fontWeight: '600',
-  },
-  plainText: {
-    color: iOSColors.primary,
-    fontWeight: '400',
-  },
-  largeText: {
-    ...iOSTypography.headline,
-  },
-  mediumText: {
-    ...iOSTypography.body,
-  },
-  smallText: {
-    ...iOSTypography.callout,
+    color: '#000',
   },
 });
 ```
 
-### 5. iOS Performance Optimization
+---
 
-#### Image Optimization
+## 🧪 Testing & Quality Assurance
+
+### Comprehensive Testing Strategy
 ```typescript
-// packages/ui-mobile/src/components/ios/OptimizedImage.tsx
-import React from 'react';
-import { Image } from 'expo-image';
-import { ViewStyle } from 'react-native';
+// apps/mobile/__tests__/quiz-flow.test.tsx
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { QuizScreen } from '../src/screens/QuizScreen';
+import { mockQuizData } from './fixtures/quiz-data';
 
-interface OptimizedImageProps {
-  source: string;
-  style?: ViewStyle;
-  placeholder?: string;
-  contentFit?: 'cover' | 'contain' | 'fill';
-}
-
-export const OptimizedImage: React.FC<OptimizedImageProps> = ({
-  source,
-  style,
-  placeholder,
-  contentFit = 'cover',
-}) => {
-  return (
-    <Image
-      source={{ uri: source }}
-      style={style}
-      placeholder={placeholder}
-      contentFit={contentFit}
-      transition={200}
-      cachePolicy="memory-disk"
-    />
-  );
-};
+describe('Quiz Flow E2E', () => {
+  beforeEach(() => {
+    // Mock network calls
+    jest.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/quiz/')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockQuizData,
+        });
+      }
+      return Promise.reject(new Error('Unknown endpoint'));
+    });
+  });
+  
+  it('completes full quiz with biometric authentication', async () => {
+    // Mock biometric auth
+    jest.mock('expo-local-authentication', () => ({
+      authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
+    }));
+    
+    const { getByTestId, getByText, queryByTestId } = render(<QuizScreen />);
+    
+    // Start quiz
+    fireEvent.press(getByTestId('start-quiz-button'));
+    
+    // Wait for biometric prompt
+    await waitFor(() => {
+      expect(LocalAuthentication.authenticateAsync).toHaveBeenCalled();
+    });
+    
+    // Answer first question
+    await waitFor(() => {
+      expect(getByTestId('question-1')).toBeTruthy();
+    });
+    
+    fireEvent.press(getByTestId('option-b'));
+    fireEvent.press(getByTestId('next-button'));
+    
+    // Complete quiz
+    await waitFor(() => {
+      expect(getByText('Quiz Complete!')).toBeTruthy();
+      expect(queryByTestId('share-button')).toBeTruthy();
+    });
+  });
+  
+  it('handles network errors gracefully', async () => {
+    // Mock network failure
+    global.fetch = jest.fn(() => Promise.reject(new Error('Network error')));
+    
+    const { getByTestId, getByText } = render(<QuizScreen />);
+    
+    fireEvent.press(getByTestId('start-quiz-button'));
+    
+    await waitFor(() => {
+      expect(getByText("Can't connect right now")).toBeTruthy();
+      expect(getByTestId('retry-button')).toBeTruthy();
+    });
+  });
+});
 ```
 
-### 6. iOS Testing & Quality Assurance
+---
 
-#### iOS-Specific Test Configuration
+## 🔒 Security Implementation
+
+### Secure Data Handling
 ```typescript
-// apps/mobile/__tests__/ios/setup.ts
-import 'react-native-gesture-handler/jestSetup';
+// packages/shared/security/secure-storage.ts
+import * as SecureStore from 'expo-secure-store';
+import CryptoJS from 'crypto-js';
 
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
-}));
-
-jest.mock('expo-local-authentication', () => ({
-  hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
-  isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
-  authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
-}));
-```
-
-### 7. iOS Build & Deployment
-
-#### EAS Build Configuration for iOS
-```json
-// apps/mobile/eas.json
-{
-  "cli": {
-    "version": ">= 5.2.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "simulator": true
-      }
-    },
-    "preview": {
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Release"
-      }
-    },
-    "production": {
-      "ios": {
-        "buildConfiguration": "Release"
-      }
+export class SecureStorage {
+  private static readonly TOKEN_KEY = 'auth_token';
+  private static readonly USER_KEY = 'user_data';
+  private static readonly ENCRYPTION_KEY = process.env.EXPO_PUBLIC_ENCRYPTION_KEY!;
+  
+  static async storeAuthToken(token: string): Promise<void> {
+    // Store with biometric protection on iOS
+    await SecureStore.setItemAsync(this.TOKEN_KEY, token, {
+      requireAuthentication: true,
+      authenticationPrompt: 'Authenticate to save your session',
+    });
+  }
+  
+  static async getAuthToken(): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync(this.TOKEN_KEY);
+    } catch (error) {
+      // Handle case where biometric auth fails
+      console.error('Failed to retrieve auth token:', error);
+      return null;
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id"
-      }
+  }
+  
+  static async storeUserData(userData: UserData): Promise<void> {
+    // Encrypt sensitive user data
+    const encrypted = CryptoJS.AES.encrypt(
+      JSON.stringify(userData),
+      this.ENCRYPTION_KEY
+    ).toString();
+    
+    await SecureStore.setItemAsync(this.USER_KEY, encrypted);
+  }
+  
+  static async getUserData(): Promise<UserData | null> {
+    try {
+      const encrypted = await SecureStore.getItemAsync(this.USER_KEY);
+      if (!encrypted) return null;
+      
+      const decrypted = CryptoJS.AES.decrypt(
+        encrypted,
+        this.ENCRYPTION_KEY
+      ).toString(CryptoJS.enc.Utf8);
+      
+      return JSON.parse(decrypted);
+    } catch (error) {
+      console.error('Failed to decrypt user data:', error);
+      return null;
     }
+  }
+  
+  static async clearAllData(): Promise<void> {
+    await Promise.all([
+      SecureStore.deleteItemAsync(this.TOKEN_KEY),
+      SecureStore.deleteItemAsync(this.USER_KEY),
+    ]);
   }
 }
 ```
 
-## 🔒 iOS Security Requirements
+---
 
-### 1. Secure Storage
-- ALWAYS use `expo-secure-store` for sensitive data on iOS
-- Enable `requireAuthentication: true` for biometric-protected storage
-- Never store tokens in AsyncStorage or plain text
+## ❓ Common Scenarios Q&A
 
-### 2. Network Security
+### Q: How do I handle offline quiz submissions?
+
+**A:** Implement an offline queue system with retry logic:
+
 ```typescript
-// packages/shared/network/ios-security.ts
-export const iOSNetworkConfig = {
-  // Enforce HTTPS
-  allowsArbitraryLoads: false,
-  // Certificate pinning for production
-  certificatePinning: {
-    'api.civicsense.com': ['sha256-hash-of-certificate'],
+// packages/shared/offline/quiz-queue.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+export class OfflineQuizQueue {
+  private static readonly QUEUE_KEY = 'offline_quiz_submissions';
+  
+  static async addSubmission(submission: QuizSubmission): Promise<void> {
+    const queue = await this.getQueue();
+    queue.push({
+      ...submission,
+      timestamp: Date.now(),
+      retryCount: 0,
+    });
+    await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+  }
+  
+  static async processQueue(): Promise<void> {
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) return;
+    
+    const queue = await this.getQueue();
+    const pending = [...queue];
+    const failed: QueuedSubmission[] = [];
+    
+    for (const submission of pending) {
+      try {
+        await this.submitQuiz(submission);
+        // Remove from queue on success
+      } catch (error) {
+        submission.retryCount++;
+        if (submission.retryCount < 3) {
+          failed.push(submission);
+        } else {
+          // Log permanent failure
+          await this.logFailedSubmission(submission);
+        }
+      }
+    }
+    
+    // Update queue with failed items
+    await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(failed));
+  }
+  
+  private static async getQueue(): Promise<QueuedSubmission[]> {
+    const data = await AsyncStorage.getItem(this.QUEUE_KEY);
+    return data ? JSON.parse(data) : [];
+  }
+}
+
+// Set up automatic processing
+NetInfo.addEventListener((state) => {
+  if (state.isConnected) {
+    OfflineQuizQueue.processQueue();
+  }
+});
+```
+
+### Q: How do I optimize image loading for quiz content?
+
+**A:** Use progressive loading with blurhash placeholders:
+
+```typescript
+// packages/ui-mobile/src/components/OptimizedQuizImage.tsx
+import { Image } from 'expo-image';
+import { View, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
+
+export function OptimizedQuizImage({ 
+  source, 
+  blurhash, 
+  critical = false 
+}: Props) {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  return (
+    <View style={styles.container}>
+      <Image
+        source={source}
+        placeholder={blurhash}
+        contentFit="cover"
+        transition={200}
+        priority={critical ? 'high' : 'normal'}
+        cachePolicy="memory-disk"
+        onLoadStart={() => setIsLoading(true)}
+        onLoadEnd={() => setIsLoading(false)}
+        style={styles.image}
+      />
+      {isLoading && !blurhash && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator color="#1E3A8A" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Preload critical images
+export async function preloadQuizImages(quiz: Quiz): Promise<void> {
+  const imageUrls = quiz.questions
+    .filter(q => q.image_url)
+    .map(q => q.image_url!);
+  
+  await Image.prefetch(imageUrls, 'memory-disk');
+}
+```
+
+### Q: How do I handle deep linking to specific quizzes?
+
+**A:** Configure Expo Router with proper deep link handling:
+
+```typescript
+// app.config.ts
+export default {
+  expo: {
+    scheme: 'civicsense',
+    ios: {
+      associatedDomains: ['applinks:civicsense.com'],
+    },
+  },
+};
+
+// app/_layout.tsx
+import { useURL } from 'expo-linking';
+import { useEffect } from 'react';
+import { router } from 'expo-router';
+
+export default function RootLayout() {
+  const url = useURL();
+  
+  useEffect(() => {
+    if (url) {
+      handleDeepLink(url);
+    }
+  }, [url]);
+  
+  const handleDeepLink = (url: string) => {
+    const { hostname, path, queryParams } = Linking.parse(url);
+    
+    if (path?.startsWith('quiz/')) {
+      const topicId = path.replace('quiz/', '');
+      router.push({
+        pathname: '/quiz/[topicId]',
+        params: { topicId },
+      });
+    }
+  };
+  
+  return <Stack />;
+}
+```
+
+### Q: How do I implement real-time multiplayer quizzes?
+
+**A:** Use Supabase Realtime with proper state synchronization:
+
+```typescript
+// packages/shared/multiplayer/quiz-room.ts
+import { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '../database/client';
+
+export class MultiplayerQuizRoom {
+  private channel: RealtimeChannel;
+  private roomId: string;
+  private userId: string;
+  
+  constructor(roomId: string, userId: string) {
+    this.roomId = roomId;
+    this.userId = userId;
+    this.channel = supabase.channel(`quiz-room-${roomId}`);
+  }
+  
+  async join(onUpdate: (state: RoomState) => void): Promise<void> {
+    this.channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = this.channel.presenceState();
+        onUpdate(this.parsePresenceState(state));
+      })
+      .on('broadcast', { event: 'answer_submitted' }, ({ payload }) => {
+        this.handleAnswerSubmitted(payload);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await this.channel.track({
+            user_id: this.userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+  }
+  
+  async submitAnswer(questionId: string, answer: string): Promise<void> {
+    await this.channel.send({
+      type: 'broadcast',
+      event: 'answer_submitted',
+      payload: {
+        user_id: this.userId,
+        question_id: questionId,
+        answer,
+        timestamp: Date.now(),
+      },
+    });
+  }
+  
+  async leave(): Promise<void> {
+    await this.channel.untrack();
+    await this.channel.unsubscribe();
+  }
+}
+```
+
+---
+
+## 🔧 Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Issue: iOS Simulator crashes on launch
+```bash
+# Solution 1: Clear Metro cache
+npx expo start -c
+
+# Solution 2: Reset iOS Simulator
+xcrun simctl erase all
+
+# Solution 3: Reinstall pods
+cd ios && pod install --repo-update
+```
+
+#### Issue: Biometric authentication not working
+```typescript
+// Debugging checklist:
+async function debugBiometric() {
+  console.log('Hardware:', await LocalAuthentication.hasHardwareAsync());
+  console.log('Enrolled:', await LocalAuthentication.isEnrolledAsync());
+  console.log('Types:', await LocalAuthentication.supportedAuthenticationTypesAsync());
+  
+  // Check Info.plist
+  // Ensure NSFaceIDUsageDescription is set
+}
+```
+
+#### Issue: Performance degradation with large quiz lists
+```typescript
+// Performance optimization checklist:
+const PerformanceOptimizations = {
+  // 1. Use getItemLayout for consistent item sizes
+  getItemLayout: (data, index) => ({
+    length: ITEM_HEIGHT,
+    offset: ITEM_HEIGHT * index,
+    index,
+  }),
+  
+  // 2. Implement viewability config
+  viewabilityConfig: {
+    minimumViewTime: 100,
+    viewAreaCoveragePercentThreshold: 10,
+  },
+  
+  // 3. Use InteractionManager for heavy operations
+  loadMoreData: () => {
+    InteractionManager.runAfterInteractions(() => {
+      // Heavy data loading
+    });
   },
 };
 ```
 
-## 📊 iOS Performance Targets
-
-### Metrics to Monitor
-- **App Launch Time**: < 400ms cold start
-- **Memory Usage**: < 150MB baseline
-- **Battery Impact**: Minimal background usage
-- **Crash Rate**: < 0.1%
-
-### iOS-Specific Optimizations
-- Use `React.memo()` for expensive components
-- Implement proper image caching with expo-image
-- Lazy load screens with React.lazy()
-- Use FlatList for long lists with proper keyExtractor
-
-## 🧪 iOS Development Workflow
-
-```bash
-# Development commands
-npm run ios:dev          # Start iOS simulator
-npm run ios:device       # Run on connected iOS device
-npm run ios:build:dev    # Build development version
-npm run ios:build:prod   # Build production version
-npm run ios:test         # Run iOS-specific tests
+#### Issue: Memory leaks in quiz screens
+```typescript
+// Memory leak prevention pattern:
+export function QuizScreen() {
+  useEffect(() => {
+    const subscription = eventEmitter.on('quiz:update', handleUpdate);
+    const timer = setInterval(updateTimer, 1000);
+    
+    // Cleanup function
+    return () => {
+      subscription.remove();
+      clearInterval(timer);
+      // Cancel any pending animations
+      cancelAnimation(progressAnimation);
+    };
+  }, []);
+}
 ```
-
-## ✅ iOS Quality Checklist
-
-Before each iOS release:
-- [ ] Test on multiple iOS versions (13.0+)
-- [ ] Verify Face ID/Touch ID functionality
-- [ ] Test Apple Sign In flow
-- [ ] Validate App Store guidelines compliance
-- [ ] Check accessibility with VoiceOver
-- [ ] Test offline functionality
-- [ ] Verify deep linking works
-- [ ] Test push notifications
-- [ ] Validate memory usage
-- [ ] Check for crashes on older devices
 
 ---
 
-*Always follow Apple's Human Interface Guidelines and ensure compliance with App Store Review Guidelines*
+## 📈 Performance Monitoring
+
+### Key Metrics Dashboard
+```typescript
+// packages/shared/monitoring/performance.ts
+export class PerformanceMonitor {
+  static trackScreenLoad(screenName: string): () => void {
+    const startTime = performance.now();
+    
+    return () => {
+      const loadTime = performance.now() - startTime;
+      
+      // Track if exceeds threshold
+      if (loadTime > 3000) {
+        console.warn(`Slow screen load: ${screenName} took ${loadTime}ms`);
+      }
+      
+      analytics.track('screen_load', {
+        screen: screenName,
+        duration: loadTime,
+        cold_start: isFirstLoad,
+      });
+    };
+  }
+  
+  static measureRender(componentName: string): void {
+    if (__DEV__) {
+      const Profiler = require('react').Profiler;
+      
+      return (
+        <Profiler
+          id={componentName}
+          onRender={(id, phase, actualDuration) => {
+            if (actualDuration > 16.67) { // 60fps threshold
+              console.warn(`Slow render: ${id} took ${actualDuration}ms`);
+            }
+          }}
+        >
+          {children}
+        </Profiler>
+      );
+    }
+    return children;
+  }
+}
+```
+
+---
+
+## ✅ Release Checklist
+
+### Pre-Release Verification
+```bash
+# Automated pre-release script
+#!/bin/bash
+
+echo "🔍 Running CivicSense iOS Release Checks..."
+
+# 1. Run tests
+npm test -- --coverage
+
+# 2. Type checking
+npm run typecheck
+
+# 3. Lint check
+npm run lint
+
+# 4. Build iOS
+cd ios && xcodebuild -workspace CivicSense.xcworkspace \
+  -scheme CivicSense -configuration Release \
+  -sdk iphonesimulator -quiet
+
+# 5. Bundle size check
+npx react-native-bundle-visualizer
+
+# 6. Performance profiling
+npm run profile:ios
+
+echo "✅ All checks passed!"
+```
+
+### Manual Testing Checklist
+- [ ] Test on iPhone 15 Pro (latest iOS)
+- [ ] Test on iPhone 8 (minimum supported)
+- [ ] Verify Face ID and Touch ID flows
+- [ ] Test offline mode functionality
+- [ ] Verify deep links work correctly
+- [ ] Test push notifications
+- [ ] Check memory usage < 150MB
+- [ ] Verify 60fps animations
+- [ ] Test with VoiceOver enabled
+- [ ] Verify no console warnings in production
+
+---
+
+**Remember:** Every decision should prioritize creating an app that feels indistinguishable from a native iOS app while leveraging React Native's development velocity. Focus on performance, user experience, and iOS platform conventions.

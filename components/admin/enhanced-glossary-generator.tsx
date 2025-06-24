@@ -22,13 +22,15 @@ interface Language {
 
 interface Category {
   id: string
-  category_slug: string
-  category_title: string
+  name: string
+  emoji: string
+  description?: string
+  display_order?: number
 }
 
 interface GenerationOptions {
   count: number
-  categories: string[]
+  categories?: string[]
   difficulty_level?: number
   include_web_search?: boolean
 }
@@ -90,14 +92,43 @@ export function EnhancedGlossaryGenerator() {
           debug: categoriesData.debug
         })
         
-        if (categoriesData.success) {
-          setAvailableCategories(categoriesData.categories || [])
-          console.log('✅ Set categories:', categoriesData.categories?.length || 0)
+        if (categoriesData.success && categoriesData.categories) {
+          // Validate and filter categories to ensure proper data structure
+          const validCategories = categoriesData.categories
+            .filter((cat: any) => {
+              const isValid = cat && 
+                (cat.id || cat.category_id) && 
+                (cat.name || cat.category_title) && 
+                (cat.emoji || cat.icon)
+              
+              if (!isValid) {
+                console.warn('⚠️ Invalid category found:', cat)
+              }
+              return isValid
+            })
+            .map((cat: any) => ({
+              // Handle multiple possible field names from the API
+              id: cat.id || cat.category_id || `category_${Date.now()}_${Math.random()}`,
+              name: cat.name || cat.category_title || cat.title || 'Unnamed Category',
+              emoji: cat.emoji || cat.icon || '📁',
+              description: cat.description || cat.category_description || '',
+              display_order: cat.display_order || cat.order || 0
+            }))
+          
+          console.log('✅ Processed categories:', {
+            original: categoriesData.categories.length,
+            valid: validCategories.length,
+            sample: validCategories.slice(0, 3).map((c: Category) => ({ id: c.id, name: c.name, emoji: c.emoji }))
+          })
+          
+          setAvailableCategories(validCategories)
         } else {
-          console.warn('⚠️ Categories response success=false')
+          console.warn('⚠️ Categories response failed or empty:', categoriesData)
+          setAvailableCategories([])
         }
       } catch (error) {
         console.error('❌ Error loading categories:', error)
+        setAvailableCategories([])
         toast({
           title: "Error",
           description: "Failed to load categories",
@@ -116,28 +147,73 @@ export function EnhancedGlossaryGenerator() {
       setProgressUpdates([])
       setCurrentProgress({ current: 0, total: count, status: 'Starting...' })
 
+      // Filter out any null/undefined categories and ensure proper data types
+      const validCategories = selectedCategories.filter(cat => cat && cat.trim().length > 0)
+      
+      console.log('🎯 Generation request data:', {
+        type: generationType,
+        provider,
+        count,
+        selectedCategories: selectedCategories.length,
+        validCategories: validCategories.length,
+        validCategoriesList: validCategories,
+        customContent: customContent?.trim()
+      })
+
+      // Ensure the request matches the API schema exactly
       const request: GenerationRequest = {
         type: generationType,
         provider,
-        custom_content: customContent.trim() || undefined,
+        custom_content: customContent?.trim() || undefined,
         options: {
           count,
-          categories: selectedCategories,
+          categories: validCategories.length > 0 ? validCategories : undefined,
           difficulty_level: difficultyLevel,
           include_web_search: enableWebSearch,
         }
       }
 
-      // Use streaming for real-time progress
+      // Remove undefined values to clean up the request
+      if (!request.custom_content) {
+        delete request.custom_content
+      }
+      if (!request.options.categories || request.options.categories.length === 0) {
+        delete request.options.categories
+      }
+
+      console.log('🚀 Final request to API:', JSON.stringify(request, null, 2))
+
       const response = await fetch('/api/admin/glossary/ai-generate?stream=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request)
       })
 
+      // Enhanced error handling
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Generation failed')
+        let errorMessage = 'Generation failed'
+        let errorDetails = null
+        
+        try {
+          const errorData = await response.json()
+          console.error('❌ API Error Response:', errorData)
+          
+          errorMessage = errorData.error || 'Generation failed'
+          errorDetails = errorData.details
+          
+          // If it's a Zod validation error, show specific field issues
+          if (errorData.details && Array.isArray(errorData.details)) {
+            const fieldErrors = errorData.details.map((detail: any) => 
+              `${detail.path?.join('.') || 'field'}: ${detail.message}`
+            ).join(', ')
+            errorMessage = `Validation error: ${fieldErrors}`
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use status text
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       // Handle streaming response
@@ -216,17 +292,34 @@ export function EnhancedGlossaryGenerator() {
               }
 
             } catch (parseError) {
-              console.warn('Failed to parse progress update:', line)
+              console.warn('Failed to parse progress update:', line, parseError)
             }
           }
         }
       }
 
     } catch (error) {
-      console.error('Generation error:', error)
+      console.error('❌ Generation error:', error)
+      
+      // Enhanced user-friendly error messages
+      let userMessage = 'Unknown error occurred'
+      if (error instanceof Error) {
+        if (error.message.includes('Validation error')) {
+          userMessage = `Request validation failed: ${error.message}`
+        } else if (error.message.includes('HTTP 401')) {
+          userMessage = 'Authentication failed. Please refresh and try again.'
+        } else if (error.message.includes('HTTP 429')) {
+          userMessage = 'Rate limit exceeded. Please wait a moment and try again.'
+        } else if (error.message.includes('HTTP 500')) {
+          userMessage = 'Server error occurred. Please try again in a few minutes.'
+        } else {
+          userMessage = error.message
+        }
+      }
+      
       toast({
         title: "Generation Failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        description: userMessage,
         variant: "destructive"
       })
     } finally {
@@ -234,11 +327,11 @@ export function EnhancedGlossaryGenerator() {
     }
   }
 
-  const handleCategoryToggle = (categorySlug: string) => {
+  const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev => 
-      prev.includes(categorySlug)
-        ? prev.filter(c => c !== categorySlug)
-        : [...prev, categorySlug]
+      prev.includes(categoryId)
+        ? prev.filter(c => c !== categoryId)
+        : [...prev, categoryId]
     )
   }
 
@@ -355,7 +448,7 @@ export function EnhancedGlossaryGenerator() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedCategories(availableCategories.map(c => c.category_slug))}
+                    onClick={() => setSelectedCategories(availableCategories.map(c => c.id))}
                   >
                     Select All
                   </Button>
@@ -374,11 +467,11 @@ export function EnhancedGlossaryGenerator() {
                   <div key={category.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={`category-${category.id}`}
-                      checked={selectedCategories.includes(category.category_slug)}
-                      onCheckedChange={() => handleCategoryToggle(category.category_slug)}
+                      checked={selectedCategories.includes(category.id)}
+                      onCheckedChange={() => handleCategoryToggle(category.id)}
                     />
                     <Label htmlFor={`category-${category.id}`} className="text-sm">
-                      {category.category_title}
+                      {category.name}
                     </Label>
                   </div>
                 ))}

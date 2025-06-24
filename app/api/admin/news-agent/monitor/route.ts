@@ -82,6 +82,49 @@ interface AgentConfig {
     /** Whether to generate public figures */
     generatePublicFigures: boolean
   }
+
+  /** Database table targeting configuration */
+  databaseTargets: {
+    /** Whether to save to content_packages tracking table */
+    saveToContentPackages: boolean
+    /** Whether to save directly to content tables */
+    saveToContentTables: boolean
+    /** Specific tables to target */
+    targetTables: {
+      question_topics: boolean
+      questions: boolean
+      skills: boolean
+      glossary_terms: boolean
+      events: boolean
+      public_figures: boolean
+    }
+    /** Custom table mappings (for enterprise/custom schemas) */
+    customTableMappings?: {
+      question_topics?: string
+      questions?: string
+      skills?: string
+      glossary_terms?: string
+      events?: string
+      public_figures?: string
+      content_packages?: string
+    }
+    /** Schema configuration */
+    schemaConfig: {
+      /** Database schema name (default: 'public') */
+      schemaName: string
+      /** Whether to use custom field mappings */
+      useCustomFieldMappings: boolean
+      /** Custom field mappings for each table */
+      customFieldMappings?: {
+        question_topics?: Record<string, string>
+        questions?: Record<string, string>
+        skills?: Record<string, string>
+        glossary_terms?: Record<string, string>
+        events?: Record<string, string>
+        public_figures?: Record<string, string>
+      }
+    }
+  }
   
   /** AI provider configuration */
   aiProvider: 'openai' | 'anthropic'
@@ -94,6 +137,10 @@ interface AgentConfig {
     minQualityScore: number
     /** Whether to require human review before publishing */
     requireHumanReview: boolean
+    /** Whether to set content as active by default */
+    publishAsActive: boolean
+    /** Whether to validate schema before insertion */
+    validateSchema: boolean
   }
 }
 
@@ -186,7 +233,26 @@ class NewsAIAgent {
       aiModel: 'gpt-4',
       qualityControl: {
         minQualityScore: 75,
-        requireHumanReview: true
+        requireHumanReview: true,
+        publishAsActive: true,
+        validateSchema: true
+      },
+      databaseTargets: {
+        saveToContentPackages: true,
+        saveToContentTables: true,
+        targetTables: {
+          question_topics: true,
+          questions: true,
+          skills: true,
+          glossary_terms: true,
+          events: true,
+          public_figures: true
+        },
+        schemaConfig: {
+          schemaName: 'public',
+          useCustomFieldMappings: false,
+          customFieldMappings: {}
+        }
       }
     }
   }
@@ -309,12 +375,9 @@ class NewsAIAgent {
         .from('source_metadata')
         .select('*')
         .not('title', 'is', null)
-        .not('description', 'is', null)
-        .gte('credibility_score', 60) // Only include credible sources
-        .eq('content_type', 'article') // Only articles, not other content types
         .order('created_at', { ascending: false })
-        .limit(100) // Get more articles for better filtering
-        .gte('last_fetched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+        .limit(200) // Get more articles for better analysis
+        .gte('last_fetched_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days instead of 24 hours
 
       if (error) {
         console.error('Error fetching news from source_metadata:', error)
@@ -362,30 +425,33 @@ class NewsAIAgent {
    * Validate that a news article from source_metadata is suitable for processing
    */
   private isNewsArticleValid(article: Record<string, any>): boolean {
-    // Must have title and description
-    if (!article.title || !article.description) return false
+    // Must have title and it should be substantial (not just a domain)
+    if (!article.title || article.title.length < 10) return false
     
-    // Must have a valid URL
-    if (!article.url || !this.isValidUrl(article.url)) return false
+    // Skip malformed entries that start with "[{" or similar
+    if (article.title.startsWith('[{') || article.title.startsWith('{')) return false
     
-    // Title should be substantial (not just URL fragments)
-    if (article.title.length < 15) return false
+    // Must have a URL or domain
+    if (!article.url && !article.domain) return false
     
-    // Description should be substantial
-    if (article.description.length < 30) return false
+    // If we have a description, it should be substantial, but it's not required
+    if (article.description && article.description.length < 20) return false
     
-    // Should be from a news source (based on domain or content type)
-    const newsIndicators = [
-      'news', 'times', 'post', 'journal', 'tribune', 'gazette', 
-      'reuters', 'ap', 'bbc', 'cnn', 'npr', 'politico', 'axios',
-      'thehill', 'rollcall', 'washingtonpost', 'nytimes'
-    ]
+    // Skip entries that are just domain names (title equals domain)
+    if (article.title === article.domain) return false
     
-    const domain = article.domain?.toLowerCase() || ''
-    const isNewsSource = newsIndicators.some(indicator => domain.includes(indicator))
+    // More lenient approach - don't require high credibility, just exclude obviously bad sources
+    const lowQualityIndicators = ['spam', 'fake', 'clickbait', 'tabloid']
+    const titleLower = article.title.toLowerCase()
+    const domainLower = (article.domain || '').toLowerCase()
     
-    // Must be from a recognized news source OR have high credibility score
-    return isNewsSource || (article.credibility_score && article.credibility_score >= 75)
+    if (lowQualityIndicators.some(indicator => 
+      titleLower.includes(indicator) || domainLower.includes(indicator)
+    )) {
+      return false
+    }
+    
+    return true
   }
 
   /**

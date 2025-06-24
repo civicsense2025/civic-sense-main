@@ -100,28 +100,43 @@ export async function GET() {
  * Calculate comprehensive statistics from source data
  */
 function calculateSourceStatistics(sources: SourceData[]): SourceStatistics {
-  // Group by domain
+  console.log(`📊 Calculating statistics for ${sources.length} source entries`)
+  
+  // Group by domain and aggregate properly
   const domainGroups = sources.reduce((groups, source) => {
     const domain = source.domain || 'unknown'
     if (!groups[domain]) {
-      groups[domain] = []
+      groups[domain] = {
+        domain,
+        articles: [],
+        credibilityScores: [],
+        biasRatings: []
+      }
     }
-    groups[domain].push(source)
+    groups[domain].articles.push(source)
+    if (source.credibility_score !== null) {
+      groups[domain].credibilityScores.push(source.credibility_score)
+    }
+    if (source.bias_rating) {
+      groups[domain].biasRatings.push(source.bias_rating)
+    }
     return groups
-  }, {} as Record<string, SourceData[]>)
+  }, {} as Record<string, any>)
 
-  // Calculate top sources
+  // Calculate top sources with proper aggregation
   const topSources = Object.entries(domainGroups)
-    .map(([domain, articles]) => ({
+    .map(([domain, data]) => ({
       domain,
-      articleCount: articles.length,
-      avgCredibilityScore: Math.round(
-        articles.reduce((sum: number, a: SourceData) => sum + (a.credibility_score || 70), 0) / articles.length
-      ),
-      biasRating: getMostCommonBias(articles.map((a: SourceData) => a.bias_rating).filter(Boolean) as string[])
+      articleCount: data.articles.length,
+      avgCredibilityScore: data.credibilityScores.length > 0 
+        ? Math.round(data.credibilityScores.reduce((sum: number, score: number) => sum + score, 0) / data.credibilityScores.length)
+        : 70,
+      biasRating: getMostCommonBias(data.biasRatings)
     }))
     .sort((a, b) => b.articleCount - a.articleCount)
     .slice(0, 10)
+
+  console.log(`📊 Top sources calculated:`, topSources.map(s => `${s.domain}: ${s.articleCount} articles`))
 
   // Calculate credibility distribution
   const credibilityDistribution = sources.reduce(
@@ -142,7 +157,7 @@ function calculateSourceStatistics(sources: SourceData[]): SourceStatistics {
     return dist
   }, {} as Record<string, number>)
 
-  return {
+  const result = {
     activeSources: Object.keys(domainGroups).length,
     totalArticles: sources.length,
     last24Hours: sources.length,
@@ -150,6 +165,14 @@ function calculateSourceStatistics(sources: SourceData[]): SourceStatistics {
     credibilityDistribution,
     biasDistribution
   }
+
+  console.log(`📊 Final statistics:`, {
+    activeSources: result.activeSources,
+    totalArticles: result.totalArticles,
+    topSourcesCount: result.topSources.length
+  })
+
+  return result
 }
 
 /**

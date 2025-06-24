@@ -57,6 +57,207 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_research_results: {
+        Row: {
+          ai_model: string | null
+          completed_at: string | null
+          content_connections_built: number | null
+          context: string | null
+          cost_usd: number | null
+          created_at: string | null
+          database_context_analyzed: number | null
+          end_year: number | null
+          error_message: string | null
+          events_found: number | null
+          focus_areas: string[] | null
+          human_reviewed: boolean | null
+          id: string
+          knowledge_insights: Json | null
+          learning_context: string | null
+          max_events: number | null
+          mode: string | null
+          performance_metrics: Json | null
+          processing_time_ms: number | null
+          query: string
+          research_quality: string | null
+          research_timestamp: string | null
+          research_type: string | null
+          researcher_id: string | null
+          results: Json | null
+          reviewer_notes: string | null
+          significance_threshold: number | null
+          start_year: number | null
+          status: string | null
+          themes: string[] | null
+          timeframe: Json | null
+          tokens_used: number | null
+          validation_score: number | null
+        }
+        Insert: {
+          ai_model?: string | null
+          completed_at?: string | null
+          content_connections_built?: number | null
+          context?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          database_context_analyzed?: number | null
+          end_year?: number | null
+          error_message?: string | null
+          events_found?: number | null
+          focus_areas?: string[] | null
+          human_reviewed?: boolean | null
+          id?: string
+          knowledge_insights?: Json | null
+          learning_context?: string | null
+          max_events?: number | null
+          mode?: string | null
+          performance_metrics?: Json | null
+          processing_time_ms?: number | null
+          query: string
+          research_quality?: string | null
+          research_timestamp?: string | null
+          research_type?: string | null
+          researcher_id?: string | null
+          results?: Json | null
+          reviewer_notes?: string | null
+          significance_threshold?: number | null
+          start_year?: number | null
+          status?: string | null
+          themes?: string[] | null
+          timeframe?: Json | null
+          tokens_used?: number | null
+          validation_score?: number | null
+        }
+        Update: {
+          ai_model?: string | null
+          completed_at?: string | null
+          content_connections_built?: number | null
+          context?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          database_context_analyzed?: number | null
+          end_year?: number | null
+          error_message?: string | null
+          events_found?: number | null
+          focus_areas?: string[] | null
+          human_reviewed?: boolean | null
+          id?: string
+          knowledge_insights?: Json | null
+          learning_context?: string | null
+          max_events?: number | null
+          mode?: string | null
+          performance_metrics?: Json | null
+          processing_time_ms?: number | null
+          query?: string
+          research_quality?: string | null
+          research_timestamp?: string | null
+          research_type?: string | null
+          researcher_id?: string | null
+          results?: Json | null
+          reviewer_notes?: string | null
+          significance_threshold?: number | null
+          start_year?: number | null
+          status?: string | null
+          themes?: string[] | null
+          timeframe?: Json | null
+          tokens_used?: number | null
+          validation_score?: number | null
+        }
+        Relationships: []
+      }
+      ai_research_sessions: {
+        Row: {
+          ai_model_used: string | null
+          completed_at: string | null
+          connections_discovered: number | null
+          content_packages_created: number | null
+          cost_usd: number | null
+          created_at: string | null
+          database_context: Json
+          error_message: string | null
+          events_generated: number | null
+          existing_events_analyzed: number | null
+          existing_topics_analyzed: number | null
+          focus_areas: string[] | null
+          id: string
+          overall_quality_score: number | null
+          patterns_identified: string[] | null
+          processing_time_ms: number | null
+          research_config: Json
+          research_mode: string
+          researcher_id: string
+          results_summary: Json | null
+          session_name: string | null
+          started_at: string | null
+          status: string | null
+          themes: string[] | null
+          time_constraints: Json | null
+          tokens_consumed: number | null
+          updated_at: string | null
+          validation_results: Json | null
+        }
+        Insert: {
+          ai_model_used?: string | null
+          completed_at?: string | null
+          connections_discovered?: number | null
+          content_packages_created?: number | null
+          cost_usd?: number | null
+          created_at?: string | null
+          database_context?: Json
+          error_message?: string | null
+          events_generated?: number | null
+          existing_events_analyzed?: number | null
+          existing_topics_analyzed?: number | null
+          focus_areas?: string[] | null
+          id?: string
+          overall_quality_score?: number | null
+          patterns_identified?: string[] | null
+          processing_time_ms?: number | null
+          research_config?: Json
+          research_mode: string
+          researcher_id: string
+          results_summary?: Json | null
+          session_name?: string | null
+          started_at?: string | null
+          status?: string | null
+          themes?: string[] | null
+          time_constraints?: Json | null
+          tokens_consumed?: number | null
+          updated_at?: string | null
+          validation_results?: Json | null
+        }
+        Update: {
+          ai_model_used?: string | null
+          completed_at?: string | null
+          connections_discovered?: number | null
+          content_packages_created?: number | null
+          cost_usd?: number | null
+          created_at?: string | null
+          database_context?: Json
+          error_message?: string | null
+          events_generated?: number | null
+          existing_events_analyzed?: number | null
+          existing_topics_analyzed?: number | null
+          focus_areas?: string[] | null
+          id?: string
+          overall_quality_score?: number | null
+          patterns_identified?: string[] | null
+          processing_time_ms?: number | null
+          research_config?: Json
+          research_mode?: string
+          researcher_id?: string
+          results_summary?: Json | null
+          session_name?: string | null
+          started_at?: string | null
+          status?: string | null
+          themes?: string[] | null
+          time_constraints?: Json | null
+          tokens_consumed?: number | null
+          updated_at?: string | null
+          validation_results?: Json | null
+        }
+        Relationships: []
+      }
       article_bias_analysis: {
         Row: {
           ai_analysis_version: string | null
@@ -1810,6 +2011,78 @@ export type Database = {
         }
         Relationships: []
       }
+      content_gaps_analysis: {
+        Row: {
+          addressed_at: string | null
+          addressed_by: string | null
+          analysis_method: string | null
+          confidence_score: number
+          created_at: string | null
+          description: string
+          discovered_at: string | null
+          discovered_by: string | null
+          evidence: Json
+          gap_type: string
+          id: string
+          impact_potential: number | null
+          missing_categories: string[] | null
+          missing_themes: string[] | null
+          priority_level: string
+          status: string | null
+          suggested_research: Json
+          time_period_end: number | null
+          time_period_start: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          addressed_at?: string | null
+          addressed_by?: string | null
+          analysis_method?: string | null
+          confidence_score?: number
+          created_at?: string | null
+          description: string
+          discovered_at?: string | null
+          discovered_by?: string | null
+          evidence?: Json
+          gap_type: string
+          id?: string
+          impact_potential?: number | null
+          missing_categories?: string[] | null
+          missing_themes?: string[] | null
+          priority_level?: string
+          status?: string | null
+          suggested_research?: Json
+          time_period_end?: number | null
+          time_period_start?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          addressed_at?: string | null
+          addressed_by?: string | null
+          analysis_method?: string | null
+          confidence_score?: number
+          created_at?: string | null
+          description?: string
+          discovered_at?: string | null
+          discovered_by?: string | null
+          evidence?: Json
+          gap_type?: string
+          id?: string
+          impact_potential?: number | null
+          missing_categories?: string[] | null
+          missing_themes?: string[] | null
+          priority_level?: string
+          status?: string | null
+          suggested_research?: Json
+          time_period_end?: number | null
+          time_period_start?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       content_generation_queue: {
         Row: {
           assigned_worker: string | null
@@ -1931,53 +2204,72 @@ export type Database = {
       }
       content_packages: {
         Row: {
+          ai_model: string | null
+          civic_relevance_score: number | null
+          content_types: Json | null
           created_at: string
-          generated_content: Json
+          created_by: string | null
+          description: string | null
+          generation_config: Json | null
+          generation_method: string | null
           id: string
-          news_event_id: string
-          news_headline: string
+          package_name: string
           published_at: string | null
-          quality_scores: Json
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
+          published_content: Json | null
+          quality_scores: Json | null
+          source_article_id: string | null
+          source_domain: string | null
+          source_headline: string | null
+          source_url: string | null
+          status: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
+          ai_model?: string | null
+          civic_relevance_score?: number | null
+          content_types?: Json | null
           created_at?: string
-          generated_content?: Json
-          id: string
-          news_event_id: string
-          news_headline: string
+          created_by?: string | null
+          description?: string | null
+          generation_config?: Json | null
+          generation_method?: string | null
+          id?: string
+          package_name: string
           published_at?: string | null
-          quality_scores?: Json
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
+          published_content?: Json | null
+          quality_scores?: Json | null
+          source_article_id?: string | null
+          source_domain?: string | null
+          source_headline?: string | null
+          source_url?: string | null
+          status?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
+          ai_model?: string | null
+          civic_relevance_score?: number | null
+          content_types?: Json | null
           created_at?: string
-          generated_content?: Json
+          created_by?: string | null
+          description?: string | null
+          generation_config?: Json | null
+          generation_method?: string | null
           id?: string
-          news_event_id?: string
-          news_headline?: string
+          package_name?: string
           published_at?: string | null
-          quality_scores?: Json
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
+          published_content?: Json | null
+          quality_scores?: Json | null
+          source_article_id?: string | null
+          source_domain?: string | null
+          source_headline?: string | null
+          source_url?: string | null
+          status?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "content_packages_news_event_id_fkey"
-            columns: ["news_event_id"]
-            isOneToOne: false
-            referencedRelation: "news_events"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       content_preview_cache: {
         Row: {
@@ -2052,15 +2344,7 @@ export type Database = {
           target_record_id?: string
           target_table?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "content_publication_log_content_package_id_fkey"
-            columns: ["content_package_id"]
-            isOneToOne: false
-            referencedRelation: "content_packages"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       content_relationships: {
         Row: {
@@ -2113,53 +2397,202 @@ export type Database = {
         }
         Relationships: []
       }
+      event_research_suggestions: {
+        Row: {
+          admin_notes: string | null
+          ai_context: string | null
+          confidence_score: number | null
+          id: string
+          potential_date: string | null
+          processed_at: string | null
+          processed_by: string | null
+          rejected_reason: string | null
+          research_query: string
+          research_result_id: string | null
+          research_status: string | null
+          resulting_event_topic_id: string | null
+          significance_estimate: number | null
+          suggested_at: string | null
+          suggested_by_ai: boolean | null
+          suggested_title: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          ai_context?: string | null
+          confidence_score?: number | null
+          id?: string
+          potential_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejected_reason?: string | null
+          research_query: string
+          research_result_id?: string | null
+          research_status?: string | null
+          resulting_event_topic_id?: string | null
+          significance_estimate?: number | null
+          suggested_at?: string | null
+          suggested_by_ai?: boolean | null
+          suggested_title: string
+        }
+        Update: {
+          admin_notes?: string | null
+          ai_context?: string | null
+          confidence_score?: number | null
+          id?: string
+          potential_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejected_reason?: string | null
+          research_query?: string
+          research_result_id?: string | null
+          research_status?: string | null
+          resulting_event_topic_id?: string | null
+          significance_estimate?: number | null
+          suggested_at?: string | null
+          suggested_by_ai?: boolean | null
+          suggested_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_research_suggestions_research_result_id_fkey"
+            columns: ["research_result_id"]
+            isOneToOne: false
+            referencedRelation: "ai_research_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_timeline_connections: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          explanation: string | null
+          from_event_topic_id: string
+          id: string
+          relationship_type: string
+          time_gap_days: number | null
+          to_event_topic_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          explanation?: string | null
+          from_event_topic_id: string
+          id?: string
+          relationship_type: string
+          time_gap_days?: number | null
+          to_event_topic_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          explanation?: string | null
+          from_event_topic_id?: string
+          id?: string
+          relationship_type?: string
+          time_gap_days?: number | null
+          to_event_topic_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
+          ai_generated: boolean | null
+          categories: string[] | null
           civic_relevance_score: number | null
           content_generation_status: string | null
           content_package_id: string | null
+          content_warnings: string[] | null
           created_at: string | null
           date: string
           description: string
+          event_type: string | null
+          fact_check_status: string | null
+          geographic_scope: string | null
           id: string | null
+          impact_summary: string | null
           is_active: boolean | null
+          is_featured: boolean | null
+          key_figures: string[] | null
+          last_fact_checked: string | null
+          long_term_consequences: string | null
           news_source_url: string | null
+          quiz_potential: Json | null
+          related_organizations: string[] | null
+          reliability_score: number | null
+          research_quality_score: number | null
+          significance_level: number | null
           source_type: string | null
           sources: Json | null
+          tags: string[] | null
           topic_id: string
           topic_title: string
           updated_at: string | null
           why_this_matters: string
         }
         Insert: {
+          ai_generated?: boolean | null
+          categories?: string[] | null
           civic_relevance_score?: number | null
           content_generation_status?: string | null
           content_package_id?: string | null
+          content_warnings?: string[] | null
           created_at?: string | null
           date: string
           description: string
+          event_type?: string | null
+          fact_check_status?: string | null
+          geographic_scope?: string | null
           id?: string | null
+          impact_summary?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
+          key_figures?: string[] | null
+          last_fact_checked?: string | null
+          long_term_consequences?: string | null
           news_source_url?: string | null
+          quiz_potential?: Json | null
+          related_organizations?: string[] | null
+          reliability_score?: number | null
+          research_quality_score?: number | null
+          significance_level?: number | null
           source_type?: string | null
           sources?: Json | null
+          tags?: string[] | null
           topic_id: string
           topic_title: string
           updated_at?: string | null
           why_this_matters: string
         }
         Update: {
+          ai_generated?: boolean | null
+          categories?: string[] | null
           civic_relevance_score?: number | null
           content_generation_status?: string | null
           content_package_id?: string | null
+          content_warnings?: string[] | null
           created_at?: string | null
           date?: string
           description?: string
+          event_type?: string | null
+          fact_check_status?: string | null
+          geographic_scope?: string | null
           id?: string | null
+          impact_summary?: string | null
           is_active?: boolean | null
+          is_featured?: boolean | null
+          key_figures?: string[] | null
+          last_fact_checked?: string | null
+          long_term_consequences?: string | null
           news_source_url?: string | null
+          quiz_potential?: Json | null
+          related_organizations?: string[] | null
+          reliability_score?: number | null
+          research_quality_score?: number | null
+          significance_level?: number | null
           source_type?: string | null
           sources?: Json | null
+          tags?: string[] | null
           topic_id?: string
           topic_title?: string
           updated_at?: string | null
@@ -3674,6 +4107,92 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_connections: {
+        Row: {
+          admin_notes: string | null
+          confidence_score: number | null
+          connection_strength: number
+          connection_type: string
+          created_at: string | null
+          discovered_by_ai: boolean | null
+          discovery_method: string | null
+          evidence_sources: Json | null
+          explanation: string
+          historical_precedent: string | null
+          human_verified: boolean | null
+          id: string
+          research_session_id: string | null
+          source_content_id: string
+          source_content_type: string
+          source_title: string | null
+          target_content_id: string
+          target_content_type: string
+          target_title: string | null
+          updated_at: string | null
+          usage_count: number | null
+          used_in_explanations: boolean | null
+          used_in_questions: boolean | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          confidence_score?: number | null
+          connection_strength?: number
+          connection_type: string
+          created_at?: string | null
+          discovered_by_ai?: boolean | null
+          discovery_method?: string | null
+          evidence_sources?: Json | null
+          explanation: string
+          historical_precedent?: string | null
+          human_verified?: boolean | null
+          id?: string
+          research_session_id?: string | null
+          source_content_id: string
+          source_content_type: string
+          source_title?: string | null
+          target_content_id: string
+          target_content_type: string
+          target_title?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+          used_in_explanations?: boolean | null
+          used_in_questions?: boolean | null
+        }
+        Update: {
+          admin_notes?: string | null
+          confidence_score?: number | null
+          connection_strength?: number
+          connection_type?: string
+          created_at?: string | null
+          discovered_by_ai?: boolean | null
+          discovery_method?: string | null
+          evidence_sources?: Json | null
+          explanation?: string
+          historical_precedent?: string | null
+          human_verified?: boolean | null
+          id?: string
+          research_session_id?: string | null
+          source_content_id?: string
+          source_content_type?: string
+          source_title?: string | null
+          target_content_id?: string
+          target_content_type?: string
+          target_title?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+          used_in_explanations?: boolean | null
+          used_in_questions?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_connections_research_session_id_fkey"
+            columns: ["research_session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_research_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -7102,6 +7621,39 @@ export type Database = {
         }
         Relationships: []
       }
+      question_event_connections: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          display_text: string | null
+          event_topic_id: string
+          id: string
+          question_id: string
+          sort_order: number | null
+          usage_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          display_text?: string | null
+          event_topic_id: string
+          id?: string
+          question_id: string
+          sort_order?: number | null
+          usage_type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          display_text?: string | null
+          event_topic_id?: string
+          id?: string
+          question_id?: string
+          sort_order?: number | null
+          usage_type?: string
+        }
+        Relationships: []
+      }
       question_feedback: {
         Row: {
           created_at: string | null
@@ -7651,6 +8203,75 @@ export type Database = {
           total_time_seconds?: number | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      research_validation: {
+        Row: {
+          content_id: string
+          content_type: string
+          content_updated: boolean | null
+          corrections_made: Json | null
+          created_at: string | null
+          evidence_checked: Json | null
+          fact_check_results: Json | null
+          flagged_for_review: boolean | null
+          id: string
+          is_valid: boolean | null
+          issues_found: string[] | null
+          recommendations: string[] | null
+          sources_verified: Json | null
+          updated_at: string | null
+          validated_at: string | null
+          validated_by: string
+          validation_criteria: Json | null
+          validation_method: string | null
+          validation_score: number | null
+          validation_type: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          content_updated?: boolean | null
+          corrections_made?: Json | null
+          created_at?: string | null
+          evidence_checked?: Json | null
+          fact_check_results?: Json | null
+          flagged_for_review?: boolean | null
+          id?: string
+          is_valid?: boolean | null
+          issues_found?: string[] | null
+          recommendations?: string[] | null
+          sources_verified?: Json | null
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by: string
+          validation_criteria?: Json | null
+          validation_method?: string | null
+          validation_score?: number | null
+          validation_type: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          content_updated?: boolean | null
+          corrections_made?: Json | null
+          created_at?: string | null
+          evidence_checked?: Json | null
+          fact_check_results?: Json | null
+          flagged_for_review?: boolean | null
+          id?: string
+          is_valid?: boolean | null
+          issues_found?: string[] | null
+          recommendations?: string[] | null
+          sources_verified?: Json | null
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string
+          validation_criteria?: Json | null
+          validation_method?: string | null
+          validation_score?: number | null
+          validation_type?: string
         }
         Relationships: []
       }
@@ -9298,6 +9919,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      topic_event_connections: {
+        Row: {
+          connection_strength: number | null
+          connection_type: string
+          context_notes: string | null
+          created_at: string | null
+          created_by: string | null
+          display_priority: number | null
+          event_topic_id: string
+          id: string
+          topic_id: string
+          used_in_explanations: boolean | null
+          used_in_questions: boolean | null
+        }
+        Insert: {
+          connection_strength?: number | null
+          connection_type: string
+          context_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          display_priority?: number | null
+          event_topic_id: string
+          id?: string
+          topic_id: string
+          used_in_explanations?: boolean | null
+          used_in_questions?: boolean | null
+        }
+        Update: {
+          connection_strength?: number | null
+          connection_type?: string
+          context_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          display_priority?: number | null
+          event_topic_id?: string
+          id?: string
+          topic_id?: string
+          used_in_explanations?: boolean | null
+          used_in_questions?: boolean | null
+        }
+        Relationships: []
       }
       translation_jobs: {
         Row: {
@@ -11823,22 +12486,6 @@ export type Database = {
         }
         Relationships: []
       }
-      news_agent_analytics: {
-        Row: {
-          avg_accuracy_score: number | null
-          avg_actionability_score: number | null
-          avg_brand_voice_score: number | null
-          avg_civic_relevance: number | null
-          avg_quality_score: number | null
-          date: string | null
-          news_sources: string[] | null
-          packages_in_review: number | null
-          published_packages: number | null
-          rejected_packages: number | null
-          total_packages: number | null
-        }
-        Relationships: []
-      }
       news_agent_performance: {
         Row: {
           date: string | null
@@ -12746,6 +13393,18 @@ export type Database = {
         Args: { p_pod_id: string; p_user_id: string }
         Returns: Json
       }
+      get_event_timeline: {
+        Args: { p_event_topic_id: string }
+        Returns: {
+          connected_event_topic_id: string
+          connected_event_title: string
+          connected_event_date: string
+          relationship_type: string
+          time_gap_days: number
+          explanation: string
+          direction: string
+        }[]
+      }
       get_function_return_info: {
         Args: { function_name_param: string }
         Returns: {
@@ -13021,6 +13680,18 @@ export type Database = {
           categories: Json
         }[]
       }
+      get_topic_related_events: {
+        Args: { p_topic_id: string }
+        Returns: {
+          event_topic_id: string
+          title: string
+          event_date: string
+          connection_type: string
+          connection_strength: number
+          context_notes: string
+          significance_level: number
+        }[]
+      }
       get_translatable_content_summary: {
         Args: {
           search_term?: string
@@ -13220,8 +13891,22 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      identify_content_gaps: {
+        Args: { p_analysis_type?: string; p_researcher_id?: string }
+        Returns: {
+          gap_type: string
+          priority_level: string
+          title: string
+          description: string
+          confidence_score: number
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      is_admin_user: {
+        Args: { check_user_id: string }
         Returns: boolean
       }
       is_content_appropriate_for_user: {
@@ -13236,6 +13921,10 @@ export type Database = {
       }
       is_educational_email: {
         Args: { email_address: string }
+        Returns: boolean
+      }
+      is_super_admin_user: {
+        Args: { check_user_id: string }
         Returns: boolean
       }
       join_multiplayer_room: {
@@ -13303,6 +13992,17 @@ export type Database = {
           p_activity_data?: Json
         }
         Returns: string
+      }
+      log_research_session_result: {
+        Args: {
+          p_session_id: string
+          p_events_generated?: number
+          p_connections_discovered?: number
+          p_quality_score?: number
+          p_processing_time_ms?: number
+          p_status?: string
+        }
+        Returns: boolean
       }
       migrate_progress_session_to_completion: {
         Args: { p_session_id: string }
@@ -13386,6 +14086,23 @@ export type Database = {
           description: string
           content_type: string
           tags: string[]
+          relevance_score: number
+        }[]
+      }
+      search_historical_events: {
+        Args: {
+          p_query: string
+          p_event_type?: string
+          p_min_significance?: number
+          p_limit?: number
+        }
+        Returns: {
+          event_topic_id: string
+          title: string
+          description: string
+          event_date: string
+          event_type: string
+          significance_level: number
           relevance_score: number
         }[]
       }

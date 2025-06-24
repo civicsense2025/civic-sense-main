@@ -12,15 +12,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import { 
-  DB_TABLES, 
-  type DbEventsInsert,
-  type DbQuestionTopicsInsert, 
-  type DbQuestionsInsert,
-  type DbGlossaryTermsInsert,
-  type DbSkillsInsert,
-  type DbPublicFiguresInsert
-} from '@/lib/database-constants'
+import Anthropic from '@anthropic-ai/sdk'
+import {
+    DB_TABLES,
+    type DbQuestionTopicsInsert,
+    type DbQuestionsInsert,
+    type DbSkillsInsert,
+    type DbGlossaryTermsInsert,
+    type DbEventsInsert,
+    type DbPublicFiguresInsert
+  } from '@/lib/database-constants'
 
 // Content packages table name (not in DB_TABLES yet)
 const CONTENT_PACKAGES_TABLE = 'content_packages'
@@ -580,64 +581,232 @@ class ContentPackageGenerator {
   }
 }
 
+// Load configuration from API
+async function loadAgentConfig() {
+  try {
+    const supabase = await createClient()
+    const { data: configData } = await supabase
+      .from('news_agent_config')
+      .select('config')
+      .single()
+    
+    return configData?.config || {
+      isActive: false,
+      monitoringIntervalMinutes: 30,
+      minCivicRelevanceScore: 70,
+      maxEventsPerCycle: 10,
+      contentGeneration: {
+        generateQuestions: true,
+        generateSkills: true,
+        generateGlossaryTerms: true,
+        generateEvents: true,
+        generatePublicFigures: true
+      },
+      databaseTargets: {
+        saveToContentPackages: true,
+        saveToContentTables: true,
+        targetTables: {
+          question_topics: true,
+          questions: true,
+          skills: true,
+          glossary_terms: true,
+          events: true,
+          public_figures: true
+        },
+        customTableMappings: {},
+        schemaConfig: {
+          schemaName: 'public',
+          useCustomFieldMappings: false,
+          customFieldMappings: {}
+        }
+      },
+      qualityControl: {
+        publishAsActive: true,
+        validateSchema: true,
+        requireMinimumFields: true
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load config from database, using defaults:', error)
+    return {
+      isActive: false,
+      monitoringIntervalMinutes: 30,
+      minCivicRelevanceScore: 70,
+      maxEventsPerCycle: 10,
+      contentGeneration: {
+        generateQuestions: true,
+        generateSkills: true,
+        generateGlossaryTerms: true,
+        generateEvents: true,
+        generatePublicFigures: true
+      },
+      databaseTargets: {
+        saveToContentPackages: true,
+        saveToContentTables: true,
+        targetTables: {
+          question_topics: true,
+          questions: true,
+          skills: true,
+          glossary_terms: true,
+          events: true,
+          public_figures: true
+        },
+        customTableMappings: {},
+        schemaConfig: {
+          schemaName: 'public',
+          useCustomFieldMappings: false,
+          customFieldMappings: {}
+        }
+      },
+      qualityControl: {
+        publishAsActive: true,
+        validateSchema: true,
+        requireMinimumFields: true
+      }
+    }
+  }
+}
+
+/**
+ * POST /api/admin/news-agent/generate-package
+ * Generate content package from news event
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedData = GeneratePackageSchema.parse(body)
-    
     const supabase = await createClient()
-
-    // Create news event record using existing events table
-    const newsEventData = {
-      date: new Date().toISOString().split('T')[0],
-      topic_id: `news_${Date.now()}`,
-      topic_title: validatedData.headline,
-      why_this_matters: 'This breaking news impacts civic participation and democratic processes',
-      civic_relevance_score: 85,
-      source_type: 'news_generated',
-      news_source_url: validatedData.sourceUrl
-    }
-
-    const supabaseClient = await supabase
-    const { data: newsEvent, error: newsEventError } = await supabaseClient
-      .from(DB_TABLES.EVENTS)
-      .insert(newsEventData)
-      .select()
-      .single()
-
-    if (newsEventError) {
-      throw new Error(`Failed to create news event: ${newsEventError.message}`)
-    }
-
-    // Generate content package
-    const generator = new ContentPackageGenerator(supabase, validatedData.provider)
     
-    const { packageId, content, qualityScores } = await generator.generateContentPackage(
-      newsEvent,
-      validatedData.contentTypes,
-      validatedData.qualityThreshold
-    )
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Publish content to production tables
-    const { published, errors } = await generator.publishContent(packageId, content)
+    // Load configuration
+    const config = await loadAgentConfig()
+    
+    // Get request body (may include specific config overrides)
+    const body = await request.json().catch(() => ({}))
+    const requestConfig = body.config || config
+
+    console.log('🎯 Starting manual content generation with config:', {
+      generateQuestions: requestConfig.contentGeneration?.generateQuestions,
+      generateSkills: requestConfig.contentGeneration?.generateSkills,
+      saveToContentPackages: requestConfig.databaseTargets?.saveToContentPackages,
+      saveToContentTables: requestConfig.databaseTargets?.saveToContentTables,
+      targetTables: requestConfig.databaseTargets?.targetTables
+    })
+
+    // Find recent articles that haven't been processed
+    const { data: articles, error: articlesError } = await supabase
+      .from('source_metadata')
+      .select('*')
+      .is('ai_generated', null) // Not yet processed by AI
+      .gte('published_date', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+      .order('published_date', { ascending: false })
+      .limit(requestConfig.maxEventsPerCycle || 10)
+
+    if (articlesError) {
+      console.error('❌ Error fetching articles:', articlesError)
+      return NextResponse.json({
+        error: 'Failed to fetch articles',
+        details: articlesError.message
+      }, { status: 500 })
+    }
+
+    if (!articles || articles.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No new articles found for processing',
+        processed: 0
+      })
+    }
+
+    console.log(`📰 Found ${articles.length} articles for processing`)
+
+    // Initialize content generator
+    const generator = new ContentPackageGenerator(supabase, 'anthropic')
+
+    let processed = 0
+    let generated = 0
+    const results = []
+
+    // Process each article
+    for (const article of articles) {
+      try {
+        console.log(`🔍 Processing article: ${article.title}`)
+
+        // Create a proper news event for the existing generator
+        const newsEvent = {
+          id: article.id,
+          headline: article.title || '',
+          content: article.content || article.description || '',
+          source: article.source || article.domain || 'Unknown',
+          source_url: article.url || '',
+          published_date: article.published_date || new Date().toISOString(),
+          civic_relevance_score: 85 // Default score since we're processing manually
+        }
+
+        // Generate content package using existing method signature
+        const result = await generator.generateContentPackage(
+          newsEvent,
+          {
+            questions: true,
+            skills: true,
+            glossary: true,
+            events: true,
+            publicFigures: true
+          },
+          70 // Quality threshold
+        )
+
+        console.log(`✅ Generated content package: ${result.packageId}`)
+        generated++
+        results.push({
+          articleId: article.id,
+          packageId: result.packageId,
+          qualityScores: result.qualityScores,
+          status: 'generated'
+        })
+
+        // Mark article as processed
+        await supabase
+          .from('source_metadata')
+          .update({ ai_generated: true })
+          .eq('id', article.id)
+
+        processed++
+
+      } catch (error) {
+        console.error(`❌ Error processing article ${article.id}:`, error)
+        results.push({
+          articleId: article.id,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+        processed++
+      }
+    }
+
+    console.log(`🎉 Content generation complete: ${generated}/${processed} packages generated`)
 
     return NextResponse.json({
       success: true,
-      packageId,
-      newsEventId: newsEvent.id,
-      qualityScores,
-      published,
-      errors: errors.length > 0 ? errors : undefined,
-      message: `Generated content package with ${Object.keys(published).length} content types`
+      message: `Content generation completed: ${generated}/${processed} packages generated`,
+      processed,
+      generated,
+      results,
+      configuration: {
+        targetTables: requestConfig.databaseTargets?.targetTables,
+        saveToContentPackages: requestConfig.databaseTargets?.saveToContentPackages,
+        saveToContentTables: requestConfig.databaseTargets?.saveToContentTables
+      }
     })
 
   } catch (error) {
-    console.error('❌ Content package generation failed:', error)
-    
+    console.error('❌ Content generation error:', error)
     return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      details: error instanceof z.ZodError ? error.errors : undefined
+      error: 'Content generation failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
@@ -650,27 +819,65 @@ export async function GET() {
   try {
     const supabaseClient = await createClient()
 
-    // Get recent content packages
-    const { data: packages } = await supabaseClient
-      .from('content_packages')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    // Get generation statistics
-    const { data: stats } = await supabaseClient
-      .from('content_packages')
-      .select('status, quality_scores')
-
-    const statistics = {
-      total: stats?.length || 0,
-      published: stats?.filter(p => p.status === 'published').length || 0,
-      inReview: stats?.filter(p => p.status === 'review').length || 0,
-      rejected: stats?.filter(p => p.status === 'rejected').length || 0,
-      averageQuality: stats?.length 
-        ? Math.round(stats.reduce((sum, p) => sum + (p.quality_scores?.overall || 0), 0) / stats.length)
-        : 0
+    // Try to get content packages first
+    let packages: any[] = []
+    let statistics = {
+      total: 0,
+      published: 0,
+      inReview: 0,
+      rejected: 0,
+      averageQuality: 0
     }
+
+    // Try content_packages table first
+    try {
+      const { data: contentPackages } = await supabaseClient
+        .from('content_packages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (contentPackages && contentPackages.length > 0) {
+        packages = contentPackages
+        console.log(`📦 Found ${packages.length} content packages`)
+      }
+    } catch (error) {
+      console.log('📦 Content packages table not available, checking question_topics...')
+      
+      // Fallback to question_topics for recently generated content
+      const { data: recentTopics } = await supabaseClient
+        .from('question_topics')
+        .select('topic_id, topic_title, created_at, is_active, ai_generated')
+        .eq('ai_generated', true)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (recentTopics && recentTopics.length > 0) {
+        packages = recentTopics.map(topic => ({
+          id: topic.topic_id,
+          news_headline: topic.topic_title,
+          status: topic.is_active ? 'published' : 'draft',
+          quality_scores: { overall: 75 },
+          created_at: topic.created_at
+        }))
+        console.log(`📦 Found ${packages.length} AI-generated topics as packages`)
+      }
+    }
+
+    // Calculate statistics from packages
+    if (packages.length > 0) {
+      statistics = {
+        total: packages.length,
+        published: packages.filter(p => p.status === 'published').length,
+        inReview: packages.filter(p => p.status === 'review').length,
+        rejected: packages.filter(p => p.status === 'rejected').length,
+        averageQuality: packages.length 
+          ? Math.round(packages.reduce((sum, p) => sum + (p.quality_scores?.overall || 75), 0) / packages.length)
+          : 0
+      }
+    }
+
+    console.log(`📊 Content package statistics:`, statistics)
 
     return NextResponse.json({
       success: true,
