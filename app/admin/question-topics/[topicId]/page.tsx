@@ -30,13 +30,20 @@ import {
   Clock,
   Users,
   BarChart3,
+  BarChart,
   Zap,
   Target,
   FileText,
   Globe,
   Brain,
   Settings,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Timer,
+  UserCheck,
+  User
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
@@ -95,6 +102,54 @@ interface TopicStats {
   last_attempt: string | null
 }
 
+interface TopicAnalytics {
+  total_attempts: number
+  unique_users: number
+  completion_rate: number
+  avg_score: number
+  avg_time_spent: number
+  question_performance: Array<{
+    question_id: string
+    question_number: number
+    question_text: string
+    category: string
+    difficulty_level: number
+    total_responses: number
+    correct_responses: number
+    accuracy_rate: number
+    avg_response_time: number
+    common_wrong_answers: Array<{ answer: string; count: number }>
+  }>
+  daily_attempts: Array<{
+    date: string
+    attempts: number
+    avg_score: number
+    completion_rate: number
+  }>
+  user_patterns: {
+    repeat_takers: number
+    avg_attempts_per_user: number
+    improvement_rate: number
+  }
+  category_performance: Record<string, {
+    total_questions: number
+    avg_accuracy: number
+    avg_time: number
+  }>
+  difficulty_analysis: Record<string, {
+    question_count: number
+    avg_accuracy: number
+    avg_time: number
+    completion_rate: number
+  }>
+  recent_activity: Array<{
+    user_id: string
+    score: number
+    completed_at: string
+    time_spent: number
+  }>
+}
+
 export default function TopicDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -105,7 +160,9 @@ export default function TopicDetailPage() {
   const [topic, setTopic] = useState<QuestionTopic | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [stats, setStats] = useState<TopicStats | null>(null)
+  const [analytics, setAnalytics] = useState<TopicAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
@@ -116,6 +173,7 @@ export default function TopicDetailPage() {
   useEffect(() => {
     if (isAdmin && topicId) {
       loadTopicData()
+      loadAnalyticsData()
     }
   }, [isAdmin, topicId])
 
@@ -129,9 +187,10 @@ export default function TopicDetailPage() {
         .from('question_topics')
         .select('*')
         .eq('topic_id', topicId)
-        .single()
+        .maybeSingle()
 
       if (topicError) throw new Error(`Failed to load topic: ${topicError.message}`)
+      if (!topicData) throw new Error(`Topic with ID "${topicId}" not found`)
 
       // Load questions with explicit limit and better error handling
       console.log(`🔍 Loading questions for topic: ${topicId}`)
@@ -193,6 +252,34 @@ export default function TopicDetailPage() {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadAnalyticsData = async () => {
+    try {
+      setIsAnalyticsLoading(true)
+      const response = await fetch(`/api/admin/question-topics/${topicId}/analytics?days=30`)
+      
+      if (response.ok) {
+        const analyticsData = await response.json()
+        setAnalytics(analyticsData)
+        
+        // Update stats with real analytics data
+        if (stats) {
+          setStats(prev => prev ? {
+            ...prev,
+            completion_rate: analyticsData.completion_rate,
+            avg_score: analyticsData.avg_score,
+            total_attempts: analyticsData.total_attempts
+          } : null)
+        }
+      } else {
+        console.warn('Failed to load analytics data')
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error)
+    } finally {
+      setIsAnalyticsLoading(false)
     }
   }
 
@@ -433,14 +520,13 @@ export default function TopicDetailPage() {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="questions">Questions ({questions.length})</TabsTrigger>
-              <TabsTrigger value="metadata">Metadata</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">Overview & Content</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="metadata">Metadata</TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
+            {/* Overview & Content Tab */}
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Basic Information */}
@@ -494,7 +580,7 @@ export default function TopicDetailPage() {
                 {/* Categories & Settings */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Categories & Settings</CardTitle>
+                    <CardTitle>Categories & Content Stats</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -508,9 +594,89 @@ export default function TopicDetailPage() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Question Statistics */}
+                    <div className="space-y-3 border-t pt-4">
+                      <h4 className="font-medium text-slate-900 dark:text-white mb-2">Question Statistics</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Total Questions</span>
+                            <Badge variant="outline" className="font-medium">
+                              {questions.length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Active Questions</span>
+                            <Badge className="bg-green-100 text-green-700 font-medium">
+                              {questions.filter(q => q.is_active).length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">With Sources</span>
+                            <Badge variant="secondary" className="font-medium">
+                              {questions.filter(q => q.sources && q.sources.length > 0).length}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">With Hints</span>
+                            <Badge variant="secondary" className="font-medium">
+                              {questions.filter(q => q.hint).length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Avg Difficulty</span>
+                            <Badge variant="outline" className="font-medium">
+                              {stats?.avg_difficulty.toFixed(1) || '0.0'}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Question Types</span>
+                            <Badge variant="outline" className="font-medium">
+                              {Object.keys(stats?.questions_by_type || {}).length}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Question Type Distribution */}
+                      {stats && Object.keys(stats.questions_by_type).length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Type Distribution</span>
+                          {Object.entries(stats.questions_by_type).map(([type, count]) => (
+                            <div key={type} className="flex justify-between items-center">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">{getTypeLabel(type)}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {count}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Difficulty Distribution */}
+                      {stats && Object.keys(stats.questions_by_difficulty).length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Difficulty Distribution</span>
+                          {Object.entries(stats.questions_by_difficulty).map(([level, count]) => (
+                            <div key={level} className="flex justify-between items-center">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">{getDifficultyLabel(parseInt(level))}</span>
+                              <Badge className={cn("text-xs", getDifficultyColor(parseInt(level)))}>
+                                {count}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     
                     {isEditing ? (
-                      <div className="space-y-3">
+                      <div className="space-y-3 border-t pt-4">
+                        <h4 className="font-medium text-slate-900 dark:text-white mb-2">Settings</h4>
                         <div className="flex items-center justify-between">
                           <label className="text-sm font-medium">Active</label>
                           <Switch
@@ -534,7 +700,8 @@ export default function TopicDetailPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 border-t pt-4">
+                        <h4 className="font-medium text-slate-900 dark:text-white mb-2">Status & Metadata</h4>
                         <div className="flex justify-between">
                           <span className="text-sm text-slate-600 dark:text-slate-400">Status</span>
                           <Badge variant={topic.is_active ? "default" : "secondary"}>
@@ -561,23 +728,7 @@ export default function TopicDetailPage() {
                 </Card>
               </div>
 
-              {/* Key Takeaways */}
-              {topic.key_takeaways && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Key Takeaways</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <pre className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
-                      {JSON.stringify(topic.key_takeaways, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Questions Tab */}
-            <TabsContent value="questions" className="space-y-6">
+              {/* Questions Section */}
               {questions.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
@@ -594,68 +745,11 @@ export default function TopicDetailPage() {
                 </Card>
               ) : (
                 <>
-                  {/* Question Distribution */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Question Types</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {Object.entries(stats?.questions_by_type || {}).map(([type, count]) => (
-                          <div key={type} className="flex justify-between items-center">
-                            <span className="text-sm">{getTypeLabel(type)}</span>
-                            <Badge variant="secondary">{count}</Badge>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Difficulty Levels</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {Object.entries(stats?.questions_by_difficulty || {}).map(([level, count]) => (
-                          <div key={level} className="flex justify-between items-center">
-                            <span className="text-sm">{getDifficultyLabel(parseInt(level))}</span>
-                            <Badge className={getDifficultyColor(parseInt(level))}>{count}</Badge>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Question Quality</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Active Questions</span>
-                          <Badge className="bg-green-100 text-green-700">
-                            {questions.filter(q => q.is_active).length}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">With Sources</span>
-                          <Badge variant="secondary">
-                            {questions.filter(q => q.sources && q.sources.length > 0).length}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">With Hints</span>
-                          <Badge variant="secondary">
-                            {questions.filter(q => q.hint).length}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
                   {/* Questions List */}
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle>All Questions</CardTitle>
+                        <CardTitle>Questions ({questions.length})</CardTitle>
                         <Button size="sm">
                           <Plus className="h-4 w-4 mr-2" />
                           Add Question
@@ -664,7 +758,7 @@ export default function TopicDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {questions.map((question) => (
+                        {questions.slice(0, 10).map((question) => (
                           <div key={question.id} className="border rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-3">
@@ -718,12 +812,35 @@ export default function TopicDetailPage() {
                             </div>
                           </div>
                         ))}
+                        {questions.length > 10 && (
+                          <div className="text-center pt-4">
+                            <Button variant="outline">
+                              View All {questions.length} Questions
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
                 </>
               )}
+
+              {/* Key Takeaways */}
+              {topic.key_takeaways && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Key Takeaways</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
+                      {JSON.stringify(topic.key_takeaways, null, 2)}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
+
+
 
             {/* Metadata Tab */}
             <TabsContent value="metadata" className="space-y-6">
@@ -741,13 +858,285 @@ export default function TopicDetailPage() {
 
             {/* Analytics Tab */}
             <TabsContent value="analytics" className="space-y-6">
-              <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Analytics Coming Soon</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Detailed analytics and performance metrics will be available here.
-                </p>
-              </div>
+              {isAnalyticsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading analytics data...</p>
+                </div>
+              ) : analytics ? (
+                <>
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Total Attempts</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {analytics.total_attempts.toLocaleString()}
+                            </p>
+                          </div>
+                          <Users className="h-8 w-8 text-blue-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Unique Users</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {analytics.unique_users.toLocaleString()}
+                            </p>
+                          </div>
+                          <UserCheck className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Avg Score</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {analytics.avg_score.toFixed(1)}%
+                            </p>
+                          </div>
+                          <TrendingUp className="h-8 w-8 text-purple-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Completion Rate</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {analytics.completion_rate.toFixed(1)}%
+                            </p>
+                          </div>
+                          <CheckCircle className="h-8 w-8 text-emerald-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Daily Activity Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart className="h-5 w-5" />
+                        Daily Activity (Last 30 Days)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64 flex items-end justify-between gap-1">
+                        {analytics.daily_attempts.map((day, index) => {
+                          const maxAttempts = Math.max(...analytics.daily_attempts.map(d => d.attempts))
+                          const height = maxAttempts > 0 ? (day.attempts / maxAttempts) * 200 : 0
+                          
+                          return (
+                            <div key={index} className="flex flex-col items-center flex-1">
+                              <div 
+                                className="bg-blue-500 hover:bg-blue-600 transition-colors w-full rounded-t cursor-pointer"
+                                style={{ height: `${height}px` }}
+                                title={`${day.attempts} attempts on ${day.date}`}
+                              />
+                              <span className="text-xs text-slate-500 mt-1">
+                                {format(new Date(day.date), 'dd')}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Question Performance Analysis */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Question Performance Analysis
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {analytics.question_performance.slice(0, 10).map((question) => (
+                          <div key={question.question_id} className="border rounded-lg p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    Q{question.question_number}
+                                  </Badge>
+                                  <Badge className={getDifficultyColor(question.difficulty_level)}>
+                                    {getDifficultyLabel(question.difficulty_level)}
+                                  </Badge>
+                                  <Badge variant="secondary">{question.category}</Badge>
+                                </div>
+                                <h4 className="font-medium text-sm text-slate-900 dark:text-white line-clamp-2">
+                                  {question.question_text}
+                                </h4>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="text-lg font-bold text-slate-900 dark:text-white">
+                                  {question.accuracy_rate.toFixed(1)}%
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {question.total_responses} responses
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <span className="text-xs text-slate-600 dark:text-slate-400">Accuracy</span>
+                                <Progress 
+                                  value={question.accuracy_rate} 
+                                  className="h-2 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-xs text-slate-600 dark:text-slate-400">Response Time</span>
+                                <div className="text-sm font-medium">{question.avg_response_time.toFixed(1)}s</div>
+                              </div>
+                              <div>
+                                <span className="text-xs text-slate-600 dark:text-slate-400">Common Wrong Answers</span>
+                                <div className="text-xs">
+                                  {question.common_wrong_answers.slice(0, 2).map((wrong, i) => (
+                                    <div key={i} className="text-slate-500">
+                                      "{wrong.answer}" ({wrong.count})
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Category & Difficulty Performance */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Category Performance</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {Object.entries(analytics.category_performance).map(([category, perf]) => (
+                          <div key={category} className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>{category}</span>
+                              <span className="font-medium">{perf.avg_accuracy.toFixed(1)}%</span>
+                            </div>
+                            <Progress value={perf.avg_accuracy} className="h-2" />
+                            <div className="flex justify-between text-xs text-slate-500">
+                              <span>{perf.total_questions} questions</span>
+                              <span>Avg: {perf.avg_time.toFixed(1)}s</span>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Difficulty Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {Object.entries(analytics.difficulty_analysis).map(([level, analysis]) => (
+                          <div key={level} className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>{getDifficultyLabel(parseInt(level))}</span>
+                              <span className="font-medium">{analysis.avg_accuracy.toFixed(1)}%</span>
+                            </div>
+                            <Progress value={analysis.avg_accuracy} className="h-2" />
+                            <div className="flex justify-between text-xs text-slate-500">
+                              <span>{analysis.question_count} questions</span>
+                              <span>{analysis.completion_rate.toFixed(1)}% completion</span>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* User Patterns & Recent Activity */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">User Patterns</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Repeat Takers</span>
+                          <span className="font-medium">{analytics.user_patterns.repeat_takers}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Avg Attempts/User</span>
+                          <span className="font-medium">{analytics.user_patterns.avg_attempts_per_user.toFixed(1)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Improvement Rate</span>
+                          <span className="font-medium">{analytics.user_patterns.improvement_rate.toFixed(1)}%</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Avg Time Spent</span>
+                          <span className="font-medium">{Math.round(analytics.avg_time_spent / 60)}m</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Recent Activity</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {analytics.recent_activity.slice(0, 5).map((activity, index) => (
+                            <div key={index} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                                  <User className="h-4 w-4 text-slate-600" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium">User {activity.user_id.slice(-8)}</div>
+                                  <div className="text-xs text-slate-500">
+                                    {format(new Date(activity.completed_at), 'MMM d, h:mm a')}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium">{activity.score}%</div>
+                                <div className="text-xs text-slate-500">{Math.round(activity.time_spent / 60)}m</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <BarChart className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No Analytics Data</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      Analytics data will appear here once users start taking quizzes on this topic.
+                    </p>
+                    <Button variant="outline" onClick={() => loadAnalyticsData()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Analytics
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
 

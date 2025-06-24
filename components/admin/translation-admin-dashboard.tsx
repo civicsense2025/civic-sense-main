@@ -20,6 +20,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
+
+// Import all icons individually to ensure they're properly loaded
+// This prevents the "Element type is invalid" error when using icons
 import { 
   Globe, 
   Languages, 
@@ -38,7 +42,6 @@ import {
   FileText,
   Loader2
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -370,28 +373,48 @@ function TranslationAdminDashboard() {
   // ============================================================================
 
   const getJobStatusBadge = (status: TranslationJob['status']) => {
-    const variants = {
-      pending: 'secondary',
-      running: 'default',
-      paused: 'outline',
-      completed: 'success',
-      failed: 'destructive'
-    } as const
-
-    const icons = {
-      pending: Clock,
-      running: RefreshCw,
-      paused: Pause,
-      completed: CheckCircle,
-      failed: XCircle
+    // Ensure we have valid status with safe fallback
+    const safeStatus = status || 'pending'
+    
+    // Safe icon mapping with fallbacks
+    const getStatusIcon = () => {
+      switch (safeStatus) {
+        case 'pending': return Clock
+        case 'running': return RefreshCw
+        case 'paused': return Pause
+        case 'completed': return CheckCircle
+        case 'failed': return XCircle
+        default: return Clock
+      }
     }
-
-    const Icon = icons[status]
+    
+    // Safe variant mapping
+    const getStatusVariant = (): 'secondary' | 'default' | 'outline' | 'destructive' => {
+      switch (safeStatus) {
+        case 'pending': return 'secondary'
+        case 'running': return 'default'
+        case 'paused': return 'outline'
+        case 'completed': return 'default'
+        case 'failed': return 'destructive'
+        default: return 'secondary'
+      }
+    }
+    
+    const IconComponent = getStatusIcon()
+    const variant = getStatusVariant()
+    
+    // Safe class generation
+    const baseClasses = 'flex items-center gap-1'
+    const statusClasses = safeStatus === 'completed' ? 'bg-green-500 hover:bg-green-600 text-white' : ''
+    const animationClasses = safeStatus === 'running' ? 'animate-pulse' : ''
+    const className = [baseClasses, statusClasses, animationClasses].filter(Boolean).join(' ')
+    
+    const iconClasses = safeStatus === 'running' ? 'h-3 w-3 animate-spin' : 'h-3 w-3'
     
     return (
-      <Badge variant={variants[status] as any} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Badge variant={variant} className={className}>
+        <IconComponent className={iconClasses} />
+        {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
       </Badge>
     )
   }

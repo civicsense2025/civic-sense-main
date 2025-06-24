@@ -90,8 +90,7 @@ interface GeneratedContent {
     why_this_matters: string
     emoji: string
     categories: string[]
-    source_analysis_id: string
-    ai_extraction_metadata: any
+    metadata: any // Store AI metadata here instead of separate fields
     date?: string
     day_of_week?: string
   }
@@ -469,8 +468,13 @@ Return JSON in this exact format:
     "why_this_matters": "<ul><li><strong>Your [Right/Issue]:</strong> Specific impact on daily life</li><li><strong>Your [Power]:</strong> What you can do about it</li><li><strong>Your [System]:</strong> How this reveals larger patterns</li></ul>",
     "emoji": "⚡",
     "categories": ["Government", "Constitutional Law", "Power Dynamics"],
-    "source_analysis_id": "${article.id}",
     "metadata": {
+      "generated_at": "${new Date().toISOString()}",
+      "source_url": "${article.url}",
+      "source_domain": "${article.domain}",
+      "source_credibility": ${article.credibility_score || 'null'},
+      "ai_model": "gpt-4o",
+      "generation_method": "news_analysis",
       "temporal_distribution": {
         "current_events": 70,
         "recent_history": 20,
@@ -601,7 +605,8 @@ Return JSON in this exact format:
         ...parsed.topic,
         date: options.targetDate,
         day_of_week: options.dayOfWeek,
-        ai_extraction_metadata: {
+        metadata: {
+          ...parsed.topic.metadata, // Include metadata from AI response
           generated_at: new Date().toISOString(),
           source_url: article.url,
           source_domain: article.domain,
@@ -646,7 +651,7 @@ async function saveGeneratedContent(
 
   for (const content of generatedContent) {
     try {
-      // Save topic
+      // Save topic with proper AI metadata fields
       const { data: topicData, error: topicError } = await supabase
         .from('question_topics')
         .insert({
@@ -656,8 +661,18 @@ async function saveGeneratedContent(
           why_this_matters: content.topic.why_this_matters,
           emoji: content.topic.emoji,
           categories: content.topic.categories,
-          source_analysis_id: content.topic.source_analysis_id,
-          ai_extraction_metadata: content.topic.ai_extraction_metadata,
+          
+          // New AI metadata fields
+          ai_generated: true,
+          ai_model_used: content.topic.metadata?.ai_model || 'gpt-4o',
+          ai_generation_method: content.topic.metadata?.generation_method || 'news_analysis',
+          ai_quality_score: content.topic.metadata?.quality_scores?.overall || null,
+          source_credibility_score: content.topic.metadata?.source_credibility || null,
+          content_package_id: content.topic.metadata?.content_package_id || null,
+          source_analysis_id: content.topic.metadata?.source_analysis_id || content.topic.topic_id,
+          ai_extraction_metadata: content.topic.metadata, // Store full AI metadata in dedicated field
+          
+          // Existing fields  
           date: content.topic.date || new Date().toISOString().split('T')[0],
           day_of_week: content.topic.day_of_week || new Date().toLocaleDateString('en-US', { weekday: 'long' }),
           is_active: false, // Set to false initially for review

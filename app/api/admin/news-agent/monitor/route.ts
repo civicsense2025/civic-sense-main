@@ -331,7 +331,7 @@ class NewsAIAgent {
 
       // Convert source_metadata entries to NewsEvent format with enhanced mapping
       const newsEvents: Partial<NewsEvent>[] = newsArticles
-        .filter(article => this.isNewsArticleValid(article))
+        .filter((article: any) => this.isNewsArticleValid(article))
         .map((article: any) => ({
           id: `source_${article.id}`,
           headline: article.title || article.og_title || 'Untitled Article',
@@ -748,9 +748,17 @@ class NewsAIAgent {
       const { ContentPackageGenerator } = await import('../content-generator')
       const generator = new ContentPackageGenerator(this.supabase, this.config.aiProvider)
       
+      const contentTypes = {
+        questions: this.config.contentGeneration.generateQuestions,
+        skills: this.config.contentGeneration.generateSkills,
+        glossary: this.config.contentGeneration.generateGlossary,
+        events: this.config.contentGeneration.generateEvents,
+        publicFigures: this.config.contentGeneration.generatePublicFigures
+      }
+
       const { packageId, content, qualityScores } = await generator.generateContentPackage(
         event,
-        this.config.contentGeneration,
+        contentTypes,
         this.config.qualityControl.minQualityScore
       )
 

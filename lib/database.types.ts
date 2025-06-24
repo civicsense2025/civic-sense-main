@@ -1233,6 +1233,42 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_sync_logs: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          errors: Json | null
+          id: string
+          skipped_count: number
+          sync_options: Json | null
+          synced_at: string
+          synced_count: number
+          user_id: string
+        }
+        Insert: {
+          calendar_id: string
+          created_at?: string
+          errors?: Json | null
+          id?: string
+          skipped_count?: number
+          sync_options?: Json | null
+          synced_at?: string
+          synced_count?: number
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          errors?: Json | null
+          id?: string
+          skipped_count?: number
+          sync_options?: Json | null
+          synced_at?: string
+          synced_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -1666,6 +1702,72 @@ export type Database = {
         }
         Relationships: []
       }
+      content_duplication_warnings: {
+        Row: {
+          admin_notes: string | null
+          analysis_method: string | null
+          content_id: string
+          content_overlap_details: Json | null
+          content_title: string
+          content_type: string
+          created_at: string | null
+          id: string
+          keyword_overlap: string[] | null
+          recommendation: string
+          resolved_at: string | null
+          reviewed_at: string | null
+          similar_content_id: string
+          similar_content_title: string
+          similar_content_type: string
+          similarity_score: number
+          status: string | null
+          suggested_action: string
+          warning_level: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          analysis_method?: string | null
+          content_id: string
+          content_overlap_details?: Json | null
+          content_title: string
+          content_type: string
+          created_at?: string | null
+          id?: string
+          keyword_overlap?: string[] | null
+          recommendation: string
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          similar_content_id: string
+          similar_content_title: string
+          similar_content_type: string
+          similarity_score: number
+          status?: string | null
+          suggested_action: string
+          warning_level: string
+        }
+        Update: {
+          admin_notes?: string | null
+          analysis_method?: string | null
+          content_id?: string
+          content_overlap_details?: Json | null
+          content_title?: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+          keyword_overlap?: string[] | null
+          recommendation?: string
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          similar_content_id?: string
+          similar_content_title?: string
+          similar_content_type?: string
+          similarity_score?: number
+          status?: string | null
+          suggested_action?: string
+          warning_level?: string
+        }
+        Relationships: []
+      }
       content_filtering_rules: {
         Row: {
           age_range: string
@@ -1959,6 +2061,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_relationships: {
+        Row: {
+          admin_notes: string | null
+          ai_discovered: boolean | null
+          confidence_score: number | null
+          created_at: string | null
+          discovery_method: string | null
+          human_verified: boolean | null
+          id: string
+          relationship_type: string
+          source_content_id: string
+          source_content_type: string
+          strength: number
+          target_content_id: string
+          target_content_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          ai_discovered?: boolean | null
+          confidence_score?: number | null
+          created_at?: string | null
+          discovery_method?: string | null
+          human_verified?: boolean | null
+          id?: string
+          relationship_type: string
+          source_content_id: string
+          source_content_type: string
+          strength?: number
+          target_content_id: string
+          target_content_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          ai_discovered?: boolean | null
+          confidence_score?: number | null
+          created_at?: string | null
+          discovery_method?: string | null
+          human_verified?: boolean | null
+          id?: string
+          relationship_type?: string
+          source_content_id?: string
+          source_content_type?: string
+          strength?: number
+          target_content_id?: string
+          target_content_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       events: {
         Row: {
@@ -6775,6 +6928,13 @@ export type Database = {
             foreignKeyName: "progress_sessions_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "progress_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
@@ -6783,6 +6943,7 @@ export type Database = {
       public_figures: {
         Row: {
           bills_sponsored: number | null
+          bio: string | null
           birth_state: string | null
           birth_year: number | null
           book_publications: string[] | null
@@ -6825,6 +6986,7 @@ export type Database = {
         }
         Insert: {
           bills_sponsored?: number | null
+          bio?: string | null
           birth_state?: string | null
           birth_year?: number | null
           book_publications?: string[] | null
@@ -6867,6 +7029,7 @@ export type Database = {
         }
         Update: {
           bills_sponsored?: number | null
+          bio?: string | null
           birth_state?: string | null
           birth_year?: number | null
           book_publications?: string[] | null
@@ -7193,7 +7356,13 @@ export type Database = {
       }
       question_topics: {
         Row: {
+          ai_extraction_metadata: Json | null
+          ai_generated: boolean | null
+          ai_generation_method: string | null
+          ai_model_used: string | null
+          ai_quality_score: number | null
           categories: Json
+          content_package_id: string | null
           created_at: string | null
           date: string | null
           day_of_week: string | null
@@ -7204,6 +7373,8 @@ export type Database = {
           is_breaking: boolean | null
           is_featured: boolean | null
           key_takeaways: Json | null
+          source_analysis_id: string | null
+          source_credibility_score: number | null
           topic_id: string
           topic_title: string
           translations: Json | null
@@ -7211,7 +7382,13 @@ export type Database = {
           why_this_matters: string
         }
         Insert: {
+          ai_extraction_metadata?: Json | null
+          ai_generated?: boolean | null
+          ai_generation_method?: string | null
+          ai_model_used?: string | null
+          ai_quality_score?: number | null
           categories?: Json
+          content_package_id?: string | null
           created_at?: string | null
           date?: string | null
           day_of_week?: string | null
@@ -7222,6 +7399,8 @@ export type Database = {
           is_breaking?: boolean | null
           is_featured?: boolean | null
           key_takeaways?: Json | null
+          source_analysis_id?: string | null
+          source_credibility_score?: number | null
           topic_id: string
           topic_title: string
           translations?: Json | null
@@ -7229,7 +7408,13 @@ export type Database = {
           why_this_matters: string
         }
         Update: {
+          ai_extraction_metadata?: Json | null
+          ai_generated?: boolean | null
+          ai_generation_method?: string | null
+          ai_model_used?: string | null
+          ai_quality_score?: number | null
           categories?: Json
+          content_package_id?: string | null
           created_at?: string | null
           date?: string | null
           day_of_week?: string | null
@@ -7240,6 +7425,8 @@ export type Database = {
           is_breaking?: boolean | null
           is_featured?: boolean | null
           key_takeaways?: Json | null
+          source_analysis_id?: string | null
+          source_credibility_score?: number | null
           topic_id?: string
           topic_title?: string
           translations?: Json | null
@@ -7391,6 +7578,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
           {
             foreignKeyName: "questions_test_topic_id_fkey"
             columns: ["topic_id"]
@@ -9612,6 +9806,13 @@ export type Database = {
             foreignKeyName: "user_deck_content_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
@@ -9824,6 +10025,54 @@ export type Database = {
           user_agent?: string | null
           user_email?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          provider: string
+          provider_email: string | null
+          provider_name: string | null
+          provider_user_id: string | null
+          refresh_token: string | null
+          scopes: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider: string
+          provider_email?: string | null
+          provider_name?: string | null
+          provider_user_id?: string | null
+          refresh_token?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider?: string
+          provider_email?: string | null
+          provider_name?: string | null
+          provider_user_id?: string | null
+          refresh_token?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -10388,6 +10637,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_quiz_attempts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
           },
           {
             foreignKeyName: "user_quiz_analytics_topic_id_fkey"
@@ -11006,8 +11262,272 @@ export type Database = {
           },
         ]
       }
+      weekly_content_metrics: {
+        Row: {
+          avg_score: number | null
+          civic_importance_score: number | null
+          completion_rate: number | null
+          content_id: string
+          content_type: string
+          created_at: string | null
+          discussions_started: number | null
+          follow_up_actions: number | null
+          id: string
+          news_mentions: number | null
+          shares_count: number | null
+          total_completions: number | null
+          total_views: number | null
+          trending_score: number | null
+          user_ratings_avg: number | null
+          user_ratings_count: number | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          avg_score?: number | null
+          civic_importance_score?: number | null
+          completion_rate?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          discussions_started?: number | null
+          follow_up_actions?: number | null
+          id?: string
+          news_mentions?: number | null
+          shares_count?: number | null
+          total_completions?: number | null
+          total_views?: number | null
+          trending_score?: number | null
+          user_ratings_avg?: number | null
+          user_ratings_count?: number | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          avg_score?: number | null
+          civic_importance_score?: number | null
+          completion_rate?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          discussions_started?: number | null
+          follow_up_actions?: number | null
+          id?: string
+          news_mentions?: number | null
+          shares_count?: number | null
+          total_completions?: number | null
+          total_views?: number | null
+          trending_score?: number | null
+          user_ratings_avg?: number | null
+          user_ratings_count?: number | null
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
+      weekly_recap_collections: {
+        Row: {
+          avg_engagement_score: number | null
+          collection_id: string
+          completions_count: number | null
+          config_used: string | null
+          content_selected: number | null
+          created_at: string | null
+          generation_timestamp: string | null
+          id: string
+          top_themes: string[] | null
+          total_content_analyzed: number | null
+          user_feedback_avg: number | null
+          views_count: number | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          avg_engagement_score?: number | null
+          collection_id: string
+          completions_count?: number | null
+          config_used?: string | null
+          content_selected?: number | null
+          created_at?: string | null
+          generation_timestamp?: string | null
+          id?: string
+          top_themes?: string[] | null
+          total_content_analyzed?: number | null
+          user_feedback_avg?: number | null
+          views_count?: number | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          avg_engagement_score?: number | null
+          collection_id?: string
+          completions_count?: number | null
+          config_used?: string | null
+          content_selected?: number | null
+          created_at?: string | null
+          generation_timestamp?: string | null
+          id?: string
+          top_themes?: string[] | null
+          total_content_analyzed?: number | null
+          user_feedback_avg?: number | null
+          views_count?: number | null
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_recap_collections_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_recap_collections_config_used_fkey"
+            columns: ["config_used"]
+            isOneToOne: false
+            referencedRelation: "weekly_recap_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_recap_configs: {
+        Row: {
+          civic_action_weight: number | null
+          config_name: string
+          created_at: string | null
+          current_events_weight: number | null
+          description_template: string | null
+          emoji_pool: string | null
+          engagement_weight: number | null
+          glossary_percentage: number | null
+          id: string
+          is_active: boolean | null
+          max_items_per_collection: number | null
+          min_completion_rate: number | null
+          min_engagement_threshold: number | null
+          questions_percentage: number | null
+          title_template: string | null
+          topics_percentage: number | null
+          updated_at: string | null
+          user_rating_weight: number | null
+        }
+        Insert: {
+          civic_action_weight?: number | null
+          config_name: string
+          created_at?: string | null
+          current_events_weight?: number | null
+          description_template?: string | null
+          emoji_pool?: string | null
+          engagement_weight?: number | null
+          glossary_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_items_per_collection?: number | null
+          min_completion_rate?: number | null
+          min_engagement_threshold?: number | null
+          questions_percentage?: number | null
+          title_template?: string | null
+          topics_percentage?: number | null
+          updated_at?: string | null
+          user_rating_weight?: number | null
+        }
+        Update: {
+          civic_action_weight?: number | null
+          config_name?: string
+          created_at?: string | null
+          current_events_weight?: number | null
+          description_template?: string | null
+          emoji_pool?: string | null
+          engagement_weight?: number | null
+          glossary_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_items_per_collection?: number | null
+          min_completion_rate?: number | null
+          min_engagement_threshold?: number | null
+          questions_percentage?: number | null
+          title_template?: string | null
+          topics_percentage?: number | null
+          updated_at?: string | null
+          user_rating_weight?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
+      ai_generated_topics: {
+        Row: {
+          accuracy_score: string | null
+          actionability_score: string | null
+          ai_generation_method: string | null
+          ai_model_used: string | null
+          ai_quality_score: number | null
+          brand_voice_score: string | null
+          categories: Json | null
+          content_package_id: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          emoji: string | null
+          generated_at: string | null
+          overall_quality: string | null
+          source_credibility_score: number | null
+          source_domain: string | null
+          source_url: string | null
+          topic_id: string | null
+          topic_title: string | null
+          updated_at: string | null
+          why_this_matters: string | null
+        }
+        Insert: {
+          accuracy_score?: never
+          actionability_score?: never
+          ai_generation_method?: string | null
+          ai_model_used?: string | null
+          ai_quality_score?: number | null
+          brand_voice_score?: never
+          categories?: Json | null
+          content_package_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          emoji?: string | null
+          generated_at?: never
+          overall_quality?: never
+          source_credibility_score?: number | null
+          source_domain?: never
+          source_url?: never
+          topic_id?: string | null
+          topic_title?: string | null
+          updated_at?: string | null
+          why_this_matters?: string | null
+        }
+        Update: {
+          accuracy_score?: never
+          actionability_score?: never
+          ai_generation_method?: string | null
+          ai_model_used?: string | null
+          ai_quality_score?: number | null
+          brand_voice_score?: never
+          categories?: Json | null
+          content_package_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          emoji?: string | null
+          generated_at?: never
+          overall_quality?: never
+          source_credibility_score?: number | null
+          source_domain?: never
+          source_url?: never
+          topic_id?: string | null
+          topic_title?: string | null
+          updated_at?: string | null
+          why_this_matters?: string | null
+        }
+        Relationships: []
+      }
       assessment_question_stats: {
         Row: {
           category: string | null
@@ -11090,6 +11610,20 @@ export type Database = {
           unique_guests: number | null
           unique_sessions: number | null
           unique_users: number | null
+        }
+        Relationships: []
+      }
+      content_relationship_analysis: {
+        Row: {
+          avg_relationship_strength: number | null
+          categories: string[] | null
+          content: string | null
+          content_id: string | null
+          content_type: string | null
+          created_at: string | null
+          relationship_count: number | null
+          title: string | null
+          updated_at: string | null
         }
         Relationships: []
       }
@@ -11862,6 +12396,16 @@ export type Database = {
         Args: { p_scenario_id: string; p_decisions_made: Json }
         Returns: number
       }
+      calculate_weekly_content_score: {
+        Args: {
+          engagement_score: number
+          current_events_score: number
+          user_rating_score: number
+          civic_action_score: number
+          config_id: string
+        }
+        Returns: number
+      }
       can_access_room: {
         Args: {
           room_uuid: string
@@ -12161,6 +12705,16 @@ export type Database = {
         Args: { skill_ids: string[] }
         Returns: {
           collection_id: string
+        }[]
+      }
+      get_content_relationships: {
+        Args: { p_content_type: string; p_content_id: string; p_limit?: number }
+        Returns: {
+          related_content_type: string
+          related_content_id: string
+          related_title: string
+          relationship_type: string
+          strength: number
         }[]
       }
       get_content_translation_stats: {
@@ -12642,6 +13196,10 @@ export type Database = {
           claims_count: number
         }[]
       }
+      get_weekly_top_themes: {
+        Args: { week_start: string; week_end: string; max_themes?: number }
+        Returns: string[]
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
@@ -12951,6 +13509,10 @@ export type Database = {
           p_time_spent?: number
         }
         Returns: undefined
+      }
+      update_weekly_content_metrics: {
+        Args: { target_week_start?: string }
+        Returns: number
       }
       upsert_user_email_preferences: {
         Args: {

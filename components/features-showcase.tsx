@@ -341,6 +341,7 @@ function CivicsBeforeAfterSlider() {
   const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
     e.preventDefault()
@@ -359,16 +360,43 @@ function CivicsBeforeAfterSlider() {
     setIsDragging(false)
   }, [])
 
+  // Touch handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true)
+    e.preventDefault()
+  }
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging || !containerRef.current) return
+    
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = e.touches[0].clientX - rect.left
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100))
+    setDragPosition(percentage)
+  }, [isDragging])
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
   useEffect(() => {
     if (isDragging) {
+      // Mouse events
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
+      
+      // Touch events for mobile
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleTouchEnd)
+      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
       }
     }
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd])
 
   const [currentExample, setCurrentExample] = useState(0)
 
@@ -552,14 +580,13 @@ function CivicsBeforeAfterSlider() {
               className="absolute top-0 bottom-0 w-1 bg-white shadow-lg cursor-col-resize z-10 flex items-center justify-center"
               style={{ left: `${dragPosition}%`, transform: 'translateX(-50%)' }}
               onMouseDown={handleMouseDown}
+              onTouchStart={handleTouchStart}
             >
               <div className="w-8 h-8 bg-white rounded-full shadow-xl border-2 border-slate-200 flex items-center justify-center hover:scale-110 transition-transform">
                 <div className="w-1 h-4 bg-slate-400 rounded-full mx-0.5"></div>
                 <div className="w-1 h-4 bg-slate-400 rounded-full mx-0.5"></div>
               </div>
             </div>
-
-
 
             {/* Instruction Text */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
@@ -682,10 +709,10 @@ export function FeaturesShowcase() {
           >
             <div className="space-y-8">
               <h3 className="text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight">
-                How It Actually Works
+                Textbook vs. Reality
               </h3>
               <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                Compare textbook civics with reality. Drag to see the difference between theory and practice.
+                See the uncomfortable truths they don't teach in school. Drag to reveal how power really works.
               </p>
               <div className="flex gap-6">
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
