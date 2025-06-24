@@ -49,7 +49,15 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching skills:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ 
+        error: error.message,
+        data: [], // Always provide data field
+        skills: [], // Also provide skills field for backward compatibility
+        total: 0,
+        page: 1,
+        pages: 0,
+        available_categories: []
+      }, { status: 200 }); // Return 200 to prevent JSON parsing issues
     }
 
     let skillsWithStats = skills;
@@ -101,6 +109,7 @@ export async function GET(request: NextRequest) {
     const availableCategories = [...new Set(categoryData?.map((s: any) => s.category) || [])];
 
     return NextResponse.json({
+      data: skillsWithStats,
       skills: skillsWithStats,
       total: count,
       page: Math.floor(offset / limit) + 1,
@@ -110,8 +119,16 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Skills API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        error: 'Internal server error',
+        data: [], // Always provide data field
+        skills: [], // Also provide skills field for backward compatibility
+        total: 0,
+        page: 1,
+        pages: 0,
+        available_categories: []
+      },
+      { status: 200 } // Return 200 to prevent JSON parsing issues
     );
   }
 }

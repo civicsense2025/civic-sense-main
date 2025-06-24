@@ -79,9 +79,9 @@ body {
   --muted: 210 40% 96%;
   --muted-foreground: 215 16% 47%;
   
-  /* Accent - Vibrant cyan */
-  --accent: 199 89% 48%;
-  --accent-foreground: 0 0% 100%;
+  /* Accent - Neutral gray instead of blue */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
   
   /* Status colors */
   --destructive: 0 84% 60%;
@@ -167,9 +167,9 @@ body {
   --muted: 217 33% 17%;
   --muted-foreground: 215 20% 65%;
   
-  /* Accent - Bright cyan for dark mode */
-  --accent: 199 89% 58%;
-  --accent-foreground: 224 71% 4%;
+  /* Accent - Neutral gray for dark mode */
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 98%;
   
   /* Status colors adjusted for dark mode */
   --destructive: 0 63% 31%;
@@ -438,6 +438,16 @@ body {
   }
 }
 
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Accordion animations */
 @keyframes accordion-down {
   from {
@@ -528,15 +538,15 @@ html {
   background-color: hsl(var(--muted) / 0.5) !important;
 }
 
-/* Override specific problematic hover colors */
-.hover\\:bg-blue-50:hover,
-.hover\\:bg-blue-100:hover {
+/* Override specific problematic hover colors - but exclude search components */
+.hover\\:bg-blue-50:hover:not(.enhanced-global-search *),
+.hover\\:bg-blue-100:hover:not(.enhanced-global-search *) {
   background-color: hsl(var(--muted) / 0.3) !important;
 }
 
-/* Subtle hover for buttons and links - NO TRANSFORM */
-button:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent),
-a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent) {
+/* Subtle hover for buttons and links - NO TRANSFORM - but exclude search component */
+button:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent):not(.enhanced-global-search *),
+a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent):not(.enhanced-global-search *) {
   background-color: hsl(var(--muted) / 0.4);
   transition: background-color 0.2s ease;
 }
@@ -568,6 +578,172 @@ a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent) {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* ============================================================================
+     HYPERLINK UNDERLINE CONTROL - FIXED
+     ============================================================================ */
+  
+  /* Remove default underlines from most links */
+  a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+  
+  /* Only add underlines to specific content areas where they make sense */
+  .prose a,
+  .content a,
+  .article a,
+  .markdown a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    color: hsl(var(--primary));
+  }
+  
+  .prose a:hover,
+  .content a:hover,
+  .article a:hover,
+  .markdown a:hover {
+    text-decoration-thickness: 2px;
+  }
+  
+  /* Navigation, buttons, and UI elements - NO underlines */
+  nav a,
+  .navigation a,
+  .nav-link,
+  .btn,
+  button,
+  [role="button"],
+  .button-link,
+  .sidebar a,
+  .header a,
+  .footer a,
+  .menu a,
+  .toolbar a,
+  .admin-nav a,
+  .card a,
+  .topic-card a {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* Admin panel links - clean styling */
+  .admin-content a:not(.prose a):not(.content a) {
+    text-decoration: none !important;
+  }
+  
+  /* Hover states for UI links - subtle color change, no underline */
+  nav a:hover,
+  .navigation a:hover,
+  .sidebar a:hover,
+  .header a:hover,
+  .footer a:hover,
+  .menu a:hover,
+  .admin-nav a:hover {
+    color: hsl(var(--primary));
+    text-decoration: none !important;
+  }
+  
+  /* ============================================================================
+     ADMIN INTERFACE SPECIFIC STYLES
+     ============================================================================ */
+  
+  /* Admin sidebar and navigation links */
+  .admin-sidebar a,
+  .admin-nav-item {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* Admin table links - use subtle primary color */
+  .admin-table a {
+    text-decoration: none;
+    color: hsl(var(--primary));
+    transition: color 0.2s ease;
+  }
+  
+  .admin-table a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
+  
+  /* Admin action buttons */
+  .admin-action-btn {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* ============================================================================
+     QUIZ AND INTERACTIVE CONTENT
+     ============================================================================ */
+  
+  /* Quiz interface links - inherit colors */
+  .quiz a,
+  .quiz-interface a {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  /* Learning content links - subtle primary color */
+  .learning-content a {
+    text-decoration: none;
+    color: hsl(var(--primary));
+    transition: color 0.2s ease;
+  }
+  
+  .learning-content a:hover {
+    color: hsl(var(--primary) / 0.8);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES FOR LINK STYLING
+   ============================================================================ */
+
+@layer utilities {
+  /* Utility classes for different link styles */
+  .link-none {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  .link-hover {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+  
+  .link-hover:hover {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  
+  .link-underline {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    color: hsl(var(--primary));
+  }
+  
+  .link-subtle {
+    text-decoration: none;
+    color: hsl(var(--foreground-secondary));
+    transition: color 0.2s ease;
+  }
+  
+  .link-subtle:hover {
+    color: hsl(var(--foreground));
+  }
+  
+  .link-button {
+    text-decoration: none !important;
+    color: inherit;
+    @apply inline-flex items-center justify-center;
   }
 }
 
@@ -710,3 +886,129 @@ input[type="checkbox"] {
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ============================================================================
+   ADDITIONAL LINK OVERRIDES
+   ============================================================================ */
+
+/* Prevent any blue backgrounds on links */
+a:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Override any Tailwind blue text classes on links */
+a.text-blue-600,
+a.text-blue-500, 
+a.text-blue-700,
+a.text-blue-800 {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Ensure hover states don't create blue backgrounds */
+a:hover:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Dark mode specific overrides */
+.dark a:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Remove underlines from specific component links */
+.header a,
+.footer a,
+.sidebar a,
+.menu a,
+.toolbar a {
+  text-decoration: none !important;
+  color: inherit;
+}
+
+/* ============================================================================
+   ICON BUTTON OVERRIDES - PREVENT BLUE BACKGROUNDS
+   ============================================================================ */
+
+/* Theme toggle and language switcher - clean neutral hover states */
+button[aria-label*="Toggle theme"],
+button[aria-label*="language"],
+.language-switcher button,
+.theme-toggle button,
+button:has(svg) {
+  background-color: transparent !important;
+}
+
+button[aria-label*="Toggle theme"]:hover,
+button[aria-label*="language"]:hover,
+.language-switcher button:hover,
+.theme-toggle button:hover,
+button:has(svg):hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Dark mode specific overrides for icon buttons */
+.dark button[aria-label*="Toggle theme"]:hover,
+.dark button[aria-label*="language"]:hover,
+.dark .language-switcher button:hover,
+.dark .theme-toggle button:hover,
+.dark button:has(svg):hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Override any ghost button variants that might have blue backgrounds */
+.btn-ghost:hover,
+button[class*="ghost"]:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* ============================================================================
+   ENHANCED GLOBAL SEARCH COMPONENT OVERRIDES
+   ============================================================================ */
+
+/* Preserve search component styling - override global button rules */
+.enhanced-global-search button {
+  /* Reset any global button overrides for search component */
+  background-color: revert !important;
+  color: revert !important;
+}
+
+.enhanced-global-search button:hover {
+  /* Let search component handle its own hover states */
+  background-color: revert !important;
+  color: revert !important;
+}
+
+/* Preserve search component pill and filter button styling */
+.enhanced-global-search button[class*="bg-slate"],
+.enhanced-global-search div[class*="hover:bg-slate"] {
+  background-color: revert !important;
+}
+
+.enhanced-global-search button[class*="bg-slate"]:hover,
+.enhanced-global-search div[class*="hover:bg-slate"]:hover {
+  background-color: revert !important;
+}
+
+/* Preserve search result item hover states */
+.enhanced-global-search [class*="hover:bg-slate"]:hover {
+  background-color: revert !important;
+}
+
+/* Override global button rules specifically for search component */
+.enhanced-global-search * {
+  /* Reset any inherited button overrides */
+  background-color: revert;
+  color: revert;
+}
+
+/* Ensure search component Tailwind classes work normally */
+.enhanced-global-search .bg-slate-100 { background-color: rgb(241 245 249) !important; }
+.enhanced-global-search .bg-slate-800 { background-color: rgb(30 41 59) !important; }
+.enhanced-global-search .bg-slate-50 { background-color: rgb(248 250 252) !important; }
+.enhanced-global-search .bg-slate-900 { background-color: rgb(15 23 42) !important; }
+
+.enhanced-global-search .hover\\:bg-slate-50:hover { background-color: rgb(248 250 252) !important; }
+.enhanced-global-search .hover\\:bg-slate-100:hover { background-color: rgb(241 245 249) !important; }
+.enhanced-global-search .hover\\:bg-slate-200:hover { background-color: rgb(226 232 240) !important; }
+.enhanced-global-search .hover\\:bg-slate-700:hover { background-color: rgb(51 65 85) !important; }
+.enhanced-global-search .hover\\:bg-slate-800:hover { background-color: rgb(30 41 59) !important; }

@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabase/client"
 import { StartQuizButton } from "@/components/start-quiz-button"
 import { UnifiedTopicNavigation } from "@/components/quiz/unified-topic-navigation"
 import { UnlockTimer } from "@/components/ui/unlock-timer"
+import { DailyCardSkeleton, DailyCardCompactSkeleton, DailyCardTransitionSkeleton } from "@/components/ui/skeleton"
 
 // Helper to get today's date at midnight in the user's local timezone
 // If you need to mock a date for testing, set NEXT_PUBLIC_MOCK_DATE="YYYY-MM-DD"
@@ -214,6 +215,7 @@ interface DailyCardStackProps {
   requireAuth?: boolean
   onAuthRequired?: () => void
   showGuestBanner?: boolean
+  onLoadingStateChange?: (isReady: boolean) => void
 }
 
 interface OrganizedTopics {
@@ -396,6 +398,7 @@ export function DailyCardStack({
   requireAuth = false,
   onAuthRequired,
   showGuestBanner = true,
+  onLoadingStateChange,
 }: DailyCardStackProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -973,6 +976,8 @@ export function DailyCardStack({
       } finally {
         if (!isCancelled) {
           setIsLoadingTopics(false)
+          // Notify parent that loading is complete
+          onLoadingStateChange?.(true)
         }
       }
     }
@@ -1218,20 +1223,7 @@ export function DailyCardStack({
 
   // Loading state
   if (isLoadingTopics) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Preparing your civic learning journey...</p>
-          <p className="text-sm text-slate-500 mt-2">
-            {totalTopicsCount > 0 
-              ? `Loading from our catalog of ${totalTopicsCount} topics...`
-              : "Loading today's most important topics..."
-            }
-          </p>
-        </div>
-      </div>
-    )
+    return <DailyCardSkeleton />
   }
 
   // Empty state
@@ -1267,6 +1259,12 @@ export function DailyCardStack({
   }
 
   const currentTopic = allFilteredTopics[currentStackIndex]
+  
+  // Show transition skeleton if current topic is not available yet
+  if (!currentTopic) {
+    return <DailyCardTransitionSkeleton />
+  }
+  
   const currentAccessStatus = getTopicAccessStatus(currentTopic)
 
   return (

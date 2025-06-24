@@ -20,9 +20,10 @@ interface CategoryCloudProps {
   limit?: number
   showViewAll?: boolean
   className?: string
+  onLoadingStateChange?: (isReady: boolean) => void
 }
 
-export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }: CategoryCloudProps) {
+export function CategoryCloud({ limit = 6, showViewAll = true, className = "", onLoadingStateChange }: CategoryCloudProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -39,13 +40,15 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "" }:
       } catch (err) {
         console.error('Error fetching categories:', err)
         setError('Failed to load categories')
-      } finally {
-        setLoading(false)
-      }
+              } finally {
+          setLoading(false)
+          // Notify parent that loading is complete
+          onLoadingStateChange?.(true)
+        }
     }
 
     fetchCategories()
-  }, [limit])
+  }, [limit, onLoadingStateChange])
 
   if (loading) {
     return (

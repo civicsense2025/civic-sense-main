@@ -177,7 +177,7 @@ export function SourceMetadataCard({
     return (
       <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg ${className}`}>
         <p className="text-sm text-red-600 dark:text-red-400 text-left">Failed to load metadata: {error}</p>
-        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm text-left">
+        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 hover:underline text-sm text-left">
           {source.url}
         </a>
       </div>
@@ -191,7 +191,7 @@ export function SourceMetadataCard({
         href={source.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline text-left ${className}`}
+        className={`inline-flex items-center text-sm text-primary hover:text-primary/80 hover:underline text-left ${className}`}
       >
         <span className="font-mono">{metadata?.title || source.name}</span>
         <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

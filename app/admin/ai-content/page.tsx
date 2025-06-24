@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, Component, ReactNode } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
-import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,17 +19,70 @@ import {
   Settings, 
   FileText,
   Zap,
-  CheckCircle,
-  XCircle,
-  Clock,
   AlertCircle,
+  CheckCircle,
+  TrendingUp,
   Target,
-  BookOpen,
-  BarChart3
+  Book,
+  Users,
+  Clock,
+  Award,
+  RefreshCw,
+  Edit,
+  Trash2,
+  Download,
+  Upload,
+  Filter,
+  Search,
+  Calendar,
+  BarChart3,
+  Globe
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from '@/lib/supabase'
+import { createClient } from "@/lib/supabase/client"
+
+// Error boundary component to catch any runtime errors
+class AIContentErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error): { hasError: boolean; error: Error } {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('AI Content page error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center space-y-4 p-6">
+            <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Something went wrong
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Reload Page
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 // Simplified interfaces
 interface GenerationJob {
@@ -71,7 +123,7 @@ const GENERATION_PRESETS = {
   weekly_deep_dive: {
     name: "Weekly Deep Dive", 
     description: "Generate comprehensive content from this week's top stories",
-    icon: BookOpen,
+    icon: Book,
     settings: {
       maxArticles: 10,
       questionsPerTopic: 12,
@@ -107,9 +159,9 @@ const GENERATION_PRESETS = {
       enableWebSearch: true
     }
   }
-}
+} as const
 
-export default function AIContentAdminPage() {
+function AIContentAdminPageComponent() {
   const { user } = useAuth()
   const { isAdmin, isLoading: adminLoading } = useAdminAccess()
   const { toast } = useToast()
@@ -139,32 +191,58 @@ export default function AIContentAdminPage() {
     try {
       setIsLoading(true)
       
-      // Load quick stats
-      const [topicsResponse, questionsResponse, articlesResponse] = await Promise.all([
+      // Create Supabase client for client-side operations
+      const supabase = createClient()
+      
+      if (!supabase) {
+        throw new Error('Failed to create Supabase client')
+      }
+      
+      // Load quick stats with proper error handling
+      const statsPromises = [
         supabase.from('question_topics').select('id', { count: 'exact' }),
         supabase.from('questions').select('id', { count: 'exact' }),
-        supabase.from('source_metadata').select('id', { count: 'exact' }).gte('last_fetched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      ])
+        supabase.from('source_metadata').select('id', { count: 'exact' })
+          .gte('last_fetched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      ]
+
+      const results = await Promise.allSettled(statsPromises)
+      
+      const topicsCount = results[0].status === 'fulfilled' ? results[0].value.count || 0 : 0
+      const questionsCount = results[1].status === 'fulfilled' ? results[1].value.count || 0 : 0
+      const articlesCount = results[2].status === 'fulfilled' ? results[2].value.count || 0 : 0
 
       setStats({
-        totalTopics: topicsResponse.count || 0,
-        totalQuestions: questionsResponse.count || 0,
-        recentArticles: articlesResponse.count || 0,
+        totalTopics: topicsCount,
+        totalQuestions: questionsCount,
+        recentArticles: articlesCount,
         pendingReview: 0
       })
 
     } catch (error) {
       console.error('Error loading stats:', error)
+      // Set fallback stats if database queries fail
+      setStats({
+        totalTopics: 0,
+        totalQuestions: 0,
+        recentArticles: 0,
+        pendingReview: 0
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   const generatePrompt = (preset: keyof typeof GENERATION_PRESETS) => {
-    const config = GENERATION_PRESETS[preset]
-    
-    // This integrates all our content rules into a comprehensive prompt
-    return `# CivicSense Content Generation System
+    try {
+      const config = GENERATION_PRESETS[preset]
+      
+      if (!config) {
+        throw new Error(`Invalid preset: ${preset}`)
+      }
+      
+      // This integrates all our content rules into a comprehensive prompt
+      return `# CivicSense Content Generation System
 
 ## Mission
 Generate civic education content that politicians don't want people to have - transforming passive observers into confident, effective participants in democracy.
@@ -211,13 +289,29 @@ Content succeeds when users:
 - Connect individual actions to systemic change
 
 Generate content that empowers citizens to win, not feel good about government.`
+    } catch (error) {
+      console.error('Error generating prompt:', error)
+      return 'Error generating prompt. Please try again.'
+    }
   }
 
   const handleGenerate = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to generate content",
+        variant: "destructive"
+      })
+      return
+    }
     
     try {
       const preset = GENERATION_PRESETS[selectedPreset]
+      
+      if (!preset) {
+        throw new Error('Invalid preset selected')
+      }
+      
       const settings = selectedPreset === 'custom' ? customSettings : preset.settings
       
       setCurrentJob({
@@ -306,7 +400,6 @@ Generate content that empowers citizens to win, not feel good about government.`
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <Header />
       <main className="container mx-auto px-6 py-12 sm:py-16 lg:py-24">
         <div className="max-w-6xl mx-auto space-y-12">
           
@@ -373,10 +466,9 @@ Generate content that empowers citizens to win, not feel good about government.`
             <Card className="border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
-                  {currentJob.status === 'running' && <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent" />}
+                  {currentJob.status === 'running' && <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />}
                   {currentJob.status === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                  {currentJob.status === 'failed' && <XCircle className="h-5 w-5 text-red-500" />}
-                  {currentJob.status === 'pending' && <Clock className="h-5 w-5 text-yellow-500" />}
+                  {currentJob.status === 'failed' && <AlertCircle className="h-5 w-5 text-red-500" />}
                   
                   Content Generation {currentJob.status === 'running' ? 'In Progress' : 
                                      currentJob.status === 'completed' ? 'Complete' :
@@ -608,5 +700,14 @@ Generate content that empowers citizens to win, not feel good about government.`
         </div>
       </main>
     </div>
+  )
+}
+
+// Export with error boundary wrapper
+export default function AIContentAdminPage() {
+  return (
+    <AIContentErrorBoundary>
+      <AIContentAdminPageComponent />
+    </AIContentErrorBoundary>
   )
 } 

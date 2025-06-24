@@ -148,6 +148,7 @@ export default function AIToolsManagement() {
   const [jobs, setJobs] = useState<AIJob[]>([])
   const [stats, setStats] = useState<AIStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [filters, setFilters] = useState<AIFilters>({
     search: '',
@@ -172,261 +173,35 @@ export default function AIToolsManagement() {
   const loadAIData = async () => {
     try {
       setLoading(true)
+      setError(null)
       
-      // Mock data for demonstration
-      const mockStats: AIStats = {
-        total_tools: 12,
-        active_tools: 9,
-        total_requests_today: 1847,
-        success_rate: 94.2,
-        avg_response_time: 2.3,
-        total_cost_today: 47.82,
-        total_cost_month: 1234.56,
-        by_provider: {
-          openai: 7,
-          anthropic: 3,
-          google: 1,
-          custom: 1
-        },
-        by_type: {
-          content_generator: 4,
-          bias_analyzer: 2,
-          fact_checker: 2,
-          summarizer: 2,
-          translator: 1,
-          moderator: 1
-        },
-        queue_status: {
-          pending: 23,
-          running: 5,
-          completed_today: 1819,
-          failed_today: 28
-        }
+      const response = await fetch('/api/admin/ai-tools')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-
-      const mockTools: AITool[] = [
-        {
-          id: '1',
-          name: 'Content Generator Pro',
-          type: 'content_generator',
-          provider: 'openai',
-          model: 'gpt-4-turbo',
-          status: 'active',
-          description: 'Advanced content generation for civic education topics',
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-20T15:30:00Z',
-          config: {
-            max_tokens: 2000,
-            temperature: 0.7,
-            top_p: 0.9,
-            rate_limit_per_minute: 60,
-            cost_per_request: 0.03
-          },
-          stats: {
-            total_requests: 12847,
-            successful_requests: 12098,
-            failed_requests: 749,
-            avg_response_time: 2.1,
-            total_cost: 385.41,
-            last_used: '2024-01-20T15:30:00Z'
-          }
-        },
-        {
-          id: '2',
-          name: 'Bias Analyzer',
-          type: 'bias_analyzer',
-          provider: 'anthropic',
-          model: 'claude-sonnet-4-20250514',
-          status: 'active',
-          description: 'Analyzes political bias in news articles and content',
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-20T14:15:00Z',
-          config: {
-            max_tokens: 1000,
-            temperature: 0.3,
-            rate_limit_per_minute: 30,
-            cost_per_request: 0.02
-          },
-          stats: {
-            total_requests: 8934,
-            successful_requests: 8756,
-            failed_requests: 178,
-            avg_response_time: 1.8,
-            total_cost: 178.68,
-            last_used: '2024-01-20T14:15:00Z'
-          }
-        },
-        {
-          id: '3',
-          name: 'Fact Checker',
-          type: 'fact_checker',
-          provider: 'openai',
-          model: 'gpt-4',
-          status: 'active',
-          description: 'Verifies factual accuracy of statements and claims',
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-20T16:45:00Z',
-          config: {
-            max_tokens: 1500,
-            temperature: 0.2,
-            rate_limit_per_minute: 40,
-            cost_per_request: 0.04
-          },
-          stats: {
-            total_requests: 5623,
-            successful_requests: 5445,
-            failed_requests: 178,
-            avg_response_time: 3.2,
-            total_cost: 224.92,
-            last_used: '2024-01-20T16:45:00Z'
-          }
-        },
-        {
-          id: '4',
-          name: 'Content Moderator',
-          type: 'moderator',
-          provider: 'google',
-          model: 'gemini-pro',
-          status: 'paused',
-          description: 'Moderates user-generated content for inappropriate material',
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-20T12:30:00Z',
-          config: {
-            max_tokens: 500,
-            temperature: 0.1,
-            rate_limit_per_minute: 100,
-            cost_per_request: 0.01
-          },
-          stats: {
-            total_requests: 15672,
-            successful_requests: 15234,
-            failed_requests: 438,
-            avg_response_time: 1.2,
-            total_cost: 156.72,
-            last_used: '2024-01-19T18:20:00Z'
-          }
-        },
-        {
-          id: '5',
-          name: 'Quiz Generator',
-          type: 'content_generator',
-          provider: 'anthropic',
-          model: 'claude-3-haiku',
-          status: 'error',
-          description: 'Generates quiz questions from educational content',
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-20T11:20:00Z',
-          config: {
-            max_tokens: 1000,
-            temperature: 0.8,
-            rate_limit_per_minute: 50,
-            cost_per_request: 0.015
-          },
-          stats: {
-            total_requests: 3456,
-            successful_requests: 3201,
-            failed_requests: 255,
-            avg_response_time: 1.5,
-            total_cost: 51.84,
-            last_used: '2024-01-20T10:15:00Z'
-          }
-        }
-      ]
-
-      const mockJobs: AIJob[] = [
-        {
-          id: '1',
-          tool_id: '1',
-          tool_name: 'Content Generator Pro',
-          type: 'generate_content',
-          status: 'running',
-          input_data: { topic: 'voting_rights', length: 'medium' },
-          created_at: '2024-01-20T16:45:00Z',
-          started_at: '2024-01-20T16:45:30Z',
-          priority: 'normal'
-        },
-        {
-          id: '2',
-          tool_id: '2',
-          tool_name: 'Bias Analyzer',
-          type: 'analyze_bias',
-          status: 'completed',
-          input_data: { article_url: 'https://example.com/article' },
-          output_data: { bias_score: -15, confidence: 0.87 },
-          created_at: '2024-01-20T16:40:00Z',
-          started_at: '2024-01-20T16:40:15Z',
-          completed_at: '2024-01-20T16:41:23Z',
-          processing_time: 68,
-          cost: 0.02,
-          priority: 'high'
-        },
-        {
-          id: '3',
-          tool_id: '3',
-          tool_name: 'Fact Checker',
-          type: 'fact_check',
-          status: 'failed',
-          input_data: { claim: 'The Constitution has 27 amendments' },
-          error_message: 'Rate limit exceeded',
-          created_at: '2024-01-20T16:35:00Z',
-          started_at: '2024-01-20T16:35:10Z',
-          priority: 'normal'
-        },
-        {
-          id: '4',
-          tool_id: '1',
-          tool_name: 'Content Generator Pro',
-          type: 'generate_content',
-          status: 'pending',
-          input_data: { topic: 'constitutional_law', length: 'long' },
-          created_at: '2024-01-20T16:50:00Z',
-          priority: 'low'
-        }
-      ]
-
-      const mockJobQueue: AIJobQueue[] = [
-        {
-          id: '1',
-          tool_id: '1',
-          type: 'generate_topic',
-          status: 'running',
-          priority: 'high',
-          created_at: '2024-01-20T18:30:00Z',
-          started_at: '2024-01-20T18:31:00Z',
-          completed_at: null,
-          progress: 65
-        },
-        {
-          id: '2',
-          tool_id: '2',
-          type: 'generate_questions',
-          status: 'pending',
-          priority: 'medium',
-          created_at: '2024-01-20T18:32:00Z',
-          started_at: null,
-          completed_at: null,
-          progress: 0
-        },
-        {
-          id: '3',
-          tool_id: '3',
-          type: 'moderate_content',
-          status: 'pending',
-          priority: 'low',
-          created_at: '2024-01-20T18:33:00Z',
-          started_at: null,
-          completed_at: null,
-          progress: 0
-        }
-      ]
-
-      setStats(mockStats)
-      setTools(mockTools)
-      setJobs(mockJobs)
-      setJobQueue(mockJobQueue)
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load AI tools data')
+      }
+      
+      const { stats, tools, jobs } = result.data
+      
+      setStats(stats)
+      setTools(tools || [])
+      setJobs(jobs || [])
+      
+      console.log('✅ Loaded AI tools data:', {
+        toolsCount: tools?.length || 0,
+        jobsCount: jobs?.length || 0,
+        statsLoaded: !!stats
+      })
       
     } catch (error) {
       console.error('Error loading AI data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load AI tools data')
     } finally {
       setLoading(false)
     }
@@ -488,15 +263,18 @@ export default function AIToolsManagement() {
 
   const handleToolAction = async (toolId: string, action: string) => {
     console.log(`Performing action ${action} on tool ${toolId}`)
+    // TODO: Implement tool actions (start, stop, pause, settings, etc.)
+    // For now, just refresh the data
     await loadAIData()
   }
 
   const handleJobAction = async (jobId: string, action: string) => {
     console.log(`Performing action ${action} on job ${jobId}`)
+    // TODO: Implement job actions (cancel, retry, view details, etc.)
     await loadAIData()
   }
 
-  if (loading) {
+  if (loading && !stats) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -512,14 +290,27 @@ export default function AIToolsManagement() {
     )
   }
 
-  if (!stats) {
+  if (error) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load AI Data</h2>
-          <p className="text-gray-600 mb-4">Unable to fetch AI tools data</p>
+          <p className="text-gray-600 mb-4">{error}</p>
           <Button onClick={loadAIData}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No AI Data Available</h2>
+          <p className="text-gray-600 mb-4">Unable to load AI tools statistics</p>
+          <Button onClick={loadAIData}>Refresh</Button>
         </div>
       </div>
     )
@@ -531,16 +322,18 @@ export default function AIToolsManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">AI Tools Management</h1>
-          <p className="text-gray-600">Manage AI services and monitor job processing</p>
+          <p className="text-gray-600">Monitor AI services and processing performance</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Tool
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/glossary/ai-generate">
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Content
+            </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={loadAIData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button variant="outline" size="sm" onClick={loadAIData} disabled={loading}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+            {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>
@@ -603,8 +396,8 @@ export default function AIToolsManagement() {
       {/* Queue Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Job Queue Status</CardTitle>
-          <CardDescription>Current processing queue and recent activity</CardDescription>
+          <CardTitle>Processing Status</CardTitle>
+          <CardDescription>Current AI processing activity and recent completions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -632,7 +425,7 @@ export default function AIToolsManagement() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Tools Overview</TabsTrigger>
-          <TabsTrigger value="jobs">Job Queue</TabsTrigger>
+          <TabsTrigger value="jobs">Recent Jobs</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -705,85 +498,90 @@ export default function AIToolsManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredTools.map((tool) => (
-                  <div key={tool.id} className="border rounded-lg p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold">{tool.name}</h3>
-                          <Badge className={cn("text-xs", getStatusColor(tool.status))}>
-                            {tool.status.charAt(0).toUpperCase() + tool.status.slice(1)}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {tool.provider.toUpperCase()}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {tool.model}
-                          </Badge>
+                {filteredTools.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No AI tools found</h3>
+                    <p className="text-gray-600">Try adjusting your filters or check back later.</p>
+                  </div>
+                ) : (
+                  filteredTools.map((tool) => (
+                    <div key={tool.id} className="border rounded-lg p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold">{tool.name}</h3>
+                            <Badge className={cn("text-xs", getStatusColor(tool.status))}>
+                              {tool.status.charAt(0).toUpperCase() + tool.status.slice(1)}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {tool.provider.toUpperCase()}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {tool.model}
+                            </Badge>
+                          </div>
+                          
+                          <p className="text-sm text-gray-700 mb-4">{tool.description}</p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">
+                                {tool.stats.total_requests.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-gray-500">Total Requests</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-green-600">
+                                {((tool.stats.successful_requests / tool.stats.total_requests) * 100).toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-gray-500">Success Rate</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-purple-600">
+                                {tool.stats.avg_response_time.toFixed(1)}s
+                              </div>
+                              <div className="text-xs text-gray-500">Avg Response</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-orange-600">
+                                ${tool.stats.total_cost.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-gray-500">Total Cost</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-gray-600">
+                                {tool.stats.last_used 
+                                  ? format(new Date(tool.stats.last_used), 'MMM d')
+                                  : 'Never'
+                                }
+                              </div>
+                              <div className="text-xs text-gray-500">Last Used</div>
+                            </div>
+                          </div>
                         </div>
                         
-                        <p className="text-sm text-gray-700 mb-4">{tool.description}</p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">
-                              {tool.stats.total_requests.toLocaleString()}
-                            </div>
-                            <div className="text-xs text-gray-500">Total Requests</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-green-600">
-                              {((tool.stats.successful_requests / tool.stats.total_requests) * 100).toFixed(1)}%
-                            </div>
-                            <div className="text-xs text-gray-500">Success Rate</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-purple-600">
-                              {tool.stats.avg_response_time.toFixed(1)}s
-                            </div>
-                            <div className="text-xs text-gray-500">Avg Response</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-orange-600">
-                              ${tool.stats.total_cost.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-gray-500">Total Cost</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-gray-600">
-                              {tool.stats.last_used 
-                                ? format(new Date(tool.stats.last_used), 'MMM d')
-                                : 'Never'
-                              }
-                            </div>
-                            <div className="text-xs text-gray-500">Last Used</div>
-                          </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          {tool.status === 'active' ? (
+                            <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'pause')}>
+                              <Pause className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'start')}>
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'settings')}>
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'view')}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 ml-4">
-                        {tool.status === 'active' ? (
-                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'pause')}>
-                            <Pause className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'start')}>
-                            <Play className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'settings')}>
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'view')}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'edit')}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -793,66 +591,74 @@ export default function AIToolsManagement() {
         <TabsContent value="jobs" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Jobs</CardTitle>
+              <CardTitle>Recent AI Jobs</CardTitle>
               <CardDescription>Latest AI processing jobs and their status</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <div key={job.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-medium">{job.tool_name}</h4>
-                            <Badge className={cn("text-xs", getJobStatusColor(job.status))}>
-                              {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                            </Badge>
-                            <Badge className={cn("text-xs", getPriorityColor(job.priority))}>
-                              {job.priority.charAt(0).toUpperCase() + job.priority.slice(1)}
-                            </Badge>
+                {jobs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No recent jobs</h3>
+                    <p className="text-gray-600">AI processing jobs will appear here when they start.</p>
+                  </div>
+                ) : (
+                  jobs.map((job) => (
+                    <div key={job.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h4 className="font-medium">{job.tool_name}</h4>
+                              <Badge className={cn("text-xs", getJobStatusColor(job.status))}>
+                                {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                              </Badge>
+                              <Badge className={cn("text-xs", getPriorityColor(job.priority))}>
+                                {job.priority.charAt(0).toUpperCase() + job.priority.slice(1)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {job.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Created: {format(new Date(job.created_at), 'MMM d, HH:mm')}
+                              {job.completed_at && (
+                                <span> • Completed: {format(new Date(job.completed_at), 'MMM d, HH:mm')}</span>
+                              )}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            {job.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Created: {format(new Date(job.created_at), 'MMM d, HH:mm')}
-                            {job.completed_at && (
-                              <span> • Completed: {format(new Date(job.completed_at), 'MMM d, HH:mm')}</span>
-                            )}
-                          </p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          {job.processing_time && (
+                            <span className="text-xs text-gray-500">
+                              {job.processing_time.toFixed(1)}s
+                            </span>
+                          )}
+                          {job.cost && (
+                            <span className="text-xs text-gray-500">
+                              ${job.cost.toFixed(3)}
+                            </span>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'view')}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {job.status === 'pending' && (
+                            <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'cancel')}>
+                              <Square className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        {job.processing_time && (
-                          <span className="text-xs text-gray-500">
-                            {job.processing_time}s
-                          </span>
-                        )}
-                        {job.cost && (
-                          <span className="text-xs text-gray-500">
-                            ${job.cost.toFixed(3)}
-                          </span>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'view')}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {job.status === 'pending' && (
-                          <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'cancel')}>
-                            <Square className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      {job.error_message && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                          Error: {job.error_message}
+                        </div>
+                      )}
                     </div>
-                    
-                    {job.error_message && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                        Error: {job.error_message}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -864,7 +670,7 @@ export default function AIToolsManagement() {
             {/* Provider Distribution */}
             <Card>
               <CardHeader>
-                <CardTitle>Tools by Provider</CardTitle>
+                <CardTitle>Usage by Provider</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -872,7 +678,7 @@ export default function AIToolsManagement() {
                     <div key={provider} className="flex items-center justify-between">
                       <span className="text-sm font-medium capitalize">{provider}</span>
                       <div className="flex items-center space-x-2">
-                        <Progress value={(count / stats.total_tools) * 100} className="w-20" />
+                        <Progress value={(count / Math.max(Object.values(stats.by_provider).reduce((a, b) => a + b, 0), 1)) * 100} className="w-20" />
                         <span className="text-sm font-medium">{count}</span>
                       </div>
                     </div>

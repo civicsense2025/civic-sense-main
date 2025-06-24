@@ -41,6 +41,13 @@ export default function HomePage() {
   const [hasLoadedTopics, setHasLoadedTopics] = useState(false)
   const [dismissModalOpen, setDismissModalOpen] = useState(false)
   const [quizToDismiss, setQuizToDismiss] = useState<{attemptId: string, topicId: string, title: string} | null>(null)
+  
+  // Coordinated loading states to prevent layout shift
+  const [isDailyCardStackReady, setIsDailyCardStackReady] = useState(false)
+  const [isCategoryCloudReady, setIsCategoryCloudReady] = useState(false)
+  
+  // Both components are ready when neither is loading
+  const areBothComponentsReady = isDailyCardStackReady && isCategoryCloudReady
 
   // Mobile detection
   useEffect(() => {
@@ -267,15 +274,96 @@ export default function HomePage() {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
           ) : viewMode === 'cards' ? (
-            <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}>
-              <DailyCardStack 
-                selectedCategory={selectedCategory}
-                searchQuery={searchQuery}
-                requireAuth={false}
-                onAuthRequired={handleAuthSuccess}
-                showGuestBanner={false}
-              />
-            </Suspense>
+            <>
+              {/* Show coordinated skeleton loaders until both components are ready */}
+              {!areBothComponentsReady && (
+                <div className="space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
+                  {/* Daily Card Stack Skeleton */}
+                  <div className="min-h-[50vh]">
+                    <div className="animate-pulse">
+                      <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
+                        <div className="text-center mb-6">
+                          <div className="h-4 w-16 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded mx-auto mb-6"></div>
+                        </div>
+                        <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+                          <div className="text-center mb-6">
+                            <div className="h-16 w-16 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-full mx-auto mb-4"></div>
+                            <div className="h-8 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-lg w-3/4 max-w-2xl mx-auto mb-4"></div>
+                            <div className="space-y-2 max-w-2xl mx-auto mb-6">
+                              <div className="h-5 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded w-full"></div>
+                              <div className="h-5 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded w-2/3 mx-auto"></div>
+                            </div>
+                            <div className="h-12 w-32 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-lg mx-auto"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Category Cloud Skeleton */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-4 sm:px-0">
+                      <div className="h-8 w-48 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded"></div>
+                      <div className="h-6 w-20 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded"></div>
+                    </div>
+                    <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-24 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-xl"></div>
+                      ))}
+                    </div>
+                    <div className="flex gap-3 px-4 sm:hidden">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-24 w-32 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-xl flex-shrink-0"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Hidden components loading in background */}
+              <div className="opacity-0 pointer-events-none absolute">
+                <Suspense fallback={null}>
+                  <DailyCardStack 
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    requireAuth={false}
+                    onAuthRequired={handleAuthSuccess}
+                    showGuestBanner={false}
+                    onLoadingStateChange={setIsDailyCardStackReady}
+                  />
+                </Suspense>
+                <CategoryCloud 
+                  limit={6} 
+                  showViewAll={true} 
+                  onLoadingStateChange={setIsCategoryCloudReady}
+                />
+              </div>
+              
+              {/* Show actual components when both are ready */}
+              {areBothComponentsReady && (
+                <div className="animate-in fade-in duration-300">
+                  <Suspense fallback={null}>
+                    <DailyCardStack 
+                      selectedCategory={selectedCategory}
+                      searchQuery={searchQuery}
+                      requireAuth={false}
+                      onAuthRequired={handleAuthSuccess}
+                      showGuestBanner={false}
+                    />
+                  </Suspense>
+                  
+                  {/* Categories Section - Mobile optimized */}
+                  <div className={cn(
+                    // Mobile-first responsive margins
+                    "mt-6 sm:mt-8 md:mt-10 lg:mt-12",
+                    // Extra bottom margin on mobile for bottom navigation
+                    isMobile && "mb-6"
+                  )}>
+                    <CategoryCloud limit={6} showViewAll={true} />
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="py-4 sm:py-8">
               <Calendar 
@@ -290,16 +378,6 @@ export default function HomePage() {
               />
             </div>
           )}
-
-          {/* Categories Section - Mobile optimized */}
-          <div className={cn(
-            // Mobile-first responsive margins
-            "mt-6 sm:mt-8 md:mt-10 lg:mt-12",
-            // Extra bottom margin on mobile for bottom navigation
-            isMobile && "mb-6"
-          )}>
-            <CategoryCloud limit={6} showViewAll={true} />
-          </div>
         </div>
 
         {/* Features Showcase Section */}

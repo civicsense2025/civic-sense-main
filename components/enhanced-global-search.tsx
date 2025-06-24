@@ -171,14 +171,50 @@ export function EnhancedGlobalSearch({
     try {
       // First load just categories - they're lightweight
       const categoriesRes = await fetch('/api/categories')
-      const categoriesData = await categoriesRes.json()
-      setCategories(categoriesData.categories || [])
+      if (categoriesRes.ok) {
+        const categoriesText = await categoriesRes.text()
+        if (categoriesText.trim()) {
+          try {
+            const categoriesData = JSON.parse(categoriesText)
+            setCategories(categoriesData.categories || [])
+          } catch (parseError) {
+            console.warn('Failed to parse categories response:', parseError)
+            setCategories([])
+          }
+        }
+      }
       
       // Then load skills and topics in parallel
       // For topics, we'll load all of them without limit
       Promise.all([
-        fetch('/api/skills').then(res => res.json()),
-        fetch('/api/topics?limit=all').then(res => res.json())
+        fetch('/api/skills').then(async res => {
+          if (res.ok) {
+            const text = await res.text()
+            if (text.trim()) {
+              try {
+                return JSON.parse(text)
+              } catch (parseError) {
+                console.warn('Failed to parse skills response:', parseError)
+                return { data: [] }
+              }
+            }
+          }
+          return { data: [] }
+        }),
+        fetch('/api/topics?limit=all').then(async res => {
+          if (res.ok) {
+            const text = await res.text()
+            if (text.trim()) {
+              try {
+                return JSON.parse(text)
+              } catch (parseError) {
+                console.warn('Failed to parse topics response:', parseError)
+                return { topics: [] }
+              }
+            }
+          }
+          return { topics: [] }
+        })
       ]).then(([skillsData, topicsData]) => {
         setSkills(skillsData.data || [])
         setTopics(topicsData.topics || [])
@@ -368,7 +404,7 @@ export function EnhancedGlobalSearch({
 
       {/* Fullscreen Search Dialog */}
       {open && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-white dark:bg-slate-950 overflow-hidden">
+        <div className="enhanced-global-search fixed inset-0 z-[9999] bg-white dark:bg-slate-950 overflow-hidden">
           {/* Search input at top with generous padding and ESC key */}
           <div className="border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 lg:px-16 py-6 lg:py-8">
             <div className="flex items-center gap-4 max-w-4xl mx-auto">

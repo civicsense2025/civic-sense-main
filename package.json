@@ -122,6 +122,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "vercel": "^43.1.0",
+    "web-vitals": "^5.0.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -131,6 +132,7 @@
     "@types/react-dom": "^19",
     "@types/stripe": "^8.0.416",
     "canvas": "^3.1.0",
+    "eslint": "^9.29.0",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",

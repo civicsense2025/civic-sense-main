@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -122,6 +122,18 @@ const adminNavigation = [
     category: 'Tools'
   },
   {
+    name: 'Content Relationships',
+    href: '/admin/content-relationships',
+    icon: Search,
+    category: 'Tools'
+  },
+  {
+    name: 'News Agent',
+    href: '/admin/news-agent',
+    icon: Zap,
+    category: 'Tools'
+  },
+  {
     name: 'Translations',
     href: '/admin/translations',
     icon: Globe,
@@ -177,27 +189,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/20 dark:bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transform transition-transform duration-300 ease-out lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-700/60 transform transition-transform duration-300 ease-out lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/60">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200/60 dark:border-slate-700/60">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
               Admin
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               CivicSense
             </p>
           </div>
@@ -215,7 +227,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <nav className="flex-1 px-3 py-6 space-y-8 overflow-y-auto">
           {categories.map((category) => (
             <div key={category.name} className="space-y-2">
-              <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <h3 className="px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 {category.name}
               </h3>
               <div className="space-y-1">
@@ -224,12 +236,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <div className={cn(
                       "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                       isActivePath(item.href)
-                        ? "bg-slate-900 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        ? "bg-slate-900 dark:bg-slate-700 text-white shadow-sm"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-slate-100"
                     )}>
                       <item.icon className={cn(
                         "mr-3 h-4 w-4 transition-colors",
-                        isActivePath(item.href) ? "text-white" : "text-slate-500"
+                        isActivePath(item.href) ? "text-white" : "text-slate-500 dark:text-slate-400"
                       )} />
                       <span className="truncate">{item.name}</span>
                       {isActivePath(item.href) && (
@@ -244,18 +256,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* User info */}
-        <div className="border-t border-slate-200/60 p-4">
+        <div className="border-t border-slate-200/60 dark:border-slate-700/60 p-4">
           <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 bg-slate-900 rounded-full flex items-center justify-center">
+            <div className="h-9 w-9 bg-slate-900 dark:bg-slate-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-semibold">
                 {user.email?.[0]?.toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                 {user.email}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Administrator
               </p>
             </div>
@@ -266,7 +278,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4">
+        <div className="sticky top-0 z-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-700/60 px-6 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"

@@ -1,3 +1,6 @@
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -7,16 +10,38 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 86400,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-  webpack: (config, { dev, isServer }) => {
-    // Ignore warnings for specific modules
+  experimental: {
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react', '@supabase/supabase-js'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Basic webpack configuration for compatibility
     config.ignoreWarnings = [
       /Critical dependency: the request of a dependency is an expression/,
       /Module not found: Can't resolve/,
     ]
     
-    // Suppress warnings from specific modules
     config.stats = {
       ...config.stats,
       warnings: false,
@@ -28,15 +53,29 @@ const nextConfig = {
     
     return config
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'civicsense.one',
+          },
+        ],
+        destination: 'https://www.civicsense.one/:path*',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {
-        // Prevent aggressive caching of CSS/JS to avoid stale design issues
         source: '/_next/static/css/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400, must-revalidate', // 1 day, must revalidate
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -45,17 +84,29 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400, must-revalidate', // 1 day, must revalidate
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
       {
-        // Don't cache HTML pages to prevent stale content
-        source: '/:path*',
+        source: '/_next/static/media/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
           },
         ],
       },

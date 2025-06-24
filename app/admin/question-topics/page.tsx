@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
 import { Header } from "@/components/header"
@@ -156,77 +156,85 @@ export default function AdminQuestionTopicsPage() {
       // Load topics and question counts in parallel for better performance
       console.log('📊 Fetching topics and questions data...')
       
-      // FIX 1: Add proper limits and use count queries instead of loading all data
-      const [topicsResult, questionsCountResult, totalQuestionsCount] = await Promise.all([
-        // Get all topics with proper limit
-        supabase
-          .from('question_topics')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1000), // Explicit limit for safety
-        
-        // Get question counts per topic efficiently
-        (async () => {
-          try {
-            return await supabase.rpc('get_questions_count_by_topic')
-          } catch (error) {
-            console.log('RPC function not available, using fallback query')
-            // Fallback: get topic_id with count
-            return await supabase
-              .from('questions')
-              .select('topic_id')
-              .limit(50000) // Explicit high limit to avoid truncation
-          }
-        })(),
-          
-        // Get total questions count
-        supabase
-          .from('questions')
-          .select('*', { count: 'exact', head: true })
-      ])
+      // Simplified approach: Load topics first, then questions separately
+      const topicsResult = await supabase
+        .from('question_topics')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000) // Explicit limit for safety
 
       const { data: topicsData, error: topicsError } = topicsResult
-      const { data: questionsData, error: questionsError } = questionsCountResult
-      const { count: totalQuestionsCountValue, error: totalCountError } = totalQuestionsCount
 
       console.log('📋 Topics result:', { 
         data: topicsData?.length, 
         error: topicsError 
       })
-      console.log('❓ Questions result:', { 
-        data: questionsData?.length, 
-        error: questionsError,
-        totalCount: totalQuestionsCountValue
-      })
 
       if (topicsError) {
         console.error('❌ Topics error:', topicsError)
-        throw new Error(`Failed to load topics: ${topicsError.message}`)
+        throw new Error(`Failed to load topics: ${topicsError.message || 'Unknown database error'}`)
       }
 
-      if (questionsError) {
-        console.error('⚠️ Questions error (non-critical):', questionsError)
-        // Don't throw here, just log and continue without question counts
-      }
+      // Now load questions data with better error handling
+      let questionsData: any[] = []
+      let totalQuestionsCountValue = 0
+      
+      try {
+        // Try to get question counts per topic
+        const questionsResult = await supabase
+          .from('questions')
+          .select('topic_id')
+          .limit(50000) // Explicit high limit to avoid truncation
 
-      if (totalCountError) {
-        console.error('⚠️ Total count error:', totalCountError)
-      }
-
-      // FIX 2: Better question counting logic
-      const questionCounts: Record<string, number> = {}
-      if (questionsData) {
-        // Handle both RPC result and fallback result
-        if (Array.isArray(questionsData)) {
-          questionsData.forEach((question: any) => {
-            if (question.topic_id) {
-              questionCounts[question.topic_id] = (questionCounts[question.topic_id] || 0) + 1
-            }
+        if (questionsResult.error) {
+          console.warn('⚠️ Questions query error:', {
+            message: questionsResult.error.message,
+            details: questionsResult.error.details,
+            hint: questionsResult.error.hint,
+            code: questionsResult.error.code
           })
+        } else {
+          questionsData = questionsResult.data || []
+          console.log('✅ Questions data loaded:', questionsData.length, 'records')
         }
+
+        // Try to get total questions count
+        const totalCountResult = await supabase
+          .from('questions')
+          .select('*', { count: 'exact', head: true })
+
+        if (totalCountResult.error) {
+          console.warn('⚠️ Total count query error:', {
+            message: totalCountResult.error.message,
+            details: totalCountResult.error.details,
+            hint: totalCountResult.error.hint,
+            code: totalCountResult.error.code
+          })
+        } else {
+          totalQuestionsCountValue = totalCountResult.count || 0
+          console.log('✅ Total questions count:', totalQuestionsCountValue)
+        }
+
+      } catch (questionsError) {
+        console.warn('⚠️ Questions data loading failed (non-critical):', {
+          error: questionsError,
+          message: questionsError instanceof Error ? questionsError.message : 'Unknown error',
+          stack: questionsError instanceof Error ? questionsError.stack : undefined
+        })
+        // Continue without question counts - this is non-critical
+      }
+
+      // Calculate question counts per topic
+      const questionCounts: Record<string, number> = {}
+      if (questionsData && Array.isArray(questionsData)) {
+        questionsData.forEach((question: any) => {
+          if (question.topic_id) {
+            questionCounts[question.topic_id] = (questionCounts[question.topic_id] || 0) + 1
+          }
+        })
         console.log('📊 Question counts calculated:', Object.keys(questionCounts).length, 'topics have questions')
       } else {
-        console.log('⚠️ No questions data available')
+        console.log('⚠️ No questions data available - will show topics without question counts')
       }
 
       // Process topics data with question counts
@@ -246,7 +254,7 @@ export default function AdminQuestionTopicsPage() {
       const topicsWithoutQuestions = totalTopics - topicsWithQuestions
       const topicsWithKeyTakeaways = processedTopics.filter((t: any) => t.key_takeaways).length
       
-      // FIX 3: Use actual total count if available, otherwise sum from topics
+      // Use actual total count if available, otherwise sum from topics
       const totalQuestions = totalQuestionsCountValue || 
         processedTopics.reduce((sum: number, t: any) => sum + (t.question_count || 0), 0)
       
@@ -275,7 +283,7 @@ export default function AdminQuestionTopicsPage() {
       console.log('📈 Calculated stats:', calculatedStats)
       setStats(calculatedStats)
 
-      // FIX 4: Alert if we hit limits
+      // Alert if we hit limits
       if (topicsData && topicsData.length >= 1000) {
         console.warn('⚠️ Topics may be truncated at 1000 limit')
         toast({
@@ -306,6 +314,10 @@ export default function AdminQuestionTopicsPage() {
       if (error instanceof Error) {
         errorMessage = error.message
         errorDetails = error.stack || ''
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error)
+      } else {
+        errorMessage = String(error)
       }
       
       setError(errorMessage)
@@ -671,10 +683,9 @@ export default function AdminQuestionTopicsPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
-      <main className="w-full py-8">
+      return (
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <main className="w-full py-8">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
           
           {/* Header */}

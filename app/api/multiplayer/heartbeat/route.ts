@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { multiplayerOperations } from '@/lib/multiplayer'
 import { debug } from '@/lib/debug-config'
-import { isMultiplayerEnabled } from '@/lib/feature-flags'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 
 export async function POST(request: NextRequest) {
   // Feature flag check - disable multiplayer API in production
-  if (!isMultiplayerEnabled()) {
+  if (!envFeatureFlags.getFlag('multiplayer')) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   // Feature flag check - disable multiplayer API in production
-  if (!isMultiplayerEnabled()) {
+  if (!envFeatureFlags.getFlag('multiplayer')) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 

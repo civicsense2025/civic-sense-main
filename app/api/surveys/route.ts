@@ -7,11 +7,17 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const status = url.searchParams.get('status') || 'active'
 
-    // Use the survey_summary view which has proper RLS policies
-    const { data: surveys, error } = await supabase
+    // Build query for survey_summary view
+    let query = supabase
       .from('survey_summary')
-      .select('id, title, description, status, allow_anonymous, allow_partial_responses, estimated_time, created_at, question_count, total_responses')
-      .eq('status', status)
+      .select('*')
+
+    // Only filter by status if not requesting all surveys
+    if (status !== 'all') {
+      query = query.eq('status', status)
+    }
+
+    const { data: surveys, error } = await query
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -27,7 +33,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Transform the data to match the expected format
+    // Transform the data to match the expected format for admin panel
     const transformedSurveys = surveys.map(survey => ({
       id: survey.id,
       title: survey.title,
@@ -37,8 +43,12 @@ export async function GET(request: NextRequest) {
       allow_partial_responses: survey.allow_partial_responses,
       estimated_time: survey.estimated_time,
       created_at: survey.created_at,
+      updated_at: survey.created_at, // Using created_at as fallback
+      response_count: survey.total_responses || 0,
+      completed_responses: survey.completed_responses || 0,
+      completion_rate: survey.completion_rate || 0,
       questions_count: survey.question_count || 0,
-      responses_count: survey.total_responses || 0
+      avg_rating: null // Not available in current schema
     }))
 
     return NextResponse.json({ 

@@ -349,4 +349,9 @@ export const envFeatureFlags = new EnvironmentFeatureFlags()
 // Make available globally in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   (window as any).featureFlags = envFeatureFlags
+}
+
+// Convenience helper matching the API in comprehensive-feature-flags.ts for backward compatibility
+export function isDocumentationSectionEnabled(): boolean {
+  return envFeatureFlags.getFlag('betaFeatures')
 } 

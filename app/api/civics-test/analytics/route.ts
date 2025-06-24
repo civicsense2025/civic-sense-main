@@ -94,37 +94,45 @@ export async function GET(request: NextRequest) {
 
     // If requesting guest data specifically
     if (guest_token) {
-      const { data: guestData, error: guestError } = await supabase
-        .rpc('get_guest_test_summary', { p_guest_token: guest_token })
+      try {
+        const { data: guestData, error: guestError } = await supabase
+          .rpc('get_guest_test_summary', { p_guest_token: guest_token })
 
-      if (guestError) {
-        console.error('Error fetching guest test summary:', guestError)
+        if (guestError) {
+          console.error('Error fetching guest test summary:', guestError)
+          return NextResponse.json(
+            { error: 'Failed to fetch guest data' },
+            { status: 500 }
+          )
+        }
+
+        // Also get detailed results
+        const { data: detailedResults, error: detailsError } = await supabase
+          .from('guest_civics_test_results')
+          .select('*')
+          .eq('guest_token', guest_token)
+          .order('completed_at', { ascending: false })
+
+        if (detailsError) {
+          console.error('Error fetching guest test details:', detailsError)
+          return NextResponse.json(
+            { error: 'Failed to fetch guest details' },
+            { status: 500 }
+          )
+        }
+
+        return NextResponse.json({
+          success: true,
+          guest_summary: guestData?.[0] || null,
+          guest_results: detailedResults || []
+        })
+      } catch (rpcError) {
+        console.error('RPC function error:', rpcError)
         return NextResponse.json(
-          { error: 'Failed to fetch guest data' },
+          { error: 'Database function error' },
           { status: 500 }
         )
       }
-
-      // Also get detailed results
-      const { data: detailedResults, error: detailsError } = await supabase
-        .from('guest_civics_test_results')
-        .select('*')
-        .eq('guest_token', guest_token)
-        .order('completed_at', { ascending: false })
-
-      if (detailsError) {
-        console.error('Error fetching guest test details:', detailsError)
-        return NextResponse.json(
-          { error: 'Failed to fetch guest details' },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({
-        success: true,
-        guest_summary: guestData[0] || null,
-        guest_results: detailedResults || []
-      })
     }
 
     // Calculate date range
@@ -153,10 +161,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Ensure data is always an array
+    const analyticsData = data || []
+
     // Calculate summary stats
-    const completions = data.filter(d => d.event_type === 'completed')
-    const starts = data.filter(d => d.event_type === 'started')
-    const signups = data.filter(d => d.event_type === 'signup_after_test')
+    const completions = analyticsData.filter(d => d.event_type === 'completed')
+    const starts = analyticsData.filter(d => d.event_type === 'started')
+    const signups = analyticsData.filter(d => d.event_type === 'signup_after_test')
 
     const averageScore = completions.length > 0 
       ? completions.reduce((sum, c) => sum + (c.score || 0), 0) / completions.length 
@@ -185,7 +196,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      data,
+      data: analyticsData,
       summary 
     })
   } catch (error) {

@@ -36,10 +36,14 @@ export async function GET(request: Request) {
     if (error) {
       console.error('Error fetching topics:', error)
       return NextResponse.json({ 
+        success: false,
         topics: [], 
         total: 0,
-        hasMore: false 
-      })
+        hasMore: false,
+        offset: parseInt(offset),
+        limit: limit === 'all' ? 'all' : parseInt(limit || '100'),
+        error: 'Failed to fetch topics'
+      }, { status: 200 }) // Return 200 to prevent JSON parsing issues
     }
 
     // Format topics for search
@@ -57,6 +61,7 @@ export async function GET(request: Request) {
     const hasMore = limit !== 'all' && formattedTopics.length === currentLimit && (currentOffset + currentLimit) < (totalCount || 0);
 
     return NextResponse.json({ 
+      success: true,
       topics: formattedTopics,
       total: totalCount || formattedTopics.length,
       hasMore,
@@ -66,11 +71,15 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error in topics API route:', error)
     
-    // Return empty array on error
+    // Return empty array on error with safe fallback values
     return NextResponse.json({ 
+      success: false,
       topics: [], 
       total: 0,
-      hasMore: false 
-    })
+      hasMore: false,
+      offset: 0,
+      limit: 100,
+      error: 'Internal server error'
+    }, { status: 200 }) // Return 200 to prevent JSON parsing issues
   }
 } 

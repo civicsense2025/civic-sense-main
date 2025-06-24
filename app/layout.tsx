@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import type { Metadata, Viewport } from "next"
 import { Space_Mono } from "next/font/google"
 import "./globals.css"
@@ -17,6 +17,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PWAStatus } from "@/components/pwa-status"
 import { DebugSettingsPanel } from "@/components/debug-settings-panel"
+import { CoreWebVitalsTracker } from "@/components/core-web-vitals-tracker"
 import { cn } from '@/lib/utils'
 
 // Import cache debug utilities in development
@@ -28,10 +29,14 @@ if (process.env.NODE_ENV === 'development') {
   })
 }
 
+// ✅ Optimize font loading with font-display: swap to prevent FOUT
 const spaceMono = Space_Mono({
   weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-space-mono',
+  display: 'swap', // Critical: Prevents invisible text during font swap period
+  preload: true,
+  fallback: ['Monaco', 'Menlo', 'Courier New', 'monospace'],
 })
 
 const getBaseUrl = () => {
@@ -41,71 +46,57 @@ const getBaseUrl = () => {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getBaseUrl()),
   title: {
-    template: '%s | CivicSense',
-    default: 'CivicSense - Learn Civics Through Current Events',
+    default: 'CivicSense | Democracy, Decoded Daily',
+    template: '%s | CivicSense'
   },
-  description: 'Learn civics through current events. Stay informed and understand how democracy works.',
-  metadataBase: new URL('https://civicsense.org'),
-  manifest: "/manifest.json",
-  applicationName: "CivicSense",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "CivicSense",
-  },
+  description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
+  keywords: ['civic education', 'democracy', 'politics', 'government', 'citizenship', 'voting'],
+  authors: [{ name: 'CivicSense' }],
+  creator: 'CivicSense',
+  publisher: 'CivicSense',
   formatDetection: {
+    email: false,
+    address: false,
     telephone: false,
   },
   openGraph: {
-    type: "website",
-    siteName: "CivicSense",
-    title: "CivicSense - Civic Education Made Simple",
-    description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
+    type: 'website',
+    locale: 'en_US',
+    url: getBaseUrl(),
+    siteName: 'CivicSense',
+    title: 'CivicSense | Democracy, Decoded Daily',
+    description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
     images: [
       {
-        url: "/images/CivicSense-Main-Share.png",
+        url: '/api/generate-image?template=social-share&title=CivicSense&description=Democracy, Decoded Daily&type=platform',
         width: 1200,
         height: 630,
-        alt: "CivicSense - Civic Education Made Simple",
-      },
+        alt: 'CivicSense - Democracy, Decoded Daily',
+      }
     ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "CivicSense - Civic Education Made Simple",
-    description: "Transform from passive citizen to informed, confident democratic participant with daily civic education.",
-    images: ["/images/CivicSense-Main-Share.png"],
+    card: 'summary_large_image',
+    title: 'CivicSense | Democracy, Decoded Daily',
+    description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
+    creator: '@CivicSenseApp',
+    images: ['/api/generate-image?template=twitter-card&title=CivicSense&description=Democracy, Decoded Daily&type=platform'],
   },
-  keywords: [
-    "civic education",
-    "democracy",
-    "government",
-    "civics",
-    "citizenship",
-    "political education",
-    "quiz",
-    "learning"
-  ],
-  authors: [{ name: "CivicSense" }],
-  creator: "CivicSense",
-  publisher: "CivicSense",
-  icons: {
-    icon: [
-      { url: "/icons/icon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/icons/icon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-72x72.png", sizes: "72x72", type: "image/png" },
-      { url: "/icons/icon-96x96.png", sizes: "96x96", type: "image/png" },
-      { url: "/icons/icon-128x128.png", sizes: "128x128", type: "image/png" },
-      { url: "/icons/icon-144x144.png", sizes: "144x144", type: "image/png" },
-      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-384x384.png", sizes: "384x384", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icons/icon-180x180.png", sizes: "180x180", type: "image/png" },
-    ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    // Add when available: google: 'your-google-verification-code',
   },
 }
 
@@ -114,56 +105,119 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
   ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={spaceMono.variable}>
       <head>
-        {/* Essential icons only */}
+        {/* ✅ DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//vercel-insights.com" />
+        <link rel="dns-prefetch" href="//vercel-analytics.com" />
+        
+        {/* ✅ Preconnect for critical third-party origins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        
+        {/* Essential icons only - optimized */}
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
         <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
+        
+        {/* ✅ Critical CSS inlined to prevent render blocking */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Critical above-the-fold styles */
+            .skip-link {
+              position: absolute;
+              top: -40px;
+              left: 6px;
+              z-index: 100000;
+              padding: 8px 16px;
+              background: #1e3a8a;
+              color: white;
+              text-decoration: none;
+              border-radius: 0 0 4px 4px;
+              font-weight: 600;
+              transition: top 0.3s;
+            }
+            .skip-link:focus {
+              top: 0;
+            }
+            /* Prevent layout shift from font loading */
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            }
+            .font-space-mono {
+              font-family: var(--font-space-mono), Monaco, Menlo, "Courier New", monospace;
+            }
+            /* Prevent CLS from theme switching */
+            html[style] {
+              color-scheme: light dark;
+            }
+          `
+        }} />
         
         {/* PWA meta tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="CivicSense" />
         
-        {/* Preload critical resources only */}
+        {/* ✅ Preload critical assets */}
         <link rel="preload" href="/icons/icon-32x32.png" as="image" type="image/png" />
         <link rel="preload" href="/icons/icon-180x180.png" as="image" type="image/png" />
       </head>
       <body className={cn(
         'min-h-screen bg-background font-sans antialiased',
+        'overflow-x-hidden w-full min-w-0', // Prevent horizontal overflow
         spaceMono.variable
       )}>
+        {/* ✅ Optimized provider hierarchy - most critical first */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="civicsense-theme"
         >
           <LanguageProvider>
             <AuthProvider>
               <AccessibilityProvider>
+                {/* ✅ Skip link for keyboard navigation (WCAG compliance) */}
+                <a href="#main-content" className="skip-link">
+                  Skip to main content
+                </a>
+                
+                <div className="min-h-screen flex flex-col w-full">
+                  <main id="main-content" className="flex-1 w-full">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+                
+                {/* ✅ Non-critical providers loaded after main content */}
                 <StatsigProvider>
                   <PWAProvider>
                     <ConnectionProvider>
-                      {/* Skip link for keyboard users */}
-                      <a href="#main-content" className="skip-link">
-                        Skip to main content
-                      </a>
-                      <div className="min-h-screen flex flex-col w-full">
-                        <main id="main-content" className="flex-1 w-full">
-                          {children}
-                        </main>
-                        <Footer />
-                      </div>
                       <Toaster />
                       <GlobalAudioWrapper />
+                      
+                      {/* ✅ Analytics loaded last to not block rendering */}
                       <Analytics />
                       <SpeedInsights />
-                      {process.env.NODE_ENV === 'development' && <PWAStatus />}
-                      <DebugSettingsPanel />
+                      
+                      {/* Development only components */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <>
+                          <PWAStatus />
+                          <DebugSettingsPanel />
+                          <CoreWebVitalsTracker />
+                        </>
+                      )}
                     </ConnectionProvider>
                   </PWAProvider>
                 </StatsigProvider>

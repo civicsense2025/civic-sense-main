@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useAdminAccess } from "@/hooks/useAdminAccess"
@@ -316,7 +316,6 @@ export default function TopicDetailPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <Header onSignInClick={() => {}} />
       <main className="w-full py-8">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           

@@ -304,79 +304,1069 @@ function isValidUrl(url: string): boolean {
 
 // RSS Feed sources for US politics and vetted political coverage
 const RSS_NEWS_SOURCES = [
+  // ============================================================================
+  // 🏛 U.S. POLITICS & GOVERNMENT - Tier 1 (Highest Priority)
+  // ============================================================================
   {
     name: 'Politico',
     url: 'https://rss.politico.com/politics-news.xml',
     category: 'US Politics',
-    type: 'rss'
-  },
-  {
-    name: 'Rolling Stone Politics',
-    url: 'https://www.rollingstone.com/politics/feed/',
-    category: 'US Politics',
-    type: 'rss'
-  },
-  {
-    name: 'NPR Politics',
-    url: 'https://feeds.npr.org/1001/rss.xml',
-    category: 'US Politics', 
-    type: 'rss'
-  },
-  {
-    name: 'Reuters US Politics',
-    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+politics&ceid=US:en&hl=en-US&gl=US',
-    category: 'US Politics',
-    type: 'rss'
-  },
-  {
-    name: 'AP News Politics',
-    url: 'https://openrss.org/apnews.com/hub/politics',
-    category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 1,
+    credibility: 90
   },
   {
     name: 'The Hill',
     url: 'https://thehill.com/news/feed/',
     category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 1,
+    credibility: 85
   },
   {
-    name: 'CNN Politics',
-    url: 'http://rss.cnn.com/rss/edition_politics.rss',
+    name: 'NPR Politics',
+    url: 'https://feeds.npr.org/1001/rss.xml',
+    category: 'US Politics', 
+    type: 'rss',
+    tier: 1,
+    credibility: 92
+  },
+  {
+    name: 'PBS NewsHour Politics',
+    url: 'https://www.pbs.org/newshour/feeds/rss/politics',
     category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+  {
+    name: 'AP News Politics',
+    url: 'https://feeds.apnews.com/rss/apf-politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 95
+  },
+  {
+    name: 'Reuters US Politics',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+politics&ceid=US:en&hl=en-US&gl=US',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 95
   },
   {
     name: 'Washington Post Politics',
     url: 'https://feeds.washingtonpost.com/rss/politics',
     category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+  {
+    name: 'States Newsroom DC Bureau',
+    url: 'https://statesnewsroom.com/dc-bureau/feed/',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 85
+  },
+
+  // ============================================================================
+  // 💼 ECONOMIC & FINANCIAL POLICY
+  // ============================================================================
+  {
+    name: 'Federal Reserve News',
+    url: 'https://www.federalreserve.gov/feeds/press_all.xml',
+    category: 'Economic Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 98
+  },
+  {
+    name: 'NPR Economy',
+    url: 'https://feeds.npr.org/1017/rss.xml',
+    category: 'Economic Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+  {
+    name: 'AP News Business',
+    url: 'https://feeds.apnews.com/rss/apf-business',
+    category: 'Economic Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 93
+  },
+  {
+    name: 'Bloomberg Government',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:bloomberg.com+government&ceid=US:en&hl=en-US&gl=US',
+    category: 'Economic Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+
+  // ============================================================================
+  // 🌍 FOREIGN POLICY & INTERNATIONAL NEWS
+  // ============================================================================
+  {
+    name: 'PBS NewsHour World',
+    url: 'https://www.pbs.org/newshour/feeds/rss/world',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+  {
+    name: 'NPR World',
+    url: 'https://feeds.npr.org/1004/rss.xml',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 92
+  },
+  {
+    name: 'AP News International',
+    url: 'https://feeds.apnews.com/rss/apf-international',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 95
+  },
+  {
+    name: 'Reuters World News',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+world&ceid=US:en&hl=en-US&gl=US',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 95
+  },
+  {
+    name: 'Foreign Policy Magazine',
+    url: 'https://foreignpolicy.com/feed/',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+
+  // ============================================================================
+  // 🏛 GOVERNMENT & OVERSIGHT - Tier 2
+  // ============================================================================
+  {
+    name: 'Government Executive',
+    url: 'https://www.govexec.com/rss/all/',
+    category: 'Government Operations',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Federal News Network',
+    url: 'https://federalnewsnetwork.com/feed/',
+    category: 'Government Operations',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'Roll Call',
+    url: 'https://rollcall.com/feed/',
+    category: 'Congressional News',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+  {
+    name: 'CQ Roll Call',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:rollcall.com&ceid=US:en&hl=en-US&gl=US',
+    category: 'Congressional News',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+
+  // ============================================================================
+  // 📺 MAJOR NEWS NETWORKS - Tier 2
+  // ============================================================================
+  {
+    name: 'CNN Politics',
+    url: 'http://rss.cnn.com/rss/edition_politics.rss',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'CBS News Politics',
+    url: 'https://www.cbsnews.com/latest/rss/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
   },
   {
     name: 'NBC Politics',
     url: 'https://feeds.nbcnews.com/nbcnews/public/politics',
     category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 2,
+    credibility: 78
   },
+  {
+    name: 'ABC News Politics',
+    url: 'https://abcnews.go.com/abcnews/politicsheadlines',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📰 SPECIALIZED POLITICAL NEWS - Tier 2
+  // ============================================================================
   {
     name: 'Axios Politics',
     url: 'https://api.axios.com/feed/politics',
     category: 'US Politics',
-    type: 'rss'
+    type: 'rss',
+    tier: 2,
+    credibility: 82
   },
   {
     name: 'USA Today Politics',
     url: 'http://rssfeeds.usatoday.com/usatoday-NewsPolitics',
     category: 'US Politics',
-    type: 'rss'
-  }
-  // NOTE: Vanity Fair sitemap requires special handling - will implement if needed
-  // {
-  //   name: 'Vanity Fair Politics',
-  //   url: 'https://www.vanityfair.com/categories-sitemap.xml',
-  //   category: 'US Politics',
-  //   type: 'sitemap'
-  // }
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'Wall Street Journal Politics',
+    url: 'https://news.google.com/rss/search?q=when:24h+allinurl:wsj.com+politics&ceid=US:en&hl=en-US&gl=US',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+
+  // ============================================================================
+  // 🎯 INVESTIGATIVE & ANALYSIS - Tier 2
+  // ============================================================================
+  {
+    name: 'ProPublica',
+    url: 'https://www.propublica.org/feeds/propublica/main',
+    category: 'Investigative',
+    type: 'rss',
+    tier: 2,
+    credibility: 92
+  },
+  {
+    name: 'Center for Investigative Reporting',
+    url: 'https://revealnews.org/feed/',
+    category: 'Investigative',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+
+  // ============================================================================
+  // 🏛️ POLICY THINK TANKS & ANALYSIS - Tier 2
+  // ============================================================================
+  {
+    name: 'Cato Institute',
+    url: 'https://www.cato.org/rss/commentary',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Brookings Institution',
+    url: 'https://www.brookings.edu/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+  {
+    name: 'American Enterprise Institute',
+    url: 'https://www.aei.org/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'Center for Strategic and International Studies',
+    url: 'https://www.csis.org/analysis/feed',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 87
+  },
+  {
+    name: 'Council on Foreign Relations',
+    url: 'https://www.cfr.org/rss/feeds/blog_feed.xml',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 89
+  },
+
+  // ============================================================================
+  // 🎖️ DEFENSE & MILITARY POLICY - Tier 1
+  // ============================================================================
+  {
+    name: 'Military.com',
+    url: 'https://www.military.com/rss/daily-news',
+    category: 'Defense Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 85
+  },
+  {
+    name: 'Defense News',
+    url: 'https://www.defensenews.com/arc/outboundfeeds/rss/category/pentagon/?outputType=xml',
+    category: 'Defense Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 87
+  },
+
+  // ============================================================================
+  // 📰 MAJOR INTERNATIONAL NEWS - Tier 1 (Enhanced)
+  // ============================================================================
+  {
+    name: 'New York Times Politics',
+    url: 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 85
+  },
+  {
+    name: 'BBC Politics',
+    url: 'https://feeds.bbci.co.uk/news/politics/rss.xml',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+  {
+    name: 'Reuters Politics',
+    url: 'https://www.reuters.com/rssFeed/politicsNews',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 95
+  },
+  {
+    name: 'The Guardian Politics',
+    url: 'https://www.theguardian.com/us/politics/rss',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 82
+  },
+  {
+    name: 'Bloomberg Politics',
+    url: 'https://www.bloomberg.com/feed/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+  {
+    name: 'Time Politics',
+    url: 'https://time.com/section/politics/feed/',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 80
+  },
+  {
+    name: 'Al Jazeera Politics',
+    url: 'https://www.aljazeera.com/xml/rss/all.xml',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 78
+  },
+  {
+    name: 'The Economist Politics',
+    url: 'https://www.economist.com/sections/politics/rss.xml',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+
+  // ============================================================================
+  // 📺 ENHANCED MAJOR NEWS NETWORKS - Tier 2
+  // ============================================================================
+  {
+    name: 'Fox News Politics',
+    url: 'https://feeds.foxnews.com/foxnews/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'The Independent Politics',
+    url: 'https://www.independent.co.uk/news/uk/politics/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'The Washington Times Politics',
+    url: 'https://www.washingtontimes.com/rss/politics/',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+  {
+    name: 'Newsweek Politics',
+    url: 'https://www.newsweek.com/rss/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'Los Angeles Times Politics',
+    url: 'https://www.latimes.com/local/politics/rss2',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Telegraph Politics',
+    url: 'https://www.telegraph.co.uk/rss-feed/politics/',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📊 POLITICAL ANALYSIS & DATA - Enhanced Tier 1
+  // ============================================================================
+  {
+    name: 'FiveThirtyEight',
+    url: 'https://fivethirtyeight.com/feed/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+  {
+    name: 'Talking Points Memo',
+    url: 'https://talkingpointsmemo.com/feed',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Hill Briefing Room',
+    url: 'https://thehill.com/homenews/briefing-room/feed',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Open Secrets',
+    url: 'https://www.opensecrets.org/news/feed/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+
+  // ============================================================================
+  // 🏛️ ENHANCED POLICY THINK TANKS - Tier 2
+  // ============================================================================
+  {
+    name: 'Heritage Foundation',
+    url: 'https://www.heritage.org/rss',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'Carnegie Endowment',
+    url: 'https://carnegieendowment.org/feed/',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 87
+  },
+  {
+    name: 'RAND Corporation',
+    url: 'https://www.rand.org/blog.rss',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Center for American Progress',
+    url: 'https://www.americanprogress.org/issues/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📝 POLITICAL COMMENTARY & BLOGS - Tier 2
+  // ============================================================================
+  {
+    name: 'The National Review',
+    url: 'https://www.nationalreview.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 78
+  },
+  {
+    name: 'The American Conservative',
+    url: 'https://www.theamericanconservative.com/rss/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Intercept Politics',
+    url: 'https://theintercept.com/feed/',
+    category: 'Investigative',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Hot Air',
+    url: 'https://hotair.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'RedState',
+    url: 'https://www.redstate.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 68
+  },
+  {
+    name: 'The Daily Caller',
+    url: 'https://dailycaller.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'Power Line Blog',
+    url: 'https://www.powerlineblog.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+  {
+    name: 'Crooks and Liars',
+    url: 'https://crooksandliars.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'PoliticusUSA',
+    url: 'https://www.politicususa.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+
+  // ============================================================================
+  // 🌍 INTERNATIONAL POLITICAL NEWS - Tier 2
+  // ============================================================================
+  {
+    name: 'Politico Europe',
+    url: 'https://www.politico.eu/rss-feed/',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'The Spectator',
+    url: 'https://www.spectator.co.uk/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 78
+  },
+  {
+    name: 'EU Observer',
+    url: 'https://euobserver.com/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+
+  // ============================================================================
+  // 🏛️ PARTY ORGANIZATIONS - Tier 3 (Monitoring Only)
+  // ============================================================================
+  {
+    name: 'Republican National Committee',
+    url: 'https://www.gop.com/feed/',
+    category: 'Party Politics',
+    type: 'rss',
+    tier: 3,
+    credibility: 65
+  },
+  {
+    name: 'Democratic National Committee',
+    url: 'https://www.democrats.org/feed',
+    category: 'Party Politics',
+    type: 'rss',
+    tier: 3,
+    credibility: 65
+  },
+
+  // ============================================================================
+  // 📚 ACADEMIC & INTELLECTUAL - Tier 2
+  // ============================================================================
+  {
+    name: 'The New York Review of Books Politics',
+    url: 'https://www.nybooks.com/feed/politics/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+  {
+    name: 'Americas Voice',
+    url: 'https://americasvoice.org/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+
+  // ============================================================================
+  // 🌐 AGGREGATED FEEDS - Tier 3 (Backup)
+  // ============================================================================
+  {
+    name: 'Google News - Government',
+    url: 'https://news.google.com/rss/search?q=when:24h+government+congress+senate&ceid=US:en&hl=en-US&gl=US',
+    category: 'Government',
+    type: 'rss',
+    tier: 3,
+    credibility: 80
+  },
+  {
+    name: 'Google News - Federal Policy',
+    url: 'https://news.google.com/rss/search?q=when:24h+federal+policy+regulation&ceid=US:en&hl=en-US&gl=US',
+    category: 'Policy',
+    type: 'rss',
+    tier: 3,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📺 MAJOR NEWS NETWORKS - Enhanced Tier 2
+  // ============================================================================
+  {
+    name: 'CNN Politics',
+    url: 'http://rss.cnn.com/rss/cnn_allpolitics.rss',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'Fox News Politics',
+    url: 'https://feeds.foxnews.com/foxnews/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'USA Today Politics',
+    url: 'https://rssfeeds.usatoday.com/UsatodaycomPolitics-TopStories',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'CBS News Politics',
+    url: 'https://www.cbsnews.com/latest/rss/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'NBC Politics',
+    url: 'https://feeds.nbcnews.com/nbcnews/public/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 78
+  },
+  {
+    name: 'ABC News Politics',
+    url: 'https://abcnews.go.com/abcnews/politicsheadlines',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Independent Politics',
+    url: 'https://www.independent.co.uk/news/uk/politics/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'The Washington Times Politics',
+    url: 'https://www.washingtontimes.com/rss/politics/',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+  {
+    name: 'Newsweek Politics',
+    url: 'https://www.newsweek.com/rss/politics',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'Los Angeles Times Politics',
+    url: 'https://www.latimes.com/local/politics/rss2',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📊 POLITICAL ANALYSIS & DATA - Tier 1
+  // ============================================================================
+  {
+    name: 'FiveThirtyEight',
+    url: 'https://fivethirtyeight.com/feed/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 1,
+    credibility: 88
+  },
+  {
+    name: 'Talking Points Memo',
+    url: 'https://talkingpointsmemo.com/feed',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Hill Briefing Room',
+    url: 'https://thehill.com/homenews/briefing-room/feed',
+    category: 'US Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Open Secrets',
+    url: 'https://www.opensecrets.org/news/feed/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+
+  // ============================================================================
+  // 🏛️ ENHANCED POLICY THINK TANKS - Tier 2
+  // ============================================================================
+  {
+    name: 'Cato Institute',
+    url: 'https://www.cato.org/rss/commentary',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Brookings Institution',
+    url: 'https://www.brookings.edu/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+  {
+    name: 'Heritage Foundation',
+    url: 'https://www.heritage.org/rss',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'American Enterprise Institute',
+    url: 'https://www.aei.org/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'Center for Strategic and International Studies',
+    url: 'https://www.csis.org/analysis/feed',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 87
+  },
+  {
+    name: 'Council on Foreign Relations',
+    url: 'https://www.cfr.org/rss/feeds/blog_feed.xml',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 89
+  },
+  {
+    name: 'Carnegie Endowment',
+    url: 'https://carnegieendowment.org/feed/',
+    category: 'Foreign Policy',
+    type: 'rss',
+    tier: 2,
+    credibility: 87
+  },
+  {
+    name: 'RAND Corporation',
+    url: 'https://www.rand.org/blog.rss',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Center for American Progress',
+    url: 'https://www.americanprogress.org/issues/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+
+  // ============================================================================
+  // 📝 POLITICAL COMMENTARY & BLOGS - Tier 2
+  // ============================================================================
+  {
+    name: 'The National Review',
+    url: 'https://www.nationalreview.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 78
+  },
+  {
+    name: 'The American Conservative',
+    url: 'https://www.theamericanconservative.com/rss/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'The Intercept Politics',
+    url: 'https://theintercept.com/feed/',
+    category: 'Investigative',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'Hot Air',
+    url: 'https://hotair.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'RedState',
+    url: 'https://www.redstate.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 68
+  },
+  {
+    name: 'The Daily Caller',
+    url: 'https://dailycaller.com/feed/',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 70
+  },
+  {
+    name: 'Power Line Blog',
+    url: 'https://www.powerlineblog.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+  {
+    name: 'Crooks and Liars',
+    url: 'https://crooksandliars.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
+  {
+    name: 'PoliticusUSA',
+    url: 'https://www.politicususa.com/feed',
+    category: 'Political Commentary',
+    type: 'rss',
+    tier: 2,
+    credibility: 72
+  },
+
+  // ============================================================================
+  // 🌍 INTERNATIONAL POLITICAL NEWS - Tier 2
+  // ============================================================================
+  {
+    name: 'Politico Europe',
+    url: 'https://www.politico.eu/rss-feed/',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 85
+  },
+  {
+    name: 'The Spectator',
+    url: 'https://www.spectator.co.uk/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 78
+  },
+  {
+    name: 'The Telegraph Politics',
+    url: 'https://www.telegraph.co.uk/rss-feed/politics/',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 80
+  },
+  {
+    name: 'EU Observer',
+    url: 'https://euobserver.com/rss',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 2,
+    credibility: 82
+  },
+  {
+    name: 'The Economist Politics',
+    url: 'https://www.economist.com/sections/politics/rss.xml',
+    category: 'International Politics',
+    type: 'rss',
+    tier: 1,
+    credibility: 90
+  },
+
+  // ============================================================================
+  // 🎖️ DEFENSE & MILITARY POLICY - Enhanced
+  // ============================================================================
+  {
+    name: 'Military.com',
+    url: 'https://www.military.com/rss/daily-news',
+    category: 'Defense Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 85
+  },
+  {
+    name: 'Defense News',
+    url: 'https://www.defensenews.com/arc/outboundfeeds/rss/category/pentagon/?outputType=xml',
+    category: 'Defense Policy',
+    type: 'rss',
+    tier: 1,
+    credibility: 87
+  },
+
+  // ============================================================================
+  // 🏛️ PARTY ORGANIZATIONS - Tier 3 (Monitoring Only)
+  // ============================================================================
+  {
+    name: 'Republican National Committee',
+    url: 'https://www.gop.com/feed/',
+    category: 'Party Politics',
+    type: 'rss',
+    tier: 3,
+    credibility: 65
+  },
+  {
+    name: 'Democratic National Committee',
+    url: 'https://www.democrats.org/feed',
+    category: 'Party Politics',
+    type: 'rss',
+    tier: 3,
+    credibility: 65
+  },
+
+  // ============================================================================
+  // 📚 ACADEMIC & INTELLECTUAL - Tier 2
+  // ============================================================================
+  {
+    name: 'The New York Review of Books Politics',
+    url: 'https://www.nybooks.com/feed/politics/',
+    category: 'Political Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 88
+  },
+  {
+    name: 'Americas Voice',
+    url: 'https://americasvoice.org/feed/',
+    category: 'Policy Analysis',
+    type: 'rss',
+    tier: 2,
+    credibility: 75
+  },
 ]
 
 const US_POLITICS_KEYWORDS = [
@@ -418,6 +1408,9 @@ interface ProcessedArticle {
   content?: string
   relevanceScore: number
   database_id?: string | null
+  // Enhanced properties for source quality and prioritization
+  tier?: number
+  credibilityScore?: number
 }
 
 interface SourceMetadataInsert {
@@ -447,6 +1440,7 @@ interface SourceMetadataInsert {
 
 /**
  * Enhanced RSS/XML parser with proper special character handling
+ * Now includes tier-based prioritization and credibility scoring
  */
 async function fetchRSSFeed(source: typeof RSS_NEWS_SOURCES[0]): Promise<any[]> {
   const userAgents = [
@@ -458,11 +1452,12 @@ async function fetchRSSFeed(source: typeof RSS_NEWS_SOURCES[0]): Promise<any[]> 
   
   for (const userAgent of userAgents) {
     try {
-      console.log(`🔄 Fetching ${source.name} from ${source.url}`)
+      console.log(`🔄 Fetching ${source.name} (Tier ${source.tier}, Credibility: ${source.credibility}) from ${source.url}`)
       
-      // Create abort controller for timeout
+      // Create abort controller for timeout - longer timeout for Tier 1 sources
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      const timeout = source.tier === 1 ? 20000 : 15000 // 20s for Tier 1, 15s for others
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
       
       const response = await fetch(source.url, {
         headers: {
@@ -493,17 +1488,20 @@ async function fetchRSSFeed(source: typeof RSS_NEWS_SOURCES[0]): Promise<any[]> 
       }
       
       if (items.length > 0) {
-        console.log(`✅ Successfully fetched ${items.length} articles from ${source.name}`)
-        return items.slice(0, 15) // Limit per source
+        console.log(`✅ Successfully fetched ${items.length} articles from ${source.name} (Tier ${source.tier})`)
+        
+        // Limit per source based on tier - Tier 1 gets more articles
+        const limit = source.tier === 1 ? 20 : source.tier === 2 ? 15 : 10
+        return items.slice(0, limit)
       }
       
     } catch (error) {
-      console.error(`❌ Error fetching ${source.name}:`, error instanceof Error ? error.message : 'Unknown error')
+      console.error(`❌ Error fetching ${source.name} (Tier ${source.tier}):`, error instanceof Error ? error.message : 'Unknown error')
       continue
     }
   }
   
-  console.warn(`⚠️ Could not fetch articles from ${source.name}`)
+  console.warn(`⚠️ Could not fetch articles from ${source.name} (Tier ${source.tier})`)
   return []
 }
 
@@ -819,17 +1817,106 @@ async function saveArticleToDatabase(article: ProcessedArticle): Promise<string 
 
 /**
  * Calculate credibility score based on news source
+ * Enhanced to use source tier and credibility data
  */
 function calculateCredibilityScore(sourceName: string): number {
+  // First, try to find exact match in our RSS sources
+  const sourceData = RSS_NEWS_SOURCES.find(source => 
+    sourceName.toLowerCase().includes(source.name.toLowerCase()) ||
+    source.name.toLowerCase().includes(sourceName.toLowerCase())
+  )
+  
+  if (sourceData) {
+    return sourceData.credibility
+  }
+  
+  // Fallback to original credibility mapping for sources not in RSS list
   const credibilityMap: Record<string, number> = {
+    // Tier 1 Sources (Highest Credibility)
     'Reuters': 95,
     'Associated Press': 95,
     'AP News': 95,
     'BBC': 90,
     'NPR': 88,
+    'PBS': 90,
+    'The Economist': 90,
+    'FiveThirtyEight': 88,
+    'Open Secrets': 90,
+    'ProPublica': 92,
+    
+    // Major News Networks
     'Politico': 85,
+    'New York Times': 85,
+    'Washington Post': 88,
+    'Wall Street Journal': 85,
+    'The Guardian': 82,
+    'Bloomberg': 88,
+    'Time': 80,
+    'Los Angeles Times': 80,
     'CNN': 75,
     'Fox News': 70,
+    'USA Today': 75,
+    'ABC News': 80,
+    'CBS News': 80,
+    'NBC News': 78,
+    'Newsweek': 75,
+    'Al Jazeera': 78,
+    'The Independent': 75,
+    'The Washington Times': 72,
+    'The Telegraph': 80,
+    
+    // Government & Oversight
+    'Government Executive': 85,
+    'Federal News Network': 82,
+    'Roll Call': 88,
+    'The Hill': 85,
+    
+    // Policy Think Tanks & Analysis
+    'Cato Institute': 85,
+    'Brookings Institution': 88,
+    'American Enterprise Institute': 82,
+    'AEI': 82,
+    'Heritage Foundation': 82,
+    'Center for Strategic and International Studies': 87,
+    'CSIS': 87,
+    'Council on Foreign Relations': 89,
+    'CFR': 89,
+    'Carnegie Endowment': 87,
+    'RAND Corporation': 85,
+    'Center for American Progress': 80,
+    
+    // Foreign Policy & Defense
+    'Foreign Policy': 88,
+    'Military.com': 85,
+    'Defense News': 87,
+    
+    // Political Commentary & Analysis
+    'The National Review': 78,
+    'The American Conservative': 80,
+    'The Intercept': 85,
+    'Talking Points Memo': 80,
+    'Hot Air': 70,
+    'RedState': 68,
+    'The Daily Caller': 70,
+    'Power Line': 72,
+    'Crooks and Liars': 75,
+    'PoliticusUSA': 72,
+    'The New York Review of Books': 88,
+    'Americas Voice': 75,
+    
+    // International
+    'Politico Europe': 85,
+    'The Spectator': 78,
+    'EU Observer': 82,
+    
+    // Specialized
+    'Axios': 82,
+    
+    // Party Organizations (Lower credibility due to bias)
+    'Republican National Committee': 65,
+    'Democratic National Committee': 65,
+    'GOP': 65,
+    'Democrats': 65
   }
   
   // Find closest match
@@ -844,17 +1931,92 @@ function calculateCredibilityScore(sourceName: string): number {
 
 /**
  * Get bias rating based on news source
+ * Enhanced with more comprehensive mapping
  */
 function getBiasRating(sourceName: string): string {
   const biasMap: Record<string, string> = {
+    // Center Sources (Minimal Bias)
     'Reuters': 'center',
     'Associated Press': 'center',
     'AP News': 'center',
     'BBC': 'center',
-    'NPR': 'center-left',
     'Politico': 'center',
+    'USA Today': 'center',
+    'ABC News': 'center',
+    'Government Executive': 'center',
+    'Federal News Network': 'center',
+    'Roll Call': 'center',
+    'The Hill': 'center',
+    'Axios': 'center',
+    'Federal Reserve': 'center',
+    'The Economist': 'center',
+    'Military.com': 'center',
+    'Defense News': 'center',
+    'Center for Strategic and International Studies': 'center',
+    'CSIS': 'center',
+    'Council on Foreign Relations': 'center',
+    'CFR': 'center',
+    'Open Secrets': 'center',
+    'FiveThirtyEight': 'center',
+    'EU Observer': 'center',
+    
+    // Center-Left Sources
+    'NPR': 'center-left',
+    'PBS': 'center-left',
+    'New York Times': 'center-left',
+    'Washington Post': 'center-left',
+    'CBS News': 'center-left',
+    'NBC News': 'center-left',
+    'ProPublica': 'center-left',
+    'The Guardian': 'center-left',
+    'Los Angeles Times': 'center-left',
+    'The Independent': 'center-left',
+    'Time': 'center-left',
+    'Foreign Policy': 'center-left',
+    'Brookings Institution': 'center-left',
+    'Carnegie Endowment': 'center-left',
+    'Center for American Progress': 'center-left',
+    'Talking Points Memo': 'center-left',
+    'The Intercept': 'center-left',
+    'Crooks and Liars': 'center-left',
+    'PoliticusUSA': 'center-left',
+    'The New York Review of Books': 'center-left',
+    'Americas Voice': 'center-left',
+    'Politico Europe': 'center-left',
+    
+    // Center-Right Sources
+    'Wall Street Journal': 'center-right',
+    'Bloomberg': 'center-right',
+    'The Telegraph': 'center-right',
+    'Cato Institute': 'center-right', // Libertarian
+    'American Enterprise Institute': 'center-right',
+    'AEI': 'center-right',
+    'Heritage Foundation': 'center-right',
+    'RAND Corporation': 'center-right',
+    'The American Conservative': 'center-right',
+    'The Spectator': 'center-right',
+    
+    // Left Sources
     'CNN': 'left',
+    'Al Jazeera': 'left',
+    
+    // Right Sources
     'Fox News': 'right',
+    'The Washington Times': 'right',
+    'The National Review': 'right',
+    'Hot Air': 'right',
+    'RedState': 'right',
+    'The Daily Caller': 'right',
+    'Power Line': 'right',
+    
+    // Mixed/Unknown
+    'Newsweek': 'center',
+    
+    // Party Organizations (Highly Biased)
+    'Republican National Committee': 'right',
+    'Democratic National Committee': 'left',
+    'GOP': 'right',
+    'Democrats': 'left'
   }
   
   // Find closest match
@@ -868,30 +2030,42 @@ function getBiasRating(sourceName: string): string {
 }
 
 async function fetchRealTimeNews(): Promise<ProcessedArticle[]> {
-  console.log('📡 Fetching real-time US politics news from vetted RSS feeds...')
+  console.log('📡 Fetching real-time civic news from enhanced RSS feed network...')
+  console.log(`🎯 Monitoring ${RSS_NEWS_SOURCES.length} sources across ${RSS_NEWS_SOURCES.filter(s => s.tier === 1).length} Tier 1, ${RSS_NEWS_SOURCES.filter(s => s.tier === 2).length} Tier 2, and ${RSS_NEWS_SOURCES.filter(s => s.tier === 3).length} Tier 3 sources`)
   
-  const allFeedPromises = RSS_NEWS_SOURCES.map(async (source) => {
+  // Sort sources by tier for prioritized fetching
+  const sortedSources = RSS_NEWS_SOURCES.sort((a, b) => a.tier - b.tier)
+  
+  const allFeedPromises = sortedSources.map(async (source) => {
     const items = await fetchRSSFeed(source)
     return items.map(item => ({
       ...item,
       sourceName: source.name,
-      category: source.category
+      category: source.category,
+      tier: source.tier,
+      credibilityScore: source.credibility
     }))
   })
   
   const feedResults = await Promise.allSettled(allFeedPromises)
   let allArticles: any[] = []
+  let successfulSources = 0
+  let tier1Sources = 0
   
   feedResults.forEach((result, index) => {
     if (result.status === 'fulfilled') {
       allArticles = [...allArticles, ...result.value]
-      console.log(`✅ Fetched ${result.value.length} articles from ${RSS_NEWS_SOURCES[index].name}`)
+      successfulSources++
+      if (sortedSources[index].tier === 1) tier1Sources++
+      console.log(`✅ Fetched ${result.value.length} articles from ${sortedSources[index].name} (Tier ${sortedSources[index].tier})`)
     } else {
-      console.error(`❌ Failed to fetch from ${RSS_NEWS_SOURCES[index].name}:`, result.reason)
+      console.error(`❌ Failed to fetch from ${sortedSources[index].name} (Tier ${sortedSources[index].tier}):`, result.reason)
     }
   })
   
-  // Convert to ProcessedArticle format with minimal processing (preserve original content)
+  console.log(`📊 Successfully fetched from ${successfulSources}/${RSS_NEWS_SOURCES.length} sources (${tier1Sources} Tier 1 sources)`)
+  
+  // Convert to ProcessedArticle format with enhanced processing
   const processedArticles: ProcessedArticle[] = allArticles
     .filter(article => {
       // Enhanced validation to prevent corrupted data
@@ -904,8 +2078,8 @@ async function fetchRealTimeNews(): Promise<ProcessedArticle[]> {
     })
     .map((article, index) => ({
       id: `rss-${Date.now()}-${index}`,
-      title: cleanText(article.title), // Only clean HTML entities and tags, preserve original text
-      description: cleanText(article.description), // Preserve full description, just clean entities/tags
+      title: cleanText(article.title),
+      description: cleanText(article.description),
       url: article.link,
       urlToImage: undefined,
       publishedAt: parseDate(article.pubDate),
@@ -914,11 +2088,19 @@ async function fetchRealTimeNews(): Promise<ProcessedArticle[]> {
         name: article.sourceName
       },
       category: article.category,
-      content: cleanText(article.description), // Preserve original content
-      relevanceScore: calculateCivicRelevance(article.title + ' ' + article.description)
+      content: cleanText(article.description),
+      relevanceScore: calculateCivicRelevance(article.title + ' ' + article.description),
+      // Enhanced with tier and credibility data
+      tier: article.tier,
+      credibilityScore: article.credibilityScore
     }))
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    .slice(0, 20) // Limit to 20 most recent
+    // Sort by tier first (Tier 1 articles first), then by relevance score, then by date
+    .sort((a, b) => {
+      if (a.tier !== b.tier) return a.tier - b.tier
+      if (a.relevanceScore !== b.relevanceScore) return b.relevanceScore - a.relevanceScore
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    })
+    .slice(0, 30) // Increased limit to accommodate more sources
   
   // Process each article and save to database with better error handling
   const articlesWithDbSave = await Promise.all(
@@ -934,9 +2116,9 @@ async function fetchRealTimeNews(): Promise<ProcessedArticle[]> {
         const savedId = await saveArticleToDatabase(article)
         
         if (savedId) {
-          console.log(`✅ Article saved to database: "${article.title.substring(0, 50)}..." (ID: ${savedId})`)
+          console.log(`✅ Article saved to database: "${article.title.substring(0, 50)}..." (ID: ${savedId}, Tier ${article.tier})`)
         } else {
-          console.log(`⚠️ Article not saved: "${article.title.substring(0, 50)}..."`)
+          console.log(`⚠️ Article not saved: "${article.title.substring(0, 50)}..." (Tier ${article.tier})`)
         }
         
         return {
@@ -950,8 +2132,16 @@ async function fetchRealTimeNews(): Promise<ProcessedArticle[]> {
     })
   )
   
-  console.log(`🎯 Found ${articlesWithDbSave.length} relevant US politics articles`)
-  console.log(`💾 Saved articles to source_metadata table for future reference`)
+  const tier1Count = articlesWithDbSave.filter(a => a.tier === 1).length
+  const tier2Count = articlesWithDbSave.filter(a => a.tier === 2).length
+  const tier3Count = articlesWithDbSave.filter(a => a.tier === 3).length
+  
+  console.log(`🎯 Found ${articlesWithDbSave.length} relevant civic articles:`)
+  console.log(`   📰 Tier 1 (High Priority): ${tier1Count} articles`)
+  console.log(`   📰 Tier 2 (Medium Priority): ${tier2Count} articles`)
+  console.log(`   📰 Tier 3 (Backup): ${tier3Count} articles`)
+  console.log(`💾 Saved articles to source_metadata table for AI News Agent processing`)
+  
   return articlesWithDbSave
 }
 

@@ -162,11 +162,27 @@ export default function CivicsTestLanding() {
       try {
         const response = await fetch('/api/civics-test/analytics?days=30')
         if (response.ok) {
-          const data = await response.json()
-          setAnalyticsData(data)
+          const text = await response.text()
+          if (text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setAnalyticsData(data)
+            } catch (parseError) {
+              console.warn('Failed to parse analytics response:', parseError)
+              // Set empty analytics data as fallback
+              setAnalyticsData(null)
+            }
+          } else {
+            console.warn('Empty analytics response')
+            setAnalyticsData(null)
+          }
+        } else {
+          console.warn('Analytics request failed:', response.status)
+          setAnalyticsData(null)
         }
       } catch (error) {
         console.error('Error fetching analytics:', error)
+        setAnalyticsData(null)
       } finally {
         setLoading(false)
       }

@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
-import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -305,7 +304,6 @@ export default function SurveysAdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <Header />
       <main className="container mx-auto px-6 py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto space-y-12">
           {/* Header */}
@@ -325,13 +323,74 @@ export default function SurveysAdminPage() {
                 </div>
               </div>
               
-              <Button
-                onClick={() => router.push('/admin/surveys/create')}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Survey
-              </Button>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/surveys/debug')
+                      const data = await response.json()
+                      console.log('Debug data:', data)
+                      toast({
+                        title: "Debug data logged",
+                        description: "Check browser console for detailed database information",
+                      })
+                    } catch (error) {
+                      toast({
+                        title: "Debug failed",
+                        description: "Failed to get debug information. Please try again.",
+                        variant: "destructive"
+                      })
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Debug DB
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/surveys/create-samples', {
+                        method: 'POST'
+                      })
+                      const data = await response.json()
+                      if (response.ok) {
+                        toast({
+                          title: "Sample surveys created",
+                          description: data.message,
+                        })
+                        // Refresh the surveys list
+                        window.location.reload()
+                      } else {
+                        toast({
+                          title: "Failed to create samples",
+                          description: data.error || 'Unknown error',
+                          variant: "destructive"
+                        })
+                      }
+                    } catch (error) {
+                      toast({
+                        title: "Error creating samples",
+                        description: "Failed to create sample surveys. Please try again.",
+                        variant: "destructive"
+                      })
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Samples
+                </Button>
+                <Button
+                  onClick={() => router.push('/admin/surveys/create')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Survey
+                </Button>
+              </div>
             </div>
           </div>
 

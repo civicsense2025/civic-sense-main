@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/header'
 import { Container } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -111,7 +110,6 @@ export default function AdminEventsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <main className="w-full">
         <Container className="max-w-7xl py-12">
           <div className="flex items-center justify-between mb-8">

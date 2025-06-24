@@ -454,6 +454,23 @@ function CivicsBeforeAfterSlider() {
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-slate-50/30 dark:bg-slate-800/30 rounded-3xl blur-xl"></div>
+      
+      {/* Example Indicators - Moved Above Card */}
+      <div className="flex justify-center gap-2 mb-4">
+        {examples.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentExample(index)}
+            className={cn(
+              "w-2 h-2 rounded-full transition-all duration-300",
+              index === currentExample 
+                ? "bg-blue-500 scale-125" 
+                : "bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500"
+            )}
+          />
+        ))}
+      </div>
+      
       <Card className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0 shadow-2xl shadow-slate-500/10 rounded-3xl overflow-hidden">
         <CardContent className="p-0">
           {/* Fixed Height Container to Prevent Layout Shift */}
@@ -544,21 +561,7 @@ function CivicsBeforeAfterSlider() {
               </div>
             </div>
 
-            {/* Example Indicators */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-              {examples.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentExample(index)}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all duration-300",
-                    index === currentExample 
-                      ? "bg-blue-500 scale-125" 
-                      : "bg-white/50 hover:bg-white/75"
-                  )}
-                />
-              ))}
-            </div>
+
 
             {/* Instruction Text */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">

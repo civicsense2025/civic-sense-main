@@ -42,10 +42,11 @@ export async function GET() {
       return NextResponse.json(
         { 
           success: false,
+          categories: [], // Always provide an empty array as fallback
           error: 'Failed to fetch categories',
           details: error.message 
         },
-        { status: 500 }
+        { status: 200 } // Return 200 with error info instead of 500 to prevent JSON parsing issues
       )
     }
 
@@ -81,10 +82,11 @@ export async function GET() {
     return NextResponse.json(
       { 
         success: false,
+        categories: [], // Always provide an empty array as fallback
         error: 'Failed to fetch categories',
         details: error instanceof Error ? error.message : String(error)
       },
-      { status: 500 }
+      { status: 200 } // Return 200 with error info instead of 500 to prevent JSON parsing issues
     )
   }
 } 

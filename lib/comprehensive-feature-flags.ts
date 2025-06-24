@@ -368,6 +368,12 @@ export function arePodsEnabled(): boolean {
     return envFeatureFlags.getFlag('quizzes')
   }
   
+  export function isDocumentationSectionEnabled(): boolean {
+    // Currently use the betaFeatures flag to gate documentation section.
+    // Adjust in future if a dedicated flag is added.
+    return envFeatureFlags.getFlag('betaFeatures')
+  }
+  
   // Make available globally in development
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     (window as any).envFeatureFlags = envFeatureFlags

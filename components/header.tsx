@@ -365,7 +365,7 @@ export function Header({
             <div className="flex items-center gap-8">
               <Link 
                 href="/" 
-                className="group hover:opacity-80 transition-opacity flex items-center"
+                className="group hover:opacity-80 transition-opacity flex items-center link-none"
               >
                 <div className="flex items-center gap-2">
                   <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -463,7 +463,7 @@ export function Header({
           <div className="sm:hidden fixed top-0 left-0 right-0 z-[95] bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 shadow-xl max-h-screen overflow-y-auto">
             {/* Header in mobile menu */}
             <div className="flex items-center justify-between px-3 h-16 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 link-none">
                 <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   CivicSense
                 </div>
@@ -508,7 +508,7 @@ export function Header({
           <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16">
             <Link 
               href="/" 
-              className="group hover:opacity-80 transition-opacity flex items-center"
+              className="group hover:opacity-80 transition-opacity flex items-center link-none"
             >
               <div className="flex items-center gap-2">
                 <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">

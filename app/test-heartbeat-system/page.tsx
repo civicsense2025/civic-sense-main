@@ -26,10 +26,28 @@ import { useEnhancedMultiplayerRoom } from '@/hooks/useEnhancedMultiplayerRoom'
 import { multiplayerOperations } from '@/lib/multiplayer'
 import { useToast } from '@/hooks/use-toast'
 
+// Force dynamic rendering since this page uses client-side providers
+export const dynamic = 'force-dynamic'
+
 export default function HeartbeatTestPage() {
   const { user } = useAuth()
   const { getOrCreateGuestToken } = useGuestAccess()
-  const { connection } = useConnection()
+  
+  // Handle connection provider not being available during SSR
+  let connection
+  try {
+    connection = useConnection().connection
+  } catch (error) {
+    // Fallback connection object for SSR/build time
+    connection = {
+      status: 'offline' as const,
+      quality: 'poor' as const,
+      latency: 0,
+      reconnectAttempts: 0,
+      lastConnected: null
+    }
+  }
+  
   const { toast } = useToast()
   
   const [testRoomId, setTestRoomId] = useState('')
