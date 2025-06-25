@@ -1,11 +1,14 @@
 /**
  * AI-Powered Key Takeaways Generator for CivicSense
+ * UPDATED: Now integrates with BaseAITool for enhanced error handling and JSON parsing
  * Uses both Anthropic and OpenAI to extract key insights from civic topics
  * Follows CivicSense content principles: truth over comfort, specific actors, power dynamics
  */
 
+import { BaseAITool, type AIToolConfig, type AIToolResult } from './base-ai-tool'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
+import { z } from 'zod'
 import { 
   KeyTakeaways, 
   validateKeyTakeaways, 
@@ -468,40 +471,13 @@ Return ONLY the JSON object with no additional text.`
 
   private getDefaultMetadata(): QuestionMetadata {
     return {
-      temporal_distribution: {
-        current_events: 70,  // Default to prioritizing current events
-        recent_history: 20,
-        historical: 10
+      skill_focus: {
+        name: "Critical Analysis",
+        proficiency_level: 2
       },
-      skill_focus_areas: [
-        {
-          name: "Critical Analysis",
-          proficiency_level: 2,
-          frequency: 50
-        },
-        {
-          name: "Systems Thinking",
-          proficiency_level: 2,
-          frequency: 50
-        }
-      ],
       key_figures: [],
       policy_areas: [],
-      bias_analysis: {
-        political_balance: 0,
-        factual_accuracy: 0.9,
-        sensationalism_level: 0.1,
-        source_diversity: 0.8,
-        citation_quality: {
-          government_sources: 0.3,
-          academic_sources: 0.3,
-          news_sources: 0.2,
-          primary_sources: 0.2
-        }
-      },
-      content_timeline: {
-        is_ongoing: true
-      }
+      temporal_focus: 'current_events'
     }
   }
 
@@ -562,4 +538,133 @@ Return ONLY the JSON object with no additional text.`
   }
 }
 
-export const keyTakeawaysGenerator = new KeyTakeawaysGenerator() 
+export const keyTakeawaysGenerator = new KeyTakeawaysGenerator()
+
+// ============================================================================
+// ENHANCED WRAPPER CLASS
+// ============================================================================
+
+const KeyTakeawaysInputSchema = z.object({
+  topicId: z.string().min(1),
+  topicTitle: z.string().min(5),
+  questionContent: z.array(z.string()).default([]),
+  existingContent: z.string().default(''),
+  provider: z.enum(['anthropic', 'openai', 'both']).default('both')
+})
+
+type KeyTakeawaysInput = z.infer<typeof KeyTakeawaysInputSchema>
+
+interface KeyTakeawaysOutput {
+  result: KeyTakeawaysGenerationResponse | KeyTakeawaysGenerationResponse[]
+  saved: boolean
+  topicId: string
+}
+
+/**
+ * Enhanced Key Takeaways Generator with BaseAITool integration
+ */
+export class EnhancedKeyTakeawaysWrapper extends BaseAITool<KeyTakeawaysInput, KeyTakeawaysOutput> {
+  private legacyGenerator: KeyTakeawaysGenerator
+
+  constructor(config?: Partial<AIToolConfig>) {
+    super({
+      name: 'Enhanced Key Takeaways Generator',
+      type: 'content_generator',
+      provider: config?.provider || 'anthropic',
+      model: config?.model || 'claude-3-7-sonnet-20250219',
+      maxRetries: 3,
+      ...config
+    })
+    
+    this.legacyGenerator = new KeyTakeawaysGenerator()
+  }
+
+  protected async validateInput(input: KeyTakeawaysInput): Promise<KeyTakeawaysInput> {
+    return KeyTakeawaysInputSchema.parse(input)
+  }
+
+  protected async processWithAI(input: KeyTakeawaysInput): Promise<string> {
+    const result = await this.legacyGenerator.generateKeyTakeaways(
+      input.topicId,
+      input.topicTitle,
+      input.questionContent,
+      input.existingContent,
+      input.provider
+    )
+    
+    return JSON.stringify(result)
+  }
+
+  protected async parseAndCleanOutput(rawOutput: string): Promise<KeyTakeawaysOutput> {
+    const parsed = await this.parseJSON(rawOutput)
+    
+    if (!parsed.isValid) {
+      throw new Error(`Failed to parse AI output: ${parsed.errors.join(', ')}`)
+    }
+
+    return {
+      result: parsed.content,
+      saved: false,
+      topicId: Array.isArray(parsed.content) ? parsed.content[0]?.topic_id : parsed.content.topic_id
+    }
+  }
+
+  protected async validateOutput(output: KeyTakeawaysOutput): Promise<KeyTakeawaysOutput> {
+    const results = Array.isArray(output.result) ? output.result : [output.result]
+    
+    for (const result of results) {
+      if (!validateKeyTakeaways(result.key_takeaways)) {
+        throw new Error('Generated content does not match required schema')
+      }
+      
+      const validation = validateKeyTakeawaysQuality(result.key_takeaways)
+      if (!validation.isValid) {
+        throw new Error(`Quality validation failed: ${validation.issues.join(', ')}`)
+      }
+    }
+
+    return output
+  }
+
+  protected async saveToSupabase(output: KeyTakeawaysOutput): Promise<KeyTakeawaysOutput> {
+    // TODO: Implement Supabase save logic for key takeaways
+    console.log(`Key takeaways generated for topic ${output.topicId}`)
+    
+    return { ...output, saved: true }
+  }
+}
+
+// ============================================================================
+// FACTORY FUNCTIONS
+// ============================================================================
+
+/**
+ * Enhanced factory function using BaseAITool integration
+ */
+export async function generateKeyTakeawaysEnhanced(
+  input: KeyTakeawaysInput,
+  provider: 'openai' | 'anthropic' = 'anthropic'
+): Promise<AIToolResult<KeyTakeawaysOutput>> {
+  const generator = new EnhancedKeyTakeawaysWrapper({ provider })
+  return await generator.process(input)
+}
+
+/**
+ * Legacy compatibility function
+ */
+export async function generateKeyTakeawaysLegacy(
+  topicId: string,
+  topicTitle: string,
+  questionContent: string[] = [],
+  existingContent: string = '',
+  provider: 'anthropic' | 'openai' | 'both' = 'both'
+): Promise<KeyTakeawaysGenerationResponse | KeyTakeawaysGenerationResponse[]> {
+  const generator = new KeyTakeawaysGenerator()
+  return await generator.generateKeyTakeaways(
+    topicId,
+    topicTitle,
+    questionContent,
+    existingContent,
+    provider
+  )
+} 

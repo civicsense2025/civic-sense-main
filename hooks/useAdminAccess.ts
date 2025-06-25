@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 export function useAdminAccess() {
   const { user } = useAuth()
@@ -21,7 +21,7 @@ export function useAdminAccess() {
         setError(null)
 
         // Create the Supabase client
-        const supabase = createClient()
+        // Use the singleton supabase client (already imported above)
         
         // Check if user has admin privileges in the profiles table
         const { data: profile, error } = await supabase

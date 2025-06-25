@@ -162,13 +162,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }} />
         
         {/* PWA meta tags */}
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="CivicSense" />
         
-        {/* ✅ Preload critical assets */}
-        <link rel="preload" href="/icons/icon-32x32.png" as="image" type="image/png" />
-        <link rel="preload" href="/icons/icon-180x180.png" as="image" type="image/png" />
+
       </head>
       <body className={cn(
         'min-h-screen bg-background font-sans antialiased',

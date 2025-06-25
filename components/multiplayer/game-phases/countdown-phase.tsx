@@ -4,13 +4,51 @@ import { useState, useEffect, useRef } from "react"
 import { NPCPersonality } from "@/lib/multiplayer-npcs"
 import { Card } from "@/components/ui/card"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
+import { QuizQuestion } from "@/lib/types/quiz"
 
+// Updated interface to match props from base-multiplayer-engine
 export interface CountdownPhaseProps {
+  currentQuestion: QuizQuestion | undefined
+  countdown: number
+}
+
+// Legacy interface for NPC battles (keep for backward compatibility)
+export interface NPCCountdownPhaseProps {
   opponent: NPCPersonality
   onComplete: () => void
 }
 
-export function CountdownPhase({ opponent, onComplete }: CountdownPhaseProps) {
+export function CountdownPhase({ currentQuestion, countdown }: CountdownPhaseProps) {
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col items-center justify-center min-h-[300px] space-y-8">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-bold">Game Starting Soon!</h2>
+          {currentQuestion && (
+            <p className="text-xl text-muted-foreground">
+              Get ready for the first question...
+            </p>
+          )}
+        </div>
+
+        <div className="text-7xl font-bold animate-pulse text-center">
+          {countdown > 0 ? countdown : "GO!"}
+        </div>
+
+        {currentQuestion && countdown <= 0 && (
+          <div className="text-center">
+            <p className="text-lg text-muted-foreground">
+              First question loading...
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Legacy component for NPC battles
+export function NPCCountdownPhase({ opponent, onComplete }: NPCCountdownPhaseProps) {
   const [countdown, setCountdown] = useState(3)
   const hasCompleted = useRef(false)
 

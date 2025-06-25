@@ -2397,6 +2397,66 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_codes: {
+        Row: {
+          applies_to: Json
+          code: string
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          max_uses_per_user: number | null
+          source_id: string | null
+          source_type: string | null
+          updated_at: string | null
+          uses_count: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applies_to?: Json
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          max_uses_per_user?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applies_to?: Json
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          max_uses_per_user?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       event_research_suggestions: {
         Row: {
           admin_notes: string | null
@@ -8206,6 +8266,78 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_entries: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string | null
+          entry_number: number
+          id: string
+          is_valid: boolean | null
+          is_winner: boolean | null
+          prize_claimed: boolean | null
+          prize_claimed_at: string | null
+          prize_description: string | null
+          prize_tier: number | null
+          survey_incentive_id: string | null
+          survey_response_id: string | null
+          ticket_code: string | null
+          user_id: string | null
+          validation_notes: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          entry_number: number
+          id?: string
+          is_valid?: boolean | null
+          is_winner?: boolean | null
+          prize_claimed?: boolean | null
+          prize_claimed_at?: string | null
+          prize_description?: string | null
+          prize_tier?: number | null
+          survey_incentive_id?: string | null
+          survey_response_id?: string | null
+          ticket_code?: string | null
+          user_id?: string | null
+          validation_notes?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          entry_number?: number
+          id?: string
+          is_valid?: boolean | null
+          is_winner?: boolean | null
+          prize_claimed?: boolean | null
+          prize_claimed_at?: string | null
+          prize_description?: string | null
+          prize_tier?: number | null
+          survey_incentive_id?: string | null
+          survey_response_id?: string | null
+          ticket_code?: string | null
+          user_id?: string | null
+          validation_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_entries_survey_incentive_id_fkey"
+            columns: ["survey_incentive_id"]
+            isOneToOne: false
+            referencedRelation: "survey_incentives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_entries_survey_response_id_fkey"
+            columns: ["survey_response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_validation: {
         Row: {
           content_id: string
@@ -8274,6 +8406,78 @@ export type Database = {
           validation_type?: string
         }
         Relationships: []
+      }
+      reward_fulfillments: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          fulfilled_at: string | null
+          fulfillment_details: Json | null
+          fulfillment_method: string | null
+          id: string
+          notification_sent: boolean | null
+          notification_sent_at: string | null
+          processed_by: string | null
+          reward_data: Json
+          reward_type: string
+          status: string | null
+          survey_incentive_id: string | null
+          survey_response_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          fulfilled_at?: string | null
+          fulfillment_details?: Json | null
+          fulfillment_method?: string | null
+          id?: string
+          notification_sent?: boolean | null
+          notification_sent_at?: string | null
+          processed_by?: string | null
+          reward_data: Json
+          reward_type: string
+          status?: string | null
+          survey_incentive_id?: string | null
+          survey_response_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          fulfilled_at?: string | null
+          fulfillment_details?: Json | null
+          fulfillment_method?: string | null
+          id?: string
+          notification_sent?: boolean | null
+          notification_sent_at?: string | null
+          processed_by?: string | null
+          reward_data?: Json
+          reward_type?: string
+          status?: string | null
+          survey_incentive_id?: string | null
+          survey_response_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_fulfillments_survey_incentive_id_fkey"
+            columns: ["survey_incentive_id"]
+            isOneToOne: false
+            referencedRelation: "survey_incentives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_fulfillments_survey_response_id_fkey"
+            columns: ["survey_response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scenario_characters: {
         Row: {
@@ -9563,6 +9767,96 @@ export type Database = {
           },
         ]
       }
+      survey_incentives: {
+        Row: {
+          authenticated_only: boolean | null
+          completion_required: boolean | null
+          created_at: string | null
+          created_by: string | null
+          credits_config: Json | null
+          description: string | null
+          discount_config: Json | null
+          enabled: boolean | null
+          id: string
+          incentive_types: Json
+          max_rewards: number | null
+          premium_config: Json | null
+          raffle_config: Json | null
+          rewards_given: number | null
+          show_on_completion: boolean | null
+          show_on_start: boolean | null
+          show_progress_reminder: boolean | null
+          survey_id: string | null
+          title: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          authenticated_only?: boolean | null
+          completion_required?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          credits_config?: Json | null
+          description?: string | null
+          discount_config?: Json | null
+          enabled?: boolean | null
+          id?: string
+          incentive_types?: Json
+          max_rewards?: number | null
+          premium_config?: Json | null
+          raffle_config?: Json | null
+          rewards_given?: number | null
+          show_on_completion?: boolean | null
+          show_on_start?: boolean | null
+          show_progress_reminder?: boolean | null
+          survey_id?: string | null
+          title: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          authenticated_only?: boolean | null
+          completion_required?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          credits_config?: Json | null
+          description?: string | null
+          discount_config?: Json | null
+          enabled?: boolean | null
+          id?: string
+          incentive_types?: Json
+          max_rewards?: number | null
+          premium_config?: Json | null
+          raffle_config?: Json | null
+          rewards_given?: number | null
+          show_on_completion?: boolean | null
+          show_on_start?: boolean | null
+          show_progress_reminder?: boolean | null
+          survey_id?: string | null
+          title?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_incentives_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "survey_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_incentives_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_learning_goals: {
         Row: {
           created_at: string | null
@@ -10368,6 +10662,60 @@ export type Database = {
           },
         ]
       }
+      user_credits: {
+        Row: {
+          amount: number
+          created_at: string | null
+          credit_type: string
+          currency: string | null
+          expires_at: string | null
+          id: string
+          redeemed_at: string | null
+          redeemed_for: string | null
+          redemption_details: Json | null
+          source_description: string | null
+          source_id: string | null
+          source_type: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          credit_type?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          redeemed_at?: string | null
+          redeemed_for?: string | null
+          redemption_details?: Json | null
+          source_description?: string | null
+          source_id?: string | null
+          source_type: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          credit_type?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          redeemed_at?: string | null
+          redeemed_for?: string | null
+          redemption_details?: Json | null
+          source_description?: string | null
+          source_id?: string | null
+          source_type?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_custom_decks: {
         Row: {
           created_at: string | null
@@ -10478,6 +10826,57 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      user_discount_usage: {
+        Row: {
+          discount_amount: number | null
+          discount_code_id: string | null
+          final_amount: number | null
+          id: string
+          order_id: string | null
+          original_amount: number | null
+          survey_response_id: string | null
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          final_amount?: number | null
+          id?: string
+          order_id?: string | null
+          original_amount?: number | null
+          survey_response_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          final_amount?: number | null
+          id?: string
+          order_id?: string | null
+          original_amount?: number | null
+          survey_response_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_discount_usage_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_discount_usage_survey_response_id_fkey"
+            columns: ["survey_response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -13086,6 +13485,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_incentive_eligibility: {
+        Args: { user_id_param: string; survey_incentive_id_param: string }
+        Returns: Json
+      }
       check_premium_feature_access: {
         Args: { p_user_id: string; p_feature_name: string }
         Returns: boolean
@@ -13280,6 +13683,10 @@ export type Database = {
         Args: { room_name: string }
         Returns: string
       }
+      generate_ticket_code: {
+        Args: { survey_incentive_id: string }
+        Returns: string
+      }
       get_active_game_session: {
         Args: { room_uuid: string }
         Returns: {
@@ -13325,6 +13732,16 @@ export type Database = {
           rarity: string
           level_requirement: number
           tags: string[]
+        }[]
+      }
+      get_category_stats_batch: {
+        Args: { category_ids: string[] }
+        Returns: {
+          category_id: string
+          topic_count: number
+          question_count: number
+          active_topics: number
+          avg_difficulty: number
         }[]
       }
       get_collection_skills: {
@@ -13538,6 +13955,23 @@ export type Database = {
         Args: { p_question_id: string }
         Returns: Json
       }
+      get_questions_batch: {
+        Args: {
+          p_topic_ids: string[]
+          p_limit_per_topic?: number
+          p_randomize?: boolean
+        }
+        Returns: {
+          topic_id: string
+          question_id: string
+          question: string
+          options: Json
+          correct_answer: string
+          explanation: string
+          difficulty_level: number
+          sources: Json
+        }[]
+      }
       get_recommended_skills_for_user: {
         Args: { p_user_id: string; p_limit?: number }
         Returns: {
@@ -13692,6 +14126,21 @@ export type Database = {
           significance_level: number
         }[]
       }
+      get_topics_with_stats_batch: {
+        Args: { p_category_id?: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          topic_id: string
+          topic_title: string
+          description: string
+          categories: Json
+          question_count: number
+          difficulty_avg: number
+          is_active: boolean
+          created_at: string
+          primary_category_name: string
+          primary_category_emoji: string
+        }[]
+      }
       get_translatable_content_summary: {
         Args: {
           search_term?: string
@@ -13734,6 +14183,10 @@ export type Database = {
           category: string
           rarity: string
         }[]
+      }
+      get_user_credits_balance: {
+        Args: { user_id_param: string; credit_type_param?: string }
+        Returns: number
       }
       get_user_email_preferences: {
         Args: { p_user_id: string }
@@ -13831,6 +14284,19 @@ export type Database = {
           test_type: string | null
           topic_id: string | null
           user_id: string | null
+        }[]
+      }
+      get_user_progress_summary: {
+        Args: { p_user_id: string }
+        Returns: {
+          total_quizzes: number
+          avg_score: number
+          total_time_minutes: number
+          current_streak: number
+          max_streak: number
+          favorite_categories: Json
+          recent_activity: Json
+          performance_trend: Json
         }[]
       }
       get_user_rooms: {

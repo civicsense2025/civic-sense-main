@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     // Static routes with proper priorities and change frequencies
-    const staticRoutes = [
+    const staticRoutes: MetadataRoute.Sitemap = [
       {
         url: SITE_URL,
         lastModified: new Date(),
@@ -41,6 +41,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${SITE_URL}/collections`,
         lastModified: new Date(),
         changeFrequency: 'weekly' as const,
+        priority: 0.8,
+      },
+      // Congressional pages (new!)
+      {
+        url: `${SITE_URL}/congress/bills`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+      },
+      // Civic engagement pages
+      {
+        url: `${SITE_URL}/glossary`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      },
+      {
+        url: `${SITE_URL}/donate`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      },
+      {
+        url: `${SITE_URL}/multiplayer`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      },
+      {
+        url: `${SITE_URL}/civics-test`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
         priority: 0.8,
       },
       // Legal and policy pages
@@ -90,7 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }))
 
-    // Get public figures for their pages
+    // Get public figures for their pages (includes congressional members!)
     const { data: publicFiguresData } = await supabase
       .from('public_figures')
       .select('slug, updated_at')
@@ -102,6 +134,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     })) : []
+
+    // Get congressional bills for their pages (commented out until table exists)
+    // const { data: billsData } = await supabase
+    //   .from('congressional_bills')
+    //   .select('id, updated_at')
+    //   .not('ai_generated_summary', 'is', null)
+    //   .limit(1000) // Limit to most recent 1000 bills for sitemap size
+
+    const billRoutes: Array<{
+      url: string;
+      lastModified: Date;
+      changeFrequency: 'weekly';
+      priority: number;
+    }> = [] // Empty until congressional_bills table is implemented
 
     // Get skills for their pages
     const { data: skillsData } = await supabase
@@ -142,20 +188,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     })) : []
 
+    // Get glossary terms for their pages (commented out until slug column exists)
+    // const { data: glossaryData } = await supabase
+    //   .from('glossary_terms')
+    //   .select('slug, updated_at')
+    //   .eq('is_active', true)
+
+    const glossaryRoutes: Array<{
+      url: string;
+      lastModified: Date;
+      changeFrequency: 'monthly';
+      priority: number;
+    }> = [] // Empty until glossary_terms has slug column
+
     // Combine all routes
     return [
       ...staticRoutes, 
       ...dailyTopicRoutes, 
       ...topicRoutes,
       ...publicFigureRoutes,
+      ...billRoutes,
       ...skillRoutes,
       ...scenarioRoutes,
-      ...collectionRoutes
+      ...collectionRoutes,
+      ...glossaryRoutes
     ]
   } catch (error) {
     console.error("Error generating sitemap:", error)
     // Return at least the static routes if there's an error
-    return [
+    const fallbackRoutes: MetadataRoute.Sitemap = [
       {
         url: SITE_URL,
         lastModified: new Date(),
@@ -187,6 +248,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       },
       {
+        url: `${SITE_URL}/congress/bills`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+      },
+      {
+        url: `${SITE_URL}/glossary`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      },
+      {
         url: `${SITE_URL}/privacy`,
         lastModified: new Date(),
         changeFrequency: 'yearly' as const,
@@ -199,5 +272,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.3,
       }
     ]
+    
+    return fallbackRoutes
   }
 } 

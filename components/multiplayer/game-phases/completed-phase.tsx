@@ -4,10 +4,16 @@ import { NPCPersonality } from "@/lib/multiplayer-npcs"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Trophy, ArrowRight, RotateCw } from "lucide-react"
+import { Trophy, ArrowRight, RotateCw, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+// Updated interface to match props from base-multiplayer-engine
 export interface CompletedPhaseProps {
+  onComplete: () => void
+}
+
+// Legacy interface for NPC battles (keep for backward compatibility)
+export interface NPCCompletedPhaseProps {
   opponent: NPCPersonality
   playerScore: number
   opponentScore: number
@@ -17,7 +23,52 @@ export interface CompletedPhaseProps {
   onExit: () => void
 }
 
-export function CompletedPhase({
+export function CompletedPhase({ onComplete }: CompletedPhaseProps) {
+  return (
+    <div className="space-y-8">
+      <Card className="p-8 text-center">
+        <div className="flex flex-col items-center space-y-6">
+          <div className="text-6xl">
+            🎉
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold">
+              Game Complete!
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Great job learning about civic topics together!
+            </p>
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                // TODO: Implement share functionality
+                console.log('Share results')
+              }}
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Share Results
+            </Button>
+            <Button
+              size="lg"
+              onClick={onComplete}
+            >
+              <ArrowRight className="mr-2 h-4 w-4" />
+              Continue
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+// Legacy component for NPC battles
+export function NPCCompletedPhase({
   opponent,
   playerScore,
   opponentScore,
@@ -25,7 +76,7 @@ export function CompletedPhase({
   totalQuestions,
   onPlayAgain,
   onExit
-}: CompletedPhaseProps) {
+}: NPCCompletedPhaseProps) {
   const playerWon = playerScore > opponentScore
   const message = playerWon
     ? opponent.chatMessages.onLosing[Math.floor(Math.random() * opponent.chatMessages.onLosing.length)]

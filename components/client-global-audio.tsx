@@ -23,20 +23,24 @@ class AudioErrorBoundary extends Component<
 
   render() {
     if (this.state.hasError) {
-      return <div style={{ display: 'none' }} />
+      return null // Return null instead of div to avoid DOM issues
     }
 
     return this.props.children
   }
 }
 
-// Simplified dynamic import to avoid webpack issues
+// More reliable dynamic import
 const GlobalAudioControlsComponent = dynamic(
-  () => import('./global-audio-controls').then(mod => ({
-    default: mod.GlobalAudioControls
-  })).catch(() => ({
-    default: () => null
-  })),
+  async () => {
+    try {
+      const mod = await import('./global-audio-controls')
+      return { default: mod.GlobalAudioControls }
+    } catch (error) {
+      console.warn('Global audio controls not available:', error)
+      return { default: () => null }
+    }
+  },
   { 
     ssr: false,
     loading: () => null
@@ -45,13 +49,17 @@ const GlobalAudioControlsComponent = dynamic(
 
 export function ClientGlobalAudio() {
   const [isClient, setIsClient] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
+    // Small delay to ensure full hydration
+    const timer = setTimeout(() => setIsReady(true), 100)
+    return () => clearTimeout(timer)
   }, [])
 
-  // Don't render on server or before hydration
-  if (!isClient || typeof window === 'undefined') {
+  // Don't render on server or before full hydration
+  if (!isClient || !isReady || typeof window === 'undefined') {
     return null
   }
 

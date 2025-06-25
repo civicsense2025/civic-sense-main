@@ -2,7 +2,14 @@ import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { envFeatureFlags } from '@/lib/env-feature-flags'
 import { createClient } from '@/lib/supabase/server'
-import { MultiplayerMarketingClient } from './marketing-client'
+import MultiplayerMarketing from './marketing-client'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Multiplayer | CivicSense',
+  description: 'Challenge friends and test your civic knowledge in real-time multiplayer quizzes.',
+  robots: 'noindex, nofollow',
+}
 
 // Replace isMultiplayerEnabled with direct usage
 const isMultiplayerEnabled = envFeatureFlags.getFlag('multiplayer')
@@ -31,7 +38,7 @@ export default async function MultiplayerMarketingPage() {
           </div>
         </div>
       }>
-        <MultiplayerMarketingClient />
+        <MultiplayerMarketing />
       </Suspense>
     </div>
   )

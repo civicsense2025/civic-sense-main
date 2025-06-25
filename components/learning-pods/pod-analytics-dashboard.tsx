@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Users, BarChart3, Star, Activity, TrendingUp, TrendingDown, Calendar, Clock, Target } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 // ============================================================================
@@ -122,7 +122,7 @@ export function PodAnalyticsDashboard({ podId, className }: PodAnalyticsDashboar
       setIsLoading(true)
       setError(null)
 
-      const supabase = createClient()
+      // Use the singleton supabase client (already imported above)
       
       // 1. Get pod member analytics
       const { data: memberAnalytics, error: memberError } = await supabase

@@ -94,7 +94,8 @@ function RealTimeNewsDemo() {
         }
         return prev + 2
       })
-    }, 80)
+    }, 200)
+    
     return () => clearInterval(interval)
   }, [])
 
@@ -315,7 +316,7 @@ function MultiplayerDemo() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.8 }}
                           transition={{ duration: 2.0 }}
-                          className="text-green-400 font-bold text-lg bg-green-900/20 px-2 py-1 rounded-md border border-green-400/30"
+                          className="text-yellow-900 dark:text-yellow-100 font-bold text-sm bg-yellow-400 px-2 py-0.5 rounded-lg border border-yellow-500/50 shadow-sm"
                         >
                           +{player.xpGain}
                         </motion.div>
@@ -603,7 +604,10 @@ function CivicsBeforeAfterSlider() {
 
 export function FeaturesShowcase() {
   return (
-    <section className="py-24 sm:py-32 lg:py-40 bg-white dark:bg-slate-950 relative overflow-hidden">
+    <section 
+      id="democracy-decoded-section"
+      className="py-24 sm:py-32 lg:py-40 bg-white dark:bg-slate-950 relative overflow-hidden"
+    >
       {/* Background decoration */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-slate-500/5 rounded-full blur-3xl"></div>
@@ -637,7 +641,38 @@ export function FeaturesShowcase() {
         {/* Features */}
         <div className="space-y-32 lg:space-y-40">
           
-          {/* Real-time News */}
+          {/* Textbook vs. Reality - First on mobile */}
+          <motion.div 
+            className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center"
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="lg:order-2 space-y-8">
+              <h3 className="text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight">
+                Textbook vs. Reality
+              </h3>
+              <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">
+                See the uncomfortable truths they don't teach in school. Drag to reveal how power really works.
+              </p>
+              <div className="flex gap-6">
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-lg">🚨</span>
+                  <span>Uncomfortable truths</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-lg">🎯</span>
+                  <span>Actionable steps</span>
+                </div>
+              </div>
+            </div>
+            <div className="lg:order-1">
+              <CivicsBeforeAfterSlider />
+            </div>
+          </motion.div>
+
+          {/* Real-time News - Second on mobile */}
           <motion.div 
             className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center"
             initial={{ opacity: 0, y: 60 }}
@@ -668,7 +703,7 @@ export function FeaturesShowcase() {
             </div>
           </motion.div>
 
-          {/* Multiplayer Learning */}
+          {/* Multiplayer Learning - Third on mobile */}
           <motion.div 
             className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center"
             initial={{ opacity: 0, y: 60 }}
@@ -696,37 +731,6 @@ export function FeaturesShowcase() {
             </div>
             <div className="lg:order-1">
               <MultiplayerDemo />
-            </div>
-          </motion.div>
-
-          {/* Uncomfortable Truths */}
-          <motion.div 
-            className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center"
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="space-y-8">
-              <h3 className="text-3xl lg:text-4xl font-light text-slate-900 dark:text-white leading-tight">
-                Textbook vs. Reality
-              </h3>
-              <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                See the uncomfortable truths they don't teach in school. Drag to reveal how power really works.
-              </p>
-              <div className="flex gap-6">
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <span className="text-lg">🚨</span>
-                  <span>Uncomfortable truths</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <span className="text-lg">🎯</span>
-                  <span>Actionable steps</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <CivicsBeforeAfterSlider />
             </div>
           </motion.div>
 

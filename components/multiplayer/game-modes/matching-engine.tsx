@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { BaseMultiplayerEngine, GAME_MODE_CONFIGS, type BaseMultiplayerEngineProps } from "./base-multiplayer-engine"
 import { MatchingQuestion } from "@/components/quiz/question-types/matching"
+import type { QuizQuestion, MatchingQuestion as MatchingQuestionType } from "@/lib/types/quiz"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -125,9 +126,10 @@ export function MatchingEngine(props: BaseMultiplayerEngineProps) {
 
   const initializeMatching = useCallback(() => {
     const currentQuestion = props.questions[currentQuestionIndex]
-    if (!currentQuestion || !currentQuestion.matching_pairs) return
+    if (!currentQuestion || currentQuestion.type !== 'matching') return
 
-    const totalPairs = currentQuestion.matching_pairs.length
+    const matchingQuestion = currentQuestion as MatchingQuestionType
+    const totalPairs = matchingQuestion.matching_pairs.length
     setMatchingState(prev => ({
       ...prev,
       totalMatches: totalPairs,
@@ -654,7 +656,7 @@ export function MatchingEngine(props: BaseMultiplayerEngineProps) {
         {/* Main Matching Question */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            {currentQuestion && currentQuestion.matching_pairs ? (
+            {currentQuestion && currentQuestion.type === 'matching' ? (
               <MatchingQuestion
                 question={currentQuestion}
                 onAnswer={handleMatchingAnswer}

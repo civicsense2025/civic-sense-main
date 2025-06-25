@@ -24,7 +24,7 @@ import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { supabase } from "@/lib/supabase/client"
 import { StartQuizButton } from "@/components/start-quiz-button"
-import { UnifiedTopicNavigation } from "@/components/quiz/unified-topic-navigation"
+
 import { UnlockTimer } from "@/components/ui/unlock-timer"
 import { DailyCardSkeleton, DailyCardCompactSkeleton, DailyCardTransitionSkeleton } from "@/components/ui/skeleton"
 
@@ -216,6 +216,7 @@ interface DailyCardStackProps {
   onAuthRequired?: () => void
   showGuestBanner?: boolean
   onLoadingStateChange?: (isReady: boolean) => void
+  onCurrentTopicChange?: (currentTopic: TopicMetadata | null, allTopics: TopicMetadata[]) => void
 }
 
 interface OrganizedTopics {
@@ -399,6 +400,7 @@ export function DailyCardStack({
   onAuthRequired,
   showGuestBanner = true,
   onLoadingStateChange,
+  onCurrentTopicChange,
 }: DailyCardStackProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -434,10 +436,16 @@ export function DailyCardStack({
   const [currentStackIndex, setCurrentStackIndex] = useState(0)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [visibleTopicsCount, setVisibleTopicsCount] = useState(20)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5) // Load 5 topics at a time
+  const [hasMoreTopics, setHasMoreTopics] = useState(true)
+  const [allTopicsLoaded, setAllTopicsLoaded] = useState(false)
+  
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownSearch, setDropdownSearch] = useState("")
   const [debouncedDropdownSearch, setDebouncedDropdownSearch] = useState("")
-  const supabaseClientRef = useRef<any>(null)
   const [trendingQueries, setTrendingQueries] = useState<string[]>([])
   const prevIndexRef = useRef(0)
   
@@ -581,6 +589,201 @@ export function DailyCardStack({
     dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'short' }) || '',
     description: topic.description
   }))
+
+  // Load more topics function
+  const loadMoreTopics = useCallback(async () => {
+    if (isLoadingMoreTopics || allTopicsLoaded) return
+    
+    try {
+      setIsLoadingMoreTopics(true)
+      console.log(`📚 Loading more topics - page ${currentPage + 1}`)
+      
+      // Calculate offset for pagination
+      const offset = currentPage * itemsPerPage
+      
+      // Load next batch of topics
+      const { data: moreTopicsData, error } = await supabase
+        .from('question_topics')
+        .select('*')
+        .eq('is_active', true)
+        .not('date', 'is', null)
+        .order('date', { ascending: false })
+        .range(offset, offset + itemsPerPage - 1)
+      
+      if (error) {
+        console.error('Error loading more topics:', error)
+        return
+      }
+      
+      const moreTopics = (moreTopicsData || []).map(topic => ({
+        ...topic,
+        categories: Array.isArray(topic.categories) ? topic.categories : []
+      })) as unknown as TopicMetadata[]
+      
+      if (moreTopics.length === 0) {
+        setAllTopicsLoaded(true)
+        setHasMoreTopics(false)
+        console.log('📚 No more topics to load')
+        return
+      }
+      
+      // Check for duplicates and add new topics
+      setTopicsList(prevTopics => {
+        const existingIds = new Set(prevTopics.map(t => t.topic_id))
+        const newTopics = moreTopics.filter(t => !existingIds.has(t.topic_id))
+        
+        if (newTopics.length > 0) {
+          console.log(`📚 Loaded ${newTopics.length} more topics (page ${currentPage + 1})`)
+          return [...prevTopics, ...newTopics]
+        }
+        return prevTopics
+      })
+      
+      setCurrentPage(prev => prev + 1)
+      
+      // Check if we've reached the end
+      if (moreTopics.length < itemsPerPage) {
+        setAllTopicsLoaded(true)
+        setHasMoreTopics(false)
+      }
+      
+    } catch (error) {
+      console.error('Error in loadMoreTopics:', error)
+    } finally {
+      setIsLoadingMoreTopics(false)
+    }
+  }, [currentPage, itemsPerPage, isLoadingMoreTopics, allTopicsLoaded])
+
+  // Helper function to check for topics without questions
+  const checkTopicsForQuestions = useCallback(async (topics: TopicMetadata[]) => {
+    const topicsWithoutQuestionsSet = new Set<string>()
+    
+    for (const topic of topics) {
+      try {
+        // Don't load all questions, just check if they exist
+        const hasQuestions = await dataService.checkTopicHasQuestions(topic.topic_id)
+        if (!hasQuestions) {
+          topicsWithoutQuestionsSet.add(topic.topic_id)
+        }
+      } catch (error) {
+        console.warn(`Error checking questions for topic ${topic.topic_id}:`, error)
+        topicsWithoutQuestionsSet.add(topic.topic_id)
+      }
+    }
+    
+    setTopicsWithoutQuestions(topicsWithoutQuestionsSet)
+  }, [])
+
+  // Optimized initial loading - load only the 5 most recent topics
+  useEffect(() => {
+    let isCancelled = false
+
+    const loadInitialTopics = async () => {
+      try {
+        setIsLoadingTopics(true)
+        console.log('📚 Loading initial 5 most recent topics for fast startup...')
+        
+        // Get total count for pagination
+        const { count, error: countError } = await supabase
+          .from('question_topics')
+          .select('*', { count: 'exact', head: true })
+          .filter('date', 'not.is', null)
+          .eq('is_active', true)
+        
+        if (!countError && count) {
+          setTotalTopicsCount(count)
+          console.log(`📊 Total topics available: ${count}`)
+        }
+        
+        // Load only the 5 most recent topics initially
+        const { data: initialTopicsData, error: topicsError } = await supabase
+          .from('question_topics')
+          .select('*')
+          .eq('is_active', true)
+          .not('date', 'is', null)
+          .order('date', { ascending: false })
+          .limit(itemsPerPage)
+        
+        if (topicsError) {
+          console.error('Error loading initial topics:', topicsError)
+          throw topicsError
+        }
+        
+        const initialTopics = (initialTopicsData || []).map(topic => ({
+          ...topic,
+          categories: Array.isArray(topic.categories) ? topic.categories : []
+        })) as unknown as TopicMetadata[]
+        
+        if (!isCancelled && initialTopics.length > 0) {
+          console.log(`📚 Loaded ${initialTopics.length} initial topics`)
+          setTopicsList(initialTopics)
+          
+          // Set pagination state
+          setCurrentPage(1)
+          setHasMoreTopics(initialTopics.length === itemsPerPage && (count || 0) > itemsPerPage)
+          setAllTopicsLoaded(initialTopics.length < itemsPerPage)
+          
+          // Notify parent that we have content ready
+          onLoadingStateChange?.(true)
+        } else if (!isCancelled) {
+          console.log('📚 No initial topics found')
+          setTopicsList([])
+          setHasMoreTopics(false)
+          setAllTopicsLoaded(true)
+          onLoadingStateChange?.(true)
+        }
+        
+      } catch (error) {
+        console.error('Error in loadInitialTopics:', error)
+        if (!isCancelled) {
+          setTopicsList([])
+          setTotalTopicsCount(0)
+          setHasMoreTopics(false)
+          setAllTopicsLoaded(true)
+          onLoadingStateChange?.(true)
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingTopics(false)
+        }
+      }
+    }
+
+    loadInitialTopics()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [itemsPerPage, onLoadingStateChange])
+
+  useEffect(() => {
+    const topicParam = searchParams.get('topic')
+    if (topicParam && allFilteredTopics.length > 0) {
+      const topicIndex = allFilteredTopics.findIndex(topic => topic.topic_id === topicParam)
+      if (topicIndex !== -1) {
+        setCurrentStackIndex(topicIndex)
+      }
+    }
+  }, [searchParams, allFilteredTopics])
+
+  useEffect(() => {
+    if (autoPlayEnabled && allFilteredTopics.length > 0 && currentStackIndex < allFilteredTopics.length) {
+      const currentTopic = allFilteredTopics[currentStackIndex]
+      if (currentTopic) {
+        const readableContent = `${currentTopic.topic_title}. ${currentTopic.description || ''}`
+        const timer = setTimeout(async () => {
+          try {
+            await readContentWithSettings(readableContent)
+          } catch (error) {
+            console.warn('Auto-play failed:', error)
+          }
+        }, 300)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [currentStackIndex, allFilteredTopics.length, autoPlayEnabled]) // Remove readContentWithSettings dependency
+
+
 
   // Now all useCallback hooks that depend on allFilteredTopics
   const updateUrlWithTopic = useCallback((index: number) => {
@@ -732,290 +935,152 @@ export function DailyCardStack({
     router.push(`/quiz/${topicId}`)
   }, [topicsList, getTopicAccessStatus, user, recordQuizAttempt, router, onAuthRequired])
 
-  // Helper function to check for topics without questions
-  const checkTopicsForQuestions = useCallback(async (topics: TopicMetadata[]) => {
-    const topicsWithoutQuestionsSet = new Set<string>()
+  // Add scroll handler for dropdown
+  const handleDropdownScroll = useCallback(() => {
+    if (debouncedDropdownSearch) return // no progressive loading while searching
+    if (!dropdownRef.current) return
     
-    for (const topic of topics) {
-      try {
-        // Don't load all questions, just check if they exist
-        const hasQuestions = await dataService.checkTopicHasQuestions(topic.topic_id)
-        if (!hasQuestions) {
-          topicsWithoutQuestionsSet.add(topic.topic_id)
-        }
-      } catch (error) {
-        console.warn(`Error checking questions for topic ${topic.topic_id}:`, error)
-        topicsWithoutQuestionsSet.add(topic.topic_id)
+    const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current
+    const scrollPosition = scrollTop + clientHeight
+    
+    // If scrolled to 80% of the way down, load more topics
+    if (scrollPosition > scrollHeight * 0.8 && visibleTopicsCount < allFilteredTopics.length) {
+      setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
+      
+      // Load more topics through pagination if we're running low
+      if (hasMoreTopics && !isLoadingMoreTopics && allFilteredTopics.length < totalTopicsCount) {
+        console.log(`📚 Loading more topics through pagination: currently have ${allFilteredTopics.length} of ${totalTopicsCount} total`)
+        loadMoreTopics()
       }
     }
-    
-    setTopicsWithoutQuestions(topicsWithoutQuestionsSet)
-  }, [])
+  }, [debouncedDropdownSearch, visibleTopicsCount, allFilteredTopics.length, hasMoreTopics, isLoadingMoreTopics, totalTopicsCount, loadMoreTopics])
 
-  // Keep track of loaded date ranges to avoid duplicate loading
-  const [loadedDateRanges, setLoadedDateRanges] = useState<Set<string>>(new Set())
-
-  // Lazy load topics for a specific date range
-  const loadTopicsForDateRange = useCallback(async (startDate: Date, endDate: Date) => {
-    const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
-    
-    // Skip if we've already loaded this range
-    if (loadedDateRanges.has(rangeKey)) {
-      return
-    }
-
-    try {
-      setIsLoadingTopics(true)
-      
-      // Load both date range topics and featured topics (to ensure featured are always available)
-      const [topicsData, featuredTopicsData] = await Promise.all([
-        dataService.getTopicsInRange(startDate, endDate),
-        dataService.getFeaturedTopics()
-      ])
-      
-      let newRangeTopics: TopicMetadata[] = Object.values(topicsData)
-      const featuredTopics: TopicMetadata[] = Object.values(featuredTopicsData)
-      
-      // If range loading didn't give us many new topics, try loading ALL topics
-      if (newRangeTopics.length < 50) {
-        console.log(`📚 Range lazy load only got ${newRangeTopics.length} topics, trying ALL topics`)
-        const allTopicsData = await dataService.getAllTopics()
-        newRangeTopics = Object.values(allTopicsData)
-      }
-      
-      // Combine and deduplicate new topics
-      const combinedNewTopics = [...newRangeTopics, ...featuredTopics]
-      
-      // First, deduplicate within the new topics themselves
-      const newTopicsSeenIds = new Set<string>()
-      const deduplicatedNewTopics = combinedNewTopics.filter(topic => {
-        if (!topic?.topic_id) return false
-        if (newTopicsSeenIds.has(topic.topic_id)) {
-          console.log(`🔍 Removing duplicate in lazy load: ${topic.topic_id}`)
-          return false
+  // Reset visible topics & search when dropdown opens and scroll to current item
+  useEffect(() => {
+    if (dropdownOpen) {
+      setVisibleTopicsCount(20)
+      setDropdownSearch("")
+      // Ensure current topic is visible & centered
+      setVisibleTopicsCount((prev) => Math.max(prev, currentStackIndex + 1))
+      // Scroll after DOM paint
+      requestAnimationFrame(() => {
+        const container = dropdownRef.current
+        if (!container) return
+        const currentEl = container.querySelector(`[data-topic-index="${currentStackIndex}"]`) as HTMLElement | null
+        if (currentEl) {
+          container.scrollTop = currentEl.offsetTop - container.clientHeight / 2
         }
-        newTopicsSeenIds.add(topic.topic_id)
-        return true
       })
-      
-      // Merge with existing topics (avoid duplicates with existing list)
-      setTopicsList(prevTopics => {
-        const existingIds = new Set(prevTopics.map(t => t.topic_id))
-        const uniqueNewTopics = deduplicatedNewTopics.filter(t => !existingIds.has(t.topic_id))
-        
-        if (uniqueNewTopics.length > 0) {
-          console.log(`📚 Lazy loaded ${uniqueNewTopics.length} new unique topics (${combinedNewTopics.length - deduplicatedNewTopics.length} internal dupes removed, ${deduplicatedNewTopics.length - uniqueNewTopics.length} existing dupes filtered)`)
-          return [...prevTopics, ...uniqueNewTopics].sort((a, b) => {
-            const dateA = new Date(a.date || '').getTime()
-            const dateB = new Date(b.date || '').getTime()
-            return dateB - dateA // Most recent first
-          })
-        }
-        return prevTopics
-      })
-      
-      // Mark this range as loaded
-      setLoadedDateRanges(prev => new Set([...prev, rangeKey]))
-      
-      // Check questions for new topics (but limit the number to avoid performance issues)
-      if (process.env.NODE_ENV !== 'development' && deduplicatedNewTopics.length > 0 && deduplicatedNewTopics.length < 20) {
-        await checkTopicsForQuestions(deduplicatedNewTopics)
-      }
-    } catch (error) {
-      console.error('Error lazy loading topics:', error)
-    } finally {
-      setIsLoadingTopics(false)
     }
-  }, [loadedDateRanges, checkTopicsForQuestions])
+  }, [dropdownOpen, currentStackIndex])
 
-  // Enhanced loading with lazy loading support
+  // Fetch trending queries when dropdown opens
   useEffect(() => {
     let isCancelled = false
 
-    const loadInitialTopics = async () => {
+    const fetchTrending = async () => {
+      if (!dropdownOpen || trendingQueries.length > 0) return
       try {
-        setIsLoadingTopics(true)
-        
-        // First, get the total count of all topics to show correct pagination
-        try {
-          // Try to get count efficiently from database
-          if (!supabaseClientRef.current) {
-            supabaseClientRef.current = supabase
-          }
-          
-          // Get count of ALL active topics with valid dates (not just a limited range)
-          const { count, error } = await supabaseClientRef.current
-            .from('question_topics')
-            .select('*', { count: 'exact', head: true })
-            .filter('date', 'not.is', null)
-            .eq('is_active', true)
-          
-          if (error) throw error
-          
-          const totalCount = count || 0
-          if (!isCancelled) {
-            setTotalTopicsCount(totalCount)
-            console.log(`📊 Total active topics available in database: ${totalCount}`)
-          }
-        } catch (countError) {
-          console.warn('Could not get total topics count from database, falling back:', countError)
-          // Fallback to loading all topics for count
-          try {
-            const allTopicsData = await dataService.getAllTopics()
-            const totalCount = Object.keys(allTopicsData).length
-            if (!isCancelled) {
-              setTotalTopicsCount(totalCount)
-              console.log(`📊 Total topics available (fallback method): ${totalCount}`)
-            }
-          } catch (fallbackError) {
-            console.warn('Could not get total topics count:', fallbackError)
-            setTotalTopicsCount(0)
-          }
-        }
-        
-        // First, load priority content: featured topics (always show) and today's topics
-        const today = getTodayAtMidnight()
-        
-        // Load featured topics first (they should always be visible regardless of date)
-        const featuredTopicsData = await dataService.getFeaturedTopics()
-        const featuredTopics: TopicMetadata[] = Object.values(featuredTopicsData)
-        
-        // Load today's topics (prioritized with breaking news first)
-        const todaysTopicsData = await dataService.getTopicsForDate(today)
-        const todaysTopics: TopicMetadata[] = Object.values(todaysTopicsData)
-        
-        console.log(`📚 Priority load: ${featuredTopics.length} featured topics, ${todaysTopics.length} topics for today (${today.toDateString()})`)
-        
-        // Then load topics for a much broader range to ensure we get all content
-        const startDate = new Date(today.getTime() - 180 * 24 * 60 * 60 * 1000) // 6 months ago  
-        const endDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)    // 3 months ahead
-        
-        let rangeTopicsData = await dataService.getTopicsInRange(startDate, endDate)
-        let rangeTopics: TopicMetadata[] = Object.values(rangeTopicsData)
-        
-        // If we don't have many topics from the range, load ALL topics as fallback
-        if (rangeTopics.length < 100) {
-          console.log(`📚 Range only returned ${rangeTopics.length} topics, loading ALL topics as fallback`)
-          const allTopicsData = await dataService.getAllTopics()
-          rangeTopics = Object.values(allTopicsData)
-        }
-        
-        // Filter out today's topics and featured topics from range to avoid duplicates
-        const todayString = today.toISOString().split('T')[0]
-        const featuredIds = new Set(featuredTopics.map(t => t.topic_id))
-        const todayIds = new Set(todaysTopics.map(t => t.topic_id))
-        const otherRangeTopics = rangeTopics.filter(topic => 
-          topic.date !== todayString && 
-          !featuredIds.has(topic.topic_id) &&
-          !todayIds.has(topic.topic_id)
-        )
-        
-        // Combine all topics with deduplication
-        const combinedTopics = [
-          ...featuredTopics, // Featured topics (will be sorted with breaking featured first)
-          ...todaysTopics, // Today's topics (already sorted with breaking news first)
-          ...otherRangeTopics.sort((a, b) => {
-            const dateA = new Date(a.date || '').getTime()
-            const dateB = new Date(b.date || '').getTime()
-            return dateB - dateA // Most recent first
-          })
+        // TODO: Implement trending_searches table and increment_trending_query function
+        // For now, use static trending queries
+        const staticTrendingQueries = [
+          "Constitution",
+          "Voting Rights", 
+          "Supreme Court",
+          "Congressional Powers",
+          "Electoral College"
         ]
         
-        // DEDUPLICATION: Remove duplicate topics by topic_id
-        const seenIds = new Set<string>()
-        const allTopics = combinedTopics.filter(topic => {
-          if (!topic?.topic_id) return false // Filter out topics without IDs
-          if (seenIds.has(topic.topic_id)) {
-            console.log(`🔍 Removing duplicate topic: ${topic.topic_id} - ${topic.topic_title}`)
-            return false
-          }
-          seenIds.add(topic.topic_id)
-          return true
-        })
-        
-        if (isCancelled) return
-        
-        setTopicsList(allTopics)
-        
-        console.log(`📚 Initial load complete: ${allTopics.length} loaded topics (${featuredTopics.length} featured, ${todaysTopics.length} for today, ${otherRangeTopics.length} surrounding dates)`)
-        console.log(`📊 Database total: ${totalTopicsCount} topics | Range load: ${rangeTopics.length} topics | Successfully loaded: ${allTopics.length}`)
-        
-        if (allTopics.length < totalTopicsCount) {
-          console.log(`⚠️ Note: Only loaded ${allTopics.length} of ${totalTopicsCount} total topics. More will load dynamically as needed.`)
-        }
-        
-        // Mark both today and the range as loaded
-        const todayKey = `${todayString}_${todayString}`
-        const rangeKey = `${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}`
-        setLoadedDateRanges(new Set([todayKey, rangeKey]))
-        
-        // Only check questions for the initially loaded topics
-        if (process.env.NODE_ENV !== 'development' && !isCancelled && allTopics.length < 50) {
-          await checkTopicsForQuestions(allTopics)
-        }
-      } catch (error) {
         if (!isCancelled) {
-          console.error('Error loading initial topics:', error)
-          // Fallback to loading all topics if date range fails
-          try {
-            const allTopicsData = await dataService.getAllTopics()
-            if (!isCancelled) {
-              const allTopicsArray: TopicMetadata[] = Object.values(allTopicsData)
-              setTopicsList(allTopicsArray)
-              setTotalTopicsCount(allTopicsArray.length)
-              // Mark as "all loaded" so we don't lazy load anymore
-              setLoadedDateRanges(new Set(['all_topics_loaded']))
-              console.log(`📚 Fallback: Loaded all ${allTopicsArray.length} topics`)
-            }
-          } catch (fallbackError) {
-            console.error('Fallback loading failed:', fallbackError)
-            setTopicsList([])
-            setTotalTopicsCount(0)
-          }
+          setTrendingQueries(staticTrendingQueries)
         }
-      } finally {
+      } catch (err) {
         if (!isCancelled) {
-          setIsLoadingTopics(false)
-          // Notify parent that loading is complete
-          onLoadingStateChange?.(true)
+          console.warn("Failed to load trending searches", err)
         }
       }
     }
-
-    loadInitialTopics()
+    
+    if (dropdownOpen) {
+      fetchTrending()
+    }
 
     return () => {
       isCancelled = true
     }
+  }, [dropdownOpen, trendingQueries.length])
+
+  // Helper to record the search query (fire and forget)
+  const recordSearchQuery = useCallback(async (query: string) => {
+    if (!query) return
+    try {
+      // TODO: Implement increment_trending_query RPC function
+      // For now, just log the search query
+      console.log('Search query recorded:', query)
+    } catch (err) {
+      // Silently ignore
+    }
   }, [])
 
+  // Define handleViewportNavigation before any early returns to maintain hook order
+  const handleViewportNavigation = useCallback((direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentStackIndex < allFilteredTopics.length - 1) {
+      const newIndex = currentStackIndex + 1
+      setCurrentStackIndex(newIndex)
+      updateUrlWithTopic(newIndex)
+    } else if (direction === 'next' && currentStackIndex > 0) {
+      const newIndex = currentStackIndex - 1
+      setCurrentStackIndex(newIndex)
+      updateUrlWithTopic(newIndex)
+    }
+  }, [currentStackIndex, allFilteredTopics.length, updateUrlWithTopic])
+
+  // Add missing cardBaseHeight constant
+  const cardBaseHeight = "min-h-[400px] sm:min-h-[500px]"
+
+  // Ensure we land on the latest (most recent) topic when no explicit topic param
+  // Users should be able to see and click through to any topic, but quiz access is controlled separately
   useEffect(() => {
     const topicParam = searchParams.get('topic')
-    if (topicParam && allFilteredTopics.length > 0) {
-      const topicIndex = allFilteredTopics.findIndex(topic => topic.topic_id === topicParam)
-      if (topicIndex !== -1) {
-        setCurrentStackIndex(topicIndex)
-      }
+    if (topicParam) return // user explicitly navigated
+    if (allFilteredTopics.length === 0) return
+    
+    // Always land on the latest topic (index 0, since topics are sorted newest first)
+    // This allows users to see the latest content and navigate to the quiz landing page
+    // The actual quiz start will be controlled by the date-based access logic
+    if (currentStackIndex !== 0) {
+      setCurrentStackIndex(0)
     }
-  }, [searchParams, allFilteredTopics])
+  }, [allFilteredTopics, searchParams, currentStackIndex])
 
+  // Track previous index to determine animation direction
   useEffect(() => {
-    if (autoPlayEnabled && allFilteredTopics.length > 0 && currentStackIndex < allFilteredTopics.length) {
-      const currentTopic = allFilteredTopics[currentStackIndex]
-      if (currentTopic) {
-        const readableContent = `${currentTopic.topic_title}. ${currentTopic.description || ''}`
-        const timer = setTimeout(async () => {
-          try {
-            await readContentWithSettings(readableContent)
-          } catch (error) {
-            console.warn('Auto-play failed:', error)
-          }
-        }, 300)
-        return () => clearTimeout(timer)
-      }
-    }
-  }, [currentStackIndex, allFilteredTopics.length, autoPlayEnabled]) // Remove readContentWithSettings dependency
+    prevIndexRef.current = currentStackIndex
+  }, [currentStackIndex])
 
+  // Notify parent of current topic changes
+  useEffect(() => {
+    if (onCurrentTopicChange) {
+      const currentTopic = allFilteredTopics[currentStackIndex] || null
+      onCurrentTopicChange(currentTopic, allFilteredTopics)
+    }
+  }, [onCurrentTopicChange, allFilteredTopics, currentStackIndex])
+
+  // Load more topics when navigating near the edges of available topics
+  useEffect(() => {
+    if (allFilteredTopics.length === 0 || allTopicsLoaded) return
+
+    // If we're near the end of our loaded topics (within 3 topics of the edge), 
+    // preemptively load more through pagination
+    const isNearEnd = currentStackIndex >= allFilteredTopics.length - 3
+
+    if (isNearEnd && hasMoreTopics && !isLoadingMoreTopics) {
+      console.log('📚 Preloading more topics for navigation...')
+      loadMoreTopics()
+    }
+  }, [currentStackIndex, allFilteredTopics.length, allTopicsLoaded, hasMoreTopics, isLoadingMoreTopics, loadMoreTopics])
+
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target && (e.target as HTMLElement).tagName.match(/INPUT|TEXTAREA|SELECT/)) return
@@ -1059,167 +1124,7 @@ export function DailyCardStack({
     
     window.addEventListener('keydown', handleKeyDown, { passive: false })
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [currentStackIndex, allFilteredTopics.length, handlePrevious, handleNext, getTopicAccessStatus, handleExploreGame]) // Include all dependencies
-
-  // Add scroll handler for dropdown with lazy loading
-  const handleDropdownScroll = useCallback(() => {
-    if (debouncedDropdownSearch) return // no progressive loading while searching
-    if (!dropdownRef.current) return
-    
-    const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current
-    const scrollPosition = scrollTop + clientHeight
-    
-    // If scrolled to 80% of the way down, load more topics
-    if (scrollPosition > scrollHeight * 0.8 && visibleTopicsCount < allFilteredTopics.length) {
-      setVisibleTopicsCount(prev => Math.min(prev + 20, allFilteredTopics.length))
-      
-      // Also trigger lazy loading for more topics if we're running low and haven't loaded all yet
-      if (!loadedDateRanges.has('all_topics_loaded') && allFilteredTopics.length < totalTopicsCount) {
-        // Load more topics from database for future navigation with wider range
-        const today = getTodayAtMidnight()
-        const futureDate = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000) // 6 months ahead
-        const pastDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000)   // 1 year back
-        
-        console.log(`📚 Lazy loading more topics: currently have ${allFilteredTopics.length} of ${totalTopicsCount} total`)
-        loadTopicsForDateRange(pastDate, futureDate)
-      }
-    }
-  }, [debouncedDropdownSearch, visibleTopicsCount, allFilteredTopics.length, loadedDateRanges, loadTopicsForDateRange])
-
-  // Reset visible topics & search when dropdown opens and scroll to current item
-  useEffect(() => {
-    if (dropdownOpen) {
-      setVisibleTopicsCount(20)
-      setDropdownSearch("")
-      // Ensure current topic is visible & centered
-      setVisibleTopicsCount((prev) => Math.max(prev, currentStackIndex + 1))
-      // Scroll after DOM paint
-      requestAnimationFrame(() => {
-        const container = dropdownRef.current
-        if (!container) return
-        const currentEl = container.querySelector(`[data-topic-index="${currentStackIndex}"]`) as HTMLElement | null
-        if (currentEl) {
-          container.scrollTop = currentEl.offsetTop - container.clientHeight / 2
-        }
-      })
-    }
-  }, [dropdownOpen, currentStackIndex])
-
-  // Fetch trending queries when dropdown opens
-  useEffect(() => {
-    let isCancelled = false
-
-    const fetchTrending = async () => {
-      if (!dropdownOpen || !supabaseClientRef.current || trendingQueries.length > 0) return
-      try {
-        const { data, error } = await supabaseClientRef.current
-          .from("trending_searches")
-          .select("query")
-          .order("count", { ascending: false })
-          .limit(5)
-        if (error) throw error
-        if (!isCancelled) {
-          setTrendingQueries((data || []).map((d: any) => d.query))
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          console.warn("Failed to load trending searches", err)
-        }
-      }
-    }
-    
-    if (dropdownOpen) {
-      fetchTrending()
-    }
-
-    return () => {
-      isCancelled = true
-    }
-  }, [dropdownOpen, trendingQueries.length])
-
-  // Helper to record the search query (fire and forget)
-  const recordSearchQuery = useCallback(async (query: string) => {
-    if (!query || !supabaseClientRef.current) return
-    try {
-      await supabaseClientRef.current.rpc("increment_trending_query", { search_query: query })
-    } catch (err) {
-      // Silently ignore
-    }
-  }, [])
-
-  // Define handleViewportNavigation before any early returns to maintain hook order
-  const handleViewportNavigation = useCallback((direction: 'prev' | 'next') => {
-    if (direction === 'prev' && currentStackIndex < allFilteredTopics.length - 1) {
-      const newIndex = currentStackIndex + 1
-      setCurrentStackIndex(newIndex)
-      updateUrlWithTopic(newIndex)
-    } else if (direction === 'next' && currentStackIndex > 0) {
-      const newIndex = currentStackIndex - 1
-      setCurrentStackIndex(newIndex)
-      updateUrlWithTopic(newIndex)
-    }
-  }, [currentStackIndex, allFilteredTopics.length, updateUrlWithTopic])
-
-  // Add missing cardBaseHeight constant
-  const cardBaseHeight = "min-h-[400px] sm:min-h-[500px]"
-
-  // Ensure we land on the latest (most recent) topic when no explicit topic param
-  // Users should be able to see and click through to any topic, but quiz access is controlled separately
-  useEffect(() => {
-    const topicParam = searchParams.get('topic')
-    if (topicParam) return // user explicitly navigated
-    if (allFilteredTopics.length === 0) return
-    
-    // Always land on the latest topic (index 0, since topics are sorted newest first)
-    // This allows users to see the latest content and navigate to the quiz landing page
-    // The actual quiz start will be controlled by the date-based access logic
-    if (currentStackIndex !== 0) {
-      setCurrentStackIndex(0)
-    }
-  }, [allFilteredTopics, searchParams, currentStackIndex])
-
-  // Track previous index to determine animation direction
-  useEffect(() => {
-    prevIndexRef.current = currentStackIndex
-  }, [currentStackIndex])
-
-  // Lazy load more topics when navigating near the edges of available topics
-  useEffect(() => {
-    if (allFilteredTopics.length === 0 || loadedDateRanges.has('all_topics_loaded')) return
-
-    const currentTopic = allFilteredTopics[currentStackIndex]
-    if (!currentTopic?.date) return
-
-    const currentDate = parseTopicDate(currentTopic.date)
-    if (!currentDate) return
-
-    // If we're near the end of our loaded topics (within 10 topics of the edge), 
-    // preemptively load more in that direction
-    const isNearEnd = currentStackIndex >= allFilteredTopics.length - 10
-    const isNearBeginning = currentStackIndex < 10
-
-    if (isNearEnd || isNearBeginning) {
-      const today = getTodayAtMidnight()
-      
-      if (isNearEnd) {
-        // Load older topics (further back in time)
-        const startDate = new Date(currentDate.getTime() - 60 * 24 * 60 * 60 * 1000) // 60 days back from current
-        const endDate = new Date(currentDate.getTime() - 1 * 24 * 60 * 60 * 1000)    // 1 day back from current
-        
-        console.log('📚 Preloading older topics for navigation...')
-        loadTopicsForDateRange(startDate, endDate)
-      }
-      
-      if (isNearBeginning) {
-        // Load newer topics (further forward in time)
-        const startDate = new Date(currentDate.getTime() + 1 * 24 * 60 * 60 * 1000)  // 1 day ahead from current
-        const endDate = new Date(currentDate.getTime() + 60 * 24 * 60 * 60 * 1000)   // 60 days ahead from current
-        
-        console.log('📚 Preloading newer topics for navigation...')
-        loadTopicsForDateRange(startDate, endDate)
-      }
-    }
-  }, [currentStackIndex, allFilteredTopics.length, loadedDateRanges, loadTopicsForDateRange, parseTopicDate])
+  }, [currentStackIndex, allFilteredTopics.length, getTopicAccessStatus, handleExploreGame, updateUrlWithTopic])
 
   // Loading state
   if (isLoadingTopics) {
@@ -1290,26 +1195,7 @@ export function DailyCardStack({
         onAuthRequired={onAuthRequired}
       />
 
-      {/* Viewport Edge Navigation - Only show if we have multiple topics and component is in view */}
-      {allFilteredTopics.length > 1 && navigationTopics.length > 0 && (
-        <div 
-          className={cn(
-            "transition-opacity duration-300",
-            showNavigation ? "opacity-100" : "opacity-0 pointer-events-none"
-          )}
-        >
-          <UnifiedTopicNavigation
-            currentTopic={navigationTopics[currentStackIndex]}
-            allTopics={navigationTopics}
-            onNavigate={handleViewportNavigation}
-            enableKeyboardShortcuts={true}
-            showKeyboardHints={false}
-            variant="viewport"
-          />
-        </div>
-      )}
-
-
+      {/* Viewport Edge Navigation removed - now using StickyQuizNavigation */}
 
       {/* Single Topic Display */}
       <div className="relative">
@@ -1556,6 +1442,8 @@ export function DailyCardStack({
           </div>
         </div>
       </div>
+
+
     </div>
   )
 }

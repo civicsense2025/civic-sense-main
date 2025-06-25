@@ -42,7 +42,6 @@ export function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut
   const { isPremium, subscription } = usePremium()
 
   // Feature flags - always call hooks at the top level
-  const showScenarios = useFeatureFlag('scenarios')
   const showMultiplayer = useFeatureFlag('multiplayer')
   const showLearningPods = useFeatureFlag('learningPods')
   const showMobileMenu = useFeatureFlag('mobileMenu')
@@ -157,12 +156,7 @@ export function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut
             </div>
           )}
 
-          {/* Learning Pods Section - feature flagged */}
-          {showLearningPods && (
-            <div className="mt-4">
-              <LearningPodsStats compact={true} />
-            </div>
-          )}
+
         </div>
       )}
 
@@ -188,40 +182,14 @@ export function MobileUserMenu({ user, onSignInClick, onClose, pathname, signOut
           <span>Categories</span>
         </Link>
 
-        {/* Scenarios link - feature flagged */}
-        {showScenarios && (
-          <Link 
-            href="/scenarios"
-            onClick={onClose}
-            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-          >
-            <span>🎭</span>
-            <span>Scenarios</span>
-          </Link>
-        )}
-
-        {/* Multiplayer link - feature flagged */}
-        {showMultiplayer && (
-          <Link 
-            href="/multiplayer"
-            onClick={onClose}
-            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-          >
-            <span>🎮</span>
-            <span>Multiplayer</span>
-          </Link>
-        )}
-
-        {showLearningPods && (
-          <Link 
-            href="/donate"
-            onClick={onClose}
-            className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
-          >
-            <span>❤️</span>
-            <span>Support</span>
-          </Link>
-        )}
+        <Link 
+          href="/donate"
+          onClick={onClose}
+          className="flex items-center space-x-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors py-2 px-3 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900"
+        >
+          <span>❤️</span>
+          <span>Support</span>
+        </Link>
       </div>
       
       {/* User Menu Items */}
@@ -340,7 +308,6 @@ export function Header({
   const [mounted, setMounted] = useState(false)
 
   // Feature flags - always call hooks at the top level
-  const showScenarios = useFeatureFlag('scenarios')
   const showMultiplayer = useFeatureFlag('multiplayer')
   const showLearningPods = useFeatureFlag('learningPods')
   const showMobileMenu = useFeatureFlag('mobileMenu')
@@ -386,29 +353,17 @@ export function Header({
                 >
                   Learn
                 </Link>
-                {showMultiplayer && (
-                  <Link 
-                    href="/multiplayer" 
-                    className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-                  >
-                    Multiplayer
-                  </Link>
-                )}
-                {showScenarios && (
-                  <Link 
-                    href="/scenarios" 
-                    className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-                  >
-                    Scenarios
-                  </Link>
-                )}
               </nav>
             </div>
 
             {/* Right side - Actions and User Menu */}
             <div className="flex items-center gap-4 flex-shrink-0">
-              {/* Search - moved closer to user menu */}
-              {showGlobalSearch && <EnhancedGlobalSearch />}
+              {/* Search - hidden on mobile, visible on desktop */}
+              {showGlobalSearch && (
+                <div className="hidden md:block">
+                  <EnhancedGlobalSearch />
+                </div>
+              )}
               
               {/* Unclaimed Rewards Notification (for authenticated users) */}
               {user && <UnclaimedRewardsNotification />}
@@ -426,15 +381,14 @@ export function Header({
                     Log In
                   </Button>
                   
-                  {/* Main CTA - Responsive sizing */}
+                  {/* Main CTA - Hidden on mobile */}
                   <Button
                     asChild
                     size="sm"
-                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-4 text-sm font-semibold h-10 whitespace-nowrap"
+                    className="hidden md:flex bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-4 text-sm font-semibold h-10 whitespace-nowrap"
                   >
                     <Link href="/civics-test" className="flex items-center justify-center">
-                      <span className="hidden sm:inline">Take Civics Test</span>
-                      <span className="sm:hidden">Test</span>
+                      Take Civics Test
                     </Link>
                   </Button>
                 </div>

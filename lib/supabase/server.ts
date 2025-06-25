@@ -1,11 +1,25 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import type { Database } from '../database.types'
+
+// Server-side client cache (per request basis is fine for server)
+// We cache it during a single request lifecycle to avoid recreating within the same request
+let currentRequestClient: ReturnType<typeof createServerClient<Database>> | null = null
+let currentRequestId: string | null = null
 
 export const createClient = async () => {
   const { cookies } = await import('next/headers')
 
+  // Generate a simple request ID based on cookies (this changes per request naturally)
   const cookieStore = await cookies() as any
+  const requestId = JSON.stringify(cookieStore.toString?.() || Math.random())
+  
+  // Return cached client if it's for the same request
+  if (currentRequestClient && currentRequestId === requestId) {
+    return currentRequestClient
+  }
 
-  return createServerClient(
+  // Create new client for this request
+  currentRequestClient = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -22,6 +36,9 @@ export const createClient = async () => {
       },
     }
   )
+
+  currentRequestId = requestId
+  return currentRequestClient
 }
 
 export const getCurrentUser = async () => {

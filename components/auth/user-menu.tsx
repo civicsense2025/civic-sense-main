@@ -67,7 +67,6 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
   const { isPremium, subscription } = usePremium()
 
   // Feature flags
-  const showScenarios = useFeatureFlag('scenarios')
   const showMultiplayer = useFeatureFlag('multiplayer')
   const showLearningPods = useFeatureFlag('learningPods')
 
@@ -210,44 +209,11 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
             </DropdownMenuItem>
           )}
 
-                      {envFeatureFlags.getFlag('quizzes') && (
+          {envFeatureFlags.getFlag('quizzes') && (
             <DropdownMenuItem asChild>
               <Link href="/quiz">
                 <Icons.brain className="mr-2 h-4 w-4" />
                 <span>Quiz</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-
-          {showScenarios && (
-            <DropdownMenuItem asChild>
-              <Link href="/scenarios" className="w-full">
-                <div className="flex items-center">
-                  <span className="mr-2">🎭</span>
-                  <span>Scenarios</span>
-                </div>
-              </Link>
-            </DropdownMenuItem>
-          )}
-
-          {showMultiplayer && (
-            <DropdownMenuItem asChild>
-              <Link href="/multiplayer" className="w-full">
-                <div className="flex items-center">
-                  <span className="mr-2">🎮</span>
-                  <span>Multiplayer</span>
-                </div>
-              </Link>
-            </DropdownMenuItem>
-          )}
-
-          {showLearningPods && (
-            <DropdownMenuItem asChild>
-              <Link href="/pods" className="w-full">
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 mr-2" />
-                  <span>Learning Pods</span>
-                </div>
               </Link>
             </DropdownMenuItem>
           )}

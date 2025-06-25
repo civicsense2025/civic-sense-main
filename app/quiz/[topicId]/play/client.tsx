@@ -16,7 +16,7 @@ import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import type { QuizGameMode, QuizResults } from "@/lib/types/quiz"
 import { UserRole } from "@/lib/types/user"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
-import { QuizNavigation } from "@/components/quiz/quiz-navigation"
+
 import { toast } from "@/components/ui/use-toast"
 
 interface QuizPlayClientProps {

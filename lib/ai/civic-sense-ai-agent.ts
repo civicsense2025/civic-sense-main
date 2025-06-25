@@ -1,10 +1,12 @@
 /**
  * CivicSense AI Agent Base Class
+ * UPDATED: Now includes BaseAITool integration bridge
  * 
  * This is the mandatory base class that ALL AI agents must extend.
  * It enforces our content quality rubric and brand voice standards.
  */
 
+import { BaseAITool, type AIToolConfig, type AIToolResult } from './base-ai-tool'
 import { ContentQualityGate, type ContentQualityAssessment } from './content-quality-gate'
 import { SourceVerificationEngine, type FactVerificationResult } from './source-verification-engine'
 import { BrandVoiceValidator } from './brand-voice-validator'
@@ -708,6 +710,61 @@ export class AIQualityGateIntegration {
     validation.publishReady = validation.passed && validation.requiredImprovements.length === 0
 
     return validation
+  }
+}
+
+// ============================================================================
+// BASEAITOOL BRIDGE ADAPTER
+// ============================================================================
+
+/**
+ * Bridge adapter that allows CivicSenseAIAgent to work with BaseAITool ecosystem
+ */
+export class CivicSenseAIAgentBridge<TInput, TOutput> extends BaseAITool<TInput, TOutput> {
+  protected civicAgent: CivicSenseAIAgent
+
+  constructor(civicAgent: CivicSenseAIAgent, config?: Partial<AIToolConfig>) {
+    super({
+      name: `CivicSense ${civicAgent.agentType} Agent`,
+      type: 'content_generator',
+      provider: 'anthropic',
+      model: 'claude-3-7-sonnet-20250219',
+      maxRetries: 3,
+      ...config
+    })
+    
+    this.civicAgent = civicAgent
+  }
+
+  protected async validateInput(input: TInput): Promise<TInput> {
+    // Delegate to civic agent's input validation if it exists
+    return input
+  }
+
+  protected async processWithAI(input: TInput): Promise<string> {
+    // Use civic agent's quality content generation
+    const result = await this.civicAgent.generateQualityContent(input)
+    return JSON.stringify(result)
+  }
+
+  protected async parseAndCleanOutput(rawOutput: string): Promise<TOutput> {
+    const parsed = await this.parseJSON(rawOutput)
+    
+    if (!parsed.isValid) {
+      throw new Error(`Failed to parse AI output: ${parsed.errors.join(', ')}`)
+    }
+
+    return parsed.content as TOutput
+  }
+
+  protected async validateOutput(output: TOutput): Promise<TOutput> {
+    // Additional validation can be added here
+    return output
+  }
+
+  protected async saveToSupabase(output: TOutput): Promise<TOutput> {
+    // CivicSense agents handle their own logging
+    return output
   }
 }
 

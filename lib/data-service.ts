@@ -4,7 +4,7 @@ import { topicOperations, questionOperations, categoryOperations } from './datab
 import type { TopicMetadata, QuizQuestion } from './quiz-data'
 import { allCategories } from './quiz-data'
 import { cleanObjectContent } from './utils'
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 
 // Cache for database availability check
 let isDatabaseAvailable: boolean | null = null
@@ -40,9 +40,9 @@ async function checkDatabaseAvailability(): Promise<boolean> {
       return false
     }
     
-    // Try a simple database query with timeout
+    // Try a simple database query with increased timeout for initial connections
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Database check timeout')), 3000) // 3 second timeout
+      setTimeout(() => reject(new Error('Database check timeout')), 8000) // Increased to 8 seconds
     )
     
     // Use a simple ping query instead of getting all topics

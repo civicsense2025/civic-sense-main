@@ -25,7 +25,7 @@ import {
   UserMinus,
   RefreshCw
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
@@ -126,7 +126,7 @@ export function PodMemberManagement({ podId, userRole, className }: PodMemberMan
   const loadMembers = async () => {
     try {
       setIsLoading(true)
-      const supabase = createClient()
+      // Use the singleton supabase client (already imported above)
 
       // Get pod members with their user details using the new view
       const { data: membersData, error: membersError } = await supabase

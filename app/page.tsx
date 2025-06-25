@@ -15,6 +15,7 @@ import { Header } from '@/components/header'
 import { CategoryCloud } from '@/components/category-cloud'
 import { ContinueQuizCard } from '@/components/continue-quiz-card'
 import { FeaturesShowcase } from '@/components/features-showcase'
+import { StickyQuizNavigation, useStickyQuizNavigation } from '@/components/quiz/sticky-quiz-navigation'
 
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -36,9 +37,7 @@ export default function HomePage() {
   const router = useRouter()
   const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([])
   const [incompleteTopics, setIncompleteTopics] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
-  const [hasLoadedTopics, setHasLoadedTopics] = useState(false)
   const [dismissModalOpen, setDismissModalOpen] = useState(false)
   const [quizToDismiss, setQuizToDismiss] = useState<{attemptId: string, topicId: string, title: string} | null>(null)
   
@@ -48,6 +47,22 @@ export default function HomePage() {
   
   // Both components are ready when neither is loading
   const areBothComponentsReady = isDailyCardStackReady && isCategoryCloudReady
+
+  // Sticky navigation state
+  const [currentTopic, setCurrentTopic] = useState<TopicMetadata | null>(null)
+  const [allTopics, setAllTopics] = useState<TopicMetadata[]>([])
+
+  // Convert topics to navigation format
+  const navigationTopics = allTopics.map(topic => ({
+    id: topic.topic_id,
+    title: topic.topic_title,
+    emoji: topic.emoji || '📝',
+    date: topic.date,
+    dayOfWeek: new Date(topic.date).toLocaleDateString('en-US', { weekday: 'short' })
+  }))
+
+  const currentTopicId = currentTopic?.topic_id || ''
+  const stickyNavigation = useStickyQuizNavigation(navigationTopics, currentTopicId)
 
   // Mobile detection
   useEffect(() => {
@@ -67,36 +82,7 @@ export default function HomePage() {
     return () => setIsMounted(false)
   }, [])
 
-  useEffect(() => {
-    let isCancelled = false
 
-    const loadTopics = async () => {
-      if (!isMounted || hasLoadedTopics) return
-      
-      try {
-        setIsLoading(true)
-        const allTopics = await dataService.getAllTopics()
-        if (!isCancelled) {
-          setTopicsList(Object.values(allTopics))
-          setHasLoadedTopics(true)
-        }
-      } catch (error) {
-        console.error('Failed to load topics:', error)
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    if (isMounted) {
-      loadTopics()
-    }
-
-    return () => {
-      isCancelled = true
-    }
-  }, [isMounted, hasLoadedTopics])
 
   useEffect(() => {
     let isCancelled = false
@@ -181,6 +167,49 @@ export default function HomePage() {
     setQuizToDismiss(null)
   }
 
+  // Sticky navigation handlers
+  const handleCurrentTopicChange = (newCurrentTopic: TopicMetadata | null, newAllTopics: TopicMetadata[]) => {
+    setCurrentTopic(newCurrentTopic)
+    setAllTopics(newAllTopics)
+  }
+
+  const handleStickyNavigation = (direction: 'prev' | 'next') => {
+    const newTopicId = stickyNavigation.navigateToTopic(direction)
+    if (newTopicId) {
+      router.push(`/?topic=${newTopicId}`)
+    }
+  }
+
+  const handleTopicSelect = (topicId: string) => {
+    router.push(`/?topic=${topicId}`)
+  }
+
+  // Load topics only when needed for calendar view - DailyCardStack loads its own topics
+  useEffect(() => {
+    let isCancelled = false
+
+    const loadTopicsForCalendar = async () => {
+      if (!isMounted || viewMode !== 'calendar') return
+      
+      try {
+        const allTopics = await dataService.getAllTopics()
+        if (!isCancelled) {
+          setTopicsList(Object.values(allTopics))
+        }
+      } catch (error) {
+        console.error('Failed to load topics for calendar:', error)
+      }
+    }
+
+    if (isMounted && viewMode === 'calendar') {
+      loadTopicsForCalendar()
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isMounted, viewMode]) // Only load when calendar view is needed
+
   // Don't render until mounted to prevent hydration issues
   if (!isMounted) {
     return (
@@ -205,7 +234,7 @@ export default function HomePage() {
       {/* Continue Where You Left Off - Fixed at top */}
       {user && incompleteAttempts.length > 0 && (
         <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 md:py-4">
-          <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="w-full max-w-8xl mx-auto px-3 sm:px-4 md:px-8 lg:px-12 xl:px-16">
             <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue where you left off</h2>
             
             {/* Single quiz or horizontal scroll for multiple */}
@@ -264,16 +293,12 @@ export default function HomePage() {
       )}>
         {/* Main content - mobile-first responsive design */}
         <div className={cn(
-          "w-full max-w-6xl mx-auto",
-          // Mobile-first responsive padding
-          "px-3 sm:px-4 md:px-6 lg:px-8",
+          "w-full max-w-8xl mx-auto",
+          // Mobile-first responsive padding - increased for wider layout
+          "px-3 sm:px-4 md:px-8 lg:px-12 xl:px-16",
           "py-1 sm:py-2"
         )}>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : viewMode === 'cards' ? (
+          {viewMode === 'cards' ? (
             <>
               {/* Show coordinated skeleton loaders until both components are ready */}
               {!areBothComponentsReady && (
@@ -330,6 +355,7 @@ export default function HomePage() {
                     onAuthRequired={handleAuthSuccess}
                     showGuestBanner={false}
                     onLoadingStateChange={setIsDailyCardStackReady}
+                    onCurrentTopicChange={handleCurrentTopicChange}
                   />
                 </Suspense>
                 <CategoryCloud 
@@ -342,15 +368,16 @@ export default function HomePage() {
               {/* Show actual components when both are ready */}
               {areBothComponentsReady && (
                 <div className="animate-in fade-in duration-300">
-                  <Suspense fallback={null}>
-                    <DailyCardStack 
-                      selectedCategory={selectedCategory}
-                      searchQuery={searchQuery}
-                      requireAuth={false}
-                      onAuthRequired={handleAuthSuccess}
-                      showGuestBanner={false}
-                    />
-                  </Suspense>
+                                  <Suspense fallback={null}>
+                  <DailyCardStack 
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    requireAuth={false}
+                    onAuthRequired={handleAuthSuccess}
+                    showGuestBanner={false}
+                    onCurrentTopicChange={handleCurrentTopicChange}
+                  />
+                </Suspense>
                   
                   {/* Categories Section - Mobile optimized */}
                   <div className={cn(
@@ -424,6 +451,19 @@ export default function HomePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sticky Quiz Navigation */}
+      {currentTopic && stickyNavigation.currentTopic && (
+        <StickyQuizNavigation
+          currentTopic={stickyNavigation.currentTopic}
+          previousTopic={stickyNavigation.previousTopic}
+          nextTopic={stickyNavigation.nextTopic}
+          onNavigate={handleStickyNavigation}
+          onTopicSelect={handleTopicSelect}
+          isLoading={!areBothComponentsReady}
+          triggerElementId="democracy-decoded-section"
+        />
+      )}
     </div>
   )
 }

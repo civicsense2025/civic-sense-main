@@ -297,7 +297,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header />
-        <main className="max-w-6xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
+        <main className="max-w-8xl mx-auto px-8 sm:px-12 lg:px-16 py-12 sm:py-16">
           <div className="animate-pulse space-y-8">
             <div className="space-y-3">
               <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/4"></div>
@@ -320,7 +320,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header />
-        <main className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-24">
+        <main className="max-w-8xl mx-auto px-8 sm:px-12 lg:px-16 py-16 sm:py-24">
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
@@ -358,7 +358,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
-      <main className="max-w-6xl mx-auto px-6 sm:px-8 py-8 sm:py-12">
+      <main className="max-w-8xl mx-auto px-8 sm:px-12 lg:px-16 py-8 sm:py-12">
         {/* Navigation */}
         <nav className="mb-8 sm:mb-12">
           <Button

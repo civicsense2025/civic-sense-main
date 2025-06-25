@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -36,7 +36,7 @@ export function PvPGameEngine({
   useEffect(() => {
     if (!roomCode) return
 
-    const supabase = createClient()
+    // Use the singleton supabase client (already imported above)
     const channel = supabase
       .channel(`room:${roomCode}`)
       .on('presence', { event: 'sync' }, () => {

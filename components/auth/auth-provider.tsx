@@ -117,35 +117,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if we have a user on mount
     const getUser = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser()
+        // First check if we have a session to avoid unnecessary errors
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (!mounted) return
         
-        if (error) {
-          console.error('Error getting user:', error)
+        if (sessionError) {
+          console.error('Error getting session:', sessionError)
           if (mounted) {
             setIsLoading(false)
           }
           return
         }
         
-        if (user) {
-          setUser(user)
-          // Transfer any pending data on initial load
-          await transferPendingData(user)
+        // Only try to get user if we have a session
+        if (session?.user) {
+          const { data: { user }, error } = await supabase.auth.getUser()
           
-          // Check if we should show donation thank you popover
-          const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
-          const savedDonationDetails = localStorage.getItem('donationDetails')
-          if (shouldShowThankYou === 'true' && savedDonationDetails) {
-            try {
-              const details = JSON.parse(savedDonationDetails)
-              if (mounted) {
-                setDonationDetails(details)
-                setShowDonationThankYou(true)
+          if (error) {
+            console.error('Error getting user:', error)
+            if (mounted) {
+              setIsLoading(false)
+            }
+            return
+          }
+          
+          if (user) {
+            setUser(user)
+            // Transfer any pending data on initial load
+            await transferPendingData(user)
+            
+            // Check if we should show donation thank you popover
+            const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
+            const savedDonationDetails = localStorage.getItem('donationDetails')
+            if (shouldShowThankYou === 'true' && savedDonationDetails) {
+              try {
+                const details = JSON.parse(savedDonationDetails)
+                if (mounted) {
+                  setDonationDetails(details)
+                  setShowDonationThankYou(true)
+                }
+              } catch (error) {
+                console.error('Error parsing donation details:', error)
               }
-            } catch (error) {
-              console.error('Error parsing donation details:', error)
             }
           }
         }
@@ -214,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } catch (error) {
-            console.error('Error validating user on sign in:', error)
+            console.warn('Error validating user on sign in:', error)
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -235,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               await transferPendingData(user)
             }
           } catch (error) {
-            console.error('Error validating user on token refresh:', error)
+            console.warn('Error validating user on token refresh:', error)
           }
         }
         
