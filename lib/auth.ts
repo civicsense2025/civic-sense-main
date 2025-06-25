@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import type { Database } from './database.types';
 
 // Create a server-side Supabase client for auth operations
-export async function getServerSession() {
+export async function getServerUser() {
   // Get cookies using the correct Next.js App Router approach
   const cookieStore = await cookies();
   
@@ -29,6 +29,10 @@ export async function getServerSession() {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting server user:', error);
+    return null;
+  }
+  return user;
 } 

@@ -17,6 +17,7 @@ import { EnhancedGlobalSearch } from "@/components/enhanced-global-search"
 import { useComprehensiveFeatureFlags } from "@/hooks/useComprehensiveFeatureFlags"
 import { envFeatureFlags } from '@/lib/env-feature-flags'
 import { useFeatureFlag } from '@/hooks/useFeatureFlags'
+import { UnclaimedRewardsNotification } from "@/components/survey/unclaimed-rewards-notification"
 
 interface HeaderProps {
   onSignInClick?: () => void
@@ -408,6 +409,9 @@ export function Header({
             <div className="flex items-center gap-4 flex-shrink-0">
               {/* Search - moved closer to user menu */}
               {showGlobalSearch && <EnhancedGlobalSearch />}
+              
+              {/* Unclaimed Rewards Notification (for authenticated users) */}
+              {user && <UnclaimedRewardsNotification />}
               
               {/* Authentication Controls */}
               {!user ? (

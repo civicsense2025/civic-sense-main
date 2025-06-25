@@ -35,6 +35,8 @@ export const authHelpers = {
     return { error }
   },
 
+  // ⚠️ SECURITY WARNING: Only use this for session-specific data (like tokens).
+  // For user authentication, use getUser() instead which validates with the server.
   async getSession() {
     const { data: { session }, error } = await supabase.auth.getSession()
     return { session, error }
@@ -47,12 +49,12 @@ export const authHelpers = {
 
   // Helper to handle OAuth callback on client side
   async handleOAuthCallback() {
-    const { data, error } = await supabase.auth.getSession()
+    const { data: { user }, error } = await supabase.auth.getUser()
     if (error) {
-      console.error('Error getting session after OAuth:', error)
+      console.error('Error getting user after OAuth:', error)
       return { error }
     }
-    return { data, error: null }
+    return { data: { user }, error: null }
   },
 
   // Password reset functionality

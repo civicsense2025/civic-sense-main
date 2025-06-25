@@ -15,20 +15,20 @@ export default function OnboardingPage() {
   useEffect(() => {
     const checkAuth = async () => {
       setLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { user }, error } = await supabase.auth.getUser()
 
-      if (!session) {
+      if (error || !user) {
         router.push('/login')
         return
       }
 
-      setUserId(session.user.id)
+      setUserId(user.id)
 
       // Check if user has already completed onboarding
       const { data: onboardingData, error: onboardingError } = await supabase
         .from('user_onboarding_state')
         .select('is_completed')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single()
 
       if (onboardingError && onboardingError.code !== 'PGRST116') {

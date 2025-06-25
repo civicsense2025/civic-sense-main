@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { getServerUser } from '@/lib/auth';
 import { skillOperations } from '@/lib/skill-operations';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the authenticated user session
-    const session = await getServerSession();
-    
-    let userId = 'guest-user';
-    
-    // If we have a valid session, use the actual user ID
-    if (session?.user) {
-      userId = session.user.id;
+    const user = await getServerUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // Get query parameters
@@ -21,8 +17,8 @@ export async function GET(request: NextRequest) {
     // Parse limit parameter
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     
-    // Get learning objectives for the user - this now handles guest users internally
-    const objectives = await skillOperations.getUserLearningObjectives(userId, limit);
+    // Get learning objectives for the authenticated user
+    const objectives = await skillOperations.getUserLearningObjectives(user.id, limit);
     
     return NextResponse.json({ data: objectives });
   } catch (error) {

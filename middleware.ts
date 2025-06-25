@@ -54,13 +54,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Get user session
-  const { data: { session } } = await supabase.auth.getSession()
+  // Get authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   // Check if this is an admin route
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    // If no session, redirect to sign in
-    if (!session?.user) {
+    // If no user or auth error, redirect to sign in
+    if (authError || !user) {
       const redirectUrl = new URL('/auth/signin', request.url)
       redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
       return NextResponse.redirect(redirectUrl)
@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('is_admin')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
       if (error) {
@@ -84,14 +84,14 @@ export async function middleware(request: NextRequest) {
 
       // If user is not admin, redirect to dashboard
       if (!profile?.is_admin) {
-        console.log(`🚫 Non-admin user ${session.user.email} attempted to access ${request.nextUrl.pathname}`)
+        console.log(`🚫 Non-admin user ${user.email} attempted to access ${request.nextUrl.pathname}`)
         const redirectUrl = new URL('/dashboard', request.url)
         redirectUrl.searchParams.set('error', 'admin_access_denied')
         return NextResponse.redirect(redirectUrl)
       }
 
       // User is admin, allow access
-      console.log(`✅ Admin user ${session.user.email} accessing ${request.nextUrl.pathname}`)
+      console.log(`✅ Admin user ${user.email} accessing ${request.nextUrl.pathname}`)
     } catch (err) {
       console.error('Error in admin middleware check:', err)
       const redirectUrl = new URL('/dashboard', request.url)

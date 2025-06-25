@@ -114,17 +114,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // Check if we have a session on mount
-    const getSession = async () => {
+    // Check if we have a user on mount
+    const getUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { user }, error } = await supabase.auth.getUser()
         
         if (!mounted) return
         
-        if (session?.user) {
-          setUser(session.user)
+        if (error) {
+          console.error('Error getting user:', error)
+          if (mounted) {
+            setIsLoading(false)
+          }
+          return
+        }
+        
+        if (user) {
+          setUser(user)
           // Transfer any pending data on initial load
-          await transferPendingData(session.user)
+          await transferPendingData(user)
           
           // Check if we should show donation thank you popover
           const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
@@ -146,14 +154,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false)
         }
       } catch (error) {
-        console.error('Error getting session:', error)
+        console.error('Error getting user:', error)
         if (mounted) {
           setIsLoading(false)
         }
       }
     }
 
-    getSession()
+    getUser()
 
     // Handle URL hash parameters (like those from OAuth or email confirmation)
     const handleHashParams = async () => {
@@ -162,11 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const type = hashParams.get('type')
       
       if (accessToken && type) {
-        console.log('Auth callback detected, refreshing session...')
+        console.log('Auth callback detected, refreshing user...')
         try {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (mounted && session?.user) {
-            setUser(session.user)
+          const { data: { user }, error } = await supabase.auth.getUser()
+          if (!error && mounted && user) {
+            setUser(user)
           }
         } catch (error) {
           console.error('Error handling auth callback:', error)
@@ -184,21 +192,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed:', event, session?.user?.email)
         
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-          // Transfer any pending data when user signs in
-          await transferPendingData(session.user)
-          
-          // Check if we should show donation thank you popover (for returning users)
-          const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
-          const savedDonationDetails = localStorage.getItem('donationDetails')
-          if (shouldShowThankYou === 'true' && savedDonationDetails) {
-            try {
-              const details = JSON.parse(savedDonationDetails)
-              setDonationDetails(details)
-              setShowDonationThankYou(true)
-            } catch (error) {
-              console.error('Error parsing donation details:', error)
+          // Validate the user from the server instead of trusting the session
+          try {
+            const { data: { user }, error } = await supabase.auth.getUser()
+            if (!error && user) {
+              setUser(user)
+              // Transfer any pending data when user signs in
+              await transferPendingData(user)
+              
+              // Check if we should show donation thank you popover (for returning users)
+              const shouldShowThankYou = localStorage.getItem('showDonationThankYou')
+              const savedDonationDetails = localStorage.getItem('donationDetails')
+              if (shouldShowThankYou === 'true' && savedDonationDetails) {
+                try {
+                  const details = JSON.parse(savedDonationDetails)
+                  setDonationDetails(details)
+                  setShowDonationThankYou(true)
+                } catch (error) {
+                  console.error('Error parsing donation details:', error)
+                }
+              }
             }
+          } catch (error) {
+            console.error('Error validating user on sign in:', error)
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -210,9 +226,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('showDonationThankYou')
           localStorage.removeItem('donationDetails')
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          setUser(session.user)
-          // Transfer pending data on token refresh (e.g., after email confirmation)
-          await transferPendingData(session.user)
+          // Validate the user from the server instead of trusting the session
+          try {
+            const { data: { user }, error } = await supabase.auth.getUser()
+            if (!error && user) {
+              setUser(user)
+              // Transfer pending data on token refresh (e.g., after email confirmation)
+              await transferPendingData(user)
+            }
+          } catch (error) {
+            console.error('Error validating user on token refresh:', error)
+          }
         }
         
         setIsLoading(false)

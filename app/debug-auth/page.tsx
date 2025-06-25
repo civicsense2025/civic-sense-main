@@ -16,14 +16,18 @@ export default function DebugAuthPage() {
   const testAPIAuth = async () => {
     setIsTestingAPI(true)
     try {
-      // First, let's check the client-side session
+      // First, let's check the client-side user authentication (secure method)
       const { supabase } = await import('@/lib/supabase/client')
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      // Also get session for debugging purposes (tokens, etc.)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
-      console.log('Client session before API call:', {
+      console.log('Client auth state before API call:', {
+        hasUser: !!user,
         hasSession: !!session,
-        hasUser: !!session?.user,
         hasAccessToken: !!session?.access_token,
+        userError: userError?.message,
         sessionError: sessionError?.message
       })
       
@@ -48,11 +52,13 @@ export default function DebugAuthPage() {
         ok: response.ok,
         data: data,
         timestamp: new Date().toISOString(),
-        clientSession: {
+        clientAuth: {
+          hasUser: !!user,
           hasSession: !!session,
-          hasUser: !!session?.user,
-          userEmail: session?.user?.email,
-          sessionError: sessionError?.message
+          userEmail: user?.email,
+          userError: userError?.message,
+          sessionError: sessionError?.message,
+          note: 'Using getUser() for auth validation, getSession() for debug info only'
         }
       })
     } catch (error) {

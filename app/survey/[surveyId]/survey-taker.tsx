@@ -27,11 +27,13 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { incentive } = useSurveyIncentive(survey.id)
   
   const [showSurvey, setShowSurvey] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [surveyResponseId, setSurveyResponseId] = useState<string | null>(null)
   const [sessionId] = useState(() => `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const [existingResponses, setExistingResponses] = useState<SurveyResponse[]>([])
   const [completedResponses, setCompletedResponses] = useState<SurveyResponse[]>([])
@@ -196,6 +198,11 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
 
       const responseData = await response.json()
 
+      // Store response ID for rewards claiming
+      if (responseData.response_id) {
+        setSurveyResponseId(responseData.response_id)
+      }
+
       // Create completion record if user is authenticated
       if (user && responseData.response_id) {
         const completionResponse = await fetch('/api/user/survey-completions', {
@@ -236,19 +243,36 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <Header onSignInClick={() => setShowAuthDialog(true)} />
         <main className="w-full py-12">
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-            <div className="text-6xl mb-6">🎉</div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-center space-x-2">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-                <h1 className="text-3xl font-light text-slate-900 dark:text-white">
-                  Survey Completed
-                </h1>
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="text-center space-y-8">
+              <div className="text-6xl mb-6">🎉</div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-2">
+                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  <h1 className="text-3xl font-light text-slate-900 dark:text-white">
+                    Survey Completed
+                  </h1>
+                </div>
+                <p className="text-lg text-slate-600 dark:text-slate-400">
+                  Thank you for taking the time to complete "{survey.title}". Your responses help us improve civic education for everyone.
+                </p>
               </div>
-              <p className="text-lg text-slate-600 dark:text-slate-400">
-                Thank you for taking the time to complete "{survey.title}". Your responses help us improve civic education for everyone.
-              </p>
             </div>
+
+            {/* Survey Rewards Section */}
+            {incentive && surveyResponseId && (
+              <SurveyRewardsCompletion
+                surveyId={survey.id}
+                surveyTitle={survey.title}
+                surveyResponseId={surveyResponseId}
+                onRewardsClaimed={(result) => {
+                  toast({
+                    title: "Rewards claimed!",
+                    description: result.messages.join(" "),
+                  })
+                }}
+              />
+            )}
             
             <Card className="border border-slate-200 dark:border-slate-800">
               <CardContent className="p-6 space-y-4">
@@ -347,6 +371,17 @@ export function SurveyTaker({ survey }: SurveyTakerProps) {
               )}
             </div>
           </div>
+
+          {/* Survey Incentives (if available) */}
+          {incentive && incentive.show_on_start && (
+            <div className="max-w-2xl mx-auto">
+              <SurveyIncentiveDisplay
+                incentive={incentive}
+                showDetails={true}
+                showClaimButton={false}
+              />
+            </div>
+          )}
 
           {/* Survey Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

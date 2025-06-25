@@ -44,7 +44,7 @@ Write like you're talking to a smart friend:
 - DIRECT, NOT ACADEMIC: "Here's what's really happening" vs "It may be observed that"
 - SPECIFIC, NOT VAGUE: "Congress voted to..." vs "Some lawmakers might..."
 - PRACTICAL WISDOM: Connect abstract concepts to real consequences
-- PERSONAL STAKES: Show how this affects daily life, not just theory
+- PERSONAL STAKES: Show how this affects daily life, not theory
 </brand_voice>
 
 <definition_standards>
@@ -73,18 +73,80 @@ PREFERRED LANGUAGE PATTERNS:
 - Specific accountability: "Dr. Curtis Wright approved OxyContin at FDA, then joined Purdue Pharma"
 </writing_approach>
 
+<critical_json_formatting_rules>
+MANDATORY JSON FORMATTING REQUIREMENTS:
+
+1. STRUCTURE: Return ONLY a valid JSON object. No text before or after. No markdown blocks. No explanations.
+
+2. ESCAPING: Always escape these characters in JSON strings:
+   - Use \\" for quotation marks inside strings
+   - Use \\\\ for backslashes
+   - Use \\n for line breaks (but avoid them in JSON)
+   - Use \\t for tabs (but avoid them)
+
+3. NO THINKING TAGS: Never include <thinking>, <analysis>, or any XML-style tags in your response
+
+4. ARRAY FORMATTING: 
+   - Each array element must end with a comma EXCEPT the last one
+   - Examples: ["item1", "item2", "item3"] NOT ["item1", "item2", "item3",]
+   - No trailing commas in arrays or objects
+
+5. STRING FORMATTING:
+   - Keep strings on single lines when possible
+   - If you must break lines, use \\n character, don't use actual line breaks
+   - No unescaped quotes in strings
+   - End all string values with proper closing quotes
+
+6. OBJECT FORMATTING:
+   - Every object property must end with a comma EXCEPT the last property
+   - Proper closing braces for all objects
+   - No trailing commas after the last property
+
+7. NUMBERS: Use plain numbers without quotes (example: "quality_score": 85 not "quality_score": "85")
+
+8. EXAMPLES ARRAY: Each example should be a complete, self-contained string. Keep examples under 300 characters to prevent truncation.
+
+EXAMPLE OF PERFECT JSON STRUCTURE:
+{
+  "terms": [
+    {
+      "term": "Term Name",
+      "definition": "Complete definition without line breaks or unescaped quotes",
+      "part_of_speech": "noun",
+      "examples": [
+        "First example with proper escaping",
+        "Second example"
+      ],
+      "synonyms": ["synonym1", "synonym2"],
+      "category": "power_structures",
+      "difficulty_level": 3,
+      "uncomfortable_truth": "What they don't want you to know",
+      "power_dynamics": [
+        "Who holds power",
+        "How they use it"
+      ],
+      "action_steps": [
+        "Immediate action",
+        "Long-term strategy"
+      ],
+      "quality_score": 85
+    }
+  ]
+}
+</critical_json_formatting_rules>
+
 <json_output_format>
-You must return a valid JSON object with this EXACT structure. No additional text or explanation outside the JSON:
+You must return a valid JSON object with this EXACT structure. Follow ALL formatting rules above:
 
 {
   "terms": [
     {
       "term": "Precise civic concept name",
-      "definition": "Complete, standalone explanation (2-3 sentences max)",
+      "definition": "Complete, standalone explanation (2-3 sentences max, no line breaks)",
       "part_of_speech": "noun",
       "examples": [
-        "Extended example with full context",
-        "Another complete example"
+        "Extended example with full context (under 300 chars)",
+        "Another complete example (under 300 chars)"
       ],
       "synonyms": ["synonym1", "synonym2"],
       "category": "voting|government|power_structures|constitutional_law|etc",
@@ -104,7 +166,16 @@ You must return a valid JSON object with this EXACT structure. No additional tex
   ]
 }
 
-CRITICAL: Return ONLY the JSON object. No markdown, no explanations, no text before or after.
+FINAL CHECKLIST BEFORE RESPONDING:
+- ✓ JSON starts with { and ends with }
+- ✓ All strings properly quoted and escaped
+- ✓ No trailing commas anywhere
+- ✓ No <thinking> or other tags
+- ✓ All examples under 300 characters
+- ✓ Valid JSON that can be parsed by JSON.parse()
+- ✓ No text outside the JSON object
+
+CRITICAL: Return ONLY the JSON object. Test your JSON mentally before responding.
 </json_output_format>`
 
 // Simplified prompt building
@@ -156,27 +227,32 @@ Transform existing glossary terms into powerful civic education tools. Add uncom
 // ============================================================================
 
 /**
- * Sends a Server-Sent Event for real-time progress tracking
+ * Enhanced progress update function with more detailed status types
  */
 function sendProgressUpdate(
   controller: ReadableStreamDefaultController, 
-  type: 'processing' | 'saved' | 'skipped' | 'failed' | 'complete',
+  type: 'processing' | 'saved' | 'skipped' | 'failed' | 'complete' | 'generating' | 'parsing' | 'checking',
   data: {
     termIndex?: number
     totalTerms?: number
     termName?: string
     error?: string
     stats?: any
+    batchInfo?: string
+    currentOperation?: string
+    terms?: any[]
+    provider?: string
+    skipped_terms?: string[]
+    failed_terms?: Array<{term: string, error: string}>
   }
 ) {
-  const event = {
+  const message = JSON.stringify({
     type,
     timestamp: new Date().toISOString(),
     ...data
-  }
+  }) + '\n'
   
-  const message = `data: ${JSON.stringify(event)}\n\n`
-  controller.enqueue(new TextEncoder().encode(message))
+  controller.enqueue(new TextEncoder().encode(`data: ${message}\n\n`))
 }
 
 // ============================================================================
@@ -216,51 +292,137 @@ async function verifyTermsInDatabase(supabase: any, savedTerms: any[]): Promise<
 // ============================================================================
 
 /**
+ * Individual term processing with streaming updates
+ */
+async function processTermWithStreaming(
+  supabase: any,
+  term: any,
+  termIndex: number,
+  totalTerms: number,
+  controller: ReadableStreamDefaultController
+): Promise<{success: boolean, result?: any, error?: string}> {
+  
+  try {
+    // Send checking status
+    sendProgressUpdate(controller, 'checking', {
+      termIndex: termIndex + 1,
+      totalTerms,
+      termName: term.term,
+      currentOperation: `Checking if "${term.term}" already exists...`
+    })
+
+    // Check if this specific term already exists
+    const { data: existingTerm } = await supabase
+      .from('glossary_terms')
+      .select('term')
+      .eq('term', term.term)
+      .single()
+
+    if (existingTerm) {
+      sendProgressUpdate(controller, 'skipped', {
+        termIndex: termIndex + 1,
+        totalTerms,
+        termName: term.term,
+        currentOperation: `Term "${term.term}" already exists in database`
+      })
+      return { success: false, error: 'already_exists' }
+    }
+
+    // Send processing status
+    sendProgressUpdate(controller, 'processing', {
+      termIndex: termIndex + 1,
+      totalTerms,
+      termName: term.term,
+      currentOperation: `Saving "${term.term}" to database...`
+    })
+
+    // Save this individual term
+    const { data: savedTerm, error: saveError } = await supabase
+      .from('glossary_terms')
+      .insert([term])
+      .select()
+      .single()
+
+    if (saveError) {
+      sendProgressUpdate(controller, 'failed', {
+        termIndex: termIndex + 1,
+        totalTerms,
+        termName: term.term,
+        error: saveError.message,
+        currentOperation: `Failed to save "${term.term}": ${saveError.message}`
+      })
+      return { success: false, error: saveError.message }
+    }
+
+    if (savedTerm) {
+      sendProgressUpdate(controller, 'saved', {
+        termIndex: termIndex + 1,
+        totalTerms,
+        termName: term.term,
+        currentOperation: `Successfully saved "${term.term}"`
+      })
+      return { success: true, result: savedTerm }
+    }
+
+    return { success: false, error: 'No term returned from database' }
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    sendProgressUpdate(controller, 'failed', {
+      termIndex: termIndex + 1,
+      totalTerms,
+      termName: term.term,
+      error: errorMessage,
+      currentOperation: `Error processing "${term.term}": ${errorMessage}`
+    })
+    return { success: false, error: errorMessage }
+  }
+}
+
+/**
  * Handles AI generation with real-time streaming progress updates
  */
 async function handleStreamingGeneration(supabase: any, validatedData: any, user: any) {
-  const encoder = new TextEncoder()
-  
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Build prompt
+        // Send initial status
+        sendProgressUpdate(controller, 'generating', {
+          currentOperation: 'Starting AI generation...'
+        })
+
+        // Build prompt and generate terms
         const prompt = buildPrompt(validatedData.type, validatedData)
         const includeWebSearch = validatedData.options?.include_web_search ?? true
         const requestedCount = validatedData.options?.count || 5
 
-        console.log(`📝 STREAMING: ${validatedData.type}, Provider: ${validatedData.provider}, Requested: ${requestedCount} terms`)
-
-        // Send initial progress
-        sendProgressUpdate(controller, 'processing', {
-          termIndex: 0,
-          totalTerms: requestedCount,
-          termName: 'Starting AI generation...'
+        sendProgressUpdate(controller, 'generating', {
+          currentOperation: `Requesting ${requestedCount} terms from ${validatedData.provider}...`
         })
 
         // Generate terms using selected provider
         let generatedTerms: any[]
         let usedProvider = validatedData.provider
-        
+
         try {
           if (validatedData.provider === 'openai') {
             generatedTerms = await generateWithOpenAI(prompt)
           } else {
             generatedTerms = await generateWithAnthropic(prompt, includeWebSearch)
           }
-          
-          console.log(`✅ Generated ${generatedTerms.length} terms with ${usedProvider} (requested: ${requestedCount})`)
-          
-          if (generatedTerms.length > requestedCount) {
-            generatedTerms.length = requestedCount
-          }
-          
+
+          sendProgressUpdate(controller, 'parsing', {
+            currentOperation: `Generated ${generatedTerms.length} terms, checking for duplicates...`
+          })
+
         } catch (primaryError) {
-          console.error(`Primary provider (${validatedData.provider}) failed:`, primaryError)
-          
+          sendProgressUpdate(controller, 'failed', {
+            error: `Primary provider (${validatedData.provider}) failed: ${primaryError}`,
+            currentOperation: `Trying fallback provider...`
+          })
+
           // Try fallback provider
           const fallbackProvider = validatedData.provider === 'openai' ? 'anthropic' : 'openai'
-          console.log(`Attempting fallback to ${fallbackProvider}...`)
           
           try {
             if (fallbackProvider === 'openai') {
@@ -269,13 +431,89 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
               generatedTerms = await generateWithAnthropic(prompt, includeWebSearch)
             }
             usedProvider = fallbackProvider
+            sendProgressUpdate(controller, 'parsing', {
+              currentOperation: `Fallback successful: Generated ${generatedTerms.length} terms with ${fallbackProvider}`
+            })
           } catch (fallbackError) {
             throw new Error('Both AI providers failed')
           }
         }
 
+        // ============================================================================
+        // PRE-DATABASE DEDUPLICATION
+        // ============================================================================
+        
+        // Check for existing terms in database first
+        sendProgressUpdate(controller, 'checking', {
+          currentOperation: `Checking ${generatedTerms.length} generated terms against existing database entries...`
+        })
+
+        const termNames = generatedTerms.map(t => t.term?.toLowerCase().trim()).filter(Boolean)
+        const { data: existingTerms } = await supabase
+          .from('glossary_terms')
+          .select('term')
+          .in('term', termNames.map(name => 
+            // Convert back to proper case for database query
+            generatedTerms.find(t => t.term?.toLowerCase().trim() === name)?.term
+          ).filter(Boolean))
+
+        const existingTermSet = new Set(
+          existingTerms?.map((t: any) => t.term.toLowerCase().trim()) || []
+        )
+
+        // Filter out duplicates and existing terms
+        const uniqueTerms: any[] = []
+        const duplicates: string[] = []
+        const alreadyExists: string[] = []
+        const seenInGeneration = new Set<string>()
+
+        for (const term of generatedTerms) {
+          const termKey = term.term?.toLowerCase().trim()
+          if (!termKey) continue
+
+          if (existingTermSet.has(termKey)) {
+            alreadyExists.push(term.term)
+          } else if (seenInGeneration.has(termKey)) {
+            duplicates.push(term.term)
+          } else {
+            seenInGeneration.add(termKey)
+            uniqueTerms.push(term)
+          }
+        }
+
+        sendProgressUpdate(controller, 'processing', {
+          currentOperation: `Filtered to ${uniqueTerms.length} unique new terms (${duplicates.length} duplicates in generation, ${alreadyExists.length} already exist in database)`,
+          stats: {
+            generated: generatedTerms.length,
+            unique_new: uniqueTerms.length,
+            duplicates_in_generation: duplicates.length,
+            already_exist: alreadyExists.length
+          }
+        })
+
+        if (uniqueTerms.length === 0) {
+          sendProgressUpdate(controller, 'complete', {
+            stats: {
+              requested: requestedCount,
+              generated: generatedTerms.length,
+              saved: 0,
+              skipped: alreadyExists.length,
+              failed: 0,
+              duplicates: duplicates.length,
+              verified: 0
+            },
+            terms: [],
+            provider: usedProvider,
+            skipped_terms: alreadyExists,
+            failed_terms: [],
+            currentOperation: `Complete! No new terms to save - all generated terms already exist or are duplicates`
+          })
+          controller.close()
+          return
+        }
+
         // Process terms for database schema
-        const processedTerms = generatedTerms.map((term) => ({
+        const processedTerms = uniqueTerms.map((term) => ({
           // Core fields
           term: term.term || 'Untitled Term',
           definition: term.definition || 'No definition provided',
@@ -332,7 +570,13 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
           is_active: true
         }))
 
-        // Process terms one by one with streaming updates
+        // Send status for starting database operations
+        sendProgressUpdate(controller, 'processing', {
+          totalTerms: processedTerms.length,
+          currentOperation: `Saving ${processedTerms.length} verified unique terms to database...`
+        })
+
+        // Process and save terms ONE AT A TIME with real-time updates
         const savedTerms: any[] = []
         const skippedTerms: string[] = []
         const failedTerms: Array<{term: string, error: string}> = []
@@ -340,151 +584,137 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
         for (let i = 0; i < processedTerms.length; i++) {
           const term = processedTerms[i]
           
-          // Send processing update
-          sendProgressUpdate(controller, 'processing', {
-            termIndex: i + 1,
-            totalTerms: processedTerms.length,
-            termName: term.term
-          })
+          const result = await processTermWithStreaming(
+            supabase, 
+            term, 
+            i, 
+            processedTerms.length, 
+            controller
+          )
 
-          try {
-            console.log(`🔍 STREAMING DB: Checking if "${term.term}" already exists...`)
-            
-            // Check if this specific term already exists
-            const { data: existingTerm, error: checkError } = await supabase
-              .from('glossary_terms')
-              .select('term')
-              .eq('term', term.term)
-              .single()
-
-            if (checkError && checkError.code !== 'PGRST116') {
-              // PGRST116 is "not found" which is expected, anything else is an error
-              console.error(`❌ STREAMING DB: Error checking existence for "${term.term}":`, checkError)
-              throw new Error(`Database check failed: ${checkError.message}`)
-            }
-
-            if (existingTerm) {
-              console.log(`⏭️ STREAMING DB: "${term.term}" already exists, skipping...`)
-              skippedTerms.push(term.term)
-              sendProgressUpdate(controller, 'skipped', {
-                termIndex: i + 1,
-                totalTerms: processedTerms.length,
-                termName: term.term
-              })
-              continue
-            }
-
-            console.log(`💾 STREAMING DB: Saving new term "${term.term}"...`)
-            
-            // Save this individual term - FORCE COMMIT
-            const { data: savedTerm, error: saveError } = await supabase
-              .from('glossary_terms')
-              .insert([term])
-              .select()
-              .single()
-
-            if (saveError) {
-              console.error(`❌ STREAMING DB: Failed to save "${term.term}":`, saveError)
-              failedTerms.push({
-                term: term.term,
-                error: saveError.message
-              })
-              sendProgressUpdate(controller, 'failed', {
-                termIndex: i + 1,
-                totalTerms: processedTerms.length,
-                termName: term.term,
-                error: saveError.message
-              })
-              continue
-            }
-
-            if (savedTerm) {
-              console.log(`✅ STREAMING DB: Successfully saved "${term.term}" with ID: ${savedTerm.id}`)
-              savedTerms.push(savedTerm)
-              sendProgressUpdate(controller, 'saved', {
-                termIndex: i + 1,
-                totalTerms: processedTerms.length,
-                termName: term.term
-              })
-              
-              // FORCE VERIFY the save by immediately checking if it exists
-              const { data: verifyTerm } = await supabase
-                .from('glossary_terms')
-                .select('id, term')
-                .eq('id', savedTerm.id)
-                .single()
-              
-              if (verifyTerm) {
-                console.log(`🔒 STREAMING DB: Verified "${term.term}" is saved with ID: ${verifyTerm.id}`)
-              } else {
-                console.error(`⚠️ STREAMING DB: Failed to verify "${term.term}" was saved!`)
-              }
-            } else {
-              console.error(`⚠️ STREAMING DB: No savedTerm returned for "${term.term}" despite no error`)
-            }
-
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          if (result.success && result.result) {
+            savedTerms.push(result.result)
+          } else if (result.error === 'already_exists') {
+            skippedTerms.push(term.term)
+          } else {
             failedTerms.push({
               term: term.term,
-              error: errorMessage
+              error: result.error || 'Unknown error'
             })
-            sendProgressUpdate(controller, 'failed', {
+          }
+
+          // Send intermediate stats update every few terms
+          if ((i + 1) % 3 === 0 || i === processedTerms.length - 1) {
+            sendProgressUpdate(controller, 'processing', {
               termIndex: i + 1,
               totalTerms: processedTerms.length,
-              termName: term.term,
-              error: errorMessage
+              currentOperation: `Database progress: ${i + 1}/${processedTerms.length} processed`,
+              stats: {
+                saved: savedTerms.length,
+                skipped: skippedTerms.length,
+                failed: failedTerms.length
+              }
             })
+          }
+
+          // Small delay to prevent overwhelming the database and give UI time to update
+          if (i < processedTerms.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100))
           }
         }
 
-        console.log(`🎉 STREAMING COMPLETE: Processing finished`)
-        console.log(`   📊 Requested: ${requestedCount}`)
-        console.log(`   🤖 Generated: ${generatedTerms.length}`)
-        console.log(`   ✅ Saved: ${savedTerms.length}`)
-        console.log(`   ⏭️ Skipped: ${skippedTerms.length}`)
-        console.log(`   ❌ Failed: ${failedTerms.length}`)
-        console.log(`   🏭 Provider: ${usedProvider}`)
-        
+        // Create category relationships for successfully saved terms
         if (savedTerms.length > 0) {
-          console.log(`   💾 Saved terms:`, savedTerms.map(t => `"${t.term}" (${t.id})`).join(', '))
-        }
-        if (skippedTerms.length > 0) {
-          console.log(`   ⏭️ Skipped terms:`, skippedTerms.join(', '))
-        }
-        if (failedTerms.length > 0) {
-          console.log(`   ❌ Failed terms:`, failedTerms.map(f => `"${f.term}": ${f.error}`).join(', '))
+          sendProgressUpdate(controller, 'processing', {
+            currentOperation: `Creating category relationships for ${savedTerms.length} saved terms...`
+          })
+
+          const { data: categories } = await supabase
+            .from('categories')
+            .select('id, category_slug, category_title')
+
+          if (categories) {
+            const categoryRelationships = []
+            
+            for (const savedTerm of savedTerms) {
+              // Find the original generated term that matches this saved term
+              const originalTerm = uniqueTerms.find(gt => gt.term === savedTerm.term)
+              if (!originalTerm) {
+                console.warn(`⚠️ Could not find original term data for: ${savedTerm.term}`)
+                continue
+              }
+
+              const categorySlug = originalTerm?.category?.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+              
+              // Guard against undefined categorySlug
+              if (!categorySlug) {
+                console.warn(`⚠️ No category slug for term: ${savedTerm.term}`)
+                continue
+              }
+              
+              const matchingCategory = categories.find((cat: any) => 
+                cat.category_slug === categorySlug ||
+                cat.category_title.toLowerCase().includes(categorySlug.replace('-', ' '))
+              )
+              
+              if (matchingCategory) {
+                categoryRelationships.push({
+                  term_id: savedTerm.id,
+                  category_id: matchingCategory.id,
+                  is_primary: true,
+                  relevance_score: 8
+                })
+              } else {
+                console.warn(`⚠️ No matching category found for slug: ${categorySlug}`)
+              }
+            }
+            
+            if (categoryRelationships.length > 0) {
+              const { error: categoryError } = await supabase
+                .from('glossary_term_categories')
+                .insert(categoryRelationships)
+              
+              if (categoryError) {
+                console.warn(`⚠️ Error creating category relationships:`, categoryError)
+              } else {
+                console.log(`✅ Created ${categoryRelationships.length} category relationships`)
+              }
+            }
+          }
         }
 
-        // FINAL VERIFICATION: Double-check all "saved" terms actually exist in DB
-        console.log(`🔍 FINAL VERIFICATION: Checking ${savedTerms.length} allegedly saved terms...`)
-        const finalVerificationCount = await verifyTermsInDatabase(supabase, savedTerms)
+        // Verify saved terms in database
+        const verifiedCount = await verifyTermsInDatabase(supabase, savedTerms)
         
-        if (finalVerificationCount !== savedTerms.length) {
-          console.error(`⚠️ VERIFICATION FAILED: Expected ${savedTerms.length} terms in DB, found ${finalVerificationCount}`)
-        } else {
-          console.log(`✅ VERIFICATION PASSED: All ${finalVerificationCount} terms confirmed in database`)
-        }
-
-        // Send completion update
+        // Combine all skipped terms (pre-existing + duplicates + generation skipped)
+        const allSkippedTerms = [...alreadyExists, ...duplicates, ...skippedTerms]
+        
+        // Send final completion status
         sendProgressUpdate(controller, 'complete', {
           stats: {
             requested: requestedCount,
             generated: generatedTerms.length,
+            unique_new: uniqueTerms.length,
             saved: savedTerms.length,
-            skipped: skippedTerms.length,
+            skipped: allSkippedTerms.length,
             failed: failedTerms.length,
-            provider: usedProvider,
-            verifiedInDB: finalVerificationCount
-          }
+            verified: verifiedCount,
+            duplicates_in_generation: duplicates.length,
+            already_existed: alreadyExists.length
+          },
+          terms: savedTerms,
+          provider: usedProvider,
+          skipped_terms: allSkippedTerms,
+          failed_terms: failedTerms,
+          currentOperation: `Complete! ${savedTerms.length} new terms saved, ${allSkippedTerms.length} skipped (${duplicates.length} duplicates + ${alreadyExists.length} pre-existing), ${failedTerms.length} failed`
         })
 
         controller.close()
 
       } catch (error) {
-        console.error('Streaming generation error:', error)
         sendProgressUpdate(controller, 'failed', {
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
+          currentOperation: 'Generation failed'
         })
         controller.close()
       }
@@ -493,13 +723,10 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
+      'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
+    },
   })
 }
 
@@ -522,20 +749,46 @@ function getValidatedModelName(provider: string): string {
 }
 
 // ============================================================================
-// ROBUST JSON EXTRACTION AND PARSING
+// IMPROVED JSON EXTRACTION AND PARSING
 // ============================================================================
 
 /**
- * Attempts to repair incomplete JSON by adding missing closing braces/brackets
+ * Enhanced JSON repair for truncated responses with better closing detection
  */
 function repairTruncatedJson(jsonStr: string): string {
   let repaired = jsonStr.trim();
   
-  // Count open vs closed braces and brackets
+  // Step 1: Remove any trailing incomplete content that might confuse the parser
+  // Look for patterns that suggest truncation mid-string or mid-property
+  const truncationPatterns = [
+    /,\s*$/,                    // Trailing comma
+    /:\s*$/,                    // Colon without value
+    /,\s*"[^"]*$/,             // Incomplete property name
+    /:\s*"[^"]*$/,             // Incomplete string value
+    /"\s*,?\s*$/               // Dangling quote
+  ];
+  
+  for (const pattern of truncationPatterns) {
+    if (pattern.test(repaired)) {
+      // Find the last complete object/array boundary
+      const lastCompleteEnd = Math.max(
+        repaired.lastIndexOf('}'),
+        repaired.lastIndexOf(']')
+      );
+      if (lastCompleteEnd > -1) {
+        repaired = repaired.substring(0, lastCompleteEnd + 1);
+        break;
+      }
+    }
+  }
+  
+  // Step 2: Count and balance braces/brackets
   let braceDepth = 0;
   let bracketDepth = 0;
   let inString = false;
   let escapeNext = false;
+  let lastNonWhitespaceChar = '';
+  let lastNonWhitespaceIndex = -1;
   
   for (let i = 0; i < repaired.length; i++) {
     const char = repaired[i];
@@ -552,7 +805,6 @@ function repairTruncatedJson(jsonStr: string): string {
     
     if (char === '"' && !escapeNext) {
       inString = !inString;
-      continue;
     }
     
     if (!inString) {
@@ -560,10 +812,43 @@ function repairTruncatedJson(jsonStr: string): string {
       else if (char === '}') braceDepth--;
       else if (char === '[') bracketDepth++;
       else if (char === ']') bracketDepth--;
+      
+      if (char.trim()) {
+        lastNonWhitespaceChar = char;
+        lastNonWhitespaceIndex = i;
+      }
     }
   }
   
-  // Add missing closing characters
+  // Step 3: Handle incomplete strings
+  if (inString) {
+    repaired += '"';
+  }
+  
+  // Step 4: Clean up trailing incomplete content based on last character
+  if (lastNonWhitespaceChar === ',' || lastNonWhitespaceChar === ':') {
+    // Remove trailing incomplete field
+    repaired = repaired.substring(0, lastNonWhitespaceIndex);
+    
+    // Recount after truncation
+    braceDepth = 0;
+    bracketDepth = 0;
+    inString = false;
+    for (let i = 0; i < repaired.length; i++) {
+      const char = repaired[i];
+      if (char === '"' && (i === 0 || repaired[i-1] !== '\\')) {
+        inString = !inString;
+      }
+      if (!inString) {
+        if (char === '{') braceDepth++;
+        else if (char === '}') braceDepth--;
+        else if (char === '[') bracketDepth++;
+        else if (char === ']') bracketDepth--;
+      }
+    }
+  }
+  
+  // Step 5: Close unclosed structures
   while (bracketDepth > 0) {
     repaired += ']';
     bracketDepth--;
@@ -577,7 +862,105 @@ function repairTruncatedJson(jsonStr: string): string {
 }
 
 /**
- * Robust JSON extractor that handles code fences, preambles, truncation, and trailing commas
+ * Enhanced comma and structural cleanup
+ */
+function cleanupJsonStructure(jsonStr: string): string {
+  let cleaned = jsonStr;
+  
+  // Remove trailing commas before closing brackets/braces
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+  
+  // Remove duplicate consecutive commas
+  cleaned = cleaned.replace(/,+/g, ',');
+  
+  // Fix missing commas between array elements and objects
+  cleaned = cleaned.replace(/}(\s*){/g, '},\n$1{');
+  cleaned = cleaned.replace(/](\s*)\[/g, '],$1[');
+  
+  // Fix quotes in strings that might break JSON
+  // This is a simplified approach - in practice, this is complex
+  cleaned = cleaned.replace(/([^\\])"([^",}\]]*)"([^,}\]\s:])/g, '$1\\"$2\\"$3');
+  
+  return cleaned;
+}
+
+/**
+ * Enhanced partial terms extraction with better boundary detection
+ */
+function extractPartialTermsArray(jsonStr: string): any {
+  const termsMatch = jsonStr.match(/"terms"\s*:\s*\[([\s\S]*?)(?:\]|$)/);
+  if (!termsMatch) {
+    throw new Error('No terms array found in response');
+  }
+  
+  const termsContent = termsMatch[1];
+  const completeTerms = [];
+  let currentTerm = '';
+  let braceDepth = 0;
+  let inString = false;
+  let escapeNext = false;
+  
+  for (let i = 0; i < termsContent.length; i++) {
+    const char = termsContent[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      currentTerm += char;
+      continue;
+    }
+    
+    if (char === '\\' && inString) {
+      escapeNext = true;
+      currentTerm += char;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+    }
+    
+    currentTerm += char;
+    
+    if (!inString) {
+      if (char === '{') {
+        braceDepth++;
+      } else if (char === '}') {
+        braceDepth--;
+        
+        if (braceDepth === 0) {
+          // We have a complete term object
+          try {
+            // Clean up the term string
+            let termStr = currentTerm.trim();
+            
+            // Remove leading comma if present
+            termStr = termStr.replace(/^,\s*/, '');
+            
+            // Parse the individual term
+            const termObj = JSON.parse(termStr);
+            
+            // Validate it has required fields
+            if (termObj.term && termObj.definition) {
+              completeTerms.push(termObj);
+            }
+            
+            currentTerm = '';
+          } catch (e) {
+            // Skip malformed term and continue
+            console.warn(`Skipping malformed term: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            currentTerm = '';
+          }
+        }
+      }
+    }
+  }
+  
+  console.log(`Extracted ${completeTerms.length} complete terms from partial response`);
+  return { terms: completeTerms };
+}
+
+/**
+ * Enhanced JSON extractor with better error-specific handling
  */
 function extractJson(raw: string): any {
   console.log('Extracting JSON from response of length:', raw.length);
@@ -593,6 +976,9 @@ function extractJson(raw: string): any {
     })
     // Remove any trailing explanation after the last }
     .replace(/\}[^}]*$/, '}')
+    // Remove thinking tags that might interfere
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+    .replace(/<analysis>[\s\S]*?<\/analysis>/gi, '')
     .trim();
 
   // 2️⃣ Find the main JSON object
@@ -611,44 +997,45 @@ function extractJson(raw: string): any {
   console.log('JSON candidate length:', candidate.length);
   console.log('JSON candidate preview:', candidate.substring(0, 500) + '...');
 
-  // 3️⃣ Try progressive parsing strategies
+  // 3️⃣ Try progressive parsing strategies with enhanced error handling
   const strategies = [
     // Strategy 1: Parse as-is
-    () => JSON.parse(candidate),
-    
-    // Strategy 2: Repair truncated JSON
     () => {
-      console.log('Attempting truncated JSON repair...');
+      return JSON.parse(candidate);
+    },
+    
+    // Strategy 2: Enhanced truncated JSON repair
+    () => {
+      console.log('Attempting enhanced truncated JSON repair...');
       const repaired = repairTruncatedJson(candidate);
+      console.log('Repaired JSON length:', repaired.length);
       return JSON.parse(repaired);
     },
     
-    // Strategy 3: Clean trailing commas and parse
+    // Strategy 3: Structural cleanup
     () => {
-      console.log('Attempting comma cleanup...');
-      const cleaned = candidate
-        .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-        .replace(/,+/g, ',') // Remove duplicate commas
-        .replace(/([}\]])(\s*)([{\[])/g, '$1,$2$3'); // Add missing commas between objects
+      console.log('Attempting structural cleanup...');
+      const cleaned = cleanupJsonStructure(candidate);
       return JSON.parse(cleaned);
     },
     
-    // Strategy 4: Extract just the terms array if main object fails
+    // Strategy 4: Combined repair and cleanup
     () => {
-      console.log('Attempting terms array extraction...');
-      const termsMatch = candidate.match(/"terms"\s*:\s*\[([\s\S]*)\]/);
-      if (termsMatch) {
-        const termsArray = `[${termsMatch[1]}]`;
-        const repaired = repairTruncatedJson(termsArray);
-        const parsed = JSON.parse(repaired);
-        return { terms: parsed };
-      }
-      throw new Error('No terms array found');
+      console.log('Attempting combined repair and cleanup...');
+      const repaired = repairTruncatedJson(candidate);
+      const cleaned = cleanupJsonStructure(repaired);
+      return JSON.parse(cleaned);
     },
     
-    // Strategy 5: Use jsonrepair for tolerant JSON fixing
+    // Strategy 5: Enhanced partial terms extraction
     () => {
-      console.log('Attempting jsonrepair...');
+      console.log('Attempting enhanced partial terms array extraction...');
+      return extractPartialTermsArray(candidate);
+    },
+    
+    // Strategy 6: jsonrepair as last resort
+    () => {
+      console.log('Attempting jsonrepair as last resort...');
       const repaired = jsonrepair(candidate);
       return JSON.parse(repaired);
     }
@@ -659,6 +1046,20 @@ function extractJson(raw: string): any {
     try {
       const result = strategies[i]();
       console.log(`✅ JSON parsing successful with strategy ${i + 1}`);
+      
+      // Validate the result has terms
+      if (!result.terms && !Array.isArray(result)) {
+        console.warn('Result has no terms array, trying next strategy...');
+        continue;
+      }
+      
+      // Additional validation
+      const terms = result.terms || [result];
+      if (terms.length === 0) {
+        console.warn('Result has empty terms array, trying next strategy...');
+        continue;
+      }
+      
       return result;
     } catch (error) {
       console.log(`Strategy ${i + 1} failed:`, error instanceof Error ? error.message : 'Unknown error');
@@ -666,6 +1067,7 @@ function extractJson(raw: string): any {
         // Last strategy failed
         console.error('All parsing strategies failed');
         console.error('Final candidate (first 1000 chars):', candidate.substring(0, 1000));
+        console.error('Final candidate (last 1000 chars):', candidate.substring(Math.max(0, candidate.length - 1000)));
         throw new Error(`All JSON parsing strategies failed. Last error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
@@ -674,7 +1076,98 @@ function extractJson(raw: string): any {
   throw new Error('Unexpected end of parsing strategies');
 }
 
-// Simplified term generation with Claude
+// Helper function to batch Claude requests with smarter sizing and duplicate prevention
+async function generateClaudeInBatches(prompt: string, systemPrompt: string, requestedCount: number): Promise<any[]> {
+  // More conservative batch sizing to prevent truncation
+  const batchSize = Math.min(5, Math.max(2, Math.floor(requestedCount / 10))); // 2-5 terms per batch
+  const batches = Math.ceil(requestedCount / batchSize);
+  const allTerms: any[] = [];
+  const seenTerms = new Set<string>(); // Track terms across batches to reduce duplicates
+  
+  console.log(`🔄 Claude batching: ${requestedCount} terms → ${batches} batches of ~${batchSize} terms each`);
+  
+  for (let i = 0; i < batches; i++) {
+    const batchCount = i === batches - 1 
+      ? requestedCount - (i * batchSize) 
+      : batchSize;
+    
+    // Enhanced prompt with context from previous batches
+    let batchPrompt = prompt.replace(
+      /Generate \d+ new civic education terms/,
+      `Generate exactly ${batchCount} new civic education terms`
+    );
+    
+    // Add context about previously generated terms to reduce duplicates
+    if (seenTerms.size > 0) {
+      const previousTermsList = Array.from(seenTerms).slice(0, 10).join(', '); // Show first 10
+      batchPrompt += `\n\nIMPORTANT: Do NOT generate terms for concepts already covered. Previous batches generated: ${previousTermsList}${seenTerms.size > 10 ? ', and others' : ''}. Generate completely different civic concepts.`;
+    }
+    
+    console.log(`🔄 Claude batch ${i + 1}/${batches}: ${batchCount} terms`);
+    
+    try {
+      const response = await anthropic.messages.create({
+        model: getValidatedModelName('anthropic'),
+        max_tokens: 4000, // Reduced from 6000 to prevent truncation
+        temperature: 0.7,
+        system: systemPrompt,
+        messages: [
+          {
+            role: "user",
+            content: batchPrompt
+          }
+        ]
+      })
+
+      const contentBlock = response.content[0]
+      if (!contentBlock || contentBlock.type !== 'text') {
+        throw new Error('No text content generated')
+      }
+      
+      const content = contentBlock.text
+      console.log(`📦 Claude batch ${i + 1} response: ${content.length} chars, ${response.usage?.output_tokens || 'unknown'} tokens`);
+      
+      const parsed = extractJson(content)
+      const batchTerms = parsed.terms || [parsed]
+      
+      if (batchTerms.length > 0) {
+        // Track new terms and add to collection
+        const newTerms = [];
+        let duplicatesInBatch = 0;
+        
+        for (const term of batchTerms) {
+          const termKey = term.term?.toLowerCase().trim();
+          if (termKey && !seenTerms.has(termKey)) {
+            seenTerms.add(termKey);
+            newTerms.push(term);
+          } else {
+            duplicatesInBatch++;
+            console.log(`⚠️ Duplicate within batch: ${term.term || 'Unknown term'}`);
+          }
+        }
+        
+        allTerms.push(...newTerms);
+        console.log(`✅ Claude batch ${i + 1}/${batches} complete: ${newTerms.length} unique terms (${duplicatesInBatch} duplicates filtered)`);
+      } else {
+        console.warn(`⚠️ Claude batch ${i + 1} produced no terms`);
+      }
+      
+      // Longer delay between batches to avoid rate limits and let Claude process properly
+      if (i < batches - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+    } catch (batchError) {
+      console.error(`❌ Claude batch ${i + 1} failed:`, batchError);
+      // Continue with other batches rather than failing completely
+    }
+  }
+  
+  console.log(`🎉 Claude batching complete: ${allTerms.length} unique terms from ${batches} batches (${seenTerms.size} total unique concepts)`);
+  return allTerms;
+}
+
+// Simplified Anthropic generation with improved truncation handling
 async function generateWithAnthropic(prompt: string, includeWebSearch: boolean = true): Promise<any[]> {
   try {
     const systemPrompt = includeWebSearch 
@@ -685,14 +1178,16 @@ async function generateWithAnthropic(prompt: string, includeWebSearch: boolean =
     const countMatch = prompt.match(/Generate (\d+) new civic education terms/);
     const requestedCount = countMatch ? parseInt(countMatch[1]) : 5;
     
-    if (requestedCount > 10) {
+    // Batch for any request > 8 terms to prevent truncation
+    if (requestedCount > 8) {
       console.log(`📦 Large Claude request (${requestedCount} terms). Processing in batches to avoid truncation...`);
       return await generateClaudeInBatches(prompt, systemPrompt, requestedCount);
     }
 
+    // For smaller requests, process with reduced max_tokens
     const response = await anthropic.messages.create({
       model: getValidatedModelName('anthropic'),
-      max_tokens: 8000, // Increased for larger requests like 50 terms
+      max_tokens: 5000, // Reduced from 8000 to prevent truncation
       temperature: 0.7,
       system: systemPrompt,
       messages: [
@@ -711,24 +1206,15 @@ async function generateWithAnthropic(prompt: string, includeWebSearch: boolean =
     const content = contentBlock.text
     if (!content) throw new Error('No content generated')
 
-    console.log('Raw Claude response preview:', content.substring(0, 300));
-    console.log('Response length:', content.length, 'tokens used:', response.usage?.output_tokens || 'unknown');
+    console.log('Claude response:', content.length, 'chars,', response.usage?.output_tokens || 'unknown', 'tokens');
 
-    // Use robust JSON extraction
+    // Use enhanced JSON extraction
     try {
       const parsed = extractJson(content)
       const terms = parsed.terms || [parsed]
       console.log(`✅ Successfully extracted ${terms.length} terms from Claude`)
       return terms
     } catch (extractError) {
-      // Check if this looks like truncation
-      if (content.length > 10000 && extractError instanceof Error && extractError.message.includes('parsing failed')) {
-        console.warn('⚠️ Possible truncation detected. Retrying with smaller batch...');
-        if (requestedCount > 5) {
-          return await generateClaudeInBatches(prompt, systemPrompt, requestedCount);
-        }
-      }
-      
       console.error('❌ JSON extraction failed:', extractError)
       throw new Error(`Failed to extract JSON: ${extractError instanceof Error ? extractError.message : 'Unknown error'}`)
     }
@@ -736,65 +1222,6 @@ async function generateWithAnthropic(prompt: string, includeWebSearch: boolean =
     console.error('Anthropic generation error:', error)
     throw new Error('Failed to generate terms with Anthropic')
   }
-}
-
-// Helper function to batch Claude requests
-async function generateClaudeInBatches(prompt: string, systemPrompt: string, requestedCount: number): Promise<any[]> {
-  const batchSize = 8; // Conservative batch size for Claude
-  const batches = Math.ceil(requestedCount / batchSize);
-  const allTerms: any[] = [];
-  
-  for (let i = 0; i < batches; i++) {
-    const batchCount = i === batches - 1 
-      ? requestedCount - (i * batchSize) 
-      : batchSize;
-    
-    const batchPrompt = prompt.replace(
-      /Generate \d+ new civic education terms/,
-      `Generate ${batchCount} new civic education terms`
-    );
-    
-    console.log(`Processing Claude batch ${i + 1}/${batches}: ${batchCount} terms`);
-    
-    try {
-      const response = await anthropic.messages.create({
-        model: getValidatedModelName('anthropic'),
-        max_tokens: 6000, // Smaller for batched requests
-        temperature: 0.7,
-        system: systemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: batchPrompt
-          }
-        ]
-      })
-
-      const contentBlock = response.content[0]
-      if (!contentBlock || contentBlock.type !== 'text') {
-        throw new Error('No text content generated')
-      }
-      
-      const content = contentBlock.text
-      const parsed = extractJson(content)
-      const batchTerms = parsed.terms || [parsed]
-      allTerms.push(...batchTerms);
-      
-      console.log(`✅ Claude batch ${i + 1}/${batches} complete: ${batchTerms.length} terms`);
-      
-      // Small delay between batches to avoid rate limits
-      if (i < batches - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-    } catch (batchError) {
-      console.error(`❌ Claude batch ${i + 1} failed:`, batchError);
-      // Continue with other batches rather than failing completely
-    }
-  }
-  
-  console.log(`Claude batching complete: ${allTerms.length} total terms`);
-  return allTerms;
 }
 
 // Simplified OpenAI generation - with batch processing for large requests
@@ -985,8 +1412,84 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ============================================================================
+    // PRE-DATABASE DEDUPLICATION (NON-STREAMING)
+    // ============================================================================
+    
+    console.log(`🔍 Checking ${generatedTerms.length} generated terms for duplicates and existing entries...`)
+
+    // Check for existing terms in database first
+    const termNames = generatedTerms.map(t => t.term?.toLowerCase().trim()).filter(Boolean)
+    const { data: existingTerms } = await supabase
+      .from('glossary_terms')
+      .select('term')
+      .in('term', termNames.map(name => 
+        // Convert back to proper case for database query
+        generatedTerms.find(t => t.term?.toLowerCase().trim() === name)?.term
+      ).filter(Boolean))
+
+    const existingTermSet = new Set(
+      existingTerms?.map((t: any) => t.term.toLowerCase().trim()) || []
+    )
+
+    // Filter out duplicates and existing terms
+    const uniqueTerms: any[] = []
+    const duplicates: string[] = []
+    const alreadyExists: string[] = []
+    const seenInGeneration = new Set<string>()
+
+    for (const term of generatedTerms) {
+      const termKey = term.term?.toLowerCase().trim()
+      if (!termKey) continue
+
+      if (existingTermSet.has(termKey)) {
+        alreadyExists.push(term.term)
+      } else if (seenInGeneration.has(termKey)) {
+        duplicates.push(term.term)
+      } else {
+        seenInGeneration.add(termKey)
+        uniqueTerms.push(term)
+      }
+    }
+
+    console.log(`📊 Deduplication results:`)
+    console.log(`   🎯 Generated: ${generatedTerms.length} terms`)
+    console.log(`   🆕 Unique new: ${uniqueTerms.length} terms`)
+    console.log(`   🔄 Duplicates in generation: ${duplicates.length} terms`)
+    console.log(`   📚 Already in database: ${alreadyExists.length} terms`)
+
+    if (duplicates.length > 0) {
+      console.log(`⚠️ Duplicates found in generation: ${duplicates.slice(0, 5).join(', ')}${duplicates.length > 5 ? '...' : ''}`)
+    }
+    if (alreadyExists.length > 0) {
+      console.log(`📚 Terms already in database: ${alreadyExists.slice(0, 5).join(', ')}${alreadyExists.length > 5 ? '...' : ''}`)
+    }
+
+    if (uniqueTerms.length === 0) {
+      console.log(`🟡 No new terms to save - all generated terms already exist or are duplicates`)
+      return NextResponse.json({
+        success: true,
+        message: `No new terms to save - all ${generatedTerms.length} generated terms were duplicates or already exist`,
+        terms: [],
+        provider: usedProvider,
+        generation_type: validatedData.type,
+        stats: {
+          requested: requestedCount,
+          generated: generatedTerms.length,
+          unique_new: 0,
+          saved: 0,
+          skipped: alreadyExists.length + duplicates.length,
+          failed: 0,
+          duplicates_in_generation: duplicates.length,
+          already_existed: alreadyExists.length
+        },
+        skipped_terms: [...alreadyExists, ...duplicates],
+        failed_terms: []
+      })
+    }
+
     // Process terms for database schema
-    const processedTerms = generatedTerms.map((term) => ({
+    const processedTerms = uniqueTerms.map((term) => ({
       // Core fields
       term: term.term || 'Untitled Term',
       definition: term.definition || 'No definition provided',
@@ -1138,7 +1641,7 @@ export async function POST(request: NextRequest) {
             continue
           }
           
-          const matchingCategory = categories.find(cat => 
+          const matchingCategory = categories.find((cat: any) => 
             cat.category_slug === categorySlug ||
             cat.category_title.toLowerCase().includes(categorySlug.replace('-', ' '))
           )
@@ -1169,23 +1672,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Combine all skipped terms
+    const allSkippedTerms = [...alreadyExists, ...duplicates, ...skippedTerms]
+
     console.log(`🎉 Generation complete: ${savedTerms.length} terms saved using ${usedProvider}`)
-    console.log(`📊 Final stats: Requested=${requestedCount}, Generated=${generatedTerms.length}, Saved=${savedTerms.length}, Skipped=${skippedTerms.length}, Failed=${failedTerms.length}`)
+    console.log(`📊 Final stats: Requested=${requestedCount}, Generated=${generatedTerms.length}, Unique=${uniqueTerms.length}, Saved=${savedTerms.length}, Skipped=${allSkippedTerms.length}, Failed=${failedTerms.length}`)
 
     return NextResponse.json({
       success: true,
-      message: `Generated ${savedTerms.length} terms successfully (${skippedTerms.length} skipped, ${failedTerms.length} failed)`,
+      message: `Generated ${savedTerms.length} new terms successfully (${allSkippedTerms.length} skipped: ${duplicates.length} duplicates + ${alreadyExists.length} pre-existing, ${failedTerms.length} failed)`,
       terms: savedTerms,
       provider: usedProvider,
       generation_type: validatedData.type,
       stats: {
         requested: requestedCount,
         generated: generatedTerms.length,
+        unique_new: uniqueTerms.length,
         saved: savedTerms.length,
-        skipped: skippedTerms.length,
-        failed: failedTerms.length
+        skipped: allSkippedTerms.length,
+        failed: failedTerms.length,
+        duplicates_in_generation: duplicates.length,
+        already_existed: alreadyExists.length
       },
-      skipped_terms: skippedTerms,
+      skipped_terms: allSkippedTerms,
       failed_terms: failedTerms
     })
 
