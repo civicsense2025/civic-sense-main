@@ -1,8 +1,20 @@
 import { supabase } from "./supabase"
-import type { Database, Json } from "./database.types"
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import type { QuizQuestion } from "./quiz-data"
 import { skillOperations, type Skill } from '@/lib/skill-operations'
 import { toQuestionAppFormat, toTopicAppFormat } from './database'
+
+// Create service role client ONLY on the server (service key must never leak to the browser)
+// In the browser we fall back to the public Supabase client, which is already initialised.
+const serviceSupabase = typeof window === 'undefined'
+  ? createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  : supabase
+
+// Define minimal types needed for this file
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 // Enhanced types for premium analytics
 export interface EnhancedQuizAttemptData {
@@ -587,7 +599,7 @@ export const enhancedQuizDatabase = {
       // Get quiz attempts
       let quizAttempts: any[] = []
       try {
-        const { data: quizData, error: quizError } = await supabase
+        const { data: quizData, error: quizError } = await serviceSupabase
           .from('user_quiz_attempts')
           .select(`
             id,
@@ -613,7 +625,7 @@ export const enhancedQuizDatabase = {
       // Get assessment attempts
       let assessmentAttempts: any[] = []
       try {
-        const { data: assessmentData, error: assessmentError } = await supabase
+        const { data: assessmentData, error: assessmentError } = await serviceSupabase
           .from('user_assessment_attempts')
           .select(`
             id,
@@ -706,7 +718,7 @@ export const enhancedQuizDatabase = {
     isPartial: boolean
   }>> {
     try {
-      const { data: attempts, error } = await supabase
+      const { data: attempts, error } = await serviceSupabase
         .from('user_quiz_attempts')
         .select('id, topic_id, score, completed_at, time_spent_seconds, is_completed')
         .eq('user_id', userId)
@@ -745,7 +757,7 @@ export const enhancedQuizDatabase = {
    */
   async getCompletedTopics(userId: string): Promise<string[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await serviceSupabase
         .from('user_quiz_attempts')
         .select('topic_id')
         .eq('user_id', userId)
@@ -1170,7 +1182,7 @@ export const enhancedQuizDatabase = {
         return {}
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await serviceSupabase
         .from('user_skill_progress')
         .select('*')
         .eq('user_id', userId)
@@ -1222,7 +1234,7 @@ export const enhancedQuizDatabase = {
   }> {
     try {
       // 1. Fetch the attempt
-      const { data: attempt, error: attemptError } = await supabase
+      const { data: attempt, error: attemptError } = await serviceSupabase
         .from('user_quiz_attempts')
         .select('*')
         .eq('id', attemptId)
@@ -1231,7 +1243,7 @@ export const enhancedQuizDatabase = {
         return { attempt: null, userAnswers: [], questions: [] }
       }
       // 2. Fetch user answers for this attempt
-      const { data: responses, error: responsesError } = await supabase
+      const { data: responses, error: responsesError } = await serviceSupabase
         .from('user_question_responses')
         .select('question_id, user_answer, is_correct, time_spent_seconds')
         .eq('attempt_id', attemptId)
@@ -1285,6 +1297,11 @@ export const enhancedQuizDatabase = {
     date?: string
   }>> {
     try {
+      if (!userId) {
+        console.warn('getPlayedTopics called with empty userId')
+        return []
+      }
+
       type DbResponse = {
         topic_id: string;
         topics: {
@@ -1296,29 +1313,38 @@ export const enhancedQuizDatabase = {
         }[];
       }
 
-      // Get all quiz attempts for the user
-      const { data: attempts, error } = await supabase
-        .from('user_quiz_attempts')
-        .select(`
-          topic_id,
-          topics:question_topics!inner (
-            topic_title,
-            description,
-            categories,
-            emoji,
-            date
-          )
-        `)
-        .eq('user_id', userId)
+          // Get all quiz attempts for the user using service role to avoid RLS issues
+    const { data: attempts, error } = await serviceSupabase
+      .from('user_quiz_attempts')
+      .select(`
+        topic_id,
+        topics:question_topics!inner (
+          topic_title,
+          description,
+          categories,
+          emoji,
+          date
+        )
+      `)
+      .eq('user_id', userId)
       
       if (error) {
+        // Handle specific RLS/permission errors more gracefully
+        if (error.code === 'PGRST116' || error.message?.includes('permission denied')) {
+          console.warn(`Database access error for user ${userId}:`, error.message)
+          return []
+        }
         console.error('Error getting played topics:', error)
+        return []
+      }
+
+      if (!attempts || attempts.length === 0) {
         return []
       }
 
       // Convert to expected format and deduplicate by topic_id
       const seen = new Set<string>()
-      return (attempts || [])
+      return attempts
         .filter(attempt => {
           if (!attempt.topic_id || seen.has(attempt.topic_id)) return false
           seen.add(attempt.topic_id)

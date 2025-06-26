@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { enhancedQuizDatabase } from '@/lib/quiz-database'
 
 export async function GET(request: Request) {
@@ -10,19 +10,16 @@ export async function GET(request: Request) {
     const topic = url.searchParams.get('topic') || 'all'
     const difficulty = url.searchParams.get('difficulty') || 'all'
 
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    // Use proper server-side authentication
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = authHeader.replace('Bearer ', '')
-    if (!userId) {
-      return NextResponse.json({ error: 'Invalid user ID' }, { status: 401 })
-    }
-
-    // Get user's activity data
-    const recentActivity = await enhancedQuizDatabase.getRecentActivity(userId, 25)
+    // Get user's activity data using the authenticated user's ID
+    const recentActivity = await enhancedQuizDatabase.getRecentActivity(user.id, 25)
 
     // Apply filters
     let filteredActivity = recentActivity.filter(activity => {

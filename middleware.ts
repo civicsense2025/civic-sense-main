@@ -1,106 +1,108 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { requireAdmin, requireSuperAdmin } from '@/lib/admin-middleware'
+
+// Define which routes require which level of access
+const ADMIN_ROUTES = [
+  '/admin',
+  '/admin/question-topics',
+  '/admin/glossary',
+  '/admin/ai-content',
+  '/admin/events',
+  '/admin/surveys',
+  '/admin/analytics',
+  '/admin/users',
+  '/admin/feedback',
+  '/admin/accessibility',
+  '/admin/media',
+  '/admin/ai-tools',
+  '/admin/content-relationships',
+  '/admin/news-agent',
+  '/admin/translations',
+  '/admin/collections',
+  '/admin/scheduled-content',
+  '/admin/weekly-recap',
+  '/admin/debug-data'
+]
+
+const SUPER_ADMIN_ROUTES = [
+  '/admin/settings',
+  '/admin/users/roles',
+  '/admin/system'
+]
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  const { pathname } = request.nextUrl
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-    }
-  )
-
-  // Get authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  // Skip middleware for API routes, static files, and non-admin routes
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
 
   // Check if this is an admin route
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // If no user or auth error, redirect to sign in
-    if (authError || !user) {
-      const redirectUrl = new URL('/auth/signin', request.url)
-      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
+  const isAdminRoute = ADMIN_ROUTES.some(route => 
+    pathname === route || pathname.startsWith(route + '/')
+  )
+  
+  const isSuperAdminRoute = SUPER_ADMIN_ROUTES.some(route => 
+    pathname === route || pathname.startsWith(route + '/')
+  )
 
-    // Check if user has admin privileges
+  if (isAdminRoute || isSuperAdminRoute) {
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-
-      if (error) {
-        console.error('Error checking admin status in middleware:', error)
-        // On error, redirect to dashboard with error message
-        const redirectUrl = new URL('/dashboard', request.url)
-        redirectUrl.searchParams.set('error', 'admin_check_failed')
-        return NextResponse.redirect(redirectUrl)
+      // For super admin routes, require super admin access
+      if (isSuperAdminRoute) {
+        const result = await requireSuperAdmin(request)
+        if (!result.success) {
+          console.log(`❌ Super admin access denied for ${pathname}`)
+          
+          // If it's an API route, return JSON error
+          if (pathname.startsWith('/api/')) {
+            return result.response!
+          }
+          
+          // For page routes, redirect to signin
+          const signInUrl = new URL('/auth/signin', request.url)
+          signInUrl.searchParams.set('redirectTo', pathname)
+          return NextResponse.redirect(signInUrl)
+        }
+        
+        console.log(`✅ Super admin user ${result.user?.email} accessing ${pathname}`)
+      } else {
+        // For regular admin routes, require admin access
+        const result = await requireAdmin(request)
+        if (!result.success) {
+          console.log(`❌ Admin access denied for ${pathname}`)
+          
+          // If it's an API route, return JSON error
+          if (pathname.startsWith('/api/')) {
+            return result.response!
+          }
+          
+          // For page routes, redirect to signin
+          const signInUrl = new URL('/auth/signin', request.url)
+          signInUrl.searchParams.set('redirectTo', pathname)
+          return NextResponse.redirect(signInUrl)
+        }
+        
+        console.log(`✅ Admin user ${result.user?.email} accessing ${pathname}`)
       }
-
-      // If user is not admin, redirect to dashboard
-      if (!profile?.is_admin) {
-        console.log(`🚫 Non-admin user ${user.email} attempted to access ${request.nextUrl.pathname}`)
-        const redirectUrl = new URL('/dashboard', request.url)
-        redirectUrl.searchParams.set('error', 'admin_access_denied')
-        return NextResponse.redirect(redirectUrl)
-      }
-
-      // User is admin, allow access
-      console.log(`✅ Admin user ${user.email} accessing ${request.nextUrl.pathname}`)
-    } catch (err) {
-      console.error('Error in admin middleware check:', err)
-      const redirectUrl = new URL('/dashboard', request.url)
-      redirectUrl.searchParams.set('error', 'admin_check_error')
-      return NextResponse.redirect(redirectUrl)
+    } catch (error) {
+      console.error('Middleware error:', error)
+      
+      // On error, redirect to signin for safety
+      const signInUrl = new URL('/auth/signin', request.url)
+      signInUrl.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(signInUrl)
     }
   }
 
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
@@ -110,8 +112,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 } 

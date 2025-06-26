@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -32,6 +33,19 @@ import {
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+
+// If the layout fix doesn't work, uncomment this as an alternative approach:
+// const AdminDashboard = dynamic(() => import('@/components/admin/admin-dashboard'), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="min-h-screen flex items-center justify-center bg-slate-50">
+//       <div className="text-center space-y-4">
+//         <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
+//         <p className="text-slate-600">Loading admin dashboard...</p>
+//       </div>
+//     </div>
+//   )
+// })
 
 interface DashboardStats {
   users: {

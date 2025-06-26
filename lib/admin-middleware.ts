@@ -6,6 +6,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createClientSingleton } from '@/lib/supabase/client'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Admin role hierarchy
@@ -212,7 +213,7 @@ export async function requireSuperAdmin(request: NextRequest): Promise<{
 }
 
 /**
- * Simplified admin check for React hooks
+ * Simplified admin check for React hooks - works both server and client side
  */
 export async function checkAdminAccess(): Promise<{
   isAdmin: boolean
@@ -221,11 +222,28 @@ export async function checkAdminAccess(): Promise<{
   error?: string
 }> {
   try {
-    const supabase = await createClient()
+    // Try server client first, fallback to client singleton
+    let supabase
+    let user
     
-    const { data: { user }, error } = await supabase.auth.getUser()
+    try {
+      // Try server-side client
+      supabase = await createClient()
+      const { data: { user: serverUser }, error } = await supabase.auth.getUser()
+      if (!error && serverUser) {
+        user = serverUser
+      }
+    } catch (serverError) {
+      // Fallback to client-side singleton
+      console.log('Using client-side Supabase client for admin check')
+      supabase = createClientSingleton()
+      const { data: { user: clientUser }, error } = await supabase.auth.getUser()
+      if (!error && clientUser) {
+        user = clientUser
+      }
+    }
     
-    if (error || !user) {
+    if (!user) {
       return {
         isAdmin: false,
         isSuperAdmin: false,
@@ -234,7 +252,8 @@ export async function checkAdminAccess(): Promise<{
       }
     }
 
-    const role = await getUserRoleSafe(user.id)
+    // Use the same supabase client for role checking
+    const role = await getUserRoleSafeWithClient(supabase, user.id)
     
     return {
       isAdmin: role === ADMIN_ROLES.ADMIN || role === ADMIN_ROLES.SUPER_ADMIN,
@@ -249,6 +268,120 @@ export async function checkAdminAccess(): Promise<{
       role: ADMIN_ROLES.USER,
       error: 'Access check failed'
     }
+  }
+}
+
+/**
+ * Get user role using provided Supabase client (bypasses RLS)
+ */
+async function getUserRoleSafeWithClient(supabase: any, userId: string): Promise<AdminRole> {
+  try {
+    // Use a direct query with explicit table access
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      console.warn(`Failed to get user role for ${userId}:`, error.message)
+      return ADMIN_ROLES.USER
+    }
+
+    // Validate role against known roles
+    const role = data?.role as AdminRole
+    if (Object.values(ADMIN_ROLES).includes(role as any)) {
+      return role
+    }
+
+    return ADMIN_ROLES.USER
+  } catch (error) {
+    console.error('Error in getUserRoleSafeWithClient:', error)
+    return ADMIN_ROLES.USER
+  }
+}
+
+/**
+ * Utility function for API routes to check admin access
+ * Returns early response if not authorized, or continues with user data
+ */
+export async function withAdminAuth<T = any>(
+  handler: (user: any, role: AdminRole) => Promise<Response> | Response
+): Promise<Response> {
+  try {
+    const supabase = await createClient()
+    
+    // Get authenticated user
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is admin
+    const role = await getUserRoleSafe(user.id)
+    const isAdmin = role === ADMIN_ROLES.ADMIN || role === ADMIN_ROLES.SUPER_ADMIN
+    
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // Call the handler with user and role
+    return await handler(user, role)
+    
+  } catch (error) {
+    console.error('Error in withAdminAuth:', error)
+    return NextResponse.json(
+      { error: 'Authorization check failed' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Utility function for API routes to check super admin access
+ */
+export async function withSuperAdminAuth<T = any>(
+  handler: (user: any) => Promise<Response> | Response
+): Promise<Response> {
+  try {
+    const supabase = await createClient()
+    
+    // Get authenticated user
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is super admin
+    const isSuperAdmin = await isUserSuperAdmin(user.id)
+    
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Super admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // Call the handler with user
+    return await handler(user)
+    
+  } catch (error) {
+    console.error('Error in withSuperAdminAuth:', error)
+    return NextResponse.json(
+      { error: 'Authorization check failed' },
+      { status: 500 }
+    )
   }
 }
 

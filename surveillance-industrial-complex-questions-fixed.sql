@@ -13,7 +13,7 @@ INSERT INTO questions (
 -- PALANTIR REMAINING QUESTIONS (11-15)
 -- =================================================================
 
-(gen_random_uuid(), 'palantir-government-contracts-2025', 11, 'multiple_choice', 'Government',
+(11, 'multiple_choice', 'Government',
 'How much did Palantir spend on lobbying in 2024 to influence surveillance policies?',
 '$3.2 million', '$5.77 million', '$8.1 million', '$12.4 million',
 '$5.77 million',
@@ -23,7 +23,7 @@ INSERT INTO questions (
 '[{"url": "https://www.opensecrets.org/federal-lobbying/clients/summary?cycle=2024&id=D000022190", "name": "OpenSecrets Palantir lobbying"}, {"url": "https://www.npr.org/2025/05/01/nx-s1-5372776/palantir-tech-contracts-trump", "name": "NPR political influence"}, {"url": "https://www.politico.com/news/2024/12/19/musk-ramaswamy-doge-palantir-00195234", "name": "Politico government integration"}]',
 2, true),
 
-(gen_random_uuid(), 'palantir-government-contracts-2025', 12, 'true_false', 'AI Governance',
+(12, 'true_false', 'AI Governance',
 'Edward Snowden warned about OpenAI appointing former NSA director Paul Nakasone to its board as AI replacing human judgment in surveillance.',
 'true',
 'AI surveillance systems eliminate human oversight.',
@@ -32,7 +32,7 @@ INSERT INTO questions (
 '[{"url": "https://twitter.com/Snowden/status/1800922691056418832", "name": "Snowden OpenAI warning"}, {"url": "https://theintercept.com/2017/02/22/how-peter-thiels-palantir-helped-the-nsa-spy-on-the-whole-world/", "name": "Intercept AI surveillance"}, {"url": "https://www.aclu.org/news/privacy-technology/the-dawn-of-robot-surveillance", "name": "ACLU AI oversight concerns"}]',
 3, true),
 
-(gen_random_uuid(), 'palantir-government-contracts-2025', 13, 'multiple_choice', 'National Security',
+(13, 'multiple_choice', 'National Security',
 'What Trump administration role is being considered for Trae Stephens, who sits on Anduril''s board while being a Thiel network partner?',
 'Secretary of Defense', 'Deputy Defense Secretary', 'National Security Advisor', 'CIA Director',
 'Deputy Defense Secretary',
@@ -46,7 +46,7 @@ INSERT INTO questions (
 -- SAMPLE QUESTIONS TO SHOW PATTERN - Continue this pattern for all questions
 -- =================================================================
 
-(gen_random_uuid(), 'anduril-border-surveillance-2025', 6, 'multiple_choice', 'National Security',
+(6, 'multiple_choice', 'National Security',
 'Anduril was awarded what value Space Force contract for space surveillance network modernization?',
 '$67 million', '$99.7 million', '$125 million', '$180 million',
 '$99.7 million',

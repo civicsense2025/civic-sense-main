@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { supabase } from '@/lib/supabase/client'
+import { checkAdminAccess, AdminRole } from '@/lib/admin-middleware'
 
-export function useAdminAccess() {
+interface AdminAccessResult {
+  isAdmin: boolean
+  isSuperAdmin: boolean
+  role: AdminRole
+  isLoading: boolean
+  error: string | null
+}
+
+export function useAdminAccess(): AdminAccessResult {
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [role, setRole] = useState<AdminRole>('user')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -12,7 +22,10 @@ export function useAdminAccess() {
     const checkAdminStatus = async () => {
       if (!user) {
         setIsAdmin(false)
+        setIsSuperAdmin(false)
+        setRole('user')
         setIsLoading(false)
+        setError(null)
         return
       }
 
@@ -20,28 +33,29 @@ export function useAdminAccess() {
         setIsLoading(true)
         setError(null)
 
-        // Create the Supabase client
-        // Use the singleton supabase client (already imported above)
+        // Use the admin middleware function that bypasses RLS
+        const result = await checkAdminAccess()
         
-        // Check if user has admin privileges in the profiles table
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-
-        if (error) {
-          console.error('Error checking admin status:', error)
-          setError('Failed to check admin status')
-          setIsAdmin(false)
+        setIsAdmin(result.isAdmin)
+        setIsSuperAdmin(result.isSuperAdmin)
+        setRole(result.role)
+        
+        if (result.error) {
+          setError(result.error)
+          console.warn('Admin access check warning:', result.error)
         } else {
-          setIsAdmin(profile?.is_admin === true)
-          console.log(`✅ Admin check for ${user.email}:`, profile?.is_admin === true)
+          console.log(`✅ Admin check for ${user.email}:`, {
+            isAdmin: result.isAdmin,
+            isSuperAdmin: result.isSuperAdmin,
+            role: result.role
+          })
         }
       } catch (err) {
         console.error('Error verifying admin access:', err)
         setError('Failed to verify admin access')
         setIsAdmin(false)
+        setIsSuperAdmin(false)
+        setRole('user')
       } finally {
         setIsLoading(false)
       }
@@ -50,5 +64,11 @@ export function useAdminAccess() {
     checkAdminStatus()
   }, [user])
 
-  return { isAdmin, isLoading, error }
+  return { 
+    isAdmin, 
+    isSuperAdmin, 
+    role, 
+    isLoading, 
+    error 
+  }
 } 

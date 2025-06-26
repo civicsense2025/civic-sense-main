@@ -5,6 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+
+// Create service role client for operations that need elevated permissions
+const serviceSupabase = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // ============================================================================
 // GET - Fetch Unclaimed Rewards
@@ -25,9 +32,9 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Simplified query to avoid RLS policy conflicts
+    // Use service role client to avoid RLS policy conflicts
     // First, get completed survey responses without joins
-    let responseQuery = supabase
+    let responseQuery = serviceSupabase
       .from('survey_responses')
       .select('id, survey_id, user_id, guest_token, is_complete, created_at, completed_at')
       .eq('is_complete', true)
@@ -60,7 +67,7 @@ export async function GET(request: NextRequest) {
     
     // Get survey titles separately to avoid join issues
     const surveyIds = responses.map(r => r.survey_id)
-    const { data: surveys, error: surveysError } = await supabase
+    const { data: surveys, error: surveysError } = await serviceSupabase
       .from('surveys')
       .select('id, title, description')
       .in('id', surveyIds)
@@ -79,7 +86,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch active incentives for these surveys
-    const { data: incentives, error: incentivesError } = await supabase
+    const { data: incentives, error: incentivesError } = await serviceSupabase
       .from('survey_incentives')
       .select('*')
       .in('survey_id', surveyIds)
@@ -104,7 +111,7 @@ export async function GET(request: NextRequest) {
     // Get response IDs to check for existing reward fulfillments
     const responseIds = responses.map(r => r.id)
     
-    const { data: existingFulfillments, error: fulfillmentsError } = await supabase
+    const { data: existingFulfillments, error: fulfillmentsError } = await serviceSupabase
       .from('reward_fulfillments')
       .select('survey_response_id, survey_incentive_id')
       .in('survey_response_id', responseIds)

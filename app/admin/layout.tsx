@@ -1,7 +1,20 @@
 'use client'
 
+// Alternative approach if hydration issues persist:
+// Use dynamic import with SSR disabled in the parent component that imports this layout:
+// 
+// const AdminLayoutClient = dynamic(() => import('./layout'), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="min-h-screen flex items-center justify-center bg-slate-50">
+//       <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
+//     </div>
+//   )
+// })
+
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
+import { useAdminAccess } from '@/hooks/useAdminAccess'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -158,34 +171,94 @@ const categories = [
 ]
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
+  const { isAdmin, isSuperAdmin, role, isLoading: adminLoading, error } = useAdminAccess()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isClientMounted, setIsClientMounted] = useState(false)
 
+  // Fix hydration by ensuring client-side mounting
   useEffect(() => {
-    if (!isLoading && !user) {
+    setIsClientMounted(true)
+  }, [])
+
+  // Redirect unauthenticated users (middleware should handle this, but double-check)
+  useEffect(() => {
+    if (isClientMounted && !authLoading && !user) {
       router.push('/auth/signin')
     }
-  }, [user, isLoading, router])
+  }, [user, authLoading, router, isClientMounted])
 
   const isActivePath = (href: string) => {
+    // Prevent hydration mismatch by only computing on client
+    if (!isClientMounted) return false
+    
     if (href === '/admin') {
       return pathname === '/admin'
     }
     return pathname.startsWith(href)
   }
 
-  if (isLoading) {
+  // Prevent any server-side rendering to avoid hydration mismatch
+  if (!isClientMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-600">Loading admin panel...</p>
+        </div>
       </div>
     )
   }
 
-  if (!user) {
-    return null
+  // Show loading state while checking authentication and admin status
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-600">Verifying admin access...</p>
+          <div className="text-xs text-slate-400 space-x-2">
+            <span>Auth: {authLoading ? 'Checking...' : 'Complete'}</span>
+            <span>•</span>
+            <span>Admin: {adminLoading ? 'Checking...' : 'Complete'}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if admin check failed
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4 max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-slate-900">Access Verification Failed</h2>
+          <p className="text-slate-600">{error}</p>
+          <Button onClick={() => router.push('/dashboard')}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // This should be handled by middleware, but as a fallback
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4 max-w-md">
+          <Shield className="w-12 h-12 text-amber-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-slate-900">Admin Access Required</h2>
+          <p className="text-slate-600">You need administrator privileges to access this area.</p>
+          <Button onClick={() => router.push('/dashboard')}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -267,9 +340,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                 {user.email}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Administrator
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                  {role}
+                </p>
+                {isSuperAdmin && (
+                  <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                    Super
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

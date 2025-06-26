@@ -22,8 +22,6 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showEmailTooltip, setShowEmailTooltip] = useState(false)
-  const [showPasswordTooltip, setShowPasswordTooltip] = useState(false)
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,27 +92,16 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
           <Label htmlFor="signin-email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
             Email
           </Label>
-          <div className="relative">
-            <Input
-              id="signin-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setShowEmailTooltip(true)}
-              onBlur={() => setShowEmailTooltip(false)}
-              required
-              className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
-              placeholder="you@example.com"
-            />
-            {showEmailTooltip && (
-              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
-                <p className="text-xs font-space-mono font-light">
-                  📧 Pro tip: That email you actually check. We're not sending spam, just the good stuff.
-                </p>
-                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-              </div>
-            )}
-          </div>
+          <Input
+            id="signin-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            tabIndex={1}
+            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+            placeholder="you@example.com"
+          />
         </div>
 
         <div className="space-y-2">
@@ -131,26 +118,15 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
               Forgot password?
             </Button>
           </div>
-          <div className="relative">
-            <Input
-              id="signin-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={() => setShowPasswordTooltip(true)}
-              onBlur={() => setShowPasswordTooltip(false)}
-              required
-              className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
-            />
-            {showPasswordTooltip && (
-              <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg shadow-lg z-50 max-w-xs animate-in slide-in-from-bottom-2 duration-200 pointer-events-none">
-                <p className="text-xs font-space-mono font-light">
-                  🔐 Welcome back! Hope you remembered that password you swore you'd never forget.
-                </p>
-                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
-              </div>
-            )}
-          </div>
+          <Input
+            id="signin-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            tabIndex={2}
+            className="h-12 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900"
+          />
         </div>
 
         <div className="flex items-center space-x-3 py-2">
@@ -159,6 +135,7 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
             checked={rememberMe}
             onCheckedChange={handleRememberMeChange}
             className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 dark:data-[state=checked]:bg-white dark:data-[state=checked]:border-white"
+            tabIndex={3}
           />
           <Label 
             htmlFor="signin-remember-me" 
@@ -171,7 +148,8 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
         <Button
           type="submit"
           disabled={isLoading || !email || !password}
-          className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200 mt-2"
+          className="w-full h-14 px-8 py-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-medium rounded-2xl transition-all duration-200 mt-6 shadow-lg hover:shadow-xl"
+          tabIndex={4}
         >
           <Lock className="h-4 w-4 mr-2" />
           {isLoading ? "Signing in..." : "Sign in with email"}
