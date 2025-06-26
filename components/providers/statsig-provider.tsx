@@ -82,6 +82,11 @@ function StatsigClientProvider({ children }: StatsigWrapperProps) {
       setIsReady(true);
       setError(null);
       globalStatsigClient = client;
+      
+      // Expose client globally for feature flag system
+      if (typeof window !== 'undefined') {
+        (window as any).statsigClient = client;
+      }
     }
   }, [client, isLoading, isMounted, isDummyKey]);
 

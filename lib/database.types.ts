@@ -2332,45 +2332,303 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_analysis: {
+        Row: {
+          analysis_results: Json
+          analysis_timestamp: string | null
+          analysis_type: string
+          applied_improvements: boolean | null
+          confidence_score: number | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          improvement_suggestions: string[] | null
+          insights_generated: string[] | null
+          metadata: Json | null
+        }
+        Insert: {
+          analysis_results?: Json
+          analysis_timestamp?: string | null
+          analysis_type: string
+          applied_improvements?: boolean | null
+          confidence_score?: number | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          improvement_suggestions?: string[] | null
+          insights_generated?: string[] | null
+          metadata?: Json | null
+        }
+        Update: {
+          analysis_results?: Json
+          analysis_timestamp?: string | null
+          analysis_type?: string
+          applied_improvements?: boolean | null
+          confidence_score?: number | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          improvement_suggestions?: string[] | null
+          insights_generated?: string[] | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_analysis_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_analytics: {
+        Row: {
+          agent_type: string
+          conversation_duration_seconds: number | null
+          conversation_id: string
+          conversation_outcome: string | null
+          created_at: string | null
+          id: string
+          resolution_status: string | null
+          topics_covered: string[] | null
+          total_messages: number | null
+          total_tokens_used: number | null
+          user_satisfaction_score: number | null
+        }
+        Insert: {
+          agent_type: string
+          conversation_duration_seconds?: number | null
+          conversation_id: string
+          conversation_outcome?: string | null
+          created_at?: string | null
+          id?: string
+          resolution_status?: string | null
+          topics_covered?: string[] | null
+          total_messages?: number | null
+          total_tokens_used?: number | null
+          user_satisfaction_score?: number | null
+        }
+        Update: {
+          agent_type?: string
+          conversation_duration_seconds?: number | null
+          conversation_id?: string
+          conversation_outcome?: string | null
+          created_at?: string | null
+          id?: string
+          resolution_status?: string | null
+          topics_covered?: string[] | null
+          total_messages?: number | null
+          total_tokens_used?: number | null
+          user_satisfaction_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_analytics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_context: {
+        Row: {
+          context_key: string
+          context_value: Json
+          conversation_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          priority: number | null
+          updated_at: string
+        }
+        Insert: {
+          context_key: string
+          context_value: Json
+          conversation_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Update: {
+          context_key?: string
+          context_value?: Json
+          conversation_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_context_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_flow_instances: {
+        Row: {
+          completed_at: string | null
+          conversation_id: string
+          current_step: number | null
+          flow_id: string
+          flow_state: string | null
+          id: string
+          satisfaction_score: number | null
+          started_at: string
+          step_data: Json | null
+        }
+        Insert: {
+          completed_at?: string | null
+          conversation_id: string
+          current_step?: number | null
+          flow_id: string
+          flow_state?: string | null
+          id?: string
+          satisfaction_score?: number | null
+          started_at?: string
+          step_data?: Json | null
+        }
+        Update: {
+          completed_at?: string | null
+          conversation_id?: string
+          current_step?: number | null
+          flow_id?: string
+          flow_state?: string | null
+          id?: string
+          satisfaction_score?: number | null
+          started_at?: string
+          step_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_flow_instances_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_flow_instances_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_flows: {
+        Row: {
+          created_at: string
+          expected_outcomes: Json | null
+          flow_description: string | null
+          flow_name: string
+          flow_steps: Json
+          id: string
+          is_active: boolean | null
+          success_criteria: Json | null
+          success_rate: number | null
+          trigger_conditions: Json
+          typical_duration_minutes: number | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          expected_outcomes?: Json | null
+          flow_description?: string | null
+          flow_name: string
+          flow_steps: Json
+          id?: string
+          is_active?: boolean | null
+          success_criteria?: Json | null
+          success_rate?: number | null
+          trigger_conditions: Json
+          typical_duration_minutes?: number | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          expected_outcomes?: Json | null
+          flow_description?: string | null
+          flow_name?: string
+          flow_steps?: Json
+          id?: string
+          is_active?: boolean | null
+          success_criteria?: Json | null
+          success_rate?: number | null
+          trigger_conditions?: Json
+          typical_duration_minutes?: number | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           agent_model: string | null
           agent_type: string
           conversation_context: Json
+          conversation_mode: string | null
+          conversation_state: string | null
+          conversation_summary: string | null
           created_at: string
+          current_topic: string | null
           ended_at: string | null
           id: string
+          next_suggested_actions: Json | null
           session_id: string
           started_at: string
           total_messages: number | null
           total_tokens_used: number | null
           user_id: string | null
+          user_satisfaction_score: number | null
         }
         Insert: {
           agent_model?: string | null
           agent_type: string
           conversation_context?: Json
+          conversation_mode?: string | null
+          conversation_state?: string | null
+          conversation_summary?: string | null
           created_at?: string
+          current_topic?: string | null
           ended_at?: string | null
           id?: string
+          next_suggested_actions?: Json | null
           session_id: string
           started_at?: string
           total_messages?: number | null
           total_tokens_used?: number | null
           user_id?: string | null
+          user_satisfaction_score?: number | null
         }
         Update: {
           agent_model?: string | null
           agent_type?: string
           conversation_context?: Json
+          conversation_mode?: string | null
+          conversation_state?: string | null
+          conversation_summary?: string | null
           created_at?: string
+          current_topic?: string | null
           ended_at?: string | null
           id?: string
+          next_suggested_actions?: Json | null
           session_id?: string
           started_at?: string
           total_messages?: number | null
           total_tokens_used?: number | null
           user_id?: string | null
+          user_satisfaction_score?: number | null
         }
         Relationships: []
       }
@@ -2445,6 +2703,8 @@ export type Database = {
       }
       generated_content: {
         Row: {
+          approval_status: string | null
+          content_category: string | null
           created_at: string
           created_by: string | null
           generated_content: Json
@@ -2462,6 +2722,8 @@ export type Database = {
           source_reference: string | null
         }
         Insert: {
+          approval_status?: string | null
+          content_category?: string | null
           created_at?: string
           created_by?: string | null
           generated_content: Json
@@ -2479,6 +2741,8 @@ export type Database = {
           source_reference?: string | null
         }
         Update: {
+          approval_status?: string | null
+          content_category?: string | null
           created_at?: string
           created_by?: string | null
           generated_content?: Json
@@ -2494,6 +2758,54 @@ export type Database = {
           published_id?: string | null
           quality_scores?: Json | null
           source_reference?: string | null
+        }
+        Relationships: []
+      }
+      intent_patterns: {
+        Row: {
+          confidence_threshold: number | null
+          created_at: string
+          id: string
+          intent_name: string
+          is_active: boolean | null
+          pattern_text: string
+          pattern_type: string
+          required_context: Json | null
+          success_rate: number | null
+          suggested_actions: Json | null
+          typical_responses: Json | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          intent_name: string
+          is_active?: boolean | null
+          pattern_text: string
+          pattern_type: string
+          required_context?: Json | null
+          success_rate?: number | null
+          suggested_actions?: Json | null
+          typical_responses?: Json | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          intent_name?: string
+          is_active?: boolean | null
+          pattern_text?: string
+          pattern_type?: string
+          required_context?: Json | null
+          success_rate?: number | null
+          suggested_actions?: Json | null
+          typical_responses?: Json | null
+          updated_at?: string
+          usage_count?: number | null
         }
         Relationships: []
       }
@@ -2584,33 +2896,156 @@ export type Database = {
         }
         Relationships: []
       }
+      memory_clusters: {
+        Row: {
+          cluster_name: string
+          cluster_type: string
+          confidence_score: number | null
+          created_at: string | null
+          description: string
+          id: string
+          is_active: boolean | null
+          knowledge_items: Json
+          last_accessed: string | null
+          metadata: Json | null
+          related_patterns: string[] | null
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          cluster_name: string
+          cluster_type: string
+          confidence_score?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          is_active?: boolean | null
+          knowledge_items?: Json
+          last_accessed?: string | null
+          metadata?: Json | null
+          related_patterns?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          cluster_name?: string
+          cluster_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_active?: boolean | null
+          knowledge_items?: Json
+          last_accessed?: string | null
+          metadata?: Json | null
+          related_patterns?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      memory_consolidation: {
+        Row: {
+          cleanup_actions_taken: Json | null
+          completed_at: string | null
+          consolidation_date: string
+          consolidation_type: string
+          created_at: string
+          id: string
+          insights_generated: Json | null
+          items_processed: number | null
+          patterns_discovered: number | null
+          processing_time_ms: number | null
+          status: string | null
+        }
+        Insert: {
+          cleanup_actions_taken?: Json | null
+          completed_at?: string | null
+          consolidation_date: string
+          consolidation_type: string
+          created_at?: string
+          id?: string
+          insights_generated?: Json | null
+          items_processed?: number | null
+          patterns_discovered?: number | null
+          processing_time_ms?: number | null
+          status?: string | null
+        }
+        Update: {
+          cleanup_actions_taken?: Json | null
+          completed_at?: string | null
+          consolidation_date?: string
+          consolidation_type?: string
+          created_at?: string
+          id?: string
+          insights_generated?: Json | null
+          items_processed?: number | null
+          patterns_discovered?: number | null
+          processing_time_ms?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
+          action_completed: boolean | null
+          confidence_score: number | null
           content: string
           conversation_id: string
           created_at: string
+          error_details: Json | null
           id: string
+          intent_detected: string | null
+          message_type: string | null
           metadata: Json | null
+          parent_message_id: string | null
+          processing_time_ms: number | null
+          related_messages: string[] | null
+          requires_action: boolean | null
           role: string
           tokens_used: number | null
+          tool_calls: Json | null
+          tool_results: Json | null
         }
         Insert: {
+          action_completed?: boolean | null
+          confidence_score?: number | null
           content: string
           conversation_id: string
           created_at?: string
+          error_details?: Json | null
           id?: string
+          intent_detected?: string | null
+          message_type?: string | null
           metadata?: Json | null
+          parent_message_id?: string | null
+          processing_time_ms?: number | null
+          related_messages?: string[] | null
+          requires_action?: boolean | null
           role: string
           tokens_used?: number | null
+          tool_calls?: Json | null
+          tool_results?: Json | null
         }
         Update: {
+          action_completed?: boolean | null
+          confidence_score?: number | null
           content?: string
           conversation_id?: string
           created_at?: string
+          error_details?: Json | null
           id?: string
+          intent_detected?: string | null
+          message_type?: string | null
           metadata?: Json | null
+          parent_message_id?: string | null
+          processing_time_ms?: number | null
+          related_messages?: string[] | null
+          requires_action?: boolean | null
           role?: string
           tokens_used?: number | null
+          tool_calls?: Json | null
+          tool_results?: Json | null
         }
         Relationships: [
           {
@@ -2620,7 +3055,71 @@ export type Database = {
             referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      patterns: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          description: string
+          evidence: Json | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          model_version: string
+          outcomes: Json | null
+          pattern_category: string
+          pattern_type: string
+          source: string
+          success_rate: number | null
+          triggers: Json | null
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          description: string
+          evidence?: Json | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          model_version: string
+          outcomes?: Json | null
+          pattern_category: string
+          pattern_type: string
+          source: string
+          success_rate?: number | null
+          triggers?: Json | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          description?: string
+          evidence?: Json | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          model_version?: string
+          outcomes?: Json | null
+          pattern_category?: string
+          pattern_type?: string
+          source?: string
+          success_rate?: number | null
+          triggers?: Json | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
       }
       performance_metrics: {
         Row: {
@@ -2664,14 +3163,258 @@ export type Database = {
         }
         Relationships: []
       }
+      response_templates: {
+        Row: {
+          agent_type: string | null
+          complexity_level: number | null
+          created_at: string
+          effectiveness_score: number | null
+          id: string
+          is_active: boolean | null
+          template_category: string
+          template_content: string
+          template_name: string
+          template_variables: Json | null
+          tone: string | null
+          trigger_conditions: Json
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          agent_type?: string | null
+          complexity_level?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          template_category: string
+          template_content: string
+          template_name: string
+          template_variables?: Json | null
+          tone?: string | null
+          trigger_conditions?: Json
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          agent_type?: string | null
+          complexity_level?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          template_category?: string
+          template_content?: string
+          template_name?: string
+          template_variables?: Json | null
+          tone?: string | null
+          trigger_conditions?: Json
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      system_health: {
+        Row: {
+          checked_at: string | null
+          component: string
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_unit: string | null
+          metric_value: number
+          status: string | null
+        }
+        Insert: {
+          checked_at?: string | null
+          component: string
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_unit?: string | null
+          metric_value: number
+          status?: string | null
+        }
+        Update: {
+          checked_at?: string | null
+          component?: string
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_unit?: string | null
+          metric_value?: number
+          status?: string | null
+        }
+        Relationships: []
+      }
+      system_metrics: {
+        Row: {
+          component: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_timestamp: string | null
+          metric_unit: string | null
+          metric_value: number
+        }
+        Insert: {
+          component: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_timestamp?: string | null
+          metric_unit?: string | null
+          metric_value: number
+        }
+        Update: {
+          component?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_timestamp?: string | null
+          metric_unit?: string | null
+          metric_value?: number
+        }
+        Relationships: []
+      }
+      tool_usage_patterns: {
+        Row: {
+          created_at: string
+          execution_time_avg_ms: number | null
+          id: string
+          is_recommended: boolean | null
+          last_used: string | null
+          learned_optimizations: Json | null
+          success_indicators: Json | null
+          success_rate: number | null
+          tool_name: string
+          typical_parameters: Json | null
+          updated_at: string
+          usage_context: Json
+          usage_count: number | null
+          user_satisfaction_avg: number | null
+        }
+        Insert: {
+          created_at?: string
+          execution_time_avg_ms?: number | null
+          id?: string
+          is_recommended?: boolean | null
+          last_used?: string | null
+          learned_optimizations?: Json | null
+          success_indicators?: Json | null
+          success_rate?: number | null
+          tool_name: string
+          typical_parameters?: Json | null
+          updated_at?: string
+          usage_context: Json
+          usage_count?: number | null
+          user_satisfaction_avg?: number | null
+        }
+        Update: {
+          created_at?: string
+          execution_time_avg_ms?: number | null
+          id?: string
+          is_recommended?: boolean | null
+          last_used?: string | null
+          learned_optimizations?: Json | null
+          success_indicators?: Json | null
+          success_rate?: number | null
+          tool_name?: string
+          typical_parameters?: Json | null
+          updated_at?: string
+          usage_context?: Json
+          usage_count?: number | null
+          user_satisfaction_avg?: number | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          last_confirmed_at: string | null
+          learned_from_interactions: number | null
+          preference_type: string
+          preference_value: Json
+          session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          last_confirmed_at?: string | null
+          learned_from_interactions?: number | null
+          preference_type: string
+          preference_value: Json
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          last_confirmed_at?: string | null
+          learned_from_interactions?: number | null
+          preference_type?: string
+          preference_value?: Json
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      auto_resolve_issues: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue_resolved: string
+          resolution_details: string
+          confidence_score: number
+        }[]
+      }
+      check_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          component: string
+          status: string
+          details: Json
+        }[]
+      }
       cleanup_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      detect_intent: {
+        Args: { p_message_content: string; p_context?: Json }
+        Returns: {
+          intent_name: string
+          confidence_score: number
+          suggested_actions: Json
+        }[]
+      }
+      get_conversation_context: {
+        Args: { p_conversation_id: string; p_context_keys?: string[] }
+        Returns: Json
+      }
+      get_proactive_suggestions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          suggestion: string
+          reasoning: string
+          action_command: string
+          priority: number
+        }[]
       }
       get_relevant_patterns: {
         Args: { p_context_type: string; p_context_data: Json; p_limit?: number }
@@ -2681,6 +3424,29 @@ export type Database = {
           confidence_score: number
           usage_count: number
         }[]
+      }
+      get_response_template: {
+        Args: {
+          p_category: string
+          p_agent_type: string
+          p_context?: Json
+          p_user_preferences?: Json
+        }
+        Returns: {
+          template_content: string
+          template_variables: Json
+          tone: string
+        }[]
+      }
+      learn_user_preference: {
+        Args: {
+          p_user_id: string
+          p_session_id: string
+          p_preference_type: string
+          p_preference_value: Json
+          p_confidence?: number
+        }
+        Returns: undefined
       }
       record_learning: {
         Args: {
@@ -2692,6 +3458,27 @@ export type Database = {
           p_source: string
         }
         Returns: string
+      }
+      record_tool_usage: {
+        Args: {
+          p_tool_name: string
+          p_context: Json
+          p_parameters: Json
+          p_execution_time_ms: number
+          p_success: boolean
+          p_user_satisfaction?: number
+        }
+        Returns: undefined
+      }
+      update_conversation_context: {
+        Args: {
+          p_conversation_id: string
+          p_context_key: string
+          p_context_value: Json
+          p_priority?: number
+          p_expires_at?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -5448,6 +6235,7 @@ export type Database = {
       congressional_photos: {
         Row: {
           bioguide_id: string
+          congress_number: number
           content_hash: string | null
           created_at: string | null
           download_success: boolean
@@ -5457,9 +6245,11 @@ export type Database = {
           image_height: number | null
           image_width: number | null
           large_path: string | null
+          local_path: string | null
           medium_path: string | null
           member_id: string
           optimization_complete: boolean | null
+          original_path: string | null
           original_url: string
           source_last_modified: string | null
           storage_path: string
@@ -5468,6 +6258,7 @@ export type Database = {
         }
         Insert: {
           bioguide_id: string
+          congress_number: number
           content_hash?: string | null
           created_at?: string | null
           download_success?: boolean
@@ -5477,9 +6268,11 @@ export type Database = {
           image_height?: number | null
           image_width?: number | null
           large_path?: string | null
+          local_path?: string | null
           medium_path?: string | null
           member_id: string
           optimization_complete?: boolean | null
+          original_path?: string | null
           original_url: string
           source_last_modified?: string | null
           storage_path: string
@@ -5488,6 +6281,7 @@ export type Database = {
         }
         Update: {
           bioguide_id?: string
+          congress_number?: number
           content_hash?: string | null
           created_at?: string | null
           download_success?: boolean
@@ -5497,9 +6291,11 @@ export type Database = {
           image_height?: number | null
           image_width?: number | null
           large_path?: string | null
+          local_path?: string | null
           medium_path?: string | null
           member_id?: string
           optimization_complete?: boolean | null
+          original_path?: string | null
           original_url?: string
           source_last_modified?: string | null
           storage_path?: string
@@ -22200,14 +22996,28 @@ export type DbAiAgentAiUserPreferences = Database['ai_agent']['Tables']['ai_user
 export type DbAiAgentAiWorkflowInstances = Database['ai_agent']['Tables']['ai_workflow_instances']['Row']
 export type DbAiAgentAiWorkflowTemplates = Database['ai_agent']['Tables']['ai_workflow_templates']['Row']
 export type DbAiAgentContentAnalysisCache = Database['ai_agent']['Tables']['content_analysis_cache']['Row']
+export type DbAiAgentConversationAnalysis = Database['ai_agent']['Tables']['conversation_analysis']['Row']
+export type DbAiAgentConversationAnalytics = Database['ai_agent']['Tables']['conversation_analytics']['Row']
+export type DbAiAgentConversationContext = Database['ai_agent']['Tables']['conversation_context']['Row']
+export type DbAiAgentConversationFlowInstances = Database['ai_agent']['Tables']['conversation_flow_instances']['Row']
+export type DbAiAgentConversationFlows = Database['ai_agent']['Tables']['conversation_flows']['Row']
 export type DbAiAgentConversations = Database['ai_agent']['Tables']['conversations']['Row']
 export type DbAiAgentDatabaseContext = Database['ai_agent']['Tables']['database_context']['Row']
 export type DbAiAgentFallbackResponses = Database['ai_agent']['Tables']['fallback_responses']['Row']
 export type DbAiAgentGeneratedContent = Database['ai_agent']['Tables']['generated_content']['Row']
+export type DbAiAgentIntentPatterns = Database['ai_agent']['Tables']['intent_patterns']['Row']
 export type DbAiAgentKnowledgeGraph = Database['ai_agent']['Tables']['knowledge_graph']['Row']
 export type DbAiAgentLearnedPatterns = Database['ai_agent']['Tables']['learned_patterns']['Row']
+export type DbAiAgentMemoryClusters = Database['ai_agent']['Tables']['memory_clusters']['Row']
+export type DbAiAgentMemoryConsolidation = Database['ai_agent']['Tables']['memory_consolidation']['Row']
 export type DbAiAgentMessages = Database['ai_agent']['Tables']['messages']['Row']
+export type DbAiAgentPatterns = Database['ai_agent']['Tables']['patterns']['Row']
 export type DbAiAgentPerformanceMetrics = Database['ai_agent']['Tables']['performance_metrics']['Row']
+export type DbAiAgentResponseTemplates = Database['ai_agent']['Tables']['response_templates']['Row']
+export type DbAiAgentSystemHealth = Database['ai_agent']['Tables']['system_health']['Row']
+export type DbAiAgentSystemMetrics = Database['ai_agent']['Tables']['system_metrics']['Row']
+export type DbAiAgentToolUsagePatterns = Database['ai_agent']['Tables']['tool_usage_patterns']['Row']
+export type DbAiAgentUserPreferences = Database['ai_agent']['Tables']['user_preferences']['Row']
 
 // ai_agent Insert Types
 export type DbAiAgentAiActionExecutionsInsert = Database['ai_agent']['Tables']['ai_action_executions']['Insert']
@@ -22239,14 +23049,28 @@ export type DbAiAgentAiUserPreferencesInsert = Database['ai_agent']['Tables']['a
 export type DbAiAgentAiWorkflowInstancesInsert = Database['ai_agent']['Tables']['ai_workflow_instances']['Insert']
 export type DbAiAgentAiWorkflowTemplatesInsert = Database['ai_agent']['Tables']['ai_workflow_templates']['Insert']
 export type DbAiAgentContentAnalysisCacheInsert = Database['ai_agent']['Tables']['content_analysis_cache']['Insert']
+export type DbAiAgentConversationAnalysisInsert = Database['ai_agent']['Tables']['conversation_analysis']['Insert']
+export type DbAiAgentConversationAnalyticsInsert = Database['ai_agent']['Tables']['conversation_analytics']['Insert']
+export type DbAiAgentConversationContextInsert = Database['ai_agent']['Tables']['conversation_context']['Insert']
+export type DbAiAgentConversationFlowInstancesInsert = Database['ai_agent']['Tables']['conversation_flow_instances']['Insert']
+export type DbAiAgentConversationFlowsInsert = Database['ai_agent']['Tables']['conversation_flows']['Insert']
 export type DbAiAgentConversationsInsert = Database['ai_agent']['Tables']['conversations']['Insert']
 export type DbAiAgentDatabaseContextInsert = Database['ai_agent']['Tables']['database_context']['Insert']
 export type DbAiAgentFallbackResponsesInsert = Database['ai_agent']['Tables']['fallback_responses']['Insert']
 export type DbAiAgentGeneratedContentInsert = Database['ai_agent']['Tables']['generated_content']['Insert']
+export type DbAiAgentIntentPatternsInsert = Database['ai_agent']['Tables']['intent_patterns']['Insert']
 export type DbAiAgentKnowledgeGraphInsert = Database['ai_agent']['Tables']['knowledge_graph']['Insert']
 export type DbAiAgentLearnedPatternsInsert = Database['ai_agent']['Tables']['learned_patterns']['Insert']
+export type DbAiAgentMemoryClustersInsert = Database['ai_agent']['Tables']['memory_clusters']['Insert']
+export type DbAiAgentMemoryConsolidationInsert = Database['ai_agent']['Tables']['memory_consolidation']['Insert']
 export type DbAiAgentMessagesInsert = Database['ai_agent']['Tables']['messages']['Insert']
+export type DbAiAgentPatternsInsert = Database['ai_agent']['Tables']['patterns']['Insert']
 export type DbAiAgentPerformanceMetricsInsert = Database['ai_agent']['Tables']['performance_metrics']['Insert']
+export type DbAiAgentResponseTemplatesInsert = Database['ai_agent']['Tables']['response_templates']['Insert']
+export type DbAiAgentSystemHealthInsert = Database['ai_agent']['Tables']['system_health']['Insert']
+export type DbAiAgentSystemMetricsInsert = Database['ai_agent']['Tables']['system_metrics']['Insert']
+export type DbAiAgentToolUsagePatternsInsert = Database['ai_agent']['Tables']['tool_usage_patterns']['Insert']
+export type DbAiAgentUserPreferencesInsert = Database['ai_agent']['Tables']['user_preferences']['Insert']
 
 // ai_agent Update Types
 export type DbAiAgentAiActionExecutionsUpdate = Database['ai_agent']['Tables']['ai_action_executions']['Update']
@@ -22278,25 +23102,66 @@ export type DbAiAgentAiUserPreferencesUpdate = Database['ai_agent']['Tables']['a
 export type DbAiAgentAiWorkflowInstancesUpdate = Database['ai_agent']['Tables']['ai_workflow_instances']['Update']
 export type DbAiAgentAiWorkflowTemplatesUpdate = Database['ai_agent']['Tables']['ai_workflow_templates']['Update']
 export type DbAiAgentContentAnalysisCacheUpdate = Database['ai_agent']['Tables']['content_analysis_cache']['Update']
+export type DbAiAgentConversationAnalysisUpdate = Database['ai_agent']['Tables']['conversation_analysis']['Update']
+export type DbAiAgentConversationAnalyticsUpdate = Database['ai_agent']['Tables']['conversation_analytics']['Update']
+export type DbAiAgentConversationContextUpdate = Database['ai_agent']['Tables']['conversation_context']['Update']
+export type DbAiAgentConversationFlowInstancesUpdate = Database['ai_agent']['Tables']['conversation_flow_instances']['Update']
+export type DbAiAgentConversationFlowsUpdate = Database['ai_agent']['Tables']['conversation_flows']['Update']
 export type DbAiAgentConversationsUpdate = Database['ai_agent']['Tables']['conversations']['Update']
 export type DbAiAgentDatabaseContextUpdate = Database['ai_agent']['Tables']['database_context']['Update']
 export type DbAiAgentFallbackResponsesUpdate = Database['ai_agent']['Tables']['fallback_responses']['Update']
 export type DbAiAgentGeneratedContentUpdate = Database['ai_agent']['Tables']['generated_content']['Update']
+export type DbAiAgentIntentPatternsUpdate = Database['ai_agent']['Tables']['intent_patterns']['Update']
 export type DbAiAgentKnowledgeGraphUpdate = Database['ai_agent']['Tables']['knowledge_graph']['Update']
 export type DbAiAgentLearnedPatternsUpdate = Database['ai_agent']['Tables']['learned_patterns']['Update']
+export type DbAiAgentMemoryClustersUpdate = Database['ai_agent']['Tables']['memory_clusters']['Update']
+export type DbAiAgentMemoryConsolidationUpdate = Database['ai_agent']['Tables']['memory_consolidation']['Update']
 export type DbAiAgentMessagesUpdate = Database['ai_agent']['Tables']['messages']['Update']
+export type DbAiAgentPatternsUpdate = Database['ai_agent']['Tables']['patterns']['Update']
 export type DbAiAgentPerformanceMetricsUpdate = Database['ai_agent']['Tables']['performance_metrics']['Update']
+export type DbAiAgentResponseTemplatesUpdate = Database['ai_agent']['Tables']['response_templates']['Update']
+export type DbAiAgentSystemHealthUpdate = Database['ai_agent']['Tables']['system_health']['Update']
+export type DbAiAgentSystemMetricsUpdate = Database['ai_agent']['Tables']['system_metrics']['Update']
+export type DbAiAgentToolUsagePatternsUpdate = Database['ai_agent']['Tables']['tool_usage_patterns']['Update']
+export type DbAiAgentUserPreferencesUpdate = Database['ai_agent']['Tables']['user_preferences']['Update']
 
 // ai_agent Functions
+export type DbAiAgentAutoResolveIssuesFunction = Database['ai_agent']['Functions']['auto_resolve_issues']
+export type DbAiAgentAutoResolveIssuesArgs = Database['ai_agent']['Functions']['auto_resolve_issues']['Args']
+export type DbAiAgentAutoResolveIssuesReturns = Database['ai_agent']['Functions']['auto_resolve_issues']['Returns']
+export type DbAiAgentCheckSystemHealthFunction = Database['ai_agent']['Functions']['check_system_health']
+export type DbAiAgentCheckSystemHealthArgs = Database['ai_agent']['Functions']['check_system_health']['Args']
+export type DbAiAgentCheckSystemHealthReturns = Database['ai_agent']['Functions']['check_system_health']['Returns']
 export type DbAiAgentCleanupExpiredCacheFunction = Database['ai_agent']['Functions']['cleanup_expired_cache']
 export type DbAiAgentCleanupExpiredCacheArgs = Database['ai_agent']['Functions']['cleanup_expired_cache']['Args']
 export type DbAiAgentCleanupExpiredCacheReturns = Database['ai_agent']['Functions']['cleanup_expired_cache']['Returns']
+export type DbAiAgentDetectIntentFunction = Database['ai_agent']['Functions']['detect_intent']
+export type DbAiAgentDetectIntentArgs = Database['ai_agent']['Functions']['detect_intent']['Args']
+export type DbAiAgentDetectIntentReturns = Database['ai_agent']['Functions']['detect_intent']['Returns']
+export type DbAiAgentGetConversationContextFunction = Database['ai_agent']['Functions']['get_conversation_context']
+export type DbAiAgentGetConversationContextArgs = Database['ai_agent']['Functions']['get_conversation_context']['Args']
+export type DbAiAgentGetConversationContextReturns = Database['ai_agent']['Functions']['get_conversation_context']['Returns']
+export type DbAiAgentGetProactiveSuggestionsFunction = Database['ai_agent']['Functions']['get_proactive_suggestions']
+export type DbAiAgentGetProactiveSuggestionsArgs = Database['ai_agent']['Functions']['get_proactive_suggestions']['Args']
+export type DbAiAgentGetProactiveSuggestionsReturns = Database['ai_agent']['Functions']['get_proactive_suggestions']['Returns']
 export type DbAiAgentGetRelevantPatternsFunction = Database['ai_agent']['Functions']['get_relevant_patterns']
 export type DbAiAgentGetRelevantPatternsArgs = Database['ai_agent']['Functions']['get_relevant_patterns']['Args']
 export type DbAiAgentGetRelevantPatternsReturns = Database['ai_agent']['Functions']['get_relevant_patterns']['Returns']
+export type DbAiAgentGetResponseTemplateFunction = Database['ai_agent']['Functions']['get_response_template']
+export type DbAiAgentGetResponseTemplateArgs = Database['ai_agent']['Functions']['get_response_template']['Args']
+export type DbAiAgentGetResponseTemplateReturns = Database['ai_agent']['Functions']['get_response_template']['Returns']
+export type DbAiAgentLearnUserPreferenceFunction = Database['ai_agent']['Functions']['learn_user_preference']
+export type DbAiAgentLearnUserPreferenceArgs = Database['ai_agent']['Functions']['learn_user_preference']['Args']
+export type DbAiAgentLearnUserPreferenceReturns = Database['ai_agent']['Functions']['learn_user_preference']['Returns']
 export type DbAiAgentRecordLearningFunction = Database['ai_agent']['Functions']['record_learning']
 export type DbAiAgentRecordLearningArgs = Database['ai_agent']['Functions']['record_learning']['Args']
 export type DbAiAgentRecordLearningReturns = Database['ai_agent']['Functions']['record_learning']['Returns']
+export type DbAiAgentRecordToolUsageFunction = Database['ai_agent']['Functions']['record_tool_usage']
+export type DbAiAgentRecordToolUsageArgs = Database['ai_agent']['Functions']['record_tool_usage']['Args']
+export type DbAiAgentRecordToolUsageReturns = Database['ai_agent']['Functions']['record_tool_usage']['Returns']
+export type DbAiAgentUpdateConversationContextFunction = Database['ai_agent']['Functions']['update_conversation_context']
+export type DbAiAgentUpdateConversationContextArgs = Database['ai_agent']['Functions']['update_conversation_context']['Args']
+export type DbAiAgentUpdateConversationContextReturns = Database['ai_agent']['Functions']['update_conversation_context']['Returns']
 
 // =============================================================================
 // SCHOOL SCHEMA TYPES

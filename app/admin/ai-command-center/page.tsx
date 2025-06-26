@@ -131,7 +131,7 @@ Examples: "sync congress", "fix photos", "how's the system?", "make content"`,
   
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const healthCheckInterval = useRef<NodeJS.Timeout | null>(null)
+  const healthCheckInterval = useRef<number | null>(null)
 
   // =============================================================================
   // AUTONOMOUS MONITORING SYSTEM
@@ -530,11 +530,11 @@ Examples: "sync congress", "fix photos", "how's the system?", "make content"`,
       performHealthCheck()
       
       // Set up regular monitoring
-      healthCheckInterval.current = setInterval(performHealthCheck, 30000) // Every 30 seconds
+      healthCheckInterval.current = window.setInterval(performHealthCheck, 30000) // Every 30 seconds
       
       return () => {
         if (healthCheckInterval.current) {
-          clearInterval(healthCheckInterval.current)
+          window.clearInterval(healthCheckInterval.current)
         }
       }
     }

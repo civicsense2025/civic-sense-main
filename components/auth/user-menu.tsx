@@ -18,7 +18,7 @@ import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enh
 import { envFeatureFlags } from '@/lib/env-feature-flags'
 import Link from "next/link"
 import { Icons } from "@/components/icons"
-import { useFeatureFlag } from '@/hooks/useFeatureFlags'
+import { useFeatureFlag } from '@/hooks/useFeatureFlags-statsig'
 
 interface UserMenuProps {
   onSignInClick?: () => void

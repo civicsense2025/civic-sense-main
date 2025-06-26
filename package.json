@@ -115,6 +115,7 @@
     "recharts": "2.15.0",
     "sharp": "^0.34.2",
     "sonner": "^1.7.1",
+    "statsig-js": "^5.1.0",
     "stripe": "^18.2.1",
     "supabase": "^2.24.3",
     "supabase-cli": "^0.0.21",

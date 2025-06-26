@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,16 +36,24 @@ import {
   Globe,
   RefreshCw,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Key,
+  Users,
+  Image,
+  BookOpen,
+  FileSearch,
+  Command,
+  ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface AITool {
   id: string
   name: string
-  type: 'content_generator' | 'bias_analyzer' | 'fact_checker' | 'summarizer' | 'translator' | 'moderator'
+  type: 'content_generator' | 'bias_analyzer' | 'fact_checker' | 'summarizer' | 'translator' | 'moderator' | 'congressional_sync' | 'photo_processor' | 'key_takeaways' | 'news_agent'
   provider: 'openai' | 'anthropic' | 'google' | 'custom'
   model: string
   status: 'active' | 'paused' | 'error' | 'maintenance'
@@ -75,7 +83,7 @@ interface AIJob {
   id: string
   tool_id: string
   tool_name: string
-  type: 'generate_content' | 'analyze_bias' | 'fact_check' | 'moderate_content'
+  type: 'generate_content' | 'analyze_bias' | 'fact_check' | 'moderate_content' | 'sync_congress' | 'process_photos' | 'extract_takeaways'
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
   input_data: any
   output_data?: any
@@ -108,23 +116,9 @@ interface AIStats {
 
 interface AIFilters {
   search: string
-  type: 'all' | 'content_generator' | 'bias_analyzer' | 'fact_checker' | 'summarizer' | 'translator' | 'moderator'
+  type: 'all' | 'content_generator' | 'bias_analyzer' | 'fact_checker' | 'summarizer' | 'translator' | 'moderator' | 'congressional_sync' | 'photo_processor' | 'key_takeaways' | 'news_agent'
   provider: 'all' | 'openai' | 'anthropic' | 'google' | 'custom'
   status: 'all' | 'active' | 'paused' | 'error' | 'maintenance'
-}
-
-interface AIJobQueue {
-  id: string
-  tool_id: string
-  type: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  priority: 'low' | 'medium' | 'high'
-  created_at: string
-  started_at: string | null
-  completed_at: string | null
-  progress: number
-  result?: any
-  error?: string
 }
 
 const toolTypes = [
@@ -132,7 +126,12 @@ const toolTypes = [
   { value: 'content_generator', label: 'Content Generator', icon: FileText },
   { value: 'bias_analyzer', label: 'Bias Analyzer', icon: BarChart3 },
   { value: 'fact_checker', label: 'Fact Checker', icon: MessageSquare },
-  { value: 'summarizer', label: 'Summarizer', icon: Sparkles }
+  { value: 'summarizer', label: 'Summarizer', icon: Sparkles },
+  { value: 'key_takeaways', label: 'Key Takeaways', icon: Key },
+  { value: 'congressional_sync', label: 'Congressional Sync', icon: Database },
+  { value: 'photo_processor', label: 'Photo Processor', icon: Image },
+  { value: 'news_agent', label: 'News Agent', icon: Globe },
+  { value: 'moderator', label: 'AI Assistant', icon: Command }
 ]
 
 const providers = [
@@ -142,6 +141,53 @@ const providers = [
   { value: 'google', label: 'Google' },
   { value: 'custom', label: 'Custom' }
 ]
+
+// Quick actions for each tool type
+const quickActions: Record<string, { 
+  primary?: { label: string; href?: string; action?: string; icon: any };
+  secondary?: { label: string; href: string; icon: any };
+}> = {
+  'key_takeaways': {
+    primary: { label: 'Generate Takeaways', href: '/admin/question-topics', icon: Key },
+    secondary: { label: 'View Content', href: '/admin/question-topics', icon: Eye }
+  },
+  'content_generator': {
+    primary: { label: 'Generate Content', href: '/admin/ai-content', icon: FileText },
+    secondary: { label: 'View Generated', href: '/admin/question-topics', icon: Eye }
+  },
+  'congressional_sync': {
+    primary: { label: 'Sync Congress', href: '/admin/congressional', icon: Database },
+    secondary: { label: 'View Data', href: '/admin/congressional', icon: Eye }
+  },
+  'photo_processor': {
+    primary: { label: 'Process Photos', action: 'process_photos', icon: Image },
+    secondary: { label: 'View Gallery', href: '/admin/congressional', icon: Eye }
+  },
+  'news_agent': {
+    primary: { label: 'Monitor News', href: '/admin/news-agent', icon: Globe },
+    secondary: { label: 'View Events', href: '/admin/events', icon: Eye }
+  },
+  'moderator': {
+    primary: { label: 'AI Command Center', href: '/admin/ai-command-center', icon: Command },
+    secondary: { label: 'View Activity', href: '/admin/ai-command-center', icon: Activity }
+  },
+  'bias_analyzer': {
+    primary: { label: 'Analyze Content', action: 'analyze_bias', icon: BarChart3 },
+    secondary: { label: 'View Reports', href: '/admin/analytics/content', icon: Eye }
+  },
+  'fact_checker': {
+    primary: { label: 'Check Facts', action: 'fact_check', icon: MessageSquare },
+    secondary: { label: 'View Reports', href: '/admin/analytics/content', icon: Eye }
+  },
+  'summarizer': {
+    primary: { label: 'Generate Summary', action: 'summarize', icon: Sparkles },
+    secondary: { label: 'View Summaries', href: '/admin/question-topics', icon: Eye }
+  },
+  'translator': {
+    primary: { label: 'Translate Content', action: 'translate', icon: Globe },
+    secondary: { label: 'View Translations', href: '/admin/question-topics', icon: Eye }
+  }
+}
 
 export default function AIToolsManagement() {
   const [tools, setTools] = useState<AITool[]>([])
@@ -156,12 +202,9 @@ export default function AIToolsManagement() {
     provider: 'all',
     status: 'all'
   })
-  const [selectedTools, setSelectedTools] = useState<string[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(20)
-  const [jobQueue, setJobQueue] = useState<AIJobQueue[]>([])
-  const [selectedType, setSelectedType] = useState('all')
-  const [selectedProvider, setSelectedProvider] = useState('all')
+  const [processingActions, setProcessingActions] = useState<Set<string>>(new Set())
+  
+  const { toast } = useToast()
 
   useEffect(() => {
     loadAIData()
@@ -202,8 +245,54 @@ export default function AIToolsManagement() {
     } catch (error) {
       console.error('Error loading AI data:', error)
       setError(error instanceof Error ? error.message : 'Failed to load AI tools data')
+      
+      toast({
+        title: 'Error Loading AI Tools',
+        description: error instanceof Error ? error.message : 'Failed to load AI tools data',
+        variant: 'destructive'
+      })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const executeAction = async (action: string, toolId?: string, data?: any) => {
+    const actionKey = `${action}-${toolId || 'global'}`
+    setProcessingActions(prev => new Set([...prev, actionKey]))
+    
+    try {
+      const response = await fetch('/api/admin/ai-tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, toolId, data })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: result.message || 'Action completed successfully'
+        })
+        
+        // Refresh data after successful action
+        setTimeout(loadAIData, 1000)
+      } else {
+        throw new Error(result.error || 'Action failed')
+      }
+    } catch (error) {
+      console.error('Action failed:', error)
+      toast({
+        title: 'Action Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive'
+      })
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(actionKey)
+        return newSet
+      })
     }
   }
 
@@ -232,46 +321,47 @@ export default function AIToolsManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-700 bg-green-100'
-      case 'paused': return 'text-yellow-700 bg-yellow-100'
-      case 'error': return 'text-red-700 bg-red-100'
-      case 'maintenance': return 'text-blue-700 bg-blue-100'
-      default: return 'text-gray-700 bg-gray-100'
+      case 'active': return 'text-green-700 bg-green-100 border-green-200'
+      case 'paused': return 'text-yellow-700 bg-yellow-100 border-yellow-200'
+      case 'error': return 'text-red-700 bg-red-100 border-red-200'
+      case 'maintenance': return 'text-blue-700 bg-blue-100 border-blue-200'
+      default: return 'text-gray-700 bg-gray-100 border-gray-200'
     }
   }
 
   const getJobStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-700 bg-green-100'
-      case 'running': return 'text-blue-700 bg-blue-100'
-      case 'pending': return 'text-yellow-700 bg-yellow-100'
-      case 'failed': return 'text-red-700 bg-red-100'
-      case 'cancelled': return 'text-gray-700 bg-gray-100'
-      default: return 'text-gray-700 bg-gray-100'
+      case 'completed': return 'text-green-700 bg-green-100 border-green-200'
+      case 'running': return 'text-blue-700 bg-blue-100 border-blue-200'
+      case 'pending': return 'text-yellow-700 bg-yellow-100 border-yellow-200'
+      case 'failed': return 'text-red-700 bg-red-100 border-red-200'
+      case 'cancelled': return 'text-gray-700 bg-gray-100 border-gray-200'
+      default: return 'text-gray-700 bg-gray-100 border-gray-200'
     }
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'text-red-700 bg-red-100'
-      case 'high': return 'text-orange-700 bg-orange-100'
-      case 'normal': return 'text-blue-700 bg-blue-100'
-      case 'low': return 'text-gray-700 bg-gray-100'
-      default: return 'text-gray-700 bg-gray-100'
+      case 'critical': return 'text-red-700 bg-red-100 border-red-200'
+      case 'high': return 'text-orange-700 bg-orange-100 border-orange-200'
+      case 'normal': return 'text-blue-700 bg-blue-100 border-blue-200'
+      case 'low': return 'text-gray-700 bg-gray-100 border-gray-200'
+      default: return 'text-gray-700 bg-gray-100 border-gray-200'
     }
   }
 
-  const handleToolAction = async (toolId: string, action: string) => {
-    console.log(`Performing action ${action} on tool ${toolId}`)
-    // TODO: Implement tool actions (start, stop, pause, settings, etc.)
-    // For now, just refresh the data
-    await loadAIData()
+  const getToolIcon = (type: string) => {
+    const toolType = toolTypes.find(t => t.value === type)
+    return toolType ? toolType.icon : Brain
   }
 
-  const handleJobAction = async (jobId: string, action: string) => {
-    console.log(`Performing action ${action} on job ${jobId}`)
-    // TODO: Implement job actions (cancel, retry, view details, etc.)
-    await loadAIData()
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'openai': return <Brain className="h-4 w-4" />
+      case 'anthropic': return <Cpu className="h-4 w-4" />
+      case 'google': return <Globe className="h-4 w-4" />
+      default: return <Zap className="h-4 w-4" />
+    }
   }
 
   if (loading && !stats) {
@@ -293,11 +383,14 @@ export default function AIToolsManagement() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load AI Data</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={loadAIData}>Try Again</Button>
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-900">Failed to Load AI Data</h2>
+          <p className="text-gray-600">{error}</p>
+          <Button onClick={loadAIData} className="mt-4">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
         </div>
       </div>
     )
@@ -306,29 +399,32 @@ export default function AIToolsManagement() {
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No AI Data Available</h2>
-          <p className="text-gray-600 mb-4">Unable to load AI tools statistics</p>
-          <Button onClick={loadAIData}>Refresh</Button>
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-900">No AI Data Available</h2>
+          <p className="text-gray-600">Unable to load AI tools statistics</p>
+          <Button onClick={loadAIData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">AI Tools Management</h1>
-          <p className="text-gray-600">Monitor AI services and processing performance</p>
+          <p className="text-gray-600">Monitor and manage CivicSense AI services and processing performance</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/glossary/ai-generate">
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Content
+            <Link href="/admin/ai-command-center">
+              <Command className="h-4 w-4 mr-2" />
+              AI Command Center
             </Link>
           </Button>
           <Button variant="outline" size="sm" onClick={loadAIData} disabled={loading}>
@@ -372,7 +468,7 @@ export default function AIToolsManagement() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avg_response_time}s</div>
+            <div className="text-2xl font-bold">{stats.avg_response_time.toFixed(1)}s</div>
             <div className="text-xs text-muted-foreground">
               Across all active tools
             </div>
@@ -455,13 +551,9 @@ export default function AIToolsManagement() {
                   onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
-                  <option value="all">All Types</option>
-                  <option value="content_generator">Content Generator</option>
-                  <option value="bias_analyzer">Bias Analyzer</option>
-                  <option value="fact_checker">Fact Checker</option>
-                  <option value="summarizer">Summarizer</option>
-                  <option value="translator">Translator</option>
-                  <option value="moderator">Moderator</option>
+                  {toolTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
                 </select>
 
                 <select
@@ -469,11 +561,9 @@ export default function AIToolsManagement() {
                   onChange={(e) => setFilters(prev => ({ ...prev, provider: e.target.value as any }))}
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
-                  <option value="all">All Providers</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="anthropic">Anthropic</option>
-                  <option value="google">Google</option>
-                  <option value="custom">Custom</option>
+                  {providers.map(provider => (
+                    <option key={provider.value} value={provider.value}>{provider.label}</option>
+                  ))}
                 </select>
 
                 <select
@@ -492,99 +582,151 @@ export default function AIToolsManagement() {
           </Card>
 
           {/* Tools List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Tools ({filteredTools.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredTools.length === 0 ? (
-                  <div className="text-center py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredTools.length === 0 ? (
+              <div className="col-span-full">
+                <Card>
+                  <CardContent className="text-center py-12">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No AI tools found</h3>
                     <p className="text-gray-600">Try adjusting your filters or check back later.</p>
-                  </div>
-                ) : (
-                  filteredTools.map((tool) => (
-                    <div key={tool.id} className="border rounded-lg p-6">
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              filteredTools.map((tool) => {
+                const IconComponent = getToolIcon(tool.type)
+                const actions = quickActions[tool.type] || {}
+                const isProcessing = processingActions.has(`${tool.id}`) || processingActions.has(`process_photos-${tool.id}`)
+                
+                return (
+                  <Card key={tool.id} className="relative overflow-hidden">
+                    <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold">{tool.name}</h3>
-                            <Badge className={cn("text-xs", getStatusColor(tool.status))}>
-                              {tool.status.charAt(0).toUpperCase() + tool.status.slice(1)}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {tool.provider.toUpperCase()}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {tool.model}
-                            </Badge>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            {React.createElement(IconComponent, { className: "h-5 w-5 text-blue-600" })}
                           </div>
-                          
-                          <p className="text-sm text-gray-700 mb-4">{tool.description}</p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600">
-                                {tool.stats.total_requests.toLocaleString()}
+                          <div>
+                            <h3 className="text-lg font-semibold">{tool.name}</h3>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge className={cn("text-xs", getStatusColor(tool.status))}>
+                                {tool.status.charAt(0).toUpperCase() + tool.status.slice(1)}
+                              </Badge>
+                              <div className="flex items-center space-x-1">
+                                {getProviderIcon(tool.provider)}
+                                <span className="text-xs text-gray-500">{tool.provider}</span>
                               </div>
-                              <div className="text-xs text-gray-500">Total Requests</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-green-600">
-                                {((tool.stats.successful_requests / tool.stats.total_requests) * 100).toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-gray-500">Success Rate</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-purple-600">
-                                {tool.stats.avg_response_time.toFixed(1)}s
-                              </div>
-                              <div className="text-xs text-gray-500">Avg Response</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-orange-600">
-                                ${tool.stats.total_cost.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-gray-500">Total Cost</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-gray-600">
-                                {tool.stats.last_used 
-                                  ? format(new Date(tool.stats.last_used), 'MMM d')
-                                  : 'Never'
-                                }
-                              </div>
-                              <div className="text-xs text-gray-500">Last Used</div>
+                              <Badge variant="outline" className="text-xs">
+                                {tool.model}
+                              </Badge>
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-gray-700">{tool.description}</p>
+                      
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-lg font-bold text-blue-600">
+                            {tool.stats.total_requests.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">Total Requests</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-lg font-bold text-green-600">
+                            {((tool.stats.successful_requests / Math.max(tool.stats.total_requests, 1)) * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-gray-500">Success Rate</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-lg font-bold text-purple-600">
+                            {tool.stats.avg_response_time.toFixed(1)}s
+                          </div>
+                          <div className="text-xs text-gray-500">Avg Response</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-lg font-bold text-orange-600">
+                            ${tool.stats.total_cost.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-gray-500">Total Cost</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="flex space-x-2">
+                          {actions.primary && (
+                            <>
+                              {actions.primary.href ? (
+                                <Button size="sm" asChild>
+                                  <Link href={actions.primary.href} className="flex items-center">
+                                    {React.createElement(actions.primary.icon, { className: "h-4 w-4 mr-1" })}
+                                    {actions.primary.label}
+                                  </Link>
+                                </Button>
+                              ) : actions.primary?.action && (
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => actions.primary?.action && executeAction(actions.primary.action, tool.id)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? (
+                                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    actions.primary?.icon && React.createElement(actions.primary.icon, { className: "h-4 w-4 mr-1" })
+                                  )}
+                                  {actions.primary?.label}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          
+                          {actions.secondary && (
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={actions.secondary.href} className="flex items-center">
+                                {React.createElement(actions.secondary.icon, { className: "h-4 w-4 mr-1" })}
+                                {actions.secondary.label}
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                         
-                        <div className="flex items-center space-x-2 ml-4">
+                        <div className="flex items-center space-x-1">
                           {tool.status === 'active' ? (
-                            <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'pause')}>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => executeAction('stop_tool', tool.id)}
+                              disabled={isProcessing}
+                            >
                               <Pause className="h-4 w-4" />
                             </Button>
                           ) : (
-                            <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'start')}>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => executeAction('start_tool', tool.id)}
+                              disabled={isProcessing}
+                            >
                               <Play className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'settings')}>
+                          <Button size="sm" variant="ghost">
                             <Settings className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleToolAction(tool.id, 'view')}>
-                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
+          </div>
         </TabsContent>
 
         {/* Job Queue Tab */}
@@ -640,14 +782,9 @@ export default function AIToolsManagement() {
                               ${job.cost.toFixed(3)}
                             </span>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'view')}>
+                          <Button size="sm" variant="ghost">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {job.status === 'pending' && (
-                            <Button size="sm" variant="ghost" onClick={() => handleJobAction(job.id, 'cancel')}>
-                              <Square className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
                       </div>
                       
@@ -674,15 +811,25 @@ export default function AIToolsManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(stats.by_provider).map(([provider, count]) => (
-                    <div key={provider} className="flex items-center justify-between">
-                      <span className="text-sm font-medium capitalize">{provider}</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={(count / Math.max(Object.values(stats.by_provider).reduce((a, b) => a + b, 0), 1)) * 100} className="w-20" />
-                        <span className="text-sm font-medium">{count}</span>
+                  {Object.entries(stats.by_provider).map(([provider, count]) => {
+                    const iconElement = getProviderIcon(provider)
+                    
+                    return (
+                      <div key={provider} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {iconElement}
+                          <span className="text-sm font-medium capitalize">{provider}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Progress 
+                            value={(count / Math.max(Object.values(stats.by_provider).reduce((a, b) => a + b, 0), 1)) * 100} 
+                            className="w-20" 
+                          />
+                          <span className="text-sm font-medium">{count}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -694,17 +841,25 @@ export default function AIToolsManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(stats.by_type).map(([type, count]) => (
-                    <div key={type} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={(count / stats.total_tools) * 100} className="w-20" />
-                        <span className="text-sm font-medium">{count}</span>
+                  {Object.entries(stats.by_type).map(([type, count]) => {
+                    const toolType = toolTypes.find(t => t.value === type)
+                    const IconComponent = toolType?.icon || Brain
+                    
+                    return (
+                      <div key={type} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <IconComponent className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            {toolType?.label || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Progress value={(count / stats.total_tools) * 100} className="w-20" />
+                          <span className="text-sm font-medium">{count}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>

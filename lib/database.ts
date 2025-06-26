@@ -1,5 +1,5 @@
 import { supabase } from "./supabase"
-import type { TopicMetadata, QuizQuestion, QuestionType } from "./quiz-data"
+import type { TopicMetadata, QuizQuestion, QuestionType, MultipleChoiceQuestion } from "./quiz-data"
 import type { 
   Database,
   Tables,
@@ -368,22 +368,49 @@ export const questionOperations = {
       }
     }
     
-    return {
+    // Create a base question that matches the MultipleChoiceQuestion structure
+    const baseQuestion = {
       topic_id: dbQuestion.topic_id,
-      question_number: dbQuestion.question_number,
-      question_type: dbQuestion.question_type as QuestionType,
-      category: dbQuestion.category,
+      question_number: dbQuestion.question_number ?? 1, // Fix: Handle null/undefined
+      type: (dbQuestion.question_type as QuestionType) || 'multiple_choice',
+      category: dbQuestion.category ?? '',
       question: dbQuestion.question,
-      option_a: dbQuestion.option_a ?? undefined,
-      option_b: dbQuestion.option_b ?? undefined,
-      option_c: dbQuestion.option_c ?? undefined,
-      option_d: dbQuestion.option_d ?? undefined,
       correct_answer: dbQuestion.correct_answer,
-      hint: dbQuestion.hint,
-      explanation: dbQuestion.explanation,
+      hint: dbQuestion.hint ?? undefined,
+      explanation: dbQuestion.explanation ?? undefined,
       tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-      sources: processedSources,
+      sources: processedSources.map(source => ({
+        title: source.name, // Map name to title
+        url: source.url,
+        type: 'article' as const // Default type for Source interface
+      })),
     }
+
+    // Add options for multiple choice questions
+    if (dbQuestion.question_type === 'multiple_choice') {
+      return {
+        ...baseQuestion,
+        type: 'multiple_choice' as const,
+        options: [
+          dbQuestion.option_a,
+          dbQuestion.option_b,
+          dbQuestion.option_c,
+          dbQuestion.option_d
+        ].filter(Boolean) as string[]
+      } as MultipleChoiceQuestion
+    }
+
+    // Return as multiple choice by default for backward compatibility
+    return {
+      ...baseQuestion,
+      type: 'multiple_choice' as const,
+      options: [
+        dbQuestion.option_a,
+        dbQuestion.option_b,
+        dbQuestion.option_c,
+        dbQuestion.option_d
+      ].filter(Boolean) as string[]
+    } as MultipleChoiceQuestion
   }
 }
 
@@ -446,7 +473,13 @@ export const quizAttemptOperations = {
     const { data, error } = await query
 
     if (error) throw error
-    return data as (DbUserQuizAttempt & { question_topics: { topic_title: string; emoji: string } })[]
+    // Handle the fact that Supabase returns question_topics as an array but we expect a single object
+    return data.map(attempt => ({
+      ...attempt,
+      question_topics: Array.isArray(attempt.question_topics) 
+        ? attempt.question_topics[0] || { topic_title: '', emoji: '' }
+        : attempt.question_topics
+    })) as (DbUserQuizAttempt & { question_topics: { topic_title: string; emoji: string } })[]
   },
 
   // Get completed quizzes for a user
@@ -574,9 +607,9 @@ export const dbUtils = {
       const dbTopic: DbQuestionTopicInsert = {
         topic_id: topicMeta.topic_id,
         topic_title: topicMeta.topic_title,
-        description: topicMeta.description,
+        description: topicMeta.description ?? '', // Fix: Handle undefined
         why_this_matters: topicMeta.why_this_matters,
-        emoji: topicMeta.emoji,
+        emoji: topicMeta.emoji ?? '', // Fix: Handle undefined
         date: topicMeta.date,
         day_of_week: topicMeta.dayOfWeek,
         categories: topicMeta.categories as any, // Cast to Json
@@ -590,18 +623,18 @@ export const dbUtils = {
       const dbQuestions: DbQuestionInsert[] = questions.map(q => ({
         topic_id: q.topic_id,
         question_number: q.question_number,
-        question_type: q.question_type,
-        category: q.category,
+        question_type: (q as any).type || q.question_type || 'multiple_choice', // Handle discriminated union
+        category: q.category ?? '', // Fix: Handle undefined
         question: q.question,
-        option_a: q.option_a ?? null,
-        option_b: q.option_b ?? null,
-        option_c: q.option_c ?? null,
-        option_d: q.option_d ?? null,
+        option_a: (q as any).option_a ?? (q as any).options?.[0] ?? null,
+        option_b: (q as any).option_b ?? (q as any).options?.[1] ?? null,
+        option_c: (q as any).option_c ?? (q as any).options?.[2] ?? null,
+        option_d: (q as any).option_d ?? (q as any).options?.[3] ?? null,
         correct_answer: q.correct_answer,
-        hint: q.hint,
-        explanation: q.explanation,
+        hint: q.hint ?? null,
+        explanation: q.explanation ?? null,
         tags: q.tags as any, // Cast to Json
-        sources: q.sources as any, // Cast to Json
+        sources: (q.sources as any) ?? null, // Cast to Json
         difficulty_level: 2, // Default difficulty
         is_active: true
       }))

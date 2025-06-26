@@ -1,7 +1,11 @@
+// DEPRECATED: This file is being replaced by useFeatureFlags-statsig.ts
+// TODO: Remove this file after migration is complete
 import React from 'react'
 import { useState, useEffect } from 'react'
 import { envFeatureFlags, type AllFeatureFlags, type PremiumFeatureFlags } from '@/lib/env-feature-flags'
 import type { User } from 'types'
+
+console.warn('useFeatureFlags.ts is deprecated. Please import from useFeatureFlags-statsig.ts')
 
 export function useFeatureFlags(user?: User | null) {
   const [flags, setFlags] = useState<AllFeatureFlags>(envFeatureFlags.getAllFlags())

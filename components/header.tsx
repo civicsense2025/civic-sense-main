@@ -16,7 +16,7 @@ import { useAdmin } from "@/lib/admin-access"
 import { EnhancedGlobalSearch } from "@/components/enhanced-global-search"
 import { useComprehensiveFeatureFlags } from "@/hooks/useComprehensiveFeatureFlags"
 import { envFeatureFlags } from '@/lib/env-feature-flags'
-import { useFeatureFlag } from '@/hooks/useFeatureFlags'
+import { useFeatureFlag } from '@/hooks/useFeatureFlags-statsig'
 import { UnclaimedRewardsNotification } from "@/components/survey/unclaimed-rewards-notification"
 
 interface HeaderProps {
