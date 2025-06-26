@@ -74,8 +74,8 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   // Check if quiz is partially completed (placeholder - would need to check localStorage or database)
   const isPartiallyCompleted = false
 
-  // Helper function to convert database questions to QuizQuestion format
-  const convertToQuizQuestion = useCallback((dbQuestion: any): QuizQuestion => {
+  // Helper function to convert database questions to QuizQuestion format (stable)
+  const convertToQuizQuestion = (dbQuestion: any): QuizQuestion => {
     const converted = { ...dbQuestion }
     
     // Convert question_type to type if needed
@@ -85,7 +85,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     }
     
     return converted as QuizQuestion
-  }, [])
+  }
 
   // Set mounted state to avoid hydration mismatches
   useEffect(() => {
@@ -150,32 +150,6 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
           console.warn(`⚠️ QuizPageClient: No questions found for topic ${params.topicId}`)
         }
         
-        // Check if this is a continue request
-        const shouldContinue = urlSearchParams?.get('continue') === 'true'
-        
-        if (shouldContinue) {
-          // For continue requests, skip the loading screen and go directly to play
-          console.log('🔄 Continue request detected, redirecting to play immediately')
-          
-          // Build continue parameters
-          const continueParams = new URLSearchParams()
-          continueParams.set('mode', 'standard') // Default mode for continue
-          continueParams.set('continue', 'true')
-          continueParams.set('restore', 'progress')
-          
-          const sessionId = urlSearchParams?.get('sessionId')
-          const attemptId = urlSearchParams?.get('attemptId')
-          const source = urlSearchParams?.get('source')
-          
-          if (sessionId) continueParams.set('sessionId', sessionId)
-          if (attemptId) continueParams.set('attemptId', attemptId)
-          if (source) continueParams.set('source', source)
-          
-          // Immediately redirect to play route with continue parameters
-          router.replace(`/quiz/${params.topicId}/play?${continueParams.toString()}`)
-          return // Exit early to prevent further loading
-        }
-        
       } catch (error) {
         console.error("❌ QuizPageClient: Error loading quiz data:", error)
         if (!isCancelled) {
@@ -193,7 +167,39 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
     return () => {
       isCancelled = true
     }
-  }, [params.topicId, urlSearchParams, user, recordQuizAttempt, convertToQuizQuestion, router])
+  }, [params.topicId]) // Only essential dependencies
+
+  // Handle continue request separately to avoid infinite loops
+  useEffect(() => {
+    // Only run after component is mounted and topic is loaded
+    if (!isMounted || !topic || isLoading) return
+
+    const shouldContinue = urlSearchParams?.get('continue') === 'true'
+    
+    if (shouldContinue) {
+      // For continue requests, skip the loading screen and go directly to play
+      console.log('🔄 Continue request detected, redirecting to play immediately')
+      
+      // Build continue parameters
+      const continueParams = new URLSearchParams()
+      continueParams.set('mode', 'standard') // Default mode for continue
+      continueParams.set('continue', 'true')
+      continueParams.set('restore', 'progress')
+      
+      const sessionId = urlSearchParams?.get('sessionId')
+      const attemptId = urlSearchParams?.get('attemptId')
+      const source = urlSearchParams?.get('source')
+      
+      if (sessionId) continueParams.set('sessionId', sessionId)
+      if (attemptId) continueParams.set('attemptId', attemptId)
+      if (source) continueParams.set('source', source)
+      
+      // Use setTimeout to avoid immediate state update during render
+      setTimeout(() => {
+        router.replace(`/quiz/${params.topicId}/play?${continueParams.toString()}`)
+      }, 0)
+    }
+  }, [isMounted, topic, isLoading, urlSearchParams, router, params.topicId])
 
   // Handle starting quiz by navigating to appropriate quiz page
   const handleStartQuiz = useCallback(async (overrideMode?: QuizGameMode) => {
@@ -358,7 +364,7 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
-      <main className="max-w-8xl mx-auto px-8 sm:px-12 lg:px-16 py-8 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Navigation */}
         <nav className="mb-8 sm:mb-12">
           <Button

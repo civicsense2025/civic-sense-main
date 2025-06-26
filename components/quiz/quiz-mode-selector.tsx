@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { QuizGameMode } from "@/lib/types/quiz"
 import { PremiumFeature } from "@/lib/premium"
-import { Lock, Play, ChevronLeft, ChevronRight } from "lucide-react"
+import { Lock, Play, Target, Users, Clock, Zap, Bot } from "lucide-react"
 
 interface ModeInfo {
   emoji: string
@@ -24,6 +24,7 @@ interface ModeInfo {
   isRecommended?: boolean
   isPremium?: boolean
   isNew?: boolean
+  icon?: any
 }
 
 interface QuizModeSelectorProps {
@@ -42,25 +43,39 @@ export function QuizModeSelector({
   className
 }: QuizModeSelectorProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
-  const [currentIndex, setCurrentIndex] = useState(0)
   const params = useParams()
 
   const modeInfo: Partial<Record<QuizGameMode, ModeInfo>> = {
     standard: {
-      emoji: '⚡',
-      name: 'Standard',
+      emoji: '🎯',
+      name: 'Standard Quiz',
       description: 'Classic quiz format',
+      icon: Target,
       isRecommended: true
+    },
+    practice: {
+      emoji: '📚',
+      name: 'Solo Practice',
+      description: 'Learn at your pace',
+      icon: Zap
+    },
+    speed_round: {
+      emoji: '⏱️',
+      name: 'Timed Challenge', 
+      description: 'Test your speed',
+      icon: Clock
     },
     classic_quiz: {
       emoji: '🤝',
       name: 'PvP Battle',
-      description: 'Challenge a friend'
+      description: 'Challenge a friend',
+      icon: Users
     },
     npc_battle: {
       emoji: '🤖',
       name: 'AI Battle',
       description: 'Face off against AI',
+      icon: Bot,
       isPremium: true,
       isNew: true
     }
@@ -83,170 +98,99 @@ export function QuizModeSelector({
       return
     }
     
-    // For standard and PvP modes, use the callback
+    // For other modes, use the callback
     onModeSelect(mode)
   }, [params.topicId, selectedDifficulty, onModeSelect, isPremium, hasFeatureAccess, modeInfo])
 
-  const allModes: QuizGameMode[] = ['standard', 'classic_quiz', 'npc_battle']
-
-  const nextMode = () => {
-    setCurrentIndex((prev) => (prev + 1) % allModes.length)
-  }
-
-  const prevMode = () => {
-    setCurrentIndex((prev) => (prev - 1 + allModes.length) % allModes.length)
-  }
-
-  const currentMode = allModes[currentIndex]
-  const info = modeInfo[currentMode]
-
-  if (!info) return null
-
-  const isSelected = selectedMode === currentMode
-  const isPremiumMode = info.isPremium
-  const hasAccess = !isPremiumMode || isPremium || hasFeatureAccess('advanced_analytics')
+  const allModes: QuizGameMode[] = ['standard', 'practice', 'speed_round', 'classic_quiz', 'npc_battle']
 
   return (
-    <div className={cn("w-full space-y-6", className)}>
-      {/* Header */}
-      <div className="text-center">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-          Choose Quiz Mode
-        </h3>
-        <p className="text-slate-600 dark:text-slate-400">
-          {currentIndex + 1} of {allModes.length}
-        </p>
-      </div>
+    <div className={cn("w-full space-y-3", className)}>
+      {/* Quiz Mode Buttons - Vertically Stacked */}
+      {allModes.map((mode) => {
+        const info = modeInfo[mode]
+        if (!info) return null
 
-      {/* Carousel Container - Fixed positioning to prevent shift */}
-      <div className="relative px-16"> {/* Add horizontal padding for arrow space */}
-        {/* Navigation Arrows - Fixed position, no hover effects that cause movement */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full shadow-md border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
-          onClick={prevMode}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full shadow-md border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
-          onClick={nextMode}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+                 const isSelected = selectedMode === mode
+         const isPremiumMode = info.isPremium
+         // Feature flag: Only allow standard mode for now
+         const hasAccess = mode === 'standard'
+        const IconComponent = info.icon
 
-        {/* Card Container - Constrained width, centered */}
-        <div className="flex justify-center">
-          <div className="w-80 max-w-full"> {/* Fixed width with max-width constraint */}
-            <Card
-              className={cn(
-                "transition-all duration-200 rounded-xl border-2",
-                isSelected 
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" 
-                  : "border-slate-200 dark:border-slate-700",
-                !hasAccess && "opacity-60"
-              )}
-            >
-              <CardContent className="p-6 text-center">
-                <div className="space-y-4">
-                  {/* Emoji and Lock */}
-                  <div className="relative">
-                    <div className="text-4xl mb-2">{info.emoji}</div>
-                    {!hasAccess && (
-                      <Lock className="h-4 w-4 text-slate-400 absolute top-0 right-0" />
-                    )}
+        return (
+          <Card
+            key={mode}
+            className={cn(
+              "transition-all duration-200 cursor-pointer hover:shadow-md",
+              isSelected 
+                ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20" 
+                : "hover:bg-slate-50 dark:hover:bg-slate-800/50",
+              !hasAccess && "opacity-60 cursor-not-allowed"
+            )}
+            onClick={() => hasAccess && handleModeSelect(mode)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                {/* Icon/Emoji */}
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">
+                    {info.emoji}
                   </div>
+                </div>
 
-                  {/* Title */}
-                  <h4 className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {info.name}
-                  </h4>
-
-                  {/* Description */}
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                                     <div className="flex items-center gap-2">
+                     <h3 className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                       {info.name}
+                     </h3>
+                     {mode !== 'standard' && (
+                       <Lock className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                     )}
+                   </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                     {info.description}
                   </p>
-
-                  {/* Badges - Now outlined */}
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    {info.isRecommended && (
-                      <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-400">
-                        Recommended
-                      </Badge>
-                    )}
-                    {info.isNew && (
-                      <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-400">
-                        New
-                      </Badge>
-                    )}
-                    {isPremiumMode && (
-                      <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400">
-                        Premium
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Action Button - Only clickable element */}
-                  {hasAccess ? (
-                    <Button 
-                      className={cn(
-                        "w-full",
-                        isSelected 
-                            ? "bg-blue-600 hover:bg-blue-700 text-primary" 
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white"
-                      )}
-                      onClick={() => handleModeSelect(currentMode)}
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      {isSelected ? 'Selected' : 'Select'}
-                    </Button>
-                  ) : (
-                    <Button 
-                      disabled
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Lock className="w-4 h-4 mr-2" />
-                      Premium Required
-                    </Button>
-                  )}
+                  
+                                     {/* Badges */}
+                   <div className="flex gap-1 mt-2">
+                     {mode === 'standard' && (
+                       <Badge variant="outline" className="text-xs py-0 px-1.5 border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/20">
+                         Recommended
+                       </Badge>
+                     )}
+                     {mode !== 'standard' && (
+                       <Badge variant="outline" className="text-xs py-0 px-1.5 border-slate-400 text-slate-600 bg-slate-50 dark:bg-slate-800">
+                         Coming Soon
+                       </Badge>
+                     )}
+                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
 
-      {/* Dots Indicator */}
-      <div className="flex justify-center gap-2">
-        {allModes.map((_, index) => (
-          <button
-            key={index}
-            className={cn(
-              "w-2 h-2 rounded-full transition-all",
-              index === currentIndex 
-                ? "bg-blue-600 w-6" 
-                : "bg-slate-300 dark:bg-slate-600 hover:bg-slate-400"
-            )}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
-      </div>
+                {/* Selection Indicator */}
+                {isSelected && (
+                  <div className="flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
 
-      {/* AI Difficulty Selector */}
-      {currentMode === 'npc_battle' && hasAccess && (
-        <Card className="rounded-xl border-slate-200 dark:border-slate-700 max-w-sm mx-auto">
+      {/* AI Difficulty Selector - only show when AI Battle is selected */}
+      {selectedMode === 'npc_battle' && (
+        <Card className="border-slate-200 dark:border-slate-700">
           <CardContent className="p-4">
-            <div className="space-y-4">
-              <div className="text-center">
-                <h4 className="font-semibold text-slate-900 dark:text-white mb-1">
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-medium text-slate-900 dark:text-white">
                   AI Difficulty
                 </h4>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   Choose your challenge level
                 </p>
               </div>
@@ -254,7 +198,7 @@ export function QuizModeSelector({
                 value={selectedDifficulty} 
                 onValueChange={(value) => setSelectedDifficulty(value as 'easy' | 'medium' | 'hard')}
               >
-                <SelectTrigger className="w-full rounded-lg">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,6 +211,16 @@ export function QuizModeSelector({
           </CardContent>
         </Card>
       )}
+
+      {/* Start Quiz Button */}
+      <Button 
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+        onClick={() => handleModeSelect(selectedMode)}
+        disabled={!selectedMode}
+      >
+        <Play className="w-4 h-4 mr-2" />
+        Start Quiz
+      </Button>
     </div>
   )
 } 

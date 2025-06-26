@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
@@ -176,9 +176,9 @@ export default function QuizPlayClient({ topicId, searchParams }: QuizPlayClient
     }
   }
 
-  const handleLoadingComplete = () => {
+  const handleLoadingComplete = useCallback(() => {
     setShowLoadingScreen(false)
-  }
+  }, [])
 
   const handleAuthSuccess = () => {
     setIsAuthDialogOpen(false)
@@ -239,7 +239,10 @@ export default function QuizPlayClient({ topicId, searchParams }: QuizPlayClient
                   date: topic?.date || "",
                   description: topic?.description || "",
                   categories: topic?.categories || [],
-                  difficulty: topic?.difficulty || "intermediate"
+                  difficulty: (topic?.difficulty === "beginner" ? "easy" : 
+                              topic?.difficulty === "intermediate" ? "medium" : 
+                              topic?.difficulty === "advanced" ? "hard" : "medium") as "easy" | "medium" | "hard",
+                  is_published: true
                 }}
                 onComplete={handleQuizComplete}
                 practiceMode={searchParams?.mode === 'practice'}

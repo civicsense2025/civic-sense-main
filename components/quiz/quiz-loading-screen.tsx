@@ -34,34 +34,53 @@ export function QuizLoadingScreen({
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
+    let quipInterval: number
+    let progressInterval: number
+    let fadeTimeout: number
+    let completeTimeout: number
+    let isCancelled = false
+
     // Rotate through quips every 1 second
-    const quipInterval = setInterval(() => {
-      setCurrentQuip(prev => (prev + 1) % POLITICAL_QUIPS.length)
+    quipInterval = setInterval(() => {
+      if (!isCancelled) {
+        setCurrentQuip(prev => (prev + 1) % POLITICAL_QUIPS.length)
+      }
     }, 1000)
 
     // Update progress bar
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + (100 / (duration / 50)) // 50ms intervals
-        if (newProgress >= 100) {
-          clearInterval(progressInterval)
-          clearInterval(quipInterval)
-          
-          // Fade out then complete
-          setTimeout(() => {
-            setIsVisible(false)
-            setTimeout(onComplete, 300) // Wait for fade out
-          }, 200)
-          
-          return 100
-        }
-        return newProgress
-      })
+    progressInterval = setInterval(() => {
+      if (!isCancelled) {
+        setProgress(prev => {
+          const newProgress = prev + (100 / (duration / 50)) // 50ms intervals
+          if (newProgress >= 100) {
+            clearInterval(progressInterval)
+            clearInterval(quipInterval)
+            
+            // Fade out then complete
+            fadeTimeout = setTimeout(() => {
+              if (!isCancelled) {
+                setIsVisible(false)
+                completeTimeout = setTimeout(() => {
+                  if (!isCancelled) {
+                    onComplete()
+                  }
+                }, 300) // Wait for fade out
+              }
+            }, 200)
+            
+            return 100
+          }
+          return newProgress
+        })
+      }
     }, 50)
 
     return () => {
+      isCancelled = true
       clearInterval(quipInterval)
       clearInterval(progressInterval)
+      clearTimeout(fadeTimeout)
+      clearTimeout(completeTimeout)
     }
   }, [duration, onComplete])
 

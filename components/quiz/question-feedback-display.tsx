@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { QuizQuestion } from "@/lib/quiz-data"
@@ -15,7 +15,7 @@ interface QuestionFeedbackDisplayProps {
   xpGained?: number
 }
 
-export function QuestionFeedbackDisplay({
+export const QuestionFeedbackDisplay = memo(function QuestionFeedbackDisplay({
   question,
   selectedAnswer,
   timeLeft,
@@ -96,14 +96,14 @@ export function QuestionFeedbackDisplay({
     }
   }, [xpGained])
 
-  // Handle next question with timing control
-  const handleNextWithDelay = () => {
+  // Handle next question with timing control - memoized to prevent recreation
+  const handleNextWithDelay = useCallback(() => {
     if (!canAdvance) return
     onNextQuestion()
-  }
+  }, [canAdvance, onNextQuestion])
 
-  // Determine if answer is correct using same logic as quiz engine
-  const isCorrectAnswer = (() => {
+  // Determine if answer is correct using same logic as quiz engine - memoized
+  const isCorrectAnswer = useMemo(() => {
     if (!selectedAnswer) return false
     
     if (question.type === 'short_answer') {
@@ -113,9 +113,10 @@ export function QuestionFeedbackDisplay({
     } else {
       return selectedAnswer === question.correct_answer
     }
-  })()
+  }, [selectedAnswer, question.type, question.correct_answer])
 
-  const getFeedbackContent = () => {
+  // Memoize feedback content to prevent recalculation
+  const feedback = useMemo(() => {
     if (isCorrectAnswer) {
       return {
         emoji: "🎉",
@@ -138,9 +139,7 @@ export function QuestionFeedbackDisplay({
         showBonus: false
       }
     }
-  }
-
-  const feedback = getFeedbackContent()
+  }, [isCorrectAnswer, timeLeft, selectedAnswer])
 
   // Auto-play feedback (correct/incorrect and correct answer) when shown
   useEffect(() => {
@@ -206,7 +205,7 @@ export function QuestionFeedbackDisplay({
             </div>
           </div>
           
-          {/* Explanation and sources */}
+          {/* Explanation and sources - memoized by React.memo on QuestionExplanation */}
           <QuestionExplanation question={question} />
         </div>
       </div>
@@ -233,4 +232,7 @@ export function QuestionFeedbackDisplay({
       </div>
     </div>
   )
-} 
+})
+
+// Add displayName for easier debugging
+QuestionFeedbackDisplay.displayName = 'QuestionFeedbackDisplay' 

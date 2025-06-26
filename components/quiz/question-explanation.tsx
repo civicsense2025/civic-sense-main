@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, memo } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { QuizQuestion } from "@/lib/quiz-data"
@@ -11,8 +11,16 @@ interface QuestionExplanationProps {
   className?: string
 }
 
-export function QuestionExplanation({ question, className }: QuestionExplanationProps) {
+export const QuestionExplanation = memo(function QuestionExplanation({ 
+  question, 
+  className 
+}: QuestionExplanationProps) {
   const [showSources, setShowSources] = useState(false)
+
+  // Don't render if no explanation
+  if (!question.explanation) {
+    return null
+  }
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -45,7 +53,10 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
               {question.sources.map((source, index) => (
                 <SourceMetadataCard
                   key={index}
-                  source={source}
+                  source={{
+                    ...source,
+                    name: source.title
+                  }}
                   showThumbnail={true}
                   compact={false}
                 />
@@ -56,4 +67,7 @@ export function QuestionExplanation({ question, className }: QuestionExplanation
       )}
     </div>
   )
-} 
+})
+
+// Add displayName for easier debugging
+QuestionExplanation.displayName = 'QuestionExplanation' 

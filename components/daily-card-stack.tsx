@@ -41,8 +41,8 @@ const PremiumPrompt = ({
   onCreateAccount: () => void
 }) => {
   if (!show) return null
-
-  return (
+    
+    return (
     <Card className="mb-6 border-2 border-blue-500 shadow-lg">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
@@ -59,8 +59,8 @@ const PremiumPrompt = ({
         <div className="grid grid-cols-2 gap-4 text-sm">
           {[
             "Unlimited daily quizzes",
-            "Advanced progress tracking",
-            "Custom study collections", 
+            "Advanced progress tracking", 
+            "Custom study collections",
             "Priority support"
           ].map((feature, index) => (
             <div key={index} className="flex items-center gap-2">
@@ -119,33 +119,33 @@ export function DailyCardStack({
         setIsLoading(true)
         
         const { data, error } = await supabase
-          .from('question_topics')
-          .select('*')
-          .eq('is_active', true)
-          .not('date', 'is', null)
-          .order('date', { ascending: false })
+        .from('question_topics')
+        .select('*')
+        .eq('is_active', true)
+        .not('date', 'is', null)
+        .order('date', { ascending: false })
           .limit(50)
-        
+      
         if (error) throw error
-        
+      
         if (!isCancelled) {
           const processedTopics = (data || []).map(topic => ({
-          ...topic,
+        ...topic,
             categories: Array.isArray(topic.categories) ? topic.categories : [],
             dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'short' }) || ''
-        })) as unknown as TopicMetadata[]
-        
+      })) as unknown as TopicMetadata[]
+      
           setTopics(processedTopics)
           setHasMoreTopics((data || []).length === 50) // Has more if we got full limit
           onLoadingStateChange?.(true)
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error loading topics:', error)
         if (!isCancelled) {
           setTopics([])
           onLoadingStateChange?.(true)
         }
-      } finally {
+    } finally {
         if (!isCancelled) {
           setIsLoading(false)
         }
@@ -167,28 +167,28 @@ export function DailyCardStack({
       if (!oldestDate) return
       
       const { data, error } = await supabase
-        .from('question_topics')
-        .select('*')
-        .eq('is_active', true)
-        .not('date', 'is', null)
+          .from('question_topics')
+          .select('*')
+          .eq('is_active', true)
+          .not('date', 'is', null)
         .lt('date', oldestDate)
-        .order('date', { ascending: false })
+          .order('date', { ascending: false })
         .limit(25)
-      
+        
       if (error) throw error
-      
+        
       const processedNewTopics = (data || []).map(topic => ({
-        ...topic,
+          ...topic,
         categories: Array.isArray(topic.categories) ? topic.categories : [],
         dayOfWeek: parseTopicDate(topic.date)?.toLocaleDateString('en-US', { weekday: 'short' }) || ''
-      })) as unknown as TopicMetadata[]
-      
+        })) as unknown as TopicMetadata[]
+        
       setTopics(prev => [...prev, ...processedNewTopics])
       setHasMoreTopics((data || []).length === 25) // Has more if we got full limit
-      
-    } catch (error) {
+        
+      } catch (error) {
       console.error('Error loading more topics:', error)
-    } finally {
+      } finally {
       setIsLoadingMore(false)
     }
   }, [topics, isLoadingMore, hasMoreTopics])
@@ -228,9 +228,15 @@ export function DailyCardStack({
       const index = filteredTopics.findIndex(topic => topic.topic_id === topicParam)
       if (index !== -1) {
         setCurrentIndex(index)
+        setHighlightedNavIndex(index) // Keep highlight in sync
       }
     }
   }, [searchParams, filteredTopics])
+
+  // Sync highlighted navigation index with current index on topic changes
+  useEffect(() => {
+    setHighlightedNavIndex(currentIndex)
+  }, [currentIndex])
 
   // Update URL when index changes
   const updateUrl = useCallback((index: number) => {
@@ -275,14 +281,14 @@ export function DailyCardStack({
     if (!topic) return
 
     const accessStatus = getTopicAccessStatus(topic)
-    
+
     if (!accessStatus.accessible) {
       if (accessStatus.reason.includes('guest')) {
-        onAuthRequired?.()
+          onAuthRequired?.()
       } else if (accessStatus.reason === 'premium_required') {
         setShowPremiumPrompt(true)
       }
-      return
+          return
     }
 
     // Record attempt for guests
@@ -316,26 +322,24 @@ export function DailyCardStack({
     
     if (direction === 'left') {
       // Move highlight left (to older topics)
-      if (highlightedNavIndex < endIndex) {
+      if (highlightedNavIndex < endIndex && highlightedNavIndex < filteredTopics.length - 1) {
         // Move highlight within visible cards
         setHighlightedNavIndex(highlightedNavIndex + 1)
       } else {
-        // Move to older topics (shift the window)
+        // Move to older topics and select that topic
         handlePrevious()
-        setHighlightedNavIndex(currentIndex + 1)
       }
     } else {
       // Move highlight right (to newer topics)  
-      if (highlightedNavIndex > startIndex) {
+      if (highlightedNavIndex > startIndex && highlightedNavIndex > 0) {
         // Move highlight within visible cards
         setHighlightedNavIndex(highlightedNavIndex - 1)
       } else {
-        // Move to newer topics (shift the window)
+        // Move to newer topics and select that topic
         handleNext()
-        setHighlightedNavIndex(currentIndex - 1)
       }
     }
-  }, [highlightedNavIndex, currentIndex, handlePrevious, handleNext, filteredTopics.length])
+  }, [highlightedNavIndex, handlePrevious, handleNext, filteredTopics.length])
 
   // Keyboard navigation
   useEffect(() => {
@@ -415,8 +419,8 @@ export function DailyCardStack({
           </p>
           {!user && (
             <Button onClick={onAuthRequired} className="mt-4">
-              Create Free Account
-            </Button>
+                Create Free Account
+              </Button>
           )}
         </div>
       </div>
@@ -451,8 +455,8 @@ export function DailyCardStack({
           accessStatus={accessStatus}
           isCompleted={isCompleted}
           onStartQuiz={() => handleStartQuiz(currentTopic.topic_id)}
-        />
-      </div>
+                          />
+                        </div>
 
       {/* Navigation Controls - Sticky on mobile */}
       {filteredTopics.length > 1 && showStickyNav && (
@@ -476,7 +480,7 @@ export function DailyCardStack({
             onNext={handleNext}
             onTopicSelect={handleTopicSelect}
           />
-        </div>
+                              </div>
       )}
     </div>
   )

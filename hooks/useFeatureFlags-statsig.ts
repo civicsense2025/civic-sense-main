@@ -1,5 +1,5 @@
 import React from 'react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { envFeatureFlags, type AllFeatureFlags, type PremiumFeatureFlags } from '@/lib/env-feature-flags'
 import { useStatsig, useFeatureFlag as useStatsigFeatureFlag } from '@/components/providers/statsig-provider'
 import type { User } from 'types'
@@ -10,6 +10,7 @@ import type { User } from 'types'
  * 2. Extracting user values to prevent reference changes
  * 3. Using stable dependency arrays in useEffect
  * 4. Separating development event listener into its own useEffect
+ * 5. CRITICAL FIX: Made logging useEffect much more conservative to prevent infinite loops
  */
 
 // Enhanced hook that uses Statsig with fallback to environment flags
@@ -26,6 +27,9 @@ export function useFeatureFlags(user?: User | null) {
   const hasActivePremium = userSubscriptionStatus === 'active' && 
                           (userSubscriptionPlan === 'premium' || userSubscriptionPlan === 'pro')
   const isAdmin = userRole === 'admin'
+
+  // Memoize the user object to prevent reference changes causing infinite loops
+  const memoizedUser = React.useMemo(() => user, [userId, userSubscriptionStatus, userSubscriptionPlan, userRole])
 
   useEffect(() => {
     // Get base flags (from Statsig if ready, otherwise from environment)
@@ -52,10 +56,10 @@ export function useFeatureFlags(user?: User | null) {
     }
     
     // Apply user-specific overrides using the standalone function
-    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, user)
+    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, memoizedUser)
     
     setFlags(userFlags)
-  }, [userId, userSubscriptionStatus, userSubscriptionPlan, userRole, statsigReady])
+  }, [userId, userSubscriptionStatus, userSubscriptionPlan, userRole, statsigReady, memoizedUser])
   
   // Handle checkGate changes separately to reduce re-render frequency
   useEffect(() => {
@@ -77,9 +81,9 @@ export function useFeatureFlags(user?: User | null) {
     }
     
     baseFlags = statsigFlags
-    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, user)
+    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, memoizedUser)
     setFlags(userFlags)
-  }, [checkGate, statsigReady])
+  }, [statsigReady, memoizedUser]) // Removed checkGate to prevent infinite loops
 
   // Development-only feature flag listener
   useEffect(() => {
@@ -107,18 +111,18 @@ export function useFeatureFlags(user?: User | null) {
         newBaseFlags = envFeatureFlags.getAllFlags()
       }
       
-      const newUserFlags = applyUserSpecificFlagsStandalone(newBaseFlags, user)
+      const newUserFlags = applyUserSpecificFlagsStandalone(newBaseFlags, memoizedUser)
       setFlags(newUserFlags)
     }
 
     window.addEventListener('featureFlagsChanged', handleFeatureFlagsChange)
     return () => window.removeEventListener('featureFlagsChanged', handleFeatureFlagsChange)
-  }, [])
+  }, [statsigReady, memoizedUser])
 
   return flags
 }
 
-  // Enhanced hook for checking a specific feature flag with Statsig analytics
+// Enhanced hook for checking a specific feature flag with Statsig analytics
 export function useFeatureFlag(flag: keyof AllFeatureFlags, user?: User | null): boolean {
   const flags = useFeatureFlags(user)
   const { logEvent, isReady: statsigReady } = useStatsig()
@@ -127,17 +131,34 @@ export function useFeatureFlag(flag: keyof AllFeatureFlags, user?: User | null):
   const userType = user?.subscription?.status === 'active' ? 'premium' : user ? 'free' : 'guest'
   const flagValue = flags[flag]
   
-  // Log feature flag usage for analytics (only in production with Statsig)
+  // Track what we've already logged to prevent excessive logging
+  const loggedRef = useRef<Set<string>>(new Set())
+  
+  // FIXED: More conservative logging to prevent infinite loops
   useEffect(() => {
-    if (statsigReady && flagValue) {
-      logEvent('feature_flag_usage', 1, {
-        flag_name: flag,
-        enabled: flagValue,
-        user_type: userType,
-        source: 'react_hook'
-      })
+    // Only log in production and only once per flag/value/userType combination
+    if (process.env.NODE_ENV === 'production' && statsigReady && flagValue) {
+      const logKey = `${flag}-${flagValue}-${userType}`
+      
+      if (!loggedRef.current.has(logKey)) {
+        loggedRef.current.add(logKey)
+        
+        // Use setTimeout to prevent immediate re-render cycles
+        setTimeout(() => {
+          try {
+            logEvent('feature_flag_usage', 1, {
+              flag_name: flag,
+              enabled: flagValue,
+              user_type: userType,
+              source: 'react_hook'
+            })
+          } catch (error) {
+            console.warn('Failed to log feature flag usage:', error)
+          }
+        }, 100)
+      }
     }
-  }, [flag, flagValue, userType, statsigReady, logEvent])
+  }, [flag, flagValue, userType, statsigReady]) // Removed logEvent from dependencies
   
   return flagValue
 }
@@ -152,17 +173,34 @@ export function usePremiumFeatureFlag(flag: keyof PremiumFeatureFlags, user?: Us
   const userHasPremium = user?.subscription?.status === 'active'
   const userPlan = user?.subscription?.plan || 'none'
   
-  // Log premium feature access attempts
+  // Track what we've already logged to prevent excessive logging
+  const loggedRef = useRef<Set<string>>(new Set())
+  
+  // FIXED: More conservative logging to prevent infinite loops
   useEffect(() => {
-    if (statsigReady) {
-      logEvent('premium_feature_check', 1, {
-        flag_name: flag,
-        enabled: flagValue,
-        user_has_premium: userHasPremium,
-        user_plan: userPlan
-      })
+    // Only log in production and only once per flag/value combination
+    if (process.env.NODE_ENV === 'production' && statsigReady) {
+      const logKey = `premium-${flag}-${flagValue}-${userPlan}`
+      
+      if (!loggedRef.current.has(logKey)) {
+        loggedRef.current.add(logKey)
+        
+        // Use setTimeout to prevent immediate re-render cycles
+        setTimeout(() => {
+          try {
+            logEvent('premium_feature_check', 1, {
+              flag_name: flag,
+              enabled: flagValue,
+              user_has_premium: userHasPremium,
+              user_plan: userPlan
+            })
+          } catch (error) {
+            console.warn('Failed to log premium feature check:', error)
+          }
+        }, 100)
+      }
     }
-  }, [flag, flagValue, userHasPremium, userPlan, statsigReady, logEvent])
+  }, [flag, flagValue, userHasPremium, userPlan, statsigReady]) // Removed logEvent from dependencies
   
   return flagValue
 }
