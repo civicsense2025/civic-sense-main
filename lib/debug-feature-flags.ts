@@ -6,7 +6,7 @@
 import { envFeatureFlags } from './env-feature-flags'
 
 export function debugFeatureFlags() {
-  console.group('🏁 Feature Flags Debug')
+  console.group('[FLAGS] Feature Flags Debug')
   
   // Environment info
   console.log('Environment:', {
@@ -21,7 +21,7 @@ export function debugFeatureFlags() {
   const allFlags = envFeatureFlags.getAllFlags()
   
   // Navigation flags
-  console.group('📱 Navigation Flags')
+  console.group('[NAV] Navigation Flags')
   const navFlags = envFeatureFlags.getNavigationFlags()
   Object.entries(navFlags).forEach(([key, value]) => {
     const envKey = `NEXT_PUBLIC_FEATURE_${key.toUpperCase()}`
@@ -36,7 +36,7 @@ export function debugFeatureFlags() {
   console.groupEnd()
   
   // Core flags
-  console.group('⚙️ Core Flags')
+  console.group('[CORE] Core Flags')
   const coreFlags = envFeatureFlags.getCoreFlags()
   Object.entries(coreFlags).forEach(([key, value]) => {
     const envKey = `NEXT_PUBLIC_FEATURE_${key.toUpperCase()}`
@@ -51,7 +51,7 @@ export function debugFeatureFlags() {
   console.groupEnd()
   
   // Premium flags
-  console.group('👑 Premium Flags')
+  console.group('[PREMIUM] Premium Flags')
   const premiumFlags = envFeatureFlags.getPremiumFlags()
   Object.entries(premiumFlags).forEach(([key, value]) => {
     const envKey = `NEXT_PUBLIC_FEATURE_${key.toUpperCase()}`
@@ -67,7 +67,7 @@ export function debugFeatureFlags() {
   
   // Development overrides
   if (process.env.NODE_ENV === 'development') {
-    console.group('🔧 Development Overrides')
+    console.group('[DEV] Development Overrides')
     const overrides = envFeatureFlags.getOverrides()
     console.log('Active overrides:', overrides)
     console.groupEnd()

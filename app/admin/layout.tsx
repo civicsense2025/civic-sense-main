@@ -183,12 +183,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setIsClientMounted(true)
   }, [])
 
-  // Redirect unauthenticated users (middleware should handle this, but double-check)
+  // Debug logging for admin access
   useEffect(() => {
-    if (isClientMounted && !authLoading && !user) {
-      router.push('/auth/signin')
+    if (isClientMounted) {
+      console.log('🔍 AdminLayout Status:', {
+        isClientMounted,
+        authLoading,
+        adminLoading,
+        hasUser: !!user,
+        userEmail: user?.email,
+        isAdmin,
+        isSuperAdmin,
+        role,
+        error
+      })
     }
-  }, [user, authLoading, router, isClientMounted])
+  }, [isClientMounted, authLoading, adminLoading, user, isAdmin, isSuperAdmin, role, error])
 
   const isActivePath = (href: string) => {
     // Prevent hydration mismatch by only computing on client
@@ -200,7 +210,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return pathname.startsWith(href)
   }
 
-  // Prevent any server-side rendering to avoid hydration mismatch
+  // Show appropriate loading/error states based on authentication
   if (!isClientMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -212,50 +222,65 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     )
   }
 
-  // Show loading state while checking authentication and admin status
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
           <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
           <p className="text-slate-600">Verifying admin access...</p>
-          <div className="text-xs text-slate-400 space-x-2">
-            <span>Auth: {authLoading ? 'Checking...' : 'Complete'}</span>
-            <span>•</span>
-            <span>Admin: {adminLoading ? 'Checking...' : 'Complete'}</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if authentication failed
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Authentication Required</h2>
+            <p className="text-red-600">You need to be signed in to access the admin panel.</p>
+            <Button 
+              onClick={() => router.push('/auth/signin')} 
+              className="mt-4"
+            >
+              Sign In
+            </Button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Show error state if admin check failed
-  if (error) {
+  // Show error if admin access failed
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4 max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-          <h2 className="text-xl font-semibold text-slate-900">Access Verification Failed</h2>
-          <p className="text-slate-600">{error}</p>
-          <Button onClick={() => router.push('/dashboard')}>
-            Return to Dashboard
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  // This should be handled by middleware, but as a fallback
-  if (!user || !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center space-y-4 max-w-md">
-          <Shield className="w-12 h-12 text-amber-500 mx-auto" />
-          <h2 className="text-xl font-semibold text-slate-900">Admin Access Required</h2>
-          <p className="text-slate-600">You need administrator privileges to access this area.</p>
-          <Button onClick={() => router.push('/dashboard')}>
-            Return to Dashboard
-          </Button>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-amber-800 mb-2">Admin Access Required</h2>
+            <p className="text-amber-600">
+              You don't have administrator privileges. If you believe this is an error, please contact support.
+            </p>
+            <div className="mt-4 space-x-2">
+              <Button 
+                onClick={() => router.push('/dashboard')} 
+                variant="outline"
+              >
+                Go to Dashboard
+              </Button>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+              >
+                Retry
+              </Button>
+            </div>
+            {error && (
+              <p className="text-xs text-amber-500 mt-2">Error: {error}</p>
+            )}
+          </div>
         </div>
       </div>
     )

@@ -536,7 +536,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                           <div className="text-xs text-muted-foreground">
                             Metrics are collected automatically and logged to console with color-coded ratings.
                             <br />
-                            🟢 Good • 🟡 Needs Improvement • 🔴 Poor
+                            (Good) (Needs Improvement) (Poor)
                           </div>
                         </CardContent>
                       </Card>
@@ -558,7 +558,7 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                                   className="p-3 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30"
                                 >
                                   <div className="text-sm text-orange-800 dark:text-orange-200">
-                                    • {suggestion}
+                                    - {suggestion}
                                   </div>
                                 </div>
                               ))}
@@ -602,10 +602,10 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                             <div>
                               <div className="font-medium mb-1">Quick Tips:</div>
                               <ul className="text-xs space-y-1 text-muted-foreground">
-                                <li>• Add width/height to images to prevent layout shifts</li>
-                                <li>• Use Next.js Image component for optimization</li>
-                                <li>• Minimize render-blocking JavaScript</li>
-                                <li>• Implement proper font loading strategies</li>
+                                <li>- Add width/height to images to prevent layout shifts</li>
+                                <li>- Use Next.js Image component for optimization</li>
+                                <li>- Minimize render-blocking JavaScript</li>
+                                <li>- Implement proper font loading strategies</li>
                               </ul>
                             </div>
                           </div>
@@ -643,8 +643,8 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
                               <span className="text-muted-foreground">Override Storage:</span>
                               <div className="mt-1">
                                 {typeof window !== 'undefined' && localStorage.getItem('civicsense-feature-flags-overrides') 
-                                  ? <span className="text-blue-600 dark:text-blue-400">✓ Active</span>
-                                  : <span className="text-gray-600 dark:text-gray-400">○ None</span>
+                                  ? <span className="text-blue-600 dark:text-blue-400">(Active)</span>
+                                  : <span className="text-gray-600 dark:text-gray-400">(None)</span>
                                 }
                               </div>
                             </div>

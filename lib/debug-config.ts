@@ -125,16 +125,16 @@ class DebugManager {
 
   private getCategoryPrefix(category: keyof DebugConfig['categories']): string {
     const prefixes = {
-      quiz: '🎯',
-      multiplayer: '🎮',
-      pwa: '📱',
-      storage: '💾',
-      analytics: '📊',
-      auth: '🔐',
-      api: '🌐',
-      premium: '💵',
-      general: '🔧',
-      'pattern-recognition': '🤖'
+      quiz: '[Q]',
+      multiplayer: '[MP]',
+      pwa: '[PWA]',
+      storage: '[STORE]',
+      analytics: '[ANALYTICS]',
+      auth: '[AUTH]',
+      api: '[API]',
+      premium: '[PREMIUM]',
+      general: '[GEN]',
+      'pattern-recognition': '[PATTERN]'
     }
     return `${prefixes[category]} [${category.toUpperCase()}]`
   }
@@ -152,7 +152,7 @@ class DebugManager {
   toggleMinimized() {
     this.config.minimized = !this.config.minimized
     this.saveConfig()
-    console.log(`🔧 Debug messages ${this.config.minimized ? 'minimized' : 'expanded'}`)
+    console.log(`[DEBUG] Debug messages ${this.config.minimized ? 'minimized' : 'expanded'}`)
   }
 
   enable(category?: keyof DebugConfig['categories']) {
@@ -178,18 +178,18 @@ class DebugManager {
   }
 
   showStatus() {
-    console.group('🔧 Debug Configuration')
+    console.group('[DEBUG] Debug Configuration')
     console.log('Enabled:', this.config.enabled)
     console.log('Minimized:', this.config.minimized)
     console.log('Categories:')
     Object.entries(this.config.categories).forEach(([key, value]) => {
-      console.log(`  ${key}: ${value ? '✅' : '❌'}`)
+      console.log(`  ${key}: ${value ? 'ENABLED' : 'DISABLED'}`)
     })
     console.groupEnd()
   }
 
   help() {
-    console.group('🔧 Debug Manager Help')
+    console.group('[DEBUG] Debug Manager Help')
     console.log('Available commands (use window.debug in dev console):')
     console.log('  .toggle()           - Toggle all debug messages')
     console.log('  .toggle("quiz")     - Toggle quiz debug messages')
@@ -205,7 +205,7 @@ class DebugManager {
   }
 
   testPremium() {
-    console.group('💵 Testing Premium Debugging')
+    console.group('[PREMIUM] Testing Premium Debugging')
     this.log('premium', 'Test message: Premium debugging is working!')
     this.warn('premium', 'Test warning: This is a premium warning message')
     this.error('premium', 'Test error: This is a premium error message')

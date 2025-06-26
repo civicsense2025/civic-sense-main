@@ -1287,6 +1287,7 @@ export const enhancedQuizDatabase = {
 
   /**
    * Get all topics that a user has played (completed or not)
+   * Enhanced with better error handling and fallback mechanisms
    */
   async getPlayedTopics(userId: string): Promise<Array<{
     id: string
@@ -1302,36 +1303,22 @@ export const enhancedQuizDatabase = {
         return []
       }
 
-      type DbResponse = {
-        topic_id: string;
-        topics: {
-          topic_title: string;
-          description: string;
-          categories: Json;
-          emoji: string;
-          date: string | null;
-        }[];
-      }
+      console.log('🔍 Getting played topics for user:', userId)
 
-          // Get all quiz attempts for the user using service role to avoid RLS issues
-    const { data: attempts, error } = await serviceSupabase
-      .from('user_quiz_attempts')
-      .select(`
-        topic_id,
-        topics:question_topics!inner (
-          topic_title,
-          description,
-          categories,
-          emoji,
-          date
-        )
-      `)
-      .eq('user_id', userId)
+      // Step 1: Get all quiz attempts for the user using service role to avoid RLS issues
+      const { data: attempts, error } = await serviceSupabase
+        .from('user_quiz_attempts')
+        .select('topic_id')
+        .eq('user_id', userId)
       
       if (error) {
-        // Handle specific RLS/permission errors more gracefully
+        // Handle specific errors more gracefully
         if (error.code === 'PGRST116' || error.message?.includes('permission denied')) {
           console.warn(`Database access error for user ${userId}:`, error.message)
+          return []
+        }
+        if (error.message?.includes('foreign key')) {
+          console.error('❌ Foreign key error detected - this should not happen with the fixed query:', error)
           return []
         }
         console.error('Error getting played topics:', error)
@@ -1339,19 +1326,45 @@ export const enhancedQuizDatabase = {
       }
 
       if (!attempts || attempts.length === 0) {
+        console.log('📭 No quiz attempts found for user:', userId)
         return []
       }
 
-      // Convert to expected format and deduplicate by topic_id
-      const seen = new Set<string>()
-      return attempts
-        .filter(attempt => {
-          if (!attempt.topic_id || seen.has(attempt.topic_id)) return false
-          seen.add(attempt.topic_id)
-          return true
-        })
-        .map(attempt => {
-          const topic = attempt.topics[0] // Take first topic since it's an array
+      console.log('✅ Found quiz attempts:', attempts.length)
+
+      // Step 2: Get unique topic IDs and validate them
+      const uniqueTopicIds = [...new Set(attempts.map((a: any) => a.topic_id).filter(Boolean))]
+      
+      if (uniqueTopicIds.length === 0) {
+        console.log('📭 No valid topic IDs found')
+        return []
+      }
+      
+      console.log('🎯 Fetching details for topic IDs:', uniqueTopicIds.length)
+      
+      // Step 3: Fetch topic details in a separate query (NO JOIN)
+      const { data: topics, error: topicsError } = await serviceSupabase
+        .from('question_topics')
+        .select('topic_id, topic_title, description, categories, emoji, date')
+        .in('topic_id', uniqueTopicIds)
+      
+      if (topicsError) {
+        console.error('Error fetching topic details:', topicsError)
+        // Return partial data with topic IDs if we can't get full details
+        return uniqueTopicIds.map(topicId => ({
+          id: topicId,
+          title: `Topic ${topicId}`,
+          description: 'Topic details unavailable',
+          category: 'General',
+          emoji: '📚'
+        }))
+      }
+      
+      console.log('✅ Successfully fetched topic details:', topics?.length || 0)
+      
+      // Step 4: Convert to expected format with proper error handling
+      return (topics || []).map(topic => {
+        try {
           // Handle categories which could be Json (string[] | null)
           const categories = topic?.categories
           const firstCategory = Array.isArray(categories) && categories.length > 0 
@@ -1359,16 +1372,27 @@ export const enhancedQuizDatabase = {
             : undefined
           
           return {
-            id: attempt.topic_id,
-            title: topic?.topic_title || '',
-            description: topic?.description,
+            id: topic.topic_id || '',
+            title: topic?.topic_title || 'Untitled Topic',
+            description: topic?.description || undefined,
             category: firstCategory,
-            emoji: topic?.emoji,
+            emoji: topic?.emoji || '📚',
             date: topic?.date || undefined
           }
-        })
+        } catch (itemError) {
+          console.error('Error processing topic item:', topic, itemError)
+          return {
+            id: topic?.topic_id || 'unknown',
+            title: 'Error loading topic',
+            description: 'Unable to load topic details',
+            category: 'General',
+            emoji: '❓'
+          }
+        }
+      }).filter(topic => topic.id !== 'unknown') // Remove failed items
     } catch (error) {
-      console.error('Error in getPlayedTopics:', error)
+      console.error('❌ Critical error in getPlayedTopics:', error)
+      // Return empty array instead of throwing to prevent breaking the UI
       return []
     }
   }

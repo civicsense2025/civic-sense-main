@@ -59,70 +59,78 @@ export function RecommendedTopics({ userId, className }: RecommendedTopicsProps)
         // If we have less than 4 recommendations, fall back to topics they've already played but haven't completed
         let finalRecs = [...recs]
         if (finalRecs.length < 4) {
-          const completedTopics = await enhancedQuizDatabase.getCompletedTopics(userId)
-          const completedSet = new Set(completedTopics)
-          
-          // Get topics they've played but not completed
-          const playedTopics = await enhancedQuizDatabase.getPlayedTopics(userId)
-          const incompleteTopics = playedTopics.filter((topic: { id: string }) => !completedSet.has(topic.id))
-          
-          // Add incomplete topics until we have at least 4
-          for (const topic of incompleteTopics) {
-            if (finalRecs.length >= 4) break
+          try {
+            console.log('🔄 Getting completed and played topics for recommendations fallback')
+            const completedTopics = await enhancedQuizDatabase.getCompletedTopics(userId)
+            const completedSet = new Set(completedTopics)
             
-            if (!finalRecs.some(rec => rec.id === topic.id)) {
-              finalRecs.push({
-                id: topic.id,
-                title: topic.title || '',
-                description: topic.description || 'Continue your learning journey',
-                category: topic.category || 'General',
-                emoji: topic.emoji || '📚',
-                reason: 'Continue where you left off',
-                confidence: 0.9,
-                estimatedMinutes: 6, // Default value since we can't calculate it without full topic data
-                difficulty: 'intermediate' as const, // Default to intermediate
-                trending: false,
-                matchScore: 0.9
-              })
-            }
-          }
-          
-          // If we still need more, add topics from categories they've shown interest in
-          if (finalRecs.length < 4) {
-            const topCategories = Object.entries(userActivity.categoryFrequency)
-              .sort(([,a], [,b]) => (b as number) - (a as number))
-              .map(([category]) => category)
+            // Get topics they've played but not completed with enhanced error handling
+            const playedTopics = await enhancedQuizDatabase.getPlayedTopics(userId)
+            console.log('✅ Played topics retrieved:', playedTopics.length)
+            const incompleteTopics = playedTopics.filter((topic: { id: string }) => !completedSet.has(topic.id))
             
-            const allTopicsArray = Object.values(allTopics)
-            
-            for (const category of topCategories) {
+            // Add incomplete topics until we have at least 4
+            for (const topic of incompleteTopics) {
               if (finalRecs.length >= 4) break
               
-              const categoryTopics = allTopicsArray
-                .filter(topic => 
-                  topic.categories?.includes(category) &&
-                  !completedSet.has(topic.topic_id) &&
-                  !finalRecs.some(rec => rec.id === topic.topic_id)
-                )
-              
-              for (const topic of categoryTopics) {
-                if (finalRecs.length >= 4) break
-                
+              if (!finalRecs.some(rec => rec.id === topic.id)) {
                 finalRecs.push({
-                  id: topic.topic_id,
-                  title: topic.topic_title,
-                  description: topic.description || topic.why_this_matters || `Learn more about ${category}`,
-                  category: category,
+                  id: topic.id,
+                  title: topic.title || '',
+                  description: topic.description || 'Continue your learning journey',
+                  category: topic.category || 'General',
                   emoji: topic.emoji || '📚',
-                  reason: `Based on your interest in ${category}`,
-                  confidence: 0.7,
-                  estimatedMinutes: calculateEstimatedTime(topic),
-                  difficulty: 'intermediate',
+                  reason: 'Continue where you left off',
+                  confidence: 0.9,
+                  estimatedMinutes: 6, // Default value since we can't calculate it without full topic data
+                  difficulty: 'intermediate' as const, // Default to intermediate
                   trending: false,
-                  matchScore: 0.7
+                  matchScore: 0.9
                 })
               }
             }
+            
+            // If we still need more, add topics from categories they've shown interest in
+            if (finalRecs.length < 4) {
+              const topCategories = Object.entries(userActivity.categoryFrequency)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
+                .map(([category]) => category)
+              
+              const allTopicsArray = Object.values(allTopics)
+              
+              for (const category of topCategories) {
+                if (finalRecs.length >= 4) break
+                
+                const categoryTopics = allTopicsArray
+                  .filter((topic: any) => 
+                    topic.categories?.includes(category) &&
+                    !completedSet.has(topic.topic_id) &&
+                    !finalRecs.some(rec => rec.id === topic.topic_id)
+                  )
+                
+                for (const topic of categoryTopics) {
+                  const typedTopic = topic as any
+                  if (finalRecs.length >= 4) break
+                  
+                  finalRecs.push({
+                    id: typedTopic.topic_id,
+                    title: typedTopic.topic_title,
+                    description: typedTopic.description || typedTopic.why_this_matters || `Learn more about ${category}`,
+                    category: category,
+                    emoji: typedTopic.emoji || '📚',
+                    reason: `Based on your interest in ${category}`,
+                    confidence: 0.7,
+                    estimatedMinutes: calculateEstimatedTime(typedTopic),
+                    difficulty: 'intermediate',
+                    trending: false,
+                    matchScore: 0.7
+                  })
+                }
+              }
+            }
+          } catch (fallbackError) {
+            console.error('Error in recommendations fallback:', fallbackError)
+            // Continue with existing recommendations even if fallback fails
           }
         }
 
