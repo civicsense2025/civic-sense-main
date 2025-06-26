@@ -10,7 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin-access'
+import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import Anthropic from '@anthropic-ai/sdk'
 import {
@@ -584,7 +585,10 @@ class ContentPackageGenerator {
 // Load configuration from API
 async function loadAgentConfig() {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     const { data: configData } = await supabase
       .from('news_agent_config')
       .select('config')
@@ -673,7 +677,10 @@ async function loadAgentConfig() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser()
@@ -817,7 +824,10 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const supabaseClient = await createClient()
+    const supabaseClient = await createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     // Try to get content packages first
     let packages: any[] = []

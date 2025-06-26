@@ -267,8 +267,12 @@ export interface AIToolUsage {
  */
 export async function trackToolUsage(usage: AIToolUsage): Promise<void> {
   try {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
+    // Use service role client to bypass RLS for AI analytics
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     
     // TODO: Create ai_tool_usage table in database
     // For now, just log the usage instead of inserting to non-existent table

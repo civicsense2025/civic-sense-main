@@ -1,8 +1,16 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CongressAPIClient } from '@/lib/integrations/congress-api';
 import { CivicSenseBillAnalyzer } from '@/lib/ai/bill-analyzer';
 import { CongressionalPhotoService } from './congressional-photo-service';
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 export class CongressSyncService {
   private api: CongressAPIClient;
@@ -16,7 +24,10 @@ export class CongressSyncService {
       apiKey: process.env.CONGRESS_API_KEY!,
       rateLimitPerSecond: 1 // Congress API rate limits
     });
-    this.supabase = createClient();
+    
+    // Use service role client to bypass RLS policies for administrative operations
+    this.supabase = createServiceClient();
+    
     this.billAnalyzer = new CivicSenseBillAnalyzer();
     this.photoService = new CongressionalPhotoService();
   }
@@ -175,6 +186,33 @@ export class CongressSyncService {
       .replace(/\s+/g, '-')
       .trim();
   }
+
+  /**
+   * Helper method to extract terms array from Congress API response
+   * Sometimes terms is an object, sometimes it's an array
+   */
+  private extractTermsArray(terms: any): any[] | null {
+    if (!terms) return null;
+    
+    // If it's already an array, return it
+    if (Array.isArray(terms)) {
+      return terms;
+    }
+    
+    // If it's an object, check if it has an array property
+    if (typeof terms === 'object') {
+      // Sometimes the API returns { items: [...] } or similar
+      if (terms.items && Array.isArray(terms.items)) {
+        return terms.items;
+      }
+      
+      // Sometimes the API returns the term object directly
+      // Convert single object to array
+      return [terms];
+    }
+    
+    return null;
+  }
   
   private async processBillCosponsors(billId: string, cosponsorsData: any) {
     if (!cosponsorsData?.cosponsors) return;
@@ -269,11 +307,39 @@ export class CongressSyncService {
   async syncMembers() {
     try {
       const currentCongress = 118; // Update as needed
-      const members = await this.api.getMembers({ congress: currentCongress });
+      console.log(`🔄 Starting comprehensive member sync for ${currentCongress}th Congress with pagination...`);
       
-      for (const memberData of members.members || []) {
-        await this.processMember(memberData);
+      // Use getAllMembers to fetch ALL members with pagination
+      const members = await this.api.getAllMembers({ congress: currentCongress });
+      
+      console.log(`📊 Found ${members.members?.length || 0} members to process`);
+      
+      if (!members.members || members.members.length === 0) {
+        throw new Error(`No members found for Congress ${currentCongress}`);
       }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const memberData of members.members) {
+        try {
+          await this.processMember(memberData);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to process member ${memberData.firstName} ${memberData.lastName}:`, error);
+          errorCount++;
+        }
+      }
+      
+      console.log(`✅ Member sync completed: ${successCount} successful, ${errorCount} failed`);
+      
+      return {
+        total_members: members.members.length,
+        successful: successCount,
+        failed: errorCount,
+        congress: currentCongress
+      };
+      
     } catch (error) {
       console.error('Error syncing members:', error);
       throw error;
@@ -282,6 +348,21 @@ export class CongressSyncService {
   
   private async processMember(memberData: any) {
     try {
+      // Validate required member data first
+      if (!memberData || !memberData.bioguideId) {
+        console.warn('Skipping member with missing bioguideId:', memberData);
+        return;
+      }
+
+      // Ensure we have basic name information
+      const firstName = memberData.firstName || 'Unknown';
+      const lastName = memberData.lastName || 'Unknown';
+      
+      if (firstName === 'Unknown' && lastName === 'Unknown') {
+        console.warn('Skipping member with no name data:', memberData.bioguideId);
+        return;
+      }
+
       // Check if member exists in public_figures
       const { data: existingFigure } = await this.supabase
         .from('public_figures')
@@ -292,69 +373,85 @@ export class CongressSyncService {
       // Map ALL Congress API fields to our schema
       const memberRecord = {
         bioguide_id: memberData.bioguideId,
-        full_name: `${memberData.firstName} ${memberData.lastName}`,
-        display_name: memberData.firstName && memberData.lastName 
-          ? `${memberData.firstName} ${memberData.lastName}` 
-          : memberData.name,
-        congress_member_type: memberData.terms?.[0]?.chamber === 'House of Representatives' ? 'representative' : 'senator',
+        full_name: `${firstName} ${lastName}`,
+        display_name: firstName && lastName 
+          ? `${firstName} ${lastName}` 
+          : memberData.name || `${firstName} ${lastName}`,
+        congress_member_type: this.extractTermsArray(memberData.terms)?.[0]?.chamber === 'House of Representatives' ? 'representative' : 'senator',
         current_state: memberData.state,
         current_district: memberData.district,
         party_affiliation: memberData.partyName,
-        congressional_tenure_start: memberData.terms?.[0]?.startYear ? `${memberData.terms[0].startYear}-01-01` : null,
+        congressional_tenure_start: this.extractTermsArray(memberData.terms)?.[0]?.startYear?.toString(),
         is_active: true,
         is_politician: true,
-        office: memberData.terms?.[0]?.chamber || 'Congress',
-        current_positions: memberData.terms?.map((term: any) => 
-          `${term.chamber === 'House of Representatives' ? 'Representative' : 'Senator'} (${term.startYear}-${term.endYear || 'present'})`
-        ) || [],
-        description: `${memberData.partyName} ${memberData.terms?.[0]?.chamber === 'House of Representatives' ? 'Representative' : 'Senator'} from ${memberData.state}`,
-        region: memberData.state,
-        congress_api_last_sync: new Date().toISOString()
+        first_name: firstName,
+        last_name: lastName,
+        current_positions: JSON.stringify([{
+          title: this.extractTermsArray(memberData.terms)?.[0]?.chamber === 'House of Representatives' ? 'Representative' : 'Senator',
+          organization: 'U.S. Congress'
+        }]),
+        slug: this.generateSlug(`${firstName} ${lastName}`),
+        office: memberData.directOrderName || `${this.extractTermsArray(memberData.terms)?.[0]?.chamber === 'House of Representatives' ? 'Representative' : 'Senator'} from ${memberData.state}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
-      
+
       let figureId: string;
       
       if (existingFigure) {
-        // Update existing figure
-        await this.supabase
+        // Update existing member
+        const { data: updatedFigure, error: updateError } = await this.supabase
           .from('public_figures')
           .update(memberRecord)
-          .eq('id', existingFigure.id);
-        figureId = existingFigure.id;
-      } else {
-        // Insert new figure
-        const { data: newFigure } = await this.supabase
-          .from('public_figures')
-          .insert({
-            ...memberRecord,
-            slug: this.generateSlug(`${memberData.firstName} ${memberData.lastName}`)
-          })
+          .eq('id', existingFigure.id)
           .select('id')
           .single();
-        figureId = newFigure!.id;
+          
+        if (updateError || !updatedFigure) {
+          console.error('Failed to update member:', memberData.bioguideId, updateError);
+          return;
+        }
+        
+        figureId = updatedFigure.id;
+      } else {
+        // Insert new member
+        const { data: newFigure, error: insertError } = await this.supabase
+          .from('public_figures')
+          .insert(memberRecord)
+          .select('id')
+          .single();
+          
+        if (insertError || !newFigure) {
+          console.error('Failed to insert member:', memberData.bioguideId, insertError);
+          console.error('Member data:', memberRecord);
+          return;
+        }
+        
+        figureId = newFigure.id;
       }
       
       // Process congressional terms
-      if (memberData.terms && memberData.terms.length > 0) {
-        for (const term of memberData.terms) {
+      const termsArray = this.extractTermsArray(memberData.terms);
+      if (termsArray && termsArray.length > 0) {
+        for (const term of termsArray) {
           await this.processCongressionalTerm(figureId, term);
         }
       }
       
-      // Download and store official photo
-      const photoResult = await this.photoService.downloadAndStorePhoto(
-        memberData.bioguideId, 
-        figureId
-      );
-      
-      if (photoResult.success) {
-        console.log(`✅ Member and photo processed: ${memberData.firstName} ${memberData.lastName} (${memberData.bioguideId})`);
-      } else {
-        console.log(`⚠️ Member processed but photo failed: ${memberData.firstName} ${memberData.lastName} (${memberData.bioguideId}) - ${photoResult.error}`);
-      }
+      console.log(`✅ Processed member: ${firstName} ${lastName} (${memberData.bioguideId})`);
       
     } catch (error) {
-      console.error(`Error processing member ${memberData.firstName} ${memberData.lastName}:`, error);
+      const memberName = memberData?.firstName && memberData?.lastName 
+        ? `${memberData.firstName} ${memberData.lastName}`
+        : `${memberData?.bioguideId || 'Unknown ID'}`;
+        
+      console.error(`Failed to process member ${memberName}:`, error);
+      
+      // Don't throw error to continue processing other members
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Stack:', error.stack);
+      }
     }
   }
   

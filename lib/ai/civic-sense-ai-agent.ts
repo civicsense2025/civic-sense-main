@@ -10,8 +10,8 @@ import { BaseAITool, type AIToolConfig, type AIToolResult } from './base-ai-tool
 import { ContentQualityGate, type ContentQualityAssessment } from './content-quality-gate'
 import { SourceVerificationEngine, type FactVerificationResult } from './source-verification-engine'
 import { BrandVoiceValidator } from './brand-voice-validator'
-import { CivicActionGenerator } from './civic-action-generator'
-import { PowerDynamicsAnalyzer } from './power-dynamics-analyzer'
+import { CivicActionGeneratorAI } from './civic-action-generator'
+import { PowerDynamicsAnalyzerAI } from './power-dynamics-analyzer'
 
 // =============================================================================
 // CORE INTERFACES
@@ -184,8 +184,8 @@ export abstract class CivicSenseAIAgent {
   protected qualityGate: ContentQualityGate
   protected sourceVerifier: SourceVerificationEngine
   protected brandVoiceValidator: BrandVoiceValidator
-  protected civicActionGenerator: CivicActionGenerator
-  protected powerDynamicsAnalyzer: PowerDynamicsAnalyzer
+  protected civicActionGenerator: CivicActionGeneratorAI
+  protected powerDynamicsAnalyzer: PowerDynamicsAnalyzerAI
   protected promptTemplates: CivicSensePromptTemplates
 
   // MANDATORY: All subclasses must declare their type
@@ -196,8 +196,8 @@ export abstract class CivicSenseAIAgent {
     this.qualityGate = new ContentQualityGate(config.qualityThresholds)
     this.sourceVerifier = new SourceVerificationEngine()
     this.brandVoiceValidator = new BrandVoiceValidator(config.brandVoice)
-    this.civicActionGenerator = new CivicActionGenerator()
-    this.powerDynamicsAnalyzer = new PowerDynamicsAnalyzer()
+    this.civicActionGenerator = new CivicActionGeneratorAI()
+    this.powerDynamicsAnalyzer = new PowerDynamicsAnalyzerAI()
     this.promptTemplates = config.promptTemplates
   }
 
@@ -595,23 +595,79 @@ export abstract class CivicSenseAIAgent {
    */
   protected async logGeneration(input: any, output: CivicSenseAIOutput): Promise<void> {
     try {
-      // This would integrate with your analytics system
-      console.log(`📊 ${this.agentType}: Logging generation`, {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+
+      // Log comprehensive generation details to ai_agent.generated_content
+      const { error } = await supabase
+        .schema('ai_agent')
+        .from('generated_content')
+        .insert({
+          generation_type: `CivicSenseAIAgent_${this.agentType}`,
+          source_reference: JSON.stringify(input).substring(0, 500), // First 500 chars of input
+          prompt_template: this.agentType,
+          generation_parameters: {
+            ...input,
+            input_size: JSON.stringify(input).length,
+            ai_provider: this.config.aiProviders.primary
+          },
+          generated_content: {
+            content: output.content,
+            content_length: output.content.length,
+            action_steps_count: output.civicActionSteps.length,
+            power_dynamics_count: output.powerDynamicsRevealed.length,
+            uncomfortable_truths_count: output.uncomfortableTruthsExposed.length,
+            sources_count: output.sourceUrls.length,
+            fact_checks_count: output.factCheckResults.length,
+            civic_action_steps: output.civicActionSteps,
+            power_dynamics_revealed: output.powerDynamicsRevealed,
+            uncomfortable_truths_exposed: output.uncomfortableTruthsExposed,
+            source_urls: output.sourceUrls,
+            fact_check_results: output.factCheckResults
+          },
+          quality_scores: {
+            overall_score: output.qualityScore.overall_score,
+            brand_voice_score: output.brandVoiceScore,
+            accuracy_score: output.qualityScore.accuracy_score,
+            civic_engagement_score: output.qualityScore.civic_engagement_score,
+            power_dynamics_score: output.qualityScore.power_dynamics_score,
+            confidence_level: output.confidenceLevel,
+            has_uncomfortable_truth: output.qualityScore.has_uncomfortable_truth,
+            primary_sources_count: output.qualityScore.primary_sources_count,
+            warning_flags: output.warningFlags,
+            publish_recommendation: output.publishRecommendation
+          },
+          human_review_status: 'pending',
+          generation_time_ms: output.processingMetadata.processingTimeMs,
+          model_used: this.config.aiProviders.primary,
+          created_by: null // Will be set by RLS if user is authenticated
+        })
+
+      if (error) {
+        console.error('Failed to log AI generation to database:', error)
+      } else {
+        console.log(`📊 ${this.agentType}: Generation logged to database`)
+      }
+
+      // Enhanced console logging for monitoring
+      console.log(`📊 ${this.agentType}: Generation completed`, {
         qualityScore: output.qualityScore.overall_score,
         brandVoiceScore: output.brandVoiceScore,
         warningFlags: output.warningFlags.length,
-        publishRecommendation: output.publishRecommendation
+        publishRecommendation: output.publishRecommendation,
+        uncomfortableTruths: output.uncomfortableTruthsExposed.length,
+        powerDynamics: output.powerDynamicsRevealed.length,
+        actionSteps: output.civicActionSteps.length,
+        processingTime: `${output.processingMetadata.processingTimeMs}ms`,
+        iterations: output.processingMetadata.iterationsRequired
       })
 
-      // TODO: Implement actual logging to database
-      // await analyticsService.logAIGeneration({
-      //   agentType: this.agentType,
-      //   input,
-      //   output,
-      //   timestamp: new Date()
-      // })
     } catch (error) {
-      console.warn('Failed to log AI generation:', error)
+      console.error('Error in AI generation logging:', error)
+      // Continue execution even if logging fails - don't break the generation process
     }
   }
 }

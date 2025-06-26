@@ -4,7 +4,7 @@
  * Includes automated event generation, entity extraction, and CivicSense-style analysis
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CongressAPIClient } from '@/lib/integrations/congress-api';
 import GovInfoAPIClient from '@/lib/integrations/govinfo-api';
@@ -12,6 +12,14 @@ import { CivicSenseBillAnalyzer } from '@/lib/ai/bill-analyzer';
 import { CongressionalPhotoServiceLocal } from './congressional-photo-service-local';
 import { CongressionalDocumentQuizGenerator } from './congressional-document-quiz-generator';
 import OpenAI from 'openai';
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 interface SyncResults {
   synced: number;
@@ -82,17 +90,22 @@ export class EnhancedCongressSyncService {
     });
     
     this.govInfoAPI = new GovInfoAPIClient();
-    this.supabase = createClient();
+    
+    // Use service role client to bypass RLS policies for administrative operations
+    this.supabase = createServiceClient();
+    
     this.billAnalyzer = new CivicSenseBillAnalyzer();
     this.photoService = new CongressionalPhotoServiceLocal();
     this.quizGenerator = new CongressionalDocumentQuizGenerator();
     
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY!,
     });
     
     // Support multiple congressional classes
     this.supportedCongresses = [117, 118, 119]; // 117th, 118th, 119th Congress
+    
+    console.log('🚀 Enhanced Congress Sync Service initialized successfully');
   }
 
   // ============================================================================
@@ -380,32 +393,85 @@ export class EnhancedCongressSyncService {
     const results: SyncResults = { synced: 0, errors: 0, details: [] };
     
     try {
-      const members = await this.congressAPI.getMembers({ congress: congressNumber });
+      console.log(`🔄 Starting member sync for ${congressNumber}th Congress...`);
       
-      console.log(`Found ${members.members?.length || 0} members in ${congressNumber}th Congress`);
+      // Use getAllMembers to fetch all members with pagination
+      const membersResponse = await this.congressAPI.getAllMembers({ congress: congressNumber });
+      const members = membersResponse.members;
       
-      for (const memberData of members.members || []) {
+      console.log(`Found ${members?.length || 0} members in ${congressNumber}th Congress`);
+      
+      if (!members || !Array.isArray(members)) {
+        console.error('Invalid members response structure:', membersResponse);
+        throw new Error('Members API returned invalid data structure');
+      }
+      
+      if (members.length === 0) {
+        console.warn(`No members found for ${congressNumber}th Congress`);
+        return results;
+      }
+      
+      console.log(`📊 Processing ${members.length} members across ${membersResponse.pagination?.pages || 1} pages...`);
+      
+      for (const memberData of members) {
         try {
           await this.processMember(memberData, congressNumber);
           results.synced++;
+          
+          // Log progress every 50 members
+          if (results.synced % 50 === 0) {
+            console.log(`🔄 Progress: ${results.synced}/${members.length} members processed`);
+          }
         } catch (error) {
-          console.error(`Error processing member ${memberData.firstName} ${memberData.lastName}:`, error);
+          console.error(`Error processing member ${memberData.firstName || 'Unknown'} ${memberData.lastName || 'Unknown'}:`, error);
           results.errors++;
           results.details?.push({
-            member: `${memberData.firstName} ${memberData.lastName}`,
+            member: `${memberData.firstName || 'Unknown'} ${memberData.lastName || 'Unknown'}`,
+            bioguideId: memberData.bioguideId,
             error: error instanceof Error ? error.message : 'Unknown error'
           });
         }
       }
       
+      console.log(`✅ Member sync completed: ${results.synced} synced, ${results.errors} errors`);
       return results;
     } catch (error) {
-      console.error(`Error syncing members for ${congressNumber}th Congress:`, error);
+      console.error(`❌ Error syncing members for ${congressNumber}th Congress:`, error);
       throw error;
     }
   }
 
   private async processMember(memberData: any, congressNumber: number): Promise<void> {
+    console.log('Processing member:', memberData.name, 'with data:', JSON.stringify(memberData, null, 2));
+    
+    // Parse the name field into first and last name
+    let firstName = '';
+    let lastName = '';
+    
+    if (memberData.name) {
+      // Handle formats like "Ramirez, Delia C." or "Johnson, Mike"
+      const nameParts = memberData.name.split(',').map((p: string) => p.trim());
+      if (nameParts.length >= 2) {
+        lastName = nameParts[0];
+        firstName = nameParts[1];
+      } else {
+        // Fallback for single names
+        const singleNameParts = memberData.name.split(' ');
+        firstName = singleNameParts[0] || '';
+        lastName = singleNameParts.slice(1).join(' ') || '';
+      }
+    }
+    
+    // Validate required member data
+    if (!memberData.bioguideId || !firstName || !lastName) {
+      console.error('Missing required member data:', {
+        bioguideId: memberData.bioguideId,
+        firstName: firstName,
+        lastName: lastName
+      });
+      throw new Error(`Invalid member data: missing required fields for ${memberData.name}`);
+    }
+    
     // Check if member exists in public_figures
     const { data: existingFigure } = await this.supabase
       .from('public_figures')
@@ -413,63 +479,197 @@ export class EnhancedCongressSyncService {
       .eq('bioguide_id', memberData.bioguideId)
       .single();
     
-    // Map member data to our schema
+    // Process terms data - handle both array and object formats
+    let termsArray: any[] = [];
+    if (memberData.terms) {
+      if (Array.isArray(memberData.terms)) {
+        termsArray = memberData.terms;
+      } else if (memberData.terms.item && Array.isArray(memberData.terms.item)) {
+        termsArray = memberData.terms.item;
+      } else if (typeof memberData.terms === 'object') {
+        // Convert single term object to array
+        termsArray = [memberData.terms];
+      }
+    }
+    
+    // Get current term info for positioning
+    const currentTerm = termsArray[0] || {};
+    const memberType = currentTerm.chamber === 'House of Representatives' ? 'Representative' : 'Senator';
+    const office = currentTerm.chamber || 'Congress';
+    
+    // Create position descriptions array
+    const positions = termsArray.map((term: any) => {
+      const chamber = term.chamber === 'House of Representatives' ? 'Representative' : 'Senator';
+      const startYear = term.startYear || 'Unknown';
+      const endYear = term.endYear || 'present';
+      return `${chamber} (${startYear}-${endYear})`;
+    });
+    
+    // CRITICAL: Create member record with ONLY existing database columns
     const memberRecord = {
       bioguide_id: memberData.bioguideId,
-      full_name: `${memberData.firstName} ${memberData.lastName}`,
-      display_name: memberData.firstName && memberData.lastName 
-        ? `${memberData.firstName} ${memberData.lastName}` 
-        : memberData.name,
-      congress_member_type: memberData.terms?.[0]?.chamber === 'House of Representatives' ? 'representative' : 'senator',
+      full_name: `${firstName} ${lastName}`,
+      display_name: `${firstName} ${lastName}`,
+      congress_member_type: memberType,
       current_state: memberData.state,
       current_district: memberData.district,
       party_affiliation: memberData.partyName,
-      congressional_tenure_start: memberData.terms?.[0]?.startYear ? `${memberData.terms[0].startYear}-01-01` : null,
+      congressional_tenure_start: currentTerm.startYear ? `${currentTerm.startYear}-01-01` : null,
       is_active: true,
       is_politician: true,
-      office: memberData.terms?.[0]?.chamber || 'Congress',
-      current_positions: memberData.terms?.map((term: any) => 
-        `${term.chamber === 'House of Representatives' ? 'Representative' : 'Senator'} (${term.startYear}-${term.endYear || 'present'})`
-      ) || [],
-      description: `${memberData.partyName} ${memberData.terms?.[0]?.chamber === 'House of Representatives' ? 'Representative' : 'Senator'} from ${memberData.state}`,
+      office: office,
+      current_positions: positions,
       region: memberData.state,
-      congress_api_last_sync: new Date().toISOString(),
-      current_congress: congressNumber
+      congress_api_last_sync: new Date().toISOString()
+      // NOTE: Removed 'description' field as it doesn't exist in database schema
     };
+    
+    console.log('Member record to insert/update:', JSON.stringify(memberRecord, null, 2));
     
     let figureId: string;
     
-    if (existingFigure) {
-      // Update existing figure
-      await this.supabase
-        .from('public_figures')
-        .update(memberRecord)
-        .eq('id', existingFigure.id);
-      figureId = existingFigure.id;
-    } else {
-      // Insert new figure
-      const { data: newFigure } = await this.supabase
-        .from('public_figures')
-        .insert({
-          ...memberRecord,
-          slug: this.generateSlug(`${memberData.firstName} ${memberData.lastName}`)
-        })
-        .select('id')
-        .single();
-      figureId = newFigure!.id;
+    try {
+      if (existingFigure) {
+        // Update existing figure
+        console.log(`🔄 Updating existing member: ${firstName} ${lastName} (${memberData.bioguideId})`);
+        const { error: updateError } = await this.supabase
+          .from('public_figures')
+          .update(memberRecord)
+          .eq('id', existingFigure.id);
+          
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw new Error(`Failed to update member: ${updateError.message}`);
+        }
+        
+        figureId = existingFigure.id;
+        console.log(`✅ Updated existing member: ${firstName} ${lastName} (${memberData.bioguideId})`);
+      } else {
+        // Insert new figure with duplicate handling
+        console.log(`➕ Creating new member: ${firstName} ${lastName} (${memberData.bioguideId})`);
+        const slug = this.generateSlug(`${firstName} ${lastName}`);
+        
+        const { data: newFigure, error: insertError } = await this.supabase
+          .from('public_figures')
+          .insert({
+            ...memberRecord,
+            slug: slug
+          })
+          .select('id')
+          .single();
+        
+        if (insertError) {
+          // Handle duplicate slug constraint error
+          if (insertError.code === '23505' && insertError.message.includes('slug')) {
+            console.log(`⚠️ Duplicate slug detected for ${firstName} ${lastName}, trying with modified slug...`);
+            
+            // Try with bioguide_id suffix to make it unique
+            const uniqueSlug = `${slug}-${memberData.bioguideId.toLowerCase()}`;
+            const { data: retryFigure, error: retryError } = await this.supabase
+              .from('public_figures')
+              .insert({
+                ...memberRecord,
+                slug: uniqueSlug
+              })
+              .select('id')
+              .single();
+            
+            if (retryError) {
+              // If still failing, try to find if a record with this bioguide_id already exists
+              console.log(`⚠️ Retry failed, checking for existing bioguide_id: ${memberData.bioguideId}`);
+              const { data: existingByBioguide } = await this.supabase
+                .from('public_figures')
+                .select('id')
+                .eq('bioguide_id', memberData.bioguideId)
+                .single();
+              
+              if (existingByBioguide) {
+                console.log(`✅ Found existing record by bioguide_id, using: ${existingByBioguide.id}`);
+                figureId = existingByBioguide.id;
+              } else {
+                console.error('Final retry error:', retryError);
+                console.error('Attempted to insert with unique slug:', { ...memberRecord, slug: uniqueSlug });
+                // Don't throw error, just skip this member to continue sync
+                console.log(`⚠️ Skipping member ${firstName} ${lastName} due to unresolvable duplicate`);
+                return;
+              }
+            } else {
+              figureId = retryFigure!.id;
+              console.log(`✅ Created new member with unique slug: ${firstName} ${lastName} (${memberData.bioguideId})`);
+            }
+          } else {
+            console.error('Insert error:', insertError);
+            console.error('Attempted to insert:', { ...memberRecord, slug: slug });
+            throw new Error(`Failed to insert member: ${insertError.message}`);
+          }
+        } else {
+          figureId = newFigure!.id;
+          console.log(`✅ Created new member: ${firstName} ${lastName} (${memberData.bioguideId})`);
+        }
+      }
+    } catch (dbError) {
+      console.error(`❌ Database error for ${firstName} ${lastName}:`, dbError);
+      throw dbError;
     }
     
-    // Download and store photo locally using the new local photo service
-    const photoResult = await this.photoService.downloadAndStorePhoto(
-      memberData.bioguideId, 
-      figureId,
-      congressNumber
-    );
+    // Process congressional terms
+    if (termsArray.length > 0) {
+      for (const term of termsArray) {
+        await this.processCongressionalTerm(figureId, term, memberData.bioguideId);
+      }
+    }
     
-    if (photoResult.success) {
-      console.log(`✅ Member and photo saved locally: ${memberData.firstName} ${memberData.lastName} (${memberData.bioguideId})`);
-    } else {
-      console.log(`⚠️ Member processed but photo failed: ${memberData.firstName} ${memberData.lastName} (${memberData.bioguideId}) - ${photoResult.error}`);
+    // Download and store official photo
+    try {
+      const photoResult = await this.photoService.downloadAndStorePhoto(
+        memberData.bioguideId, 
+        figureId,
+        congressNumber
+      );
+      
+      if (photoResult.success) {
+        console.log(`📷 Photo processed for: ${firstName} ${lastName} (${memberData.bioguideId})`);
+      } else {
+        console.log(`⚠️ Photo failed for: ${firstName} ${lastName} (${memberData.bioguideId}) - ${photoResult.error}`);
+      }
+    } catch (photoError) {
+      console.warn(`📷 Photo processing error for ${firstName} ${lastName}:`, photoError);
+      // Don't fail the whole process for photo errors
+    }
+  }
+  
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .trim();
+  }
+  
+  private async processCongressionalTerm(memberId: string, termData: any, bioguideId: string) {
+    try {
+      const termRecord = {
+        member_id: memberId,
+        congress_number: termData.congress || termData.startYear ? Math.floor((termData.startYear - 1789) / 2) + 1 : null,
+        chamber: termData.chamber === 'House of Representatives' ? 'house' : 'senate',
+        state_code: termData.stateCode || termData.state,
+        district: termData.district || null,
+        start_year: termData.startYear,
+        end_year: termData.endYear || null,
+        party_affiliation: termData.party || termData.partyName,
+        member_type: termData.chamber === 'House of Representatives' ? 'representative' : 'senator'
+      };
+      
+      await this.supabase
+        .from('congressional_terms')
+        .upsert(termRecord, { 
+          onConflict: 'member_id,congress_number,chamber',
+          ignoreDuplicates: false 
+        });
+        
+      console.log(`📋 Processed term for ${bioguideId}: ${termRecord.chamber} ${termRecord.start_year}-${termRecord.end_year || 'present'}`);
+    } catch (error) {
+      console.error(`Error processing term for ${bioguideId}:`, error);
     }
   }
 
@@ -481,36 +681,88 @@ export class EnhancedCongressSyncService {
    * Sync congressional hearings from GovInfo with quiz generation
    */
   async syncCongressionalHearings(limit: number = 25, congressNumber: number = 118): Promise<SyncResults> {
+    console.log(`🏛️ Syncing congressional hearings for ${congressNumber}th Congress...`);
     const results: SyncResults = { synced: 0, errors: 0, details: [] };
 
     try {
-      // Search for recent hearings for specific congress
-      const hearingsResponse = await this.govInfoAPI.searchHearings({
-        congress: congressNumber,
-        publishedDate: this.getRecentDate(),
-        pageSize: limit
-      });
+      // First, validate the API connection
+      const validation = await this.govInfoAPI.validateConnection();
+      if (!validation.success) {
+        console.error(`❌ API validation failed: ${validation.message}`);
+        throw new Error(`GovInfo API validation failed: ${validation.message}`);
+      }
+      console.log(`✅ API connection validated successfully`);
 
-      const hearingPackages = hearingsResponse.packages || [];
+      // Try multiple strategies to get hearings
+      let hearingsResponse;
+      
+      try {
+        // Strategy 1: Recent hearings with date filter
+        hearingsResponse = await this.govInfoAPI.searchHearings({
+          congress: congressNumber,
+          publishedDate: this.getRecentDate(),
+          pageSize: limit
+        });
+      } catch (dateError) {
+        console.warn(`⚠️ Date-filtered search failed, trying without date filter:`, dateError);
+        
+        try {
+          // Strategy 2: No date filter, just congress
+          hearingsResponse = await this.govInfoAPI.searchHearings({
+            congress: congressNumber,
+            pageSize: limit
+          });
+        } catch (congressError) {
+          console.warn(`⚠️ Congress-filtered search failed, trying basic search:`, congressError);
+          
+          // Strategy 3: Very basic search
+          hearingsResponse = await this.govInfoAPI.searchHearings({
+            pageSize: 10 // Very small limit
+          });
+        }
+      }
 
-      for (const packageData of hearingPackages) {
+      if (!hearingsResponse?.packages) {
+        console.warn(`⚠️ No hearing packages found in response`);
+        return results;
+      }
+
+      console.log(`📋 Found ${hearingsResponse.packages.length} hearing packages`);
+
+      for (const packageData of hearingsResponse.packages) {
         try {
           const result = await this.processHearing(packageData, congressNumber);
           if (result.success) {
             results.synced++;
           } else {
             results.errors++;
-            results.details?.push(result.error);
+            results.details?.push({
+              packageId: packageData.packageId,
+              error: result.error
+            });
           }
         } catch (error) {
-          console.error(`Error processing hearing ${packageData.title}:`, error);
           results.errors++;
+          console.error(`Error processing hearing ${packageData.packageId}:`, error);
+          results.details?.push({
+            packageId: packageData.packageId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
       }
 
+      console.log(`✅ Hearing sync completed: ${results.synced} synced, ${results.errors} errors`);
       return results;
     } catch (error) {
       console.error('Error in syncCongressionalHearings:', error);
+      
+      // If all strategies failed, check if it's an API key issue
+      if (error instanceof Error && error.message.includes('401')) {
+        console.error('❌ Authentication failed - check your GovInfo API key');
+      } else if (error instanceof Error && error.message.includes('500')) {
+        console.error('❌ GovInfo API server error - may be temporary, try again later');
+      }
+      
       throw error;
     }
   }
@@ -1325,7 +1577,7 @@ export class EnhancedCongressSyncService {
   private getRecentDateTime(): string {
     const date = new Date();
     date.setDate(date.getDate() - 7);
-    return date.toISOString();
+    return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
   }
 
   private getRecentDate(): string {
@@ -1434,14 +1686,6 @@ export class EnhancedCongressSyncService {
       .single();
     
     return fuzzyMatch?.id || null;
-  }
-
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
   }
 
   // Delegate methods to keep compatibility

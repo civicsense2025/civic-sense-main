@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/admin-access'
 import { z } from 'zod'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { jsonrepair } from 'jsonrepair'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 // Simplified AI Generation Request Schema
 const AIGenerationRequestSchema = z.object({
@@ -182,13 +191,28 @@ CRITICAL: Return ONLY the JSON object. Test your JSON mentally before responding
 function buildPrompt(type: string, data: any): string {
   const baseInstructions = `Generate civic education terms following CivicSense standards. Return ONLY a valid JSON object with a "terms" array.`
   
+  // Build exclusion list if existing terms are provided
+  let exclusionSection = ''
+  if (data.existingTerms && data.existingTerms.length > 0) {
+    const termsList = data.existingTerms
+      .slice(0, 50) // Limit to avoid prompt bloat
+      .map((t: any) => `"${t.term}"`)
+      .join(', ')
+    
+    exclusionSection = `
+CRITICAL: DO NOT generate any of these ${data.existingTerms.length} existing terms:
+${termsList}${data.existingTerms.length > 50 ? '... (and ' + (data.existingTerms.length - 50) + ' more)' : ''}
+
+Generate completely NEW terms that are not in this exclusion list.`
+  }
+  
   switch (type) {
     case 'extract_from_content':
       const contentText = data.content_sources?.map((source: any) => 
         `${source.title}: ${source.content || 'No content available'}`
       ).join('\n\n') || ''
       
-      return `${baseInstructions}
+      return `${baseInstructions}${exclusionSection}
 
 Extract 5-10 civic education terms from this content that reveal uncomfortable truths about power structures:
 
@@ -202,18 +226,19 @@ Focus on terms that expose hidden power structures and provide actionable intell
       const customContent = data.custom_content || 'current American democracy and power structures'
       
       console.log(`🎯 Building prompt for ${count} terms about: ${customContent}`)
+      console.log(`📋 Excluding ${data.existingTerms?.length || 0} existing terms from generation`)
       
-      return `${baseInstructions}
+      return `${baseInstructions}${exclusionSection}
 
 Generate ${count} new civic education terms about: ${customContent}
 Focus on categories: ${categories}
 
-IMPORTANT: Generate exactly ${count} terms. Your JSON response must contain exactly ${count} items in the "terms" array.
+IMPORTANT: Generate exactly ${count} NEW terms that do not appear in the exclusion list above. Your JSON response must contain exactly ${count} items in the "terms" array.
 
 Each term must reveal something politicians actively hide from citizens. Include specific names, dates, dollar amounts where relevant. Connect abstract concepts to citizens' daily lives.`
 
     case 'optimize_existing':
-      return `${baseInstructions}
+      return `${baseInstructions}${exclusionSection}
 
 Transform existing glossary terms into powerful civic education tools. Add uncomfortable truths, replace vague references with specific actors, update examples to recent (2024-2025) incidents, and transform passive suggestions into concrete action strategies.`
 
@@ -386,18 +411,45 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Send initial status
-        sendProgressUpdate(controller, 'generating', {
-          currentOperation: 'Starting AI generation...'
+        // ============================================================================
+        // STEP 1: LOAD EXISTING TERMS FOR PROACTIVE EXCLUSION
+        // ============================================================================
+        
+        sendProgressUpdate(controller, 'processing', {
+          currentOperation: 'Loading existing terms to avoid duplicates...'
         })
 
-        // Build prompt and generate terms
-        const prompt = buildPrompt(validatedData.type, validatedData)
-        const includeWebSearch = validatedData.options?.include_web_search ?? true
+        // Get ALL existing terms to create exclusion list
+        const { data: allExistingTerms, error: existingError } = await supabase
+          .from('glossary_terms')
+          .select('term, definition')
+          .order('term')
+
+        if (existingError) {
+          console.warn('Warning: Could not load existing terms for exclusion:', existingError)
+        }
+
+        const existingTermsList = allExistingTerms || []
         const requestedCount = validatedData.options?.count || 5
+        
+        sendProgressUpdate(controller, 'processing', {
+          currentOperation: `Found ${existingTermsList.length} existing terms. Building AI prompt with exclusions...`
+        })
+
+        // ============================================================================
+        // STEP 2: BUILD PROMPT WITH EXCLUSION LIST AND GENERATE
+        // ============================================================================
+
+        // Build prompt with existing terms as exclusions
+        const promptData = {
+          ...validatedData,
+          existingTerms: existingTermsList
+        }
+        const prompt = buildPrompt(validatedData.type, promptData)
+        const includeWebSearch = validatedData.options?.include_web_search ?? true
 
         sendProgressUpdate(controller, 'generating', {
-          currentOperation: `Requesting ${requestedCount} terms from ${validatedData.provider}...`
+          currentOperation: `Requesting ${requestedCount} NEW terms from ${validatedData.provider} (excluding ${existingTermsList.length} existing terms)...`
         })
 
         // Generate terms using selected provider
@@ -440,41 +492,24 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
         }
 
         // ============================================================================
-        // PRE-DATABASE DEDUPLICATION
+        // STEP 3: FILTER DUPLICATES WITHIN GENERATED SET
         // ============================================================================
         
-        // Check for existing terms in database first
         sendProgressUpdate(controller, 'checking', {
-          currentOperation: `Checking ${generatedTerms.length} generated terms against existing database entries...`
+          currentOperation: `Checking ${generatedTerms.length} generated terms for internal duplicates...`
         })
 
-        const termNames = generatedTerms.map(t => t.term?.toLowerCase().trim()).filter(Boolean)
-        const { data: existingTerms } = await supabase
-          .from('glossary_terms')
-          .select('term')
-          .in('term', termNames.map(name => 
-            // Convert back to proper case for database query
-            generatedTerms.find(t => t.term?.toLowerCase().trim() === name)?.term
-          ).filter(Boolean))
-
-        const existingTermSet = new Set(
-          existingTerms?.map((t: any) => t.term.toLowerCase().trim()) || []
-        )
-
-        // Filter out duplicates and existing terms
+        // Filter out duplicates within the generated set (AI should avoid existing terms now)
         const uniqueTerms: any[] = []
-        const duplicates: string[] = []
-        const alreadyExists: string[] = []
+        const duplicatesInGeneration: string[] = []
         const seenInGeneration = new Set<string>()
 
         for (const term of generatedTerms) {
           const termKey = term.term?.toLowerCase().trim()
           if (!termKey) continue
 
-          if (existingTermSet.has(termKey)) {
-            alreadyExists.push(term.term)
-          } else if (seenInGeneration.has(termKey)) {
-            duplicates.push(term.term)
+          if (seenInGeneration.has(termKey)) {
+            duplicatesInGeneration.push(term.term)
           } else {
             seenInGeneration.add(termKey)
             uniqueTerms.push(term)
@@ -482,35 +517,41 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
         }
 
         sendProgressUpdate(controller, 'processing', {
-          currentOperation: `Filtered to ${uniqueTerms.length} unique new terms (${duplicates.length} duplicates in generation, ${alreadyExists.length} already exist in database)`,
+          currentOperation: uniqueTerms.length === generatedTerms.length 
+            ? `All ${uniqueTerms.length} generated terms are unique and new!`
+            : `Filtered to ${uniqueTerms.length} unique terms (removed ${duplicatesInGeneration.length} internal duplicates)`,
           stats: {
             generated: generatedTerms.length,
             unique_new: uniqueTerms.length,
-            duplicates_in_generation: duplicates.length,
-            already_exist: alreadyExists.length
+            duplicates_in_generation: duplicatesInGeneration.length,
+            excluded_by_ai: existingTermsList.length
           }
         })
 
         if (uniqueTerms.length === 0) {
+          console.log(`🟡 Early exit: No unique terms to process (${duplicatesInGeneration.length} were duplicates)`)
           sendProgressUpdate(controller, 'complete', {
             stats: {
               requested: requestedCount,
               generated: generatedTerms.length,
               saved: 0,
-              skipped: alreadyExists.length,
+              skipped: duplicatesInGeneration.length,
               failed: 0,
-              duplicates: duplicates.length,
-              verified: 0
+              duplicates: duplicatesInGeneration.length,
+              verified: 0,
+              excluded_by_ai: existingTermsList.length
             },
             terms: [],
             provider: usedProvider,
-            skipped_terms: alreadyExists,
+            skipped_terms: duplicatesInGeneration,
             failed_terms: [],
-            currentOperation: `Complete! No new terms to save - all generated terms already exist or are duplicates`
+            currentOperation: `Complete! No new terms to save - all generated terms were duplicates within the generation set`
           })
           controller.close()
           return
         }
+
+        console.log(`🚀 Proceeding to database processing with ${uniqueTerms.length} unique terms`)
 
         // Process terms for database schema
         const processedTerms = uniqueTerms.map((term) => ({
@@ -528,7 +569,7 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
             uncomfortable_truth: term.uncomfortable_truth || '',
             tags: [term.category || 'general'],
             crossword_clue: term.crossword_clue || `A civic concept: ${term.term}`,
-            ai_model: usedProvider === 'anthropic' ? 'claude-3.7-sonnet' : 'gpt-4-turbo',
+            ai_model: usedProvider === 'anthropic' ? 'claude-3.5-sonnet' : 'gpt-4o',
             generation_timestamp: new Date().toISOString(),
             web_search_used: includeWebSearch && usedProvider === 'anthropic',
             quality_score: term.quality_score || 75
@@ -576,30 +617,95 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
           currentOperation: `Saving ${processedTerms.length} verified unique terms to database...`
         })
 
+        // ============================================================================
+        // DIAGNOSTIC CHECKS BEFORE DATABASE PROCESSING
+        // ============================================================================
+        
+        console.log(`🔍 Diagnostic checks before database processing...`)
+        
+        // Test database connection
+        try {
+          const { data: testQuery, error: testError } = await supabase
+            .from('glossary_terms')
+            .select('count(*)')
+            .limit(1)
+          
+          if (testError) {
+            console.error(`❌ Database connection test failed:`, testError)
+            throw new Error(`Database connection failed: ${testError.message}`)
+          } else {
+            console.log(`✅ Database connection test passed`)
+          }
+        } catch (dbTestError) {
+          console.error(`💥 Database connection exception:`, dbTestError)
+          sendProgressUpdate(controller, 'failed', {
+            error: `Database connection failed: ${dbTestError instanceof Error ? dbTestError.message : 'Unknown error'}`,
+            currentOperation: 'Database connection test failed'
+          })
+          controller.close()
+          return
+        }
+
+        // Validate first few processed terms
+        console.log(`🔍 Validating processed terms structure...`)
+        for (let i = 0; i < Math.min(3, processedTerms.length); i++) {
+          const term = processedTerms[i]
+          console.log(`   Term ${i + 1}: "${term.term}" - has required fields: ${!!(term.term && term.definition)}`)
+          console.log(`   Term ${i + 1}: metadata type: ${typeof term.metadata}`)
+          console.log(`   Term ${i + 1}: examples type: ${typeof term.examples}, length: ${term.examples?.length || 'undefined'}`)
+        }
+        
+        console.log(`✅ Starting database processing for ${processedTerms.length} verified terms...`)
+
         // Process and save terms ONE AT A TIME with real-time updates
         const savedTerms: any[] = []
         const skippedTerms: string[] = []
         const failedTerms: Array<{term: string, error: string}> = []
 
+        console.log(`🔧 Starting database processing for ${processedTerms.length} terms...`)
+        sendProgressUpdate(controller, 'processing', {
+          currentOperation: `Starting database processing for ${processedTerms.length} terms...`
+        })
+
         for (let i = 0; i < processedTerms.length; i++) {
           const term = processedTerms[i]
+          console.log(`💾 Processing term ${i + 1}/${processedTerms.length}: "${term.term}"`)
           
-          const result = await processTermWithStreaming(
-            supabase, 
-            term, 
-            i, 
-            processedTerms.length, 
-            controller
-          )
+          try {
+            const result = await processTermWithStreaming(
+              supabase, 
+              term, 
+              i, 
+              processedTerms.length, 
+              controller
+            )
 
-          if (result.success && result.result) {
-            savedTerms.push(result.result)
-          } else if (result.error === 'already_exists') {
-            skippedTerms.push(term.term)
-          } else {
+            if (result.success && result.result) {
+              savedTerms.push(result.result)
+              console.log(`✅ Successfully saved term: "${term.term}"`)
+            } else if (result.error === 'already_exists') {
+              skippedTerms.push(term.term)
+              console.log(`⏭️ Skipped existing term: "${term.term}"`)
+            } else {
+              failedTerms.push({
+                term: term.term,
+                error: result.error || 'Unknown error'
+              })
+              console.log(`❌ Failed to save term: "${term.term}" - ${result.error}`)
+            }
+          } catch (termError) {
+            const errorMessage = termError instanceof Error ? termError.message : 'Unknown error'
+            console.error(`💥 Exception processing term "${term.term}":`, termError)
             failedTerms.push({
               term: term.term,
-              error: result.error || 'Unknown error'
+              error: `Exception: ${errorMessage}`
+            })
+            sendProgressUpdate(controller, 'failed', {
+              termIndex: i + 1,
+              totalTerms: processedTerms.length,
+              termName: term.term,
+              error: errorMessage,
+              currentOperation: `Exception processing "${term.term}": ${errorMessage}`
             })
           }
 
@@ -686,10 +792,19 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
         // Verify saved terms in database
         const verifiedCount = await verifyTermsInDatabase(supabase, savedTerms)
         
-        // Combine all skipped terms (pre-existing + duplicates + generation skipped)
-        const allSkippedTerms = [...alreadyExists, ...duplicates, ...skippedTerms]
+        // Combine all skipped terms (internal duplicates + database skipped during processing)
+        const allSkippedTerms = [...duplicatesInGeneration, ...skippedTerms]
         
         // Send final completion status
+        console.log(`🎉 Final results summary:`)
+        console.log(`   • Requested: ${requestedCount}`)
+        console.log(`   • Generated by AI: ${generatedTerms.length}`)
+        console.log(`   • Unique new terms: ${uniqueTerms.length}`)
+        console.log(`   • Successfully saved to DB: ${savedTerms.length}`)
+        console.log(`   • Skipped (all types): ${allSkippedTerms.length}`)
+        console.log(`   • Failed: ${failedTerms.length}`)
+        console.log(`   • Existing terms excluded upfront: ${existingTermsList.length}`)
+        
         sendProgressUpdate(controller, 'complete', {
           stats: {
             requested: requestedCount,
@@ -699,16 +814,18 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
             skipped: allSkippedTerms.length,
             failed: failedTerms.length,
             verified: verifiedCount,
-            duplicates_in_generation: duplicates.length,
-            already_existed: alreadyExists.length
+            duplicates_in_generation: duplicatesInGeneration.length,
+            excluded_by_ai_upfront: existingTermsList.length,
+            processing_skipped: skippedTerms.length
           },
           terms: savedTerms,
           provider: usedProvider,
           skipped_terms: allSkippedTerms,
           failed_terms: failedTerms,
-          currentOperation: `Complete! ${savedTerms.length} new terms saved, ${allSkippedTerms.length} skipped (${duplicates.length} duplicates + ${alreadyExists.length} pre-existing), ${failedTerms.length} failed`
+          currentOperation: `Complete! ${savedTerms.length} new terms saved, ${allSkippedTerms.length} skipped (${duplicatesInGeneration.length} internal duplicates + ${skippedTerms.length} processing issues), ${existingTermsList.length} existing terms excluded upfront, ${failedTerms.length} failed`
         })
 
+        console.log(`✅ Generation stream completed and closed successfully`)
         controller.close()
 
       } catch (error) {
@@ -740,9 +857,9 @@ async function handleStreamingGeneration(supabase: any, validatedData: any, user
 function getValidatedModelName(provider: string): string {
   switch (provider) {
     case 'anthropic':
-      return 'claude-3-7-sonnet-20250219' // Updated Claude model
+      return 'claude-3-5-sonnet-20241022' // Latest Claude 3.5 Sonnet
     case 'openai':
-      return 'gpt-4-turbo-preview' // Stable OpenAI model
+      return 'gpt-4o' // Latest GPT-4 Omni model
     default:
       throw new Error(`Unsupported provider: ${provider}`)
   }
@@ -1329,13 +1446,13 @@ async function generateWithOpenAI(prompt: string): Promise<any[]> {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check admin authentication
+    const adminCheck = await requireAdmin(request)
+    if (!adminCheck.success) {
+      return adminCheck.response || NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
+
+    const supabase = await createServiceClient()
 
     // Parse and validate request body
     const body = await request.json()
@@ -1362,7 +1479,7 @@ export async function POST(request: NextRequest) {
     const streamMode = searchParams.get('stream') === 'true'
     
     if (streamMode) {
-      return handleStreamingGeneration(supabase, validatedData, user)
+      return handleStreamingGeneration(supabase, validatedData, adminCheck.user)
     }
 
     // Build prompt
@@ -1504,7 +1621,7 @@ export async function POST(request: NextRequest) {
         uncomfortable_truth: term.uncomfortable_truth || '',
         tags: [term.category || 'general'],
         crossword_clue: term.crossword_clue || `A civic concept: ${term.term}`,
-        ai_model: usedProvider === 'anthropic' ? 'claude-3.7-sonnet' : 'gpt-4-turbo',
+        ai_model: usedProvider === 'anthropic' ? 'claude-3.5-sonnet' : 'gpt-4o',
         generation_timestamp: new Date().toISOString(),
         web_search_used: includeWebSearch && usedProvider === 'anthropic',
         quality_score: term.quality_score || 75

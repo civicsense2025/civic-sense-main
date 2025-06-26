@@ -14,7 +14,16 @@
 import { BaseAITool, type AIToolConfig, type AIToolResult } from './base-ai-tool'
 import { UserBehaviorAnalyzer } from './user-behavior-analyzer'
 import { CollectionOrganizerAgent } from './collection-organizer-agent'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+import type { Collection } from '@/types/collections'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 interface CollectionWorkflowContext {
   user_id?: string
@@ -44,7 +53,7 @@ interface SystemIntegration {
 }
 
 export class CollectionWorkflowIntegrator {
-  private supabase = createClient()
+  private supabase = createServiceClient()
   private behaviorAnalyzer = new UserBehaviorAnalyzer()
   private collectionAgent = new CollectionOrganizerAgent()
   

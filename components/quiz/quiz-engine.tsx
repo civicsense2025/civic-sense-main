@@ -1149,8 +1149,8 @@ export function QuizEngine({
     // Determine if answer is correct
     let isCorrect = false
     if (currentQuestion.type === 'short_answer') {
-      const answerStatus = checkAnswerDetailed(selectedAnswer, currentQuestion.correct_answer)
-      isCorrect = answerStatus === 'correct'
+      // Use checkAnswerIntelligently for consistency with the component's real-time feedback
+      isCorrect = checkAnswerIntelligently(selectedAnswer, currentQuestion.correct_answer)
     } else if (currentQuestion.type === 'true_false') {
       isCorrect = selectedAnswer.toLowerCase() === currentQuestion.correct_answer.toLowerCase()
     } else {

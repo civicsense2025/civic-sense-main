@@ -290,12 +290,7 @@ export class EnhancedProgressStorage {
 
       const { data, error } = await supabase.rpc('get_user_progress_sessions', {
         p_user_id: userId,
-        p_guest_token: !userId ? guestToken : null,
-        p_session_type: options.sessionType !== 'all' ? options.sessionType : null,
-        p_topic_id: options.topicId || null,
-        p_assessment_type: options.assessmentType || null,
-        p_test_type: options.testType || null,
-        p_max_age_hours: options.maxAgeHours || null
+        p_guest_token: !userId ? guestToken : undefined
       })
 
       if (error) {

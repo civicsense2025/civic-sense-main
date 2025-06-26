@@ -627,10 +627,69 @@ export class EnhancedKeyTakeawaysWrapper extends BaseAITool<KeyTakeawaysInput, K
   }
 
   protected async saveToSupabase(output: KeyTakeawaysOutput): Promise<KeyTakeawaysOutput> {
-    // TODO: Implement Supabase save logic for key takeaways
-    console.log(`Key takeaways generated for topic ${output.topicId}`)
-    
-    return { ...output, saved: true }
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      const results = Array.isArray(output.result) ? output.result : [output.result]
+      
+      for (const result of results) {
+        // Save key takeaways to the question_topics table
+        const { error: updateError } = await supabase
+          .from('question_topics')
+          .update({
+            key_takeaways: result.key_takeaways,
+            key_takeaways_generated_at: new Date().toISOString(),
+            key_takeaways_provider: result.generation_metadata.provider,
+            key_takeaways_model: result.generation_metadata.model,
+            key_takeaways_quality_score: result.key_takeaways.sources?.length || 0,
+            updated_at: new Date().toISOString()
+          })
+          .eq('topic_id', result.topic_id)
+
+        if (updateError) {
+          console.error(`Failed to save key takeaways for topic ${result.topic_id}:`, updateError)
+          continue
+        }
+
+        // Log the generation activity
+        await supabase
+          .schema('ai_agent')
+        .from('generated_content')
+          .insert({
+            generation_type: 'key_takeaways',
+            source_reference: result.topic_id,
+            prompt_template: 'key_takeaways_extraction',
+            generation_parameters: {
+              topic_id: result.topic_id,
+              provider: result.generation_metadata.provider,
+              model: result.generation_metadata.model
+            },
+            generated_content: {
+              key_takeaways: result.key_takeaways,
+              takeaway_count: Object.keys(result.key_takeaways).length
+            },
+            quality_scores: {
+              sources_count: result.key_takeaways.sources?.length || 0,
+              uncomfortable_truths_count: result.key_takeaways.uncomfortable_truths?.length || 0,
+              power_dynamics_count: result.key_takeaways.power_dynamics?.length || 0,
+              actionable_insights_count: result.key_takeaways.actionable_insights?.length || 0
+            },
+            human_review_status: 'pending',
+            model_used: result.generation_metadata.model || 'unknown',
+            created_by: null // Will be set by RLS if user is authenticated
+          })
+
+        console.log(`✅ Key takeaways saved for topic ${result.topic_id}`)
+      }
+      
+      return { ...output, saved: true }
+    } catch (error) {
+      console.error('Error saving key takeaways to Supabase:', error)
+      return { ...output, saved: false }
+    }
   }
 }
 

@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin-access';
 import { EnhancedCongressSyncService } from '@/lib/services/enhanced-congress-sync-service';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check admin authentication
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (!profile?.is_admin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    // Check admin authentication using the proper admin access system
+    const adminCheck = await requireAdmin(request);
+    if (!adminCheck.success) {
+      return adminCheck.response!;
     }
     
     // Parse sync options from request body
@@ -60,6 +48,7 @@ export async function POST(request: NextRequest) {
     const totalErrors = Object.values(results).reduce((sum, result) => sum + result.errors, 0);
     
     // Save enhanced sync log to database
+    const supabase = await createClient();
     await supabase
       .from('admin_sync_logs')
       .insert({
@@ -83,7 +72,7 @@ export async function POST(request: NextRequest) {
           },
           completed_at: new Date().toISOString()
         },
-        initiated_by: user.id
+        initiated_by: adminCheck.user!.id
       });
     
     return NextResponse.json({
@@ -111,24 +100,13 @@ export async function POST(request: NextRequest) {
 // Get enhanced sync status and recent runs
 export async function GET(request: NextRequest) {
   try {
-    // Check admin authentication
+    // Check admin authentication using the proper admin access system
+    const adminCheck = await requireAdmin(request);
+    if (!adminCheck.success) {
+      return adminCheck.response!;
+    }
+    
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (!profile?.is_admin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
     
     // Get recent enhanced sync logs
     const { data: syncLogs, error } = await supabase

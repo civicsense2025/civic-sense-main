@@ -8,9 +8,17 @@
  * - Comprehensive error tracking
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { jsonrepair } from 'jsonrepair'
 import { z } from 'zod'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 // ============================================================================
 // CORE TYPES
@@ -79,7 +87,7 @@ export abstract class BaseAITool<TInput = any, TOutput = any> {
     while (retryCount <= (this.config.maxRetries || 3)) {
       try {
         // Initialize Supabase client
-        this.supabase = await createClient()
+        this.supabase = await createServiceClient()
 
         // Step 1: Validate input
         const validatedInput = await this.validateInput(input)
@@ -400,7 +408,7 @@ export abstract class BaseAITool<TInput = any, TOutput = any> {
   }
 
   /**
-   * Log tool activity
+   * Log tool activity to AI agent performance metrics
    */
   protected async logActivity(
     action: string,
@@ -408,17 +416,30 @@ export abstract class BaseAITool<TInput = any, TOutput = any> {
     success: boolean = true
   ): Promise<void> {
     try {
+      // Log to ai_agent.performance_metrics instead of ai_tool_logs
       await this.supabase
-        .from('ai_tool_logs')
+        .schema('ai_agent')
+        .from('performance_metrics')
         .insert({
-          tool_name: this.config.name,
-          tool_type: this.config.type,
-          provider: this.config.provider,
-          model: this.config.model,
-          action,
-          details,
-          success,
-          created_at: new Date().toISOString()
+          metric_date: new Date().toISOString().split('T')[0], // Extract date only
+          agent_type: `${this.config.name}_tool`,
+          total_requests: 1,
+          successful_requests: success ? 1 : 0,
+          failed_requests: success ? 0 : 1,
+          fallback_requests: 0,
+          avg_response_time_ms: details.processing_time_ms || null,
+          total_tokens_used: details.tokens_used || 0,
+          total_cost_usd: details.cost_usd || 0,
+          quality_metrics: {
+            tool_name: this.config.name,
+            tool_type: this.config.type,
+            provider: this.config.provider,
+            model: this.config.model,
+            action,
+            details,
+            success,
+            timestamp: new Date().toISOString()
+          }
         })
     } catch (error) {
       console.warn(`Failed to log activity for ${this.config.name}:`, error)

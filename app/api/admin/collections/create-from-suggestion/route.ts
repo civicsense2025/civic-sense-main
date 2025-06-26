@@ -8,8 +8,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin-access'
 import { CollectionOrganizerAgent } from '@/lib/ai/collection-organizer-agent'
+import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import type { 
+  Collection, 
+  CollectionItem, 
+  CreateCollectionRequest,
+  COLLECTION_CATEGORIES 
+} from '@/types/collections'
 
 // ============================================================================
 // REQUEST/RESPONSE TYPES
@@ -82,6 +90,14 @@ interface CreateFromSuggestionResponse {
 // API ROUTE HANDLERS
 // ============================================================================
 
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
@@ -100,7 +116,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate admin access
-    const supabase = await createClient()
+    const supabase = await createServiceClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -368,7 +384,7 @@ function validateSuggestion(suggestion: any): string | null {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createServiceClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {

@@ -1,5 +1,30 @@
-import { BaseAITool } from './base-ai-tool';
-import OpenAI from 'openai';
+/**
+ * CivicSense Bill Analyzer
+ * 
+ * AI-powered analysis of congressional bills that reveals:
+ * - Hidden power dynamics and special interests
+ * - Real-world impact on citizens' daily lives
+ * - Uncomfortable truths about legislative process
+ * - Specific actions citizens can take
+ * 
+ * Uses the CivicSense voice: direct, evidence-based, action-oriented
+ */
+
+import { createClient } from '@supabase/supabase-js'
+import { OpenAI } from 'openai'
+import { BaseAITool } from './base-ai-tool'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
+
+// ============================================================================
+// BILL ANALYSIS TYPES
+// ============================================================================
 
 export class CivicSenseBillAnalyzer extends BaseAITool<BillAnalysisInput, BillAnalysis> {
   private openaiClient: OpenAI;
@@ -8,8 +33,8 @@ export class CivicSenseBillAnalyzer extends BaseAITool<BillAnalysisInput, BillAn
     super({
       name: 'CivicSenseBillAnalyzer',
       type: 'content_generator',
-      provider: 'openai',
-      model: 'gpt-4-turbo-preview',
+          provider: 'openai',
+    model: 'gpt-4o',
       maxRetries: 3,
       retryDelay: 1000
     });

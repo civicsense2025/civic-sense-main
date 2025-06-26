@@ -1,6 +1,29 @@
-import { createClient } from '@/lib/supabase/client';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
+/**
+ * Congressional Document Quiz Generator
+ * 
+ * Transforms congressional documents (bills, hearings, reports) into
+ * engaging quiz questions that teach civic knowledge with CivicSense voice.
+ * 
+ * Features:
+ * - Analyzes complex legislative documents
+ * - Extracts key civic concepts and power dynamics
+ * - Generates multiple-choice questions with explanations
+ * - Maintains CivicSense brand voice (direct, evidence-based)
+ * - Creates questions that reveal uncomfortable truths about power
+ */
+
+import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { OpenAI } from 'openai'
+import { BaseAITool } from '@/lib/ai/base-ai-tool'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 interface DocumentKeyTakeaways {
   main_points: string[];
@@ -50,7 +73,7 @@ export class CongressionalDocumentQuizGenerator {
   private openai: OpenAI;
   
   constructor() {
-    this.supabase = createClient();
+    this.supabase = createServiceClient();
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
@@ -454,6 +477,145 @@ export class CongressionalDocumentQuizGenerator {
     }
   }
   
+  /**
+   * Generate quiz content from a bill
+   */
+  async generateQuizFromBill(bill: any): Promise<{
+    success: boolean;
+    error?: string;
+    topicGenerated?: boolean;
+    questionsGenerated?: number;
+  }> {
+    try {
+      if (!bill.summary && !bill.full_text) {
+        return { success: false, error: 'No content available for quiz generation' };
+      }
+
+      const content = bill.summary || bill.full_text || '';
+      
+      const result = await this.processDocument({
+        documentType: 'bill',
+        documentId: bill.id,
+        documentTitle: bill.title || `${bill.bill_type} ${bill.bill_number}`,
+        documentContent: content,
+        metadata: { congress_number: bill.congress_number }
+      });
+
+      return {
+        success: true,
+        topicGenerated: result.questionTopics.length > 0,
+        questionsGenerated: result.questions.length
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Generate quiz content from a hearing
+   */
+  async generateQuizFromHearing(hearing: any): Promise<{
+    success: boolean;
+    error?: string;
+    topicGenerated?: boolean;
+    questionsGenerated?: number;
+  }> {
+    try {
+      if (!hearing.transcript && !hearing.summary) {
+        return { success: false, error: 'No content available for quiz generation' };
+      }
+
+      const content = hearing.transcript || hearing.summary || '';
+      
+      const result = await this.processDocument({
+        documentType: 'hearing',
+        documentId: hearing.id,
+        documentTitle: hearing.title,
+        documentContent: content,
+        metadata: { congress_number: hearing.congress_number }
+      });
+
+      return {
+        success: true,
+        topicGenerated: result.questionTopics.length > 0,
+        questionsGenerated: result.questions.length
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Generate quiz content from a committee document
+   */
+  async generateQuizFromCommitteeDocument(doc: any): Promise<{
+    success: boolean;
+    error?: string;
+    topicGenerated?: boolean;
+    questionsGenerated?: number;
+  }> {
+    try {
+      if (!doc.full_text && !doc.summary) {
+        return { success: false, error: 'No content available for quiz generation' };
+      }
+
+      const content = doc.full_text || doc.summary || '';
+      
+      const result = await this.processDocument({
+        documentType: 'committee_document',
+        documentId: doc.id,
+        documentTitle: doc.title,
+        documentContent: content,
+        metadata: { congress_number: doc.congress_number }
+      });
+
+      return {
+        success: true,
+        topicGenerated: result.questionTopics.length > 0,
+        questionsGenerated: result.questions.length
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Update generation statistics
+   */
+  async updateGenerationStats(stats: {
+    congress_number: number;
+    total_documents_processed: number;
+    topics_generated: number;
+    questions_generated: number;
+    bills_processed: number;
+    hearings_processed: number;
+    committee_docs_processed: number;
+  }): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('quiz_generation_stats')
+        .upsert({
+          congress_number: stats.congress_number,
+          total_documents_processed: stats.total_documents_processed,
+          topics_generated: stats.topics_generated,
+          questions_generated: stats.questions_generated,
+          bills_processed: stats.bills_processed,
+          hearings_processed: stats.hearings_processed,
+          committee_docs_processed: stats.committee_docs_processed,
+          last_generation: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'congress_number'
+        });
+
+      if (error) {
+        console.error('Error updating generation stats:', error);
+      }
+    } catch (error) {
+      console.error('Error in updateGenerationStats:', error);
+    }
+  }
+
   /**
    * Process all documents of a specific type
    */

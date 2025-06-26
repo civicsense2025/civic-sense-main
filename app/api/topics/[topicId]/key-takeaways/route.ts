@@ -4,11 +4,11 @@ import { KeyTakeaways, validateKeyTakeaways } from '@/lib/types/key-takeaways'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { topicId: string } }
+  { params }: { params: Promise<{ topicId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const topicId = params.topicId
+    const { topicId } = await params
 
     const { data, error } = await supabase
       .from('question_topics')
@@ -53,11 +53,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { topicId: string } }
+  { params }: { params: Promise<{ topicId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const topicId = params.topicId
+    const { topicId } = await params
 
     // Check authentication for updates
     const { data: { user } } = await supabase.auth.getUser()

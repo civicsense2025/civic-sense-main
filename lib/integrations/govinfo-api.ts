@@ -6,6 +6,7 @@
 
 interface GovInfoAPIConfig {
   baseUrl: string;
+  apiKey: string;
   rateLimitPerSecond: number;
 }
 
@@ -77,10 +78,21 @@ export class GovInfoAPIClient {
   constructor(config?: Partial<GovInfoAPIConfig>) {
     this.config = {
       baseUrl: 'https://api.govinfo.gov',
+      apiKey: process.env.GOVINFO_API_KEY || '',
       rateLimitPerSecond: 2, // Conservative rate limiting
       ...config
     };
+    
+    // Validate API key is configured
+    if (!this.config.apiKey) {
+      console.error('❌ GOVINFO_API_KEY environment variable is not set!');
+      console.error('📝 Get your API key from: https://api.govinfo.gov/docs/');
+      console.error('💡 Add GOVINFO_API_KEY=your_key_here to your .env.local file');
+      throw new Error('GovInfo API key is required. Please set GOVINFO_API_KEY environment variable.');
+    }
+    
     this.rateLimiter = new RateLimiter(this.config.rateLimitPerSecond);
+    console.log('📚 GovInfo API client initialized successfully');
   }
 
   // ===== CORE API METHODS =====
@@ -89,26 +101,82 @@ export class GovInfoAPIClient {
     await this.rateLimiter.wait();
 
     const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
+    // Add API key to all requests
+    queryParams.append('api_key', this.config.apiKey);
+    
+    // Convert camelCase to kebab-case for GovInfo API compatibility
+    const convertedParams = this.convertParamsForGovInfo(params);
+    
+    Object.entries(convertedParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         queryParams.append(key, value.toString());
       }
     });
 
     const url = `${this.config.baseUrl}${endpoint}?${queryParams}`;
+    
+    // Debug logging
+    console.log(`🔍 GovInfo API Request: ${url}`);
 
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'CivicSense/1.0 (civic education platform)'
+        'User-Agent': 'CivicSense/1.0 (civic education platform)',
+        'X-API-Key': this.config.apiKey
       }
     });
 
     if (!response.ok) {
+      console.error(`❌ GovInfo API Error Response:`, {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      // Try to get error details from response body
+      try {
+        const errorBody = await response.text();
+        console.error(`Error response body:`, errorBody);
+      } catch (e) {
+        console.error('Could not read error response body');
+      }
+      
       throw new Error(`GovInfo API error: ${response.statusText} (${response.status})`);
     }
 
     return response.json();
+  }
+
+  /**
+   * Convert camelCase parameters to GovInfo API expected format
+   */
+  private convertParamsForGovInfo(params: Record<string, any>): Record<string, any> {
+    const converted: Record<string, any> = {};
+    
+    Object.entries(params).forEach(([key, value]) => {
+      let convertedKey = key;
+      
+      // Convert specific parameter names for GovInfo API
+      switch (key) {
+        case 'publishedDate':
+          convertedKey = 'published-date';
+          break;
+        case 'lastModifiedDate':
+          convertedKey = 'last-modified-date';
+          break;
+        case 'pageSize':
+          convertedKey = 'pageSize'; // Keep this as is
+          break;
+        default:
+          // Convert camelCase to kebab-case for other params
+          convertedKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+      }
+      
+      converted[convertedKey] = value;
+    });
+    
+    return converted;
   }
 
   // ===== CONGRESSIONAL DOCUMENTS =====
@@ -177,13 +245,63 @@ export class GovInfoAPIClient {
     offset?: number;
     pageSize?: number;
   }) {
-    return this.makeRequest('/collections/CHRG', {
+    // Build search parameters with fallbacks
+    const searchParams: Record<string, any> = {
       offset: params.offset || 0,
-      pageSize: params.pageSize || 100,
-      congress: params.congress,
-      publishedDate: params.publishedDate,
-      query: params.query
-    });
+      pageSize: params.pageSize || 25, // Reduced default page size
+    };
+
+    // Add congress parameter if provided
+    if (params.congress) {
+      searchParams.congress = params.congress;
+    }
+
+    // Add publishedDate with fallback strategy
+    if (params.publishedDate) {
+      searchParams.publishedDate = params.publishedDate;
+    }
+
+    // Add query if provided
+    if (params.query) {
+      searchParams.query = params.query;
+    }
+
+    console.log(`🏛️ Searching congressional hearings with params:`, searchParams);
+
+    try {
+      return await this.makeRequest('/collections/CHRG', searchParams);
+    } catch (error) {
+      console.error('❌ Failed to search hearings with date filter, trying without date...', error);
+      
+      // Fallback: Remove publishedDate and try again
+      if (searchParams.publishedDate) {
+        const fallbackParams = { ...searchParams };
+        delete fallbackParams.publishedDate;
+        
+        console.log(`🔄 Retrying hearings search without date filter:`, fallbackParams);
+        
+        try {
+          return await this.makeRequest('/collections/CHRG', fallbackParams);
+        } catch (fallbackError) {
+          console.error('❌ Fallback search also failed:', fallbackError);
+          
+                     // Second fallback: Just congress and basic params
+           const basicParams: Record<string, any> = {
+             offset: params.offset || 0,
+             pageSize: Math.min(params.pageSize || 10, 10) // Very small page size
+           };
+           
+           if (params.congress) {
+             basicParams.congress = params.congress;
+           }
+          
+          console.log(`🔄 Final fallback with minimal params:`, basicParams);
+          return await this.makeRequest('/collections/CHRG', basicParams);
+        }
+      }
+      
+      throw error;
+    }
   }
 
   /**
@@ -617,6 +735,58 @@ export class GovInfoAPIClient {
     }
     
     return results;
+  }
+
+  // ===== VALIDATION AND TESTING =====
+
+  /**
+   * Test API connection and validate credentials
+   */
+  async validateConnection(): Promise<{
+    success: boolean;
+    message: string;
+    details?: any;
+  }> {
+    try {
+      console.log('🔑 Testing GovInfo API connection...');
+      
+      // Test with a simple request that should always work
+      const testResponse = await this.makeRequest('/collections', {
+        pageSize: 1,
+        offset: 0
+      });
+      
+      return {
+        success: true,
+        message: 'API connection successful',
+        details: {
+          collectionsFound: testResponse.count || 0,
+          apiKeyValid: true
+        }
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMessage.includes('401') || errorMessage.includes('403')) {
+        return {
+          success: false,
+          message: 'API key validation failed - check your GovInfo API key',
+          details: { error: errorMessage }
+        };
+      } else if (errorMessage.includes('500')) {
+        return {
+          success: false,
+          message: 'GovInfo API server error - the service may be temporarily unavailable',
+          details: { error: errorMessage }
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Connection test failed',
+          details: { error: errorMessage }
+        };
+      }
+    }
   }
 }
 

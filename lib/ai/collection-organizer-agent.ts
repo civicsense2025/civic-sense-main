@@ -15,7 +15,7 @@
  * ```
  */
 
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 import type { 
   Collection, 
   CollectionItem, 
@@ -24,6 +24,14 @@ import type {
 } from '@/types/collections'
 import type { CollectionSkill, CollectionSkillSummary } from '@/types/skills'
 import { OpenAI } from 'openai'
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 // ============================================================================
 // CONTENT ANALYSIS TYPES
@@ -105,7 +113,7 @@ interface ThemeCluster {
 // ============================================================================
 
 export class CollectionOrganizerAgent {
-  private supabase = createClient()
+  private supabase = createServiceClient()
   private openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   })
@@ -913,8 +921,47 @@ export class CollectionOrganizerAgent {
   }
   
   private calculateSourceDiversity(content: ContentAnalysis[]): number {
-    // Mock implementation - in reality would analyze source diversity
-    return Math.min(5, Math.max(1, content.length / 2))
+    try {
+      const allSources = content.flatMap(item => item.sources || [])
+      const uniqueSources = [...new Set(allSources)]
+      
+      if (uniqueSources.length === 0) return 1
+      
+      // Calculate diversity metrics
+      const sourceDomains = uniqueSources.map(source => {
+        try {
+          const url = new URL(source)
+          return url.hostname.replace('www.', '')
+        } catch {
+          return source.toLowerCase()
+        }
+      })
+      
+      const uniqueDomains = [...new Set(sourceDomains)]
+      const domainDiversity = uniqueDomains.length
+      
+      // Analyze source types
+      const sourceTypes = {
+        government: sourceDomains.filter(d => d.includes('.gov')).length,
+        academic: sourceDomains.filter(d => d.includes('.edu')).length,
+        news: sourceDomains.filter(d => ['cnn.com', 'bbc.com', 'reuters.com', 'npr.org', 'politico.com'].includes(d)).length,
+        nonprofit: sourceDomains.filter(d => d.includes('.org')).length
+      }
+      
+      const typesDiversity = Object.values(sourceTypes).filter(count => count > 0).length
+      
+      // Calculate final score (1-5 scale)
+      const diversityScore = Math.min(5, Math.max(1, 
+        (domainDiversity * 0.4) + 
+        (typesDiversity * 0.6) + 
+        (uniqueSources.length > content.length ? 1 : 0)
+      ))
+      
+      return Math.round(diversityScore)
+    } catch (error) {
+      console.warn('Error calculating source diversity:', error)
+      return Math.min(5, Math.max(1, content.length / 2)) // Fallback
+    }
   }
   
   private generateLearningObjectives(themeName: string, content: ContentAnalysis[]): string[] {
@@ -983,8 +1030,95 @@ export class CollectionOrganizerAgent {
   }
   
   private calculatePoliticalBalance(content: ContentAnalysis[]): 1 | 2 | 3 | 4 | 5 {
-    // Mock implementation - in reality would analyze political balance
-    return 3 // Neutral
+    try {
+      const allEntities = content.flatMap(item => item.political_entities || [])
+      
+      if (allEntities.length === 0) return 3 // Neutral when no political entities
+      
+      // Analyze political lean indicators
+      const conservativeIndicators = [
+        'republican', 'conservative', 'right-wing', 'gop', 
+        'heritage foundation', 'american enterprise institute',
+        'federalist society', 'cato institute'
+      ]
+      
+      const liberalIndicators = [
+        'democrat', 'democratic', 'liberal', 'left-wing', 'progressive',
+        'center for american progress', 'aclu', 'planned parenthood',
+        'naacp', 'sierra club'
+      ]
+      
+      const neutralIndicators = [
+        'bipartisan', 'nonpartisan', 'independent', 'centrist',
+        'congressional budget office', 'government accountability office',
+        'brookings institution'
+      ]
+      
+      let conservativeScore = 0
+      let liberalScore = 0
+      let neutralScore = 0
+      
+      // Count entity mentions and their political lean
+      allEntities.forEach(entity => {
+        const entityLower = entity.toLowerCase()
+        
+        if (conservativeIndicators.some(indicator => entityLower.includes(indicator))) {
+          conservativeScore++
+        }
+        if (liberalIndicators.some(indicator => entityLower.includes(indicator))) {
+          liberalScore++
+        }
+        if (neutralIndicators.some(indicator => entityLower.includes(indicator))) {
+          neutralScore++
+        }
+      })
+      
+      // Analyze source political lean
+      const allSources = content.flatMap(item => item.sources || [])
+      allSources.forEach(source => {
+        const sourceLower = source.toLowerCase()
+        
+        // Conservative-leaning sources
+        if (['foxnews.com', 'wsj.com', 'nypost.com', 'nationalreview.com'].some(s => sourceLower.includes(s))) {
+          conservativeScore++
+        }
+        
+        // Liberal-leaning sources
+        if (['msnbc.com', 'cnn.com', 'nytimes.com', 'washingtonpost.com', 'huffpost.com'].some(s => sourceLower.includes(s))) {
+          liberalScore++
+        }
+        
+        // Neutral sources
+        if (['reuters.com', 'ap.org', 'bbc.com', 'pbs.org', 'npr.org'].some(s => sourceLower.includes(s))) {
+          neutralScore++
+        }
+      })
+      
+      const totalScore = conservativeScore + liberalScore + neutralScore
+      
+      if (totalScore === 0) return 3 // Default neutral
+      
+      // Calculate balance score
+      const conservativeRatio = conservativeScore / totalScore
+      const liberalRatio = liberalScore / totalScore
+      const neutralRatio = neutralScore / totalScore
+      
+      // Determine balance (1 = very conservative, 5 = very liberal, 3 = balanced)
+      if (neutralRatio > 0.6) return 3 // Strong neutral presence
+      
+      const politicalLean = liberalRatio - conservativeRatio
+      
+      if (politicalLean <= -0.4) return 1 // Very conservative
+      if (politicalLean <= -0.2) return 2 // Somewhat conservative
+      if (politicalLean >= 0.4) return 5 // Very liberal
+      if (politicalLean >= 0.2) return 4 // Somewhat liberal
+      
+      return 3 // Balanced
+      
+    } catch (error) {
+      console.warn('Error calculating political balance:', error)
+      return 3 // Default neutral
+    }
   }
   
   private suggestCategories(themeName: string, content: ContentAnalysis[]): string[] {

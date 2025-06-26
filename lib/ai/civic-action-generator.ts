@@ -7,105 +7,312 @@
  * Mission: Transform passive civic consumers into active democratic participants
  */
 
-export interface ActionStep {
-  id: string
-  title: string
-  description: string
-  difficulty: 'immediate' | 'moderate' | 'advanced'
-  timeRequired: string
-  impact: 'individual' | 'community' | 'systemic'
-  category: 'contact' | 'organize' | 'educate' | 'vote' | 'advocate' | 'monitor'
-  specificInstructions: string[]
-  contactInfo?: ContactInfo
-  deadlines?: string[]
-  leverage_points: string[]
-}
+import { BaseAITool, type AIToolConfig, type AIToolResult } from './base-ai-tool'
+import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 
-export interface ContactInfo {
-  type: 'elected_official' | 'agency' | 'organization' | 'media'
-  name: string
-  title?: string
-  email?: string
-  phone?: string
-  address?: string
-  socialMedia?: string[]
-  bestContactMethod: string
-  expectedResponseTime: string
-}
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
-export interface CivicActionPlan {
-  topic: string
-  immediateActions: ActionStep[]
-  mediumTermActions: ActionStep[]
-  longTermActions: ActionStep[]
-  coalitionOpportunities: string[]
-  monitoringActions: ActionStep[]
-  powerLeveragePoints: string[]
-  successMetrics: string[]
-}
+// =============================================================================
+// INPUT/OUTPUT SCHEMAS
+// =============================================================================
 
-export interface ActionGenerationConfig {
-  userLocation?: {
-    state: string
-    district?: string
-    city?: string
-  }
-  userCapacity: 'beginner' | 'intermediate' | 'advanced'
-  preferredActionTypes: ActionStep['category'][]
-  timeAvailable: 'minimal' | 'moderate' | 'substantial'
-  issueUrgency: 'routine' | 'urgent' | 'crisis'
-}
+const ContactInfoSchema = z.object({
+  type: z.enum(['elected_official', 'agency', 'organization', 'media']),
+  name: z.string(),
+  title: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  website: z.string().optional(),
+  socialMedia: z.array(z.string()).optional(),
+  bestContactMethod: z.string(),
+  expectedResponseTime: z.string(),
+  notes: z.string().optional()
+})
 
-export class CivicActionGenerator {
+const ActionStepSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  difficulty: z.enum(['immediate', 'moderate', 'advanced']),
+  timeRequired: z.string(),
+  impact: z.enum(['individual', 'community', 'systemic']),
+  category: z.enum(['contact', 'organize', 'educate', 'vote', 'advocate', 'monitor']),
+  specificInstructions: z.array(z.string()),
+  contactInfo: ContactInfoSchema.optional(),
+  deadlines: z.array(z.string()).optional(),
+  leverage_points: z.array(z.string())
+})
+
+const ActionGenerationInputSchema = z.object({
+  topic: z.string(),
+  content: z.string(),
+  config: z.object({
+    userLocation: z.object({
+      state: z.string(),
+      district: z.string().optional(),
+      city: z.string().optional()
+    }).optional(),
+    userCapacity: z.enum(['beginner', 'intermediate', 'advanced']),
+    preferredActionTypes: z.array(z.enum(['contact', 'organize', 'educate', 'vote', 'advocate', 'monitor'])),
+    timeAvailable: z.enum(['minimal', 'moderate', 'substantial']),
+    issueUrgency: z.enum(['routine', 'urgent', 'crisis'])
+  })
+})
+
+const CivicActionPlanSchema = z.object({
+  topic: z.string(),
+  immediateActions: z.array(ActionStepSchema),
+  mediumTermActions: z.array(ActionStepSchema),
+  longTermActions: z.array(ActionStepSchema),
+  coalitionOpportunities: z.array(z.string()),
+  monitoringActions: z.array(ActionStepSchema),
+  powerLeveragePoints: z.array(z.string()),
+  successMetrics: z.array(z.string()),
+  metadata: z.object({
+    total_actions_generated: z.number(),
+    power_structures_identified: z.number(),
+    leverage_points_found: z.number(),
+    processing_time_ms: z.number()
+  })
+})
+
+type ContactInfo = z.infer<typeof ContactInfoSchema>
+type ActionStep = z.infer<typeof ActionStepSchema>
+type ActionGenerationInput = z.infer<typeof ActionGenerationInputSchema>
+type CivicActionPlan = z.infer<typeof CivicActionPlanSchema>
+
+// =============================================================================
+// CIVIC ACTION GENERATOR AI TOOL
+// =============================================================================
+
+export class CivicActionGeneratorAI extends BaseAITool<ActionGenerationInput, CivicActionPlan> {
+  private openai?: OpenAI
+  private anthropic?: Anthropic
   private actionTemplates: Map<string, ActionStep[]>
   private officialContacts: Map<string, ContactInfo[]>
 
-  constructor() {
+  constructor(config?: Partial<AIToolConfig>) {
+    super({
+      name: 'Civic Action Generator',
+      type: 'content_generator',
+      provider: config?.provider || 'anthropic',
+      model: config?.model || 'claude-3-7-sonnet',
+      maxRetries: 3,
+      retryDelay: 1500,
+      timeout: 60000, // 1 minute for action generation
+      ...config
+    })
+
     this.actionTemplates = new Map()
     this.officialContacts = new Map()
     this.initializeActionTemplates()
     this.initializeContactDatabase()
   }
 
-  /**
-   * Generate comprehensive action plan for civic topic
-   */
-  async generateActionPlan(
-    topic: string,
-    content: string,
-    config: ActionGenerationConfig
-  ): Promise<CivicActionPlan> {
-    const powerStructures = this.identifyPowerStructures(content)
-    const leveragePoints = this.identifyLeveragePoints(content, powerStructures)
-    const urgentActions = this.generateUrgentActions(topic, content, config)
-    const systematicActions = this.generateSystematicActions(topic, powerStructures, config)
+  // =============================================================================
+  // BASE AI TOOL IMPLEMENTATION
+  // =============================================================================
+
+  protected async validateInput(input: ActionGenerationInput): Promise<ActionGenerationInput> {
+    return ActionGenerationInputSchema.parse(input)
+  }
+
+  protected async processWithAI(input: ActionGenerationInput): Promise<string> {
+    await this.initializeProviders()
     
-    return {
-      topic,
+    const startTime = Date.now()
+    
+    // Step 1: Identify power structures and leverage points
+    const powerStructures = this.identifyPowerStructures(input.content)
+    const leveragePoints = this.identifyLeveragePoints(input.content, powerStructures)
+    
+    // Step 2: Generate different types of actions
+    const urgentActions = await this.generateUrgentActions(input.topic, input.content, input.config)
+    const systematicActions = await this.generateSystematicActions(input.topic, powerStructures, input.config)
+    const monitoringActions = await this.generateMonitoringActions(input.topic, input.config)
+    
+    // Step 3: Identify coalition opportunities and success metrics
+    const coalitionOpportunities = this.identifyCoalitionOpportunities(input.topic, powerStructures)
+    const successMetrics = this.defineSuccessMetrics(input.topic, powerStructures)
+    
+    const processingTime = Date.now() - startTime
+    
+    return JSON.stringify({
+      topic: input.topic,
       immediateActions: urgentActions.filter(a => a.difficulty === 'immediate'),
       mediumTermActions: systematicActions.filter(a => a.difficulty === 'moderate'),
       longTermActions: systematicActions.filter(a => a.difficulty === 'advanced'),
-      coalitionOpportunities: this.identifyCoalitionOpportunities(topic, powerStructures),
-      monitoringActions: this.generateMonitoringActions(topic, config),
+      coalitionOpportunities,
+      monitoringActions,
       powerLeveragePoints: leveragePoints,
-      successMetrics: this.defineSuccessMetrics(topic, powerStructures)
+      successMetrics,
+      metadata: {
+        total_actions_generated: urgentActions.length + systematicActions.length + monitoringActions.length,
+        power_structures_identified: powerStructures.length,
+        leverage_points_found: leveragePoints.length,
+        processing_time_ms: processingTime
+      }
+    })
+  }
+
+  protected async parseAndCleanOutput(rawOutput: string): Promise<CivicActionPlan> {
+    const parsed = await this.parseJSON(rawOutput)
+    return this.cleanOutput(parsed.content || parsed)
+  }
+
+  protected async validateOutput(output: CivicActionPlan): Promise<CivicActionPlan> {
+    const validated = CivicActionPlanSchema.parse(output)
+    
+    // Quality validation
+    if (validated.immediateActions.length === 0) {
+      throw new Error('No immediate actions were generated - users need actionable steps')
+    }
+    
+    if (validated.powerLeveragePoints.length === 0) {
+      throw new Error('No leverage points identified - actions lack strategic focus')
+    }
+    
+    // Ensure CivicSense action characteristics
+    const allActions = [
+      ...validated.immediateActions,
+      ...validated.mediumTermActions,
+      ...validated.longTermActions,
+      ...validated.monitoringActions
+    ]
+    
+    for (const action of allActions) {
+      if (!action.specificInstructions || action.specificInstructions.length < 2) {
+        throw new Error(`Action "${action.title}" lacks specific instructions`)
+      }
+      
+      if (!action.leverage_points || action.leverage_points.length === 0) {
+        throw new Error(`Action "${action.title}" doesn't identify leverage points`)
+      }
+    }
+    
+    return validated
+  }
+
+  protected async saveToSupabase(data: CivicActionPlan): Promise<CivicActionPlan> {
+    try {
+      const supabase = createServiceClient()
+
+      // Save the civic action plan
+      const { data: savedPlan, error: planError } = await supabase
+        .from('civic_action_plans')
+        .insert({
+          topic: data.topic,
+          immediate_actions: data.immediateActions,
+          medium_term_actions: data.mediumTermActions,
+          long_term_actions: data.longTermActions,
+          coalition_opportunities: data.coalitionOpportunities,
+          monitoring_actions: data.monitoringActions,
+          power_leverage_points: data.powerLeveragePoints,
+          success_metrics: data.successMetrics,
+          metadata: data.metadata,
+          generated_at: new Date().toISOString(),
+          ai_tool_used: this.config.name,
+          ai_model: this.config.model
+        })
+        .select()
+        .single()
+
+      if (planError) {
+        console.error('Error saving action plan:', planError)
+      }
+
+      // Save individual action steps for easier querying
+      const allActions = [
+        ...data.immediateActions,
+        ...data.mediumTermActions,
+        ...data.longTermActions,
+        ...data.monitoringActions
+      ]
+
+      for (const action of allActions) {
+        const { error: actionError } = await supabase
+          .from('action_steps')
+          .insert({
+            plan_id: savedPlan?.id,
+            action_id: action.id,
+            title: action.title,
+            description: action.description,
+            difficulty: action.difficulty,
+            time_required: action.timeRequired,
+            impact: action.impact,
+            category: action.category,
+            specific_instructions: action.specificInstructions,
+            contact_info: action.contactInfo,
+            deadlines: action.deadlines,
+            leverage_points: action.leverage_points,
+            is_active: true
+          })
+
+        if (actionError) {
+          console.error('Error saving action step:', actionError)
+        }
+      }
+
+      // Log activity
+      await this.logActivity('civic_action_plan_generated', {
+        topic: data.topic,
+        total_actions: allActions.length,
+        immediate_actions: data.immediateActions.length,
+        medium_term_actions: data.mediumTermActions.length,
+        long_term_actions: data.longTermActions.length,
+        power_leverage_points: data.powerLeveragePoints.length
+      })
+
+      return data
+
+    } catch (error) {
+      console.error('Error saving civic action plan to Supabase:', error)
+      throw new Error(`Failed to save civic action plan: ${error}`)
+    }
+  }
+
+  // =============================================================================
+  // CIVIC ACTION GENERATION
+  // =============================================================================
+
+  private async initializeProviders() {
+    if (this.config.provider === 'openai' && !this.openai) {
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      })
+    }
+    
+    if (this.config.provider === 'anthropic' && !this.anthropic) {
+      this.anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY
+      })
     }
   }
 
   /**
    * Generate immediate action steps (can be done today)
    */
-  generateUrgentActions(
+  private async generateUrgentActions(
     topic: string,
     content: string,
-    config: ActionGenerationConfig
-  ): ActionStep[] {
+    config: any
+  ): Promise<ActionStep[]> {
     const actions: ActionStep[] = []
     
     // Contact elected officials
     if (config.preferredActionTypes.includes('contact')) {
-      const contacts = this.getRelevantContacts(topic, config.userLocation)
-      contacts.slice(0, 3).forEach((contact, index) => {
+      const contacts = await this.getRelevantContacts(topic, config.userLocation)
+      contacts.slice(0, 3).forEach((contact: ContactInfo, index: number) => {
         actions.push({
           id: `contact-${index}`,
           title: `Contact ${contact.name}`,
@@ -147,7 +354,7 @@ export class CivicActionGenerator {
       })
     }
 
-    // Sign up for alerts
+    // Set up monitoring
     actions.push({
       id: 'monitor-setup',
       title: 'Set Up Monitoring',
@@ -171,11 +378,11 @@ export class CivicActionGenerator {
   /**
    * Generate systematic, long-term actions
    */
-  generateSystematicActions(
+  private async generateSystematicActions(
     topic: string,
     powerStructures: string[],
-    config: ActionGenerationConfig
-  ): ActionStep[] {
+    config: any
+  ): Promise<ActionStep[]> {
     const actions: ActionStep[] = []
 
     // Organize with others
@@ -245,10 +452,10 @@ export class CivicActionGenerator {
   /**
    * Generate monitoring actions to track progress
    */
-  generateMonitoringActions(
+  private async generateMonitoringActions(
     topic: string,
-    config: ActionGenerationConfig
-  ): ActionStep[] {
+    config: any
+  ): Promise<ActionStep[]> {
     return [
       {
         id: 'track-voting-records',
@@ -286,6 +493,10 @@ export class CivicActionGenerator {
       }
     ]
   }
+
+  // =============================================================================
+  // POWER ANALYSIS METHODS
+  // =============================================================================
 
   /**
    * Identify power structures mentioned in content
@@ -367,37 +578,174 @@ export class CivicActionGenerator {
   /**
    * Get relevant contacts for the topic and location
    */
-  private getRelevantContacts(topic: string, location?: ActionGenerationConfig['userLocation']): ContactInfo[] {
-    // Mock implementation - in real system would query database
-    const mockContacts: ContactInfo[] = [
-      {
-        type: 'elected_official',
-        name: 'Representative [Your Rep]',
-        title: 'U.S. Representative',
-        phone: '(555) 123-4567',
-        email: 'contact@yourrepresentative.gov',
-        bestContactMethod: 'phone',
-        expectedResponseTime: '2-3 weeks'
-      },
-      {
-        type: 'elected_official',
-        name: 'Senator [Your Senator]',
-        title: 'U.S. Senator',
-        phone: '(555) 234-5678',
-        email: 'contact@yoursenator.gov',
-        bestContactMethod: 'phone',
-        expectedResponseTime: '3-4 weeks'
-      },
-      {
-        type: 'agency',
-        name: 'Relevant Agency',
-        email: 'public.affairs@agency.gov',
-        bestContactMethod: 'email',
-        expectedResponseTime: '2-3 weeks'
-      }
-    ]
+  private async getRelevantContacts(topic: string, location?: any): Promise<ContactInfo[]> {
+    try {
+      const supabase = createServiceClient()
+      const contacts: ContactInfo[] = []
 
-    return mockContacts
+      // Get user's location-based representatives if location provided
+      if (location?.state || location?.district) {
+        const { data: representatives } = await supabase
+          .from('congressional_members')
+          .select(`
+            full_name,
+            title,
+            party,
+            state,
+            district,
+            phone,
+            email,
+            office_address,
+            contact_form_url
+          `)
+          .or(`state.eq.${location.state},district.eq.${location.district}`)
+          .eq('active', true)
+          .order('title', { ascending: true })
+
+                 if (representatives) {
+           for (const rep of representatives) {
+             contacts.push({
+               type: 'elected_official',
+               name: rep.full_name,
+               title: rep.title,
+               phone: rep.phone || undefined,
+               email: rep.email || undefined,
+               address: rep.office_address || undefined,
+               bestContactMethod: rep.phone ? 'phone' : 'email',
+               expectedResponseTime: '2-4 weeks'
+             })
+           }
+         }
+      }
+
+      // Get topic-relevant agencies and officials
+      const topicKeywords = this.extractTopicKeywords(topic)
+      
+             // Query government agencies relevant to topic
+       if (topicKeywords.includes('environment') || topicKeywords.includes('climate')) {
+         contacts.push({
+           type: 'agency',
+           name: 'Environmental Protection Agency',
+           email: 'public-access@epa.gov',
+           bestContactMethod: 'email',
+           expectedResponseTime: '2-3 weeks'
+         })
+       }
+
+       if (topicKeywords.includes('health') || topicKeywords.includes('medicare') || topicKeywords.includes('medicaid')) {
+         contacts.push({
+           type: 'agency',
+           name: 'Department of Health and Human Services',
+           email: 'info@hhs.gov',
+           bestContactMethod: 'email',
+           expectedResponseTime: '3-4 weeks'
+         })
+       }
+
+       if (topicKeywords.includes('education') || topicKeywords.includes('student') || topicKeywords.includes('school')) {
+         contacts.push({
+           type: 'agency',
+           name: 'Department of Education',
+           email: 'customerservice@studentaid.gov',
+           bestContactMethod: 'email',
+           expectedResponseTime: '2-3 weeks'
+         })
+       }
+
+       if (topicKeywords.includes('justice') || topicKeywords.includes('civil rights') || topicKeywords.includes('voting')) {
+         contacts.push({
+           type: 'agency',
+           name: 'Department of Justice - Civil Rights Division',
+           email: 'civilrights.complaint@usdoj.gov',
+           bestContactMethod: 'email',
+           expectedResponseTime: '4-6 weeks'
+         })
+       }
+
+      // Add state and local contacts if location provided
+      if (location?.state) {
+        const { data: stateOfficials } = await supabase
+          .from('state_officials')
+          .select('*')
+          .eq('state', location.state)
+          .eq('active', true)
+          .limit(3)
+
+        if (stateOfficials) {
+                     for (const official of stateOfficials) {
+             contacts.push({
+               type: 'elected_official',
+               name: official.name,
+               title: official.title,
+               phone: official.phone,
+               email: official.email,
+               bestContactMethod: official.phone ? 'phone' : 'email',
+               expectedResponseTime: '1-2 weeks'
+             })
+           }
+        }
+      }
+
+      // If no specific contacts found, provide general federal contacts
+      if (contacts.length === 0) {
+        contacts.push(
+          {
+            type: 'elected_official',
+            name: 'Your U.S. Representative',
+            title: 'U.S. Representative',
+            website: 'https://www.house.gov/representatives/find-your-representative',
+            bestContactMethod: 'website',
+            expectedResponseTime: '2-3 weeks',
+            notes: 'Find your specific representative using your zip code'
+          },
+          {
+            type: 'elected_official',
+            name: 'Your U.S. Senators',
+            title: 'U.S. Senator',
+            website: 'https://www.senate.gov/senators/senators-contact.htm',
+            bestContactMethod: 'website',
+            expectedResponseTime: '3-4 weeks',
+            notes: 'Find your state senators\' contact information'
+          }
+        )
+      }
+
+      return contacts.slice(0, 5) // Limit to top 5 most relevant contacts
+
+    } catch (error) {
+      console.error('Error getting relevant contacts:', error)
+      // Fallback to basic federal contacts
+      return [
+        {
+          type: 'elected_official',
+          name: 'Your U.S. Representative',
+          title: 'U.S. Representative',
+          website: 'https://www.house.gov/representatives/find-your-representative',
+          bestContactMethod: 'website',
+          expectedResponseTime: '2-3 weeks'
+        },
+        {
+          type: 'elected_official',
+          name: 'Your U.S. Senators',
+          title: 'U.S. Senator',
+          website: 'https://www.senate.gov/senators/senators-contact.htm',
+          bestContactMethod: 'website',
+          expectedResponseTime: '3-4 weeks'
+        }
+      ]
+    }
+  }
+
+  /**
+   * Extract keywords from topic for agency matching
+   */
+  private extractTopicKeywords(topic: string): string[] {
+    const keywords = topic.toLowerCase().split(/\s+/)
+    const relevantKeywords = keywords.filter(keyword => 
+      keyword.length > 3 && // Filter out short words
+      !['the', 'and', 'for', 'with', 'this', 'that', 'they', 'have', 'been', 'will', 'from'].includes(keyword)
+    )
+    return relevantKeywords
   }
 
   /**
@@ -472,6 +820,99 @@ export class CivicActionGenerator {
     ])
     // Add more contact categories as needed
   }
+
+  // =============================================================================
+  // WORKFLOW ORCHESTRATION METHODS
+  // =============================================================================
+
+  /**
+   * Generate action plans for multiple topics in batch
+   */
+  async generateBatch(inputs: ActionGenerationInput[]): Promise<AIToolResult<CivicActionPlan[]>> {
+    const results: CivicActionPlan[] = []
+    const errors: string[] = []
+
+    for (const input of inputs) {
+      try {
+        const result = await this.process(input)
+        if (result.success && result.data) {
+          results.push(result.data)
+        } else {
+          errors.push(`Topic "${input.topic}": ${result.error}`)
+        }
+      } catch (error) {
+        errors.push(`Topic "${input.topic}": ${error}`)
+      }
+    }
+
+    // Log batch processing
+    await this.logActivity('batch_action_generation', {
+      topics_processed: inputs.length,
+      successful_generations: results.length,
+      failed_generations: errors.length
+    })
+
+    return {
+      success: errors.length === 0,
+      data: results,
+      error: errors.length > 0 ? errors.join('; ') : undefined,
+      metadata: {
+        toolName: this.config.name,
+        provider: this.config.provider,
+        model: this.config.model,
+        processingTime: 0,
+        retryCount: 0
+      }
+    }
+  }
+
+  /**
+   * Get workflow step configuration for orchestration
+   */
+  static getWorkflowStepConfig() {
+    return {
+      id: 'civic_action_generation',
+      name: 'Generate Civic Action Plan',
+      type: 'action_generator',
+      inputs: ['civic_content', 'user_preferences'],
+      outputs: ['action_plan', 'leverage_points'],
+      config: {
+        batch_processing: true,
+        max_topics_per_batch: 5,
+        include_power_analysis: true,
+        generate_monitoring_actions: true
+      }
+    }
+  }
+
+  /**
+   * Generate quick actions for urgent civic situations
+   */
+  async generateQuickActions(topic: string, urgency: 'routine' | 'urgent' | 'crisis'): Promise<ActionStep[]> {
+    const config = {
+      userCapacity: 'beginner' as const,
+      preferredActionTypes: ['contact', 'educate'] as ('contact' | 'organize' | 'educate' | 'vote' | 'advocate' | 'monitor')[],
+      timeAvailable: urgency === 'crisis' ? 'minimal' as const : 'moderate' as const,
+      issueUrgency: urgency
+    }
+
+    const input: ActionGenerationInput = {
+      topic,
+      content: `Urgent civic action needed regarding ${topic}`,
+      config
+    }
+
+    try {
+      const result = await this.process(input)
+      if (result.success && result.data) {
+        return result.data.immediateActions
+      }
+      return []
+    } catch (error) {
+      console.error('Error generating quick actions:', error)
+      return []
+    }
+  }
 }
 
-export default CivicActionGenerator 
+export default CivicActionGeneratorAI 

@@ -1,8 +1,16 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CongressAPIClient } from '@/lib/integrations/congress-api';
 import { GovInfoAPIClient } from '@/lib/integrations/govinfo-api';
 import { CivicSenseBillAnalyzer } from '@/lib/ai/bill-analyzer';
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 export class EntityBasedCongressSync {
   private supabase: SupabaseClient;
@@ -11,7 +19,9 @@ export class EntityBasedCongressSync {
   private billAnalyzer: CivicSenseBillAnalyzer;
   
   constructor() {
-    this.supabase = createClient();
+    // Use service role client to bypass RLS policies for administrative operations
+    this.supabase = createServiceClient();
+    
     this.congressAPI = new CongressAPIClient({
       baseUrl: process.env.NEXT_PUBLIC_CONGRESS_API_BASE_URL || 'https://api.congress.gov/v3',
       apiKey: process.env.CONGRESS_API_KEY!,

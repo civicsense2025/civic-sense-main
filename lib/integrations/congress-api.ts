@@ -30,9 +30,24 @@ export class CongressAPIClient {
   private config: CongressAPIConfig;
   private rateLimiter: RateLimiter;
   
-  constructor(config: CongressAPIConfig) {
-    this.config = config;
-    this.rateLimiter = new RateLimiter(config.rateLimitPerSecond);
+  constructor(config?: Partial<CongressAPIConfig>) {
+    this.config = {
+      baseUrl: 'https://api.congress.gov/v3',
+      apiKey: process.env.CONGRESS_API_KEY || '',
+      rateLimitPerSecond: 1, // Congress.gov allows 1 request per second
+      ...config
+    };
+    
+    // Validate API key is configured
+    if (!this.config.apiKey) {
+      console.error('❌ CONGRESS_API_KEY environment variable is not set!');
+      console.error('📝 Get your API key from: https://api.congress.gov/sign-up/');
+      console.error('💡 Add CONGRESS_API_KEY=your_key_here to your .env.local file');
+      throw new Error('Congress API key is required. Please set CONGRESS_API_KEY environment variable.');
+    }
+    
+    this.rateLimiter = new RateLimiter(this.config.rateLimitPerSecond);
+    console.log('🏛️ Congress API client initialized successfully');
   }
   
   // Fetch bills with proper error handling
@@ -46,27 +61,36 @@ export class CongressAPIClient {
   }) {
     await this.rateLimiter.wait();
     
+    // If congress is specified, use the congress-specific endpoint
+    let endpoint = '/bill';
+    if (params.congress) {
+      endpoint = `/bill/${params.congress}`;
+    }
+    
     const queryParams = new URLSearchParams();
+    // Only add non-congress parameters to query params
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value !== undefined && key !== 'congress') {
         queryParams.append(key, value.toString());
       }
     });
     queryParams.append('api_key', this.config.apiKey);
     queryParams.append('format', 'json');
     
-    const response = await fetch(
-      `${this.config.baseUrl}/bill?${queryParams}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'CivicSense/1.0 (civic education platform)'
-        }
+    const url = `${this.config.baseUrl}${endpoint}?${queryParams}`;
+    console.log('Bills API URL:', url); // Debug log
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CivicSense/1.0 (civic education platform)'
       }
-    );
+    });
     
     if (!response.ok) {
-      throw new CongressAPIError(`Failed to fetch bills: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Bills API Error:', response.status, response.statusText, errorText);
+      throw new CongressAPIError(`Failed to fetch bills: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     return response.json();
@@ -124,11 +148,13 @@ export class CongressAPIClient {
     return placeholderPatterns.some(pattern => pattern.test(textContent));
   }
   
-  // Fetch member information
+  // Fetch member information with pagination support
   async getMembers(params: {
     congress?: number;
     stateCode?: string;
     district?: number;
+    offset?: number;
+    limit?: number;
   }) {
     await this.rateLimiter.wait();
     
@@ -143,15 +169,96 @@ export class CongressAPIClient {
       }
     }
     
-    const response = await fetch(
-      `${this.config.baseUrl}${endpoint}?api_key=${this.config.apiKey}&format=json`
-    );
+    const queryParams = new URLSearchParams();
+    if (params.offset) queryParams.append('offset', params.offset.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    queryParams.append('api_key', this.config.apiKey);
+    queryParams.append('format', 'json');
+    
+    const url = `${this.config.baseUrl}${endpoint}?${queryParams}`;
+    console.log('Members API URL:', url); // Debug log
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CivicSense/1.0 (civic education platform)'
+      }
+    });
     
     if (!response.ok) {
-      throw new CongressAPIError(`Failed to fetch members: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Members API Error:', response.status, response.statusText, errorText);
+      throw new CongressAPIError(`Failed to fetch members: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
-    return response.json();
+    const data = await response.json();
+    console.log('Members API Response structure:', {
+      hasMembers: !!data.members,
+      membersLength: data.members?.length,
+      pagination: data.pagination,
+      count: data.count,
+      firstMemberKeys: data.members?.[0] ? Object.keys(data.members[0]) : [],
+      sampleMember: data.members?.[0] ? {
+        bioguideId: data.members[0].bioguideId,
+        firstName: data.members[0].firstName,
+        lastName: data.members[0].lastName,
+        hasTerms: !!data.members[0].terms,
+        termsType: typeof data.members[0].terms,
+        termsLength: Array.isArray(data.members[0].terms) ? data.members[0].terms.length : 'not array'
+      } : null
+    });
+    
+    return data;
+  }
+  
+  // Fetch ALL members with automatic pagination
+  async getAllMembers(params: {
+    congress?: number;
+    stateCode?: string;
+    district?: number;
+  }) {
+    console.log(`🔄 Fetching ALL members for congress ${params.congress || 'current'}...`);
+    
+    const allMembers = [];
+    let offset = 0;
+    const limit = 250; // Maximum allowed by Congress.gov API
+    let hasMore = true;
+    
+    while (hasMore) {
+      console.log(`📄 Fetching page at offset ${offset}...`);
+      
+      const response = await this.getMembers({
+        ...params,
+        offset,
+        limit
+      });
+      
+      const members = response.members || [];
+      allMembers.push(...members);
+      
+      console.log(`✅ Got ${members.length} members (total so far: ${allMembers.length})`);
+      
+      // Check if we have more pages
+      hasMore = members.length === limit;
+      offset += limit;
+      
+      // Safety break to prevent infinite loops
+      if (offset > 2000) {
+        console.warn('⚠️ Safety break: stopping at offset 2000 to prevent infinite loop');
+        break;
+      }
+    }
+    
+    console.log(`🎉 Completed pagination: ${allMembers.length} total members found`);
+    
+    return {
+      members: allMembers,
+      count: allMembers.length,
+      pagination: {
+        total: allMembers.length,
+        pages: Math.ceil(allMembers.length / limit)
+      }
+    };
   }
   
   // Fetch voting records

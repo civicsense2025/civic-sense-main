@@ -1,10 +1,18 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 import { createHash } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 /**
  * Enhanced Congressional Photo Service
@@ -15,7 +23,8 @@ export class CongressionalPhotoServiceLocal {
   private basePath: string;
   
   constructor() {
-    this.supabase = createClient();
+    // Use service role client to bypass RLS policies for administrative operations
+    this.supabase = createServiceClient();
     this.basePath = path.join(process.cwd(), 'public', 'images', 'congress');
   }
   
@@ -323,6 +332,52 @@ export class CongressionalPhotoServiceLocal {
     };
   }
   
+  /**
+   * Process photos for a specific member
+   */
+  async processPhotosForMember(
+    bioguideId: string,
+    congressNumber: number,
+    forceRefresh: boolean = false
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    photoRecord?: any;
+  }> {
+    try {
+      // Get member ID from bioguide_id
+      const { data: member } = await this.supabase
+        .from('public_figures')
+        .select('id, full_name')
+        .eq('bioguide_id', bioguideId)
+        .single();
+
+      if (!member) {
+        return { success: false, error: 'Member not found' };
+      }
+
+      // If not forcing refresh, check if photo is current
+      if (!forceRefresh) {
+        const existingPhoto = await this.getExistingPhoto(bioguideId, congressNumber);
+        if (existingPhoto && await this.isPhotoCurrent(existingPhoto)) {
+          return { success: true, photoRecord: existingPhoto };
+        }
+      }
+
+      // Process the photo
+      const result = await this.downloadAndStorePhoto(
+        bioguideId,
+        member.id,
+        congressNumber
+      );
+
+      return result;
+
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
   /**
    * Bulk process photos for all members in a specific congress
    */

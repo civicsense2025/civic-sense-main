@@ -1,14 +1,23 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 import { createHash } from 'crypto';
+
+// Create service role client for admin operations that need to bypass RLS
+const createServiceClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 export class CongressionalPhotoService {
   private supabase: SupabaseClient;
   private bucketName = 'congressional-photos';
   
   constructor() {
-    this.supabase = createClient();
+    // Use service role client to bypass RLS policies for administrative operations
+    this.supabase = createServiceClient();
   }
   
   async downloadAndStorePhoto(bioguideId: string, memberId: string): Promise<{

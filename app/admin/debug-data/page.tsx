@@ -32,11 +32,21 @@ interface DiagnosticResult {
   }
 }
 
+interface GovInfoTestResult {
+  success: boolean
+  message: string
+  validation?: any
+  testSearch?: any
+  error?: string
+}
+
 export default function DebugDataPage() {
   const { user } = useAuth()
   const isAdmin = true // Simplified for debugging - middleware should protect this route
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult | null>(null)
+  const [govInfoResult, setGovInfoResult] = useState<GovInfoTestResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isGovInfoLoading, setIsGovInfoLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const runDiagnostics = async () => {
@@ -57,6 +67,31 @@ export default function DebugDataPage() {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const testGovInfoAPI = async () => {
+    try {
+      setIsGovInfoLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/admin/govinfo/test')
+      const result = await response.json()
+      
+      setGovInfoResult(result)
+      
+      if (!result.success) {
+        console.error('GovInfo API test failed:', result.message)
+      }
+    } catch (err) {
+      console.error('GovInfo API test error:', err)
+      setGovInfoResult({
+        success: false,
+        message: 'Test request failed',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      })
+    } finally {
+      setIsGovInfoLoading(false)
     }
   }
 
@@ -178,7 +213,25 @@ export default function DebugDataPage() {
                 </div>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Button 
+                  onClick={testGovInfoAPI}
+                  disabled={isGovInfoLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white font-light rounded-2xl px-6 py-3 h-auto shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                >
+                  {isGovInfoLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white mr-2"></div>
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-2">🏛️</span>
+                      Test GovInfo API
+                    </>
+                  )}
+                </Button>
+                
                 <Button 
                   onClick={runDiagnostics}
                   disabled={isLoading}
@@ -238,7 +291,88 @@ export default function DebugDataPage() {
           </div>
         )}
 
-        {/* Results */}
+        {/* GovInfo API Test Results */}
+        {govInfoResult && (
+          <div className="relative">
+            <div className={`absolute inset-0 bg-gradient-to-r ${
+              govInfoResult.success 
+                ? 'from-green-500/10 via-emerald-500/10 to-green-500/10' 
+                : 'from-red-500/10 via-pink-500/10 to-red-500/10'
+            } rounded-3xl blur-xl`}></div>
+            <Card className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-white/20 rounded-3xl">
+              <CardHeader className="pb-4">
+                <CardTitle className={`flex items-center gap-3 font-light ${
+                  govInfoResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                }`}>
+                  <span className="text-2xl">{govInfoResult.success ? '✅' : '❌'}</span>
+                  GovInfo API Test Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={`p-4 rounded-2xl border ${
+                  govInfoResult.success 
+                    ? 'bg-green-50/50 dark:bg-green-950/20 border-green-200/50 dark:border-green-800/50'
+                    : 'bg-red-50/50 dark:bg-red-950/20 border-red-200/50 dark:border-red-800/50'
+                }`}>
+                  <p className={`font-light ${
+                    govInfoResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {govInfoResult.message}
+                  </p>
+                  {govInfoResult.error && (
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-light">
+                      Error: {govInfoResult.error}
+                    </p>
+                  )}
+                </div>
+                
+                {govInfoResult.validation && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-white">Validation Details:</span>
+                    </div>
+                    <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl">
+                      <pre className="text-sm text-slate-600 dark:text-slate-400 font-mono overflow-auto">
+                        {JSON.stringify(govInfoResult.validation, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+                
+                {govInfoResult.testSearch && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-white">Search Test Results:</span>
+                      <span className="text-sm font-light text-slate-600 dark:text-slate-400">
+                        Found {govInfoResult.testSearch.found} packages
+                      </span>
+                    </div>
+                    {govInfoResult.testSearch.sample && (
+                      <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl">
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium text-slate-900 dark:text-white">Sample Package:</span>
+                            <span className="font-light text-slate-600 dark:text-slate-400">
+                              {govInfoResult.testSearch.sample.title || govInfoResult.testSearch.sample.packageId}
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium text-slate-900 dark:text-white">Package ID:</span>
+                            <span className="font-light text-slate-600 dark:text-slate-400 font-mono">
+                              {govInfoResult.testSearch.sample.packageId}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Database Diagnostics Results */}
         {diagnostics && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
