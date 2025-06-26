@@ -196,7 +196,7 @@ export function QuizModeSelector({
                       className={cn(
                         "w-full",
                         isSelected 
-                          ? "bg-blue-600 hover:bg-blue-700 text-primary" 
+                            ? "bg-blue-600 hover:bg-blue-700 text-primary" 
                           : "bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white"
                       )}
                       onClick={() => handleModeSelect(currentMode)}

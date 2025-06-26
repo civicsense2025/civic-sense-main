@@ -392,10 +392,10 @@ export function Header({
                     </Link>
                   </Button>
                 </div>
-              ) : (
-                /* User menu for authenticated users */
-                <UserMenu isAdmin={isAdmin} />
-              )}
+              ) : null}
+              
+              {/* Always render UserMenu to avoid hook order violations */}
+              <UserMenu isAdmin={isAdmin} />
               
               {/* Mobile menu button */}
               {showMobileMenu && (

@@ -21,14 +21,30 @@ interface CategoryCloudProps {
   showViewAll?: boolean
   className?: string
   onLoadingStateChange?: (isReady: boolean) => void
+  preloadedCategories?: Category[]
 }
 
-export function CategoryCloud({ limit = 6, showViewAll = true, className = "", onLoadingStateChange }: CategoryCloudProps) {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
+export function CategoryCloud({ 
+  limit = 6, 
+  showViewAll = true, 
+  className = "", 
+  onLoadingStateChange,
+  preloadedCategories 
+}: CategoryCloudProps) {
+  const [categories, setCategories] = useState<Category[]>(preloadedCategories || [])
+  const [loading, setLoading] = useState(!preloadedCategories)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // If we already have preloaded categories, skip the API call
+    if (preloadedCategories && preloadedCategories.length > 0) {
+      setCategories(preloadedCategories.slice(0, limit))
+      setLoading(false)
+      onLoadingStateChange?.(true)
+      console.log(`📊 CategoryCloud: Using preloaded ${preloadedCategories.length} categories`)
+      return
+    }
+
     const fetchCategories = async () => {
       try {
         // Use centralized caching from dataService
@@ -40,15 +56,15 @@ export function CategoryCloud({ limit = 6, showViewAll = true, className = "", o
       } catch (err) {
         console.error('Error fetching categories:', err)
         setError('Failed to load categories')
-              } finally {
-          setLoading(false)
-          // Notify parent that loading is complete
-          onLoadingStateChange?.(true)
-        }
+      } finally {
+        setLoading(false)
+        // Notify parent that loading is complete
+        onLoadingStateChange?.(true)
+      }
     }
 
     fetchCategories()
-  }, [limit, onLoadingStateChange])
+  }, [limit, onLoadingStateChange, preloadedCategories])
 
   if (loading) {
     return (

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users, Brain, Target, BookOpen, Zap } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { envFeatureFlags } from '@/lib/env-feature-flags'
@@ -64,7 +64,7 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
   const { theme, setTheme } = useTheme()
   const [userProgress, setUserProgress] = useState<EnhancedUserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const { isPremium, subscription } = usePremium()
+  const { isPremium, subscription, isLoading: isPremiumLoading } = usePremium()
 
   // Feature flags
   const showMultiplayer = useFeatureFlag('multiplayer')
@@ -103,30 +103,30 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
-  // Only show user menu if user is authenticated
-  if (!user) {
-    return null
-  }
-
-  const getUserTitle = () => {
+  const getUserTitle = useMemo(() => {
     if (isPremium) {
       // Check if it's a lifetime subscription by looking at external_subscription_id or other indicators
       return subscription?.subscription_tier === 'pro' ? 'Pro Member' : 'Premium Member'
     }
     return userProgress?.currentLevel ? `Level ${userProgress.currentLevel}` : 'Member'
-  }
+  }, [isPremium, subscription?.subscription_tier, userProgress?.currentLevel])
 
-  const getTierBadge = () => {
+  const getTierBadge = useMemo(() => {
     if (subscription?.subscription_tier === 'pro') return { icon: Icons.crown, color: 'text-accent', label: 'Pro' }
     if (isPremium) return { icon: Icons.crown, color: 'text-primary', label: 'Premium' }
     return null
+  }, [subscription?.subscription_tier, isPremium])
+
+  const userEmail = user?.email ?? 'user@example.com'
+  const tierBadge = getTierBadge
+
+  // Don't render if user menu is disabled by feature flags
+  if (!envFeatureFlags.getFlag('userMenu')) {
+    return null
   }
 
-  const userEmail = user.email || 'user@example.com'
-  const tierBadge = getTierBadge()
-
-  // Don't render if user menu is disabled
-  if (!envFeatureFlags.getFlag('userMenu')) {
+  // Guard: only render the dropdown once we have the necessary data
+  if (!user || isPremiumLoading) {
     return null
   }
 
@@ -160,7 +160,7 @@ export function UserMenu({ onSignInClick = () => {}, isAdmin = false, ...otherPr
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {getUserTitle()}
+                {getUserTitle}
               </p>
             </div>
           </div>

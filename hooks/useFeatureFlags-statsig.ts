@@ -4,71 +4,66 @@ import { envFeatureFlags, type AllFeatureFlags, type PremiumFeatureFlags } from 
 import { useStatsig, useFeatureFlag as useStatsigFeatureFlag } from '@/components/providers/statsig-provider'
 import type { User } from 'types'
 
+/**
+ * Fixed infinite re-render issues by:
+ * 1. Removing duplicate applyUserSpecificFlags function definitions
+ * 2. Extracting user values to prevent reference changes
+ * 3. Using stable dependency arrays in useEffect
+ * 4. Separating development event listener into its own useEffect
+ */
+
 // Enhanced hook that uses Statsig with fallback to environment flags
 export function useFeatureFlags(user?: User | null) {
   const [flags, setFlags] = useState<AllFeatureFlags>(envFeatureFlags.getAllFlags())
   const { isReady: statsigReady, checkGate, logEvent } = useStatsig()
 
-  const applyUserSpecificFlags = useCallback((baseFlags: AllFeatureFlags, user?: User | null): AllFeatureFlags => {
-    if (!user) {
-      // Guest user - disable premium and admin features
-      return {
-        ...baseFlags,
-        // Premium features
-        customDecks: false,
-        historicalProgress: false,
-        advancedAnalytics: false,
-        spacedRepetition: false,
-        learningInsights: false,
-        prioritySupport: false,
-        offlineMode: false,
-        dataExport: false,
-        premiumBadges: false,
-        premiumOnboarding: false,
-        billingManagement: false,
-        // Admin features
-        adminMenuItem: false,
-        adminAccess: false,
-        // Show upgrade prompts to guests
-        upgradePrompts: baseFlags.upgradePrompts
-      }
-    }
+  // Memoize user-specific values to prevent unnecessary recalculations
+  const userSubscriptionStatus = user?.subscription?.status
+  const userSubscriptionPlan = user?.subscription?.plan
+  const userRole = user?.role
+  const userId = user?.id
 
-    const hasActivePremium = user.subscription?.status === 'active' && 
-                            (user.subscription?.plan === 'premium' || user.subscription?.plan === 'pro')
+  const hasActivePremium = userSubscriptionStatus === 'active' && 
+                          (userSubscriptionPlan === 'premium' || userSubscriptionPlan === 'pro')
+  const isAdmin = userRole === 'admin'
+
+  useEffect(() => {
+    // Get base flags (from Statsig if ready, otherwise from environment)
+    let baseFlags: AllFeatureFlags
     
-    const isAdmin = user.role === 'admin'
-
-    return {
-      ...baseFlags,
-      // Premium features - enable if user has active premium subscription
-      customDecks: hasActivePremium && baseFlags.customDecks,
-      historicalProgress: hasActivePremium && baseFlags.historicalProgress,
-      advancedAnalytics: hasActivePremium && baseFlags.advancedAnalytics,
-      spacedRepetition: hasActivePremium && baseFlags.spacedRepetition,
-      learningInsights: hasActivePremium && baseFlags.learningInsights,
-      prioritySupport: hasActivePremium && baseFlags.prioritySupport,
-      offlineMode: hasActivePremium && baseFlags.offlineMode,
-      dataExport: hasActivePremium && baseFlags.dataExport,
-      premiumBadges: hasActivePremium && baseFlags.premiumBadges,
-      premiumOnboarding: hasActivePremium && baseFlags.premiumOnboarding,
-      billingManagement: hasActivePremium && baseFlags.billingManagement,
+    if (statsigReady && checkGate) {
+      // Get all flags from Statsig
+      const statsigFlags = {} as AllFeatureFlags
+      const flagKeys = Object.keys(envFeatureFlags.getAllFlags()) as (keyof AllFeatureFlags)[]
       
-      // Show upgrade prompts only to free users
-      upgradePrompts: !hasActivePremium && baseFlags.upgradePrompts,
+      for (const flag of flagKeys) {
+        try {
+          const gateKey = `civicsense_${flag}`
+          statsigFlags[flag] = checkGate(gateKey)
+        } catch (error) {
+          // Fallback to environment flag if Statsig gate doesn't exist
+          statsigFlags[flag] = envFeatureFlags.getFlag(flag)
+        }
+      }
       
-      // Admin features - enable if user is admin
-      adminMenuItem: isAdmin && baseFlags.adminMenuItem,
-      adminAccess: isAdmin && baseFlags.adminAccess
+      baseFlags = statsigFlags
+    } else {
+      baseFlags = envFeatureFlags.getAllFlags()
     }
-  }, [])
-
-  const getStatsigFlags = useCallback((): AllFeatureFlags => {
-    if (!statsigReady) {
-      return envFeatureFlags.getAllFlags()
-    }
-
-    // Get all flags from Statsig
+    
+    // Apply user-specific overrides using the standalone function
+    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, user)
+    
+    setFlags(userFlags)
+  }, [userId, userSubscriptionStatus, userSubscriptionPlan, userRole, statsigReady])
+  
+  // Handle checkGate changes separately to reduce re-render frequency
+  useEffect(() => {
+    if (!statsigReady || !checkGate) return
+    
+    // Re-evaluate flags when checkGate function changes
+    let baseFlags: AllFeatureFlags
+    
     const statsigFlags = {} as AllFeatureFlags
     const flagKeys = Object.keys(envFeatureFlags.getAllFlags()) as (keyof AllFeatureFlags)[]
     
@@ -77,57 +72,74 @@ export function useFeatureFlags(user?: User | null) {
         const gateKey = `civicsense_${flag}`
         statsigFlags[flag] = checkGate(gateKey)
       } catch (error) {
-        // Fallback to environment flag if Statsig gate doesn't exist
         statsigFlags[flag] = envFeatureFlags.getFlag(flag)
       }
     }
     
-    return statsigFlags
-  }, [statsigReady, checkGate])
-
-  useEffect(() => {
-    // Get base flags (from Statsig if ready, otherwise from environment)
-    const baseFlags = statsigReady ? getStatsigFlags() : envFeatureFlags.getAllFlags()
-    
-    // Apply user-specific overrides
-    const userFlags = applyUserSpecificFlags(baseFlags, user)
-    
+    baseFlags = statsigFlags
+    const userFlags = applyUserSpecificFlagsStandalone(baseFlags, user)
     setFlags(userFlags)
+  }, [checkGate, statsigReady])
 
-    // Listen for feature flag changes (development only)
+  // Development-only feature flag listener
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return
+
     const handleFeatureFlagsChange = () => {
-      const newBaseFlags = statsigReady ? getStatsigFlags() : envFeatureFlags.getAllFlags()
-      const newUserFlags = applyUserSpecificFlags(newBaseFlags, user)
+      // Get base flags directly
+      let newBaseFlags: AllFeatureFlags
+      
+      if (statsigReady) {
+        const statsigFlags = {} as AllFeatureFlags
+        const flagKeys = Object.keys(envFeatureFlags.getAllFlags()) as (keyof AllFeatureFlags)[]
+        
+        for (const flag of flagKeys) {
+          try {
+            const gateKey = `civicsense_${flag}`
+            statsigFlags[flag] = checkGate(gateKey)
+          } catch (error) {
+            statsigFlags[flag] = envFeatureFlags.getFlag(flag)
+          }
+        }
+        
+        newBaseFlags = statsigFlags
+      } else {
+        newBaseFlags = envFeatureFlags.getAllFlags()
+      }
+      
+      const newUserFlags = applyUserSpecificFlagsStandalone(newBaseFlags, user)
       setFlags(newUserFlags)
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      window.addEventListener('featureFlagsChanged', handleFeatureFlagsChange)
-      return () => window.removeEventListener('featureFlagsChanged', handleFeatureFlagsChange)
-    }
-  }, [user, statsigReady, getStatsigFlags, applyUserSpecificFlags])
+    window.addEventListener('featureFlagsChanged', handleFeatureFlagsChange)
+    return () => window.removeEventListener('featureFlagsChanged', handleFeatureFlagsChange)
+  }, [])
 
   return flags
 }
 
-// Enhanced hook for checking a specific feature flag with Statsig analytics
+  // Enhanced hook for checking a specific feature flag with Statsig analytics
 export function useFeatureFlag(flag: keyof AllFeatureFlags, user?: User | null): boolean {
   const flags = useFeatureFlags(user)
   const { logEvent, isReady: statsigReady } = useStatsig()
   
+  // Stable user type to prevent unnecessary re-renders
+  const userType = user?.subscription?.status === 'active' ? 'premium' : user ? 'free' : 'guest'
+  const flagValue = flags[flag]
+  
   // Log feature flag usage for analytics (only in production with Statsig)
   useEffect(() => {
-    if (statsigReady && flags[flag]) {
+    if (statsigReady && flagValue) {
       logEvent('feature_flag_usage', 1, {
         flag_name: flag,
-        enabled: flags[flag],
-        user_type: user ? (user.subscription?.status === 'active' ? 'premium' : 'free') : 'guest',
+        enabled: flagValue,
+        user_type: userType,
         source: 'react_hook'
       })
     }
-  }, [flag, flags, user, statsigReady, logEvent])
+  }, [flag, flagValue, userType, statsigReady, logEvent])
   
-  return flags[flag]
+  return flagValue
 }
 
 // Hook specifically for premium features with subscription checking
@@ -135,29 +147,34 @@ export function usePremiumFeatureFlag(flag: keyof PremiumFeatureFlags, user?: Us
   const flags = useFeatureFlags(user)
   const { logEvent, isReady: statsigReady } = useStatsig()
   
+  // Stable values to prevent unnecessary re-renders
+  const flagValue = flags[flag]
+  const userHasPremium = user?.subscription?.status === 'active'
+  const userPlan = user?.subscription?.plan || 'none'
+  
   // Log premium feature access attempts
   useEffect(() => {
     if (statsigReady) {
       logEvent('premium_feature_check', 1, {
         flag_name: flag,
-        enabled: flags[flag],
-        user_has_premium: user?.subscription?.status === 'active',
-        user_plan: user?.subscription?.plan || 'none'
+        enabled: flagValue,
+        user_has_premium: userHasPremium,
+        user_plan: userPlan
       })
     }
-  }, [flag, flags, user, statsigReady, logEvent])
+  }, [flag, flagValue, userHasPremium, userPlan, statsigReady, logEvent])
   
-  return flags[flag]
+  return flagValue
 }
 
 // Server-side function to get feature flags for a user (fallback only)
 export function getServerSideFeatureFlags(user?: User | null): AllFeatureFlags {
   const baseFlags = envFeatureFlags.getAllFlags()
-  return applyUserSpecificFlags(baseFlags, user)
+  return applyUserSpecificFlagsStandalone(baseFlags, user)
 }
 
 // Apply user-specific flag overrides based on subscription and role
-function applyUserSpecificFlags(baseFlags: AllFeatureFlags, user?: User | null): AllFeatureFlags {
+function applyUserSpecificFlagsStandalone(baseFlags: AllFeatureFlags, user?: User | null): AllFeatureFlags {
   if (!user) {
     // Guest user - disable premium and admin features
     return {

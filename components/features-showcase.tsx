@@ -78,9 +78,23 @@ function RealTimeNewsDemo() {
   const [currentMessage, setCurrentMessage] = useState(0)
   const [generatedContent, setGeneratedContent] = useState<string[]>([])
 
-    useEffect(() => {
+  // Single effect with ref to prevent dependency issues
+  const phaseRef = useRef(phase)
+  const progressRef = useRef(progress)
+  const generatedContentRef = useRef(generatedContent)
+  
+  useEffect(() => {
+    phaseRef.current = phase
+    progressRef.current = progress
+    generatedContentRef.current = generatedContent
+  })
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
+        const newProgress = prev >= 100 ? 0 : prev + 2
+        
+        // Handle phase transitions
         if (prev >= 100) {
           setPhase(p => {
             const nextPhase = (p + 1) % REAL_TIME_PHASES.length
@@ -90,24 +104,23 @@ function RealTimeNewsDemo() {
             return nextPhase
           })
           setCurrentMessage(0)
-          return 0
         }
-        return prev + 2
+        
+        // Handle message cycling (less frequently)
+        else if (newProgress > 0 && newProgress % 33 === 0) {
+          setCurrentMessage(prev => (prev + 1) % REAL_TIME_PHASES[phaseRef.current].messages.length)
+        }
+        
+        return newProgress
       })
-    }, 200)
+    }, 300) // Slower interval to reduce updates
     
     return () => clearInterval(interval)
   }, [])
 
+  // Separate effect for content generation with better debouncing
   useEffect(() => {
-    if (progress > 0 && progress % 33 === 0) {
-      setCurrentMessage(prev => (prev + 1) % REAL_TIME_PHASES[phase].messages.length)
-    }
-  }, [progress, phase])
-
-  useEffect(() => {
-    if (phase === 3 && progress > 50) {
-      // Simulate content being generated in final phase
+    if (phase === 3 && progress > 50 && generatedContent.length < CONTENT_TYPES.length) {
       const timer = setTimeout(() => {
         setGeneratedContent(prev => {
           if (prev.length < CONTENT_TYPES.length) {
@@ -115,10 +128,10 @@ function RealTimeNewsDemo() {
           }
           return prev
         })
-      }, 300)
+      }, 500)
       return () => clearTimeout(timer)
     }
-  }, [phase, progress, generatedContent])
+  }, [phase, progress]) // Removed generatedContent from dependencies to prevent loops
 
   const currentPhase = REAL_TIME_PHASES[phase]
 
@@ -260,8 +273,9 @@ function MultiplayerDemo() {
   useEffect(() => {
     const interval = setInterval(() => {
       setPlayers(prev => prev.map(player => {
-        const shouldAnswer = Math.random() > 0.7
-        const xpGain = shouldAnswer ? Math.floor(Math.random() * 100) + 10 : null
+        // Reduce animation frequency to prevent excessive updates
+        const shouldAnswer = Math.random() > 0.8 // Less frequent
+        const xpGain = shouldAnswer ? Math.floor(Math.random() * 50) + 10 : null
         return {
           ...player,
           isAnswering: shouldAnswer,
@@ -269,13 +283,17 @@ function MultiplayerDemo() {
           xpGain: xpGain
         }
       }))
-      
-      // Clear XP gains after showing them
-      setTimeout(() => {
-        setPlayers(prev => prev.map(player => ({ ...player, xpGain: null })))
-      }, 2500)
-    }, 3000)
-    return () => clearInterval(interval)
+    }, 4000) // Slower interval
+    
+    // Use separate timeout for clearing XP gains
+    const clearXpInterval = setInterval(() => {
+      setPlayers(prev => prev.map(player => ({ ...player, xpGain: null })))
+    }, 6000) // Clear XP gains every 6 seconds
+    
+    return () => {
+      clearInterval(interval)
+      clearInterval(clearXpInterval)
+    }
   }, [])
 
   return (
@@ -348,8 +366,16 @@ function CivicsBeforeAfterSlider() {
     e.preventDefault()
   }
 
+  // Throttle drag updates to prevent excessive re-renders
+  const lastDragUpdate = useRef(0)
+  const DRAG_THROTTLE = 16 // ~60fps
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !containerRef.current) return
+    
+    const now = Date.now()
+    if (now - lastDragUpdate.current < DRAG_THROTTLE) return
+    lastDragUpdate.current = now
     
     const rect = containerRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -369,6 +395,10 @@ function CivicsBeforeAfterSlider() {
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging || !containerRef.current) return
+    
+    const now = Date.now()
+    if (now - lastDragUpdate.current < DRAG_THROTTLE) return
+    lastDragUpdate.current = now
     
     const rect = containerRef.current.getBoundingClientRect()
     const x = e.touches[0].clientX - rect.left
@@ -470,13 +500,15 @@ function CivicsBeforeAfterSlider() {
   const beforeContent = examples[currentExample].before
   const afterContent = examples[currentExample].after
 
-  // Auto-cycle through examples
+  // Auto-cycle through examples - only when not dragging
   useEffect(() => {
+    if (isDragging) return // Don't auto-cycle while user is interacting
+    
     const interval = setInterval(() => {
       setCurrentExample((prev) => (prev + 1) % examples.length)
-    }, 8000) // Change example every 8 seconds
+    }, 10000) // Slower cycling - every 10 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [isDragging])
 
   return (
     <div className="relative">
@@ -654,7 +686,7 @@ export function FeaturesShowcase() {
                 Textbook vs. Reality
               </h3>
               <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                See the uncomfortable truths they don't teach in school. Drag to reveal how power really works.
+                School civics classes teach you how government should work. Reality shows you how it actually works. Drag to see the difference.
               </p>
               <div className="flex gap-6">
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">

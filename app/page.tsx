@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import { DailyCardStack } from "@/components/daily-card-stack"
 import { Calendar } from "@/components/calendar"
 import type { CategoryType, TopicMetadata } from "@/lib/quiz-data"
@@ -12,57 +12,120 @@ import Link from "next/link"
 import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { useRouter } from "next/navigation"
 import { Header } from '@/components/header'
-import { CategoryCloud } from '@/components/category-cloud'
 import { ContinueQuizCard } from '@/components/continue-quiz-card'
-import { FeaturesShowcase } from '@/components/features-showcase'
-import { StickyQuizNavigation, useStickyQuizNavigation } from '@/components/quiz/sticky-quiz-navigation'
+import dynamic from 'next/dynamic'
+
+// Lazy load FeaturesShowcase only when needed (for non-authenticated users)
+const FeaturesShowcase = dynamic(
+  () => import('@/components/features-showcase').then(mod => ({ 
+    default: mod.FeaturesShowcase || (() => null) 
+  })).catch(() => ({ 
+    default: () => null 
+  })),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="py-24 sm:py-32 lg:py-40 bg-white dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16">
+          <div className="text-center space-y-8">
+            <div className="h-12 w-96 mx-auto bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+            <div className="h-6 w-64 mx-auto bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+)
 
 import { supabase } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-
 type ViewMode = 'cards' | 'calendar'
+
+// Optimized batched data fetching
+interface HomePageData {
+  incompleteAttempts: any[]
+  incompleteTopics: TopicMetadata[]
+  topicsForCalendar?: TopicMetadata[]
+}
+
+const fetchHomePageData = async (userId?: string, needsCalendarData: boolean = false): Promise<HomePageData> => {
+  try {
+    // Batch all API calls into a single Promise.all to prevent waterfall loading
+    const promises: Promise<any>[] = []
+    
+    // Only fetch user-specific data if user exists
+    if (userId) {
+      promises.push(enhancedQuizDatabase.getUserQuizAttempts(userId))
+    } else {
+      promises.push(Promise.resolve([]))
+    }
+    
+    // Only fetch calendar topics if needed
+    if (needsCalendarData) {
+      promises.push(dataService.getAllTopics())
+    } else {
+      promises.push(Promise.resolve({}))
+    }
+    
+    const [userAttempts, allTopics] = await Promise.all(promises)
+    
+    // Process incomplete attempts
+    let incompleteAttempts: any[] = []
+    let incompleteTopics: TopicMetadata[] = []
+    
+    if (userId && userAttempts?.length > 0) {
+      // Get dismissed quiz IDs from localStorage
+      const dismissedQuizzes = JSON.parse(localStorage.getItem('dismissedQuizzes') || '[]')
+      
+      // Filter out dismissed quizzes
+      const incomplete = userAttempts.filter((a: any) => a.isPartial && !dismissedQuizzes.includes(a.id))
+      incompleteAttempts = incomplete
+      
+      // Batch fetch topic metadata for incomplete attempts
+      if (incomplete.length > 0) {
+        const topicPromises = incomplete.map((a: any) => dataService.getTopicById(a.topicId))
+        incompleteTopics = (await Promise.all(topicPromises)).filter(Boolean) as TopicMetadata[]
+      }
+    }
+    
+    return {
+      incompleteAttempts,
+      incompleteTopics,
+      topicsForCalendar: needsCalendarData ? Object.values(allTopics) : undefined
+    }
+  } catch (error) {
+    console.error('Error fetching homepage data:', error)
+    return {
+      incompleteAttempts: [],
+      incompleteTopics: [],
+      topicsForCalendar: undefined
+    }
+  }
+}
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [topicsList, setTopicsList] = useState<TopicMetadata[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [isMobile, setIsMobile] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
-  const [incompleteAttempts, setIncompleteAttempts] = useState<any[]>([])
-  const [incompleteTopics, setIncompleteTopics] = useState<any[]>([])
   const [isMounted, setIsMounted] = useState(false)
   const [dismissModalOpen, setDismissModalOpen] = useState(false)
   const [quizToDismiss, setQuizToDismiss] = useState<{attemptId: string, topicId: string, title: string} | null>(null)
   
-  // Coordinated loading states to prevent layout shift
-  const [isDailyCardStackReady, setIsDailyCardStackReady] = useState(false)
-  const [isCategoryCloudReady, setIsCategoryCloudReady] = useState(false)
-  
-  // Both components are ready when neither is loading
-  const areBothComponentsReady = isDailyCardStackReady && isCategoryCloudReady
-
-  // Sticky navigation state
-  const [currentTopic, setCurrentTopic] = useState<TopicMetadata | null>(null)
-  const [allTopics, setAllTopics] = useState<TopicMetadata[]>([])
-
-  // Convert topics to navigation format
-  const navigationTopics = allTopics.map(topic => ({
-    id: topic.topic_id,
-    title: topic.topic_title,
-    emoji: topic.emoji || '📝',
-    date: topic.date,
-    dayOfWeek: new Date(topic.date).toLocaleDateString('en-US', { weekday: 'short' })
-  }))
-
-  const currentTopicId = currentTopic?.topic_id || ''
-  const stickyNavigation = useStickyQuizNavigation(navigationTopics, currentTopicId)
+  // Optimized state management
+  const [homePageData, setHomePageData] = useState<HomePageData>({
+    incompleteAttempts: [],
+    incompleteTopics: []
+  })
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [topicsForCalendar, setTopicsForCalendar] = useState<TopicMetadata[]>([])
 
   // Mobile detection
   useEffect(() => {
@@ -82,61 +145,80 @@ export default function HomePage() {
     return () => setIsMounted(false)
   }, [])
 
-
-
+  // Optimized data fetching with batching
   useEffect(() => {
     let isCancelled = false
 
-    const fetchIncompleteAttempts = async () => {
-      if (!user || !isMounted) return
+    const loadHomePageData = async () => {
+      if (!isMounted) return
+      
+      setIsLoadingData(true)
       
       try {
-        const attempts = await enhancedQuizDatabase.getUserQuizAttempts(user.id)
-        if (isCancelled) return
-        
-        // Get dismissed quiz IDs from localStorage
-        const dismissedQuizzes = JSON.parse(localStorage.getItem('dismissedQuizzes') || '[]')
-        
-        // Filter out dismissed quizzes
-        const incomplete = attempts.filter(a => a.isPartial && !dismissedQuizzes.includes(a.id))
-        setIncompleteAttempts(incomplete)
-        
-        // Fetch topic metadata for each incomplete attempt
-        const topics = await Promise.all(
-          incomplete.map(a => dataService.getTopicById(a.topicId))
-        )
+        const data = await fetchHomePageData(user?.id, viewMode === 'calendar')
         
         if (!isCancelled) {
-          setIncompleteTopics(topics)
+          setHomePageData(data)
+          if (data.topicsForCalendar) {
+            setTopicsForCalendar(data.topicsForCalendar)
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch incomplete attempts:', error)
+        console.error('Failed to load homepage data:', error)
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingData(false)
+        }
+      }
+    }
+
+    loadHomePageData()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [user?.id, isMounted, viewMode])
+
+  // Load calendar topics only when switching to calendar view
+  useEffect(() => {
+    let isCancelled = false
+
+    const loadCalendarTopics = async () => {
+      if (viewMode !== 'calendar' || topicsForCalendar.length > 0) return
+      
+      try {
+        const allTopics = await dataService.getAllTopics()
+        if (!isCancelled) {
+          setTopicsForCalendar(Object.values(allTopics))
+        }
+      } catch (error) {
+        console.error('Failed to load calendar topics:', error)
       }
     }
 
     if (isMounted) {
-      fetchIncompleteAttempts()
+      loadCalendarTopics()
     }
 
     return () => {
       isCancelled = true
     }
-  }, [user, isMounted])
+  }, [viewMode, isMounted, topicsForCalendar.length])
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = useCallback(() => {
     setIsAuthDialogOpen(false)
-  }
+  }, [])
 
-  const handleDateSelect = (date: Date) => {
+  const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date)
-  }
+  }, [])
 
-  const handleDismissClick = (attemptId: string, topicId: string, title: string) => {
+  const handleDismissClick = useCallback((attemptId: string, topicId: string, title: string) => {
     setQuizToDismiss({ attemptId, topicId, title })
     setDismissModalOpen(true)
-  }
+  }, [])
 
-  const handleDismissConfirm = () => {
+  const handleDismissConfirm = useCallback(() => {
     if (!quizToDismiss) return
     
     try {
@@ -146,69 +228,26 @@ export default function HomePage() {
       localStorage.setItem('dismissedQuizzes', JSON.stringify(dismissedQuizzes))
       
       // Update local state to remove the dismissed item
-      setIncompleteAttempts(prev => prev.filter(attempt => attempt.id !== quizToDismiss.attemptId))
-      setIncompleteTopics(prev => {
-        const attemptIndex = incompleteAttempts.findIndex(a => a.id === quizToDismiss.attemptId)
-        if (attemptIndex >= 0) {
-          return prev.filter((_, index) => index !== attemptIndex)
-        }
-        return prev
-      })
+      setHomePageData(prev => ({
+        ...prev,
+        incompleteAttempts: prev.incompleteAttempts.filter(attempt => attempt.id !== quizToDismiss.attemptId),
+        incompleteTopics: prev.incompleteTopics.filter((_, index) => {
+          const attemptIndex = prev.incompleteAttempts.findIndex(a => a.id === quizToDismiss.attemptId)
+          return index !== attemptIndex
+        })
+      }))
       
       setDismissModalOpen(false)
       setQuizToDismiss(null)
     } catch (error) {
       console.error('Failed to dismiss quiz:', error)
     }
-  }
+  }, [quizToDismiss])
 
-  const handleDismissCancel = () => {
+  const handleDismissCancel = useCallback(() => {
     setDismissModalOpen(false)
     setQuizToDismiss(null)
-  }
-
-  // Sticky navigation handlers
-  const handleCurrentTopicChange = (newCurrentTopic: TopicMetadata | null, newAllTopics: TopicMetadata[]) => {
-    setCurrentTopic(newCurrentTopic)
-    setAllTopics(newAllTopics)
-  }
-
-  const handleStickyNavigation = (direction: 'prev' | 'next') => {
-    const newTopicId = stickyNavigation.navigateToTopic(direction)
-    if (newTopicId) {
-      router.push(`/?topic=${newTopicId}`)
-    }
-  }
-
-  const handleTopicSelect = (topicId: string) => {
-    router.push(`/?topic=${topicId}`)
-  }
-
-  // Load topics only when needed for calendar view - DailyCardStack loads its own topics
-  useEffect(() => {
-    let isCancelled = false
-
-    const loadTopicsForCalendar = async () => {
-      if (!isMounted || viewMode !== 'calendar') return
-      
-      try {
-        const allTopics = await dataService.getAllTopics()
-        if (!isCancelled) {
-          setTopicsList(Object.values(allTopics))
-        }
-      } catch (error) {
-        console.error('Failed to load topics for calendar:', error)
-      }
-    }
-
-    if (isMounted && viewMode === 'calendar') {
-      loadTopicsForCalendar()
-    }
-
-    return () => {
-      isCancelled = true
-    }
-  }, [isMounted, viewMode]) // Only load when calendar view is needed
+  }, [])
 
   // Don't render until mounted to prevent hydration issues
   if (!isMounted) {
@@ -228,21 +267,19 @@ export default function HomePage() {
       isMobile && "pb-20"
     )}>
       <Header onSignInClick={() => setIsAuthDialogOpen(true)} />
-
-      {/* News Ticker moved to search dialog */}
     
       {/* Continue Where You Left Off - Fixed at top */}
-      {user && incompleteAttempts.length > 0 && (
+      {user && homePageData.incompleteAttempts.length > 0 && (
         <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 md:py-4">
           <div className="w-full max-w-8xl mx-auto px-3 sm:px-4 md:px-8 lg:px-12 xl:px-16">
             <h2 className="text-sm font-medium mb-3 text-slate-900 dark:text-slate-100">Continue where you left off</h2>
             
             {/* Single quiz or horizontal scroll for multiple */}
-            {incompleteAttempts.length === 1 ? (
+            {homePageData.incompleteAttempts.length === 1 ? (
               // Single quiz - full width
               (() => {
-                const attempt = incompleteAttempts[0]
-                const topic = incompleteTopics[0]
+                const attempt = homePageData.incompleteAttempts[0]
+                const topic = homePageData.incompleteTopics[0]
                 if (!topic) return null
                 
                 return (
@@ -260,8 +297,8 @@ export default function HomePage() {
             ) : (
               // Multiple quizzes - horizontal scroll
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {incompleteAttempts.map((attempt, idx) => {
-                  const topic = incompleteTopics[idx]
+                {homePageData.incompleteAttempts.map((attempt, idx) => {
+                  const topic = homePageData.incompleteTopics[idx]
                   if (!topic) return null
                   
                   return (
@@ -299,102 +336,28 @@ export default function HomePage() {
           "py-1 sm:py-2"
         )}>
           {viewMode === 'cards' ? (
-            <>
-              {/* Show coordinated skeleton loaders until both components are ready */}
-              {!areBothComponentsReady && (
-                <div className="space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
-                  {/* Daily Card Stack Skeleton */}
-                  <div className="min-h-[50vh]">
-                    <div className="animate-pulse">
-                      <div className="min-h-[50vh] flex flex-col justify-center py-4 sm:py-8">
-                        <div className="text-center mb-6">
-                          <div className="h-4 w-16 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded mx-auto mb-6"></div>
-                        </div>
-                        <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
-                          <div className="text-center mb-6">
-                            <div className="h-16 w-16 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-full mx-auto mb-4"></div>
-                            <div className="h-8 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-lg w-3/4 max-w-2xl mx-auto mb-4"></div>
-                            <div className="space-y-2 max-w-2xl mx-auto mb-6">
-                              <div className="h-5 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded w-full"></div>
-                              <div className="h-5 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded w-2/3 mx-auto"></div>
-                            </div>
-                            <div className="h-12 w-32 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-lg mx-auto"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Category Cloud Skeleton */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between px-4 sm:px-0">
-                      <div className="h-8 w-48 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded"></div>
-                      <div className="h-6 w-20 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded"></div>
-                    </div>
-                    <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-24 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-xl"></div>
-                      ))}
-                    </div>
-                    <div className="flex gap-3 px-4 sm:hidden">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-24 w-32 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-xl flex-shrink-0"></div>
-                      ))}
-                    </div>
-                  </div>
+            <div className="space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
+              {/* Daily Card Stack with optimized loading */}
+              <Suspense fallback={
+                <div className="min-h-[50vh] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                 </div>
-              )}
-              
-              {/* Hidden components loading in background */}
-              <div className="opacity-0 pointer-events-none absolute">
-                <Suspense fallback={null}>
-                  <DailyCardStack 
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    requireAuth={false}
-                    onAuthRequired={handleAuthSuccess}
-                    showGuestBanner={false}
-                    onLoadingStateChange={setIsDailyCardStackReady}
-                    onCurrentTopicChange={handleCurrentTopicChange}
-                  />
-                </Suspense>
-                <CategoryCloud 
-                  limit={6} 
-                  showViewAll={true} 
-                  onLoadingStateChange={setIsCategoryCloudReady}
+              }>
+                <DailyCardStack 
+                  selectedCategory={selectedCategory}
+                  searchQuery={searchQuery}
+                  requireAuth={false}
+                  onAuthRequired={handleAuthSuccess}
+                  showGuestBanner={false}
                 />
-              </div>
+              </Suspense>
               
-              {/* Show actual components when both are ready */}
-              {areBothComponentsReady && (
-                <div className="animate-in fade-in duration-300">
-                                  <Suspense fallback={null}>
-                  <DailyCardStack 
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    requireAuth={false}
-                    onAuthRequired={handleAuthSuccess}
-                    showGuestBanner={false}
-                    onCurrentTopicChange={handleCurrentTopicChange}
-                  />
-                </Suspense>
-                  
-                  {/* Categories Section - Mobile optimized */}
-                  <div className={cn(
-                    // Mobile-first responsive margins
-                    "mt-6 sm:mt-8 md:mt-10 lg:mt-12",
-                    // Extra bottom margin on mobile for bottom navigation
-                    isMobile && "mb-6"
-                  )}>
-                    <CategoryCloud limit={6} showViewAll={true} />
-                  </div>
-                </div>
-              )}
-            </>
+
+            </div>
           ) : (
             <div className="py-4 sm:py-8">
               <Calendar 
-                topics={topicsList}
+                topics={topicsForCalendar}
                 onDateSelect={handleDateSelect}
                 selectedDate={selectedDate}
                 className={cn(
@@ -407,8 +370,8 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Features Showcase Section */}
-        <FeaturesShowcase />
+        {/* Features Showcase Section - Only show for non-authenticated users */}
+        {!user && !isLoadingData && <FeaturesShowcase />}
 
         <AuthDialog
           isOpen={isAuthDialogOpen}
@@ -451,19 +414,6 @@ export default function HomePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Sticky Quiz Navigation */}
-      {currentTopic && stickyNavigation.currentTopic && (
-        <StickyQuizNavigation
-          currentTopic={stickyNavigation.currentTopic}
-          previousTopic={stickyNavigation.previousTopic}
-          nextTopic={stickyNavigation.nextTopic}
-          onNavigate={handleStickyNavigation}
-          onTopicSelect={handleTopicSelect}
-          isLoading={!areBothComponentsReady}
-          triggerElementId="democracy-decoded-section"
-        />
-      )}
     </div>
   )
 }
