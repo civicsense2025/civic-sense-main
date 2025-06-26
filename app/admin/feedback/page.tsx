@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -104,7 +104,7 @@ export default function AdminFeedbackPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   const router = useRouter()
 
   useEffect(() => {

@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
-import { useAdminAccess } from '@/hooks/useAdminAccess'
+import { useAdmin } from '@/lib/admin-access'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -172,7 +172,7 @@ const categories = [
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isLoading: authLoading } = useAuth()
-  const { isAdmin, isSuperAdmin, role, isLoading: adminLoading, error } = useAdminAccess()
+  const { isAdmin, isSuperAdmin, role, loading: adminLoading } = useAdmin()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -194,11 +194,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         userEmail: user?.email,
         isAdmin,
         isSuperAdmin,
-        role,
-        error
+        role
       })
     }
-  }, [isClientMounted, authLoading, adminLoading, user, isAdmin, isSuperAdmin, role, error])
+  }, [isClientMounted, authLoading, adminLoading, user, isAdmin, isSuperAdmin, role])
 
   const isActivePath = (href: string) => {
     // Prevent hydration mismatch by only computing on client
@@ -277,9 +276,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 Retry
               </Button>
             </div>
-            {error && (
-              <p className="text-xs text-amber-500 mt-2">Error: {error}</p>
-            )}
+
           </div>
         </div>
       </div>

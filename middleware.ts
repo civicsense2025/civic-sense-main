@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { requireAdmin, requireSuperAdmin } from '@/lib/admin-middleware'
+import { requireAdmin, requireSuperAdmin } from '@/lib/admin-access'
 
 // Define which routes require which level of access
 const ADMIN_ROUTES = [

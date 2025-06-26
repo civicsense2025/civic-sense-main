@@ -27,7 +27,7 @@ import {
   Download,
   FileText
 } from "lucide-react"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -91,7 +91,7 @@ export default function SurveysAdminPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   
   const [surveys, setSurveys] = useState<Survey[]>([])
   const [responses, setResponses] = useState<SurveyResponse[]>([])

@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin-middleware'
+import { requireAdmin } from '@/lib/admin-access'
 
 // ============================================================================
 // INTERFACES AND TYPES

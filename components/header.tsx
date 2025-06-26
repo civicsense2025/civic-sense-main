@@ -12,7 +12,7 @@ import { useTheme } from "next-themes"
 import { usePremium } from "@/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@/lib/enhanced-gamification"
 import { LearningPodsStats } from "./learning-pods-stats"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { EnhancedGlobalSearch } from "@/components/enhanced-global-search"
 import { useComprehensiveFeatureFlags } from "@/hooks/useComprehensiveFeatureFlags"
 import { envFeatureFlags } from '@/lib/env-feature-flags'
@@ -304,7 +304,7 @@ export function Header({
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isDevelopment = process.env.NODE_ENV !== 'production'
-  const { isAdmin } = useAdminAccess()
+  const { isAdmin } = useAdmin()
   const [mounted, setMounted] = useState(false)
 
   // Feature flags - always call hooks at the top level

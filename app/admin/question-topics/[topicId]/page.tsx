@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -154,7 +154,7 @@ export default function TopicDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   const { toast } = useToast()
   
   const [topic, setTopic] = useState<QuestionTopic | null>(null)

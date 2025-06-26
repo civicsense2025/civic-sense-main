@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin-middleware'
+import { requireAdmin } from '@/lib/admin-access'
 import OpenAI from 'openai'
 
 // Initialize OpenAI client with error handling
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = adminCheck
-    console.log(`🔍 Admin user ${user.email} requesting AI-powered gap analysis`)
+    console.log(`🔍 Admin user ${user?.email} requesting AI-powered gap analysis`)
 
     const supabase = await createClient()
     

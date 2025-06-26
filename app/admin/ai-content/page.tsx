@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Component, ReactNode } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -163,7 +163,7 @@ const GENERATION_PRESETS = {
 
 function AIContentAdminPageComponent() {
   const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   const { toast } = useToast()
   
   const [isLoading, setIsLoading] = useState(true)

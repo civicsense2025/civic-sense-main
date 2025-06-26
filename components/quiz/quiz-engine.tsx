@@ -14,15 +14,13 @@ import { MatchingQuestion } from "./question-types/matching"
 import { OrderingQuestion } from "./question-types/ordering"
 import { CrosswordQuestion } from "./question-types/crossword"
 import { QuestionFeedbackDisplay } from "./question-feedback-display"
-// Removed QuestionFeedback - only needed on results screen
 import { QuestionTimer, useQuestionTimer } from "./question-timer"
 import { BoostCommandBar } from "./boost-command-bar"
 import { QuizResults as QuizResultsComponent } from "./quiz-results"
-// Removed QuizDateNavigation - now using the new QuizNavigation component in the page layout
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from "@/lib/keyboard-shortcuts"
 import { AdminEditPanel } from "./admin-edit-panel"
-import { useAdminAccess } from "@/lib/hooks/use-admin-access"
+import { useAdmin } from "@/lib/admin-access"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -316,7 +314,7 @@ export function QuizEngine({
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const { getOrCreateGuestToken } = useGuestAccess()
-  const { isAdmin } = useAdminAccess()
+  const { isAdmin } = useAdmin()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
   
   // Analytics integration

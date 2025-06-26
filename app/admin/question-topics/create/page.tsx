@@ -10,7 +10,7 @@
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
+import { useAdmin } from "@/lib/admin-access"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -75,7 +75,7 @@ const DAY_OPTIONS = [
 export default function CreateTopicPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   const { toast } = useToast()
 
   // Form state

@@ -10,7 +10,7 @@ import {
   Users, 
   Calendar, 
   Database,
-  Sync,
+  Zap,
   CheckCircle,
   XCircle,
   Clock,
@@ -301,7 +301,7 @@ export default function CongressionalAdminPage() {
                             onClick={() => handleSync(source.source_system)}
                             disabled={syncing}
                           >
-                            <Sync className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                            <Zap className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
                             Sync Now
                           </Button>
                         </div>

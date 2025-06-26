@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-middleware'
+import { requireAdmin } from '@/lib/admin-access'
 
 // ============================================================================
 // TEST SCENARIOS

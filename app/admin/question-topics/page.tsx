@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useAdminAccess } from "@/hooks/useAdminAccess"
-import { Header } from "@/components/header"
+import { useAdmin } from "@/lib/admin-access"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   Brain, 
   Search, 
-  Filter, 
+  Filter,   
   Eye, 
   Edit, 
   Sparkles, 
@@ -107,7 +106,7 @@ type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'question_cou
 
 export default function AdminQuestionTopicsPage() {
   const { user } = useAuth()
-  const { isAdmin, isLoading: adminLoading, error: adminError } = useAdminAccess()
+  const { isAdmin, loading: adminLoading } = useAdmin()
   const { toast } = useToast()
   
   // Data state
@@ -640,7 +639,7 @@ export default function AdminQuestionTopicsPage() {
   }, [topics])
 
   // Loading state
-  if (isLoading || adminLoading || !stats || (!isAdmin && !adminError)) {
+  if (isLoading || adminLoading || !stats || !isAdmin) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -651,19 +650,7 @@ export default function AdminQuestionTopicsPage() {
     )
   }
 
-  // Access denied state
-  if (!isAdmin && adminError) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-          <h2 className="text-xl font-medium text-slate-900 dark:text-white">Access Denied</h2>
-          <p className="text-slate-600 dark:text-slate-400">You don't have permission to access this admin area.</p>
-          <p className="text-sm text-red-600 dark:text-red-400">{adminError}</p>
-        </div>
-      </div>
-    )
-  }
+
 
   // Error state with retry
   if (error && !isLoading) {
