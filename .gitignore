@@ -52,6 +52,7 @@ lib/database.types.ts.backup.*
 /app/news-ticker-demo/
 /app/npc-demo/
 /app/survey-demo/
+/app/admin/*
 
 # Debug and Development Routes
 /app/debug-*/
