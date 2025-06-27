@@ -31,21 +31,74 @@ async function checkDatabaseAvailability(): Promise<boolean> {
     return isDatabaseAvailable
   }
   
+  // In development mode, be more permissive
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      // Check if supabase client is initialized
+      if (!supabase) {
+        console.warn('⚠️ Supabase client not initialized - using fallback')
+        isDatabaseAvailable = false
+        lastDbCheck = now
+        return false
+      }
+      
+      // Quick ping with shorter timeout for development
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Database check timeout')), 3000) // Reduced to 3 seconds
+      )
+      
+      // Simple existence check
+      const dbCheckPromise = supabase
+        .from('question_topics')
+        .select('topic_id')
+        .limit(1)
+        .then(response => {
+          if (response.error) {
+            console.warn(`Database check warning: ${response.error.message}`)
+            // In development, allow some errors and still proceed
+            return response.error.code !== 'PGRST301' // Allow unless it's a serious auth error
+          }
+          return true
+        })
+      
+      const result = await Promise.race([dbCheckPromise, timeoutPromise])
+      
+      isDatabaseAvailable = Boolean(result)
+      lastDbCheck = now
+      
+      if (isDatabaseAvailable) {
+        console.log('✅ Database is available')
+      } else {
+        console.warn('⚠️ Database check failed, but continuing in development mode')
+        // In development, return true even if check fails to allow testing
+        isDatabaseAvailable = true
+      }
+      
+      return isDatabaseAvailable
+    } catch (error) {
+      console.warn(`⚠️ Database check error in development:`, error)
+      // In development mode, be permissive and allow fallback
+      isDatabaseAvailable = true
+      lastDbCheck = now
+      return true
+    }
+  }
+  
+  // Production mode - stricter checking
   try {
     // Check if supabase client is initialized
     if (!supabase) {
-      console.warn('⚠️ Supabase client not initialized')
+      console.error('❌ Supabase client not initialized')
       isDatabaseAvailable = false
       lastDbCheck = now
       return false
     }
     
-    // Try a simple database query with increased timeout for initial connections
+    // Try a simple database query with timeout
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Database check timeout')), 8000) // Increased to 8 seconds
+      setTimeout(() => reject(new Error('Database check timeout')), 5000)
     )
     
-    // Use a simple ping query instead of getting all topics
     const dbCheckPromise = supabase
       .from('question_topics')
       .select('count', { count: 'exact', head: true })
@@ -64,19 +117,11 @@ async function checkDatabaseAvailability(): Promise<boolean> {
     console.log('✅ Database is available')
     return true
   } catch (error) {
-    // Extract error message safely
-    let errorMessage = 'Unknown error'
-    if (error instanceof Error) {
-      errorMessage = error.message
-    } else if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage = String((error as any).message)
-    } else if (error !== null && error !== undefined) {
-      errorMessage = String(error)
-    }
+    const errorMessage = error instanceof Error ? error.message : String(error)
     
     isDatabaseAvailable = false
     lastDbCheck = now
-    console.warn(`⚠️ Database unavailable: ${errorMessage}`)
+    console.error(`❌ Database unavailable: ${errorMessage}`)
     return false
   }
 }

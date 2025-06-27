@@ -184,7 +184,7 @@ const MemoizedQuestionDisplay = memo(({
     </h1>
     
     {showHint && question.hint && (
-      <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
         <div className="rounded-lg p-6 border border-slate-100 dark:border-slate-800">
           <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
             💡 {question.hint}
@@ -1833,7 +1833,7 @@ export function QuizEngine({
           )}
 
           {!isAnswerSubmitted && (
-            <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               {renderQuestion()}
             </div>
           )}

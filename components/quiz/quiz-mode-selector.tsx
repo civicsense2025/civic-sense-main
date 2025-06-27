@@ -103,8 +103,8 @@ export function QuizModeSelector({
     const info = modeInfo[mode]
     if (!info) return { hasAccess: false, reason: 'unknown' }
 
-    // Feature flag: Only allow standard mode for now
-    if (mode !== 'standard') {
+    // Enable standard, practice, and speed_round modes
+    if (!['standard', 'practice', 'speed_round'].includes(mode)) {
       return { hasAccess: false, reason: 'coming_soon' }
     }
 
@@ -122,7 +122,7 @@ export function QuizModeSelector({
     }
 
     return { hasAccess: true, reason: 'allowed' }
-  }, [user, isInitialized, getRemainingAttempts, isPremium, hasFeatureAccess, modeInfo])
+  }, [user, isInitialized, getRemainingAttempts, isPremium, hasFeatureAccess])
 
   const handleModeSelect = useCallback((mode: QuizGameMode) => {
     const info = modeInfo[mode]

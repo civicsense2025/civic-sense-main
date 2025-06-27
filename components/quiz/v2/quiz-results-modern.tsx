@@ -180,7 +180,7 @@ export function QuizResultsModern({
   }, [topic, results.score, performance.tier, quizAttemptId, toast])
 
   return (
-    <div className={cn("max-w-2xl mx-auto space-y-6", className)}>
+    <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

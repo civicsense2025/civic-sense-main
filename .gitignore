@@ -52,7 +52,15 @@ lib/database.types.ts.backup.*
 /app/news-ticker-demo/
 /app/npc-demo/
 /app/survey-demo/
-/app/admin/*
+
+# Admin Panel - Exclude entire admin system from deployment
+/app/admin/
+/app/api/admin/
+/components/admin/
+sql/admin_panel_schema.sql
+ADMIN_ACCESS_MIGRATION_GUIDE.md
+ADMIN_MIGRATION.md
+lib/admin-access.ts
 
 # Debug and Development Routes
 /app/debug-*/

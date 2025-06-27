@@ -506,7 +506,7 @@ export default function QuizPlayClient({ topicId, searchParams }: QuizPlayClient
       
       {/* No quiz navigation here - this is pure gameplay */}
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active="true">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 sm:py-8" data-quiz-active="true">
         {showLoadingScreen ? (
           <QuizLoadingScreen onComplete={handleLoadingComplete} />
         ) : (

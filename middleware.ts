@@ -28,7 +28,8 @@ const ADMIN_ROUTES = [
 const SUPER_ADMIN_ROUTES = [
   '/admin/settings',
   '/admin/users/roles',
-  '/admin/system'
+  '/admin/system',
+  '/admin/test' // Admin test routes for disabled features
 ]
 
 export async function middleware(request: NextRequest) {

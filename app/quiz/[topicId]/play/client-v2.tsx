@@ -69,14 +69,17 @@ function topicMetadataToQuizTopic(metadata: TopicMetadata | null): QuizTopic | n
 
 export default function QuizPlayClientV2({
   topicId,
-  topic,
+  topic: initialTopic,
   searchParams,
   userId,
   guestToken
 }: QuizPlayClientV2Props) {
+  console.log('🎯 V2 Client: Component mounting with props:', { topicId, initialTopic, searchParams })
+  
   const router = useRouter()
   const { user } = useAuth()
   const { hasFeatureAccess, isPremium, isPro } = usePremium()
+  const [topic, setTopic] = useState<TopicMetadata | null>(initialTopic)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,166 +101,139 @@ export default function QuizPlayClientV2({
   } = useGuestAccess()
 
   // Map old mode parameter to new system
-  const getModeSettings = (): { 
-    mode: 'standard' | 'ai-battle' | 'pvp', 
-    settings?: StandardModeSettings | AIBattleSettings | PVPSettings 
-  } => {
-    const urlMode = searchParams?.mode?.toLowerCase()
+  const getModeSettings = useCallback(() => {
+    const mode = searchParams?.mode || 'standard'
     
-    // For now, all modes map to standard with different settings
-    // In the future, we'll implement AI Battle and PVP
-    switch (urlMode) {
-      case 'timed':
-        return {
-          mode: 'standard',
-          settings: {
-            timeLimit: 30,
-            totalTimeLimit: null,
-            allowHints: false,
-            allowSkip: false,
-            allowReview: true,
-            showExplanations: true,
-            instantFeedback: false,
-            scoringMode: 'speed-bonus',
-            streakBonus: true,
-            questionCount: undefined,
-            shuffleQuestions: false,
-            difficulty: 'mixed',
-            topics: [topicId],
-            mixTopics: false
-          } as StandardModeSettings
-        }
-      
+    switch (mode) {
       case 'practice':
+        // Solo Practice: Learn at your pace with hints and instant feedback
         return {
-          mode: 'standard',
+          mode: 'standard' as const,
           settings: {
-            timeLimit: null,
-            totalTimeLimit: null,
-            allowHints: true,
-            allowSkip: true,
-            allowReview: true,
-            showExplanations: true,
-            instantFeedback: true,
-            scoringMode: 'standard',
-            streakBonus: false,
-            questionCount: undefined,
-            shuffleQuestions: false,
-            difficulty: 'mixed',
-            topics: [topicId],
-            mixTopics: false
+            timeLimit: null,              // No time pressure
+            totalTimeLimit: null,         // No overall limit
+            allowHints: true,             // Enable hints for learning
+            allowSkip: true,              // Allow skipping questions
+            allowReview: true,            // Can review at end
+            showExplanations: true,       // Show explanations
+            instantFeedback: true,        // Immediate feedback
+            scoringMode: 'standard',      // Regular scoring
+            streakBonus: false,           // No streak pressure
+            questionCount: undefined,     // All questions
+            shuffleQuestions: false,      // Keep original order
+            difficulty: 'mixed',          // All difficulties
+            topics: [],                   // Single topic
+            mixTopics: false              // Don't mix topics
           } as StandardModeSettings
         }
-      
-      case 'survival':
+        
+      case 'speed_round':
+      case 'timed':
+        // Timed Challenge: Test your speed with time pressure
         return {
-          mode: 'standard',
+          mode: 'standard' as const,
           settings: {
-            timeLimit: 45,
-            totalTimeLimit: null,
-            allowHints: false,
-            allowSkip: false,
-            allowReview: false,
-            showExplanations: true,
-            instantFeedback: true,
-            scoringMode: 'survival',
-            streakBonus: true,
-            questionCount: undefined,
-            shuffleQuestions: false,
-            difficulty: 'mixed',
-            topics: [topicId],
-            mixTopics: false
+            timeLimit: 30,                // 30 seconds per question
+            totalTimeLimit: 300,          // 5 minutes total
+            allowHints: false,            // No hints in timed mode
+            allowSkip: false,             // Can't skip in timed mode
+            allowReview: true,            // Can review at end
+            showExplanations: true,       // Show explanations after
+            instantFeedback: false,       // Wait until end
+            scoringMode: 'speed-bonus',   // Speed bonus scoring
+            streakBonus: true,            // Streak bonus for speed
+            questionCount: undefined,     // All questions
+            shuffleQuestions: false,      // Keep original order
+            difficulty: 'mixed',          // All difficulties
+            topics: [],                   // Single topic
+            mixTopics: false              // Don't mix topics
           } as StandardModeSettings
         }
-      
-      case 'speed':
+        
+      case 'npc_battle':
+        // AI Battle mode (future)
         return {
-          mode: 'standard',
-          settings: {
-            timeLimit: 15,
-            totalTimeLimit: 300,
-            allowHints: false,
-            allowSkip: false,
-            allowReview: true,
-            showExplanations: false,
-            instantFeedback: false,
-            scoringMode: 'speed-bonus',
-            streakBonus: true,
-            questionCount: undefined,
-            shuffleQuestions: false,
-            difficulty: 'mixed',
-            topics: [topicId],
-            mixTopics: false
-          } as StandardModeSettings
+          mode: 'ai-battle' as const,
+          settings: undefined // Use default AI battle settings
         }
-      
-      // Future modes
-      case 'ai-battle':
-      case 'npc':
-        return {
-          mode: 'ai-battle',
-          settings: {
-            npcId: 'civic-sage',
-            npcDifficulty: 'medium',
-            timeLimit: 30,
-            powerupsEnabled: true,
-            topics: [topicId]
-          } as AIBattleSettings
-        }
-      
+        
+      case 'classic_quiz':
       case 'pvp':
-      case 'multiplayer':
+        // PVP Battle mode (future)  
         return {
-          mode: 'pvp',
-          settings: {
-            roomSize: 4,
-            timeLimit: 30,
-            chatEnabled: true,
-            spectatorMode: false,
-            topics: [topicId],
-            isPrivate: false
-          } as PVPSettings
+          mode: 'pvp' as const,
+          settings: undefined // Use default PVP settings
         }
-      
+        
+      case 'standard':
       default:
-        // Standard mode with default settings
+        // Standard Quiz: Classic quiz experience
         return {
-          mode: 'standard',
-          settings: undefined // Use default settings from the mode
+          mode: 'standard' as const,
+          settings: {
+            timeLimit: null,              // No time pressure
+            totalTimeLimit: null,         // No overall limit
+            allowHints: false,            // No hints
+            allowSkip: false,             // Can't skip questions
+            allowReview: true,            // Can review at end
+            showExplanations: true,       // Show explanations after
+            instantFeedback: false,       // Wait until end for feedback
+            scoringMode: 'standard',      // Regular scoring
+            streakBonus: true,            // Bonus for consecutive correct
+            questionCount: undefined,     // All questions
+            shuffleQuestions: false,      // Keep original order
+            difficulty: 'mixed',          // All difficulties
+            topics: [],                   // Single topic
+            mixTopics: false              // Don't mix topics
+          } as StandardModeSettings
         }
     }
-  }
+  }, [searchParams?.mode])
 
   useEffect(() => {
-    const loadQuestions = async () => {
+    const loadQuizData = async () => {
       try {
         setIsLoading(true)
-        const questionsData = await dataService.getQuestionsByTopic(topicId)
+        setError(null)
         
-        if (!questionsData || questionsData.length === 0) {
-          toast({
-            title: "No Questions Available",
-            description: "This quiz doesn't have any questions yet.",
-            variant: "destructive"
-          })
+        console.log('🔍 V2 Client: Loading quiz data for topic:', topicId)
+        
+        // Load both topic and questions in parallel
+        const [topicData, questionsData] = await Promise.all([
+          initialTopic ? Promise.resolve(initialTopic) : dataService.getTopicById(topicId),
+          dataService.getQuestionsByTopic(topicId)
+        ])
+        
+        console.log('📊 V2 Client: Loaded data:', {
+          topicFound: !!topicData,
+          topicTitle: topicData?.topic_title,
+          questionsCount: questionsData?.length || 0
+        })
+        
+        if (!topicData) {
+          setError("Quiz topic not found")
           return
         }
         
+        if (!questionsData || questionsData.length === 0) {
+          setError("This quiz doesn't have any questions yet")
+          return
+        }
+        
+        setTopic(topicData)
         setQuestions(questionsData)
+        
+        console.log('✅ V2 Client: Successfully loaded quiz data')
       } catch (error) {
-        console.error('Error loading questions:', error)
-        toast({
-          title: "Error Loading Quiz",
-          description: "Failed to load quiz questions. Please try again.",
-          variant: "destructive"
-        })
+        console.error('❌ V2 Client: Error loading quiz data:', error)
+        setError(error instanceof Error ? error.message : "Failed to load quiz data")
       } finally {
         setIsLoading(false)
       }
     }
     
-    loadQuestions()
-  }, [topicId])
+    loadQuizData()
+  }, [topicId, initialTopic])
 
   const handleQuizComplete = async (results: QuizResults) => {
     try {
@@ -394,7 +370,7 @@ export default function QuizPlayClientV2({
       )}
       
       <div className={cn(
-        !(showResults && cachedResults) && "max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8"
+        !(showResults && cachedResults) && "max-w-6xl mx-auto px-4 sm:px-8 py-4 sm:py-8"
       )} data-quiz-active="true">
         <div className={cn(
           !(showResults && cachedResults) && "pb-4 sm:pb-8"

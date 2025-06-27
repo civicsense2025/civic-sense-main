@@ -320,7 +320,7 @@ export function QuizEngineV2({
     const score = Math.round((correctCount / processedQuestions.length) * 100)
     
     return (
-      <div className="w-full max-w-2xl mx-auto text-center space-y-6 py-8">
+      <div className="w-full max-w-4xl mx-auto text-center space-y-6 py-8">
         <div>
           <h2 className="text-3xl font-bold mb-2">Quiz Complete!</h2>
           <p className="text-xl text-muted-foreground">
@@ -379,7 +379,7 @@ export function QuizEngineV2({
   const hasAnswered = !!answers[questionId]
   
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Mode indicator */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
