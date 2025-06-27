@@ -405,84 +405,214 @@ export function TopicInfo({
   const topicCompleted = hasCompletedTopic
 
   return (
-    <div className={cn('flex flex-col h-full py-4 sm:py-6', className)}>
-      {/* Main Layout: 2/3 content + 1/3 quiz selector */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        
-        {/* Left Column: Content (2/3 width) */}
-        <div className="flex-1 lg:w-2/3 space-y-6">
+    <div className={cn('flex flex-col h-full', className)}>
+      {/* Hero Section - Enhanced hierarchy */}
+      <div className="mb-8 lg:mb-12">
+        <div className="text-center lg:text-left space-y-6">
+          {/* Topic emoji - larger and more prominent */}
+          <div className="text-6xl sm:text-7xl lg:text-8xl">
+            {topicData.emoji}
+          </div>
           
-          {/* Header section */}
+          {/* Topic title - much larger and more prominent */}
           <div className="space-y-4">
-            <div className="text-4xl sm:text-5xl">
-              {topicData.emoji}
-            </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
               {topicData.topic_title}
             </h1>
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <span className="font-mono">{new Date(topicData.date).toLocaleDateString('en-US', { 
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}</span>
+            
+            {/* Date and metadata */}
+            <div className="flex items-center justify-center lg:justify-start gap-3 text-sm text-slate-500 dark:text-slate-400">
+              <time className="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                {new Date(topicData.date).toLocaleDateString('en-US', { 
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </time>
+              {hasQuestions && !isCheckingQuestions && (
+                <Badge variant="secondary" className="text-xs">
+                  Interactive Quiz Available
+                </Badge>
+              )}
             </div>
+            
+            {/* Description with better typography */}
             {topicData.description && (
-              <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+              <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-4xl">
                 {topicData.description}
               </p>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Mobile Quiz Selector Dropdown */}
-          <div className="lg:hidden">
-            <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-4 backdrop-blur-sm">
-              {hasQuestions && !isCheckingQuestions ? (
-                <>
-                  {/* Mobile Quiz Mode Selector as Dropdown */}
-                  <select 
-                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                    onChange={(e) => {
-                      const selectedMode = e.target.value as QuizGameMode
-                      // Only allow standard mode for now, but use proper routing
-                      if (selectedMode === 'standard') {
-                        if (onModeChange) {
-                          onModeChange(selectedMode)
-                        }
-                        // Use proper routing instead of direct onStartQuiz call
-                        window.location.href = `/quiz/${topicData.topic_id}/play?mode=${selectedMode}`
-                      }
-                    }}
-                    defaultValue={selectedMode}
-                  >
-                    <option value="standard">🎯 Standard Quiz</option>
-                    <option value="practice" disabled>📚 Solo Practice (Coming Soon)</option>
-                    <option value="speed_round" disabled>⏱️ Timed Challenge (Coming Soon)</option>
-                    <option value="classic_quiz" disabled>🤝 PvP Battle (Coming Soon)</option>
-                    <option value="npc_battle" disabled>🤖 AI Battle (Coming Soon)</option>
-                  </select>
-                  
-                  {/* Quiz count display for mobile */}
-                  {remainingQuizzes !== undefined && hasQuestions && !isPremium && (
-                    <div className="mt-3 text-center">
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {remainingQuizzes} quizzes remaining today
+      {/* Main Content Layout */}
+      <div className="flex flex-col xl:flex-row gap-8 xl:gap-12">
+        
+        {/* Left Column: Content (2/3 width on desktop) */}
+        <div className="flex-1 xl:w-2/3 space-y-8">
+          
+          {/* Quiz Action Section - Mobile First, more prominent */}
+          <div className="xl:hidden">
+            <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 shadow-lg">
+              <CardContent className="p-6">
+                {hasQuestions && !isCheckingQuestions ? (
+                  <div className="space-y-4">
+                    <div className="text-center space-y-2">
+                      <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                        Ready to Test Your Knowledge?
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-400">
+                        Take this interactive quiz to see how much you know
                       </p>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-2">
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    {!hasQuestions ? "Quiz coming soon!" : "Loading quiz options..."}
-                  </p>
-                </div>
-              )}
-            </div>
+                    
+                    <QuizModeSelector
+                      selectedMode={selectedMode}
+                      onModeSelect={onModeChange || (() => {})}
+                      isPremium={isPremium}
+                      hasFeatureAccess={hasFeatureAccess || (() => false)}
+                      onLoginClick={onAuthRequired || (() => {})}
+                      className="mt-4"
+                    />
+                    
+                    {/* Quiz count display for mobile */}
+                    {remainingQuizzes !== undefined && hasQuestions && !isPremium && (
+                      <div className="text-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {remainingQuizzes} quiz{remainingQuizzes === 1 ? '' : 'es'} remaining today
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto flex items-center justify-center">
+                        <BookOpen className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+                        Quiz Coming Soon
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">
+                        {isCheckingQuestions ? "Checking quiz availability..." : "Interactive quiz for this topic is being prepared"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Social Sharing Section */}
-          <div>
+          {/* Content Sections */}
+          <div className="space-y-6">
+            {/* Tabbed interface for "Why This Matters" and "Sources & Citations" */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 h-12 bg-slate-100 dark:bg-slate-800 p-1">
+                <TabsTrigger 
+                  value="why-this-matters"
+                  className="flex items-center gap-2 text-sm font-medium h-10"
+                >
+                  <Info className="w-4 h-4" />
+                  Why This Matters
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="sources"
+                  className="flex items-center gap-2 text-sm font-medium h-10"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Sources ({allSources.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Why This Matters Tab */}
+              <TabsContent value="why-this-matters" className="mt-6 space-y-6">
+                {blurbs.length > 0 ? (
+                  <div className="grid gap-4 sm:gap-6">
+                    {blurbs.map((blurb, index) => (
+                      <Card key={index} className="border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow duration-200">
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0 text-2xl">
+                              {blurb.emoji}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <h3 className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">
+                                {blurb.title}
+                              </h3>
+                              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {blurb.content}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="border border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-6">
+                      <div 
+                        className="prose prose-slate dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: topicData.why_this_matters }}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Sources Tab */}
+              <TabsContent value="sources" className="mt-6">
+                {isLoadingSources ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="border border-slate-200 dark:border-slate-800">
+                        <CardContent className="p-6">
+                          <div className="animate-pulse space-y-3">
+                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : allSources.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        All information in this quiz is sourced from verified, credible sources
+                      </p>
+                    </div>
+                    <div className="grid gap-4">
+                                             {allSources.map((source, index) => (
+                         <SourceMetadataCard
+                           key={index}
+                           source={source}
+                         />
+                       ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="border border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-8 text-center">
+                      <div className="space-y-3">
+                        <BookOpen className="w-12 h-12 text-slate-400 mx-auto" />
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+                          Sources Loading
+                        </h3>
+                        <p className="text-slate-600 dark:text-slate-400">
+                          Sources and citations will appear when the quiz is available
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Social Sharing - moved to bottom with better integration */}
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
             <EnhancedSocialShare
               title={topicData.topic_title}
               description={topicData.description || "Test your civic knowledge with this important topic"}
@@ -490,265 +620,58 @@ export function TopicInfo({
               type="topic"
             />
           </div>
-
-          {/* Tabbed interface for "Why This Matters" and "Sources & Citations" */}
-          <div>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger 
-                  value="why-this-matters"
-                  className="flex items-center gap-2 text-xs sm:text-sm"
-                >
-                  <Info className="h-4 w-4" />
-                  <span className="hidden xs:inline">Why This Matters</span>
-                  <span className="xs:hidden">Why This Matters</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="sources-citations"
-                  className="flex items-center gap-2 text-xs sm:text-sm"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  <span className="hidden xs:inline">Sources & Citations</span>
-                  <span className="xs:hidden">Sources</span>
-                  <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                    {allSources.length}
-                  </span>
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Why This Matters Tab Content */}
-              <TabsContent value="why-this-matters" className="mt-0">
-                {/* Blurbs as cards */}
-                <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                  {blurbs.map((blurb, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-start space-x-3 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="text-xl flex-shrink-0 mt-1">
-                        {blurb.emoji}
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <h4 className="font-semibold font-mono text-slate-900 dark:text-slate-100 mb-2 text-base sm:text-lg">
-                          {blurb.title}
-                        </h4>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm sm:text-base">
-                          {blurb.content}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Fallback if parsing fails */}
-                {blurbs.length === 0 && (
-                  <div className="bg-slate-50 dark:bg-slate-900 p-6 sm:p-8 rounded-2xl">
-                    <div
-                      className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: topicData.why_this_matters }}
-                    />
-                  </div>
-                )}
-              </TabsContent>
-              
-              {/* Sources & Citations Tab Content */}
-              <TabsContent value="sources-citations" className="mt-0">
-                {isLoadingSources ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-3 text-sm text-slate-600 dark:text-slate-300">Loading sources...</span>
-                  </div>
-                ) : allSources.length > 0 ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                      This quiz draws information from {allSources.length} credible source{allSources.length !== 1 ? 's' : ''}.
-                    </p>
-                    
-                    {allSources.map((source, index) => (
-                      <div key={index} className="space-y-2">
-                        <SourceMetadataCard
-                          source={source}
-                          showThumbnail={true}
-                          className="mb-1"
-                        />
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pl-4">
-                          <span>
-                            Used in question{source.questions.length > 1 ? 's' : ''}: {source.questions
-                              .slice()
-                              .sort((a: number, b: number) => a - b)
-                              .join(', ')}
-                          </span>
-                          {source.questions.length > 1 && (
-                            <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                              {source.questions.length} questions
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : questions.length > 0 ? (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-6 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <div className="text-amber-600 dark:text-amber-400 mt-1">⚠️</div>
-                      <div>
-                        <p className="text-amber-800 dark:text-amber-200 font-medium mb-2">
-                          Sources temporarily unavailable
-                        </p>
-                        <p className="text-amber-700 dark:text-amber-300 text-sm">
-                          This quiz has {questions.length} question{questions.length !== 1 ? 's' : ''}, but source information is currently being processed. Sources & citations will appear here once available.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : hasQuestions ? (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <div className="text-blue-600 dark:text-blue-400 mt-1">ℹ️</div>
-                      <div>
-                        <p className="text-blue-800 dark:text-blue-200 font-medium mb-2">
-                          Questions loading...
-                        </p>
-                        <p className="text-blue-700 dark:text-blue-300 text-sm">
-                          This topic has questions available. Sources & citations will appear once the questions finish loading.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-6 rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <div className="text-orange-600 dark:text-orange-400 mt-1">🚧</div>
-                      <div className="text-center w-full">
-                        <p className="text-orange-800 dark:text-orange-200 font-medium mb-2">
-                          Quiz content coming soon
-                        </p>
-                        <p className="text-orange-700 dark:text-orange-300 text-sm mb-3">
-                          This topic is being prepared with curated questions and verified sources. We're working to add comprehensive quiz content for this important civic topic.
-                        </p>
-                        <p className="text-xs text-orange-600 dark:text-orange-400">
-                          Check back soon or explore other available topics while we prepare this one!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-          
-          {/* FAQ Section */}
-          <div className="mt-12">
-            <h2 className="text-xl sm:text-2xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6 flex items-center gap-2">
-              <HelpCircle className="h-5 w-5" />
-              Frequently Asked Questions
-            </h2>
-            
-            <Accordion type="single" collapsible className="w-full rounded-xl border border-slate-200 dark:border-slate-700">
-              <AccordionItem value="item-1" className="border-slate-200 dark:border-slate-700">
-                <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
-                  How do I earn points in quizzes?
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
-                  You earn points by answering questions correctly. Faster responses earn bonus points, and consecutive correct answers build combo multipliers.
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="item-2" className="border-slate-200 dark:border-slate-700">
-                <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
-                  What are boosts and how do they work?
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
-                  Boosts are special power-ups that can help you during quizzes. They include Time Extensions, Answer Hints, and Score Multipliers. Premium users get additional boost usage each day.
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="item-3" className="border-slate-200 dark:border-slate-700">
-                <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
-                  How can I improve my civic knowledge skill rating?
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
-                  Taking daily quizzes consistently, reviewing explanations for questions you miss, and focusing on specific skill areas will help improve your civic knowledge ratings over time.
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="item-4" className="border-slate-200 dark:border-slate-700">
-                <AccordionTrigger className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-left justify-start">
-                  Can I retake quizzes I've already completed?
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4 text-slate-600 dark:text-slate-400">
-                  Yes, you can retake quizzes, but your daily quiz limit applies to both new and repeated quizzes. Premium users have unlimited quiz attempts.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
         </div>
 
-        {/* Right Column: Quiz Selector (1/3 width) - Desktop Only */}
-        <div className="hidden lg:block lg:w-1/3">
-          <div className="sticky top-4">
-            <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-6 backdrop-blur-sm">
-              {hasQuestions && !isCheckingQuestions ? (
-                <>
-                  {/* Premium features gate */}
-                  {isPremium ? (
-                    <QuizModeSelector
-                      selectedMode={selectedMode}
-                      onModeSelect={onModeChange || (() => {})}
-                      isPremium={isPremium}
-                      hasFeatureAccess={hasFeatureAccess || (() => false)}
-                      onLoginClick={onAuthRequired}
-                    />
-                  ) : (
-                    <QuizModeSelector
-                      selectedMode={selectedMode}
-                      onModeSelect={onModeChange || (() => {})}
-                      isPremium={false}
-                      hasFeatureAccess={(feature) => {
-                        // Individual feature flags for free tier
-                        switch (feature) {
-                          case 'custom_decks':
-                          case 'historical_progress':
-                          case 'advanced_analytics':
-                          case 'spaced_repetition':
-                          case 'learning_insights':
-                          case 'priority_support':
-                          case 'offline_mode':
-                          case 'export_data':
-                            return false;
-                          default:
-                            return true; // Allow basic features by default
-                        }
-                      }}
-                      onLoginClick={onAuthRequired}
-                    />
-                  )}
-                  
-                  {/* Quiz count display - only show for non-premium users */}
-                  {remainingQuizzes !== undefined && hasQuestions && !isPremium && (
-                    <div className="mt-4 text-center">
+        {/* Right Column: Quiz Selector (1/3 width on desktop) */}
+        <div className="hidden xl:block xl:w-1/3">
+          <div className="sticky top-8 space-y-6">
+            {hasQuestions && !isCheckingQuestions ? (
+              <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+                <CardContent className="p-6">
+                  <QuizModeSelector
+                    selectedMode={selectedMode}
+                    onModeSelect={onModeChange || (() => {})}
+                    isPremium={isPremium}
+                    hasFeatureAccess={hasFeatureAccess || (() => false)}
+                    onLoginClick={onAuthRequired || (() => {})}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border border-slate-200 dark:border-slate-800">
+                <CardContent className="p-8 text-center">
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full mx-auto flex items-center justify-center">
+                      <BookOpen className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                        Quiz Coming Soon
+                      </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {remainingQuizzes} quizzes remaining today
-                        <span className="block mt-1 text-xs">
-                          Upgrade to premium for unlimited quizzes
-                        </span>
+                        {isCheckingQuestions ? "Checking availability..." : "Interactive quiz is being prepared"}
                       </p>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-slate-600 dark:text-slate-400">
-                    {!hasQuestions ? "Quiz coming soon!" : "Loading quiz options..."}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Quiz count for desktop */}
+            {remainingQuizzes !== undefined && hasQuestions && !isPremium && (
+              <Card className="border border-slate-200 dark:border-slate-800">
+                <CardContent className="p-4 text-center">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <span className="font-medium">{remainingQuizzes}</span> quiz{remainingQuizzes === 1 ? '' : 'es'} remaining today
                   </p>
-                </div>
-              )}
-            </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
-      
-      {/* Structured data for SEO */}
+
+      {/* FAQ Schema for SEO */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}

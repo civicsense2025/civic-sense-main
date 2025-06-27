@@ -46,6 +46,17 @@ class QuizSaveManager {
   }> {
     console.log('🛡️ QuizSaveManager: Starting bulletproof save process')
     
+    // VALIDATION: Reject suspicious quiz results to prevent spam saves
+    if (data.results.score === 0 && data.results.correctAnswers === 0 && data.results.totalQuestions > 0) {
+      console.warn('⚠️ QuizSaveManager: Rejecting suspicious quiz result (0 score, 0 correct, has questions)')
+      console.warn('⚠️ This looks like an automatic/error completion - blocking save')
+      return {
+        success: false,
+        error: 'Invalid quiz results - appears to be automatic completion',
+        isBackedUp: false
+      }
+    }
+    
     const saveData: QuizSaveData = {
       ...data,
       completedAt: new Date().toISOString(),
@@ -263,9 +274,21 @@ class QuizSaveManager {
       const pending = this.getPendingSaves()
       const now = Date.now()
 
-      console.log(`🔄 Processing ${Object.keys(pending).length} pending quiz saves...`)
+      // FIXED: Only process pending saves, not failed ones
+      const pendingAttempts = Object.entries(pending).filter(([_, attempt]) => 
+        attempt.data.status === 'pending'
+      )
 
-      for (const [saveId, attempt] of Object.entries(pending)) {
+      console.log(`🔄 Processing ${pendingAttempts.length} pending quiz saves...`)
+
+      for (const [saveId, attempt] of pendingAttempts) {
+        // FIXED: Check retry count BEFORE attempting
+        if (attempt.data.retryCount >= attempt.maxRetries) {
+          console.error(`❌ FINAL FAILURE: Quiz save ${saveId} exceeded max retries (${attempt.data.retryCount}/${attempt.maxRetries})`)
+          this.markAsFinallyFailed(attempt)
+          continue
+        }
+
         if (now >= attempt.nextRetryAt) {
           console.log(`🔁 Retrying save ${saveId} (attempt ${attempt.data.retryCount + 1}/${attempt.maxRetries})`)
           
@@ -291,7 +314,8 @@ class QuizSaveManager {
 
       // Schedule next retry round if there are still pending saves
       const remainingPending = this.getPendingSaves()
-      if (Object.keys(remainingPending).length > 0) {
+      const stillPending = Object.values(remainingPending).filter(p => p.data.status === 'pending')
+      if (stillPending.length > 0) {
         this.scheduleRetries()
       }
     } catch (error) {
@@ -309,14 +333,7 @@ class QuizSaveManager {
     
     if (attempt.data.retryCount >= attempt.maxRetries) {
       console.error(`❌ FINAL FAILURE: Quiz save ${attempt.id} failed after ${attempt.maxRetries} attempts`)
-      attempt.data.status = 'failed'
-      
-      // Keep in localStorage as failed - user can manually retry later
-      const pending = this.getPendingSaves()
-      pending[attempt.id] = attempt
-      localStorage.setItem(QuizSaveManager.STORAGE_KEY, JSON.stringify(pending))
-      
-      // TODO: Show user notification about failed save with manual retry option
+      this.markAsFinallyFailed(attempt)
     } else {
       // Schedule next retry with progressive backoff
       const delayIndex = Math.min(attempt.data.retryCount - 1, QuizSaveManager.RETRY_DELAYS.length - 1)
@@ -328,6 +345,30 @@ class QuizSaveManager {
       
       console.log(`⏰ Scheduling retry ${attempt.data.retryCount + 1} for save ${attempt.id} in ${QuizSaveManager.RETRY_DELAYS[delayIndex]}ms`)
     }
+  }
+
+  /**
+   * Mark save as finally failed and remove from retry queue
+   */
+  private markAsFinallyFailed(attempt: SaveAttempt): void {
+    attempt.data.status = 'failed'
+    
+    // FIXED: Remove from pending saves completely to stop retries
+    this.removeFromPendingSaves(attempt.id)
+    
+    // Keep backup but mark as failed
+    try {
+      const backups = this.getBackups()
+      if (backups[attempt.id]) {
+        backups[attempt.id].status = 'failed'
+        localStorage.setItem(QuizSaveManager.BACKUP_KEY, JSON.stringify(backups))
+      }
+    } catch (error) {
+      console.error('Error updating backup status:', error)
+    }
+    
+    console.log(`🛑 Quiz save ${attempt.id} marked as finally failed and removed from retry queue`)
+    // TODO: Show user notification about failed save with manual retry option
   }
 
   /**
@@ -364,7 +405,7 @@ class QuizSaveManager {
     const backups = this.getBackups()
     
     const pendingSaves = Object.values(pending).filter(p => p.data.status === 'pending').length
-    const failedSaves = Object.values(pending).filter(p => p.data.status === 'failed').length
+    const failedSaves = Object.values(backups).filter(p => p.status === 'failed').length
     
     return {
       pendingSaves,
@@ -374,10 +415,38 @@ class QuizSaveManager {
   }
 
   /**
+   * Clear all failed saves (for cleanup)
+   */
+  clearFailedSaves(): void {
+    try {
+      // Clear from pending
+      const pending = this.getPendingSaves()
+      const stillPending = Object.fromEntries(
+        Object.entries(pending).filter(([_, attempt]) => attempt.data.status === 'pending')
+      )
+      localStorage.setItem(QuizSaveManager.STORAGE_KEY, JSON.stringify(stillPending))
+      
+      // Clear failed from backups
+      const backups = this.getBackups()
+      const validBackups = Object.fromEntries(
+        Object.entries(backups).filter(([_, data]) => data.status !== 'failed')
+      )
+      localStorage.setItem(QuizSaveManager.BACKUP_KEY, JSON.stringify(validBackups))
+      
+      console.log('🗑️ Cleared all failed saves')
+    } catch (error) {
+      console.error('Error clearing failed saves:', error)
+    }
+  }
+
+  /**
    * Initialize the save manager (call on app start)
    */
   initialize(): void {
     console.log('🛡️ QuizSaveManager: Initializing...')
+    
+    // Clear any failed saves from previous session to prevent accumulation
+    this.clearFailedSaves()
     
     // Process any pending saves from previous session
     this.processRetries()
@@ -385,7 +454,7 @@ class QuizSaveManager {
     // Start periodic processing
     setInterval(() => {
       const status = this.getSaveStatus()
-      if (status.pendingSaves > 0 || status.failedSaves > 0) {
+      if (status.pendingSaves > 0) {
         console.log(`🔄 QuizSaveManager status: ${status.pendingSaves} pending, ${status.failedSaves} failed, ${status.backups} backed up`)
         this.processRetries()
       }

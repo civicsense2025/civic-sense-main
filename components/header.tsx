@@ -365,8 +365,8 @@ export function Header({
                 </div>
               )}
               
-              {/* Unclaimed Rewards Notification (for authenticated users) */}
-              {user && <UnclaimedRewardsNotification />}
+              {/* Unclaimed Rewards Notification (for authenticated users) - Only show on dashboard */}
+              {user && pathname === '/dashboard' && <UnclaimedRewardsNotification />}
               
               {/* Authentication Controls */}
               {!user ? (

@@ -196,42 +196,63 @@ export default function QuizPlayClientV2({
         setIsLoading(true)
         setError(null)
         
-        console.log('🔍 V2 Client: Loading quiz data for topic:', topicId)
+        console.log('🔍 V2 Client: Starting quiz data load for topic:', topicId)
+        console.log('🔍 V2 Client: Initial topic provided:', !!initialTopic, initialTopic?.topic_title)
         
         // Load both topic and questions in parallel
+        console.log('🔄 V2 Client: Executing parallel data load...')
         const [topicData, questionsData] = await Promise.all([
-          initialTopic ? Promise.resolve(initialTopic) : dataService.getTopicById(topicId),
-          dataService.getQuestionsByTopic(topicId)
+          initialTopic ? 
+            Promise.resolve(initialTopic) : 
+            dataService.getTopicById(topicId).then(result => {
+              console.log('📊 V2 Client: Topic load result:', !!result, result?.topic_title)
+              return result
+            }),
+          dataService.getQuestionsByTopic(topicId).then(result => {
+            console.log('📊 V2 Client: Questions load result:', result?.length || 0, 'questions')
+            return result
+          })
         ])
         
-        console.log('📊 V2 Client: Loaded data:', {
+        console.log('📊 V2 Client: Data load completed:', {
           topicFound: !!topicData,
           topicTitle: topicData?.topic_title,
-          questionsCount: questionsData?.length || 0
+          questionsCount: questionsData?.length || 0,
+          questionsValid: Array.isArray(questionsData)
         })
         
         if (!topicData) {
+          console.error('❌ V2 Client: No topic data found')
           setError("Quiz topic not found")
           return
         }
         
         if (!questionsData || questionsData.length === 0) {
+          console.error('❌ V2 Client: No questions data found')
           setError("This quiz doesn't have any questions yet")
           return
         }
         
+        console.log('✅ V2 Client: Setting data state...')
         setTopic(topicData)
         setQuestions(questionsData)
         
-        console.log('✅ V2 Client: Successfully loaded quiz data')
+        console.log('✅ V2 Client: Quiz data loaded successfully')
       } catch (error) {
-        console.error('❌ V2 Client: Error loading quiz data:', error)
+        console.error('❌ V2 Client: Error in loadQuizData:', error)
+        console.error('❌ V2 Client: Error details:', {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        })
         setError(error instanceof Error ? error.message : "Failed to load quiz data")
       } finally {
+        console.log('🏁 V2 Client: Setting loading to false')
         setIsLoading(false)
       }
     }
     
+    console.log('🚀 V2 Client: useEffect triggered, calling loadQuizData')
     loadQuizData()
   }, [topicId, initialTopic])
 
