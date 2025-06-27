@@ -134,10 +134,10 @@ export class CongressionalPhotoServiceLocal {
     
     // Save all versions
     await Promise.all([
-      fs.writeFile(path.join(memberDir, 'original.jpg'), originalBuffer),
-      fs.writeFile(path.join(memberDir, 'thumbnail.jpg'), optimizedVersions.thumbnail),
-      fs.writeFile(path.join(memberDir, 'medium.jpg'), optimizedVersions.medium),
-      fs.writeFile(path.join(memberDir, 'large.jpg'), optimizedVersions.large)
+      fs.writeFile(path.join(memberDir, 'original.jpg'), new Uint8Array(originalBuffer)),
+      fs.writeFile(path.join(memberDir, 'thumbnail.jpg'), new Uint8Array(optimizedVersions.thumbnail)),
+      fs.writeFile(path.join(memberDir, 'medium.jpg'), new Uint8Array(optimizedVersions.medium)),
+      fs.writeFile(path.join(memberDir, 'large.jpg'), new Uint8Array(optimizedVersions.large))
     ]);
     
     // Return relative paths for database storage
@@ -233,9 +233,18 @@ export class CongressionalPhotoServiceLocal {
    * Save photo record to database
    */
   private async savePhotoRecord(photoData: any): Promise<any> {
+    // Ensure all required fields are present
+    const completePhotoData = {
+      ...photoData,
+      download_success: true,
+      downloaded_at: new Date().toISOString(),
+      // Add storage_path for backward compatibility
+      storage_path: photoData.original_path
+    };
+
     const { data, error } = await this.supabase
       .from('congressional_photos')
-      .upsert(photoData, { 
+      .upsert(completePhotoData, { 
         onConflict: 'bioguide_id,congress_number' 
       })
       .select()
@@ -275,7 +284,7 @@ export class CongressionalPhotoServiceLocal {
    * Generate SHA256 hash of buffer
    */
   private generateHash(buffer: Buffer): string {
-    return createHash('sha256').update(buffer).digest('hex');
+    return createHash('sha256').update(buffer as any).digest('hex');
   }
   
   /**

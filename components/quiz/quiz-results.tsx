@@ -940,19 +940,25 @@ export function QuizResults({
 
         {/* Actions */}
         <div className="mt-8 flex justify-center gap-4">
-          <Button onClick={() => onFinish({
-            totalQuestions,
-            correctAnswers,
-            incorrectAnswers: totalQuestions - correctAnswers,
-            score,
-            timeTaken: totalTime,
-            timeSpentSeconds: totalTime,
-            questions: questions.map((question, index) => ({
-              question,
-              userAnswer: userAnswers[index]?.answer || '',
-              isCorrect: userAnswers[index]?.isCorrect || false
-            }))
-          })} size="lg">
+          <Button onClick={() => {
+            // Call onFinish with the results data
+            onFinish({
+              totalQuestions,
+              correctAnswers,
+              incorrectAnswers: totalQuestions - correctAnswers,
+              score,
+              timeTaken: totalTime,
+              timeSpentSeconds: totalTime,
+              questions: questions.map((question, index) => ({
+                question,
+                userAnswer: userAnswers[index]?.answer || '',
+                isCorrect: userAnswers[index]?.isCorrect || false
+              }))
+            })
+            
+            // Also redirect to topic page for "Continue Learning"
+            window.location.href = `/quiz/${topicId}`
+          }} size="lg">
             Continue Learning
           </Button>
         </div>

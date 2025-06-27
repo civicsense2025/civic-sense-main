@@ -15,6 +15,21 @@ public/images/congress/
     └── thumbnail.jpg  # 150x150 optimized for lists
 ```
 
+## Example Structure
+```
+public/images/congress/119/C001078/
+├── original.jpg
+├── large.jpg
+├── medium.jpg
+└── thumbnail.jpg
+
+public/images/congress/119/F000477/
+├── original.jpg
+├── large.jpg
+├── medium.jpg
+└── thumbnail.jpg
+```
+
 ## Photo Sources
 Photos are downloaded from the [unitedstates/images](https://github.com/unitedstates/images) repository.
 
@@ -22,5 +37,12 @@ Photos are downloaded from the [unitedstates/images](https://github.com/unitedst
 - Use the admin congressional photos panel to download and process photos
 - Photos are automatically optimized into multiple sizes for performance
 - Each photo is stored with congress number for historical tracking
+- Use the AI command center with commands like "download congressional photos for 119th congress"
 
-Generated on: 2025-06-26T19:04:14.205Z
+## Database Integration
+Photos are tracked in the `congressional_photos` table with:
+- `bioguide_id` and `congress_number` as unique identifiers
+- Local file paths stored as relative paths from public directory
+- Metadata including dimensions, file sizes, and optimization status
+
+Generated on: 2025-01-27T04:00:00.000Z

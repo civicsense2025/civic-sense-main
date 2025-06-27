@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CategoriesPageHeader } from "@/components/categories-page-header"
+import { Header } from "@/components/header"
 import { SkillsCarousel } from "@/components/categories/skills-carousel"
 import { BookOpen, Target, CheckCircle, Search } from "lucide-react"
 
@@ -204,7 +204,7 @@ export default async function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <CategoriesPageHeader />
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {/* Page header with search hint */}

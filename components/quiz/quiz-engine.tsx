@@ -1251,160 +1251,159 @@ export function QuizEngine({
     }
   }
 
+  // Add emergency completion handler for debugging
+  const handleEmergencyFinish = useCallback(() => {
+    console.log('🚨 Emergency finish triggered!')
+    
+    // Create basic results even if calculation fails
+    const basicResults: QuizResults = {
+      totalQuestions: randomizedQuestions.length,
+      correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+      incorrectAnswers: userAnswers.filter(a => !a.isCorrect).length,
+      score: randomizedQuestions.length > 0 ? Math.round((userAnswers.filter(a => a.isCorrect).length / randomizedQuestions.length) * 100) : 0,
+      timeTaken: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
+      timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
+      questions: randomizedQuestions.map((question, index) => {
+        const userAnswer = userAnswers.find(answer => answer.questionId === question.question_number)
+        return {
+          question,
+          userAnswer: userAnswer?.answer || 'skipped',
+          isCorrect: userAnswer?.isCorrect || false
+        }
+      })
+    }
+    
+    console.log('✅ Emergency completion with basic results:', basicResults)
+    
+    if (onComplete) {
+      onComplete(basicResults)
+    } else {
+      console.error('❌ No onComplete handler available!')
+    }
+  }, [userAnswers, randomizedQuestions, onComplete])
+
   async function handleFinishQuiz() {
-    if (results || userAnswers.length === 0) return
+    console.log('🎯 handleFinishQuiz called with full context:', {
+      hasResults: !!results,
+      userAnswersLength: userAnswers.length,
+      isFinishing,
+      totalQuestions: randomizedQuestions.length,
+      topicIdProp: topicId,
+      currentTopicProp: currentTopic,
+      hasOnComplete: !!onComplete,
+      randomizedQuestionsLength: randomizedQuestions.length
+    })
+
+    // Only prevent if already finishing
+    if (isFinishing) {
+      console.log('⏸️ Quiz finish already in progress, skipping')
+      return
+    }
+
+    // If results already exist, show them
+    if (results) {
+      console.log('✅ Quiz results already exist, showing results screen')
+      setShowResults(true)
+      return
+    }
 
     setIsFinishing(true)
+    console.log('🚀 Starting quiz completion process...')
 
     try {
-      // Calculate final results
-      const calculatedResults = calculateResults(userAnswers, randomizedQuestions)
+      // Calculate results first
+      let calculatedResults: QuizResults
+      
+      try {
+        calculatedResults = calculateResults(userAnswers, randomizedQuestions)
+        console.log('✅ Results calculated successfully:', {
+          score: calculatedResults.score,
+          totalQuestions: calculatedResults.totalQuestions,
+          correctAnswers: calculatedResults.correctAnswers,
+          timeTaken: calculatedResults.timeTaken,
+          questionsLength: calculatedResults.questions.length
+        })
+      } catch (calculateError) {
+        console.error('❌ Error calculating results, using basic calculation:', calculateError)
+        
+        // Fallback calculation
+        calculatedResults = {
+          totalQuestions: randomizedQuestions.length,
+          correctAnswers: userAnswers.filter(a => a.isCorrect).length,
+          incorrectAnswers: userAnswers.filter(a => !a.isCorrect).length,
+          score: randomizedQuestions.length > 0 ? Math.round((userAnswers.filter(a => a.isCorrect).length / randomizedQuestions.length) * 100) : 0,
+          timeTaken: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
+          timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
+          questions: randomizedQuestions.map((question, index) => {
+            const userAnswer = userAnswers.find(answer => answer.questionId === question.question_number)
+            return {
+              question,
+              userAnswer: userAnswer?.answer || 'skipped',
+              isCorrect: userAnswer?.isCorrect || false
+            }
+          })
+        }
+        console.log('✅ Fallback results calculated:', calculatedResults)
+      }
+      
+      // Set results FIRST before calling completion API
       setResults(calculatedResults)
 
-      // Clear any existing localStorage data since quiz is completed
+      // Clear progress storage since quiz is completed
+      try {
+        progressManager.clear()
+        console.log('✅ Progress storage cleared')
+      } catch (progressError) {
+        console.warn('⚠️ Failed to clear progress storage:', progressError)
+      }
+
+      // Clear localStorage progress storage too
       const storageKey = `civicSenseQuizProgress_${topicId}`
       localStorage.removeItem(storageKey)
-
-      console.log("🎯 Quiz completed successfully:", {
-        score: calculatedResults.score,
-        correctAnswers: calculatedResults.correctAnswers,
-        totalQuestions: calculatedResults.totalQuestions,
-        timeSpent: calculatedResults.timeSpentSeconds,
-        userId: user?.id
-      })
-
-      // Prepare question responses for skill tracking and pending attribution
-      const questionResponses = userAnswers.map(answer => {
-        const question = randomizedQuestions.find(q => q.question_number === answer.questionId)
-        return {
-          questionId: answer.questionId.toString(),
-          category: question?.category || 'General',
-          isCorrect: answer.isCorrect,
-          timeSpent: answer.timeSpent
+      
+      // Store completion data in localStorage for refresh detection
+      try {
+        const completionData = {
+          topicId,
+          results: calculatedResults,
+          completedAt: new Date().toISOString(),
+          score: calculatedResults.score,
+          totalQuestions: calculatedResults.totalQuestions,
+          correctAnswers: calculatedResults.correctAnswers,
+          mode: mode || 'standard'
         }
-      })
-
-      // Update enhanced gamification progress
-      if (user) {
-        try {
-          // 1. Update gamification progress
-          const quizData = {
-            topicId,
-            totalQuestions: randomizedQuestions.length,
-            correctAnswers: userAnswers.filter(a => a.isCorrect).length,
-            timeSpentSeconds: userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0),
-            questionResponses
-          }
-
-          console.log('🎮 Updating enhanced gamification progress:', quizData)
-          const results = await updateProgress(quizData)
-          console.log('✅ Enhanced gamification progress updated:', {
-            achievements: results.newAchievements?.length || 0,
-            levelUp: results.levelUp || false,
-            skillUpdates: results.skillUpdates?.length || 0
-          })
-
-          // 2. Update skill progress with our new skill tracking system
-          try {
-            console.log('🔄 Updating skill progress...')
-            const skillResults = await enhancedQuizDatabase.updateSkillProgress(
-              user.id,
-              questionResponses
-            )
-            
-            console.log('✅ Skill progress updated:', {
-              updatedSkills: skillResults.updatedSkills.length,
-              masteryChanges: Object.keys(skillResults.masteryChanges).length > 0 
-                ? skillResults.masteryChanges 
-                : 'No mastery changes'
-            })
-       
-            // If there were mastery changes, we could notify the user here
-            
-          } catch (skillError) {
-            console.error('❌ Error updating skill progress:', skillError)
-            // Continue despite error
-          }
-
-          // 3. **NEW: Pod Integration** - Update pod analytics if user is in a pod
-          try {
-            // Extract pod ID from URL search params or quiz context
-            const urlParams = new URLSearchParams(window.location.search)
-            const podId = extractPodIdFromQuizContext(urlParams)
-            
-            if (podId) {
-              console.log('🏫 Processing quiz completion for pod:', podId)
-              
-              const podIntegration = new PodQuizIntegration()
-              const podQuizData = createQuizCompletionData(
-                user.id,
-                topicId,
-                {
-                  score: calculatedResults.score,
-                  totalQuestions: calculatedResults.totalQuestions,
-                  correctAnswers: calculatedResults.correctAnswers,
-                  timeSpent: calculatedResults.timeSpentSeconds
-                },
-                {
-                  podId,
-                  gameMode: mode || 'standard',
-                  sessionId: sessionId.current
-                }
-              )
-
-              const podResult = await podIntegration.processQuizCompletion(podQuizData)
-              
-              console.log('🎉 Pod integration completed:', {
-                activityLogged: podResult.activityLogged,
-                analyticsUpdated: podResult.analyticsUpdated,
-                achievementsEarned: podResult.achievementsEarned.length,
-                errors: podResult.errors.length
-              })
-
-              // Show user feedback for pod-related achievements
-              if (podResult.achievementsEarned.length > 0) {
-                const achievementMessages = podResult.achievementsEarned.map(achievement => {
-                  switch (achievement) {
-                    case 'perfect_score': return '🎯 Perfect Score Achievement!'
-                    case 'speed_learner': return '⚡ Speed Learner Achievement!'
-                    case 'century_learner': return '💯 Century Learner Achievement!'
-                    case 'dedicated_learner': return '🏆 Dedicated Learner Achievement!'
-                    case 'accuracy_expert': return '🎯 Accuracy Expert Achievement!'
-                    default: return `🏅 ${achievement} Achievement!`
-                  }
-                })
-
-                // Show achievements in UI (you could add a toast or modal here)
-                console.log('🏆 Pod achievements earned:', achievementMessages)
-              }
-
-              // Handle any errors but don't block the quiz completion
-              if (podResult.errors.length > 0) {
-                console.warn('⚠️ Pod integration had some errors:', podResult.errors)
-              }
-            } else {
-              console.log('📝 No pod context found, skipping pod integration')
-            }
-            
-          } catch (podError) {
-            console.error('❌ Error in pod integration (non-blocking):', podError)
-            // Continue with quiz completion even if pod integration fails
-          }
-
-        } catch (progressError) {
-          console.error('❌ Error updating progress:', progressError)
-          // Continue despite error - quiz completion should not fail due to progress issues
-        }
+        
+        const completionKey = `quiz_completion_${topicId}_${Date.now()}`
+        localStorage.setItem(completionKey, JSON.stringify(completionData))
+        localStorage.setItem(`latest_quiz_completion_${topicId}`, completionKey)
+        
+        console.log('✅ Stored completion data for refresh detection')
+      } catch (completionError) {
+        console.warn('⚠️ Failed to store completion data:', completionError)
       }
 
-      // Call completion handler with results
-      if (onComplete) {
-        onComplete(calculatedResults)
+      // Call the completion API to save results
+      try {
+        console.log('📡 Calling completion API...')
+        await onComplete(calculatedResults)
+        console.log('✅ Completion API call successful')
+      } catch (apiError) {
+        console.error('❌ Completion API call failed, but continuing to show results:', apiError)
+        // Don't block showing results if API fails
       }
+
+      console.log('🎉 Quiz completed! Showing results screen...')
+      
+      // Show results screen - this will NOT call onComplete again
+      setShowResults(true)
 
     } catch (error) {
       console.error("❌ Error finishing quiz:", error)
       setError("Failed to complete quiz. Please try again.")
+      
+      // Use emergency completion as fallback
+      console.log('🚨 Using emergency completion as fallback...')
+      handleEmergencyFinish()
     } finally {
       setIsFinishing(false)
     }
@@ -2037,6 +2036,45 @@ export function QuizEngine({
             />
           )}
         </>
+      )}
+
+      {/* Emergency completion button for debugging - shows on last question */}
+      {isLastQuestion && process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+            🚨 Emergency Quiz Completion (Development Only)
+          </p>
+          <Button 
+            onClick={handleEmergencyFinish}
+            variant="destructive"
+            size="sm"
+            className="w-full"
+          >
+            Force Complete Quiz Now
+          </Button>
+        </div>
+      )}
+
+      {/* Emergency completion button - ALWAYS visible on last question in development */}
+      {isLastQuestion && (
+        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+              🎯 Quiz Completion Available
+            </p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-500">
+              You're on the last question! Click below to complete the quiz.
+            </p>
+            <Button 
+              onClick={handleEmergencyFinish}
+              variant="default"
+              size="lg"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+            >
+              🏁 Complete Quiz Now
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )

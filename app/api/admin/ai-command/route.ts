@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-access'
 import { EnhancedCongressSyncService } from '@/lib/services/enhanced-congress-sync-service'
-import { CongressionalPhotoService } from '@/lib/services/congressional-photo-service'
+import { CongressionalPhotoServiceLocal } from '@/lib/services/congressional-photo-service-local'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
@@ -466,7 +466,7 @@ function findBestCategoryMatch(command: string): string | null {
 class CommandExecutor {
   private supabase = createServiceClient()
   private congressSync = new EnhancedCongressSyncService()
-  private photoService = new CongressionalPhotoService()
+  private photoService = new CongressionalPhotoServiceLocal()
 
   async executeCommand(category: string, action: string, parameters: any): Promise<any> {
     try {
@@ -937,10 +937,10 @@ Just tell me what you want to accomplish in plain English - I'll figure out what
   }
 
   private async downloadMemberPhotos(params: any) {
-    const congressNumber = params.congress_number || null
+    const congressNumber = params.congress_number || 119
     console.log(`📷 Downloading member photos${congressNumber ? ` for Congress ${congressNumber}` : ' for all members'}...`)
     
-    const results = await this.photoService.processAllMemberPhotos()
+    const results = await this.photoService.processAllMemberPhotos(congressNumber)
     
     return {
       success: true,
@@ -948,9 +948,10 @@ Just tell me what you want to accomplish in plain English - I'll figure out what
         photos_processed: results.processed,
         photos_succeeded: results.succeeded,
         photos_failed: results.failed,
-        success_rate: `${((results.succeeded / results.processed) * 100).toFixed(1)}%`
+        success_rate: `${((results.succeeded / results.processed) * 100).toFixed(1)}%`,
+        congress_number: congressNumber
       },
-      message: `Photo processing complete: ${results.succeeded}/${results.processed} photos downloaded successfully.`
+      message: `Photo processing complete: ${results.succeeded}/${results.processed} photos downloaded successfully for ${congressNumber}th Congress.`
     }
   }
 

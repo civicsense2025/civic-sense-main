@@ -99,7 +99,7 @@ export function PasswordResetForm({ onBack }: PasswordResetFormProps) {
           <Button
             type="submit"
             disabled={isLoading || !email}
-            className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white font-medium rounded-full transition-all duration-200"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-full transition-all duration-200"
           >
             <Mail className="h-4 w-4 mr-2" />
             {isLoading ? "Sending..." : "Send reset link"}

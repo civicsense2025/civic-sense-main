@@ -1,19 +1,18 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { dataService } from "@/lib/data-service"
-import QuizPlayClient from "./client"
-import type { QuizGameMode } from "@/lib/types/quiz"
+import QuizClientWrapper from "./quiz-client-wrapper"
 
 interface QuizPlayPageProps {
   params: Promise<{ topicId: string }>
   searchParams: Promise<{
-    mode?: QuizGameMode
     attempt?: string
     podId?: string
     classroomCourseId?: string
     classroomAssignmentId?: string
     cleverSectionId?: string
-    cleverAssignmentId?: string
+    mode?: string
+    v?: string // Version parameter for testing
   }>
 }
 
@@ -53,17 +52,10 @@ export default async function QuizPlayPage({ params, searchParams }: QuizPlayPag
   const { topicId } = await params
   const resolvedSearchParams = await searchParams
   
-  try {
-    // Fetch topic data to verify it exists
-    const topic = await dataService.getTopicById(topicId)
-    
-    if (!topic) {
-      notFound()
-    }
-
-    return <QuizPlayClient topicId={topicId} searchParams={resolvedSearchParams} />
-  } catch (error) {
-    console.error("Error loading quiz play page:", error)
-    notFound()
-  }
+  return (
+    <QuizClientWrapper 
+      topicId={topicId} 
+      searchParams={resolvedSearchParams} 
+    />
+  )
 } 

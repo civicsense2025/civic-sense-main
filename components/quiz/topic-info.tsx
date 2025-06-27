@@ -443,12 +443,14 @@ export function TopicInfo({
                   <select 
                     className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     onChange={(e) => {
-                      // Only allow standard mode for now
-                      if (e.target.value === 'standard') {
+                      const selectedMode = e.target.value as QuizGameMode
+                      // Only allow standard mode for now, but use proper routing
+                      if (selectedMode === 'standard') {
                         if (onModeChange) {
-                          onModeChange(e.target.value as QuizGameMode)
+                          onModeChange(selectedMode)
                         }
-                        onStartQuiz()
+                        // Use proper routing instead of direct onStartQuiz call
+                        window.location.href = `/quiz/${topicData.topic_id}/play?mode=${selectedMode}`
                       }
                     }}
                     defaultValue={selectedMode}
@@ -692,14 +694,15 @@ export function TopicInfo({
                   {isPremium ? (
                     <QuizModeSelector
                       selectedMode={selectedMode}
-                      onModeSelect={onStartQuiz}
+                      onModeSelect={onModeChange || (() => {})}
                       isPremium={isPremium}
                       hasFeatureAccess={hasFeatureAccess || (() => false)}
+                      onLoginClick={onAuthRequired}
                     />
                   ) : (
                     <QuizModeSelector
                       selectedMode={selectedMode}
-                      onModeSelect={onStartQuiz}
+                      onModeSelect={onModeChange || (() => {})}
                       isPremium={false}
                       hasFeatureAccess={(feature) => {
                         // Individual feature flags for free tier
@@ -717,6 +720,7 @@ export function TopicInfo({
                             return true; // Allow basic features by default
                         }
                       }}
+                      onLoginClick={onAuthRequired}
                     />
                   )}
                   

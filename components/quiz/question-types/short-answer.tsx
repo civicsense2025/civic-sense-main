@@ -8,69 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-// Typing animation component for human-like encouragement
-interface TypingTextProps {
-  text: string
-  speed?: number
-  delay?: number
-  onComplete?: () => void
-  className?: string
-}
-
-function TypingText({ text, speed = 50, delay = 0, onComplete, className }: TypingTextProps) {
-  const [displayedText, setDisplayedText] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
-  const [showCursor, setShowCursor] = useState(true)
-
-  useEffect(() => {
-    setDisplayedText("")
-    setIsTyping(false)
-    
-    const startTyping = setTimeout(() => {
-      setIsTyping(true)
-      let currentIndex = 0
-      
-      const typeNextChar = () => {
-        if (currentIndex < text.length) {
-          setDisplayedText(text.slice(0, currentIndex + 1))
-          currentIndex++
-          // Vary typing speed slightly for more natural feel
-          const nextDelay = speed + Math.random() * 30 - 15
-          setTimeout(typeNextChar, nextDelay)
-        } else {
-          setIsTyping(false)
-          onComplete?.()
-        }
-      }
-      
-      typeNextChar()
-    }, delay)
-
-    return () => clearTimeout(startTyping)
-  }, [text, speed, delay, onComplete])
-
-  // Cursor blinking effect
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-
-    return () => clearInterval(cursorInterval)
-  }, [])
-
-  return (
-    <span className={className}>
-      {displayedText}
-      {isTyping && (
-        <span className={cn(
-          "inline-block w-0.5 h-4 bg-current ml-0.5 transition-opacity duration-75",
-          showCursor ? "opacity-100" : "opacity-0"
-        )} />
-      )}
-    </span>
-  )
-}
-
 /**
  * IMPORTANT: This component exports `checkAnswerIntelligently` which MUST be used
  * by your quiz engine for answer validation. Using simple string comparison will
@@ -294,134 +231,67 @@ export function ShortAnswerQuestion({
   isSubmitted,
   onSelectAnswer,
 }: ShortAnswerQuestionProps) {
-  const [inputValue, setInputValue] = useState(selectedAnswer || "")
-  const [isFocused, setIsFocused] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [inputValue, setInputValue] = useState("")
   const [showHint, setShowHint] = useState(false)
   
-  // Use the enhanced detailed checking function
-  const isCorrect = isSubmitted && checkAnswerIntelligently(inputValue, question.correct_answer)
-  const answerStatus = inputValue ? checkAnswerDetailed(inputValue, question.correct_answer) : 'incorrect'
-  
-  // IMPORTANT: Ensure the quiz engine uses checkAnswerIntelligently for validation
-  // If you're seeing mismatches between typing feedback and submission results,
-  // the quiz engine needs to import and use checkAnswerIntelligently
+  // Initialize and sync with selectedAnswer
   useEffect(() => {
-    if (isSubmitted && inputValue) {
-      const shouldBeCorrect = checkAnswerIntelligently(inputValue, question.correct_answer)
-      // Store the expected result for the quiz engine to verify
-      if (window && typeof window !== 'undefined') {
-        (window as any).__lastAnswerCheck = {
-          question: question.question_number,
-          userAnswer: inputValue,
-          correctAnswer: question.correct_answer,
-          shouldBeCorrect,
-          checkFunction: checkAnswerIntelligently,
-          detailedStatus: answerStatus
-        }
-      }
-    }
-  }, [isSubmitted, inputValue, question, answerStatus])
-
-  // Clear input when moving to a new question (selectedAnswer becomes null)
-  useEffect(() => {
-    if (selectedAnswer === null) {
-      setInputValue("")
-      setShowHint(false)
-    } else if (selectedAnswer) {
+    if (selectedAnswer !== null) {
       setInputValue(selectedAnswer)
+    } else {
+      setInputValue("")
     }
   }, [selectedAnswer])
 
-  // Clear input when question changes (additional safety)
+  // Reset when question changes
   useEffect(() => {
     setInputValue("")
-    setIsTyping(false)
     setShowHint(false)
-    if (typingTimeout) {
-      clearTimeout(typingTimeout)
-    }
   }, [question.question_number])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setInputValue(value)
     onSelectAnswer(value)
-    
-    // Handle typing indicator
-    setIsTyping(true)
-    if (typingTimeout) {
-      clearTimeout(typingTimeout)
-    }
-    const newTimeout = setTimeout(() => {
-      setIsTyping(false)
-    }, 1000)
-    setTypingTimeout(newTimeout)
-  }
+  }, [onSelectAnswer])
 
-  const handleFocus = () => {
-    setIsFocused(true)
-  }
+  const toggleHint = useCallback(() => {
+    setShowHint(prev => !prev)
+  }, [])
 
-  const handleBlur = () => {
-    setIsFocused(false)
-  }
-
-  const toggleHint = () => {
-    setShowHint(!showHint)
-  }
+  // Calculate answer status for real-time feedback
+  const answerStatus = inputValue.trim() ? checkAnswerDetailed(inputValue, question.correct_answer) : 'incorrect'
+  const isCorrect = isSubmitted && checkAnswerIntelligently(inputValue, question.correct_answer)
 
   return (
-    <div className="space-y-4 animate-in slide-in-from-bottom duration-300">
+    <div className="space-y-4">
+      {/* Main input field */}
       <div className="relative">
         <Input
           type="text"
           value={inputValue}
           onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
           disabled={isSubmitted}
           placeholder="Type your answer here..."
           className={cn(
-            "p-6 text-lg transition-all duration-300 border-2 placeholder:text-slate-500 dark:placeholder:text-slate-400",
-            // Make input more visible by default
-            !isSubmitted && !isFocused && "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900",
-            // Enhanced focus state
-            !isSubmitted && isFocused && "border-blue-500 bg-blue-50 dark:bg-blue-950/30 scale-[1.02] shadow-lg ring-2 ring-blue-200 dark:ring-blue-800",
-            // With input value but not focused
-            !isSubmitted && !isFocused && inputValue && "border-blue-400 bg-blue-50/50 dark:bg-blue-900/20",
-            // Hover state when empty
-            !isSubmitted && !isFocused && !inputValue && "hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800",
+            "p-6 text-lg transition-all duration-200 border-2",
+            // Default state
+            !isSubmitted && "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900",
+            // Focus state
+            !isSubmitted && "focus:border-blue-500 focus:bg-blue-50 dark:focus:bg-blue-950/30 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800",
+            // With content
+            !isSubmitted && inputValue && "border-blue-400 bg-blue-50/50 dark:bg-blue-900/20",
             // Submitted states
             isSubmitted && isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
             isSubmitted && !isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
           )}
         />
-        
-        {/* Typing indicator */}
-        {isTyping && !isSubmitted && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-60 animate-pulse" />
-              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-80 animate-pulse" style={{ animationDelay: '0.2s' }} />
-              <div className="w-2 h-2 bg-blue-500 rounded-full opacity-100 animate-pulse" style={{ animationDelay: '0.4s' }} />
-            </div>
-          </div>
-        )}
-        
-        {/* Character count */}
-        {!isSubmitted && inputValue && !isTyping && (
-          <div className="absolute right-3 bottom-2 text-xs text-slate-500 dark:text-slate-400">
-            {inputValue.length} characters
-          </div>
-        )}
       </div>
 
-      {/* Real-time feedback while typing - enhanced with typing animation */}
-      {!isSubmitted && inputValue && (
+      {/* Real-time feedback while typing */}
+      {!isSubmitted && inputValue.trim() && (
         <div className={cn(
-          "p-3 rounded-lg border-l-4 transition-all duration-300 animate-in slide-in-from-top duration-200",
+          "p-3 rounded-lg border-l-4 transition-all duration-200",
           answerStatus === 'correct' ? "border-green-400 bg-green-50 dark:bg-green-900/20" :
           answerStatus === 'partially_correct' ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" :
           "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
@@ -430,77 +300,28 @@ export function ShortAnswerQuestion({
             {answerStatus === 'correct' ? (
               <span className="text-green-600 font-medium flex items-center">
                 <span className="mr-2">🎯</span>
-                <TypingText 
-                  text="Perfect! Your answer will be marked correct." 
-                  speed={30}
-                  className="font-medium"
-                />
+                Perfect! Your answer looks correct.
               </span>
             ) : answerStatus === 'partially_correct' ? (
               <span className="text-yellow-600 font-medium">
                 <span className="flex items-center">
                   <span className="mr-2">⚡</span>
-                  <TypingText 
-                    text="You're on the right track! You have part of the answer." 
-                    speed={35}
-                    className="font-medium"
-                  />
-                </span>
-                <span className="text-xs mt-1 block text-yellow-600">
-                  <TypingText 
-                    text="Try adding more details to complete your answer." 
-                    speed={40}
-                    delay={1200}
-                  />
+                  You're on the right track! Try adding more details.
                 </span>
               </span>
             ) : (
               <span className="text-blue-600 font-medium">
                 <span className="flex items-center">
                   <span className="mr-2">💭</span>
-                  <TypingText 
-                    text="Keep thinking! You're making progress..." 
-                    speed={40}
-                    className="font-medium"
-                  />
+                  Keep thinking...
                 </span>
-                {/* Show helpful hints based on how close they are */}
-                {(() => {
-                  const normalizedInput = inputValue.toLowerCase().trim()
-                  const normalizedCorrect = question.correct_answer.toLowerCase().trim()
-                  const distance = getLevenshteinDistance(normalizedInput, normalizedCorrect)
-                  
-                  if (distance === 1 && normalizedCorrect.length > 3) {
-                    return (
-                      <span className="text-xs mt-1 block text-blue-500">
-                        <TypingText 
-                          text="You're very close! Check for typos." 
-                          speed={45}
-                          delay={1500}
-                        />
-                      </span>
-                    )
-                  }
-                  if (normalizedInput.length > 0 && normalizedCorrect.includes(normalizedInput)) {
-                    return (
-                      <span className="text-xs mt-1 block text-blue-500">
-                        <TypingText 
-                          text="You might need more details..." 
-                          speed={45}
-                          delay={1500}
-                        />
-                      </span>
-                    )
-                  }
-                  return null
-                })()}
               </span>
             )}
           </p>
         </div>
       )}
 
-      {/* Hint button and reveal */}
+      {/* Hint section */}
       {!isSubmitted && question.hint && (
         <div className="space-y-2">
           <Button
@@ -508,33 +329,25 @@ export function ShortAnswerQuestion({
             variant="outline"
             size="sm"
             onClick={toggleHint}
-            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
           >
             {showHint ? "Hide Hint" : "Show Hint"}
           </Button>
           
-          {/* Animated hint reveal */}
-          <div className={cn(
-            "overflow-hidden transition-all duration-300 ease-in-out",
-            showHint ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-          )}>
+          {showHint && (
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
               <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start">
                 <span className="mr-2 text-base">💡</span>
-                <TypingText 
-                  text={question.hint}
-                  speed={30}
-                  className="flex-1"
-                />
+                <span className="flex-1">{question.hint}</span>
               </p>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Consolidated feedback after submission - no redundant messaging */}
+      {/* Answer comparison after submission */}
       {isSubmitted && !isCorrect && (
-        <div className="mt-4 p-4 rounded-lg border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 animate-in slide-in-from-bottom duration-500">
+        <div className="mt-4 p-4 rounded-lg border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20">
           <div className="space-y-2 text-sm">
             <p>
               <span className="font-medium text-slate-700 dark:text-slate-200">Your answer:</span>{" "}

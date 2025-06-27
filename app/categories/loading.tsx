@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Header } from "@/components/header"
 
 // Category Card Skeleton
 function CategoryCardSkeleton() {
@@ -118,15 +119,7 @@ function SkillsCarouselSkeleton() {
 export default function CategoriesLoading() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Header skeleton */}
-      <div className="border-b border-slate-100 dark:border-slate-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-7 w-32" />
-            <Skeleton className="h-10 w-24 rounded-md" />
-          </div>
-        </div>
-      </div>
+      <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {/* Page header skeleton */}

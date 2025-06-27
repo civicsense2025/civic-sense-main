@@ -194,13 +194,21 @@ export class EnhancedProgressStorage {
 
   /**
    * Load progress session from database with localStorage fallback
+   * Enhanced with completion checking to prevent restoring completed quizzes
    */
   static async loadProgressSession(
     sessionId: string,
     options: ProgressSessionOptions
   ): Promise<EnhancedQuizState | null> {
     try {
-      const { userId, guestToken } = options
+      const { userId, guestToken, topicId } = options
+
+      // CRITICAL: Check if this quiz was recently completed
+      // Don't restore progress for completed quizzes
+      if (topicId && this.isQuizRecentlyCompleted(topicId)) {
+        debug.log('storage', 'Quiz was recently completed, not restoring progress:', topicId)
+        return null
+      }
 
       // Try to load from database first
       let query = supabase
@@ -221,7 +229,7 @@ export class EnhancedProgressStorage {
       if (error || !session) {
         debug.log('storage', 'No progress session found in database, trying localStorage:', error?.message)
         
-        // Fallback to localStorage
+        // Fallback to localStorage (with completion check)
         return this.loadFromLocalStorage(sessionId, options)
       }
 
@@ -266,6 +274,99 @@ export class EnhancedProgressStorage {
       
       // Fallback to localStorage
       return this.loadFromLocalStorage(sessionId, options)
+    }
+  }
+
+  /**
+   * Check if a quiz was recently completed (within last 5 minutes)
+   * This prevents restoring progress for just-completed quizzes
+   */
+  static isQuizRecentlyCompleted(topicId: string): boolean {
+    try {
+      // Check multiple possible completion data formats
+      
+      // Format 1: Check latest completion reference
+      const completionKey = localStorage.getItem(`latest_quiz_completion_${topicId}`)
+      if (completionKey) {
+        const completionData = localStorage.getItem(completionKey)
+        if (completionData) {
+          const completion = JSON.parse(completionData)
+          const completedAt = new Date(completion.completedAt).getTime()
+          const now = Date.now()
+          const fiveMinutesAgo = now - (5 * 60 * 1000) // 5 minutes
+
+          // Consider quiz recently completed if within last 5 minutes
+          const isRecent = completedAt > fiveMinutesAgo
+          
+          if (isRecent) {
+            debug.log('storage', 'Quiz recently completed (format 1), preventing progress restoration:', {
+              topicId,
+              completedAt: new Date(completedAt).toISOString(),
+              minutesAgo: Math.round((now - completedAt) / 60000)
+            })
+            return true
+          }
+        }
+      }
+      
+      // Format 2: Check completed topics list (legacy)
+      const completedTopicsStr = localStorage.getItem("civicAppCompletedTopics_v1")
+      if (completedTopicsStr) {
+        const completedTopics = JSON.parse(completedTopicsStr)
+        if (Array.isArray(completedTopics) && completedTopics.includes(topicId)) {
+          // Check if there's recent activity to determine if this is a fresh completion
+          const lastActivityStr = localStorage.getItem("civicAppLastActivity")
+          if (lastActivityStr) {
+            const lastActivity = new Date(lastActivityStr).getTime()
+            const now = Date.now()
+            const fiveMinutesAgo = now - (5 * 60 * 1000)
+            
+            if (lastActivity > fiveMinutesAgo) {
+              debug.log('storage', 'Quiz recently completed (format 2), preventing progress restoration:', {
+                topicId,
+                lastActivity: new Date(lastActivity).toISOString()
+              })
+              return true
+            }
+          }
+        }
+      }
+      
+      // Format 3: Check for any completion data keys for this topic
+      const allKeys = Object.keys(localStorage)
+      const recentCompletionKeys = allKeys.filter(key => 
+        key.startsWith(`quiz_completion_${topicId}_`) && 
+        key !== `latest_quiz_completion_${topicId}`
+      )
+      
+      for (const key of recentCompletionKeys) {
+        try {
+          const data = localStorage.getItem(key)
+          if (data) {
+            const completion = JSON.parse(data)
+            const completedAt = new Date(completion.completedAt).getTime()
+            const now = Date.now()
+            const fiveMinutesAgo = now - (5 * 60 * 1000)
+
+            if (completedAt > fiveMinutesAgo) {
+              debug.log('storage', 'Quiz recently completed (format 3), preventing progress restoration:', {
+                topicId,
+                completedAt: new Date(completedAt).toISOString(),
+                key
+              })
+              return true
+            }
+          }
+        } catch (parseError) {
+          // Invalid data, skip
+          debug.warn('storage', 'Invalid completion data for key:', key)
+        }
+      }
+
+      return false
+    } catch (error) {
+      debug.warn('storage', 'Error checking recent completion:', error)
+      return false
     }
   }
 
@@ -316,7 +417,7 @@ export class EnhancedProgressStorage {
   }
 
   /**
-   * Clear progress session from both database and localStorage
+   * Enhanced clear method that also cleans up completion data after some time
    */
   static async clearProgressSession(
     sessionId: string,
@@ -336,6 +437,11 @@ export class EnhancedProgressStorage {
       // Clear from localStorage
       this.clearFromLocalStorage(sessionId, options)
 
+      // Also clear any old completion data for this topic (older than 1 hour)
+      if (options.topicId) {
+        this.cleanupOldCompletionData(options.topicId)
+      }
+
       debug.log('storage', 'Successfully cleared progress session:', sessionId)
       return { success: true }
     } catch (error) {
@@ -345,6 +451,50 @@ export class EnhancedProgressStorage {
       this.clearFromLocalStorage(sessionId, options)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
+  }
+
+  /**
+   * Clean up old completion data to prevent localStorage bloat
+   */
+  private static cleanupOldCompletionData(topicId: string) {
+    try {
+      const keys = Object.keys(localStorage)
+      const completionKeys = keys.filter(key => key.startsWith(`quiz_completion_${topicId}_`))
+      const oneHourAgo = Date.now() - (60 * 60 * 1000)
+
+      let cleaned = 0
+      completionKeys.forEach(key => {
+        try {
+          const data = localStorage.getItem(key)
+          if (data) {
+            const completion = JSON.parse(data)
+            const completedAt = new Date(completion.completedAt).getTime()
+            
+            if (completedAt < oneHourAgo) {
+              localStorage.removeItem(key)
+              cleaned++
+            }
+          }
+        } catch (error) {
+          // Remove invalid completion data
+          localStorage.removeItem(key)
+          cleaned++
+        }
+      })
+
+      if (cleaned > 0) {
+        debug.log('storage', `Cleaned up ${cleaned} old completion records for topic:`, topicId)
+      }
+    } catch (error) {
+      debug.warn('storage', 'Error cleaning up completion data:', error)
+    }
+  }
+
+  /**
+   * Generate storage key for localStorage
+   */
+  private static getStorageKey(sessionId: string, options: ProgressSessionOptions): string {
+    return `${this.STORAGE_PREFIX}-${sessionId}`
   }
 
   /**
@@ -418,30 +568,44 @@ export class EnhancedProgressStorage {
     }
   }
 
+  /**
+   * Load from localStorage with completion checking
+   */
   private static loadFromLocalStorage(sessionId: string, options: ProgressSessionOptions): EnhancedQuizState | null {
     try {
-      const key = `${this.STORAGE_PREFIX}-${sessionId}`
-      const saved = localStorage.getItem(key)
-      
-      if (!saved) {
-        debug.log('storage', 'No localStorage fallback found for session:', sessionId)
+      // Check for recent completion again (in case database check was skipped)
+      if (options.topicId && this.isQuizRecentlyCompleted(options.topicId)) {
+        debug.log('storage', 'Quiz recently completed, not loading from localStorage:', options.topicId)
         return null
       }
 
-      const data = JSON.parse(saved)
+      const storageKey = this.getStorageKey(sessionId, options)
+      const stored = localStorage.getItem(storageKey)
+      
+      if (!stored) {
+        debug.log('storage', 'No localStorage data found for session:', sessionId)
+        return null
+      }
+
+      const state: EnhancedQuizState = JSON.parse(stored)
       
       // Check if expired
-      const maxAge = (options.maxAgeHours || this.DEFAULT_EXPIRY_HOURS) * 60 * 60 * 1000
-      if (Date.now() - data.savedAt > maxAge) {
-        localStorage.removeItem(key)
-        debug.log('storage', 'Removed expired localStorage session:', sessionId)
+      if (state.expiresAt && Date.now() > state.expiresAt) {
+        debug.log('storage', 'Progress session expired, removing from localStorage')
+        localStorage.removeItem(storageKey)
         return null
       }
 
-      debug.log('storage', 'Loaded from localStorage fallback:', sessionId)
-      return data as EnhancedQuizState
+      debug.log('storage', 'Successfully loaded progress from localStorage:', {
+        sessionId: state.sessionId,
+        sessionType: state.sessionType,
+        questionIndex: state.currentQuestionIndex,
+        totalQuestions: state.questions.length
+      })
+
+      return state
     } catch (error) {
-      debug.warn('storage', 'Failed to load from localStorage:', error)
+      debug.warn('storage', 'Error loading from localStorage:', error)
       return null
     }
   }

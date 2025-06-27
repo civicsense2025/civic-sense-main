@@ -24,6 +24,7 @@
     "test-generator": "npx tsx scripts/test-quiz-generator.ts",
     "test-source-validation": "npx tsx scripts/test-source-validation.ts",
     "test-20-questions": "npx tsx scripts/test-20-questions.ts",
+    "test-photo-structure": "node scripts/test-photo-structure.js",
     "import-quiz": "npx tsx scripts/import-quiz-data.ts import-csv",
     "optimize-questions": "npx tsx scripts/optimize-question-content.ts",
     "check-integrity": "npx tsx scripts/check-question-integrity.ts",

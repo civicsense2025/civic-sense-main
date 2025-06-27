@@ -54,34 +54,34 @@ body {
 
 /* WCAG 2.2 AA Compliant Color System */
 :root {
-  /* Light mode - Modern blue-focused palette */
-  --background: 0 0% 100%;
-  --foreground: 224 71% 4%;
+  /* Light mode - CivicSense brand palette */
+  --background: 35 43% 98%; /* #FDFCF9 - Truth white */
+  --foreground: 210 30% 15%; /* Dark text for high contrast */
   --foreground-secondary: 215 20% 65%;
   --foreground-tertiary: 215 16% 47%;
-  --foreground-muted: 210 40% 96%;
+  --foreground-muted: 50 100% 95%; /* #FFF5D9 - Warm surface muted */
   
   --card: 0 0% 100%;
-  --card-foreground: 224 71% 4%;
+  --card-foreground: 210 30% 15%;
   
   --popover: 0 0% 100%;
-  --popover-foreground: 224 71% 4%;
+  --popover-foreground: 210 30% 15%;
   
-  /* Primary - Modern electric blue */
-  --primary: 217 91% 60%;
+  /* Primary - CivicSense Gold #E0A63E */
+  --primary: 43 75% 56%;
   --primary-foreground: 0 0% 100%;
   
-  /* Secondary - Subtle gray-blue */
-  --secondary: 214 32% 91%;
-  --secondary-foreground: 224 71% 4%;
+  /* Secondary - Authority Blue #2E4057 */
+  --secondary: 210 30% 27%;
+  --secondary-foreground: 0 0% 100%;
   
-  /* Muted - Light gray with blue tint */
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  /* Accent - Civic Blue #6096BA */
+  --accent: 205 34% 55%;
+  --accent-foreground: 0 0% 100%;
   
-  /* Accent - Neutral gray instead of blue */
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
+  /* Muted - Warm surface #FFF5D9 */
+  --muted: 50 100% 93%;
+  --muted-foreground: 210 30% 27%;
   
   /* Status colors */
   --destructive: 0 84% 60%;
@@ -90,14 +90,14 @@ body {
   --success: 142 76% 36%;
   --success-foreground: 0 0% 100%;
   
-  /* Warning uses CivicSense primary blue instead of amber */
-  --warning: 217 91% 60%;
+  /* Warning uses CivicSense gold for consistency */
+  --warning: 43 75% 56%;
   --warning-foreground: 0 0% 100%;
   
   /* Interactive elements */
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 217 91% 60%;
+  --border: 210 30% 85%;
+  --input: 210 30% 85%;
+  --ring: 43 75% 56%; /* CivicSense gold focus ring */
   --radius: 0.5rem;
 
   /* CivicSense 8px Grid System - Replaces Apple spacing */
@@ -204,80 +204,80 @@ body {
    BASE THEME VARIABLES
    ============================================================================ */
 :root {
-  /* Enhanced multiplayer theme variables */
-  --multiplayer-bg: 210 40% 98%;
+  /* Enhanced multiplayer theme variables - CivicSense brand */
+  --multiplayer-bg: 50 100% 98%; /* Warm surface background */
   --multiplayer-card: 0 0% 100%;
-  --multiplayer-card-hover: 210 40% 96%;
-  --multiplayer-border: 214 32% 85%;
-  --multiplayer-text: 224 71% 4%;
+  --multiplayer-card-hover: 50 100% 93%; /* Warm surface on hover */
+  --multiplayer-border: 210 30% 85%;
+  --multiplayer-text: 210 30% 15%;
   --multiplayer-text-muted: 215 16% 47%;
-  --multiplayer-accent: 217 91% 60%;
-  --multiplayer-accent-light: 217 91% 95%;
+  --multiplayer-accent: 43 75% 56%; /* CivicSense gold */
+  --multiplayer-accent-light: 43 75% 95%;
   --multiplayer-success: 142 76% 36%;
   --multiplayer-success-light: 142 76% 95%;
-  --multiplayer-warning: 217 91% 60%;
-  --multiplayer-warning-light: 217 91% 95%;
+  --multiplayer-warning: 43 75% 56%; /* CivicSense gold for warnings */
+  --multiplayer-warning-light: 43 75% 95%;
 }
 
 .dark {
-  /* Dark mode - Consistent with blue theme but darker */
-  --background: 224 71% 4%;
-  --foreground: 210 40% 98%;
+  /* Dark mode - CivicSense brand palette adapted for dark theme */
+  --background: 210 30% 8%; /* Dark authority blue background */
+  --foreground: 50 100% 95%; /* Warm light text */
   --foreground-secondary: 215 20% 65%;
   --foreground-tertiary: 215 16% 65%;
-  --foreground-muted: 217 33% 17%;
+  --foreground-muted: 210 30% 15%;
   
-  --card: 217 33% 8%;
-  --card-foreground: 210 40% 98%;
+  --card: 210 30% 12%;
+  --card-foreground: 50 100% 95%;
   
-  --popover: 217 33% 8%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 210 30% 12%;
+  --popover-foreground: 50 100% 95%;
   
-  /* Primary - Brighter blue for dark mode */
-  --primary: 217 91% 65%;
-  --primary-foreground: 224 71% 4%;
+  /* Primary - CivicSense Gold (slightly brighter for dark mode) */
+  --primary: 43 80% 65%;
+  --primary-foreground: 210 30% 8%;
   
-  /* Secondary - Dark blue-gray */
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
+  /* Secondary - Lighter authority blue */
+  --secondary: 210 30% 20%;
+  --secondary-foreground: 50 100% 95%;
   
-  /* Muted - Dark gray with blue tint */
-  --muted: 217 33% 17%;
+  /* Accent - Brighter civic blue for dark mode */
+  --accent: 205 40% 65%;
+  --accent-foreground: 210 30% 8%;
+  
+  /* Muted - Dark surface */
+  --muted: 210 30% 15%;
   --muted-foreground: 215 20% 65%;
-  
-  /* Accent - Neutral gray for dark mode */
-  --accent: 217 33% 17%;
-  --accent-foreground: 210 40% 98%;
   
   /* Status colors adjusted for dark mode */
   --destructive: 0 63% 31%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 50 100% 95%;
   
   --success: 142 76% 46%;
-  --success-foreground: 210 40% 98%;
+  --success-foreground: 50 100% 95%;
   
-  /* Warning uses CivicSense primary blue instead of amber for dark mode */
-  --warning: 217 91% 65%;
-  --warning-foreground: 224 71% 4%;
+  /* Warning uses CivicSense gold for consistency in dark mode */
+  --warning: 43 80% 65%;
+  --warning-foreground: 210 30% 8%;
   
   /* Interactive elements */
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 217 91% 65%;
+  --border: 210 30% 20%;
+  --input: 210 30% 20%;
+  --ring: 43 80% 65%; /* CivicSense gold focus ring for dark mode */
 
-  /* Enhanced dark mode multiplayer variables */
-  --multiplayer-bg: 224 71% 3%;
-  --multiplayer-card: 217 33% 8%;
-  --multiplayer-card-hover: 217 33% 12%;
-  --multiplayer-border: 217 33% 20%;
-  --multiplayer-text: 210 40% 95%;
+  /* Enhanced dark mode multiplayer variables - CivicSense brand */
+  --multiplayer-bg: 210 30% 8%; /* Dark authority blue background */
+  --multiplayer-card: 210 30% 12%;
+  --multiplayer-card-hover: 210 30% 16%;
+  --multiplayer-border: 210 30% 20%;
+  --multiplayer-text: 50 100% 95%; /* Warm light text */
   --multiplayer-text-muted: 215 20% 60%;
-  --multiplayer-accent: 217 91% 65%;
-  --multiplayer-accent-light: 217 91% 15%;
+  --multiplayer-accent: 43 80% 65%; /* CivicSense gold for dark mode */
+  --multiplayer-accent-light: 43 80% 15%;
   --multiplayer-success: 142 76% 46%;
   --multiplayer-success-light: 142 76% 12%;
-  --multiplayer-warning: 217 91% 65%;
-  --multiplayer-warning-light: 217 91% 12%;
+  --multiplayer-warning: 43 80% 65%; /* CivicSense gold for warnings in dark mode */
+  --multiplayer-warning-light: 43 80% 12%;
 }
 
 /* Clean base styles */

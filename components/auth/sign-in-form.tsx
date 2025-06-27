@@ -148,7 +148,7 @@ export function SignInForm({ onSuccess, onResetPassword }: SignInFormProps) {
         <Button
           type="submit"
           disabled={isLoading || !email || !password}
-          className="w-full h-14 px-8 py-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-medium rounded-2xl transition-all duration-200 mt-6 shadow-lg hover:shadow-xl"
+          className="w-full h-14 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-2xl transition-all duration-200 mt-6 shadow-lg hover:shadow-xl"
           tabIndex={4}
         >
           <Lock className="h-4 w-4 mr-2" />

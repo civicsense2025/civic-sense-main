@@ -20,14 +20,18 @@ export class CongressionalPhotoService {
     this.supabase = createServiceClient();
   }
   
-  async downloadAndStorePhoto(bioguideId: string, memberId: string): Promise<{
+  async downloadAndStorePhoto(
+    bioguideId: string, 
+    memberId: string, 
+    congressNumber: number = 119
+  ): Promise<{
     success: boolean;
     photoRecord?: any;
     error?: string;
   }> {
     try {
       // Check if photo already exists and is current
-      const existingPhoto = await this.getExistingPhoto(bioguideId);
+      const existingPhoto = await this.getExistingPhoto(bioguideId, congressNumber);
       if (existingPhoto && await this.isPhotoCurrent(existingPhoto)) {
         return { success: true, photoRecord: existingPhoto };
       }
@@ -55,12 +59,13 @@ export class CongressionalPhotoService {
       const optimizedVersions = await this.createOptimizedVersions(originalBuffer, bioguideId);
       
       // Store in Supabase Storage
-      const storagePaths = await this.uploadToStorage(bioguideId, originalBuffer, optimizedVersions);
+      const storagePaths = await this.uploadToStorage(bioguideId, congressNumber, originalBuffer, optimizedVersions);
       
       // Save photo record to database
       const photoRecord = await this.savePhotoRecord({
         member_id: memberId,
         bioguide_id: bioguideId,
+        congress_number: congressNumber,
         storage_path: storagePaths.original,
         original_url: sourcePhoto.url,
         file_size: originalBuffer.length,
@@ -70,13 +75,15 @@ export class CongressionalPhotoService {
         medium_path: storagePaths.medium,
         large_path: storagePaths.large,
         content_hash: contentHash,
-        optimization_complete: true
+        optimization_complete: true,
+        download_success: true,
+        downloaded_at: new Date().toISOString()
       });
       
       // Update public_figures record
       await this.updateMemberPhotoUrl(memberId, storagePaths.medium);
       
-      console.log(`✅ Photo processed for bioguide ${bioguideId}`);
+      console.log(`✅ Photo processed for bioguide ${bioguideId} (${congressNumber}th Congress)`);
       return { success: true, photoRecord };
       
     } catch (error: any) {
@@ -155,6 +162,7 @@ export class CongressionalPhotoService {
   
   private async uploadToStorage(
     bioguideId: string, 
+    congressNumber: number,
     originalBuffer: Buffer, 
     optimizedVersions: any
   ): Promise<{
@@ -163,7 +171,7 @@ export class CongressionalPhotoService {
     medium: string;
     large: string;
   }> {
-    const basePath = `members/${bioguideId}`;
+    const basePath = `congress/${congressNumber}/${bioguideId}`;
     
     // Upload all versions in parallel
     const [originalUpload, thumbnailUpload, mediumUpload, largeUpload] = await Promise.all([
@@ -217,7 +225,7 @@ export class CongressionalPhotoService {
   private async savePhotoRecord(photoData: any): Promise<any> {
     const { data, error } = await this.supabase
       .from('congressional_photos')
-      .upsert(photoData, { onConflict: 'bioguide_id' })
+      .upsert(photoData, { onConflict: 'bioguide_id,congress_number' })
       .select()
       .single();
     
@@ -250,14 +258,15 @@ export class CongressionalPhotoService {
   }
   
   private generateHash(buffer: Buffer): string {
-    return createHash('sha256').update(buffer).digest('hex');
+    return createHash('sha256').update(buffer as any).digest('hex');
   }
   
-  private async getExistingPhoto(bioguideId: string): Promise<any | null> {
+  private async getExistingPhoto(bioguideId: string, congressNumber: number): Promise<any | null> {
     const { data } = await this.supabase
       .from('congressional_photos')
       .select('*')
       .eq('bioguide_id', bioguideId)
+      .eq('congress_number', congressNumber)
       .single();
     
     return data;
@@ -273,13 +282,13 @@ export class CongressionalPhotoService {
   }
   
   // Utility method to get all photo URLs for a member
-  async getMemberPhotoUrls(bioguideId: string): Promise<{
+  async getMemberPhotoUrls(bioguideId: string, congressNumber: number = 119): Promise<{
     thumbnail: string | null;
     medium: string | null;
     large: string | null;
     original: string | null;
   }> {
-    const photoRecord = await this.getExistingPhoto(bioguideId);
+    const photoRecord = await this.getExistingPhoto(bioguideId, congressNumber);
     if (!photoRecord) {
       return { thumbnail: null, medium: null, large: null, original: null };
     }
@@ -300,7 +309,7 @@ export class CongressionalPhotoService {
   }
   
   // Bulk photo processing for all members
-  async processAllMemberPhotos(): Promise<{
+  async processAllMemberPhotos(congressNumber: number = 119): Promise<{
     processed: number;
     succeeded: number;
     failed: number;
@@ -309,7 +318,8 @@ export class CongressionalPhotoService {
     const { data: members } = await this.supabase
       .from('public_figures')
       .select('id, bioguide_id, full_name')
-      .not('bioguide_id', 'is', null);
+      .not('bioguide_id', 'is', null)
+      .or(`current_congress.eq.${congressNumber},congress_member_type.not.is.null`);
     
     const results = {
       processed: 0,
@@ -321,7 +331,7 @@ export class CongressionalPhotoService {
     for (const member of members || []) {
       results.processed++;
       
-      const result = await this.downloadAndStorePhoto(member.bioguide_id, member.id);
+      const result = await this.downloadAndStorePhoto(member.bioguide_id, member.id, congressNumber);
       
       if (result.success) {
         results.succeeded++;
