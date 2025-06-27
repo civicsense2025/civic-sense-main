@@ -2,6 +2,56 @@ import type { ReactNode } from 'react'
 import type { QuizGameMode, QuizQuestion, QuizResults, QuizModeConfig } from '@/lib/types/quiz'
 import type { QuizAttemptData, QuizModeSettings, GameMetadata, UserAnswer } from '../types/database'
 
+// Core game mode types - just 3 main modes
+export type GameModeId = 'standard' | 'ai-battle' | 'pvp'
+
+// Settings for standard mode that replace multiple separate modes
+export interface StandardModeSettings {
+  // Timing
+  timeLimit?: number | null // null = unlimited, number = seconds per question
+  totalTimeLimit?: number | null // null = unlimited, number = total seconds for quiz
+  
+  // Practice features
+  allowHints: boolean
+  allowSkip: boolean
+  allowReview: boolean
+  showExplanations: boolean
+  instantFeedback: boolean
+  
+  // Scoring
+  scoringMode: 'standard' | 'speed-bonus' | 'survival' // survival = one wrong ends quiz
+  streakBonus: boolean
+  
+  // Question selection
+  questionCount?: number // null = all questions
+  shuffleQuestions: boolean
+  difficulty?: 'easy' | 'medium' | 'hard' | 'mixed'
+  
+  // Multi-topic support
+  topics: string[] // Array of topic IDs
+  mixTopics: boolean // true = shuffle questions from all topics
+}
+
+// Settings for AI Battle mode
+export interface AIBattleSettings {
+  npcId: string // Which NPC opponent
+  npcDifficulty: 'easy' | 'medium' | 'hard' | 'adaptive'
+  timeLimit?: number
+  powerupsEnabled: boolean
+  topics: string[]
+}
+
+// Settings for PVP mode
+export interface PVPSettings {
+  roomSize: number // 2-8 players
+  timeLimit?: number
+  chatEnabled: boolean
+  spectatorMode: boolean
+  topics: string[]
+  isPrivate: boolean
+  roomCode?: string
+}
+
 // Base interface that all game modes must implement
 export interface GameModePlugin<T = any> {
   // Mode identification
@@ -221,4 +271,51 @@ export function hasCustomLogic(plugin: GameModePlugin): boolean {
     plugin.calculateScore ||
     plugin.getTimeLimit
   )
+}
+
+// Base game mode interface
+export interface GameMode<TSettings = any> {
+  id: GameModeId
+  displayName: string
+  description: string
+  icon: string
+  
+  // Default settings for this mode
+  defaultSettings: TSettings
+  
+  // Validation
+  validateSettings?: (settings: TSettings) => { valid: boolean; errors?: string[] }
+  
+  // Hooks for mode-specific behavior
+  onModeStart?: (settings: TSettings) => void
+  onQuestionStart?: (question: QuizQuestion, questionIndex: number, settings: TSettings) => void
+  onAnswerSubmit?: (answer: string, isCorrect: boolean, timeSpent: number, settings: TSettings) => void
+  onQuizComplete?: (results: QuizResults, settings: TSettings) => void
+  
+  // UI customization
+  getSettingsUI?: () => React.ReactNode
+  getQuestionUI?: (question: QuizQuestion, defaultUI: React.ReactNode, settings: TSettings) => React.ReactNode
+  getResultsUI?: (results: QuizResults, defaultUI: React.ReactNode, settings: TSettings) => React.ReactNode
+}
+
+// Mode state that can be passed around
+export interface ModeState {
+  powerupsUsed: string[]
+  achievementsEarned: string[]
+  bonusPoints: number
+  hintsUsed: number
+  questionsSkipped: number
+  customData?: Record<string, any>
+}
+
+// Multi-topic quiz session
+export interface MultiTopicQuizSession {
+  sessionId: string
+  topics: string[]
+  questions: QuizQuestion[] // Mixed from all topics
+  topicProgress: Record<string, {
+    questionsAnswered: number
+    correctAnswers: number
+  }>
+  settings: StandardModeSettings | AIBattleSettings | PVPSettings
 } 

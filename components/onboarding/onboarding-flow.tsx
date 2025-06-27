@@ -213,16 +213,31 @@ export function OnboardingFlow({ userId, onComplete, onSkip }: OnboardingFlowPro
       if (currentStepIndex === STEPS.length - 1) {
         await completeOnboarding(updatedState)
       } else {
-        // Move to next step
-        setCurrentStepIndex(prev => prev + 1)
+        // Move to next step AFTER successful save
+        const nextStepIndex = currentStepIndex + 1
+        setCurrentStepIndex(nextStepIndex)
+        
+        // Update the current step in the database
+        await supabase
+          .from('user_onboarding_state')
+          .upsert({
+            user_id: userId,
+            current_step: STEPS[nextStepIndex]?.id || 'completion',
+            onboarding_data: updatedState
+          }, { onConflict: 'user_id' })
       }
     } catch (error) {
       console.error(`Error saving ${currentStep.id} step data:`, error)
       toast({
         title: "Error saving your progress",
-        description: "Please try again or continue without saving.",
+        description: "Your selections have been saved locally. You can continue or try again.",
         variant: "destructive",
       })
+      
+      // Allow user to continue even if save failed
+      if (currentStepIndex < STEPS.length - 1) {
+        setCurrentStepIndex(prev => prev + 1)
+      }
     } finally {
       setIsLoading(false)
     }

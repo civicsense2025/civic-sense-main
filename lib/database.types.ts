@@ -3963,6 +3963,149 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          action_steps_engaged: number | null
+          civic_knowledge_score: number | null
+          created_at: string
+          device_type: string | null
+          event_category: string
+          event_data: Json
+          event_type: string
+          game_mode: string | null
+          guest_token: string | null
+          id: string
+          misconceptions_corrected: number | null
+          page_url: string | null
+          performance_data: Json | null
+          platform: string | null
+          question_id: string | null
+          quiz_attempt_id: string | null
+          referrer_url: string | null
+          response_time_ms: number | null
+          room_code: string | null
+          session_id: string
+          social_interaction_type: string | null
+          team_id: string | null
+          time_since_question_start_ms: number | null
+          time_since_quiz_start_ms: number | null
+          topic_id: string | null
+          uncomfortable_truths_revealed: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_steps_engaged?: number | null
+          civic_knowledge_score?: number | null
+          created_at?: string
+          device_type?: string | null
+          event_category: string
+          event_data?: Json
+          event_type: string
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string
+          misconceptions_corrected?: number | null
+          page_url?: string | null
+          performance_data?: Json | null
+          platform?: string | null
+          question_id?: string | null
+          quiz_attempt_id?: string | null
+          referrer_url?: string | null
+          response_time_ms?: number | null
+          room_code?: string | null
+          session_id: string
+          social_interaction_type?: string | null
+          team_id?: string | null
+          time_since_question_start_ms?: number | null
+          time_since_quiz_start_ms?: number | null
+          topic_id?: string | null
+          uncomfortable_truths_revealed?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_steps_engaged?: number | null
+          civic_knowledge_score?: number | null
+          created_at?: string
+          device_type?: string | null
+          event_category?: string
+          event_data?: Json
+          event_type?: string
+          game_mode?: string | null
+          guest_token?: string | null
+          id?: string
+          misconceptions_corrected?: number | null
+          page_url?: string | null
+          performance_data?: Json | null
+          platform?: string | null
+          question_id?: string | null
+          quiz_attempt_id?: string | null
+          referrer_url?: string | null
+          response_time_ms?: number | null
+          room_code?: string | null
+          session_id?: string
+          social_interaction_type?: string | null
+          team_id?: string | null
+          time_since_question_start_ms?: number | null
+          time_since_quiz_start_ms?: number | null
+          topic_id?: string | null
+          uncomfortable_truths_revealed?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_quiz_attempt_id_fkey"
+            columns: ["quiz_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "user_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+        ]
+      }
       article_bias_analysis: {
         Row: {
           ai_analysis_version: string | null
@@ -4110,77 +4253,6 @@ export type Database = {
           },
         ]
       }
-      assessment_analytics: {
-        Row: {
-          event_type: string | null
-          final_score: number | null
-          id: number
-          metadata: Json | null
-          session_id: string | null
-          timestamp: string | null
-          user_id: string | null
-        }
-        Insert: {
-          event_type?: string | null
-          final_score?: number | null
-          id?: number
-          metadata?: Json | null
-          session_id?: string | null
-          timestamp?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          event_type?: string | null
-          final_score?: number | null
-          id?: number
-          metadata?: Json | null
-          session_id?: string | null
-          timestamp?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      assessment_engagement: {
-        Row: {
-          assessment_id: string
-          created_at: string | null
-          engagement_data: Json | null
-          engagement_type: string
-          id: string
-          ip_address: unknown | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          assessment_id: string
-          created_at?: string | null
-          engagement_data?: Json | null
-          engagement_type: string
-          id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          assessment_id?: string
-          created_at?: string | null
-          engagement_data?: Json | null
-          engagement_type?: string
-          id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_engagement_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "assessments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       assessment_evidence: {
         Row: {
           created_at: string | null
@@ -4276,95 +4348,6 @@ export type Database = {
           scoring_system?: Json
           updated_at?: string | null
           version?: string | null
-        }
-        Relationships: []
-      }
-      assessment_questions: {
-        Row: {
-          category: string
-          correct_answer: string
-          created_at: string | null
-          difficulty: number
-          explanation: string | null
-          friendly_explanation: string | null
-          id: string
-          is_active: boolean | null
-          options: Json
-          question: string
-          skill_id: string | null
-          translations: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          category: string
-          correct_answer: string
-          created_at?: string | null
-          difficulty: number
-          explanation?: string | null
-          friendly_explanation?: string | null
-          id?: string
-          is_active?: boolean | null
-          options: Json
-          question: string
-          skill_id?: string | null
-          translations?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string
-          correct_answer?: string
-          created_at?: string | null
-          difficulty?: number
-          explanation?: string | null
-          friendly_explanation?: string | null
-          id?: string
-          is_active?: boolean | null
-          options?: Json
-          question?: string
-          skill_id?: string | null
-          translations?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_questions_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "skills"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assessment_scoring: {
-        Row: {
-          category: string
-          created_at: string | null
-          description: string
-          id: string
-          recommended_content: string[] | null
-          score_range_max: number
-          score_range_min: number
-          skill_level: string
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          description: string
-          id?: string
-          recommended_content?: string[] | null
-          score_range_max: number
-          score_range_min: number
-          skill_level: string
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          description?: string
-          id?: string
-          recommended_content?: string[] | null
-          score_range_max?: number
-          score_range_min?: number
-          skill_level?: string
         }
         Relationships: []
       }
@@ -6237,70 +6220,73 @@ export type Database = {
           bioguide_id: string
           congress_number: number
           content_hash: string | null
-          created_at: string | null
-          download_success: boolean
+          created_at: string
+          download_attempts: number | null
           downloaded_at: string
-          file_size: number
+          file_size: number | null
           id: string
           image_height: number | null
           image_width: number | null
           large_path: string | null
+          last_error: string | null
           local_path: string | null
           medium_path: string | null
           member_id: string
           optimization_complete: boolean | null
           original_path: string | null
           original_url: string
-          source_last_modified: string | null
-          storage_path: string
+          storage_bucket: string | null
+          storage_path: string | null
           thumbnail_path: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           bioguide_id: string
           congress_number: number
           content_hash?: string | null
-          created_at?: string | null
-          download_success?: boolean
+          created_at?: string
+          download_attempts?: number | null
           downloaded_at?: string
-          file_size: number
+          file_size?: number | null
           id?: string
           image_height?: number | null
           image_width?: number | null
           large_path?: string | null
+          last_error?: string | null
           local_path?: string | null
           medium_path?: string | null
           member_id: string
           optimization_complete?: boolean | null
           original_path?: string | null
           original_url: string
-          source_last_modified?: string | null
-          storage_path: string
+          storage_bucket?: string | null
+          storage_path?: string | null
           thumbnail_path?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           bioguide_id?: string
           congress_number?: number
           content_hash?: string | null
-          created_at?: string | null
-          download_success?: boolean
+          created_at?: string
+          download_attempts?: number | null
           downloaded_at?: string
-          file_size?: number
+          file_size?: number | null
           id?: string
           image_height?: number | null
           image_width?: number | null
           large_path?: string | null
+          last_error?: string | null
           local_path?: string | null
           medium_path?: string | null
           member_id?: string
           optimization_complete?: boolean | null
           original_path?: string | null
           original_url?: string
-          source_last_modified?: string | null
-          storage_path?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
           thumbnail_path?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -11339,6 +11325,39 @@ export type Database = {
           },
         ]
       }
+      onboarding_invites: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invitee_id: string | null
+          inviter_id: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          invitee_id?: string | null
+          inviter_id: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invitee_id?: string | null
+          inviter_id?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       organization_bias_scores: {
         Row: {
           calculation_method: string | null
@@ -13043,7 +13062,7 @@ export type Database = {
           questions: Json
           response_times: Json
           session_id: string
-          session_type: string
+          session_type: string | null
           started_at: string
           streak: number
           test_type: string | null
@@ -13068,7 +13087,7 @@ export type Database = {
           questions: Json
           response_times?: Json
           session_id: string
-          session_type: string
+          session_type?: string | null
           started_at?: string
           streak?: number
           test_type?: string | null
@@ -13093,7 +13112,7 @@ export type Database = {
           questions?: Json
           response_times?: Json
           session_id?: string
-          session_type?: string
+          session_type?: string | null
           started_at?: string
           streak?: number
           test_type?: string | null
@@ -14731,44 +14750,6 @@ export type Database = {
           },
         ]
       }
-      skill_assessment_criteria: {
-        Row: {
-          assessment_method: string
-          created_at: string | null
-          id: string
-          passing_criteria: string
-          proficiency_level: string
-          skill_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          assessment_method: string
-          created_at?: string | null
-          id?: string
-          passing_criteria: string
-          proficiency_level: string
-          skill_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          assessment_method?: string
-          created_at?: string | null
-          id?: string
-          passing_criteria?: string
-          proficiency_level?: string
-          skill_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "skill_assessment_criteria_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "skills"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       skill_badges: {
         Row: {
           badge_description: string
@@ -16108,6 +16089,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_assessment_analytics: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          final_score: number | null
+          id: number
+          metadata: Json | null
+          session_id: string | null
+          timestamp: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type?: string | null
+          final_score?: number | null
+          id?: number
+          metadata?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string | null
+          final_score?: number | null
+          id?: number
+          metadata?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_assessment_attempts: {
         Row: {
           assessment_type: string
@@ -16144,6 +16161,136 @@ export type Database = {
           time_spent_seconds?: number | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_assessment_engagement: {
+        Row: {
+          assessment_id: string
+          created_at: string | null
+          engagement_data: Json | null
+          engagement_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string | null
+          engagement_data?: Json | null
+          engagement_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string | null
+          engagement_data?: Json | null
+          engagement_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_engagement_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_assessment_questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          created_at: string | null
+          difficulty: number
+          explanation: string | null
+          friendly_explanation: string | null
+          id: string
+          is_active: boolean | null
+          options: Json
+          question: string
+          skill_id: string | null
+          translations: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          correct_answer: string
+          created_at?: string | null
+          difficulty: number
+          explanation?: string | null
+          friendly_explanation?: string | null
+          id?: string
+          is_active?: boolean | null
+          options: Json
+          question: string
+          skill_id?: string | null
+          translations?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          created_at?: string | null
+          difficulty?: number
+          explanation?: string | null
+          friendly_explanation?: string | null
+          id?: string
+          is_active?: boolean | null
+          options?: Json
+          question?: string
+          skill_id?: string | null
+          translations?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_assessment_scoring: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          recommended_content: string[] | null
+          score_range_max: number
+          score_range_min: number
+          skill_level: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          recommended_content?: string[] | null
+          score_range_max: number
+          score_range_min: number
+          skill_level: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          recommended_content?: string[] | null
+          score_range_max?: number
+          score_range_min?: number
+          skill_level?: string
         }
         Relationships: []
       }
@@ -17133,37 +17280,49 @@ export type Database = {
       user_onboarding_state: {
         Row: {
           completed_at: string | null
+          completed_steps: string[] | null
           created_at: string | null
           current_step: string
           id: string
           is_completed: boolean | null
+          last_active_at: string | null
           onboarding_data: Json | null
           skip_reason: string | null
+          skipped_at: string | null
           started_at: string | null
+          status: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           completed_at?: string | null
+          completed_steps?: string[] | null
           created_at?: string | null
           current_step?: string
           id?: string
           is_completed?: boolean | null
+          last_active_at?: string | null
           onboarding_data?: Json | null
           skip_reason?: string | null
+          skipped_at?: string | null
           started_at?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           completed_at?: string | null
+          completed_steps?: string[] | null
           created_at?: string | null
           current_step?: string
           id?: string
           is_completed?: boolean | null
+          last_active_at?: string | null
           onboarding_data?: Json | null
           skip_reason?: string | null
+          skipped_at?: string | null
           started_at?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -17633,6 +17792,7 @@ export type Database = {
           grade_posted_to_lms: boolean | null
           guest_token: string | null
           id: string
+          incorrect_answers: number | null
           is_completed: boolean | null
           max_streak: number | null
           mode_settings: Json | null
@@ -17651,7 +17811,7 @@ export type Database = {
           topic_id: string
           total_questions: number
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           classroom_assignment_id?: string | null
@@ -17667,6 +17827,7 @@ export type Database = {
           grade_posted_to_lms?: boolean | null
           guest_token?: string | null
           id?: string
+          incorrect_answers?: number | null
           is_completed?: boolean | null
           max_streak?: number | null
           mode_settings?: Json | null
@@ -17685,7 +17846,7 @@ export type Database = {
           topic_id: string
           total_questions: number
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           classroom_assignment_id?: string | null
@@ -17701,6 +17862,7 @@ export type Database = {
           grade_posted_to_lms?: boolean | null
           guest_token?: string | null
           id?: string
+          incorrect_answers?: number | null
           is_completed?: boolean | null
           max_streak?: number | null
           mode_settings?: Json | null
@@ -17719,7 +17881,7 @@ export type Database = {
           topic_id?: string
           total_questions?: number
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -18016,6 +18178,44 @@ export type Database = {
             columns: ["situation_id"]
             isOneToOne: false
             referencedRelation: "scenario_situations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_skill_assessment_criteria: {
+        Row: {
+          assessment_method: string
+          created_at: string | null
+          id: string
+          passing_criteria: string
+          proficiency_level: string
+          skill_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_method: string
+          created_at?: string | null
+          id?: string
+          passing_criteria: string
+          proficiency_level: string
+          skill_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_method?: string
+          created_at?: string | null
+          id?: string
+          passing_criteria?: string
+          proficiency_level?: string
+          skill_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_assessment_criteria_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
@@ -18627,6 +18827,46 @@ export type Database = {
           unique_users_engaged: number | null
         }
         Relationships: []
+      }
+      civic_learning_impact: {
+        Row: {
+          avg_civic_knowledge_score: number | null
+          first_interaction: string | null
+          guest_token: string | null
+          last_interaction: string | null
+          max_civic_knowledge_score: number | null
+          quiz_attempt_id: string | null
+          session_duration_seconds: number | null
+          topic_id: string | null
+          total_action_steps_engaged: number | null
+          total_events: number | null
+          total_misconceptions_corrected: number | null
+          total_uncomfortable_truths: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_quiz_attempt_id_fkey"
+            columns: ["quiz_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "user_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+        ]
       }
       civics_test_attempts: {
         Row: {
@@ -19258,6 +19498,65 @@ export type Database = {
           url: string | null
         }
         Relationships: []
+      }
+      response_time_analytics: {
+        Row: {
+          avg_response_time_ms: number | null
+          game_mode: string | null
+          max_response_time_ms: number | null
+          median_response_time_ms: number | null
+          min_response_time_ms: number | null
+          p95_response_time_ms: number | null
+          platform: string | null
+          question_id: string | null
+          response_count: number | null
+          response_time_stddev: number | null
+          topic_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+        ]
       }
       survey_summary: {
         Row: {
@@ -19928,6 +20227,15 @@ export type Database = {
           created_by: string
         }[]
       }
+      get_member_photo_urls: {
+        Args: { p_bioguide_id: string; p_congress_number?: number }
+        Returns: {
+          thumbnail_url: string
+          medium_url: string
+          large_url: string
+          original_url: string
+        }[]
+      }
       get_npc_category_performance: {
         Args: { p_npc_id: string; p_category: string }
         Returns: {
@@ -19942,23 +20250,24 @@ export type Database = {
         Returns: {
           id: string
           name: string
-          emoji: string
           description: string
-          display_order: number
+          emoji: string
           question_count: number
+          display_order: number
         }[]
       }
       get_onboarding_skills: {
-        Args: { category_ids?: string[] }
+        Args: { p_category_ids?: string[] }
         Returns: {
           id: string
           skill_name: string
-          skill_slug: string
+          description: string
+          emoji: string
           category_id: string
           category_name: string
-          description: string
           difficulty_level: number
           is_core_skill: boolean
+          display_order: number
         }[]
       }
       get_or_create_media_organization: {
@@ -20003,6 +20312,19 @@ export type Database = {
           redemption_code: string
           link_title: string
           ip_address: unknown
+        }[]
+      }
+      get_personalized_quizzes: {
+        Args: { p_user_id: string; p_limit?: number }
+        Returns: {
+          topic_id: string
+          topic_title: string
+          description: string
+          emoji: string
+          category_id: string
+          category_name: string
+          question_count: number
+          relevance_score: number
         }[]
       }
       get_pod_analytics: {
@@ -20304,14 +20626,21 @@ export type Database = {
         }[]
       }
       get_user_onboarding_progress: {
-        Args: { target_user_id: string }
+        Args: { p_user_id: string }
         Returns: {
-          onboarding_step: string
+          user_id: string
+          current_step: string
+          completed_steps: string[]
+          status: string
           is_completed: boolean
-          selected_categories: Json
-          selected_skills: Json
-          platform_preferences: Json
-          assessment_results: Json
+          onboarding_data: Json
+          categories: Json
+          skills: Json
+          preferences: Json
+          assessment: Json
+          created_at: string
+          updated_at: string
+          completed_at: string
         }[]
       }
       get_user_pod_memberships: {
@@ -20345,7 +20674,7 @@ export type Database = {
           questions: Json
           response_times: Json
           session_id: string
-          session_type: string
+          session_type: string | null
           started_at: string
           streak: number
           test_type: string | null
@@ -20451,7 +20780,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_user: {
-        Args: { check_user_id: string }
+        Args: { user_id: string }
         Returns: boolean
       }
       is_content_appropriate_for_user: {
@@ -20466,10 +20795,6 @@ export type Database = {
       }
       is_educational_email: {
         Args: { email_address: string }
-        Returns: boolean
-      }
-      is_super_admin_user: {
-        Args: { check_user_id: string }
         Returns: boolean
       }
       join_multiplayer_room: {
@@ -20538,6 +20863,33 @@ export type Database = {
         }
         Returns: string
       }
+      log_quiz_event: {
+        Args: {
+          p_event_type: string
+          p_event_category: string
+          p_user_id?: string
+          p_guest_token?: string
+          p_session_id?: string
+          p_topic_id?: string
+          p_quiz_attempt_id?: string
+          p_question_id?: string
+          p_game_mode?: string
+          p_event_data?: Json
+          p_performance_data?: Json
+          p_response_time_ms?: number
+          p_time_since_question_start_ms?: number
+          p_time_since_quiz_start_ms?: number
+          p_platform?: string
+          p_device_type?: string
+          p_user_agent?: string
+          p_referrer_url?: string
+          p_page_url?: string
+          p_room_code?: string
+          p_team_id?: string
+          p_social_interaction_type?: string
+        }
+        Returns: string
+      }
       log_research_session_result: {
         Args: {
           p_session_id: string
@@ -20573,6 +20925,10 @@ export type Database = {
           annual_credits_granted: number
           lifetime_credits_granted: number
         }[]
+      }
+      process_invite_code: {
+        Args: { p_invite_code: string; p_invitee_id: string }
+        Returns: Json
       }
       record_game_event: {
         Args: {
@@ -20737,6 +21093,10 @@ export type Database = {
           p_response_time: number
           p_vs_human_performance?: number
         }
+        Returns: undefined
+      }
+      update_onboarding_progress: {
+        Args: { p_user_id: string; p_step_name: string; p_step_data?: Json }
         Returns: undefined
       }
       update_organization_bias_from_articles: {
@@ -21664,14 +22024,11 @@ export type DbAiCommandExecutions = Database['public']['Tables']['ai_command_exe
 export type DbAiResearchResults = Database['public']['Tables']['ai_research_results']['Row']
 export type DbAiResearchSessions = Database['public']['Tables']['ai_research_sessions']['Row']
 export type DbAiToolUsage = Database['public']['Tables']['ai_tool_usage']['Row']
+export type DbAnalyticsEvents = Database['public']['Tables']['analytics_events']['Row']
 export type DbArticleBiasAnalysis = Database['public']['Tables']['article_bias_analysis']['Row']
 export type DbAssessedEntities = Database['public']['Tables']['assessed_entities']['Row']
-export type DbAssessmentAnalytics = Database['public']['Tables']['assessment_analytics']['Row']
-export type DbAssessmentEngagement = Database['public']['Tables']['assessment_engagement']['Row']
 export type DbAssessmentEvidence = Database['public']['Tables']['assessment_evidence']['Row']
 export type DbAssessmentFrameworks = Database['public']['Tables']['assessment_frameworks']['Row']
-export type DbAssessmentQuestions = Database['public']['Tables']['assessment_questions']['Row']
-export type DbAssessmentScoring = Database['public']['Tables']['assessment_scoring']['Row']
 export type DbAssessmentSummaries = Database['public']['Tables']['assessment_summaries']['Row']
 export type DbAssessments = Database['public']['Tables']['assessments']['Row']
 export type DbAutoGeneratedEvents = Database['public']['Tables']['auto_generated_events']['Row']
@@ -21794,6 +22151,7 @@ export type DbNpcLearningProgression = Database['public']['Tables']['npc_learnin
 export type DbNpcPersonalities = Database['public']['Tables']['npc_personalities']['Row']
 export type DbNpcQuestionResponses = Database['public']['Tables']['npc_question_responses']['Row']
 export type DbNpcQuizAttempts = Database['public']['Tables']['npc_quiz_attempts']['Row']
+export type DbOnboardingInvites = Database['public']['Tables']['onboarding_invites']['Row']
 export type DbOrganizationBiasScores = Database['public']['Tables']['organization_bias_scores']['Row']
 export type DbOrganizations = Database['public']['Tables']['organizations']['Row']
 export type DbParentalControls = Database['public']['Tables']['parental_controls']['Row']
@@ -21844,7 +22202,6 @@ export type DbScheduledContentJobs = Database['public']['Tables']['scheduled_con
 export type DbShareableGiftLinks = Database['public']['Tables']['shareable_gift_links']['Row']
 export type DbShareableLinkClaims = Database['public']['Tables']['shareable_link_claims']['Row']
 export type DbSharedCollectionAccess = Database['public']['Tables']['shared_collection_access']['Row']
-export type DbSkillAssessmentCriteria = Database['public']['Tables']['skill_assessment_criteria']['Row']
 export type DbSkillBadges = Database['public']['Tables']['skill_badges']['Row']
 export type DbSkillCategories = Database['public']['Tables']['skill_categories']['Row']
 export type DbSkillLearningObjectives = Database['public']['Tables']['skill_learning_objectives']['Row']
@@ -21873,7 +22230,11 @@ export type DbTranslationJobs = Database['public']['Tables']['translation_jobs']
 export type DbTrendingSearches = Database['public']['Tables']['trending_searches']['Row']
 export type DbUserAchievements = Database['public']['Tables']['user_achievements']['Row']
 export type DbUserActiveBoosts = Database['public']['Tables']['user_active_boosts']['Row']
+export type DbUserAssessmentAnalytics = Database['public']['Tables']['user_assessment_analytics']['Row']
 export type DbUserAssessmentAttempts = Database['public']['Tables']['user_assessment_attempts']['Row']
+export type DbUserAssessmentEngagement = Database['public']['Tables']['user_assessment_engagement']['Row']
+export type DbUserAssessmentQuestions = Database['public']['Tables']['user_assessment_questions']['Row']
+export type DbUserAssessmentScoring = Database['public']['Tables']['user_assessment_scoring']['Row']
 export type DbUserAssessments = Database['public']['Tables']['user_assessments']['Row']
 export type DbUserBadges = Database['public']['Tables']['user_badges']['Row']
 export type DbUserBoostInventory = Database['public']['Tables']['user_boost_inventory']['Row']
@@ -21906,6 +22267,7 @@ export type DbUserRepresentatives = Database['public']['Tables']['user_represent
 export type DbUserRoles = Database['public']['Tables']['user_roles']['Row']
 export type DbUserScenarioAttempts = Database['public']['Tables']['user_scenario_attempts']['Row']
 export type DbUserScenarioDecisions = Database['public']['Tables']['user_scenario_decisions']['Row']
+export type DbUserSkillAssessmentCriteria = Database['public']['Tables']['user_skill_assessment_criteria']['Row']
 export type DbUserSkillPreferences = Database['public']['Tables']['user_skill_preferences']['Row']
 export type DbUserSkillProgress = Database['public']['Tables']['user_skill_progress']['Row']
 export type DbUserStreakHistory = Database['public']['Tables']['user_streak_history']['Row']
@@ -21922,14 +22284,11 @@ export type DbAiCommandExecutionsInsert = Database['public']['Tables']['ai_comma
 export type DbAiResearchResultsInsert = Database['public']['Tables']['ai_research_results']['Insert']
 export type DbAiResearchSessionsInsert = Database['public']['Tables']['ai_research_sessions']['Insert']
 export type DbAiToolUsageInsert = Database['public']['Tables']['ai_tool_usage']['Insert']
+export type DbAnalyticsEventsInsert = Database['public']['Tables']['analytics_events']['Insert']
 export type DbArticleBiasAnalysisInsert = Database['public']['Tables']['article_bias_analysis']['Insert']
 export type DbAssessedEntitiesInsert = Database['public']['Tables']['assessed_entities']['Insert']
-export type DbAssessmentAnalyticsInsert = Database['public']['Tables']['assessment_analytics']['Insert']
-export type DbAssessmentEngagementInsert = Database['public']['Tables']['assessment_engagement']['Insert']
 export type DbAssessmentEvidenceInsert = Database['public']['Tables']['assessment_evidence']['Insert']
 export type DbAssessmentFrameworksInsert = Database['public']['Tables']['assessment_frameworks']['Insert']
-export type DbAssessmentQuestionsInsert = Database['public']['Tables']['assessment_questions']['Insert']
-export type DbAssessmentScoringInsert = Database['public']['Tables']['assessment_scoring']['Insert']
 export type DbAssessmentSummariesInsert = Database['public']['Tables']['assessment_summaries']['Insert']
 export type DbAssessmentsInsert = Database['public']['Tables']['assessments']['Insert']
 export type DbAutoGeneratedEventsInsert = Database['public']['Tables']['auto_generated_events']['Insert']
@@ -22052,6 +22411,7 @@ export type DbNpcLearningProgressionInsert = Database['public']['Tables']['npc_l
 export type DbNpcPersonalitiesInsert = Database['public']['Tables']['npc_personalities']['Insert']
 export type DbNpcQuestionResponsesInsert = Database['public']['Tables']['npc_question_responses']['Insert']
 export type DbNpcQuizAttemptsInsert = Database['public']['Tables']['npc_quiz_attempts']['Insert']
+export type DbOnboardingInvitesInsert = Database['public']['Tables']['onboarding_invites']['Insert']
 export type DbOrganizationBiasScoresInsert = Database['public']['Tables']['organization_bias_scores']['Insert']
 export type DbOrganizationsInsert = Database['public']['Tables']['organizations']['Insert']
 export type DbParentalControlsInsert = Database['public']['Tables']['parental_controls']['Insert']
@@ -22102,7 +22462,6 @@ export type DbScheduledContentJobsInsert = Database['public']['Tables']['schedul
 export type DbShareableGiftLinksInsert = Database['public']['Tables']['shareable_gift_links']['Insert']
 export type DbShareableLinkClaimsInsert = Database['public']['Tables']['shareable_link_claims']['Insert']
 export type DbSharedCollectionAccessInsert = Database['public']['Tables']['shared_collection_access']['Insert']
-export type DbSkillAssessmentCriteriaInsert = Database['public']['Tables']['skill_assessment_criteria']['Insert']
 export type DbSkillBadgesInsert = Database['public']['Tables']['skill_badges']['Insert']
 export type DbSkillCategoriesInsert = Database['public']['Tables']['skill_categories']['Insert']
 export type DbSkillLearningObjectivesInsert = Database['public']['Tables']['skill_learning_objectives']['Insert']
@@ -22131,7 +22490,11 @@ export type DbTranslationJobsInsert = Database['public']['Tables']['translation_
 export type DbTrendingSearchesInsert = Database['public']['Tables']['trending_searches']['Insert']
 export type DbUserAchievementsInsert = Database['public']['Tables']['user_achievements']['Insert']
 export type DbUserActiveBoostsInsert = Database['public']['Tables']['user_active_boosts']['Insert']
+export type DbUserAssessmentAnalyticsInsert = Database['public']['Tables']['user_assessment_analytics']['Insert']
 export type DbUserAssessmentAttemptsInsert = Database['public']['Tables']['user_assessment_attempts']['Insert']
+export type DbUserAssessmentEngagementInsert = Database['public']['Tables']['user_assessment_engagement']['Insert']
+export type DbUserAssessmentQuestionsInsert = Database['public']['Tables']['user_assessment_questions']['Insert']
+export type DbUserAssessmentScoringInsert = Database['public']['Tables']['user_assessment_scoring']['Insert']
 export type DbUserAssessmentsInsert = Database['public']['Tables']['user_assessments']['Insert']
 export type DbUserBadgesInsert = Database['public']['Tables']['user_badges']['Insert']
 export type DbUserBoostInventoryInsert = Database['public']['Tables']['user_boost_inventory']['Insert']
@@ -22164,6 +22527,7 @@ export type DbUserRepresentativesInsert = Database['public']['Tables']['user_rep
 export type DbUserRolesInsert = Database['public']['Tables']['user_roles']['Insert']
 export type DbUserScenarioAttemptsInsert = Database['public']['Tables']['user_scenario_attempts']['Insert']
 export type DbUserScenarioDecisionsInsert = Database['public']['Tables']['user_scenario_decisions']['Insert']
+export type DbUserSkillAssessmentCriteriaInsert = Database['public']['Tables']['user_skill_assessment_criteria']['Insert']
 export type DbUserSkillPreferencesInsert = Database['public']['Tables']['user_skill_preferences']['Insert']
 export type DbUserSkillProgressInsert = Database['public']['Tables']['user_skill_progress']['Insert']
 export type DbUserStreakHistoryInsert = Database['public']['Tables']['user_streak_history']['Insert']
@@ -22180,14 +22544,11 @@ export type DbAiCommandExecutionsUpdate = Database['public']['Tables']['ai_comma
 export type DbAiResearchResultsUpdate = Database['public']['Tables']['ai_research_results']['Update']
 export type DbAiResearchSessionsUpdate = Database['public']['Tables']['ai_research_sessions']['Update']
 export type DbAiToolUsageUpdate = Database['public']['Tables']['ai_tool_usage']['Update']
+export type DbAnalyticsEventsUpdate = Database['public']['Tables']['analytics_events']['Update']
 export type DbArticleBiasAnalysisUpdate = Database['public']['Tables']['article_bias_analysis']['Update']
 export type DbAssessedEntitiesUpdate = Database['public']['Tables']['assessed_entities']['Update']
-export type DbAssessmentAnalyticsUpdate = Database['public']['Tables']['assessment_analytics']['Update']
-export type DbAssessmentEngagementUpdate = Database['public']['Tables']['assessment_engagement']['Update']
 export type DbAssessmentEvidenceUpdate = Database['public']['Tables']['assessment_evidence']['Update']
 export type DbAssessmentFrameworksUpdate = Database['public']['Tables']['assessment_frameworks']['Update']
-export type DbAssessmentQuestionsUpdate = Database['public']['Tables']['assessment_questions']['Update']
-export type DbAssessmentScoringUpdate = Database['public']['Tables']['assessment_scoring']['Update']
 export type DbAssessmentSummariesUpdate = Database['public']['Tables']['assessment_summaries']['Update']
 export type DbAssessmentsUpdate = Database['public']['Tables']['assessments']['Update']
 export type DbAutoGeneratedEventsUpdate = Database['public']['Tables']['auto_generated_events']['Update']
@@ -22310,6 +22671,7 @@ export type DbNpcLearningProgressionUpdate = Database['public']['Tables']['npc_l
 export type DbNpcPersonalitiesUpdate = Database['public']['Tables']['npc_personalities']['Update']
 export type DbNpcQuestionResponsesUpdate = Database['public']['Tables']['npc_question_responses']['Update']
 export type DbNpcQuizAttemptsUpdate = Database['public']['Tables']['npc_quiz_attempts']['Update']
+export type DbOnboardingInvitesUpdate = Database['public']['Tables']['onboarding_invites']['Update']
 export type DbOrganizationBiasScoresUpdate = Database['public']['Tables']['organization_bias_scores']['Update']
 export type DbOrganizationsUpdate = Database['public']['Tables']['organizations']['Update']
 export type DbParentalControlsUpdate = Database['public']['Tables']['parental_controls']['Update']
@@ -22360,7 +22722,6 @@ export type DbScheduledContentJobsUpdate = Database['public']['Tables']['schedul
 export type DbShareableGiftLinksUpdate = Database['public']['Tables']['shareable_gift_links']['Update']
 export type DbShareableLinkClaimsUpdate = Database['public']['Tables']['shareable_link_claims']['Update']
 export type DbSharedCollectionAccessUpdate = Database['public']['Tables']['shared_collection_access']['Update']
-export type DbSkillAssessmentCriteriaUpdate = Database['public']['Tables']['skill_assessment_criteria']['Update']
 export type DbSkillBadgesUpdate = Database['public']['Tables']['skill_badges']['Update']
 export type DbSkillCategoriesUpdate = Database['public']['Tables']['skill_categories']['Update']
 export type DbSkillLearningObjectivesUpdate = Database['public']['Tables']['skill_learning_objectives']['Update']
@@ -22389,7 +22750,11 @@ export type DbTranslationJobsUpdate = Database['public']['Tables']['translation_
 export type DbTrendingSearchesUpdate = Database['public']['Tables']['trending_searches']['Update']
 export type DbUserAchievementsUpdate = Database['public']['Tables']['user_achievements']['Update']
 export type DbUserActiveBoostsUpdate = Database['public']['Tables']['user_active_boosts']['Update']
+export type DbUserAssessmentAnalyticsUpdate = Database['public']['Tables']['user_assessment_analytics']['Update']
 export type DbUserAssessmentAttemptsUpdate = Database['public']['Tables']['user_assessment_attempts']['Update']
+export type DbUserAssessmentEngagementUpdate = Database['public']['Tables']['user_assessment_engagement']['Update']
+export type DbUserAssessmentQuestionsUpdate = Database['public']['Tables']['user_assessment_questions']['Update']
+export type DbUserAssessmentScoringUpdate = Database['public']['Tables']['user_assessment_scoring']['Update']
 export type DbUserAssessmentsUpdate = Database['public']['Tables']['user_assessments']['Update']
 export type DbUserBadgesUpdate = Database['public']['Tables']['user_badges']['Update']
 export type DbUserBoostInventoryUpdate = Database['public']['Tables']['user_boost_inventory']['Update']
@@ -22422,6 +22787,7 @@ export type DbUserRepresentativesUpdate = Database['public']['Tables']['user_rep
 export type DbUserRolesUpdate = Database['public']['Tables']['user_roles']['Update']
 export type DbUserScenarioAttemptsUpdate = Database['public']['Tables']['user_scenario_attempts']['Update']
 export type DbUserScenarioDecisionsUpdate = Database['public']['Tables']['user_scenario_decisions']['Update']
+export type DbUserSkillAssessmentCriteriaUpdate = Database['public']['Tables']['user_skill_assessment_criteria']['Update']
 export type DbUserSkillPreferencesUpdate = Database['public']['Tables']['user_skill_preferences']['Update']
 export type DbUserSkillProgressUpdate = Database['public']['Tables']['user_skill_progress']['Update']
 export type DbUserStreakHistoryUpdate = Database['public']['Tables']['user_streak_history']['Update']
@@ -22436,6 +22802,7 @@ export type DbAiGeneratedTopicsView = Database['public']['Views']['ai_generated_
 export type DbAssessmentQuestionStatsView = Database['public']['Views']['assessment_question_stats']['Row']
 export type DbCampaignPerformanceView = Database['public']['Views']['campaign_performance']['Row']
 export type DbCivicEngagementImpactView = Database['public']['Views']['civic_engagement_impact']['Row']
+export type DbCivicLearningImpactView = Database['public']['Views']['civic_learning_impact']['Row']
 export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_attempts']['Row']
 export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
 export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
@@ -22457,6 +22824,7 @@ export type DbProviderPerformanceView = Database['public']['Views']['provider_pe
 export type DbQuestionFeedbackStatsView = Database['public']['Views']['question_feedback_stats']['Row']
 export type DbQuestionResponseStatsView = Database['public']['Views']['question_response_stats']['Row']
 export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
+export type DbResponseTimeAnalyticsView = Database['public']['Views']['response_time_analytics']['Row']
 export type DbSurveySummaryView = Database['public']['Views']['survey_summary']['Row']
 export type DbTranslationJobStatsView = Database['public']['Views']['translation_job_stats']['Row']
 export type DbUserComprehensiveStatsView = Database['public']['Views']['user_comprehensive_stats']['Row']
@@ -22661,6 +23029,9 @@ export type DbGetGuestTestSummaryReturns = Database['public']['Functions']['get_
 export type DbGetJobsReadyForExecutionFunction = Database['public']['Functions']['get_jobs_ready_for_execution']
 export type DbGetJobsReadyForExecutionArgs = Database['public']['Functions']['get_jobs_ready_for_execution']['Args']
 export type DbGetJobsReadyForExecutionReturns = Database['public']['Functions']['get_jobs_ready_for_execution']['Returns']
+export type DbGetMemberPhotoUrlsFunction = Database['public']['Functions']['get_member_photo_urls']
+export type DbGetMemberPhotoUrlsArgs = Database['public']['Functions']['get_member_photo_urls']['Args']
+export type DbGetMemberPhotoUrlsReturns = Database['public']['Functions']['get_member_photo_urls']['Returns']
 export type DbGetNpcCategoryPerformanceFunction = Database['public']['Functions']['get_npc_category_performance']
 export type DbGetNpcCategoryPerformanceArgs = Database['public']['Functions']['get_npc_category_performance']['Args']
 export type DbGetNpcCategoryPerformanceReturns = Database['public']['Functions']['get_npc_category_performance']['Returns']
@@ -22685,6 +23056,9 @@ export type DbGetOrCreateTagReturns = Database['public']['Functions']['get_or_cr
 export type DbGetPeopleHelpedByDonorFunction = Database['public']['Functions']['get_people_helped_by_donor']
 export type DbGetPeopleHelpedByDonorArgs = Database['public']['Functions']['get_people_helped_by_donor']['Args']
 export type DbGetPeopleHelpedByDonorReturns = Database['public']['Functions']['get_people_helped_by_donor']['Returns']
+export type DbGetPersonalizedQuizzesFunction = Database['public']['Functions']['get_personalized_quizzes']
+export type DbGetPersonalizedQuizzesArgs = Database['public']['Functions']['get_personalized_quizzes']['Args']
+export type DbGetPersonalizedQuizzesReturns = Database['public']['Functions']['get_personalized_quizzes']['Returns']
 export type DbGetPodAnalyticsFunction = Database['public']['Functions']['get_pod_analytics']
 export type DbGetPodAnalyticsArgs = Database['public']['Functions']['get_pod_analytics']['Args']
 export type DbGetPodAnalyticsReturns = Database['public']['Functions']['get_pod_analytics']['Returns']
@@ -22823,9 +23197,6 @@ export type DbIsContentAppropriateForUserReturns = Database['public']['Functions
 export type DbIsEducationalEmailFunction = Database['public']['Functions']['is_educational_email']
 export type DbIsEducationalEmailArgs = Database['public']['Functions']['is_educational_email']['Args']
 export type DbIsEducationalEmailReturns = Database['public']['Functions']['is_educational_email']['Returns']
-export type DbIsSuperAdminUserFunction = Database['public']['Functions']['is_super_admin_user']
-export type DbIsSuperAdminUserArgs = Database['public']['Functions']['is_super_admin_user']['Args']
-export type DbIsSuperAdminUserReturns = Database['public']['Functions']['is_super_admin_user']['Returns']
 export type DbJoinMultiplayerRoomFunction = Database['public']['Functions']['join_multiplayer_room']
 export type DbJoinMultiplayerRoomArgs = Database['public']['Functions']['join_multiplayer_room']['Args']
 export type DbJoinMultiplayerRoomReturns = Database['public']['Functions']['join_multiplayer_room']['Returns']
@@ -22844,6 +23215,9 @@ export type DbLinkQuestionToSourceReturns = Database['public']['Functions']['lin
 export type DbLogPodActivityFunction = Database['public']['Functions']['log_pod_activity']
 export type DbLogPodActivityArgs = Database['public']['Functions']['log_pod_activity']['Args']
 export type DbLogPodActivityReturns = Database['public']['Functions']['log_pod_activity']['Returns']
+export type DbLogQuizEventFunction = Database['public']['Functions']['log_quiz_event']
+export type DbLogQuizEventArgs = Database['public']['Functions']['log_quiz_event']['Args']
+export type DbLogQuizEventReturns = Database['public']['Functions']['log_quiz_event']['Returns']
 export type DbLogResearchSessionResultFunction = Database['public']['Functions']['log_research_session_result']
 export type DbLogResearchSessionResultArgs = Database['public']['Functions']['log_research_session_result']['Args']
 export type DbLogResearchSessionResultReturns = Database['public']['Functions']['log_research_session_result']['Returns']
@@ -22856,6 +23230,9 @@ export type DbPopulateHistoricalAnalyticsReturns = Database['public']['Functions
 export type DbProcessDonationGiftCreditsFunction = Database['public']['Functions']['process_donation_gift_credits']
 export type DbProcessDonationGiftCreditsArgs = Database['public']['Functions']['process_donation_gift_credits']['Args']
 export type DbProcessDonationGiftCreditsReturns = Database['public']['Functions']['process_donation_gift_credits']['Returns']
+export type DbProcessInviteCodeFunction = Database['public']['Functions']['process_invite_code']
+export type DbProcessInviteCodeArgs = Database['public']['Functions']['process_invite_code']['Args']
+export type DbProcessInviteCodeReturns = Database['public']['Functions']['process_invite_code']['Returns']
 export type DbRecordGameEventFunction = Database['public']['Functions']['record_game_event']
 export type DbRecordGameEventArgs = Database['public']['Functions']['record_game_event']['Args']
 export type DbRecordGameEventReturns = Database['public']['Functions']['record_game_event']['Returns']
@@ -22916,6 +23293,9 @@ export type DbUpdateMemberAnalyticsReturns = Database['public']['Functions']['up
 export type DbUpdateNpcLearningFunction = Database['public']['Functions']['update_npc_learning']
 export type DbUpdateNpcLearningArgs = Database['public']['Functions']['update_npc_learning']['Args']
 export type DbUpdateNpcLearningReturns = Database['public']['Functions']['update_npc_learning']['Returns']
+export type DbUpdateOnboardingProgressFunction = Database['public']['Functions']['update_onboarding_progress']
+export type DbUpdateOnboardingProgressArgs = Database['public']['Functions']['update_onboarding_progress']['Args']
+export type DbUpdateOnboardingProgressReturns = Database['public']['Functions']['update_onboarding_progress']['Returns']
 export type DbUpdateOrganizationBiasFromArticlesFunction = Database['public']['Functions']['update_organization_bias_from_articles']
 export type DbUpdateOrganizationBiasFromArticlesArgs = Database['public']['Functions']['update_organization_bias_from_articles']['Args']
 export type DbUpdateOrganizationBiasFromArticlesReturns = Database['public']['Functions']['update_organization_bias_from_articles']['Returns']

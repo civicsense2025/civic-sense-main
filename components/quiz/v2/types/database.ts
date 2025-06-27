@@ -209,9 +209,9 @@ export function createQuizAttemptUpdate(
 // Convert database row to typed attempt data
 export function parseQuizAttempt(row: DbQuizAttempt): QuizAttemptData {
   return {
-    id: row.id,
-    user_id: row.user_id,
-    topic_id: row.topic_id,
+    id: row.id!,
+    user_id: row.user_id!,
+    topic_id: row.topic_id!,
     game_mode: row.game_mode as QuizGameMode,
     mode_settings: row.mode_settings as unknown as QuizModeSettings,
     game_metadata: row.game_metadata as unknown as GameMetadata,

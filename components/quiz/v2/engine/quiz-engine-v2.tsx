@@ -1,246 +1,91 @@
 "use client"
 
-import React, { useReducer, useEffect, useCallback, useRef, useMemo } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
-
-// Import plugin system
-import { gameModeRegistry, ensureGameModesInitialized } from '../modes'
-import type { 
-  GameModePlugin, 
-  QuizEngineContext, 
-  QuizEngineActions, 
-  GameModeAction
-} from '../modes/types'
-
-// Import database types from local v2 folder
-import type { 
-  QuizAttemptData, 
-  QuizModeSettings, 
-  GameMetadata, 
-  UserAnswer,
-} from '../types/database'
-
-// Import existing quiz types
-import type { QuizGameMode, QuizQuestion, QuizResults, QuizTopic } from '@/lib/types/quiz'
-
-// Import shared components (keeping existing visuals)
-import { QuizQuestion as QuestionRenderer } from '../components/question-renderer'
-import { QuizResults as ResultsDisplay } from '@/components/quiz/quiz-results'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 
-// Enhanced progress storage integration
-import { EnhancedProgressAdapter } from '../storage/enhanced-progress-adapter'
-import type { QuizState as BaseQuizState, QuizConfig, QuizPluginContext } from '../types'
+// Import existing quiz types
+import type { QuizQuestion, QuizResults, QuizTopic, QuizGameMode } from '@/lib/types/quiz'
+import { quizSaveManager } from '@/lib/quiz-save-manager'
+
+// Import game modes
+import { getGameMode, type GameModeId, type StandardModeSettings, type AIBattleSettings, type PVPSettings } from '../modes'
 
 interface QuizEngineV2Props {
-  questions: QuizQuestion[]
-  topicId: string
-  currentTopic: QuizTopic
-  mode: QuizGameMode
+  // For single topic mode (backwards compatibility)
+  topicId?: string
+  questions?: QuizQuestion[]
+  currentTopic?: QuizTopic | null
+  
+  // For multi-topic mode (future)
+  topics?: string[]
+  allQuestions?: Record<string, QuizQuestion[]>
+  
+  // Mode and settings
+  mode?: GameModeId | QuizGameMode // Support both old and new mode types
+  settings?: StandardModeSettings | AIBattleSettings | PVPSettings
+  
+  // Callbacks
   onComplete: (results: QuizResults) => void
   onExit?: () => void
+  
+  // Auth
   userId?: string
   guestToken?: string
   resumedAttemptId?: string
   
-  // LMS integration
+  // Learning context
   podId?: string
   classroomCourseId?: string
   classroomAssignmentId?: string
   cleverSectionId?: string
 }
 
-// Quiz engine state
-interface QuizEngineState {
-  // Core quiz state
-  currentQuestionIndex: number
-  userAnswers: UserAnswer[]
-  score: number
-  streak: number
-  maxStreak: number
-  timeRemaining: number | null
-  isCompleted: boolean
-  showResults: boolean
-  
-  // Session management
-  sessionId: string
-  startTime: number
-  attemptData?: QuizAttemptData
-  
-  // Mode-specific state
-  modeState: any
-  modeSettings: QuizModeSettings
-  gameMetadata: GameMetadata
-  
-  // UI state
-  isLoading: boolean
-  error: string | null
-  showModal: boolean
-  modalContent: React.ReactNode | null
+// Helper to get question ID
+const getQuestionId = (question: QuizQuestion): string => {
+  // Use topic_id and question_number for unique ID
+  return `${question.topic_id}_${question.question_number}`
 }
 
-// Quiz engine actions
-type QuizEngineActionType =
-  | { type: 'INITIALIZE'; payload: { plugin: GameModePlugin; settings: QuizModeSettings } }
-  | { type: 'START_QUIZ' }
-  | { type: 'ANSWER_QUESTION'; payload: { answer: string; timeSpent: number } }
-  | { type: 'NEXT_QUESTION' }
-  | { type: 'PREVIOUS_QUESTION' }
-  | { type: 'GO_TO_QUESTION'; payload: { index: number } }
-  | { type: 'USE_HINT' }
-  | { type: 'USE_POWERUP'; payload: { powerup: string } }
-  | { type: 'TIMER_TICK'; payload: { timeRemaining: number } }
-  | { type: 'UPDATE_MODE_STATE'; payload: any }
-  | { type: 'UPDATE_GAME_METADATA'; payload: GameMetadata }
-  | { type: 'COMPLETE_QUIZ'; payload?: Partial<QuizResults> }
-  | { type: 'SHOW_MODAL'; payload: { content: React.ReactNode } }
-  | { type: 'HIDE_MODAL' }
-  | { type: 'SET_ERROR'; payload: { error: string } }
-  | { type: 'SET_LOADING'; payload: { isLoading: boolean } }
-  | { type: 'RESTORE_PROGRESS'; payload: Partial<QuizEngineState> }
-
-// Quiz engine reducer
-function quizEngineReducer(state: QuizEngineState, action: QuizEngineActionType): QuizEngineState {
-  switch (action.type) {
-    case 'INITIALIZE':
-      const { plugin, settings } = action.payload
-      const initialModeState = plugin.getInitialState?.() || null
-      
-      return {
-        ...state,
-        modeState: initialModeState,
-        modeSettings: settings,
-        isLoading: false
-      }
-      
-    case 'START_QUIZ':
-      return {
-        ...state,
-        startTime: Date.now(),
-        currentQuestionIndex: 0,
-        userAnswers: [],
-        score: 0,
-        streak: 0,
-        maxStreak: 0,
-        isCompleted: false,
-        showResults: false
-      }
-      
-    case 'ANSWER_QUESTION':
-      const { answer, timeSpent } = action.payload
-      const currentQuestion = state.currentQuestionIndex
-      const correctAnswer = state.userAnswers[currentQuestion]?.isCorrect || false
-      
-      const newAnswer: UserAnswer = {
-        questionId: currentQuestion,
-        answer,
-        isCorrect: correctAnswer, // Will be determined by mode plugin
-        timeSpent
-      }
-      
-      const newAnswers = [...state.userAnswers]
-      newAnswers[currentQuestion] = newAnswer
-      
-      // Update streak
-      const newStreak = correctAnswer ? state.streak + 1 : 0
-      const newMaxStreak = Math.max(state.maxStreak, newStreak)
-      
-      return {
-        ...state,
-        userAnswers: newAnswers,
-        streak: newStreak,
-        maxStreak: newMaxStreak
-      }
-      
-    case 'NEXT_QUESTION':
-      return {
-        ...state,
-        currentQuestionIndex: Math.min(state.currentQuestionIndex + 1, state.userAnswers.length - 1)
-      }
-      
-    case 'PREVIOUS_QUESTION':
-      return {
-        ...state,
-        currentQuestionIndex: Math.max(0, state.currentQuestionIndex - 1)
-      }
-      
-    case 'GO_TO_QUESTION':
-      return {
-        ...state,
-        currentQuestionIndex: Math.max(0, Math.min(action.payload.index, state.userAnswers.length - 1))
-      }
-      
-    case 'UPDATE_MODE_STATE':
-      return {
-        ...state,
-        modeState: action.payload
-      }
-      
-    case 'UPDATE_GAME_METADATA':
-      return {
-        ...state,
-        gameMetadata: action.payload
-      }
-      
-    case 'COMPLETE_QUIZ':
-      return {
-        ...state,
-        isCompleted: true,
-        showResults: true
-      }
-      
-    case 'SHOW_MODAL':
-      return {
-        ...state,
-        showModal: true,
-        modalContent: action.payload.content
-      }
-      
-    case 'HIDE_MODAL':
-      return {
-        ...state,
-        showModal: false,
-        modalContent: null
-      }
-      
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload.error,
-        isLoading: false
-      }
-      
-    case 'SET_LOADING':
-      return {
-        ...state,
-        isLoading: action.payload.isLoading
-      }
-      
-    case 'TIMER_TICK':
-      return {
-        ...state,
-        timeRemaining: action.payload.timeRemaining
-      }
-      
-    case 'RESTORE_PROGRESS':
-      return {
-        ...state,
-        ...action.payload
-      }
-      
-    default:
-      return state
+// Helper to get question options
+const getQuestionOptions = (question: QuizQuestion): string[] => {
+  // Handle different question types
+  if (question.type === 'multiple_choice' && question.options) {
+    return question.options
   }
+  
+  if (question.type === 'true_false') {
+    return ['True', 'False']
+  }
+  
+  // For questions without type or with legacy format
+  if ('option_a' in question) {
+    const options = [
+      question.correct_answer,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((opt): opt is string => Boolean(opt) && opt !== question.correct_answer)
+    
+    // Add correct answer and shuffle
+    return [question.correct_answer, ...options].sort(() => Math.random() - 0.5)
+  }
+  
+  // Default: just return correct answer as single option
+  return [question.correct_answer]
 }
 
 export function QuizEngineV2({
-  questions,
   topicId,
-  currentTopic,
-  mode,
+  questions: singleTopicQuestions,
+  topics,
+  allQuestions,
+  mode = 'standard',
+  settings,
   onComplete,
   onExit,
   userId,
@@ -251,493 +96,385 @@ export function QuizEngineV2({
   classroomAssignmentId,
   cleverSectionId
 }: QuizEngineV2Props) {
-  // Ensure game modes are initialized before using registry
-  ensureGameModesInitialized()
+  const router = useRouter()
+  const [isClient, setIsClient] = useState(false)
   
-  // Get the mode plugin
-  const modePlugin = gameModeRegistry.get(mode)
+  // Map old mode names to new ones if needed
+  const mappedMode = (mode === 'standard' || mode === 'ai-battle' || mode === 'pvp') 
+    ? mode as GameModeId 
+    : 'standard' // Default to standard for all other modes
   
-  if (!modePlugin) {
-    throw new Error(`Game mode "${mode}" is not registered`)
-  }
+  // Get game mode (with fallback to standard)
+  const gameMode = getGameMode(mappedMode) || getGameMode('standard')
+  const modeSettings = settings || gameMode?.defaultSettings
   
-  // Generate session ID
-  const sessionId = useRef(resumedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
-  
-  // Initialize state
-  const initialState: QuizEngineState = {
-    currentQuestionIndex: 0,
-    userAnswers: [],
-    score: 0,
-    streak: 0,
-    maxStreak: 0,
-    timeRemaining: null,
-    isCompleted: false,
-    showResults: false,
-    sessionId: sessionId.current,
-    startTime: Date.now(),
-    modeState: null,
-    modeSettings: modePlugin.config.settings,
-    gameMetadata: {
-      power_ups_used: [],
-      achievements_earned: [],
-      social_interactions: []
-    },
-    isLoading: true,
-    error: null,
-    showModal: false,
-    modalContent: null
-  }
-  
-  const [state, dispatch] = useReducer(quizEngineReducer, initialState)
-  
-  // Progress adapter
-  const progressAdapter = useRef<EnhancedProgressAdapter | null>(null)
-  
-  // Initialize progress adapter
-  useEffect(() => {
-    progressAdapter.current = new EnhancedProgressAdapter({
-      userId,
-      guestToken,
-      sessionId: sessionId.current,
-      topicId,
-      mode: mode as string,
-    })
-    
-    // Try to restore progress
-    const restoreProgress = async () => {
-      const savedProgress = await progressAdapter.current!.loadProgress()
-      if (savedProgress) {
-        dispatch({ type: 'RESTORE_PROGRESS', payload: savedProgress as any })
-        toast({
-          title: "Welcome back! 👋",
-          description: "Your progress has been restored.",
-        })
-      }
-      dispatch({ type: 'SET_LOADING', payload: { isLoading: false } })
+  // Process questions
+  const processedQuestions = React.useMemo(() => {
+    if (singleTopicQuestions) {
+      return singleTopicQuestions
     }
     
-    restoreProgress()
-  }, [userId, guestToken, topicId, mode])
+    // Future: multi-topic support
+    if (topics && allQuestions) {
+      let combined: QuizQuestion[] = []
+      for (const topic of topics) {
+        const topicQs = allQuestions[topic] || []
+        combined = [...combined, ...topicQs]
+      }
+      return combined
+    }
+    
+    return []
+  }, [singleTopicQuestions, topics, allQuestions])
   
-  // Timer management
+  // State
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [showResults, setShowResults] = useState(false)
+  const [streak, setStreak] = useState(0)
+  const [maxStreak, setMaxStreak] = useState(0)
+  const startTimeRef = useRef(Date.now())
+  const questionStartTimeRef = useRef(Date.now())
+  const [responseTimes, setResponseTimes] = useState<Record<string, number>>({})
+  
+  // Timer state
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   
-  const startTimer = useCallback((timeLimit: number) => {
-    if (timerRef.current) clearInterval(timerRef.current)
+  const currentQuestion = processedQuestions[currentQuestionIndex]
+  const hasTimeLimit = (modeSettings as StandardModeSettings)?.timeLimit !== null && 
+                       (modeSettings as StandardModeSettings)?.timeLimit !== undefined
+  const timeLimit = (modeSettings as StandardModeSettings)?.timeLimit || 0
+  
+  // Initialize
+  useEffect(() => {
+    setIsClient(true)
     
-    let remaining = timeLimit
-    dispatch({ type: 'TIMER_TICK', payload: { timeRemaining: remaining } })
-    
-    timerRef.current = setInterval(() => {
-      remaining -= 1
-      dispatch({ type: 'TIMER_TICK', payload: { timeRemaining: remaining } })
-      
-      if (remaining <= 0) {
-        clearInterval(timerRef.current!)
-        // Auto-submit on timeout
-        actions.submitAnswer('')
-      }
-    }, 1000)
+    // Call mode start hook
+    if (gameMode?.onModeStart) {
+      gameMode.onModeStart(modeSettings)
+    }
   }, [])
   
-  const stopTimer = useCallback(() => {
+  // Timer effect
+  useEffect(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
     }
-  }, [])
-  
-  // Convert state to BaseQuizState for progress storage
-  const convertToBaseQuizState = useCallback((): BaseQuizState => {
-    const answers: { [questionId: string]: string } = {}
-    const questionTimes: { [questionId: string]: number } = {}
-    let correctAnswers = 0
     
-    state.userAnswers.forEach((answer, index) => {
-      const questionNumber = questions[index]?.question_number || index
-      const questionId = questionNumber.toString()
-      answers[questionId] = answer.answer
-      questionTimes[questionId] = answer.timeSpent
-      if (answer.isCorrect) correctAnswers++
-    })
-    
-    return {
-      currentQuestionIndex: state.currentQuestionIndex,
-      answers,
-      score: state.score,
-      correctAnswers,
-      streak: state.streak,
-      maxStreak: state.maxStreak,
-      timeRemaining: state.timeRemaining,
-      startTime: state.startTime,
-      questionTimes,
-      categoryScores: state.gameMetadata.custom?.categoryScores,
-      isCompleted: state.isCompleted,
-      showResults: state.showResults
-    }
-  }, [state, questions])
-  
-  // Create context first, before using it in actions
-  const context: QuizEngineContext = useMemo(() => ({
-    questions,
-    currentQuestionIndex: state.currentQuestionIndex,
-    userAnswers: state.userAnswers,
-    timeRemaining: state.timeRemaining,
-    score: state.score,
-    streak: state.streak,
-    maxStreak: state.maxStreak,
-    sessionId: state.sessionId,
-    startTime: state.startTime,
-    attemptData: state.attemptData,
-    userId,
-    guestToken,
-    isAuthenticated: !!userId,
-    topicId,
-    topicData: currentTopic,
-    modeState: state.modeState,
-    modeSettings: state.modeSettings,
-    gameMetadata: state.gameMetadata,
-    actions: {} as QuizEngineActions // Placeholder, will be replaced
-  }), [state, questions, userId, guestToken, topicId, currentTopic])
-  
-  // Quiz engine actions that plugins can use
-  const actions: QuizEngineActions = useMemo(() => ({
-    goToNextQuestion: () => dispatch({ type: 'NEXT_QUESTION' }),
-    goToPreviousQuestion: () => dispatch({ type: 'PREVIOUS_QUESTION' }),
-    goToQuestion: (index: number) => dispatch({ type: 'GO_TO_QUESTION', payload: { index } }),
-    
-    submitAnswer: async (answer: string) => {
-      const startTime = Date.now()
-      const timeSpent = (startTime - state.startTime) / 1000
+    if (hasTimeLimit && !showResults && currentQuestion) {
+      setTimeRemaining(timeLimit)
       
-      // Let plugin validate the answer
-      const isValid = await modePlugin.onAnswerSubmit?.({
-        questionId: state.currentQuestionIndex,
-        answer,
-        isCorrect: false, // Will be determined
-        timeSpent
-      }, context)
-      
-      if (isValid !== false) {
-        dispatch({ type: 'ANSWER_QUESTION', payload: { answer, timeSpent } })
-        
-        // Save question response
-        if (progressAdapter.current) {
-          const currentQuestion = questions[state.currentQuestionIndex]
-          const isCorrect = currentQuestion?.correct_answer === answer
-          const questionNumber = currentQuestion?.question_number || state.currentQuestionIndex
-          await progressAdapter.current.saveQuestionResponse(
-            questionNumber.toString(),
-            state.currentQuestionIndex,
-            answer,
-            isCorrect,
-            timeSpent
-          )
-        }
-      }
-    },
-    
-    setAnswerConfidence: (confidence: number) => {
-      // Store confidence for analytics
-    },
-    
-    useHint: () => {
-      dispatch({ type: 'USE_POWERUP', payload: { powerup: 'hint' } })
-    },
-    
-    skipQuestion: () => {
-      actions.submitAnswer('') // Submit empty answer
-    },
-    
-    pauseTimer: () => stopTimer(),
-    resumeTimer: () => {
-      if (state.timeRemaining) {
-        startTimer(state.timeRemaining)
-      }
-    },
-    extendTime: (seconds: number) => {
-      if (state.timeRemaining) {
-        dispatch({ type: 'TIMER_TICK', payload: { timeRemaining: state.timeRemaining + seconds } })
-      }
-    },
-    
-    updateModeState: (update: any) => {
-      dispatch({ type: 'UPDATE_MODE_STATE', payload: update })
-    },
-    
-    updateGameMetadata: (update: GameMetadata) => {
-      dispatch({ type: 'UPDATE_GAME_METADATA', payload: update })
-    },
-    
-    showModal: (content: React.ReactNode) => {
-      dispatch({ type: 'SHOW_MODAL', payload: { content } })
-    },
-    
-    hideModal: () => {
-      dispatch({ type: 'HIDE_MODAL' })
-    },
-    
-    showToast: (message: string, type?: 'success' | 'error' | 'info') => {
-      toast({
-        title: message,
-        variant: type === 'error' ? 'destructive' : 'default'
-      })
-    },
-    
-    saveProgress: () => {
-      if (progressAdapter.current) {
-        const config: QuizConfig = {
-          questions,
-          topicId,
-          topicData: currentTopic,
-          mode,
-          practiceMode: false,
-          settings: state.modeSettings
-        }
-        
-        const pluginContext: QuizPluginContext = {
-          userId,
-          guestToken,
-          sessionId: sessionId.current,
-          metadata: { podId, classroomCourseId, classroomAssignmentId, cleverSectionId }
-        }
-        
-        const baseState = convertToBaseQuizState()
-        progressAdapter.current.saveProgress(baseState, config, pluginContext)
-      }
-    },
-    
-    clearProgress: () => {
-      if (progressAdapter.current) {
-        progressAdapter.current.clearProgress()
-      }
-    },
-    
-    completeQuiz: (results?: Partial<QuizResults>) => {
-      dispatch({ type: 'COMPLETE_QUIZ', payload: results })
-    },
-    
-    exitQuiz: () => {
-      actions.clearProgress()
-      onExit?.()
-    }
-  }), [state, modePlugin, userId, guestToken, topicId, currentTopic, mode, questions, onExit, stopTimer, startTimer, convertToBaseQuizState, podId, classroomCourseId, classroomAssignmentId, cleverSectionId, context])
-  
-  // Update context with actions
-  const contextWithActions = useMemo(() => ({
-    ...context,
-    actions
-  }), [context, actions])
-  
-  // Save progress on state changes
-  useEffect(() => {
-    if (!progressAdapter.current || state.isLoading || state.isCompleted) return
-    
-    const config: QuizConfig = {
-      questions,
-      topicId,
-      topicData: currentTopic,
-      mode,
-      practiceMode: false,
-      settings: state.modeSettings
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev === null || prev <= 0) {
+            handleAnswer('') // Auto-submit empty answer
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
     }
     
-    const pluginContext: QuizPluginContext = {
-      userId,
-      guestToken,
-      sessionId: sessionId.current,
-      attemptId: resumedAttemptId,
-      metadata: {
-        podId,
-        classroomCourseId,
-        classroomAssignmentId,
-        cleverSectionId
-      }
-    }
-    
-    const baseState = convertToBaseQuizState()
-    progressAdapter.current.saveProgress(baseState, config, pluginContext)
-  }, [state.currentQuestionIndex, state.userAnswers, state.score, convertToBaseQuizState, questions, topicId, currentTopic, mode, userId, guestToken, resumedAttemptId, podId, classroomCourseId, classroomAssignmentId, cleverSectionId])
-  
-  // Initialize the mode plugin
-  useEffect(() => {
-    if (modePlugin && !state.isLoading) {
-      dispatch({ 
-        type: 'INITIALIZE', 
-        payload: { 
-          plugin: modePlugin, 
-          settings: modePlugin.config.settings 
-        } 
-      })
-      
-      // Call plugin initialization
-      modePlugin.onModeStart?.(contextWithActions)
-      dispatch({ type: 'START_QUIZ' })
-    }
-  }, [modePlugin, state.isLoading, contextWithActions])
-  
-  // Handle quiz completion
-  useEffect(() => {
-    if (state.isCompleted && state.showResults) {
-      const results: QuizResults = {
-        totalQuestions: questions.length,
-        correctAnswers: state.userAnswers.filter(a => a.isCorrect).length,
-        incorrectAnswers: state.userAnswers.filter(a => !a.isCorrect).length,
-        score: state.score,
-        timeTaken: (Date.now() - state.startTime) / 1000,
-        timeSpentSeconds: (Date.now() - state.startTime) / 1000,
-        questions: questions.map((q, i) => ({
-          question: q,
-          userAnswer: state.userAnswers[i]?.answer || '',
-          isCorrect: state.userAnswers[i]?.isCorrect || false
-        }))
-      }
-      
-      // Let plugin handle completion
-      modePlugin.onModeComplete?.(results, contextWithActions)
-      
-      // Clear progress and call completion handler
-      actions.clearProgress()
-      onComplete(results)
-    }
-  }, [state.isCompleted, state.showResults, modePlugin, contextWithActions, actions, onComplete, questions, state.userAnswers, state.score, state.startTime])
-  
-  // Cleanup timer on unmount
-  useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
     }
-  }, [])
+  }, [currentQuestionIndex, hasTimeLimit, timeLimit, showResults])
   
-  // Loading state
-  if (state.isLoading) {
+  // Handle answer
+  const handleAnswer = useCallback((answer: string) => {
+    if (!currentQuestion) return
+    
+    const questionId = getQuestionId(currentQuestion)
+    const responseTime = Date.now() - questionStartTimeRef.current
+    const isCorrect = answer === currentQuestion.correct_answer
+    
+    // Update state
+    setAnswers(prev => ({ ...prev, [questionId]: answer }))
+    setResponseTimes(prev => ({ ...prev, [questionId]: responseTime }))
+    
+    // Update streak
+    if (isCorrect) {
+      const newStreak = streak + 1
+      setStreak(newStreak)
+      setMaxStreak(Math.max(maxStreak, newStreak))
+    } else {
+      setStreak(0)
+      
+      // Survival mode check
+      if ((modeSettings as StandardModeSettings)?.scoringMode === 'survival') {
+        setTimeout(() => {
+          handleQuizComplete()
+        }, 1500)
+        return
+      }
+    }
+    
+    // Call mode hook
+    if (gameMode?.onAnswerSubmit) {
+      gameMode.onAnswerSubmit(answer, isCorrect, responseTime / 1000, modeSettings)
+    }
+    
+    // Auto-advance or complete
+    const delay = (modeSettings as StandardModeSettings)?.instantFeedback ? 1500 : 500
+    
+    setTimeout(() => {
+      if (currentQuestionIndex < processedQuestions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1)
+        questionStartTimeRef.current = Date.now()
+        
+        // Call question start hook
+        if (gameMode?.onQuestionStart) {
+          gameMode.onQuestionStart(
+            processedQuestions[currentQuestionIndex + 1],
+            currentQuestionIndex + 1,
+            modeSettings
+          )
+        }
+      } else {
+        handleQuizComplete()
+      }
+    }, delay)
+  }, [currentQuestion, currentQuestionIndex, processedQuestions, streak, maxStreak, gameMode, modeSettings])
+  
+  // Handle completion
+  const handleQuizComplete = useCallback(async () => {
+    const endTime = Date.now()
+    const totalTime = Math.floor((endTime - startTimeRef.current) / 1000)
+    
+    // Calculate results
+    const correctAnswers = processedQuestions.reduce((count, question) => {
+      const qId = getQuestionId(question)
+      return answers[qId] === question.correct_answer ? count + 1 : count
+    }, 0)
+    
+    const results: QuizResults = {
+      totalQuestions: processedQuestions.length,
+      correctAnswers,
+      incorrectAnswers: processedQuestions.length - correctAnswers,
+      score: Math.round((correctAnswers / processedQuestions.length) * 100),
+      timeTaken: totalTime,
+      timeSpentSeconds: totalTime,
+      questions: processedQuestions.map(q => {
+        const qId = getQuestionId(q)
+        return {
+          question: q,
+          userAnswer: answers[qId] || '',
+          isCorrect: answers[qId] === q.correct_answer
+        }
+      })
+    }
+    
+    // Call mode completion hook
+    if (gameMode?.onQuizComplete) {
+      gameMode.onQuizComplete(results, modeSettings)
+    }
+    
+    // Save results
+    if (topicId) {
+      try {
+        await quizSaveManager.saveQuizResults({
+          topicId,
+          results,
+          userId,
+          guestToken,
+          attemptId: resumedAttemptId,
+          searchParams: {
+            mode: mode as QuizGameMode,
+            podId,
+            classroomCourseId,
+            classroomAssignmentId,
+            cleverSectionId
+          }
+        })
+      } catch (error) {
+        console.error('Failed to save quiz results:', error)
+      }
+    }
+    
+    setShowResults(true)
+    onComplete(results)
+  }, [processedQuestions, answers, responseTimes, gameMode, modeSettings, topicId, userId, guestToken, mode, resumedAttemptId, podId, classroomCourseId, classroomAssignmentId, cleverSectionId, onComplete])
+  
+  if (!isClient) {
+    return null
+  }
+  
+  if (processedQuestions.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Loading {modePlugin.displayName}...</p>
-        </div>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No questions available</p>
       </div>
     )
   }
   
-  // Error state
-  if (state.error) {
+  if (showResults) {
+    const correctCount = processedQuestions.reduce((count, question) => {
+      const qId = getQuestionId(question)
+      return answers[qId] === question.correct_answer ? count + 1 : count
+    }, 0)
+    
+    const score = Math.round((correctCount / processedQuestions.length) * 100)
+    
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md mx-auto p-8">
-          <h1 className="text-2xl font-bold mb-4">Error</h1>
-          <p className="text-muted-foreground mb-6">{state.error}</p>
-          <Button onClick={() => window.location.reload()}>
+      <div className="w-full max-w-2xl mx-auto text-center space-y-6 py-8">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">Quiz Complete!</h2>
+          <p className="text-xl text-muted-foreground">
+            You scored {score}%
+          </p>
+        </div>
+        
+        <div className="bg-muted/20 rounded-lg p-6 space-y-4">
+          <div>
+            <p className="text-lg font-medium">{correctCount} out of {processedQuestions.length} correct</p>
+            {maxStreak > 1 && (
+              <p className="text-sm text-muted-foreground">
+                Best streak: {maxStreak} in a row 🔥
+              </p>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex gap-4 justify-center">
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Reset for retry
+              setCurrentQuestionIndex(0)
+              setAnswers({})
+              setShowResults(false)
+              setStreak(0)
+              setMaxStreak(0)
+              setResponseTimes({})
+              startTimeRef.current = Date.now()
+              questionStartTimeRef.current = Date.now()
+            }}
+          >
             Try Again
+          </Button>
+          
+          <Button
+            onClick={() => {
+              if (topicId) {
+                router.push(`/quiz/${topicId}`)
+              } else {
+                router.push('/quiz')
+              }
+            }}
+          >
+            Continue Learning
           </Button>
         </div>
       </div>
     )
   }
   
-  // Main quiz UI
-  const currentQuestion = questions[state.currentQuestionIndex]
-  const progress = ((state.currentQuestionIndex + 1) / questions.length) * 100
+  const progress = ((currentQuestionIndex + 1) / processedQuestions.length) * 100
+  const options = currentQuestion ? getQuestionOptions(currentQuestion) : []
+  const questionId = currentQuestion ? getQuestionId(currentQuestion) : ''
+  const hasAnswered = !!answers[questionId]
   
   return (
-    <div className="quiz-engine-v2">
-      {/* Progress Bar */}
-      <div className="mb-6">
-        <Progress value={progress} className="h-2" />
-        <div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
-          <span>Question {state.currentQuestionIndex + 1} of {questions.length}</span>
-          {state.timeRemaining !== null && (
-            <span>{Math.floor(state.timeRemaining / 60)}:{(state.timeRemaining % 60).toString().padStart(2, '0')}</span>
-          )}
+    <div className="w-full max-w-2xl mx-auto space-y-6">
+      {/* Mode indicator */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{gameMode?.icon}</span>
+          <span className="font-medium">{gameMode?.displayName}</span>
         </div>
+        
+        {/* Timer if applicable */}
+        {hasTimeLimit && timeRemaining !== null && (
+          <div className={cn(
+            "font-mono text-lg",
+            timeRemaining <= 10 && "text-red-500 animate-pulse"
+          )}>
+            {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+          </div>
+        )}
       </div>
       
-      {/* Custom Header from Plugin */}
-      {modePlugin.renderHeader?.(contextWithActions)}
-      
-      {/* Question Display */}
-      {modePlugin.renderQuestion ? (
-        modePlugin.renderQuestion(currentQuestion, contextWithActions)
-      ) : (
-        <QuestionRenderer
-          question={currentQuestion}
-          onAnswer={(answer: string) => actions.submitAnswer(answer)}
-          selectedAnswer={state.userAnswers[state.currentQuestionIndex]?.answer}
-          showExplanation={false}
-          practiceMode={false}
-        />
-      )}
-      
-      {/* Custom Interface from Plugin */}
-      {modePlugin.renderInterface?.(contextWithActions)}
-      
-      {/* Navigation */}
-      <div className="flex justify-between items-center mt-6">
-        <Button 
-          variant="outline" 
-          onClick={actions.goToPreviousQuestion}
-          disabled={state.currentQuestionIndex === 0}
-        >
-          Previous
-        </Button>
-        
-        <span className="text-sm text-muted-foreground">
-          {state.streak > 0 && `🔥 Streak: ${state.streak}`}
-        </span>
-        
-        <Button 
-          onClick={actions.goToNextQuestion}
-          disabled={state.currentQuestionIndex === questions.length - 1}
-        >
-          Next
-        </Button>
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>Question {currentQuestionIndex + 1} of {processedQuestions.length}</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
       </div>
       
-      {/* Custom Footer from Plugin */}
-      {modePlugin.renderFooter?.(contextWithActions)}
+      {/* Question card */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-lg space-y-6">
+        {/* Question text */}
+        <h2 className="text-xl font-semibold">
+          {currentQuestion?.question}
+        </h2>
+        
+        {/* Answer options */}
+        <div className="space-y-3">
+          {options.map((option, index) => {
+            const isSelected = answers[questionId] === option
+            
+            return (
+              <button
+                key={index}
+                onClick={() => handleAnswer(option)}
+                disabled={hasAnswered}
+                className={cn(
+                  "w-full text-left p-4 rounded-lg border transition-all duration-200",
+                  "hover:border-primary hover:bg-primary/5",
+                  isSelected && "border-primary bg-primary/10",
+                  hasAnswered && "cursor-not-allowed opacity-60"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full border-2 flex items-center justify-center font-medium",
+                    isSelected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                  )}>
+                    {String.fromCharCode(65 + index)}
+                  </div>
+                  <span className="flex-1">{option}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        
+        {/* Skip button if allowed */}
+        {(modeSettings as StandardModeSettings)?.allowSkip && !hasAnswered && (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => handleAnswer('')}
+              className="text-sm"
+            >
+              Skip Question →
+            </Button>
+          </div>
+        )}
+      </div>
       
-      {/* Modal */}
-      {state.showModal && (
-        <Dialog open={state.showModal} onOpenChange={() => dispatch({ type: 'HIDE_MODAL' })}>
-          <DialogContent>
-            {state.modalContent}
-          </DialogContent>
-        </Dialog>
+      {/* Streak indicator */}
+      {streak > 1 && (
+        <div className="text-center animate-in zoom-in duration-300">
+          <span className="text-sm font-medium text-primary">
+            🔥 {streak} answer streak!
+          </span>
+        </div>
       )}
       
-      {/* Results Display */}
-      {state.showResults && (
-        modePlugin.renderResults ? (
-          modePlugin.renderResults({
-            totalQuestions: questions.length,
-            correctAnswers: state.userAnswers.filter(a => a.isCorrect).length,
-            incorrectAnswers: state.userAnswers.filter(a => !a.isCorrect).length,
-            score: state.score,
-            timeTaken: (Date.now() - state.startTime) / 1000,
-            timeSpentSeconds: (Date.now() - state.startTime) / 1000,
-            questions: []
-          }, contextWithActions)
-        ) : (
-          <ResultsDisplay
-            userAnswers={state.userAnswers}
-            questions={questions}
-            onFinish={() => onComplete({
-              totalQuestions: questions.length,
-              correctAnswers: state.userAnswers.filter(a => a.isCorrect).length,
-              incorrectAnswers: state.userAnswers.filter(a => !a.isCorrect).length,
-              score: state.score,
-              timeTaken: (Date.now() - state.startTime) / 1000,
-              timeSpentSeconds: (Date.now() - state.startTime) / 1000,
-              questions: []
-            })}
-            topicId={topicId}
-            mode={mode}
-          />
-        )
+      {/* Exit button */}
+      {onExit && (
+        <div className="text-center">
+          <Button variant="ghost" onClick={onExit}>
+            Exit Quiz
+          </Button>
+        </div>
       )}
     </div>
   )

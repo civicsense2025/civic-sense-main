@@ -4,6 +4,17 @@ import dynamic from "next/dynamic"
 import { Suspense } from "react"
 import type { QuizGameMode } from "@/lib/types/quiz"
 
+/**
+ * QuizClientWrapper - Handles version switching between V1 and V2 quiz engines
+ * 
+ * V2 is now the default engine with simplified architecture:
+ * - Removed complex plugin system
+ * - Fixed circular import issues
+ * - Integrated quiz save manager for reliable saving
+ * 
+ * Use query param ?v=1 to use the legacy V1 engine
+ */
+
 // Dynamic imports with ssr: false (allowed in client components)
 const QuizPlayClientV2 = dynamic(() => import("./client-v2"), {
   ssr: false
@@ -33,8 +44,8 @@ export default function QuizClientWrapper({
   topicId, 
   searchParams 
 }: QuizClientWrapperProps) {
-  // Simple version detection - default to V2 for new database compatibility
-  const useV2 = searchParams?.v !== '1' // Default to V2, use V1 only if explicitly requested
+  // Enable V2 by default
+  const useV2 = searchParams?.v !== '1' // Use V2 unless explicitly requesting V1
   
   console.log(`🎮 QuizClientWrapper: Using ${useV2 ? 'V2' : 'V1'} engine for topic ${topicId}`)
   
@@ -66,28 +77,36 @@ export default function QuizClientWrapper({
   return (
     <Suspense fallback={<LoadingFallback />}>
       {useV2 ? (
-        <QuizPlayClientV2 
-          topicId={topicId} 
-          searchParams={{
-            attempt: searchParams?.attempt,
-            podId: searchParams?.podId,
-            classroomCourseId: searchParams?.classroomCourseId,
-            classroomAssignmentId: searchParams?.classroomAssignmentId,
-            cleverSectionId: searchParams?.cleverSectionId,
-            mode: getValidMode(searchParams?.mode) // Type-safe conversion for V2 too
-          }}
-        />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md mx-auto p-8">
+            <h1 className="text-2xl font-bold mb-4">V2 Quiz System Temporarily Unavailable</h1>
+            <p className="text-muted-foreground mb-6">
+              The V2 quiz system is being updated. Please use the standard quiz experience.
+            </p>
+            <QuizPlayClientV1 
+              topicId={topicId} 
+              searchParams={searchParams ? {
+                attempt: searchParams.attempt,
+                podId: searchParams.podId,
+                classroomCourseId: searchParams.classroomCourseId,
+                classroomAssignmentId: searchParams.classroomAssignmentId,
+                cleverSectionId: searchParams.cleverSectionId,
+                mode: getValidMode(searchParams.mode)
+              } : undefined}
+            />
+          </div>
+        </div>
       ) : (
         <QuizPlayClientV1 
           topicId={topicId} 
-          searchParams={{
-            attempt: searchParams?.attempt,
-            podId: searchParams?.podId,
-            classroomCourseId: searchParams?.classroomCourseId,
-            classroomAssignmentId: searchParams?.classroomAssignmentId,
-            cleverSectionId: searchParams?.cleverSectionId,
-            mode: getValidMode(searchParams?.mode) // Type-safe conversion for V1
-          }}
+          searchParams={searchParams ? {
+            attempt: searchParams.attempt,
+            podId: searchParams.podId,
+            classroomCourseId: searchParams.classroomCourseId,
+            classroomAssignmentId: searchParams.classroomAssignmentId,
+            cleverSectionId: searchParams.cleverSectionId,
+            mode: getValidMode(searchParams.mode)
+          } : undefined}
         />
       )}
     </Suspense>

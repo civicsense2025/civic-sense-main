@@ -323,8 +323,10 @@ export function DailyCardStack({
     if (direction === 'left') {
       // Move highlight left (to older topics)
       if (highlightedNavIndex < endIndex && highlightedNavIndex < filteredTopics.length - 1) {
-        // Move highlight within visible cards
-        setHighlightedNavIndex(highlightedNavIndex + 1)
+        // Move highlight within visible cards and update current topic
+        const newIndex = highlightedNavIndex + 1
+        setHighlightedNavIndex(newIndex)
+        handleTopicSelect(newIndex)
       } else {
         // Move to older topics and select that topic
         handlePrevious()
@@ -332,14 +334,16 @@ export function DailyCardStack({
     } else {
       // Move highlight right (to newer topics)  
       if (highlightedNavIndex > startIndex && highlightedNavIndex > 0) {
-        // Move highlight within visible cards
-        setHighlightedNavIndex(highlightedNavIndex - 1)
+        // Move highlight within visible cards and update current topic
+        const newIndex = highlightedNavIndex - 1
+        setHighlightedNavIndex(newIndex)
+        handleTopicSelect(newIndex)
       } else {
         // Move to newer topics and select that topic
         handleNext()
       }
     }
-  }, [highlightedNavIndex, handlePrevious, handleNext, filteredTopics.length])
+  }, [highlightedNavIndex, handlePrevious, handleNext, handleTopicSelect, filteredTopics.length])
 
   // Keyboard navigation
   useEffect(() => {
