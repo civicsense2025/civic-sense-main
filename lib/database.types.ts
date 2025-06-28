@@ -3903,6 +3903,72 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_source_analysis: {
+        Row: {
+          ai_model_version: string | null
+          analysis_confidence: number
+          analysis_summary: string
+          analyzed_at: string
+          created_at: string | null
+          domain: string
+          expires_at: string
+          factual_rating: string
+          id: string
+          original_url: string
+          overall_bias: string
+          overall_credibility: number
+          recommendations: string[] | null
+          red_flags: string[] | null
+          strengths: string[] | null
+          transparency_score: number | null
+          updated_at: string | null
+          url_hash: string
+          weaknesses: string[] | null
+        }
+        Insert: {
+          ai_model_version?: string | null
+          analysis_confidence: number
+          analysis_summary: string
+          analyzed_at?: string
+          created_at?: string | null
+          domain: string
+          expires_at: string
+          factual_rating: string
+          id?: string
+          original_url: string
+          overall_bias: string
+          overall_credibility: number
+          recommendations?: string[] | null
+          red_flags?: string[] | null
+          strengths?: string[] | null
+          transparency_score?: number | null
+          updated_at?: string | null
+          url_hash: string
+          weaknesses?: string[] | null
+        }
+        Update: {
+          ai_model_version?: string | null
+          analysis_confidence?: number
+          analysis_summary?: string
+          analyzed_at?: string
+          created_at?: string | null
+          domain?: string
+          expires_at?: string
+          factual_rating?: string
+          id?: string
+          original_url?: string
+          overall_bias?: string
+          overall_credibility?: number
+          recommendations?: string[] | null
+          red_flags?: string[] | null
+          strengths?: string[] | null
+          transparency_score?: number | null
+          updated_at?: string | null
+          url_hash?: string
+          weaknesses?: string[] | null
+        }
+        Relationships: []
+      }
       ai_tool_usage: {
         Row: {
           completed_at: string | null
@@ -6913,45 +6979,6 @@ export type Database = {
           status?: string | null
           updated_at?: string
           updated_by?: string | null
-        }
-        Relationships: []
-      }
-      content_preview_cache: {
-        Row: {
-          access_count: number
-          cache_key: string
-          cache_type: string
-          created_at: string
-          created_by: string | null
-          expires_at: string
-          generation_settings: Json
-          id: string
-          last_accessed_at: string
-          preview_data: Json
-        }
-        Insert: {
-          access_count?: number
-          cache_key: string
-          cache_type: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string
-          generation_settings: Json
-          id?: string
-          last_accessed_at?: string
-          preview_data: Json
-        }
-        Update: {
-          access_count?: number
-          cache_key?: string
-          cache_type?: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string
-          generation_settings?: Json
-          id?: string
-          last_accessed_at?: string
-          preview_data?: Json
         }
         Relationships: []
       }
@@ -10508,30 +10535,6 @@ export type Database = {
         }
         Relationships: []
       }
-      news_cache: {
-        Row: {
-          articles_data: Json
-          cache_key: string
-          created_at: string
-          id: string
-          source_info: string | null
-        }
-        Insert: {
-          articles_data: Json
-          cache_key: string
-          created_at?: string
-          id?: string
-          source_info?: string | null
-        }
-        Update: {
-          articles_data?: Json
-          cache_key?: string
-          created_at?: string
-          id?: string
-          source_info?: string | null
-        }
-        Relationships: []
-      }
       news_events: {
         Row: {
           civic_relevance_score: number
@@ -11324,6 +11327,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      og_data_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          og_data: Json
+          original_url: string
+          url_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          og_data?: Json
+          original_url: string
+          url_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          og_data?: Json
+          original_url?: string
+          url_hash?: string
+        }
+        Relationships: []
       }
       onboarding_invites: {
         Row: {
@@ -15125,6 +15155,54 @@ export type Database = {
           },
         ]
       }
+      source_analysis_cache: {
+        Row: {
+          ai_insights: Json | null
+          analysis_data: Json
+          analyzed_at: string
+          bias_rating: string
+          created_at: string
+          credibility_score: number
+          domain: string
+          expires_at: string
+          factual_rating: string
+          id: string
+          original_url: string
+          source_metadata: Json | null
+          url_hash: string
+        }
+        Insert: {
+          ai_insights?: Json | null
+          analysis_data?: Json
+          analyzed_at?: string
+          bias_rating: string
+          created_at?: string
+          credibility_score: number
+          domain: string
+          expires_at: string
+          factual_rating: string
+          id?: string
+          original_url: string
+          source_metadata?: Json | null
+          url_hash: string
+        }
+        Update: {
+          ai_insights?: Json | null
+          analysis_data?: Json
+          analyzed_at?: string
+          bias_rating?: string
+          created_at?: string
+          credibility_score?: number
+          domain?: string
+          expires_at?: string
+          factual_rating?: string
+          id?: string
+          original_url?: string
+          source_metadata?: Json | null
+          url_hash?: string
+        }
+        Relationships: []
+      }
       source_credibility_indicators: {
         Row: {
           created_at: string | null
@@ -16543,6 +16621,188 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_content_annotations: {
+        Row: {
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at: string
+          follow_up_questions: string[] | null
+          how_it_applies: string | null
+          id: string
+          key_insights: string[] | null
+          last_accessed_at: string | null
+          personal_notes: string | null
+          personal_rating: number | null
+          personal_tags: string[] | null
+          reading_progress: number | null
+          times_accessed: number | null
+          updated_at: string
+          user_id: string
+          why_saved: string | null
+        }
+        Insert: {
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at?: string
+          follow_up_questions?: string[] | null
+          how_it_applies?: string | null
+          id?: string
+          key_insights?: string[] | null
+          last_accessed_at?: string | null
+          personal_notes?: string | null
+          personal_rating?: number | null
+          personal_tags?: string[] | null
+          reading_progress?: number | null
+          times_accessed?: number | null
+          updated_at?: string
+          user_id: string
+          why_saved?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_title?: string
+          content_type?: string
+          created_at?: string
+          follow_up_questions?: string[] | null
+          how_it_applies?: string | null
+          id?: string
+          key_insights?: string[] | null
+          last_accessed_at?: string | null
+          personal_notes?: string | null
+          personal_rating?: number | null
+          personal_tags?: string[] | null
+          reading_progress?: number | null
+          times_accessed?: number | null
+          updated_at?: string
+          user_id?: string
+          why_saved?: string | null
+        }
+        Relationships: []
+      }
+      user_content_collection_items: {
+        Row: {
+          added_note: string | null
+          collection_id: string
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          sort_order: number | null
+          user_id: string
+        }
+        Insert: {
+          added_note?: string | null
+          collection_id: string
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          sort_order?: number | null
+          user_id: string
+        }
+        Update: {
+          added_note?: string | null
+          collection_id?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          sort_order?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_content_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "user_content_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_content_collections: {
+        Row: {
+          color_theme: string | null
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          is_favorite: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color_theme?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color_theme?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_content_connections: {
+        Row: {
+          connection_note: string | null
+          connection_type: string
+          created_at: string
+          from_content_id: string
+          from_content_type: string
+          id: string
+          strength: number | null
+          to_content_id: string
+          to_content_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_note?: string | null
+          connection_type?: string
+          created_at?: string
+          from_content_id: string
+          from_content_type: string
+          id?: string
+          strength?: number | null
+          to_content_id: string
+          to_content_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_note?: string | null
+          connection_type?: string
+          created_at?: string
+          from_content_id?: string
+          from_content_type?: string
+          id?: string
+          strength?: number | null
+          to_content_id?: string
+          to_content_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_credits: {
         Row: {
@@ -18969,6 +19229,81 @@ export type Database = {
         }
         Relationships: []
       }
+      enhanced_source_analysis: {
+        Row: {
+          ai_model_version: string | null
+          analysis_confidence: number | null
+          analysis_summary: string | null
+          analyzed_at: string | null
+          bias_category: string | null
+          credibility_category: string | null
+          domain: string | null
+          expires_at: string | null
+          factual_rating: string | null
+          id: string | null
+          is_fresh: boolean | null
+          is_high_confidence: boolean | null
+          is_recent: boolean | null
+          overall_bias: string | null
+          overall_credibility: number | null
+          recommendations: string[] | null
+          red_flags: string[] | null
+          strengths: string[] | null
+          transparency_score: number | null
+          url: string | null
+          url_hash: string | null
+          weaknesses: string[] | null
+        }
+        Insert: {
+          ai_model_version?: string | null
+          analysis_confidence?: number | null
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          bias_category?: never
+          credibility_category?: never
+          domain?: string | null
+          expires_at?: string | null
+          factual_rating?: string | null
+          id?: string | null
+          is_fresh?: never
+          is_high_confidence?: never
+          is_recent?: never
+          overall_bias?: string | null
+          overall_credibility?: number | null
+          recommendations?: string[] | null
+          red_flags?: string[] | null
+          strengths?: string[] | null
+          transparency_score?: number | null
+          url?: string | null
+          url_hash?: string | null
+          weaknesses?: string[] | null
+        }
+        Update: {
+          ai_model_version?: string | null
+          analysis_confidence?: number | null
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          bias_category?: never
+          credibility_category?: never
+          domain?: string | null
+          expires_at?: string | null
+          factual_rating?: string | null
+          id?: string | null
+          is_fresh?: never
+          is_high_confidence?: never
+          is_recent?: never
+          overall_bias?: string | null
+          overall_credibility?: number | null
+          recommendations?: string[] | null
+          red_flags?: string[] | null
+          strengths?: string[] | null
+          transparency_score?: number | null
+          url?: string | null
+          url_hash?: string | null
+          weaknesses?: string[] | null
+        }
+        Relationships: []
+      }
       function_type_validation: {
         Row: {
           column_types: string[] | null
@@ -19861,7 +20196,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_ai_analyses: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_boosts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_expired_og_cache: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
@@ -19870,6 +20213,10 @@ export type Database = {
         Returns: number
       }
       cleanup_expired_rooms: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_expired_source_analysis: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
@@ -20278,6 +20625,16 @@ export type Database = {
         Args: { p_pod_id: string }
         Returns: string
       }
+      get_or_create_source_analysis: {
+        Args: {
+          p_url: string
+          p_domain?: string
+          p_credibility?: number
+          p_bias?: string
+          p_factual_rating?: string
+        }
+        Returns: string
+      }
       get_or_create_source_metadata: {
         Args:
           | {
@@ -20433,6 +20790,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_source_analysis_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_table_column_info: {
         Args: { table_name_param: string }
         Returns: {
@@ -20571,6 +20932,42 @@ export type Database = {
           level_requirement: number
           category: string
           rarity: string
+        }[]
+      }
+      get_user_connected_content: {
+        Args: {
+          p_user_id: string
+          p_content_type: string
+          p_content_id: string
+        }
+        Returns: {
+          connection_id: string
+          connected_content_type: string
+          connected_content_id: string
+          connection_type: string
+          connection_note: string
+          strength: number
+          created_at: string
+        }[]
+      }
+      get_user_content_annotation: {
+        Args: {
+          p_user_id: string
+          p_content_type: string
+          p_content_id: string
+        }
+        Returns: {
+          annotation_id: string
+          personal_notes: string
+          key_insights: string[]
+          personal_rating: number
+          why_saved: string
+          how_it_applies: string
+          follow_up_questions: string[]
+          personal_tags: string[]
+          reading_progress: number
+          last_accessed_at: string
+          times_accessed: number
         }[]
       }
       get_user_credits_balance: {
@@ -22023,6 +22420,7 @@ export type DbAiCommandAnalytics = Database['public']['Tables']['ai_command_anal
 export type DbAiCommandExecutions = Database['public']['Tables']['ai_command_executions']['Row']
 export type DbAiResearchResults = Database['public']['Tables']['ai_research_results']['Row']
 export type DbAiResearchSessions = Database['public']['Tables']['ai_research_sessions']['Row']
+export type DbAiSourceAnalysis = Database['public']['Tables']['ai_source_analysis']['Row']
 export type DbAiToolUsage = Database['public']['Tables']['ai_tool_usage']['Row']
 export type DbAnalyticsEvents = Database['public']['Tables']['analytics_events']['Row']
 export type DbArticleBiasAnalysis = Database['public']['Tables']['article_bias_analysis']['Row']
@@ -22075,7 +22473,6 @@ export type DbContentGapsAnalysis = Database['public']['Tables']['content_gaps_a
 export type DbContentGenerationQueue = Database['public']['Tables']['content_generation_queue']['Row']
 export type DbContentItemSkills = Database['public']['Tables']['content_item_skills']['Row']
 export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
-export type DbContentPreviewCache = Database['public']['Tables']['content_preview_cache']['Row']
 export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
 export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
 export type DbDiscountCodes = Database['public']['Tables']['discount_codes']['Row']
@@ -22137,7 +22534,6 @@ export type DbMultiplayerRoomPlayers = Database['public']['Tables']['multiplayer
 export type DbMultiplayerRooms = Database['public']['Tables']['multiplayer_rooms']['Row']
 export type DbNewsAgentConfig = Database['public']['Tables']['news_agent_config']['Row']
 export type DbNewsAgentLogs = Database['public']['Tables']['news_agent_logs']['Row']
-export type DbNewsCache = Database['public']['Tables']['news_cache']['Row']
 export type DbNewsEvents = Database['public']['Tables']['news_events']['Row']
 export type DbNotificationCampaigns = Database['public']['Tables']['notification_campaigns']['Row']
 export type DbNotificationEvents = Database['public']['Tables']['notification_events']['Row']
@@ -22151,6 +22547,7 @@ export type DbNpcLearningProgression = Database['public']['Tables']['npc_learnin
 export type DbNpcPersonalities = Database['public']['Tables']['npc_personalities']['Row']
 export type DbNpcQuestionResponses = Database['public']['Tables']['npc_question_responses']['Row']
 export type DbNpcQuizAttempts = Database['public']['Tables']['npc_quiz_attempts']['Row']
+export type DbOgDataCache = Database['public']['Tables']['og_data_cache']['Row']
 export type DbOnboardingInvites = Database['public']['Tables']['onboarding_invites']['Row']
 export type DbOrganizationBiasScores = Database['public']['Tables']['organization_bias_scores']['Row']
 export type DbOrganizations = Database['public']['Tables']['organizations']['Row']
@@ -22211,6 +22608,7 @@ export type DbSkillPrerequisites = Database['public']['Tables']['skill_prerequis
 export type DbSkillProgressionPathways = Database['public']['Tables']['skill_progression_pathways']['Row']
 export type DbSkillRelationships = Database['public']['Tables']['skill_relationships']['Row']
 export type DbSkills = Database['public']['Tables']['skills']['Row']
+export type DbSourceAnalysisCache = Database['public']['Tables']['source_analysis_cache']['Row']
 export type DbSourceCredibilityIndicators = Database['public']['Tables']['source_credibility_indicators']['Row']
 export type DbSourceFetchQueue = Database['public']['Tables']['source_fetch_queue']['Row']
 export type DbSourceMetadata = Database['public']['Tables']['source_metadata']['Row']
@@ -22241,6 +22639,10 @@ export type DbUserBoostInventory = Database['public']['Tables']['user_boost_inve
 export type DbUserCategoryPreferences = Database['public']['Tables']['user_category_preferences']['Row']
 export type DbUserCategorySkills = Database['public']['Tables']['user_category_skills']['Row']
 export type DbUserCollectionProgress = Database['public']['Tables']['user_collection_progress']['Row']
+export type DbUserContentAnnotations = Database['public']['Tables']['user_content_annotations']['Row']
+export type DbUserContentCollectionItems = Database['public']['Tables']['user_content_collection_items']['Row']
+export type DbUserContentCollections = Database['public']['Tables']['user_content_collections']['Row']
+export type DbUserContentConnections = Database['public']['Tables']['user_content_connections']['Row']
 export type DbUserCredits = Database['public']['Tables']['user_credits']['Row']
 export type DbUserCustomDecks = Database['public']['Tables']['user_custom_decks']['Row']
 export type DbUserDeckContent = Database['public']['Tables']['user_deck_content']['Row']
@@ -22283,6 +22685,7 @@ export type DbAiCommandAnalyticsInsert = Database['public']['Tables']['ai_comman
 export type DbAiCommandExecutionsInsert = Database['public']['Tables']['ai_command_executions']['Insert']
 export type DbAiResearchResultsInsert = Database['public']['Tables']['ai_research_results']['Insert']
 export type DbAiResearchSessionsInsert = Database['public']['Tables']['ai_research_sessions']['Insert']
+export type DbAiSourceAnalysisInsert = Database['public']['Tables']['ai_source_analysis']['Insert']
 export type DbAiToolUsageInsert = Database['public']['Tables']['ai_tool_usage']['Insert']
 export type DbAnalyticsEventsInsert = Database['public']['Tables']['analytics_events']['Insert']
 export type DbArticleBiasAnalysisInsert = Database['public']['Tables']['article_bias_analysis']['Insert']
@@ -22335,7 +22738,6 @@ export type DbContentGapsAnalysisInsert = Database['public']['Tables']['content_
 export type DbContentGenerationQueueInsert = Database['public']['Tables']['content_generation_queue']['Insert']
 export type DbContentItemSkillsInsert = Database['public']['Tables']['content_item_skills']['Insert']
 export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
-export type DbContentPreviewCacheInsert = Database['public']['Tables']['content_preview_cache']['Insert']
 export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
 export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
 export type DbDiscountCodesInsert = Database['public']['Tables']['discount_codes']['Insert']
@@ -22397,7 +22799,6 @@ export type DbMultiplayerRoomPlayersInsert = Database['public']['Tables']['multi
 export type DbMultiplayerRoomsInsert = Database['public']['Tables']['multiplayer_rooms']['Insert']
 export type DbNewsAgentConfigInsert = Database['public']['Tables']['news_agent_config']['Insert']
 export type DbNewsAgentLogsInsert = Database['public']['Tables']['news_agent_logs']['Insert']
-export type DbNewsCacheInsert = Database['public']['Tables']['news_cache']['Insert']
 export type DbNewsEventsInsert = Database['public']['Tables']['news_events']['Insert']
 export type DbNotificationCampaignsInsert = Database['public']['Tables']['notification_campaigns']['Insert']
 export type DbNotificationEventsInsert = Database['public']['Tables']['notification_events']['Insert']
@@ -22411,6 +22812,7 @@ export type DbNpcLearningProgressionInsert = Database['public']['Tables']['npc_l
 export type DbNpcPersonalitiesInsert = Database['public']['Tables']['npc_personalities']['Insert']
 export type DbNpcQuestionResponsesInsert = Database['public']['Tables']['npc_question_responses']['Insert']
 export type DbNpcQuizAttemptsInsert = Database['public']['Tables']['npc_quiz_attempts']['Insert']
+export type DbOgDataCacheInsert = Database['public']['Tables']['og_data_cache']['Insert']
 export type DbOnboardingInvitesInsert = Database['public']['Tables']['onboarding_invites']['Insert']
 export type DbOrganizationBiasScoresInsert = Database['public']['Tables']['organization_bias_scores']['Insert']
 export type DbOrganizationsInsert = Database['public']['Tables']['organizations']['Insert']
@@ -22471,6 +22873,7 @@ export type DbSkillPrerequisitesInsert = Database['public']['Tables']['skill_pre
 export type DbSkillProgressionPathwaysInsert = Database['public']['Tables']['skill_progression_pathways']['Insert']
 export type DbSkillRelationshipsInsert = Database['public']['Tables']['skill_relationships']['Insert']
 export type DbSkillsInsert = Database['public']['Tables']['skills']['Insert']
+export type DbSourceAnalysisCacheInsert = Database['public']['Tables']['source_analysis_cache']['Insert']
 export type DbSourceCredibilityIndicatorsInsert = Database['public']['Tables']['source_credibility_indicators']['Insert']
 export type DbSourceFetchQueueInsert = Database['public']['Tables']['source_fetch_queue']['Insert']
 export type DbSourceMetadataInsert = Database['public']['Tables']['source_metadata']['Insert']
@@ -22501,6 +22904,10 @@ export type DbUserBoostInventoryInsert = Database['public']['Tables']['user_boos
 export type DbUserCategoryPreferencesInsert = Database['public']['Tables']['user_category_preferences']['Insert']
 export type DbUserCategorySkillsInsert = Database['public']['Tables']['user_category_skills']['Insert']
 export type DbUserCollectionProgressInsert = Database['public']['Tables']['user_collection_progress']['Insert']
+export type DbUserContentAnnotationsInsert = Database['public']['Tables']['user_content_annotations']['Insert']
+export type DbUserContentCollectionItemsInsert = Database['public']['Tables']['user_content_collection_items']['Insert']
+export type DbUserContentCollectionsInsert = Database['public']['Tables']['user_content_collections']['Insert']
+export type DbUserContentConnectionsInsert = Database['public']['Tables']['user_content_connections']['Insert']
 export type DbUserCreditsInsert = Database['public']['Tables']['user_credits']['Insert']
 export type DbUserCustomDecksInsert = Database['public']['Tables']['user_custom_decks']['Insert']
 export type DbUserDeckContentInsert = Database['public']['Tables']['user_deck_content']['Insert']
@@ -22543,6 +22950,7 @@ export type DbAiCommandAnalyticsUpdate = Database['public']['Tables']['ai_comman
 export type DbAiCommandExecutionsUpdate = Database['public']['Tables']['ai_command_executions']['Update']
 export type DbAiResearchResultsUpdate = Database['public']['Tables']['ai_research_results']['Update']
 export type DbAiResearchSessionsUpdate = Database['public']['Tables']['ai_research_sessions']['Update']
+export type DbAiSourceAnalysisUpdate = Database['public']['Tables']['ai_source_analysis']['Update']
 export type DbAiToolUsageUpdate = Database['public']['Tables']['ai_tool_usage']['Update']
 export type DbAnalyticsEventsUpdate = Database['public']['Tables']['analytics_events']['Update']
 export type DbArticleBiasAnalysisUpdate = Database['public']['Tables']['article_bias_analysis']['Update']
@@ -22595,7 +23003,6 @@ export type DbContentGapsAnalysisUpdate = Database['public']['Tables']['content_
 export type DbContentGenerationQueueUpdate = Database['public']['Tables']['content_generation_queue']['Update']
 export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_item_skills']['Update']
 export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
-export type DbContentPreviewCacheUpdate = Database['public']['Tables']['content_preview_cache']['Update']
 export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
 export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
 export type DbDiscountCodesUpdate = Database['public']['Tables']['discount_codes']['Update']
@@ -22657,7 +23064,6 @@ export type DbMultiplayerRoomPlayersUpdate = Database['public']['Tables']['multi
 export type DbMultiplayerRoomsUpdate = Database['public']['Tables']['multiplayer_rooms']['Update']
 export type DbNewsAgentConfigUpdate = Database['public']['Tables']['news_agent_config']['Update']
 export type DbNewsAgentLogsUpdate = Database['public']['Tables']['news_agent_logs']['Update']
-export type DbNewsCacheUpdate = Database['public']['Tables']['news_cache']['Update']
 export type DbNewsEventsUpdate = Database['public']['Tables']['news_events']['Update']
 export type DbNotificationCampaignsUpdate = Database['public']['Tables']['notification_campaigns']['Update']
 export type DbNotificationEventsUpdate = Database['public']['Tables']['notification_events']['Update']
@@ -22671,6 +23077,7 @@ export type DbNpcLearningProgressionUpdate = Database['public']['Tables']['npc_l
 export type DbNpcPersonalitiesUpdate = Database['public']['Tables']['npc_personalities']['Update']
 export type DbNpcQuestionResponsesUpdate = Database['public']['Tables']['npc_question_responses']['Update']
 export type DbNpcQuizAttemptsUpdate = Database['public']['Tables']['npc_quiz_attempts']['Update']
+export type DbOgDataCacheUpdate = Database['public']['Tables']['og_data_cache']['Update']
 export type DbOnboardingInvitesUpdate = Database['public']['Tables']['onboarding_invites']['Update']
 export type DbOrganizationBiasScoresUpdate = Database['public']['Tables']['organization_bias_scores']['Update']
 export type DbOrganizationsUpdate = Database['public']['Tables']['organizations']['Update']
@@ -22731,6 +23138,7 @@ export type DbSkillPrerequisitesUpdate = Database['public']['Tables']['skill_pre
 export type DbSkillProgressionPathwaysUpdate = Database['public']['Tables']['skill_progression_pathways']['Update']
 export type DbSkillRelationshipsUpdate = Database['public']['Tables']['skill_relationships']['Update']
 export type DbSkillsUpdate = Database['public']['Tables']['skills']['Update']
+export type DbSourceAnalysisCacheUpdate = Database['public']['Tables']['source_analysis_cache']['Update']
 export type DbSourceCredibilityIndicatorsUpdate = Database['public']['Tables']['source_credibility_indicators']['Update']
 export type DbSourceFetchQueueUpdate = Database['public']['Tables']['source_fetch_queue']['Update']
 export type DbSourceMetadataUpdate = Database['public']['Tables']['source_metadata']['Update']
@@ -22761,6 +23169,10 @@ export type DbUserBoostInventoryUpdate = Database['public']['Tables']['user_boos
 export type DbUserCategoryPreferencesUpdate = Database['public']['Tables']['user_category_preferences']['Update']
 export type DbUserCategorySkillsUpdate = Database['public']['Tables']['user_category_skills']['Update']
 export type DbUserCollectionProgressUpdate = Database['public']['Tables']['user_collection_progress']['Update']
+export type DbUserContentAnnotationsUpdate = Database['public']['Tables']['user_content_annotations']['Update']
+export type DbUserContentCollectionItemsUpdate = Database['public']['Tables']['user_content_collection_items']['Update']
+export type DbUserContentCollectionsUpdate = Database['public']['Tables']['user_content_collections']['Update']
+export type DbUserContentConnectionsUpdate = Database['public']['Tables']['user_content_connections']['Update']
 export type DbUserCreditsUpdate = Database['public']['Tables']['user_credits']['Update']
 export type DbUserCustomDecksUpdate = Database['public']['Tables']['user_custom_decks']['Update']
 export type DbUserDeckContentUpdate = Database['public']['Tables']['user_deck_content']['Update']
@@ -22807,6 +23219,7 @@ export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_
 export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
 export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
 export type DbCurrentAssessmentStatusView = Database['public']['Views']['current_assessment_status']['Row']
+export type DbEnhancedSourceAnalysisView = Database['public']['Views']['enhanced_source_analysis']['Row']
 export type DbFunctionTypeValidationView = Database['public']['Views']['function_type_validation']['Row']
 export type DbFunctionValidationSummaryView = Database['public']['Views']['function_validation_summary']['Row']
 export type DbIndicatorTrendsView = Database['public']['Views']['indicator_trends']['Row']
@@ -22903,15 +23316,24 @@ export type DbClaimShareableGiftLinkReturns = Database['public']['Functions']['c
 export type DbCleanupExpiredAgentMemoryFunction = Database['public']['Functions']['cleanup_expired_agent_memory']
 export type DbCleanupExpiredAgentMemoryArgs = Database['public']['Functions']['cleanup_expired_agent_memory']['Args']
 export type DbCleanupExpiredAgentMemoryReturns = Database['public']['Functions']['cleanup_expired_agent_memory']['Returns']
+export type DbCleanupExpiredAiAnalysesFunction = Database['public']['Functions']['cleanup_expired_ai_analyses']
+export type DbCleanupExpiredAiAnalysesArgs = Database['public']['Functions']['cleanup_expired_ai_analyses']['Args']
+export type DbCleanupExpiredAiAnalysesReturns = Database['public']['Functions']['cleanup_expired_ai_analyses']['Returns']
 export type DbCleanupExpiredBoostsFunction = Database['public']['Functions']['cleanup_expired_boosts']
 export type DbCleanupExpiredBoostsArgs = Database['public']['Functions']['cleanup_expired_boosts']['Args']
 export type DbCleanupExpiredBoostsReturns = Database['public']['Functions']['cleanup_expired_boosts']['Returns']
+export type DbCleanupExpiredOgCacheFunction = Database['public']['Functions']['cleanup_expired_og_cache']
+export type DbCleanupExpiredOgCacheArgs = Database['public']['Functions']['cleanup_expired_og_cache']['Args']
+export type DbCleanupExpiredOgCacheReturns = Database['public']['Functions']['cleanup_expired_og_cache']['Returns']
 export type DbCleanupExpiredProgressSessionsFunction = Database['public']['Functions']['cleanup_expired_progress_sessions']
 export type DbCleanupExpiredProgressSessionsArgs = Database['public']['Functions']['cleanup_expired_progress_sessions']['Args']
 export type DbCleanupExpiredProgressSessionsReturns = Database['public']['Functions']['cleanup_expired_progress_sessions']['Returns']
 export type DbCleanupExpiredRoomsFunction = Database['public']['Functions']['cleanup_expired_rooms']
 export type DbCleanupExpiredRoomsArgs = Database['public']['Functions']['cleanup_expired_rooms']['Args']
 export type DbCleanupExpiredRoomsReturns = Database['public']['Functions']['cleanup_expired_rooms']['Returns']
+export type DbCleanupExpiredSourceAnalysisFunction = Database['public']['Functions']['cleanup_expired_source_analysis']
+export type DbCleanupExpiredSourceAnalysisArgs = Database['public']['Functions']['cleanup_expired_source_analysis']['Args']
+export type DbCleanupExpiredSourceAnalysisReturns = Database['public']['Functions']['cleanup_expired_source_analysis']['Returns']
 export type DbCleanupInactivePlayersFunction = Database['public']['Functions']['cleanup_inactive_players']
 export type DbCleanupInactivePlayersArgs = Database['public']['Functions']['cleanup_inactive_players']['Args']
 export type DbCleanupInactivePlayersReturns = Database['public']['Functions']['cleanup_inactive_players']['Returns']
@@ -23047,6 +23469,9 @@ export type DbGetOrCreateMediaOrganizationReturns = Database['public']['Function
 export type DbGetOrCreatePodAnalyticsTodayFunction = Database['public']['Functions']['get_or_create_pod_analytics_today']
 export type DbGetOrCreatePodAnalyticsTodayArgs = Database['public']['Functions']['get_or_create_pod_analytics_today']['Args']
 export type DbGetOrCreatePodAnalyticsTodayReturns = Database['public']['Functions']['get_or_create_pod_analytics_today']['Returns']
+export type DbGetOrCreateSourceAnalysisFunction = Database['public']['Functions']['get_or_create_source_analysis']
+export type DbGetOrCreateSourceAnalysisArgs = Database['public']['Functions']['get_or_create_source_analysis']['Args']
+export type DbGetOrCreateSourceAnalysisReturns = Database['public']['Functions']['get_or_create_source_analysis']['Returns']
 export type DbGetOrCreateSourceMetadataFunction = Database['public']['Functions']['get_or_create_source_metadata']
 export type DbGetOrCreateSourceMetadataArgs = Database['public']['Functions']['get_or_create_source_metadata']['Args']
 export type DbGetOrCreateSourceMetadataReturns = Database['public']['Functions']['get_or_create_source_metadata']['Returns']
@@ -23089,6 +23514,9 @@ export type DbGetSkillsNeedingReviewReturns = Database['public']['Functions']['g
 export type DbGetSocialProofMessageFunction = Database['public']['Functions']['get_social_proof_message']
 export type DbGetSocialProofMessageArgs = Database['public']['Functions']['get_social_proof_message']['Args']
 export type DbGetSocialProofMessageReturns = Database['public']['Functions']['get_social_proof_message']['Returns']
+export type DbGetSourceAnalysisStatsFunction = Database['public']['Functions']['get_source_analysis_stats']
+export type DbGetSourceAnalysisStatsArgs = Database['public']['Functions']['get_source_analysis_stats']['Args']
+export type DbGetSourceAnalysisStatsReturns = Database['public']['Functions']['get_source_analysis_stats']['Returns']
 export type DbGetTableColumnInfoFunction = Database['public']['Functions']['get_table_column_info']
 export type DbGetTableColumnInfoArgs = Database['public']['Functions']['get_table_column_info']['Args']
 export type DbGetTableColumnInfoReturns = Database['public']['Functions']['get_table_column_info']['Returns']
@@ -23128,6 +23556,12 @@ export type DbGetTrendingSearchesReturns = Database['public']['Functions']['get_
 export type DbGetUserBoostSummaryFunction = Database['public']['Functions']['get_user_boost_summary']
 export type DbGetUserBoostSummaryArgs = Database['public']['Functions']['get_user_boost_summary']['Args']
 export type DbGetUserBoostSummaryReturns = Database['public']['Functions']['get_user_boost_summary']['Returns']
+export type DbGetUserConnectedContentFunction = Database['public']['Functions']['get_user_connected_content']
+export type DbGetUserConnectedContentArgs = Database['public']['Functions']['get_user_connected_content']['Args']
+export type DbGetUserConnectedContentReturns = Database['public']['Functions']['get_user_connected_content']['Returns']
+export type DbGetUserContentAnnotationFunction = Database['public']['Functions']['get_user_content_annotation']
+export type DbGetUserContentAnnotationArgs = Database['public']['Functions']['get_user_content_annotation']['Args']
+export type DbGetUserContentAnnotationReturns = Database['public']['Functions']['get_user_content_annotation']['Returns']
 export type DbGetUserCreditsBalanceFunction = Database['public']['Functions']['get_user_credits_balance']
 export type DbGetUserCreditsBalanceArgs = Database['public']['Functions']['get_user_credits_balance']['Args']
 export type DbGetUserCreditsBalanceReturns = Database['public']['Functions']['get_user_credits_balance']['Returns']
