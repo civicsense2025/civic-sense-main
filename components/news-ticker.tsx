@@ -287,7 +287,7 @@ export function NewsTicker({
   const [fromCache, setFromCache] = useState<boolean>(false)
   
   const tickerRef = useRef<HTMLDivElement>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<number | null>(null)
 
   // News loading
   const loadNews = useCallback(async () => {

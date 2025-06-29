@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS } from '@/lib/types/quiz'
 import { PremiumFeature } from '@/lib/premium'
 import { QuizModeSelector } from "@/components/quiz/quiz-mode-selector"
+import { TopicLanguageSwitcher } from "@/components/ui/language-switcher-topic"
+import { useTranslatedContent } from "@/hooks/use-translated-content"
 
 interface TopicInfoProps {
   topicData: TopicMetadata
@@ -74,6 +76,18 @@ export function TopicInfo({
   const [isCheckingQuestions, setIsCheckingQuestions] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Translation support
+  const { 
+    getTranslatedItem, 
+    getAvailableLanguages, 
+    currentLanguage,
+    isTranslated 
+  } = useTranslatedContent(topicData)
+  
+  // Get translated topic data
+  const translatedTopic = getTranslatedItem() || topicData
+  const availableLanguages = getAvailableLanguages()
   
   // Initialize state based on pre-loaded questions
   useEffect(() => {
@@ -156,7 +170,7 @@ export function TopicInfo({
     
     // Create a temporary div to parse HTML
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = topicData.why_this_matters
+    tempDiv.innerHTML = translatedTopic.why_this_matters
     
     // Look for bullet points or structured content
     const listItems = tempDiv.querySelectorAll('li')
@@ -247,20 +261,20 @@ export function TopicInfo({
     }
     
     return parsed
-  }, [topicData.why_this_matters])
+  }, [translatedTopic.why_this_matters])
 
   // Auto-play the topic title and all blurbs when autoplay is enabled
   useEffect(() => {
-    if (autoPlayEnabled && topicData.topic_title) {
+    if (autoPlayEnabled && translatedTopic.topic_title) {
       // Build text to read: title + all blurbs
-      let textToRead = `${topicData.topic_title}. Why this matters: `
+      let textToRead = `${translatedTopic.topic_title}. Why this matters: `
       
       if (blurbs.length > 0) {
         // Add all blurbs
         textToRead += blurbs.map(blurb => `${blurb.title}. ${blurb.content}`).join('. ')
-      } else if (topicData.why_this_matters) {
+      } else if (translatedTopic.why_this_matters) {
         // Fallback to raw content if no blurbs parsed
-        const plainText = topicData.why_this_matters.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        const plainText = translatedTopic.why_this_matters.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
         textToRead += plainText.slice(0, 600) // Limit length
       }
       
@@ -269,7 +283,7 @@ export function TopicInfo({
         playText(textToRead, { autoPlay: true })
       }, 1000)
     }
-  }, [autoPlayEnabled, topicData.topic_title, topicData.why_this_matters, blurbs, playText])
+  }, [autoPlayEnabled, translatedTopic.topic_title, translatedTopic.why_this_matters, blurbs, playText])
 
   // Extract and process sources from questions
   const allSources = useMemo(() => {
@@ -417,10 +431,10 @@ export function TopicInfo({
           {/* Topic title - much larger and more prominent */}
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-slate-900 dark:text-slate-50 leading-tight tracking-tight">
-              {topicData.topic_title}
+              {translatedTopic.topic_title}
             </h1>
             
-            {/* Date and metadata */}
+            {/* Date and metadata with language switcher */}
             <div className="flex items-center justify-center lg:justify-start gap-3 text-sm text-slate-500 dark:text-slate-400">
               <time className="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
                 {new Date(topicData.date).toLocaleDateString('en-US', { 
@@ -434,12 +448,28 @@ export function TopicInfo({
                   Interactive Quiz Available
                 </Badge>
               )}
+              {isTranslated && (
+                <Badge variant="outline" className="text-xs">
+                  Translated
+                </Badge>
+              )}
+            </div>
+            
+            {/* Language Switcher */}
+            <div className="flex justify-center lg:justify-start">
+              <TopicLanguageSwitcher 
+                availableLanguages={availableLanguages}
+                className="inline-flex"
+                contentType="topic"
+                contentId={topicData.topic_id}
+                contentData={topicData}
+              />
             </div>
             
             {/* Description with better typography */}
-            {topicData.description && (
+            {translatedTopic.description && (
               <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-4xl">
-                {topicData.description}
+                {translatedTopic.description}
               </p>
             )}
           </div>
@@ -554,7 +584,7 @@ export function TopicInfo({
                     <CardContent className="p-6">
                       <div 
                         className="prose prose-slate dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: topicData.why_this_matters }}
+                        dangerouslySetInnerHTML={{ __html: translatedTopic.why_this_matters }}
                       />
                     </CardContent>
                   </Card>
@@ -614,8 +644,8 @@ export function TopicInfo({
           {/* Social Sharing - moved to bottom with better integration */}
           <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
             <EnhancedSocialShare
-              title={topicData.topic_title}
-              description={topicData.description || "Test your civic knowledge with this important topic"}
+              title={translatedTopic.topic_title}
+              description={translatedTopic.description || "Test your civic knowledge with this important topic"}
               emoji={topicData.emoji || "🏛️"}
               type="topic"
             />
