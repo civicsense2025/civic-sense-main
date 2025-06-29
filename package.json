@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:no-ai": "node scripts/build-for-vercel.js",
+    "build:vercel": "node scripts/build-for-vercel.js",
     "start": "next start",
     "lint": "next lint",
+    "deploy:vercel": "bash scripts/deploy-vercel.sh",
+    "deploy:vercel-prod": "bash scripts/deploy-vercel.sh --prod",
     "sync-db": "node scripts/sync-database.js",
     "sync-db:watch": "npm run sync-db && echo '🔄 Watching for database changes...' && npx nodemon --watch supabase/migrations --ext sql --exec 'npm run sync-db'",
     "db:status": "supabase status",

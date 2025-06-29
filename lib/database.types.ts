@@ -4150,6 +4150,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "analytics_events_quiz_attempt_id_fkey"
             columns: ["quiz_attempt_id"]
             isOneToOne: false
@@ -4168,6 +4175,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -5907,6 +5935,327 @@ export type Database = {
           },
         ]
       }
+      collection_analytics_daily: {
+        Row: {
+          average_completion_rate: number | null
+          average_score: number | null
+          average_session_duration_minutes: number | null
+          bounce_rate: number | null
+          collection_id: string
+          completed_plays: number | null
+          date: string
+          engagement_score: number | null
+          id: string
+          perfect_scores: number | null
+          quality_score: number | null
+          total_comments: number | null
+          total_likes: number | null
+          total_plays: number | null
+          total_shares: number | null
+          total_time_played_minutes: number | null
+          unique_players: number | null
+        }
+        Insert: {
+          average_completion_rate?: number | null
+          average_score?: number | null
+          average_session_duration_minutes?: number | null
+          bounce_rate?: number | null
+          collection_id: string
+          completed_plays?: number | null
+          date: string
+          engagement_score?: number | null
+          id?: string
+          perfect_scores?: number | null
+          quality_score?: number | null
+          total_comments?: number | null
+          total_likes?: number | null
+          total_plays?: number | null
+          total_shares?: number | null
+          total_time_played_minutes?: number | null
+          unique_players?: number | null
+        }
+        Update: {
+          average_completion_rate?: number | null
+          average_score?: number | null
+          average_session_duration_minutes?: number | null
+          bounce_rate?: number | null
+          collection_id?: string
+          completed_plays?: number | null
+          date?: string
+          engagement_score?: number | null
+          id?: string
+          perfect_scores?: number | null
+          quality_score?: number | null
+          total_comments?: number | null
+          total_likes?: number | null
+          total_plays?: number | null
+          total_shares?: number | null
+          total_time_played_minutes?: number | null
+          unique_players?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_analytics_daily_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_daily_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_daily_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_analytics_events: {
+        Row: {
+          client_timestamp: string | null
+          collection_id: string
+          event_data: Json | null
+          event_timestamp: string
+          event_type: string
+          id: string
+          item_id: string | null
+          item_position: number | null
+          processing_time_ms: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          client_timestamp?: string | null
+          collection_id: string
+          event_data?: Json | null
+          event_timestamp?: string
+          event_type: string
+          id?: string
+          item_id?: string | null
+          item_position?: number | null
+          processing_time_ms?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          client_timestamp?: string | null
+          collection_id?: string
+          event_data?: Json | null
+          event_timestamp?: string
+          event_type?: string
+          id?: string
+          item_id?: string | null
+          item_position?: number | null
+          processing_time_ms?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_analytics_events_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_events_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_events_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_events_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "custom_collection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_analytics_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "collection_play_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_collaborators: {
+        Row: {
+          can_delete: boolean | null
+          can_edit: boolean | null
+          can_invite: boolean | null
+          can_publish: boolean | null
+          collection_id: string
+          contributions_count: number | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          last_viewed_at: string | null
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_invite?: boolean | null
+          can_publish?: boolean | null
+          collection_id: string
+          contributions_count?: number | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          last_viewed_at?: string | null
+          role: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_invite?: boolean | null
+          can_publish?: boolean | null
+          collection_id?: string
+          contributions_count?: number | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          last_viewed_at?: string | null
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_collaborators_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_collaborators_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_collaborators_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_engagement: {
+        Row: {
+          best_score: number | null
+          collection_id: string
+          comment_visibility: string | null
+          completion_count: number | null
+          has_liked: boolean | null
+          has_saved: boolean | null
+          has_shared: boolean | null
+          id: string
+          last_played_at: string | null
+          liked_at: string | null
+          play_count: number | null
+          private_notes: string | null
+          public_comment: string | null
+          rated_at: string | null
+          rating: number | null
+          saved_at: string | null
+          shared_at: string | null
+          total_time_spent_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          best_score?: number | null
+          collection_id: string
+          comment_visibility?: string | null
+          completion_count?: number | null
+          has_liked?: boolean | null
+          has_saved?: boolean | null
+          has_shared?: boolean | null
+          id?: string
+          last_played_at?: string | null
+          liked_at?: string | null
+          play_count?: number | null
+          private_notes?: string | null
+          public_comment?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          saved_at?: string | null
+          shared_at?: string | null
+          total_time_spent_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          best_score?: number | null
+          collection_id?: string
+          comment_visibility?: string | null
+          completion_count?: number | null
+          has_liked?: boolean | null
+          has_saved?: boolean | null
+          has_shared?: boolean | null
+          id?: string
+          last_played_at?: string | null
+          liked_at?: string | null
+          play_count?: number | null
+          private_notes?: string | null
+          public_comment?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          saved_at?: string | null
+          shared_at?: string | null
+          total_time_spent_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_engagement_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_engagement_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_engagement_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_items: {
         Row: {
           category: string | null
@@ -5957,6 +6306,109 @@ export type Database = {
           },
         ]
       }
+      collection_play_sessions: {
+        Row: {
+          active_time_seconds: number | null
+          app_version: string | null
+          collection_id: string
+          completed_at: string | null
+          completion_rate: number | null
+          current_item_position: number | null
+          device_type: string | null
+          final_score_percentage: number | null
+          hint_usage_count: number | null
+          id: string
+          is_completed: boolean | null
+          items_completed: number | null
+          items_skipped: number | null
+          last_activity_at: string | null
+          metadata: Json | null
+          pause_count: number | null
+          play_mode: string | null
+          referrer_source: string | null
+          session_token: string
+          started_at: string
+          total_possible_score: number | null
+          total_score: number | null
+          total_time_seconds: number | null
+          user_id: string | null
+        }
+        Insert: {
+          active_time_seconds?: number | null
+          app_version?: string | null
+          collection_id: string
+          completed_at?: string | null
+          completion_rate?: number | null
+          current_item_position?: number | null
+          device_type?: string | null
+          final_score_percentage?: number | null
+          hint_usage_count?: number | null
+          id?: string
+          is_completed?: boolean | null
+          items_completed?: number | null
+          items_skipped?: number | null
+          last_activity_at?: string | null
+          metadata?: Json | null
+          pause_count?: number | null
+          play_mode?: string | null
+          referrer_source?: string | null
+          session_token: string
+          started_at?: string
+          total_possible_score?: number | null
+          total_score?: number | null
+          total_time_seconds?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          active_time_seconds?: number | null
+          app_version?: string | null
+          collection_id?: string
+          completed_at?: string | null
+          completion_rate?: number | null
+          current_item_position?: number | null
+          device_type?: string | null
+          final_score_percentage?: number | null
+          hint_usage_count?: number | null
+          id?: string
+          is_completed?: boolean | null
+          items_completed?: number | null
+          items_skipped?: number | null
+          last_activity_at?: string | null
+          metadata?: Json | null
+          pause_count?: number | null
+          play_mode?: string | null
+          referrer_source?: string | null
+          session_token?: string
+          started_at?: string
+          total_possible_score?: number | null
+          total_score?: number | null
+          total_time_seconds?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_play_sessions_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_play_sessions_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_play_sessions_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_reviews: {
         Row: {
           collection_id: string | null
@@ -5994,6 +6446,88 @@ export type Database = {
             columns: ["collection_id"]
             isOneToOne: false
             referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_shares: {
+        Row: {
+          allow_download: boolean | null
+          allow_remix: boolean | null
+          collection_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          max_uses: number | null
+          metadata: Json | null
+          password_required: boolean | null
+          require_login: boolean | null
+          revoked_at: string | null
+          share_code: string | null
+          share_type: string
+          shared_by: string
+          unique_users: number | null
+          use_count: number | null
+        }
+        Insert: {
+          allow_download?: boolean | null
+          allow_remix?: boolean | null
+          collection_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          max_uses?: number | null
+          metadata?: Json | null
+          password_required?: boolean | null
+          require_login?: boolean | null
+          revoked_at?: string | null
+          share_code?: string | null
+          share_type: string
+          shared_by: string
+          unique_users?: number | null
+          use_count?: number | null
+        }
+        Update: {
+          allow_download?: boolean | null
+          allow_remix?: boolean | null
+          collection_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          max_uses?: number | null
+          metadata?: Json | null
+          password_required?: boolean | null
+          require_login?: boolean | null
+          revoked_at?: string | null
+          share_code?: string | null
+          share_type?: string
+          shared_by?: string
+          unique_users?: number | null
+          use_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_shares_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_shares_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_shares_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
             referencedColumns: ["id"]
           },
         ]
@@ -7111,6 +7645,242 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_collection_items: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          average_time_seconds: number | null
+          collection_id: string
+          correct_rate: number | null
+          custom_question_data: Json | null
+          id: string
+          is_required: boolean | null
+          notes: string | null
+          points_value: number | null
+          position: number
+          question_id: string | null
+          section_name: string | null
+          skip_rate: number | null
+          time_limit_seconds: number | null
+          times_answered: number | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          average_time_seconds?: number | null
+          collection_id: string
+          correct_rate?: number | null
+          custom_question_data?: Json | null
+          id?: string
+          is_required?: boolean | null
+          notes?: string | null
+          points_value?: number | null
+          position: number
+          question_id?: string | null
+          section_name?: string | null
+          skip_rate?: number | null
+          time_limit_seconds?: number | null
+          times_answered?: number | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          average_time_seconds?: number | null
+          collection_id?: string
+          correct_rate?: number | null
+          custom_question_data?: Json | null
+          id?: string
+          is_required?: boolean | null
+          notes?: string | null
+          points_value?: number | null
+          position?: number
+          question_id?: string | null
+          section_name?: string | null
+          skip_rate?: number | null
+          time_limit_seconds?: number | null
+          times_answered?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "discoverable_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_feedback_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_response_stats"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_sources_enhanced"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
+        ]
+      }
+      custom_content_collections: {
+        Row: {
+          ai_generation_id: string | null
+          allow_remixing: boolean | null
+          average_completion_time_seconds: number | null
+          average_score: number | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          created_by_ai: boolean | null
+          creation_method: string | null
+          description: string | null
+          difficulty_level: string | null
+          emoji: string | null
+          engagement_score: number | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_collaborative: boolean | null
+          language: string | null
+          last_played_at: string | null
+          metadata: Json | null
+          owner_id: string
+          password_hash: string | null
+          published_at: string | null
+          question_count: number | null
+          requires_premium: boolean | null
+          slug: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          topic_areas: string[] | null
+          total_completions: number | null
+          total_plays: number | null
+          unique_players: number | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          ai_generation_id?: string | null
+          allow_remixing?: boolean | null
+          average_completion_time_seconds?: number | null
+          average_score?: number | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_ai?: boolean | null
+          creation_method?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          emoji?: string | null
+          engagement_score?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_collaborative?: boolean | null
+          language?: string | null
+          last_played_at?: string | null
+          metadata?: Json | null
+          owner_id: string
+          password_hash?: string | null
+          published_at?: string | null
+          question_count?: number | null
+          requires_premium?: boolean | null
+          slug?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          topic_areas?: string[] | null
+          total_completions?: number | null
+          total_plays?: number | null
+          unique_players?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          ai_generation_id?: string | null
+          allow_remixing?: boolean | null
+          average_completion_time_seconds?: number | null
+          average_score?: number | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_ai?: boolean | null
+          creation_method?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          emoji?: string | null
+          engagement_score?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_collaborative?: boolean | null
+          language?: string | null
+          last_played_at?: string | null
+          metadata?: Json | null
+          owner_id?: string
+          password_hash?: string | null
+          published_at?: string | null
+          question_count?: number | null
+          requires_premium?: boolean | null
+          slug?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          topic_areas?: string[] | null
+          total_completions?: number | null
+          total_plays?: number | null
+          unique_players?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_content_collections_ai_generation_id_fkey"
+            columns: ["ai_generation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_content_generations: {
         Row: {
           average_credibility: number | null
@@ -8100,6 +8870,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_check_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
           },
         ]
       }
@@ -13420,6 +14197,13 @@ export type Database = {
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "progress_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
         ]
       }
       progress_sessions: {
@@ -13511,6 +14295,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "progress_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "progress_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "progress_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -13827,6 +14632,13 @@ export type Database = {
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "question_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
         ]
       }
       question_skills: {
@@ -13882,6 +14694,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_skills_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
           },
           {
             foreignKeyName: "question_skills_skill_id_fkey"
@@ -13962,6 +14781,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "question_source_links_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "question_source_links_source_metadata_id_fkey"
             columns: ["source_metadata_id"]
             isOneToOne: false
@@ -14012,6 +14838,20 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_internal_id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -14252,6 +15092,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "questions_test_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -15655,6 +16516,7 @@ export type Database = {
           content_type: string | null
           created_at: string | null
           credibility_score: number | null
+          date_specific: string | null
           description: string | null
           domain: string
           favicon_url: string | null
@@ -15689,6 +16551,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string | null
           credibility_score?: number | null
+          date_specific?: string | null
           description?: string | null
           domain: string
           favicon_url?: string | null
@@ -15723,6 +16586,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string | null
           credibility_score?: number | null
+          date_specific?: string | null
           description?: string | null
           domain?: string
           favicon_url?: string | null
@@ -16319,6 +17183,13 @@ export type Database = {
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
         ]
       }
       topic_event_connections: {
@@ -16453,6 +17324,117 @@ export type Database = {
           search_query?: string
           updated_at?: string
           user_type?: string | null
+        }
+        Relationships: []
+      }
+      url_health_status: {
+        Row: {
+          average_response_time: number
+          blacklist_date: string | null
+          blacklist_reason: string | null
+          created_at: string
+          domain: string
+          failure_count: number
+          id: string
+          is_blacklisted: boolean
+          last_failure: string | null
+          last_status_code: number | null
+          last_success: string | null
+          reliability_score: number
+          success_count: number
+          total_checks: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          average_response_time?: number
+          blacklist_date?: string | null
+          blacklist_reason?: string | null
+          created_at?: string
+          domain: string
+          failure_count?: number
+          id?: string
+          is_blacklisted?: boolean
+          last_failure?: string | null
+          last_status_code?: number | null
+          last_success?: string | null
+          reliability_score?: number
+          success_count?: number
+          total_checks?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          average_response_time?: number
+          blacklist_date?: string | null
+          blacklist_reason?: string | null
+          created_at?: string
+          domain?: string
+          failure_count?: number
+          id?: string
+          is_blacklisted?: boolean
+          last_failure?: string | null
+          last_status_code?: number | null
+          last_success?: string | null
+          reliability_score?: number
+          success_count?: number
+          total_checks?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      url_validation_cache: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          domain: string
+          error_message: string | null
+          http_status: number | null
+          id: string
+          is_broken_link: boolean
+          is_valid: boolean
+          last_checked: string
+          page_title: string | null
+          redirect_url: string | null
+          response_time: number
+          updated_at: string
+          url: string
+          validation_score: number
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          domain: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          is_broken_link?: boolean
+          is_valid?: boolean
+          last_checked?: string
+          page_title?: string | null
+          redirect_url?: string | null
+          response_time?: number
+          updated_at?: string
+          url: string
+          validation_score?: number
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          domain?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          is_broken_link?: boolean
+          is_valid?: boolean
+          last_checked?: string
+          page_title?: string | null
+          redirect_url?: string | null
+          response_time?: number
+          updated_at?: string
+          url?: string
+          validation_score?: number
         }
         Relationships: []
       }
@@ -17305,6 +18287,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_deck_content_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "user_deck_content_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
@@ -17316,6 +18305,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -18272,6 +19282,13 @@ export type Database = {
             referencedRelation: "questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_question_memory_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
         ]
       }
       user_question_responses: {
@@ -18340,6 +19357,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
           },
         ]
       }
@@ -18427,6 +19451,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -19520,6 +20565,27 @@ export type Database = {
             referencedRelation: "question_topics"
             referencedColumns: ["topic_id"]
           },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
+            referencedColumns: ["topic_id"]
+          },
         ]
       }
       civics_test_attempts: {
@@ -19620,6 +20686,99 @@ export type Database = {
           partial_indicators: number | null
           total_indicators: number | null
           triggered_indicators: number | null
+        }
+        Relationships: []
+      }
+      discoverable_collections: {
+        Row: {
+          ai_generation_id: string | null
+          allow_remixing: boolean | null
+          average_completion_time_seconds: number | null
+          average_rating: number | null
+          average_score: number | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_ai: boolean | null
+          creation_method: string | null
+          description: string | null
+          difficulty_level: string | null
+          emoji: string | null
+          engagement_score: number | null
+          estimated_duration_minutes: number | null
+          id: string | null
+          is_collaborative: boolean | null
+          language: string | null
+          last_played_at: string | null
+          metadata: Json | null
+          owner_id: string | null
+          password_hash: string | null
+          published_at: string | null
+          question_count: number | null
+          recent_players: number | null
+          requires_premium: boolean | null
+          slug: string | null
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          topic_areas: string[] | null
+          total_completions: number | null
+          total_likes: number | null
+          total_plays: number | null
+          unique_players: number | null
+          updated_at: string | null
+          visibility: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_content_collections_ai_generation_id_fkey"
+            columns: ["ai_generation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_reliability_report: {
+        Row: {
+          average_response_time: number | null
+          domain: string | null
+          failure_count: number | null
+          is_blacklisted: boolean | null
+          last_failure: string | null
+          last_success: string | null
+          reliability_rating: string | null
+          reliability_score: number | null
+          success_count: number | null
+          total_checks: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_response_time?: number | null
+          domain?: string | null
+          failure_count?: number | null
+          is_blacklisted?: boolean | null
+          last_failure?: string | null
+          last_success?: string | null
+          reliability_rating?: never
+          reliability_score?: number | null
+          success_count?: number | null
+          total_checks?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_response_time?: number | null
+          domain?: string | null
+          failure_count?: number | null
+          is_blacklisted?: boolean | null
+          last_failure?: string | null
+          last_success?: string | null
+          reliability_rating?: never
+          reliability_score?: number | null
+          success_count?: number | null
+          total_checks?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -20168,6 +21327,61 @@ export type Database = {
         }
         Relationships: []
       }
+      public_collections_with_authors: {
+        Row: {
+          ai_generation_id: string | null
+          allow_remixing: boolean | null
+          author_avatar_url: string | null
+          author_bio: string | null
+          author_display_name: string | null
+          author_username: string | null
+          average_completion_time_seconds: number | null
+          average_score: number | null
+          avg_rating: number | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_ai: boolean | null
+          creation_method: string | null
+          description: string | null
+          difficulty_level: string | null
+          emoji: string | null
+          engagement_score: number | null
+          estimated_duration_minutes: number | null
+          id: string | null
+          is_collaborative: boolean | null
+          language: string | null
+          last_played_at: string | null
+          metadata: Json | null
+          owner_id: string | null
+          password_hash: string | null
+          play_count: number | null
+          published_at: string | null
+          question_count: number | null
+          rating_count: number | null
+          requires_premium: boolean | null
+          slug: string | null
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          topic_areas: string[] | null
+          total_completions: number | null
+          total_plays: number | null
+          unique_players: number | null
+          updated_at: string | null
+          visibility: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_content_collections_ai_generation_id_fkey"
+            columns: ["ai_generation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       question_feedback_stats: {
         Row: {
           category: string | null
@@ -20228,6 +21442,33 @@ export type Database = {
         }
         Relationships: []
       }
+      recent_url_failures: {
+        Row: {
+          domain: string | null
+          error_message: string | null
+          http_status: number | null
+          last_checked: string | null
+          url: string | null
+          validation_score: number | null
+        }
+        Insert: {
+          domain?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          last_checked?: string | null
+          url?: string | null
+          validation_score?: number | null
+        }
+        Update: {
+          domain?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          last_checked?: string | null
+          url?: string | null
+          validation_score?: number | null
+        }
+        Relationships: []
+      }
       response_time_analytics: {
         Row: {
           avg_response_time_ms: number | null
@@ -20272,6 +21513,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "analytics_events_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
@@ -20283,6 +21531,27 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_with_questions_and_translations"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_topics_without_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "v_translation_coverage_summary"
             referencedColumns: ["topic_id"]
           },
         ]
@@ -20449,6 +21718,90 @@ export type Database = {
         }
         Relationships: []
       }
+      v_topics_with_questions_and_translations: {
+        Row: {
+          categories: Json | null
+          combined_available_languages: string[] | null
+          correct_answer: string | null
+          date: string | null
+          day_of_week: string | null
+          description: string | null
+          difficulty_level: number | null
+          emoji: string | null
+          explanation: string | null
+          hint: string | null
+          is_breaking: boolean | null
+          is_featured: boolean | null
+          key_takeaways: Json | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question: string | null
+          question_available_languages: string[] | null
+          question_category: string | null
+          question_created_at: string | null
+          question_id: string | null
+          question_is_active: boolean | null
+          question_number: number | null
+          question_translations: Json | null
+          question_type: string | null
+          question_updated_at: string | null
+          sources: Json | null
+          tags: Json | null
+          topic_available_languages: string[] | null
+          topic_created_at: string | null
+          topic_id: string | null
+          topic_internal_id: string | null
+          topic_is_active: boolean | null
+          topic_title: string | null
+          topic_translations: Json | null
+          topic_updated_at: string | null
+          why_this_matters: string | null
+        }
+        Relationships: []
+      }
+      v_topics_without_questions: {
+        Row: {
+          available_translation_fields: string[] | null
+          categories: Json | null
+          created_at: string | null
+          date: string | null
+          day_of_week: string | null
+          description: string | null
+          emoji: string | null
+          id: string | null
+          is_active: boolean | null
+          is_breaking: boolean | null
+          is_featured: boolean | null
+          key_takeaways: Json | null
+          topic_id: string | null
+          topic_title: string | null
+          translation_language_count: number | null
+          translations: Json | null
+          updated_at: string | null
+          why_this_matters: string | null
+        }
+        Relationships: []
+      }
+      v_translation_coverage_summary: {
+        Row: {
+          all_available_languages: string[] | null
+          question_language_count: number | null
+          question_languages: string[] | null
+          question_translation_percentage: number | null
+          topic_id: string | null
+          topic_language_count: number | null
+          topic_languages: string[] | null
+          topic_title: string | null
+          topic_translated_field_count: number | null
+          topic_translated_fields: string[] | null
+          total_questions: number | null
+          translated_questions: number | null
+          translation_status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_npc_to_multiplayer_room: {
@@ -20507,6 +21860,16 @@ export type Database = {
           sample_size: number
           agreement_rate: number
         }[]
+      }
+      calculate_engagement_score: {
+        Args: {
+          p_play_count: number
+          p_completion_rate: number
+          p_average_score: number
+          p_share_count: number
+          p_like_count: number
+        }
+        Returns: number
       }
       calculate_gift_credits: {
         Args: { donation_amount_cents: number }
@@ -20661,6 +22024,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_old_url_validations: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       complete_onboarding_step: {
         Args: { target_user_id: string; step_name: string; step_data?: Json }
         Returns: boolean
@@ -20791,6 +22158,10 @@ export type Database = {
           last_played_together: string
           shared_games: Json
         }[]
+      }
+      generate_collection_slug: {
+        Args: { p_title: string }
+        Returns: string
       }
       generate_invite_code: {
         Args: Record<PropertyKey, never>
@@ -21312,6 +22683,14 @@ export type Database = {
           significance_level: number
         }[]
       }
+      get_topic_translation: {
+        Args: {
+          translations_jsonb: Json
+          field_name: string
+          language_code: string
+        }
+        Returns: string
+      }
       get_topics_with_stats_batch: {
         Args: { p_category_id?: string; p_limit?: number; p_offset?: number }
         Returns: {
@@ -21594,6 +22973,10 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      has_translation: {
+        Args: { translations_jsonb: Json; language_code: string }
+        Returns: boolean
       }
       identify_content_gaps: {
         Args: { p_analysis_type?: string; p_researcher_id?: string }
@@ -21920,6 +23303,10 @@ export type Database = {
           p_mood?: string
           p_conflict_detected?: boolean
         }
+        Returns: undefined
+      }
+      update_domain_reliability_score: {
+        Args: { domain_name: string }
         Returns: undefined
       }
       update_job_after_execution: {
@@ -22909,8 +24296,14 @@ export type DbCivicEngagementEvents = Database['public']['Tables']['civic_engage
 export type DbCivicsTestAnalytics = Database['public']['Tables']['civics_test_analytics']['Row']
 export type DbCleverUserMapping = Database['public']['Tables']['clever_user_mapping']['Row']
 export type DbCollectionAnalytics = Database['public']['Tables']['collection_analytics']['Row']
+export type DbCollectionAnalyticsDaily = Database['public']['Tables']['collection_analytics_daily']['Row']
+export type DbCollectionAnalyticsEvents = Database['public']['Tables']['collection_analytics_events']['Row']
+export type DbCollectionCollaborators = Database['public']['Tables']['collection_collaborators']['Row']
+export type DbCollectionEngagement = Database['public']['Tables']['collection_engagement']['Row']
 export type DbCollectionItems = Database['public']['Tables']['collection_items']['Row']
+export type DbCollectionPlaySessions = Database['public']['Tables']['collection_play_sessions']['Row']
 export type DbCollectionReviews = Database['public']['Tables']['collection_reviews']['Row']
+export type DbCollectionShares = Database['public']['Tables']['collection_shares']['Row']
 export type DbCollectionSkillProgress = Database['public']['Tables']['collection_skill_progress']['Row']
 export type DbCollections = Database['public']['Tables']['collections']['Row']
 export type DbCommitteeMemberships = Database['public']['Tables']['committee_memberships']['Row']
@@ -22929,6 +24322,8 @@ export type DbContentItemSkills = Database['public']['Tables']['content_item_ski
 export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
 export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
 export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
+export type DbCustomCollectionItems = Database['public']['Tables']['custom_collection_items']['Row']
+export type DbCustomContentCollections = Database['public']['Tables']['custom_content_collections']['Row']
 export type DbCustomContentGenerations = Database['public']['Tables']['custom_content_generations']['Row']
 export type DbCustomContentQuestions = Database['public']['Tables']['custom_content_questions']['Row']
 export type DbCustomContentTopics = Database['public']['Tables']['custom_content_topics']['Row']
@@ -23083,6 +24478,8 @@ export type DbTags = Database['public']['Tables']['tags']['Row']
 export type DbTopicEventConnections = Database['public']['Tables']['topic_event_connections']['Row']
 export type DbTranslationJobs = Database['public']['Tables']['translation_jobs']['Row']
 export type DbTrendingSearches = Database['public']['Tables']['trending_searches']['Row']
+export type DbUrlHealthStatus = Database['public']['Tables']['url_health_status']['Row']
+export type DbUrlValidationCache = Database['public']['Tables']['url_validation_cache']['Row']
 export type DbUserAchievements = Database['public']['Tables']['user_achievements']['Row']
 export type DbUserActiveBoosts = Database['public']['Tables']['user_active_boosts']['Row']
 export type DbUserAssessmentAnalytics = Database['public']['Tables']['user_assessment_analytics']['Row']
@@ -23179,8 +24576,14 @@ export type DbCivicEngagementEventsInsert = Database['public']['Tables']['civic_
 export type DbCivicsTestAnalyticsInsert = Database['public']['Tables']['civics_test_analytics']['Insert']
 export type DbCleverUserMappingInsert = Database['public']['Tables']['clever_user_mapping']['Insert']
 export type DbCollectionAnalyticsInsert = Database['public']['Tables']['collection_analytics']['Insert']
+export type DbCollectionAnalyticsDailyInsert = Database['public']['Tables']['collection_analytics_daily']['Insert']
+export type DbCollectionAnalyticsEventsInsert = Database['public']['Tables']['collection_analytics_events']['Insert']
+export type DbCollectionCollaboratorsInsert = Database['public']['Tables']['collection_collaborators']['Insert']
+export type DbCollectionEngagementInsert = Database['public']['Tables']['collection_engagement']['Insert']
 export type DbCollectionItemsInsert = Database['public']['Tables']['collection_items']['Insert']
+export type DbCollectionPlaySessionsInsert = Database['public']['Tables']['collection_play_sessions']['Insert']
 export type DbCollectionReviewsInsert = Database['public']['Tables']['collection_reviews']['Insert']
+export type DbCollectionSharesInsert = Database['public']['Tables']['collection_shares']['Insert']
 export type DbCollectionSkillProgressInsert = Database['public']['Tables']['collection_skill_progress']['Insert']
 export type DbCollectionsInsert = Database['public']['Tables']['collections']['Insert']
 export type DbCommitteeMembershipsInsert = Database['public']['Tables']['committee_memberships']['Insert']
@@ -23199,6 +24602,8 @@ export type DbContentItemSkillsInsert = Database['public']['Tables']['content_it
 export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
 export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
 export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
+export type DbCustomCollectionItemsInsert = Database['public']['Tables']['custom_collection_items']['Insert']
+export type DbCustomContentCollectionsInsert = Database['public']['Tables']['custom_content_collections']['Insert']
 export type DbCustomContentGenerationsInsert = Database['public']['Tables']['custom_content_generations']['Insert']
 export type DbCustomContentQuestionsInsert = Database['public']['Tables']['custom_content_questions']['Insert']
 export type DbCustomContentTopicsInsert = Database['public']['Tables']['custom_content_topics']['Insert']
@@ -23353,6 +24758,8 @@ export type DbTagsInsert = Database['public']['Tables']['tags']['Insert']
 export type DbTopicEventConnectionsInsert = Database['public']['Tables']['topic_event_connections']['Insert']
 export type DbTranslationJobsInsert = Database['public']['Tables']['translation_jobs']['Insert']
 export type DbTrendingSearchesInsert = Database['public']['Tables']['trending_searches']['Insert']
+export type DbUrlHealthStatusInsert = Database['public']['Tables']['url_health_status']['Insert']
+export type DbUrlValidationCacheInsert = Database['public']['Tables']['url_validation_cache']['Insert']
 export type DbUserAchievementsInsert = Database['public']['Tables']['user_achievements']['Insert']
 export type DbUserActiveBoostsInsert = Database['public']['Tables']['user_active_boosts']['Insert']
 export type DbUserAssessmentAnalyticsInsert = Database['public']['Tables']['user_assessment_analytics']['Insert']
@@ -23449,8 +24856,14 @@ export type DbCivicEngagementEventsUpdate = Database['public']['Tables']['civic_
 export type DbCivicsTestAnalyticsUpdate = Database['public']['Tables']['civics_test_analytics']['Update']
 export type DbCleverUserMappingUpdate = Database['public']['Tables']['clever_user_mapping']['Update']
 export type DbCollectionAnalyticsUpdate = Database['public']['Tables']['collection_analytics']['Update']
+export type DbCollectionAnalyticsDailyUpdate = Database['public']['Tables']['collection_analytics_daily']['Update']
+export type DbCollectionAnalyticsEventsUpdate = Database['public']['Tables']['collection_analytics_events']['Update']
+export type DbCollectionCollaboratorsUpdate = Database['public']['Tables']['collection_collaborators']['Update']
+export type DbCollectionEngagementUpdate = Database['public']['Tables']['collection_engagement']['Update']
 export type DbCollectionItemsUpdate = Database['public']['Tables']['collection_items']['Update']
+export type DbCollectionPlaySessionsUpdate = Database['public']['Tables']['collection_play_sessions']['Update']
 export type DbCollectionReviewsUpdate = Database['public']['Tables']['collection_reviews']['Update']
+export type DbCollectionSharesUpdate = Database['public']['Tables']['collection_shares']['Update']
 export type DbCollectionSkillProgressUpdate = Database['public']['Tables']['collection_skill_progress']['Update']
 export type DbCollectionsUpdate = Database['public']['Tables']['collections']['Update']
 export type DbCommitteeMembershipsUpdate = Database['public']['Tables']['committee_memberships']['Update']
@@ -23469,6 +24882,8 @@ export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_it
 export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
 export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
 export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
+export type DbCustomCollectionItemsUpdate = Database['public']['Tables']['custom_collection_items']['Update']
+export type DbCustomContentCollectionsUpdate = Database['public']['Tables']['custom_content_collections']['Update']
 export type DbCustomContentGenerationsUpdate = Database['public']['Tables']['custom_content_generations']['Update']
 export type DbCustomContentQuestionsUpdate = Database['public']['Tables']['custom_content_questions']['Update']
 export type DbCustomContentTopicsUpdate = Database['public']['Tables']['custom_content_topics']['Update']
@@ -23623,6 +25038,8 @@ export type DbTagsUpdate = Database['public']['Tables']['tags']['Update']
 export type DbTopicEventConnectionsUpdate = Database['public']['Tables']['topic_event_connections']['Update']
 export type DbTranslationJobsUpdate = Database['public']['Tables']['translation_jobs']['Update']
 export type DbTrendingSearchesUpdate = Database['public']['Tables']['trending_searches']['Update']
+export type DbUrlHealthStatusUpdate = Database['public']['Tables']['url_health_status']['Update']
+export type DbUrlValidationCacheUpdate = Database['public']['Tables']['url_validation_cache']['Update']
 export type DbUserAchievementsUpdate = Database['public']['Tables']['user_achievements']['Update']
 export type DbUserActiveBoostsUpdate = Database['public']['Tables']['user_active_boosts']['Update']
 export type DbUserAssessmentAnalyticsUpdate = Database['public']['Tables']['user_assessment_analytics']['Update']
@@ -23687,6 +25104,8 @@ export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_
 export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
 export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
 export type DbCurrentAssessmentStatusView = Database['public']['Views']['current_assessment_status']['Row']
+export type DbDiscoverableCollectionsView = Database['public']['Views']['discoverable_collections']['Row']
+export type DbDomainReliabilityReportView = Database['public']['Views']['domain_reliability_report']['Row']
 export type DbEnhancedSourceAnalysisView = Database['public']['Views']['enhanced_source_analysis']['Row']
 export type DbFunctionTypeValidationView = Database['public']['Views']['function_type_validation']['Row']
 export type DbFunctionValidationSummaryView = Database['public']['Views']['function_validation_summary']['Row']
@@ -23702,15 +25121,20 @@ export type DbPodDiscoveryView = Database['public']['Views']['pod_discovery']['R
 export type DbPodMemberDetailsView = Database['public']['Views']['pod_member_details']['Row']
 export type DbPracticeAttemptsView = Database['public']['Views']['practice_attempts']['Row']
 export type DbProviderPerformanceView = Database['public']['Views']['provider_performance']['Row']
+export type DbPublicCollectionsWithAuthorsView = Database['public']['Views']['public_collections_with_authors']['Row']
 export type DbQuestionFeedbackStatsView = Database['public']['Views']['question_feedback_stats']['Row']
 export type DbQuestionResponseStatsView = Database['public']['Views']['question_response_stats']['Row']
 export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
+export type DbRecentUrlFailuresView = Database['public']['Views']['recent_url_failures']['Row']
 export type DbResponseTimeAnalyticsView = Database['public']['Views']['response_time_analytics']['Row']
 export type DbSurveySummaryView = Database['public']['Views']['survey_summary']['Row']
 export type DbTranslationJobStatsView = Database['public']['Views']['translation_job_stats']['Row']
 export type DbUserComprehensiveStatsView = Database['public']['Views']['user_comprehensive_stats']['Row']
 export type DbUserComprehensiveStatsPremiumView = Database['public']['Views']['user_comprehensive_stats_premium']['Row']
 export type DbUserSkillAnalyticsView = Database['public']['Views']['user_skill_analytics']['Row']
+export type DbVTopicsWithQuestionsAndTranslationsView = Database['public']['Views']['v_topics_with_questions_and_translations']['Row']
+export type DbVTopicsWithoutQuestionsView = Database['public']['Views']['v_topics_without_questions']['Row']
+export type DbVTranslationCoverageSummaryView = Database['public']['Views']['v_translation_coverage_summary']['Row']
 
 // public Enums
 export type DbCourseRoleEnum = Database['public']['Enums']['course_role']
@@ -23739,6 +25163,9 @@ export type DbCalculateAssessmentScoreReturns = Database['public']['Functions'][
 export type DbCalculateBiasConsensusFunction = Database['public']['Functions']['calculate_bias_consensus']
 export type DbCalculateBiasConsensusArgs = Database['public']['Functions']['calculate_bias_consensus']['Args']
 export type DbCalculateBiasConsensusReturns = Database['public']['Functions']['calculate_bias_consensus']['Returns']
+export type DbCalculateEngagementScoreFunction = Database['public']['Functions']['calculate_engagement_score']
+export type DbCalculateEngagementScoreArgs = Database['public']['Functions']['calculate_engagement_score']['Args']
+export type DbCalculateEngagementScoreReturns = Database['public']['Functions']['calculate_engagement_score']['Returns']
 export type DbCalculateGiftCreditsFunction = Database['public']['Functions']['calculate_gift_credits']
 export type DbCalculateGiftCreditsArgs = Database['public']['Functions']['calculate_gift_credits']['Args']
 export type DbCalculateGiftCreditsReturns = Database['public']['Functions']['calculate_gift_credits']['Returns']
@@ -23823,6 +25250,9 @@ export type DbCleanupOldTranslationJobsReturns = Database['public']['Functions']
 export type DbCleanupOldTrendingSearchesFunction = Database['public']['Functions']['cleanup_old_trending_searches']
 export type DbCleanupOldTrendingSearchesArgs = Database['public']['Functions']['cleanup_old_trending_searches']['Args']
 export type DbCleanupOldTrendingSearchesReturns = Database['public']['Functions']['cleanup_old_trending_searches']['Returns']
+export type DbCleanupOldUrlValidationsFunction = Database['public']['Functions']['cleanup_old_url_validations']
+export type DbCleanupOldUrlValidationsArgs = Database['public']['Functions']['cleanup_old_url_validations']['Args']
+export type DbCleanupOldUrlValidationsReturns = Database['public']['Functions']['cleanup_old_url_validations']['Returns']
 export type DbCompleteOnboardingStepFunction = Database['public']['Functions']['complete_onboarding_step']
 export type DbCompleteOnboardingStepArgs = Database['public']['Functions']['complete_onboarding_step']['Args']
 export type DbCompleteOnboardingStepReturns = Database['public']['Functions']['complete_onboarding_step']['Returns']
@@ -23859,6 +25289,9 @@ export type DbFindDuplicatePublicFiguresReturns = Database['public']['Functions'
 export type DbFindPotentialFriendsFunction = Database['public']['Functions']['find_potential_friends']
 export type DbFindPotentialFriendsArgs = Database['public']['Functions']['find_potential_friends']['Args']
 export type DbFindPotentialFriendsReturns = Database['public']['Functions']['find_potential_friends']['Returns']
+export type DbGenerateCollectionSlugFunction = Database['public']['Functions']['generate_collection_slug']
+export type DbGenerateCollectionSlugArgs = Database['public']['Functions']['generate_collection_slug']['Args']
+export type DbGenerateCollectionSlugReturns = Database['public']['Functions']['generate_collection_slug']['Returns']
 export type DbGenerateInviteCodeFunction = Database['public']['Functions']['generate_invite_code']
 export type DbGenerateInviteCodeArgs = Database['public']['Functions']['generate_invite_code']['Args']
 export type DbGenerateInviteCodeReturns = Database['public']['Functions']['generate_invite_code']['Returns']
@@ -24027,6 +25460,9 @@ export type DbGetTermsWithCategoriesReturns = Database['public']['Functions']['g
 export type DbGetTopicRelatedEventsFunction = Database['public']['Functions']['get_topic_related_events']
 export type DbGetTopicRelatedEventsArgs = Database['public']['Functions']['get_topic_related_events']['Args']
 export type DbGetTopicRelatedEventsReturns = Database['public']['Functions']['get_topic_related_events']['Returns']
+export type DbGetTopicTranslationFunction = Database['public']['Functions']['get_topic_translation']
+export type DbGetTopicTranslationArgs = Database['public']['Functions']['get_topic_translation']['Args']
+export type DbGetTopicTranslationReturns = Database['public']['Functions']['get_topic_translation']['Returns']
 export type DbGetTopicsWithStatsBatchFunction = Database['public']['Functions']['get_topics_with_stats_batch']
 export type DbGetTopicsWithStatsBatchArgs = Database['public']['Functions']['get_topics_with_stats_batch']['Args']
 export type DbGetTopicsWithStatsBatchReturns = Database['public']['Functions']['get_topics_with_stats_batch']['Returns']
@@ -24099,6 +25535,9 @@ export type DbGtrgmOptionsReturns = Database['public']['Functions']['gtrgm_optio
 export type DbGtrgmOutFunction = Database['public']['Functions']['gtrgm_out']
 export type DbGtrgmOutArgs = Database['public']['Functions']['gtrgm_out']['Args']
 export type DbGtrgmOutReturns = Database['public']['Functions']['gtrgm_out']['Returns']
+export type DbHasTranslationFunction = Database['public']['Functions']['has_translation']
+export type DbHasTranslationArgs = Database['public']['Functions']['has_translation']['Args']
+export type DbHasTranslationReturns = Database['public']['Functions']['has_translation']['Returns']
 export type DbIdentifyContentGapsFunction = Database['public']['Functions']['identify_content_gaps']
 export type DbIdentifyContentGapsArgs = Database['public']['Functions']['identify_content_gaps']['Args']
 export type DbIdentifyContentGapsReturns = Database['public']['Functions']['identify_content_gaps']['Returns']
@@ -24207,6 +25646,9 @@ export type DbUpdateBookmarkAccessReturns = Database['public']['Functions']['upd
 export type DbUpdateConversationContextFunction = Database['public']['Functions']['update_conversation_context']
 export type DbUpdateConversationContextArgs = Database['public']['Functions']['update_conversation_context']['Args']
 export type DbUpdateConversationContextReturns = Database['public']['Functions']['update_conversation_context']['Returns']
+export type DbUpdateDomainReliabilityScoreFunction = Database['public']['Functions']['update_domain_reliability_score']
+export type DbUpdateDomainReliabilityScoreArgs = Database['public']['Functions']['update_domain_reliability_score']['Args']
+export type DbUpdateDomainReliabilityScoreReturns = Database['public']['Functions']['update_domain_reliability_score']['Returns']
 export type DbUpdateJobAfterExecutionFunction = Database['public']['Functions']['update_job_after_execution']
 export type DbUpdateJobAfterExecutionArgs = Database['public']['Functions']['update_job_after_execution']['Args']
 export type DbUpdateJobAfterExecutionReturns = Database['public']['Functions']['update_job_after_execution']['Returns']

@@ -38,17 +38,11 @@ export async function POST(request: NextRequest) {
     // Map language codes for DeepL
     const deeplLanguageMap: Record<string, string> = {
       'es': 'ES',
-      'fr': 'FR',
-      'de': 'DE',
       'it': 'IT',
-      'pt': 'PT',
       'zh': 'ZH',
-      'ja': 'JA',
-      'ko': 'KO',
-      'ru': 'RU',
+      'vi': 'VI',
       'ar': 'AR',
-      'pl': 'PL',
-      'nl': 'NL'
+      'hi': 'HI'
     }
 
     const deeplTargetLang = deeplLanguageMap[targetLanguage] || targetLanguage.toUpperCase()

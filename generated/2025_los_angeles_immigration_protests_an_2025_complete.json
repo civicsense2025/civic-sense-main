@@ -1,0 +1,268 @@
+{
+  "metadata": {
+    "generated_at": "2025-06-13T01:59:06.733Z",
+    "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+    "question_count": 4,
+    "validation_passed": true
+  },
+  "originalQuiz": {
+    "topic": "2025 Los Angeles Immigration Protests and Federal Troop Deployment",
+    "issue": "Federal deployment of National Guard/Marines during LA immigration protests sparks constitutional debate",
+    "description": "This quiz examines the 2025 LA protests against immigration enforcement and subsequent deployment of federal troops, exploring tensions between federal authority (10th Amendment), state autonomy, and citizens' rights to protest. It connects current events to constitutional principles of federalism, civil liberties, and civic participation in democracy.",
+    "questions": [
+      {
+        "questionNumber": 1,
+        "questionType": "Multiple Choice",
+        "difficultyLevel": "Recall",
+        "category": "Government",
+        "question": "How many active-duty Marines were deployed to Los Angeles in June 2025?",
+        "optionA": "400",
+        "optionB": "700",
+        "optionC": "1,000",
+        "optionD": "2,500",
+        "correctAnswer": "700",
+        "hint": "This number was specifically mentioned in coverage about military deployment disagreements",
+        "explanation": "The deployment of 700 Marines demonstrated federal executive power under Article II of the Constitution, though state officials argued this violated principles of federalism.",
+        "tags": [
+          "Military Deployment",
+          "Federalism",
+          "Executive Power"
+        ],
+        "sources": [
+          {
+            "name": "Division, distrust roil L.A. as federal troops arrive - LA Times",
+            "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+          },
+          {
+            "name": "72 hours in LA: Immigration protests timeline - CalMatters",
+            "url": "https://calmatters.org/justice/2025/06/la-immigration-protests-photo-essay/"
+          }
+        ]
+      },
+      {
+        "questionNumber": 2,
+        "questionType": "Multiple Choice",
+        "difficultyLevel": "Comprehension",
+        "category": "Constitutional Law",
+        "question": "Which constitutional principle did California officials cite when opposing federal troop deployment?",
+        "optionA": "First Amendment free speech",
+        "optionB": "Tenth Amendment state rights",
+        "optionC": "Fourteenth Amendment equal protection",
+        "optionD": "Fourth Amendment search protections",
+        "correctAnswer": "Tenth Amendment state rights",
+        "hint": "This amendment deals with powers reserved to states",
+        "explanation": "The Tenth Amendment reserves non-delegated powers to states, creating ongoing debates about federal intervention in local law enforcement matters.",
+        "tags": [
+          "10th Amendment",
+          "Federalism",
+          "States' Rights"
+        ],
+        "sources": [
+          {
+            "name": "Trump’s feud with California moves to streets - CalMatters",
+            "url": "https://calmatters.org/politics/2025/06/los-angeles-national-guard-trump/"
+          },
+          {
+            "name": "LAPD statement on federal coordination - LA Times",
+            "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+          }
+        ]
+      },
+      {
+        "questionNumber": 3,
+        "questionType": "True or False",
+        "difficultyLevel": "Recall",
+        "category": "Civic Action",
+        "question": "Protesters successfully shut down the 101 Freeway during the June 2025 demonstrations.",
+        "correctAnswer": "True",
+        "hint": "Look for information about protest locations and police responses",
+        "explanation": "The 101 Freeway shutdown demonstrated both the scale of protests and challenges in balancing public safety with protest rights under the First Amendment.",
+        "tags": [
+          "Public Protests",
+          "First Amendment",
+          "Law Enforcement"
+        ],
+        "sources": [
+          {
+            "name": "Anti-ICE protests enter fourth night - CBS News",
+            "url": "https://www.cbsnews.com/losangeles/news/anti-ice-protests-los-angeles-immigration-enforcement/"
+          },
+          {
+            "name": "LA protests photo essay - CalMatters",
+            "url": "https://calmatters.org/justice/2025/06/la-immigration-protests-photo-essay/"
+          }
+        ]
+      },
+      {
+        "questionNumber": 4,
+        "questionType": "Short Answer",
+        "difficultyLevel": "Analysis",
+        "category": "Public Policy",
+        "question": "How might the federal deployment of troops impact community trust in local law enforcement?",
+        "correctAnswer": "Answers should address: Reduced trust due to perceived federal overreach, strained local-federal coordination, or increased tensions between communities and authorities",
+        "hint": "Consider both immediate effects and long-term relationships",
+        "explanation": "When federal forces operate without local coordination, it can undermine community policing efforts and deter civic participation in public safety matters.",
+        "tags": [
+          "Community Trust",
+          "Law Enforcement",
+          "Federal-Local Relations"
+        ],
+        "sources": [
+          {
+            "name": "LAPD Chief on operational challenges - LA Times",
+            "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+          },
+          {
+            "name": "School security measures during protests - CBS News",
+            "url": "https://www.cbsnews.com/losangeles/news/anti-ice-protests-los-angeles-immigration-enforcement/"
+          }
+        ]
+      }
+    ]
+  },
+  "topicConfig": {
+    "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+    "topic_title": "2025 Los Angeles Immigration Protests and Federal Troop Deployment",
+    "description": "This quiz examines the 2025 LA protests against immigration enforcement and subsequent deployment of federal troops, exploring tensions between federal authority (10th Amendment), state autonomy, and citizens' rights to protest. It connects current events to constitutional principles of federalism, civil liberties, and civic participation in democracy.",
+    "why_this_matters": "<ul><li><strong>Civic Engagement:</strong> Understanding this current event helps you participate meaningfully in democratic processes and stay informed about key government decisions.</li><li><strong>Informed Citizenship:</strong> Knowledge of this issue enables better voting decisions and more effective advocacy on topics that affect your community.</li><li><strong>Constitutional Awareness:</strong> This topic connects to fundamental principles of American governance and helps you understand how our democratic system works in practice.</li><li><strong>Community Impact:</strong> These developments directly affect your daily life, from local services to federal policies that shape your economic and social environment.</li></ul>",
+    "emoji": "🏛️",
+    "date": "2025-07-10",
+    "day_of_week": "Wednesday",
+    "categories": [
+      "Government",
+      "Constitutional Law",
+      "Civic Action",
+      "Public Policy"
+    ]
+  },
+  "dbQuestions": [
+    {
+      "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+      "question_number": 1,
+      "question_type": "multiple_choice",
+      "category": "Government",
+      "question": "How many active-duty Marines were deployed to Los Angeles in June 2025?",
+      "option_a": "400",
+      "option_b": "700",
+      "option_c": "1,000",
+      "option_d": "2,500",
+      "correct_answer": "option_b",
+      "hint": "This number was specifically mentioned in coverage about military deployment disagreements",
+      "explanation": "The deployment of 700 Marines demonstrated federal executive power under Article II of the Constitution, though state officials argued this violated principles of federalism.",
+      "tags": [
+        "constitution",
+        "federal",
+        "state",
+        "government"
+      ],
+      "sources": [
+        {
+          "name": "Division, distrust roil L.A. as federal troops arrive - LA Times",
+          "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+        },
+        {
+          "name": "72 hours in LA: Immigration protests timeline - CalMatters",
+          "url": "https://calmatters.org/justice/2025/06/la-immigration-protests-photo-essay/"
+        }
+      ],
+      "difficulty_level": 1,
+      "is_active": true
+    },
+    {
+      "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+      "question_number": 2,
+      "question_type": "multiple_choice",
+      "category": "Constitutional Law",
+      "question": "Which constitutional principle did California officials cite when opposing federal troop deployment?",
+      "option_a": "First Amendment free speech",
+      "option_b": "Tenth Amendment state rights",
+      "option_c": "Fourteenth Amendment equal protection",
+      "option_d": "Fourth Amendment search protections",
+      "correct_answer": "option_b",
+      "hint": "This amendment deals with powers reserved to states",
+      "explanation": "The Tenth Amendment reserves non-delegated powers to states, creating ongoing debates about federal intervention in local law enforcement matters.",
+      "tags": [
+        "constitution",
+        "federal",
+        "state",
+        "local"
+      ],
+      "sources": [
+        {
+          "name": "Trump’s feud with California moves to streets - CalMatters",
+          "url": "https://calmatters.org/politics/2025/06/los-angeles-national-guard-trump/"
+        },
+        {
+          "name": "LAPD statement on federal coordination - LA Times",
+          "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+        }
+      ],
+      "difficulty_level": 2,
+      "is_active": true
+    },
+    {
+      "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+      "question_number": 3,
+      "question_type": "true_false",
+      "category": "Civic Action",
+      "question": "Protesters successfully shut down the 101 Freeway during the June 2025 demonstrations.",
+      "option_a": null,
+      "option_b": null,
+      "option_c": null,
+      "option_d": null,
+      "correct_answer": "true",
+      "hint": "Look for information about protest locations and police responses",
+      "explanation": "The 101 Freeway shutdown demonstrated both the scale of protests and challenges in balancing public safety with protest rights under the First Amendment.",
+      "tags": [
+        "amendment",
+        "civic",
+        "rights",
+        "first amendment"
+      ],
+      "sources": [
+        {
+          "name": "Anti-ICE protests enter fourth night - CBS News",
+          "url": "https://www.cbsnews.com/losangeles/news/anti-ice-protests-los-angeles-immigration-enforcement/"
+        },
+        {
+          "name": "LA protests photo essay - CalMatters",
+          "url": "https://calmatters.org/justice/2025/06/la-immigration-protests-photo-essay/"
+        }
+      ],
+      "difficulty_level": 1,
+      "is_active": true
+    },
+    {
+      "topic_id": "2025_los_angeles_immigration_protests_an_2025",
+      "question_number": 4,
+      "question_type": "short_answer",
+      "category": "Public Policy",
+      "question": "How might the federal deployment of troops impact community trust in local law enforcement?",
+      "option_a": null,
+      "option_b": null,
+      "option_c": null,
+      "option_d": null,
+      "correct_answer": "Answers should address: Reduced trust due to perceived federal overreach, strained local-federal coordination, or increased tensions between communities and authorities",
+      "hint": "Consider both immediate effects and long-term relationships",
+      "explanation": "When federal forces operate without local coordination, it can undermine community policing efforts and deter civic participation in public safety matters.",
+      "tags": [
+        "federal",
+        "local",
+        "law",
+        "policy"
+      ],
+      "sources": [
+        {
+          "name": "LAPD Chief on operational challenges - LA Times",
+          "url": "https://www.latimes.com/california/story/2025-06-10/businesses-burglarized-as-immigration-protests-continue"
+        },
+        {
+          "name": "School security measures during protests - CBS News",
+          "url": "https://www.cbsnews.com/losangeles/news/anti-ice-protests-los-angeles-immigration-enforcement/"
+        }
+      ],
+      "difficulty_level": 3,
+      "is_active": true
+    }
+  ]
+}

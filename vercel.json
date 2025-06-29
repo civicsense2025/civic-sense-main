@@ -1,0 +1,24 @@
+{
+  "build": {
+    "env": {
+      "DISABLE_AI_FEATURES": "true"
+    }
+  },
+  "buildCommand": "npm run build:vercel",
+  "functions": {
+    "app/api/!(assistant|ai|admin)/**": {
+      "maxDuration": 30
+    }
+  },
+  "ignores": [
+    "app/api/assistant/**",
+    "app/api/admin/**",
+    "app/admin/**",
+    "components/admin/**",
+    "scripts/*ai*",
+    "scripts/*generate*"
+  ],
+  "ignoreCommand": "echo 'Skipping AI functions in production build'",
+  "outputDirectory": ".next",
+  "installCommand": "npm ci --omit=optional"
+} 

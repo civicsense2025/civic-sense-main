@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCivicSenseAssistant, askAlex, getCivicActions, analyzePower } from '@/lib/ai/civicsense-assistant'
 import { z } from 'zod'
+
+// Check if AI features are disabled (for Vercel builds)
+const AI_DISABLED = process.env.DISABLE_AI_FEATURES === 'true'
+
+// Conditional imports - only load AI modules if features are enabled
+let getCivicSenseAssistant: any, askAlex: any, getCivicActions: any, analyzePower: any
+
+if (!AI_DISABLED) {
+  try {
+    const aiModule = await import('@/lib/ai/civicsense-assistant')
+    getCivicSenseAssistant = aiModule.getCivicSenseAssistant
+    askAlex = aiModule.askAlex
+    getCivicActions = aiModule.getCivicActions
+    analyzePower = aiModule.analyzePower
+  } catch (error) {
+    console.warn('AI modules not available:', error)
+  }
+}
 
 // =============================================================================
 // VALIDATION SCHEMAS
@@ -15,10 +32,34 @@ const ChatRequestSchema = z.object({
 })
 
 // =============================================================================
+// FALLBACK RESPONSES WHEN AI IS DISABLED
+// =============================================================================
+
+const AI_DISABLED_RESPONSE = {
+  success: false,
+  error: 'AI features are currently disabled in this environment',
+  fallback: {
+    message: "I'm currently unavailable, but you can still explore CivicSense's quiz topics and learn about how power works in government. Check out our quiz library for hands-on civic education!",
+    confidence: 0,
+    suggestions: [
+      "Browse our quiz topics",
+      "Learn about constitutional rights",
+      "Explore local government functions",
+      "Understand voting processes"
+    ]
+  }
+}
+
+// =============================================================================
 // MAIN CHAT ENDPOINT
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  // Return early if AI features are disabled
+  if (AI_DISABLED || !getCivicSenseAssistant) {
+    return NextResponse.json(AI_DISABLED_RESPONSE, { status: 503 })
+  }
+
   try {
     const body = await request.json()
     const validatedInput = ChatRequestSchema.parse(body)
@@ -99,33 +140,12 @@ export async function POST(request: NextRequest) {
     }
     
   } catch (error) {
-    console.error('Assistant chat error:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid input format',
-        details: error.errors
-      }, { status: 400 })
-    }
+    console.error('Chat endpoint error:', error)
     
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
-      fallback_response: {
-        message: "I'm having trouble processing that right now, but I'm here to help you understand how power works and take civic action. Can you try rephrasing your question?",
-        actions: [
-          {
-            type: 'research',
-            title: 'Learn About Civic Engagement',
-            description: 'Explore how to get involved in your community',
-            urgency: 'low',
-            timeRequired: '10 minutes'
-          }
-        ],
-        civic_insights: [],
-        confidence: 30
-      }
+      fallback: AI_DISABLED_RESPONSE.fallback
     }, { status: 500 })
   }
 }
@@ -135,6 +155,17 @@ export async function POST(request: NextRequest) {
 // =============================================================================
 
 export async function GET(request: NextRequest) {
+  // Return early if AI features are disabled
+  if (AI_DISABLED || !askAlex) {
+    return NextResponse.json({
+      success: false,
+      service: 'CivicSense Assistant (Disabled)',
+      status: 'disabled',
+      reason: 'AI features disabled in this environment',
+      fallback_available: true
+    })
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const healthCheck = searchParams.get('health')

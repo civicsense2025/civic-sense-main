@@ -17,7 +17,27 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'source.unsplash.com',
+        port: '',
+        pathname: '/**',
       },
     ],
   },
@@ -30,6 +50,9 @@ const nextConfig = {
           as: '*.js',
         },
       },
+    },
+    serverActions: {
+      bodySizeLimit: '10mb',
     },
   },
   compiler: {
@@ -49,6 +72,41 @@ const nextConfig = {
         /node_modules\/@supabase\/realtime-js/,
         /Critical dependency: the request of a dependency is an expression/,
       ],
+    }
+
+    // Exclude AI dependencies when building for Vercel
+    if (process.env.DISABLE_AI_FEATURES === 'true') {
+      config.externals = config.externals || []
+      config.externals.push({
+        '@anthropic-ai/sdk': 'commonjs @anthropic-ai/sdk',
+        'openai': 'commonjs openai',
+        '@google-cloud/text-to-speech': 'commonjs @google-cloud/text-to-speech',
+        '@google-cloud/translate': 'commonjs @google-cloud/translate',
+        'deepl-node': 'commonjs deepl-node'
+      })
+
+      // Ignore AI-related modules and admin routes
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^(openai|@anthropic-ai\/sdk|@google-cloud\/(text-to-speech|translate)|deepl-node)$/,
+        }),
+        new webpack.IgnorePlugin({
+          resourceRegExp: /\/admin\//,
+        }),
+        new webpack.IgnorePlugin({
+          resourceRegExp: /\/ai\//,
+        })
+      )
+    }
+    
+    // When AI features are disabled, ignore AI-related imports in API routes only
+    if (process.env.DISABLE_AI_FEATURES === 'true' && isServer) {
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^(openai|@anthropic-ai\/sdk|@google\/generative-ai|deepl-node)$/,
+          contextRegExp: /app\/api\/(assistant|admin)/,
+        })
+      )
     }
     
     return config
@@ -111,6 +169,33 @@ const nextConfig = {
         ],
       },
     ]
+  },
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_MONTHLY: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_MONTHLY,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_YEARLY: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_YEARLY,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_LIFETIME: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_LIFETIME,
+    NEXT_PUBLIC_STRIPE_PRODUCT_ID_LIFETIME: process.env.NEXT_PUBLIC_STRIPE_PRODUCT_ID_LIFETIME,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_SMALL: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_SMALL,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_MEDIUM: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_MEDIUM,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_LARGE: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_LARGE,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_CUSTOM: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_DONATION_CUSTOM,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_MONTHLY: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_MONTHLY,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_YEARLY: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_YEARLY,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_LIFETIME: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_GIFT_LIFETIME,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_SMALL: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_SMALL,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_MEDIUM: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_MEDIUM,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_LARGE: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_LARGE,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_HUGE: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_HUGE,
+    NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_MEGA: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_CREDIT_PACK_MEGA,
+    NEXT_PUBLIC_STATSIG_CLIENT_SDK_KEY: process.env.NEXT_PUBLIC_STATSIG_CLIENT_SDK_KEY,
+    NEXT_PUBLIC_MIXPANEL_TOKEN: process.env.NEXT_PUBLIC_MIXPANEL_TOKEN,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
+    NEXT_PUBLIC_APPLE_SHARED_SECRET: process.env.NEXT_PUBLIC_APPLE_SHARED_SECRET,
+    NEXT_PUBLIC_APPLE_BUNDLE_ID: process.env.NEXT_PUBLIC_APPLE_BUNDLE_ID,
   },
 }
 

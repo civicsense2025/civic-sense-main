@@ -128,12 +128,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
 
     // Create routes for individual topic quiz pages
-    const topicRoutes: MetadataRoute.Sitemap = validTopicsData.map(topic => ({
-      url: `${SITE_URL}/quiz/${topic.topic_id}`,
-      lastModified: topic.updated_at ? new Date(topic.updated_at) : new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.8,
-    }))
+    const topicRoutes: MetadataRoute.Sitemap = validTopicsData.map(topic => {
+      // Convert underscores to hyphens for URL compatibility
+      const urlSafeTopicId = topic.topic_id.replace(/_/g, '-')
+      
+      return {
+        url: `${SITE_URL}/quiz/${urlSafeTopicId}`,
+        lastModified: topic.updated_at ? new Date(topic.updated_at) : new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.8,
+      }
+    })
 
     // Get public figures for their pages (includes congressional members!)
     console.log('👤 Fetching public figures for sitemap...')
