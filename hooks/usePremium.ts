@@ -147,10 +147,24 @@ export function usePremium(): UsePremiumReturn {
           subscriptionOperations.getUserFeatureLimits(user.id)
         ])
 
+        // Check for Apple IAP access if no Stripe subscription
+        let hasAppleIAPAccess = false
+        if (!subscriptionData || subscriptionData.subscription_status !== 'active') {
+          try {
+                         // Check Apple IAP access on iOS
+             if (typeof window !== 'undefined' && navigator.userAgent.includes('Mobile')) {
+               const { AppleIAPService, APPLE_IAP_PRODUCTS } = await import('@/lib/apple-iap')
+               hasAppleIAPAccess = Boolean(await AppleIAPService.hasValidAppleSubscription(user.id, APPLE_IAP_PRODUCTS.LIFETIME_PREMIUM))
+             }
+          } catch (error) {
+            debug.log('premium', 'Apple IAP check failed, continuing with Stripe-only access')
+          }
+        }
+
         // Calculate feature access locally to avoid 9 separate API calls
         const isPremiumOrPro = subscriptionData?.subscription_tier === 'premium' || subscriptionData?.subscription_tier === 'pro'
         const isActive = subscriptionData?.subscription_status === 'active'
-        const hasActivePremium = isPremiumOrPro && isActive
+        const hasActivePremium = (isPremiumOrPro && isActive) || hasAppleIAPAccess
 
         const accessData: Record<PremiumFeature, boolean> = {
           custom_decks: hasActivePremium,

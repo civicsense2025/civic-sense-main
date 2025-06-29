@@ -16,6 +16,7 @@ interface DebugConfig {
     premium: boolean
     general: boolean
     'pattern-recognition': boolean
+    'apple-iap': boolean
   }
   minimized: boolean // Show condensed logs when true
 }
@@ -61,18 +62,19 @@ class DebugManager {
     return {
       enabled: process.env.NODE_ENV === 'development',
       categories: {
-        quiz: true,
-        multiplayer: true,
-        pwa: false, // Disabled by default since these can be noisy
+        quiz: false, // Disabled by default - too verbose
+        multiplayer: false,
+        pwa: false,
         storage: false,
         analytics: false,
-        auth: false,
-        api: false,
-        premium: true, // Enabled by default for subscription debugging
-        general: true,
-        'pattern-recognition': true // Enabled by default for pattern recognition debugging
+        auth: false, // Major source of noise
+        api: false, // Major source of noise  
+        premium: false, // Only enable when debugging premium issues
+        general: false, // Disabled by default
+        'pattern-recognition': false,
+        'apple-iap': false
       },
-      minimized: false
+      minimized: true // Use minimized logging by default
     }
   }
 
@@ -134,7 +136,8 @@ class DebugManager {
       api: '[API]',
       premium: '[PREMIUM]',
       general: '[GEN]',
-      'pattern-recognition': '[PATTERN]'
+      'pattern-recognition': '[PATTERN]',
+      'apple-iap': '[IAP]'
     }
     return `${prefixes[category]} [${category.toUpperCase()}]`
   }
@@ -238,6 +241,31 @@ export const debug = {
   showStatus: () => debugManager.showStatus(),
   help: () => debugManager.help(),
   testPremium: () => debugManager.testPremium()
+}
+
+// Centralized logging utilities that respect debug configuration
+export const logger = {
+  auth: (message: string, data?: any) => debug.log('auth', message, data),
+  api: (message: string, data?: any) => debug.log('api', message, data),
+  general: (message: string, data?: any) => debug.log('general', message, data),
+  premium: (message: string, data?: any) => debug.log('premium', message, data),
+  quiz: (message: string, data?: any) => debug.log('quiz', message, data),
+  
+  // Quick disable/enable for production
+  quick: {
+    disable: () => {
+      debugManager.disable();
+      console.log('[DEBUG] All debug logging disabled');
+    },
+    enable: () => {
+      debugManager.enable();
+      console.log('[DEBUG] Debug logging enabled');
+    },
+    minimizeAll: () => {
+      debugManager.toggleMinimized();
+      console.log('[DEBUG] Switched to minimized logging');
+    }
+  }
 }
 
 export default debug 

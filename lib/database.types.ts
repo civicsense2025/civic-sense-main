@@ -4172,6 +4172,48 @@ export type Database = {
           },
         ]
       }
+      apple_iap_transactions: {
+        Row: {
+          created_at: string
+          environment: string
+          id: string
+          original_transaction_id: string
+          product_id: string
+          purchase_date: string
+          receipt_data: string
+          transaction_id: string
+          updated_at: string
+          user_id: string
+          validation_status: string
+        }
+        Insert: {
+          created_at?: string
+          environment: string
+          id?: string
+          original_transaction_id: string
+          product_id: string
+          purchase_date: string
+          receipt_data: string
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+          validation_status: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          id?: string
+          original_transaction_id?: string
+          product_id?: string
+          purchase_date?: string
+          receipt_data?: string
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+          validation_status?: string
+        }
+        Relationships: []
+      }
       article_bias_analysis: {
         Row: {
           ai_analysis_version: string | null
@@ -7068,6 +7110,313 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      custom_content_generations: {
+        Row: {
+          average_credibility: number | null
+          civic_standards_score: number | null
+          completed_at: string | null
+          content: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty: string | null
+          fact_check_status: string | null
+          generated_at: string | null
+          generated_content: Json | null
+          generation_completed_at: string | null
+          generation_metadata: Json | null
+          generation_settings: Json
+          generation_started_at: string | null
+          guest_token: string | null
+          id: string
+          is_premium: boolean | null
+          is_premium_generation: boolean | null
+          is_preview: boolean | null
+          is_preview_only: boolean | null
+          is_published: boolean | null
+          metadata: Json | null
+          names_specific_institutions: boolean | null
+          premium_features_used: Json | null
+          provides_action_steps: boolean | null
+          published_at: string | null
+          quality_score: number | null
+          question_count: number | null
+          questions: Json | null
+          reveals_uncomfortable_truths: boolean | null
+          source_credibility_average: number | null
+          status: string | null
+          topic: string
+          topic_id: string | null
+          total_sources: number | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          average_credibility?: number | null
+          civic_standards_score?: number | null
+          completed_at?: string | null
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          fact_check_status?: string | null
+          generated_at?: string | null
+          generated_content?: Json | null
+          generation_completed_at?: string | null
+          generation_metadata?: Json | null
+          generation_settings?: Json
+          generation_started_at?: string | null
+          guest_token?: string | null
+          id?: string
+          is_premium?: boolean | null
+          is_premium_generation?: boolean | null
+          is_preview?: boolean | null
+          is_preview_only?: boolean | null
+          is_published?: boolean | null
+          metadata?: Json | null
+          names_specific_institutions?: boolean | null
+          premium_features_used?: Json | null
+          provides_action_steps?: boolean | null
+          published_at?: string | null
+          quality_score?: number | null
+          question_count?: number | null
+          questions?: Json | null
+          reveals_uncomfortable_truths?: boolean | null
+          source_credibility_average?: number | null
+          status?: string | null
+          topic: string
+          topic_id?: string | null
+          total_sources?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          average_credibility?: number | null
+          civic_standards_score?: number | null
+          completed_at?: string | null
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          fact_check_status?: string | null
+          generated_at?: string | null
+          generated_content?: Json | null
+          generation_completed_at?: string | null
+          generation_metadata?: Json | null
+          generation_settings?: Json
+          generation_started_at?: string | null
+          guest_token?: string | null
+          id?: string
+          is_premium?: boolean | null
+          is_premium_generation?: boolean | null
+          is_preview?: boolean | null
+          is_preview_only?: boolean | null
+          is_published?: boolean | null
+          metadata?: Json | null
+          names_specific_institutions?: boolean | null
+          premium_features_used?: Json | null
+          provides_action_steps?: boolean | null
+          published_at?: string | null
+          quality_score?: number | null
+          question_count?: number | null
+          questions?: Json | null
+          reveals_uncomfortable_truths?: boolean | null
+          source_credibility_average?: number | null
+          status?: string | null
+          topic?: string
+          topic_id?: string | null
+          total_sources?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      custom_content_questions: {
+        Row: {
+          action_steps: Json | null
+          category: string | null
+          civic_relevance_score: number | null
+          correct_answer: string
+          created_at: string
+          difficulty: string | null
+          explanation: string | null
+          fact_check_status: string | null
+          generation_id: string | null
+          id: string
+          is_active: boolean | null
+          options: Json | null
+          power_dynamics_revealed: string[] | null
+          question_order: number
+          question_text: string
+          question_type: string | null
+          sources: Json | null
+          tags: string[] | null
+          uncomfortable_truths: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          action_steps?: Json | null
+          category?: string | null
+          civic_relevance_score?: number | null
+          correct_answer: string
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          fact_check_status?: string | null
+          generation_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          options?: Json | null
+          power_dynamics_revealed?: string[] | null
+          question_order: number
+          question_text: string
+          question_type?: string | null
+          sources?: Json | null
+          tags?: string[] | null
+          uncomfortable_truths?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          action_steps?: Json | null
+          category?: string | null
+          civic_relevance_score?: number | null
+          correct_answer?: string
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          fact_check_status?: string | null
+          generation_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          options?: Json | null
+          power_dynamics_revealed?: string[] | null
+          question_order?: number
+          question_text?: string
+          question_type?: string | null
+          sources?: Json | null
+          tags?: string[] | null
+          uncomfortable_truths?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_content_questions_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_content_topics: {
+        Row: {
+          actionability_score: number | null
+          average_score: number | null
+          category_name: string | null
+          civic_standards_passed: boolean | null
+          completion_rate: number | null
+          created_at: string
+          created_by: string | null
+          created_by_user: string | null
+          creator_display_name: string | null
+          date: string | null
+          difficulty_level: string | null
+          estimated_time_minutes: number | null
+          generation_id: string | null
+          id: string
+          is_approved: boolean | null
+          is_featured: boolean | null
+          is_public: boolean | null
+          moderation_notes: string | null
+          moderation_status: string | null
+          play_count: number | null
+          published_at: string | null
+          topic_description: string | null
+          topic_emoji: string | null
+          topic_id: string
+          topic_title: string
+          uncomfortable_truths_score: number | null
+          updated_at: string
+          updated_by: string | null
+          user_ratings: Json | null
+        }
+        Insert: {
+          actionability_score?: number | null
+          average_score?: number | null
+          category_name?: string | null
+          civic_standards_passed?: boolean | null
+          completion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          created_by_user?: string | null
+          creator_display_name?: string | null
+          date?: string | null
+          difficulty_level?: string | null
+          estimated_time_minutes?: number | null
+          generation_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          moderation_notes?: string | null
+          moderation_status?: string | null
+          play_count?: number | null
+          published_at?: string | null
+          topic_description?: string | null
+          topic_emoji?: string | null
+          topic_id: string
+          topic_title: string
+          uncomfortable_truths_score?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_ratings?: Json | null
+        }
+        Update: {
+          actionability_score?: number | null
+          average_score?: number | null
+          category_name?: string | null
+          civic_standards_passed?: boolean | null
+          completion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          created_by_user?: string | null
+          creator_display_name?: string | null
+          date?: string | null
+          difficulty_level?: string | null
+          estimated_time_minutes?: number | null
+          generation_id?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          moderation_notes?: string | null
+          moderation_status?: string | null
+          play_count?: number | null
+          published_at?: string | null
+          topic_description?: string | null
+          topic_emoji?: string | null
+          topic_id?: string
+          topic_title?: string
+          uncomfortable_truths_score?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_ratings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_content_topics_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_content_generations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_codes: {
         Row: {
@@ -17291,6 +17640,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_generation_usage: {
+        Row: {
+          created_at: string
+          free_generation_limit: number | null
+          free_generations_used: number | null
+          guest_token: string | null
+          has_used_free_trial: boolean | null
+          id: string
+          last_reset_at: string | null
+          premium_generations_used: number | null
+          subscription_status: string | null
+          total_generations: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          free_generation_limit?: number | null
+          free_generations_used?: number | null
+          guest_token?: string | null
+          has_used_free_trial?: boolean | null
+          id?: string
+          last_reset_at?: string | null
+          premium_generations_used?: number | null
+          subscription_status?: string | null
+          total_generations?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          free_generation_limit?: number | null
+          free_generations_used?: number | null
+          guest_token?: string | null
+          has_used_free_trial?: boolean | null
+          id?: string
+          last_reset_at?: string | null
+          premium_generations_used?: number | null
+          subscription_status?: string | null
+          total_generations?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_integrations: {
         Row: {
           access_token: string | null
@@ -20080,6 +20474,23 @@ export type Database = {
           avg_generation_time: number
         }[]
       }
+      cache_source_analysis: {
+        Args: {
+          input_url: string
+          input_domain: string
+          input_credibility: number
+          input_bias: string
+          input_factual_rating: string
+          input_summary: string
+          input_strengths: string[]
+          input_weaknesses: string[]
+          input_red_flags: string[]
+          input_recommendations: string[]
+          input_confidence: number
+          cache_duration_hours?: number
+        }
+        Returns: string
+      }
       calculate_assessment_score: {
         Args: { assessment_id_param: string }
         Returns: number
@@ -20139,6 +20550,10 @@ export type Database = {
         Args: { p_invite_code: string; p_user_id: string; p_user_age?: number }
         Returns: Json
       }
+      can_user_generate_content: {
+        Args: { p_user_id?: string; p_guest_token?: string }
+        Returns: boolean
+      }
       check_all_players_ready: {
         Args: { p_room_id: string }
         Returns: boolean
@@ -20151,6 +20566,10 @@ export type Database = {
           p_trigger_data?: Json
         }
         Returns: number
+      }
+      check_apple_iap_access: {
+        Args: { p_user_id: string; p_product_id: string }
+        Returns: boolean
       }
       check_boost_cooldown: {
         Args: { target_user_id: string; target_boost_type: string }
@@ -20165,7 +20584,9 @@ export type Database = {
         Returns: Json
       }
       check_premium_feature_access: {
-        Args: { p_user_id: string; p_feature_name: string }
+        Args:
+          | { p_user_id: string; p_feature_name: string }
+          | { p_user_id: string; p_feature_name: string }
         Returns: boolean
       }
       check_silence_intervention: {
@@ -20247,6 +20668,10 @@ export type Database = {
       convert_guest_civics_results: {
         Args: { p_guest_token: string; p_user_id: string }
         Returns: number
+      }
+      convert_preview_to_topic: {
+        Args: { p_generation_id: string; p_user_id: string }
+        Returns: string
       }
       create_gift_redemption: {
         Args: {
@@ -20512,6 +20937,10 @@ export type Database = {
       }
       get_effective_member_settings: {
         Args: { p_pod_id: string; p_user_id: string }
+        Returns: Json
+      }
+      get_enhanced_source_analysis: {
+        Args: { input_url: string }
         Returns: Json
       }
       get_event_timeline: {
@@ -20789,6 +21218,22 @@ export type Database = {
           p_difficulty_level: string
         }
         Returns: Json
+      }
+      get_source_analysis_by_url: {
+        Args: { input_url: string }
+        Returns: {
+          url_hash: string
+          overall_credibility: number
+          overall_bias: string
+          factual_rating: string
+          analysis_summary: string
+          strengths: string[]
+          weaknesses: string[]
+          red_flags: string[]
+          recommendations: string[]
+          analysis_confidence: number
+          cached_at: string
+        }[]
       }
       get_source_analysis_stats: {
         Args: Record<PropertyKey, never>
@@ -21159,6 +21604,14 @@ export type Database = {
           description: string
           confidence_score: number
         }[]
+      }
+      increment_generation_usage: {
+        Args: {
+          p_user_id?: string
+          p_guest_token?: string
+          p_is_premium?: boolean
+        }
+        Returns: string
       }
       increment_trending_query: {
         Args: {
@@ -22423,6 +22876,7 @@ export type DbAiResearchSessions = Database['public']['Tables']['ai_research_ses
 export type DbAiSourceAnalysis = Database['public']['Tables']['ai_source_analysis']['Row']
 export type DbAiToolUsage = Database['public']['Tables']['ai_tool_usage']['Row']
 export type DbAnalyticsEvents = Database['public']['Tables']['analytics_events']['Row']
+export type DbAppleIapTransactions = Database['public']['Tables']['apple_iap_transactions']['Row']
 export type DbArticleBiasAnalysis = Database['public']['Tables']['article_bias_analysis']['Row']
 export type DbAssessedEntities = Database['public']['Tables']['assessed_entities']['Row']
 export type DbAssessmentEvidence = Database['public']['Tables']['assessment_evidence']['Row']
@@ -22475,6 +22929,9 @@ export type DbContentItemSkills = Database['public']['Tables']['content_item_ski
 export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
 export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
 export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
+export type DbCustomContentGenerations = Database['public']['Tables']['custom_content_generations']['Row']
+export type DbCustomContentQuestions = Database['public']['Tables']['custom_content_questions']['Row']
+export type DbCustomContentTopics = Database['public']['Tables']['custom_content_topics']['Row']
 export type DbDiscountCodes = Database['public']['Tables']['discount_codes']['Row']
 export type DbDocumentActions = Database['public']['Tables']['document_actions']['Row']
 export type DbDocumentRelationships = Database['public']['Tables']['document_relationships']['Row']
@@ -22652,6 +23109,7 @@ export type DbUserEmailPreferences = Database['public']['Tables']['user_email_pr
 export type DbUserEvents = Database['public']['Tables']['user_events']['Row']
 export type DbUserFeatureUsage = Database['public']['Tables']['user_feature_usage']['Row']
 export type DbUserFeedback = Database['public']['Tables']['user_feedback']['Row']
+export type DbUserGenerationUsage = Database['public']['Tables']['user_generation_usage']['Row']
 export type DbUserIntegrations = Database['public']['Tables']['user_integrations']['Row']
 export type DbUserLearningGoals = Database['public']['Tables']['user_learning_goals']['Row']
 export type DbUserLearningInsights = Database['public']['Tables']['user_learning_insights']['Row']
@@ -22688,6 +23146,7 @@ export type DbAiResearchSessionsInsert = Database['public']['Tables']['ai_resear
 export type DbAiSourceAnalysisInsert = Database['public']['Tables']['ai_source_analysis']['Insert']
 export type DbAiToolUsageInsert = Database['public']['Tables']['ai_tool_usage']['Insert']
 export type DbAnalyticsEventsInsert = Database['public']['Tables']['analytics_events']['Insert']
+export type DbAppleIapTransactionsInsert = Database['public']['Tables']['apple_iap_transactions']['Insert']
 export type DbArticleBiasAnalysisInsert = Database['public']['Tables']['article_bias_analysis']['Insert']
 export type DbAssessedEntitiesInsert = Database['public']['Tables']['assessed_entities']['Insert']
 export type DbAssessmentEvidenceInsert = Database['public']['Tables']['assessment_evidence']['Insert']
@@ -22740,6 +23199,9 @@ export type DbContentItemSkillsInsert = Database['public']['Tables']['content_it
 export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
 export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
 export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
+export type DbCustomContentGenerationsInsert = Database['public']['Tables']['custom_content_generations']['Insert']
+export type DbCustomContentQuestionsInsert = Database['public']['Tables']['custom_content_questions']['Insert']
+export type DbCustomContentTopicsInsert = Database['public']['Tables']['custom_content_topics']['Insert']
 export type DbDiscountCodesInsert = Database['public']['Tables']['discount_codes']['Insert']
 export type DbDocumentActionsInsert = Database['public']['Tables']['document_actions']['Insert']
 export type DbDocumentRelationshipsInsert = Database['public']['Tables']['document_relationships']['Insert']
@@ -22917,6 +23379,7 @@ export type DbUserEmailPreferencesInsert = Database['public']['Tables']['user_em
 export type DbUserEventsInsert = Database['public']['Tables']['user_events']['Insert']
 export type DbUserFeatureUsageInsert = Database['public']['Tables']['user_feature_usage']['Insert']
 export type DbUserFeedbackInsert = Database['public']['Tables']['user_feedback']['Insert']
+export type DbUserGenerationUsageInsert = Database['public']['Tables']['user_generation_usage']['Insert']
 export type DbUserIntegrationsInsert = Database['public']['Tables']['user_integrations']['Insert']
 export type DbUserLearningGoalsInsert = Database['public']['Tables']['user_learning_goals']['Insert']
 export type DbUserLearningInsightsInsert = Database['public']['Tables']['user_learning_insights']['Insert']
@@ -22953,6 +23416,7 @@ export type DbAiResearchSessionsUpdate = Database['public']['Tables']['ai_resear
 export type DbAiSourceAnalysisUpdate = Database['public']['Tables']['ai_source_analysis']['Update']
 export type DbAiToolUsageUpdate = Database['public']['Tables']['ai_tool_usage']['Update']
 export type DbAnalyticsEventsUpdate = Database['public']['Tables']['analytics_events']['Update']
+export type DbAppleIapTransactionsUpdate = Database['public']['Tables']['apple_iap_transactions']['Update']
 export type DbArticleBiasAnalysisUpdate = Database['public']['Tables']['article_bias_analysis']['Update']
 export type DbAssessedEntitiesUpdate = Database['public']['Tables']['assessed_entities']['Update']
 export type DbAssessmentEvidenceUpdate = Database['public']['Tables']['assessment_evidence']['Update']
@@ -23005,6 +23469,9 @@ export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_it
 export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
 export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
 export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
+export type DbCustomContentGenerationsUpdate = Database['public']['Tables']['custom_content_generations']['Update']
+export type DbCustomContentQuestionsUpdate = Database['public']['Tables']['custom_content_questions']['Update']
+export type DbCustomContentTopicsUpdate = Database['public']['Tables']['custom_content_topics']['Update']
 export type DbDiscountCodesUpdate = Database['public']['Tables']['discount_codes']['Update']
 export type DbDocumentActionsUpdate = Database['public']['Tables']['document_actions']['Update']
 export type DbDocumentRelationshipsUpdate = Database['public']['Tables']['document_relationships']['Update']
@@ -23182,6 +23649,7 @@ export type DbUserEmailPreferencesUpdate = Database['public']['Tables']['user_em
 export type DbUserEventsUpdate = Database['public']['Tables']['user_events']['Update']
 export type DbUserFeatureUsageUpdate = Database['public']['Tables']['user_feature_usage']['Update']
 export type DbUserFeedbackUpdate = Database['public']['Tables']['user_feedback']['Update']
+export type DbUserGenerationUsageUpdate = Database['public']['Tables']['user_generation_usage']['Update']
 export type DbUserIntegrationsUpdate = Database['public']['Tables']['user_integrations']['Update']
 export type DbUserLearningGoalsUpdate = Database['public']['Tables']['user_learning_goals']['Update']
 export type DbUserLearningInsightsUpdate = Database['public']['Tables']['user_learning_insights']['Update']
@@ -23262,6 +23730,9 @@ export type DbAddSourceToGlossaryTermReturns = Database['public']['Functions']['
 export type DbAnalyzeImageAbTestFunction = Database['public']['Functions']['analyze_image_ab_test']
 export type DbAnalyzeImageAbTestArgs = Database['public']['Functions']['analyze_image_ab_test']['Args']
 export type DbAnalyzeImageAbTestReturns = Database['public']['Functions']['analyze_image_ab_test']['Returns']
+export type DbCacheSourceAnalysisFunction = Database['public']['Functions']['cache_source_analysis']
+export type DbCacheSourceAnalysisArgs = Database['public']['Functions']['cache_source_analysis']['Args']
+export type DbCacheSourceAnalysisReturns = Database['public']['Functions']['cache_source_analysis']['Returns']
 export type DbCalculateAssessmentScoreFunction = Database['public']['Functions']['calculate_assessment_score']
 export type DbCalculateAssessmentScoreArgs = Database['public']['Functions']['calculate_assessment_score']['Args']
 export type DbCalculateAssessmentScoreReturns = Database['public']['Functions']['calculate_assessment_score']['Returns']
@@ -23289,12 +23760,18 @@ export type DbCanAccessRoomReturns = Database['public']['Functions']['can_access
 export type DbCanJoinPodViaInviteFunction = Database['public']['Functions']['can_join_pod_via_invite']
 export type DbCanJoinPodViaInviteArgs = Database['public']['Functions']['can_join_pod_via_invite']['Args']
 export type DbCanJoinPodViaInviteReturns = Database['public']['Functions']['can_join_pod_via_invite']['Returns']
+export type DbCanUserGenerateContentFunction = Database['public']['Functions']['can_user_generate_content']
+export type DbCanUserGenerateContentArgs = Database['public']['Functions']['can_user_generate_content']['Args']
+export type DbCanUserGenerateContentReturns = Database['public']['Functions']['can_user_generate_content']['Returns']
 export type DbCheckAllPlayersReadyFunction = Database['public']['Functions']['check_all_players_ready']
 export type DbCheckAllPlayersReadyArgs = Database['public']['Functions']['check_all_players_ready']['Args']
 export type DbCheckAllPlayersReadyReturns = Database['public']['Functions']['check_all_players_ready']['Returns']
 export type DbCheckAndAwardAchievementsFunction = Database['public']['Functions']['check_and_award_achievements']
 export type DbCheckAndAwardAchievementsArgs = Database['public']['Functions']['check_and_award_achievements']['Args']
 export type DbCheckAndAwardAchievementsReturns = Database['public']['Functions']['check_and_award_achievements']['Returns']
+export type DbCheckAppleIapAccessFunction = Database['public']['Functions']['check_apple_iap_access']
+export type DbCheckAppleIapAccessArgs = Database['public']['Functions']['check_apple_iap_access']['Args']
+export type DbCheckAppleIapAccessReturns = Database['public']['Functions']['check_apple_iap_access']['Returns']
 export type DbCheckBoostCooldownFunction = Database['public']['Functions']['check_boost_cooldown']
 export type DbCheckBoostCooldownArgs = Database['public']['Functions']['check_boost_cooldown']['Args']
 export type DbCheckBoostCooldownReturns = Database['public']['Functions']['check_boost_cooldown']['Returns']
@@ -23352,6 +23829,9 @@ export type DbCompleteOnboardingStepReturns = Database['public']['Functions']['c
 export type DbConvertGuestCivicsResultsFunction = Database['public']['Functions']['convert_guest_civics_results']
 export type DbConvertGuestCivicsResultsArgs = Database['public']['Functions']['convert_guest_civics_results']['Args']
 export type DbConvertGuestCivicsResultsReturns = Database['public']['Functions']['convert_guest_civics_results']['Returns']
+export type DbConvertPreviewToTopicFunction = Database['public']['Functions']['convert_preview_to_topic']
+export type DbConvertPreviewToTopicArgs = Database['public']['Functions']['convert_preview_to_topic']['Args']
+export type DbConvertPreviewToTopicReturns = Database['public']['Functions']['convert_preview_to_topic']['Returns']
 export type DbCreateGiftRedemptionFunction = Database['public']['Functions']['create_gift_redemption']
 export type DbCreateGiftRedemptionArgs = Database['public']['Functions']['create_gift_redemption']['Args']
 export type DbCreateGiftRedemptionReturns = Database['public']['Functions']['create_gift_redemption']['Returns']
@@ -23433,6 +23913,9 @@ export type DbGetDetailedGiftCreditsReturns = Database['public']['Functions']['g
 export type DbGetEffectiveMemberSettingsFunction = Database['public']['Functions']['get_effective_member_settings']
 export type DbGetEffectiveMemberSettingsArgs = Database['public']['Functions']['get_effective_member_settings']['Args']
 export type DbGetEffectiveMemberSettingsReturns = Database['public']['Functions']['get_effective_member_settings']['Returns']
+export type DbGetEnhancedSourceAnalysisFunction = Database['public']['Functions']['get_enhanced_source_analysis']
+export type DbGetEnhancedSourceAnalysisArgs = Database['public']['Functions']['get_enhanced_source_analysis']['Args']
+export type DbGetEnhancedSourceAnalysisReturns = Database['public']['Functions']['get_enhanced_source_analysis']['Returns']
 export type DbGetEventTimelineFunction = Database['public']['Functions']['get_event_timeline']
 export type DbGetEventTimelineArgs = Database['public']['Functions']['get_event_timeline']['Args']
 export type DbGetEventTimelineReturns = Database['public']['Functions']['get_event_timeline']['Returns']
@@ -23514,6 +23997,9 @@ export type DbGetSkillsNeedingReviewReturns = Database['public']['Functions']['g
 export type DbGetSocialProofMessageFunction = Database['public']['Functions']['get_social_proof_message']
 export type DbGetSocialProofMessageArgs = Database['public']['Functions']['get_social_proof_message']['Args']
 export type DbGetSocialProofMessageReturns = Database['public']['Functions']['get_social_proof_message']['Returns']
+export type DbGetSourceAnalysisByUrlFunction = Database['public']['Functions']['get_source_analysis_by_url']
+export type DbGetSourceAnalysisByUrlArgs = Database['public']['Functions']['get_source_analysis_by_url']['Args']
+export type DbGetSourceAnalysisByUrlReturns = Database['public']['Functions']['get_source_analysis_by_url']['Returns']
 export type DbGetSourceAnalysisStatsFunction = Database['public']['Functions']['get_source_analysis_stats']
 export type DbGetSourceAnalysisStatsArgs = Database['public']['Functions']['get_source_analysis_stats']['Args']
 export type DbGetSourceAnalysisStatsReturns = Database['public']['Functions']['get_source_analysis_stats']['Returns']
@@ -23616,6 +24102,9 @@ export type DbGtrgmOutReturns = Database['public']['Functions']['gtrgm_out']['Re
 export type DbIdentifyContentGapsFunction = Database['public']['Functions']['identify_content_gaps']
 export type DbIdentifyContentGapsArgs = Database['public']['Functions']['identify_content_gaps']['Args']
 export type DbIdentifyContentGapsReturns = Database['public']['Functions']['identify_content_gaps']['Returns']
+export type DbIncrementGenerationUsageFunction = Database['public']['Functions']['increment_generation_usage']
+export type DbIncrementGenerationUsageArgs = Database['public']['Functions']['increment_generation_usage']['Args']
+export type DbIncrementGenerationUsageReturns = Database['public']['Functions']['increment_generation_usage']['Returns']
 export type DbIncrementTrendingQueryFunction = Database['public']['Functions']['increment_trending_query']
 export type DbIncrementTrendingQueryArgs = Database['public']['Functions']['increment_trending_query']['Args']
 export type DbIncrementTrendingQueryReturns = Database['public']['Functions']['increment_trending_query']['Returns']

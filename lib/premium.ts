@@ -319,7 +319,7 @@ export const premiumFeatures = {
   },
 
   /**
-   * Check if user has access to a feature (using database function)
+   * Check if user has access to a feature (using database function with Apple IAP support)
    */
   async hasFeatureAccess(userId: string, feature: PremiumFeature): Promise<boolean> {
     // Add validation
@@ -347,12 +347,16 @@ export const premiumFeatures = {
         hint: error.hint
       })
       
-      // If the function doesn't exist, fall back to basic logic
+      // If the function doesn't exist, fall back to basic logic with Apple IAP support
       if (error.code === '42883' || error.message?.includes('function')) {
-        debug.warn('premium', 'check_premium_feature_access function not found, falling back to basic subscription check')
+        debug.warn('premium', 'check_premium_feature_access function not found, falling back to basic subscription check with Apple IAP')
         
-        // Get subscription directly and do basic check
-        const subscription = await subscriptionOperations.getUserSubscription(userId)
+        // Get subscription directly and check Apple IAP
+        const [subscription, hasAppleIAP] = await Promise.all([
+          subscriptionOperations.getUserSubscription(userId),
+          this.checkAppleIAPAccess(userId, feature)
+        ])
+        
         const isPremiumOrPro = subscription?.subscription_tier === 'premium' || subscription?.subscription_tier === 'pro'
         const isActive = subscription?.subscription_status === 'active'
         
@@ -362,9 +366,10 @@ export const premiumFeatures = {
           return true
         }
         
-        // For premium features, check if user has active premium subscription
-        const hasAccess = isPremiumOrPro && isActive
+        // Check Apple IAP first, then Stripe subscription
+        const hasAccess = hasAppleIAP || (isPremiumOrPro && isActive)
         debug.log('premium', `Fallback check for ${feature}: ${hasAccess ? 'granted' : 'denied'}`, {
+          hasAppleIAP,
           isPremiumOrPro,
           isActive,
           tier: subscription?.subscription_tier,
@@ -378,6 +383,26 @@ export const premiumFeatures = {
 
     debug.log('premium', `Feature access check result for ${feature}: ${data ? 'granted' : 'denied'}`)
     return data || false
+  },
+
+  /**
+   * Check if user has Apple IAP access for a feature
+   */
+  async checkAppleIAPAccess(userId: string, feature: PremiumFeature): Promise<boolean> {
+    try {
+      // Import Apple IAP service dynamically to avoid circular dependency
+      const { AppleIAPService, APPLE_IAP_PRODUCTS } = await import('./apple-iap')
+      
+      // For now, we only have lifetime premium through Apple IAP
+      if (['custom_decks', 'historical_progress', 'advanced_analytics', 'spaced_repetition', 'learning_insights', 'priority_support', 'offline_mode', 'export_data', 'npc_battle'].includes(feature)) {
+        return await AppleIAPService.hasValidAppleSubscription(userId, APPLE_IAP_PRODUCTS.LIFETIME_PREMIUM)
+      }
+      
+      return false
+    } catch (error) {
+      debug.error('premium', 'Error checking Apple IAP access:', error)
+      return false
+    }
   },
 
   /**

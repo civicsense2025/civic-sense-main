@@ -19,7 +19,7 @@ interface DebugSettingsPanelProps {
   className?: string
 }
 
-type DebugCategory = 'quiz' | 'multiplayer' | 'pwa' | 'storage' | 'analytics' | 'auth' | 'api' | 'premium' | 'general'
+type DebugCategory = 'quiz' | 'multiplayer' | 'pwa' | 'storage' | 'analytics' | 'auth' | 'api' | 'premium' | 'general' | 'apple-iap'
 
 type FlagCategory = 'navigation' | 'premium' | 'core'
 
@@ -138,7 +138,8 @@ export function DebugSettingsPanel({ className }: DebugSettingsPanelProps) {
     auth: "Authentication and user management",
     api: "API calls and server communications",
     premium: "Premium subscriptions, feature access, and billing",
-    general: "General application debug messages"
+    general: "General application debug messages",
+    'apple-iap': "Apple In-App Purchase validation and transactions"
   }
 
   const flagCategoryDescriptions: Record<FlagCategory, string> = {
