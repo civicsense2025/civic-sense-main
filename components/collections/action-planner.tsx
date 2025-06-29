@@ -1,0 +1,264 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Target, CheckCircle, Calendar, Users, ExternalLink } from 'lucide-react'
+
+interface ActionPlannerProps {
+  actionItems: string[]
+  civicOpportunities: string[]
+  onPlan?: (planned: string[]) => void
+  onComplete?: (completed: string[]) => void
+  initialPlanned?: string[]
+  initialCompleted?: string[]
+  className?: string
+}
+
+export function ActionPlanner({
+  actionItems,
+  civicOpportunities,
+  onPlan,
+  onComplete,
+  initialPlanned = [],
+  initialCompleted = [],
+  className
+}: ActionPlannerProps) {
+  const [plannedActions, setPlannedActions] = useState<string[]>(initialPlanned)
+  const [completedActions, setCompletedActions] = useState<string[]>(initialCompleted)
+
+  useEffect(() => {
+    setPlannedActions(initialPlanned)
+    setCompletedActions(initialCompleted)
+  }, [initialPlanned, initialCompleted])
+
+  const handlePlanToggle = (action: string) => {
+    const newPlanned = plannedActions.includes(action)
+      ? plannedActions.filter(a => a !== action)
+      : [...plannedActions, action]
+    
+    setPlannedActions(newPlanned)
+    onPlan?.(newPlanned)
+  }
+
+  const handleCompleteToggle = (action: string) => {
+    const newCompleted = completedActions.includes(action)
+      ? completedActions.filter(a => a !== action)
+      : [...completedActions, action]
+    
+    setCompletedActions(newCompleted)
+    onComplete?.(newCompleted)
+  }
+
+  const allActions = [...actionItems, ...civicOpportunities]
+  const plannedCount = plannedActions.length
+  const completedCount = completedActions.length
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5 text-red-600" />
+          Take Action
+          <div className="flex items-center gap-2 ml-auto">
+            {plannedCount > 0 && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {plannedCount} planned
+              </Badge>
+            )}
+            {completedCount > 0 && (
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                {completedCount} completed
+              </Badge>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Action Items */}
+        {actionItems.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              <h4 className="font-medium text-gray-900">Immediate Actions</h4>
+            </div>
+            <p className="text-sm text-gray-600">
+              These are specific steps you can take right now to apply what you've learned.
+            </p>
+            
+            <div className="space-y-3">
+              {actionItems.map((action, index) => {
+                const isPlanned = plannedActions.includes(action)
+                const isCompleted = completedActions.includes(action)
+                
+                return (
+                  <div key={index} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col gap-2 pt-1">
+                      <Checkbox
+                        id={`plan-${index}`}
+                        checked={isPlanned}
+                        onCheckedChange={() => handlePlanToggle(action)}
+                      />
+                      {isPlanned && (
+                        <Checkbox
+                          id={`complete-${index}`}
+                          checked={isCompleted}
+                          onCheckedChange={() => handleCompleteToggle(action)}
+                          className="border-green-600 data-[state=checked]:bg-green-600"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <label htmlFor={`plan-${index}`} className="block cursor-pointer">
+                        <span className={`text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {action}
+                        </span>
+                      </label>
+                      
+                      {isPlanned && !isCompleted && (
+                        <div className="mt-2">
+                          <label htmlFor={`complete-${index}`} className="flex items-center gap-2 text-xs text-green-700 cursor-pointer">
+                            <span>Mark as completed</span>
+                          </label>
+                        </div>
+                      )}
+                      
+                      {isCompleted && (
+                        <div className="mt-1">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Completed
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Separator */}
+        {actionItems.length > 0 && civicOpportunities.length > 0 && (
+          <Separator />
+        )}
+
+        {/* Civic Engagement Opportunities */}
+        {civicOpportunities.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-600" />
+              <h4 className="font-medium text-gray-900">Civic Engagement Opportunities</h4>
+            </div>
+            <p className="text-sm text-gray-600">
+              Connect with your community and make a broader impact through these opportunities.
+            </p>
+            
+            <div className="space-y-3">
+              {civicOpportunities.map((opportunity, index) => {
+                const isPlanned = plannedActions.includes(opportunity)
+                const isCompleted = completedActions.includes(opportunity)
+                
+                return (
+                  <div key={index} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col gap-2 pt-1">
+                      <Checkbox
+                        id={`civic-plan-${index}`}
+                        checked={isPlanned}
+                        onCheckedChange={() => handlePlanToggle(opportunity)}
+                      />
+                      {isPlanned && (
+                        <Checkbox
+                          id={`civic-complete-${index}`}
+                          checked={isCompleted}
+                          onCheckedChange={() => handleCompleteToggle(opportunity)}
+                          className="border-green-600 data-[state=checked]:bg-green-600"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <label htmlFor={`civic-plan-${index}`} className="block cursor-pointer">
+                        <span className={`text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {opportunity}
+                        </span>
+                      </label>
+                      
+                      {isPlanned && !isCompleted && (
+                        <div className="mt-2">
+                          <label htmlFor={`civic-complete-${index}`} className="flex items-center gap-2 text-xs text-green-700 cursor-pointer">
+                            <span>Mark as completed</span>
+                          </label>
+                        </div>
+                      )}
+                      
+                      {isCompleted && (
+                        <div className="mt-1">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Completed
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Progress Summary */}
+        {plannedCount > 0 && (
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h5 className="font-medium text-blue-900 mb-2">Your Action Plan</h5>
+            <div className="text-sm text-blue-800">
+              <p className="mb-2">
+                You've planned {plannedCount} action{plannedCount !== 1 ? 's' : ''} 
+                {completedCount > 0 && ` and completed ${completedCount}`}.
+              </p>
+              {completedCount > 0 && (
+                <p className="font-medium">
+                  Great job taking action on your civic learning! 🎉
+                </p>
+              )}
+              {plannedCount > completedCount && (
+                <p>
+                  Keep going! Taking action is how we strengthen democracy.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Encouragement */}
+        {plannedCount === 0 && (
+          <div className="bg-gray-50 p-4 rounded-lg text-center">
+            <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <h5 className="font-medium text-gray-700 mb-1">Ready to Take Action?</h5>
+            <p className="text-sm text-gray-600">
+              Check off the actions you plan to take. Every small step makes democracy stronger.
+            </p>
+          </div>
+        )}
+
+        {/* Call to Action */}
+        {completedCount === allActions.length && allActions.length > 0 && (
+          <div className="bg-green-50 p-4 rounded-lg text-center">
+            <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+            <h5 className="font-medium text-green-800 mb-1">Outstanding!</h5>
+            <p className="text-sm text-green-700">
+              You've completed all the suggested actions. You're making a real difference in your community!
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+} 

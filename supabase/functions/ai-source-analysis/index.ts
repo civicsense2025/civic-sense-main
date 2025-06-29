@@ -12,6 +12,32 @@ function hashUrl(url: string): string {
   return btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)
 }
 
+/**
+ * Sanitize bias values to match database constraint
+ * Maps 'far_left' -> 'left' and 'far_right' -> 'right'
+ * Ensures only valid constraint values are used
+ */
+function sanitizeBiasValue(bias: string): string {
+  const biasMap: Record<string, string> = {
+    'far_left': 'left',
+    'far_right': 'right', 
+    'left': 'left',
+    'lean_left': 'lean_left',
+    'center': 'center',
+    'lean_right': 'lean_right',
+    'right': 'right',
+    'mixed': 'mixed'
+  }
+  
+  const sanitized = biasMap[bias] || 'mixed' // Default to 'mixed' for unknown values
+  
+  if (sanitized !== bias) {
+    console.log(`🔧 Sanitized bias value: '${bias}' -> '${sanitized}' for database compatibility`)
+  }
+  
+  return sanitized
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -107,6 +133,14 @@ serve(async (req) => {
               "analysisConfidence": number (0.0-1.0)
             }
             
+            IMPORTANT: For overallBias, use only these exact values:
+            - "left" for strongly liberal/progressive sources
+            - "lean_left" for moderately liberal sources  
+            - "center" for balanced/neutral sources
+            - "lean_right" for moderately conservative sources
+            - "right" for strongly conservative sources
+            - "mixed" for sources with inconsistent bias patterns
+            
             Focus on civic education - help citizens understand how to evaluate sources for democratic participation.`
           },
           {
@@ -155,6 +189,10 @@ serve(async (req) => {
       }
     }
 
+    // VALIDATE AND SANITIZE bias value to match database constraint
+    // Database constraint only allows: 'left', 'lean_left', 'center', 'lean_right', 'right', 'mixed'
+    const sanitizedBias = sanitizeBiasValue(analysisResult.overallBias)
+
     // Store the analysis result in the database
     try {
       const expiresAt = new Date()
@@ -165,7 +203,7 @@ serve(async (req) => {
         original_url: url,
         domain,
         overall_credibility: analysisResult.overallCredibility,
-        overall_bias: analysisResult.overallBias,
+        overall_bias: sanitizedBias, // Use sanitized value
         factual_rating: analysisResult.factualRating,
         analysis_summary: analysisResult.summary,
         key_findings: analysisResult.keyFindings || [],
