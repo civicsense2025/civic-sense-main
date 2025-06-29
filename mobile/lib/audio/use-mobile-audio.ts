@@ -1,280 +1,292 @@
 import { useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mobileAudioService } from './audio-service';
+import type { CivicAudioSettings } from './audio-service';
+import type { SupportedLanguage } from '../translation/deepl-service';
 
-// Placeholder interfaces until the audio service is fully implemented
-export interface CivicAudioSettings {
-  autoPlayEnabled: boolean;
-  loopEnabled: boolean;
-  highlightingEnabled: boolean;
-  volume: number;
-  speechRate: number;
-  speechPitch: number;
-  voiceLanguage: string;
-  musicVolume: number;
-  soundEffectsEnabled: boolean;
-  backgroundMusicEnabled: boolean;
-}
-
-export interface AudioState {
+export interface CivicAudioState {
+  // Audio playback state
   isPlayingTTS: boolean;
   isPausedTTS: boolean;
   currentText: string;
-  currentMusicTrack: string | null;
-  settings: CivicAudioSettings;
+  
+  // Background music state
+  isPlayingMusic: boolean;
+  currentTrack?: string;
+  
+  // Service state
   isInitialized: boolean;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Settings
+  settings: CivicAudioSettings;
+  
+  // Translation state
+  availableLanguages: SupportedLanguage[];
+  translationStatus: {
+    isAvailable: boolean;
+    isEnabled: boolean;
+    currentLanguage: string;
+    cacheSize: number;
+  };
 }
 
-// Default settings
-const defaultSettings: CivicAudioSettings = {
-  autoPlayEnabled: false,
-  loopEnabled: false,
-  highlightingEnabled: true,
-  volume: 0.8,
-  speechRate: 1.0,
-  speechPitch: 1.0,
-  voiceLanguage: 'en-US',
-  musicVolume: 0.6,
-  soundEffectsEnabled: true,
-  backgroundMusicEnabled: true,
-};
-
-/**
- * Hook for managing mobile audio functionality in CivicSense
- * Provides TTS, sound effects, and background music controls
- */
 export function useMobileAudio() {
-  const [audioState, setAudioState] = useState<AudioState>({
+  const [audioState, setAudioState] = useState<CivicAudioState>({
     isPlayingTTS: false,
     isPausedTTS: false,
     currentText: '',
-    currentMusicTrack: null,
-    settings: defaultSettings,
+    isPlayingMusic: false,
     isInitialized: false,
+    isLoading: true,
+    error: null,
+    settings: mobileAudioService.getSettings(),
+    availableLanguages: [],
+    translationStatus: {
+      isAvailable: false,
+      isEnabled: false,
+      currentLanguage: 'en',
+      cacheSize: 0,
+    },
   });
 
-  // Initialize audio settings from storage
+  // Initialize audio service
   useEffect(() => {
     const initializeAudio = async () => {
       try {
-        // Load saved settings
-        const savedSettings = await AsyncStorage.getItem('civic_audio_settings');
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-          setAudioState(prev => ({
-            ...prev,
-            settings: { ...defaultSettings, ...parsed },
-            isInitialized: true,
-          }));
-        } else {
-          setAudioState(prev => ({ ...prev, isInitialized: true }));
-        }
+        setAudioState(prev => ({ ...prev, isLoading: true, error: null }));
+        
+        await mobileAudioService.initialize();
+        
+        // Get initial state
+        const settings = mobileAudioService.getSettings();
+        const availableLanguages = mobileAudioService.getAvailableLanguages();
+        const translationStatus = mobileAudioService.getTranslationStatus();
+        
+        setAudioState(prev => ({
+          ...prev,
+          isInitialized: true,
+          isLoading: false,
+          settings,
+          availableLanguages,
+          translationStatus,
+        }));
+        
       } catch (error) {
-        console.warn('Failed to load audio settings:', error);
-        setAudioState(prev => ({ ...prev, isInitialized: true }));
+        console.error('Failed to initialize mobile audio:', error);
+        setAudioState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Audio initialization failed',
+        }));
       }
     };
 
     initializeAudio();
   }, []);
 
-  // Save settings when they change
-  const saveSettings = useCallback(async (newSettings: Partial<CivicAudioSettings>) => {
-    try {
-      const updatedSettings = { ...audioState.settings, ...newSettings };
-      await AsyncStorage.setItem('civic_audio_settings', JSON.stringify(updatedSettings));
+  // Listen for audio state changes
+  useEffect(() => {
+    const unsubscribe = mobileAudioService.addListener((serviceState) => {
       setAudioState(prev => ({
         ...prev,
-        settings: updatedSettings,
+        isPlayingTTS: serviceState.isPlayingTTS,
+        isPausedTTS: serviceState.isPausedTTS,
+        currentText: serviceState.currentText,
+        isPlayingMusic: serviceState.isPlayingMusic,
+        currentTrack: serviceState.currentTrack,
+        settings: serviceState.settings,
+        translationStatus: mobileAudioService.getTranslationStatus(),
       }));
-    } catch (error) {
-      console.error('Failed to save audio settings:', error);
-    }
-  }, [audioState.settings]);
+    });
 
-  // Text-to-Speech functions (will be implemented when expo-speech is installed)
+    return unsubscribe;
+  }, []);
+
+  // Core TTS functions with translation support
   const speakText = useCallback(async (text: string, options?: {
-    autoPlay?: boolean;
-    onStart?: () => void;
-    onDone?: () => void;
-    onError?: (error: Error) => void;
+    rate?: number;
+    pitch?: number;
+    language?: string;
+    skipTranslation?: boolean;
   }) => {
     try {
-      console.log('🗣️ TTS: Would speak text:', text.slice(0, 50) + '...');
-      
-      // Check if auto-play is disabled
-      if (options?.autoPlay && !audioState.settings.autoPlayEnabled) {
-        console.log('Auto-play disabled, skipping TTS');
-        return;
-      }
-
-      setAudioState(prev => ({
-        ...prev,
-        isPlayingTTS: true,
-        isPausedTTS: false,
-        currentText: text,
-      }));
-
-      options?.onStart?.();
-
-      // Simulate speech duration
-      setTimeout(() => {
-        setAudioState(prev => ({
-          ...prev,
-          isPlayingTTS: false,
-          isPausedTTS: false,
-        }));
-        options?.onDone?.();
-      }, Math.min(text.length * 50, 10000)); // Estimate duration
-
+      await mobileAudioService.speakText(text, options);
     } catch (error) {
-      console.error('TTS Error:', error);
+      console.error('Error speaking text:', error);
       setAudioState(prev => ({
         ...prev,
-        isPlayingTTS: false,
-        isPausedTTS: false,
+        error: error instanceof Error ? error.message : 'Speech failed',
       }));
-      options?.onError?.(error as Error);
     }
-  }, [audioState.settings.autoPlayEnabled]);
+  }, []);
 
   const stopSpeech = useCallback(async () => {
-    console.log('🗣️ Stopping TTS');
-    setAudioState(prev => ({
-      ...prev,
-      isPlayingTTS: false,
-      isPausedTTS: false,
-      currentText: '',
-    }));
+    await mobileAudioService.stopSpeech();
   }, []);
 
   const pauseResumeSpeech = useCallback(async () => {
-    if (audioState.isPlayingTTS && !audioState.isPausedTTS) {
-      console.log('🗣️ Pausing TTS');
-      setAudioState(prev => ({ ...prev, isPausedTTS: true }));
-    } else if (audioState.isPausedTTS && audioState.currentText) {
-      console.log('🗣️ Resuming TTS');
-      setAudioState(prev => ({ ...prev, isPausedTTS: false }));
-      await speakText(audioState.currentText);
+    if (audioState.isPausedTTS) {
+      await mobileAudioService.resumeSpeech();
+    } else {
+      await mobileAudioService.pauseSpeech();
     }
-  }, [audioState.isPlayingTTS, audioState.isPausedTTS, audioState.currentText, speakText]);
+  }, [audioState.isPausedTTS]);
 
-  // Sound effect functions (placeholders until react-native-sound is installed)
-  const playSoundEffect = useCallback(async (soundId: string, options?: { volume?: number }) => {
-    if (!audioState.settings.soundEffectsEnabled) {
-      return;
+  // Translation functions
+  const setTranslationLanguage = useCallback(async (languageCode: string) => {
+    try {
+      await mobileAudioService.setTranslationLanguage(languageCode);
+      setAudioState(prev => ({
+        ...prev,
+        translationStatus: mobileAudioService.getTranslationStatus(),
+      }));
+    } catch (error) {
+      console.error('Error setting translation language:', error);
+      setAudioState(prev => ({
+        ...prev,
+        error: 'Failed to set translation language',
+      }));
     }
-    console.log(`🔊 Playing sound effect: ${soundId}`);
-    // TODO: Implement with expo-av when installed
-  }, [audioState.settings.soundEffectsEnabled]);
-
-  // Background music functions (placeholders until react-native-track-player is installed)
-  const playBackgroundMusic = useCallback(async (trackId: string) => {
-    if (!audioState.settings.backgroundMusicEnabled) {
-      return;
-    }
-    console.log(`🎵 Playing background music: ${trackId}`);
-    setAudioState(prev => ({ ...prev, currentMusicTrack: trackId }));
-    // TODO: Implement with react-native-track-player when installed
-  }, [audioState.settings.backgroundMusicEnabled]);
-
-  const stopBackgroundMusic = useCallback(async () => {
-    console.log('🎵 Stopping background music');
-    setAudioState(prev => ({ ...prev, currentMusicTrack: null }));
-    // TODO: Implement with react-native-track-player when installed
   }, []);
 
-  // Civic-specific convenience methods
-  const playQuizCorrectSound = useCallback(() => playSoundEffect('quiz_correct'), [playSoundEffect]);
-  const playQuizIncorrectSound = useCallback(() => playSoundEffect('quiz_incorrect'), [playSoundEffect]);
-  const playCivicAchievementSound = useCallback(() => playSoundEffect('civic_achievement'), [playSoundEffect]);
-  const playButtonTapSound = useCallback(() => playSoundEffect('button_tap', { volume: 0.3 }), [playSoundEffect]);
-  const playNotificationSound = useCallback(() => playSoundEffect('notification_chime'), [playSoundEffect]);
+  const toggleTranslation = useCallback(async (enabled?: boolean) => {
+    try {
+      await mobileAudioService.toggleTranslation(enabled);
+      setAudioState(prev => ({
+        ...prev,
+        translationStatus: mobileAudioService.getTranslationStatus(),
+      }));
+    } catch (error) {
+      console.error('Error toggling translation:', error);
+      setAudioState(prev => ({
+        ...prev,
+        error: 'Failed to toggle translation',
+      }));
+    }
+  }, []);
 
-  const startQuizBackgroundMusic = useCallback(() => playBackgroundMusic('quiz_background'), [playBackgroundMusic]);
-  
-  const celebrateCompletion = useCallback(async () => {
-    await playSoundEffect('quiz_complete');
-    await playBackgroundMusic('celebration_theme');
-  }, [playSoundEffect, playBackgroundMusic]);
+  const setTranslationFormality = useCallback(async (formality: 'default' | 'more' | 'less') => {
+    try {
+      await mobileAudioService.setTranslationFormality(formality);
+    } catch (error) {
+      console.error('Error setting translation formality:', error);
+    }
+  }, []);
 
-  // Settings update functions
-  const updateSettings = useCallback((newSettings: Partial<CivicAudioSettings>) => {
-    saveSettings(newSettings);
-  }, [saveSettings]);
+  const clearTranslationCache = useCallback(async () => {
+    try {
+      await mobileAudioService.clearTranslationCache();
+      setAudioState(prev => ({
+        ...prev,
+        translationStatus: mobileAudioService.getTranslationStatus(),
+      }));
+    } catch (error) {
+      console.error('Error clearing translation cache:', error);
+    }
+  }, []);
 
-  const setAutoPlay = useCallback((enabled: boolean) => {
-    updateSettings({ autoPlayEnabled: enabled });
-  }, [updateSettings]);
+  // Civic-specific functions with translation
+  const speakQuizCorrect = useCallback(async (customMessage?: string) => {
+    await mobileAudioService.speakQuizCorrect(customMessage);
+  }, []);
 
-  const setLoop = useCallback((enabled: boolean) => {
-    updateSettings({ loopEnabled: enabled });
-  }, [updateSettings]);
+  const speakQuizIncorrect = useCallback(async (customMessage?: string) => {
+    await mobileAudioService.speakQuizIncorrect(customMessage);
+  }, []);
 
-  const setVolume = useCallback((volume: number) => {
-    updateSettings({ volume: Math.max(0, Math.min(1, volume)) });
-  }, [updateSettings]);
+  const speakCivicAchievement = useCallback(async (achievement: string) => {
+    await mobileAudioService.speakCivicAchievement(achievement);
+  }, []);
 
-  const setMusicVolume = useCallback((volume: number) => {
-    updateSettings({ musicVolume: Math.max(0, Math.min(1, volume)) });
-  }, [updateSettings]);
+  const speakConstitutionalConcept = useCallback(async (concept: string) => {
+    await mobileAudioService.speakConstitutionalConcept(concept);
+  }, []);
 
-  const setSoundEffectsEnabled = useCallback((enabled: boolean) => {
-    updateSettings({ soundEffectsEnabled: enabled });
-  }, [updateSettings]);
+  const speakVotingInformation = useCallback(async (info: string) => {
+    await mobileAudioService.speakVotingInformation(info);
+  }, []);
 
-  const setBackgroundMusicEnabled = useCallback((enabled: boolean) => {
-    updateSettings({ backgroundMusicEnabled: enabled });
-  }, [updateSettings]);
+  // Settings management
+  const updateSettings = useCallback(async (newSettings: Partial<CivicAudioSettings>) => {
+    try {
+      await mobileAudioService.updateSettings(newSettings);
+      setAudioState(prev => ({
+        ...prev,
+        settings: mobileAudioService.getSettings(),
+        translationStatus: mobileAudioService.getTranslationStatus(),
+      }));
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      setAudioState(prev => ({
+        ...prev,
+        error: 'Failed to update settings',
+      }));
+    }
+  }, []);
 
-  const setSpeechRate = useCallback((rate: number) => {
-    updateSettings({ speechRate: Math.max(0.5, Math.min(2.0, rate)) });
-  }, [updateSettings]);
+  // Sound effects and background music (placeholders for now)
+  const playQuizCorrectSound = useCallback(async () => {
+    // Placeholder - will play sound effect when assets are added
+    console.log('🎵 Quiz Correct Sound');
+  }, []);
 
-  const setSpeechPitch = useCallback((pitch: number) => {
-    updateSettings({ speechPitch: Math.max(0.5, Math.min(2.0, pitch)) });
-  }, [updateSettings]);
+  const playQuizIncorrectSound = useCallback(async () => {
+    // Placeholder - will play sound effect when assets are added
+    console.log('🎵 Quiz Incorrect Sound');
+  }, []);
 
-  // Read current page content (adapted from web version)
+  const playNotificationSound = useCallback(async () => {
+    // Placeholder - will play notification sound when assets are added
+    console.log('🔔 Notification Sound');
+  }, []);
+
+  const startBackgroundMusic = useCallback(async (trackName?: string) => {
+    // Placeholder - will start background music when assets are added
+    console.log('🎵 Starting Background Music:', trackName);
+  }, []);
+
+  const stopBackgroundMusic = useCallback(async () => {
+    // Placeholder - will stop background music when assets are added
+    console.log('🎵 Stopping Background Music');
+  }, []);
+
   const readCurrentPageContent = useCallback(async () => {
-    // This would extract content from the current screen
-    // For now, just a placeholder
-    const pageContent = "Welcome to CivicSense. This is your civic education platform.";
-    await speakText(pageContent, { autoPlay: false });
+    // This would extract and read current page content
+    await speakText('Reading current page content. This is a placeholder for page content extraction.');
   }, [speakText]);
 
   return {
     // State
     ...audioState,
     
-    // TTS Controls
+    // Core TTS functions
     speakText,
     stopSpeech,
     pauseResumeSpeech,
     readCurrentPageContent,
     
-    // Sound Effects
-    playSoundEffect,
+    // Translation functions
+    setTranslationLanguage,
+    toggleTranslation,
+    setTranslationFormality,
+    clearTranslationCache,
+    
+    // Civic-specific functions
+    speakQuizCorrect,
+    speakQuizIncorrect,
+    speakCivicAchievement,
+    speakConstitutionalConcept,
+    speakVotingInformation,
+    
+    // Sound effects and music
     playQuizCorrectSound,
     playQuizIncorrectSound,
-    playCivicAchievementSound,
-    playButtonTapSound,
     playNotificationSound,
-    
-    // Background Music
-    playBackgroundMusic,
+    startBackgroundMusic,
     stopBackgroundMusic,
-    startQuizBackgroundMusic,
-    celebrateCompletion,
     
     // Settings
     updateSettings,
-    setAutoPlay,
-    setLoop,
-    setVolume,
-    setMusicVolume,
-    setSoundEffectsEnabled,
-    setBackgroundMusicEnabled,
-    setSpeechRate,
-    setSpeechPitch,
   };
 } 

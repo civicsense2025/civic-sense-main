@@ -10,6 +10,7 @@ import TrackPlayer, {
   Track,
   AppKilledPlaybackBehavior,
 } from 'react-native-track-player';
+import { deepLTranslationService, SupportedLanguage } from '../translation/deepl-service';
 
 export interface CivicAudioSettings {
   autoPlayEnabled: boolean;
@@ -22,6 +23,15 @@ export interface CivicAudioSettings {
   musicVolume: number;
   soundEffectsEnabled: boolean;
   backgroundMusicEnabled: boolean;
+  
+  // TTS Settings
+  speechLanguage: string;
+  
+  // Translation Settings
+  translationEnabled: boolean;
+  targetLanguage: string;
+  preserveCivicTerms: boolean;
+  translationFormality: 'default' | 'more' | 'less';
 }
 
 export interface CivicSoundEffect {
@@ -41,9 +51,20 @@ export interface CivicMusicTrack {
   category: 'background' | 'quiz' | 'menu' | 'celebration';
 }
 
+export interface AudioServiceState {
+  isPlayingTTS: boolean;
+  isPausedTTS: boolean;
+  currentText: string;
+  isPlayingMusic: boolean;
+  currentTrack?: string;
+  settings: CivicAudioSettings;
+}
+
+export type AudioServiceListener = (state: AudioServiceState) => void;
+
 class MobileAudioService {
   private static instance: MobileAudioService;
-  private listeners: Set<() => void> = new Set();
+  private listeners: Set<AudioServiceListener> = new Set();
   
   // Audio state
   private isInitialized = false;
@@ -51,6 +72,8 @@ class MobileAudioService {
   private isPlayingTTS = false;
   private isPausedTTS = false;
   private currentText = '';
+  private isPlayingMusic = false;
+  private currentMusicTrack: string | null = null;
   private settings: CivicAudioSettings = {
     autoPlayEnabled: false,
     loopEnabled: false,
@@ -62,12 +85,16 @@ class MobileAudioService {
     musicVolume: 0.6,
     soundEffectsEnabled: true,
     backgroundMusicEnabled: true,
+    speechLanguage: 'en-US',
+    translationEnabled: false,
+    targetLanguage: 'en-US',
+    preserveCivicTerms: true,
+    translationFormality: 'default',
   };
   
   // Sound effects storage
   private soundEffects: Map<string, Audio.Sound> = new Map();
   private musicTracks: CivicMusicTrack[] = [];
-  private currentMusicTrack: string | null = null;
   
   // Civic-specific sound library - Using placeholders until assets are added
   private readonly civicSounds: CivicSoundEffect[] = [
@@ -244,85 +271,58 @@ class MobileAudioService {
   }
 
   /**
-   * Text-to-Speech functionality for civic content
+   * Speak text with optional translation
    */
-  async speakText(text: string, options?: {
-    autoPlay?: boolean;
-    onStart?: () => void;
-    onDone?: () => void;
-    onError?: (error: Error) => void;
+  async speakText(text: string, options?: { 
+    rate?: number; 
+    pitch?: number; 
+    language?: string;
+    skipTranslation?: boolean;
   }): Promise<void> {
     try {
-      if (!text || !this.isInitialized) {
-        console.warn('No text provided or service not initialized');
-        return;
+      let textToSpeak = text;
+      
+      // Apply translation if enabled and not skipping
+      if (this.settings.translationEnabled && !options?.skipTranslation) {
+        textToSpeak = await this.translateTextForSpeech(text);
       }
-
-      // Check if auto-play is disabled
-      if (options?.autoPlay && !this.settings.autoPlayEnabled) {
-        console.log('Auto-play disabled, skipping TTS');
-        return;
-      }
-
+      
+      // Clean text for civic education context
+      textToSpeak = this.cleanTextForTTS(textToSpeak);
+      
       // Stop any current speech
       await this.stopSpeech();
-
-      this.currentText = text;
-      this.isPlayingTTS = true;
-      this.isPausedTTS = false;
-
-      // Clean text for better civic education speech
-      const cleanText = this.cleanCivicTextForSpeech(text);
-
+      
       const speechOptions: Speech.SpeechOptions = {
-        language: this.settings.voiceLanguage,
-        pitch: this.settings.speechPitch,
-        rate: this.settings.speechRate,
-        volume: this.settings.volume,
+        language: options?.language || this.settings.speechLanguage,
+        pitch: options?.pitch || this.settings.speechPitch,
+        rate: options?.rate || this.settings.speechRate,
         onStart: () => {
-          console.log('🗣️ TTS Started');
-          options?.onStart?.();
+          this.isPlayingTTS = true;
+          this.isPausedTTS = false;
+          this.currentText = textToSpeak;
           this.notifyListeners();
         },
         onDone: () => {
-          console.log('🗣️ TTS Completed');
           this.isPlayingTTS = false;
           this.isPausedTTS = false;
-          
-          // Handle looping for civic content
-          if (this.settings.loopEnabled) {
-            setTimeout(() => {
-              if (this.settings.loopEnabled && this.currentText) {
-                this.speakText(this.currentText, options);
-              }
-            }, 1000);
-          }
-          
-          options?.onDone?.();
+          this.currentText = '';
           this.notifyListeners();
         },
-                 onError: (error: any) => {
-           console.error('🗣️ TTS Error:', error);
-           this.isPlayingTTS = false;
-           this.isPausedTTS = false;
-           options?.onError?.(new Error(error?.toString() || 'Speech synthesis failed'));
-           this.notifyListeners();
-         },
-        onStopped: () => {
-          console.log('🗣️ TTS Stopped');
+        onError: (error) => {
+          console.error('TTS Error:', error);
           this.isPlayingTTS = false;
           this.isPausedTTS = false;
           this.notifyListeners();
-        },
+        }
       };
-
-      await Speech.speak(cleanText, speechOptions);
-
+      
+      await Speech.speak(textToSpeak, speechOptions);
+      
     } catch (error) {
-      console.error('Error in TTS:', error);
+      console.error('Error speaking text:', error);
       this.isPlayingTTS = false;
       this.isPausedTTS = false;
-      options?.onError?.(error as Error);
       this.notifyListeners();
     }
   }
@@ -330,7 +330,7 @@ class MobileAudioService {
   /**
    * Clean text for better civic education speech
    */
-  private cleanCivicTextForSpeech(text: string): string {
+  private cleanTextForTTS(text: string): string {
     return text
       // Handle common civic abbreviations
       .replace(/\bU\.S\.A?\./g, 'United States')
@@ -355,6 +355,137 @@ class MobileAudioService {
       // Clean up extra whitespace
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  /**
+   * Translate text for speech using DeepL
+   */
+  private async translateTextForSpeech(text: string): Promise<string> {
+    try {
+      if (!this.settings.translationEnabled || this.settings.targetLanguage === 'en') {
+        return text;
+      }
+      
+      const translatedText = await deepLTranslationService.translateText(
+        text,
+        this.settings.targetLanguage,
+        {
+          preserveCivicTerms: this.settings.preserveCivicTerms,
+          formality: this.settings.translationFormality,
+          context: 'civic education content for text-to-speech'
+        }
+      );
+      
+      console.log(`🌍 Translated text from English to ${this.settings.targetLanguage}`);
+      return translatedText;
+      
+    } catch (error) {
+      console.error('Translation failed for TTS:', error);
+      return text; // Fallback to original text
+    }
+  }
+
+  /**
+   * Get available languages for translation
+   */
+  getAvailableLanguages(): SupportedLanguage[] {
+    return deepLTranslationService.getAvailableLanguages();
+  }
+
+  /**
+   * Set translation language
+   */
+  async setTranslationLanguage(languageCode: string): Promise<void> {
+    this.settings = {
+      ...this.settings,
+      targetLanguage: languageCode,
+      translationEnabled: languageCode !== 'en'
+    };
+    
+    await this.saveSettings();
+    this.notifyListeners();
+  }
+
+  /**
+   * Toggle translation on/off
+   */
+  async toggleTranslation(enabled?: boolean): Promise<void> {
+    this.settings = {
+      ...this.settings,
+      translationEnabled: enabled !== undefined ? enabled : !this.settings.translationEnabled
+    };
+    
+    await this.saveSettings();
+    this.notifyListeners();
+  }
+
+  /**
+   * Set translation formality
+   */
+  async setTranslationFormality(formality: 'default' | 'more' | 'less'): Promise<void> {
+    this.settings = {
+      ...this.settings,
+      translationFormality: formality
+    };
+    
+    await this.saveSettings();
+    this.notifyListeners();
+  }
+
+  /**
+   * Get translation service status
+   */
+  getTranslationStatus(): {
+    isAvailable: boolean;
+    isEnabled: boolean;
+    currentLanguage: string;
+    cacheSize: number;
+  } {
+    const status = deepLTranslationService.getStatus();
+    return {
+      isAvailable: status.isInitialized,
+      isEnabled: this.settings.translationEnabled,
+      currentLanguage: this.settings.targetLanguage,
+      cacheSize: status.cacheSize
+    };
+  }
+
+  /**
+   * Clear translation cache
+   */
+  async clearTranslationCache(): Promise<void> {
+    await deepLTranslationService.clearCache();
+  }
+
+  /**
+   * Civic-specific convenience methods with translation support
+   */
+
+  // Quiz feedback with translation
+  async speakQuizCorrect(customMessage?: string): Promise<void> {
+    const message = customMessage || 'Correct! You\'re building your civic knowledge and becoming a more informed citizen.';
+    await this.speakText(message);
+  }
+
+  async speakQuizIncorrect(customMessage?: string): Promise<void> {
+    const message = customMessage || 'That\'s not quite right. Let\'s learn about this together - understanding how power works is crucial for democracy.';
+    await this.speakText(message);
+  }
+
+  async speakCivicAchievement(achievement: string): Promise<void> {
+    const message = `Congratulations! You've achieved: ${achievement}. You're becoming harder to manipulate and more difficult to ignore.`;
+    await this.speakText(message);
+  }
+
+  // Multilingual civic education content
+  async speakConstitutionalConcept(concept: string): Promise<void> {
+    const message = `Let's explore this constitutional concept: ${concept}. Understanding your rights is the foundation of democratic participation.`;
+    await this.speakText(message);
+  }
+
+  async speakVotingInformation(info: string): Promise<void> {
+    const message = `Important voting information: ${info}. Your vote is your voice in democracy.`;
+    await this.speakText(message);
   }
 
   /**
@@ -479,79 +610,26 @@ class MobileAudioService {
   }
 
   /**
-   * Update audio settings
+   * Get current state for listeners
    */
-  async updateSettings(newSettings: Partial<CivicAudioSettings>): Promise<void> {
-    try {
-      this.settings = { ...this.settings, ...newSettings };
-      await this.saveSettings();
-      
-      // Apply volume changes to current audio
-      if (newSettings.volume !== undefined) {
-        // Update sound effects volume
-        for (const sound of this.soundEffects.values()) {
-          await sound.setVolumeAsync(newSettings.volume);
-        }
-      }
-      
-      if (newSettings.musicVolume !== undefined) {
-        await TrackPlayer.setVolume(newSettings.musicVolume);
-      }
-
-      this.notifyListeners();
-      console.log('🔧 Audio settings updated:', newSettings);
-      
-    } catch (error) {
-      console.error('Error updating settings:', error);
-    }
-  }
-
-  /**
-   * Get current audio state
-   */
-  getState() {
+  private getState(): AudioServiceState {
     return {
       isPlayingTTS: this.isPlayingTTS,
       isPausedTTS: this.isPausedTTS,
       currentText: this.currentText,
-      currentMusicTrack: this.currentMusicTrack,
-      settings: { ...this.settings },
-      isInitialized: this.isInitialized,
-      availableSoundEffects: this.civicSounds,
-      availableMusicTracks: this.civicMusicTracks,
+      isPlayingMusic: this.isPlayingMusic,
+      currentTrack: this.currentMusicTrack || undefined,
+      settings: this.settings,
     };
   }
 
   /**
-   * Civic-specific convenience methods
+   * Update settings
    */
-  async playQuizCorrectSound(): Promise<void> {
-    await this.playSoundEffect('quiz_correct');
-  }
-
-  async playQuizIncorrectSound(): Promise<void> {
-    await this.playSoundEffect('quiz_incorrect');
-  }
-
-  async playCivicAchievementSound(): Promise<void> {
-    await this.playSoundEffect('civic_achievement');
-  }
-
-  async playButtonTapSound(): Promise<void> {
-    await this.playSoundEffect('button_tap', { volume: 0.3 });
-  }
-
-  async playNotificationSound(): Promise<void> {
-    await this.playSoundEffect('notification_chime');
-  }
-
-  async startQuizBackgroundMusic(): Promise<void> {
-    await this.playBackgroundMusic('quiz_background');
-  }
-
-  async celebrateCompletion(): Promise<void> {
-    await this.playSoundEffect('quiz_complete');
-    await this.playBackgroundMusic('celebration_theme');
+  async updateSettings(newSettings: Partial<CivicAudioSettings>): Promise<void> {
+    this.settings = { ...this.settings, ...newSettings };
+    await this.saveSettings();
+    this.notifyListeners();
   }
 
   // Event handling and persistence methods
@@ -565,18 +643,18 @@ class MobileAudioService {
     this.notifyListeners();
   };
 
-  addListener(callback: () => void): void {
+  addListener(callback: AudioServiceListener): void {
     this.listeners.add(callback);
   }
 
-  removeListener(callback: () => void): void {
+  removeListener(callback: AudioServiceListener): void {
     this.listeners.delete(callback);
   }
 
   private notifyListeners(): void {
     this.listeners.forEach(callback => {
       try {
-        callback();
+        callback(this.getState());
       } catch (error) {
         console.warn('Error in audio listener:', error);
       }
@@ -622,6 +700,43 @@ class MobileAudioService {
       
     } catch (error) {
       console.error('Error during cleanup:', error);
+    }
+  }
+
+  /**
+   * Get current settings
+   */
+  getSettings(): CivicAudioSettings {
+    return { ...this.settings };
+  }
+
+  /**
+   * Pause speech
+   */
+  async pauseSpeech(): Promise<void> {
+    try {
+      const isSpeaking = await Speech.isSpeakingAsync();
+      if (isSpeaking) {
+        await Speech.stop();
+        this.isPausedTTS = true;
+        this.notifyListeners();
+      }
+    } catch (error) {
+      console.error('Error pausing speech:', error);
+    }
+  }
+
+  /**
+   * Resume speech
+   */
+  async resumeSpeech(): Promise<void> {
+    try {
+      if (this.isPausedTTS && this.currentText) {
+        this.isPausedTTS = false;
+        await this.speakText(this.currentText, { skipTranslation: true });
+      }
+    } catch (error) {
+      console.error('Error resuming speech:', error);
     }
   }
 }

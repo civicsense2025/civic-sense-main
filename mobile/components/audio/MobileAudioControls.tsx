@@ -8,8 +8,10 @@ import {
   Dimensions,
   ScrollView,
   Switch,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { SupportedLanguage } from '../../lib/translation/deepl-service';
 
 // Simple icon components using emoji for now
 const PlayIcon = () => <Text style={styles.iconText}>▶️</Text>;
@@ -21,6 +23,7 @@ const SettingsIcon = () => <Text style={styles.iconText}>⚙️</Text>;
 const CloseIcon = () => <Text style={styles.iconText}>✕</Text>;
 const HeadphonesIcon = () => <Text style={styles.iconText}>🎧</Text>;
 const MusicIcon = () => <Text style={styles.iconText}>🎵</Text>;
+const TranslateIcon = () => <Text style={styles.iconText}>🌍</Text>;
 
 interface MobileAudioControlsProps {
   isPlayingTTS?: boolean;
@@ -32,6 +35,17 @@ interface MobileAudioControlsProps {
   soundEffectsEnabled?: boolean;
   backgroundMusicEnabled?: boolean;
   
+  // Translation props
+  translationEnabled?: boolean;
+  availableLanguages?: SupportedLanguage[];
+  currentLanguage?: string;
+  translationStatus?: {
+    isAvailable: boolean;
+    isEnabled: boolean;
+    currentLanguage: string;
+    cacheSize: number;
+  };
+  
   onPlay?: (text?: string) => void;
   onPause?: () => void;
   onStop?: () => void;
@@ -41,6 +55,11 @@ interface MobileAudioControlsProps {
   onSoundEffectsToggle?: (enabled: boolean) => void;
   onBackgroundMusicToggle?: (enabled: boolean) => void;
   onReadCurrentPage?: () => void;
+  
+  // Translation callbacks
+  onTranslationToggle?: (enabled: boolean) => void;
+  onLanguageChange?: (languageCode: string) => void;
+  onClearTranslationCache?: () => void;
   
   isMinimized?: boolean;
   onToggleMinimized?: () => void;
@@ -59,6 +78,17 @@ export function MobileAudioControls({
   soundEffectsEnabled = true,
   backgroundMusicEnabled = true,
   
+  // Translation props
+  translationEnabled = false,
+  availableLanguages = [],
+  currentLanguage = '',
+  translationStatus = {
+    isAvailable: false,
+    isEnabled: false,
+    currentLanguage: '',
+    cacheSize: 0,
+  },
+  
   onPlay,
   onPause,
   onStop,
@@ -68,6 +98,11 @@ export function MobileAudioControls({
   onSoundEffectsToggle,
   onBackgroundMusicToggle,
   onReadCurrentPage,
+  
+  // Translation callbacks
+  onTranslationToggle,
+  onLanguageChange,
+  onClearTranslationCache,
   
   isMinimized = true,
   onToggleMinimized,
@@ -263,6 +298,39 @@ export function MobileAudioControls({
               </View>
             </View>
 
+            {/* Translation Settings */}
+            <View style={styles.translationSettings}>
+              <Text style={styles.sectionTitle}>Translation Settings</Text>
+              
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <Text style={styles.iconText}>🌍</Text>
+                  <Text style={styles.settingLabel}>Translation Enabled</Text>
+                </View>
+                <Switch
+                  value={translationEnabled}
+                  onValueChange={onTranslationToggle}
+                  trackColor={{ false: '#CCCCCC', true: '#E0A63E' }}
+                />
+              </View>
+
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <Text style={styles.iconText}>🌐</Text>
+                  <Text style={styles.settingLabel}>Current Language</Text>
+                </View>
+                <Text style={styles.settingText}>{currentLanguage}</Text>
+              </View>
+
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <Text style={styles.iconText}>🔄</Text>
+                  <Text style={styles.settingLabel}>Translation Cache Size</Text>
+                </View>
+                <Text style={styles.settingText}>{translationStatus.cacheSize} items</Text>
+              </View>
+            </View>
+
             {/* Info */}
             <View style={styles.infoSection}>
               <Text style={styles.infoTitle}>🏛️ Civic Audio Features</Text>
@@ -442,6 +510,11 @@ const styles = StyleSheet.create({
     color: '#1B1B1B',
     marginLeft: 8,
   },
+  settingText: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginLeft: 8,
+  },
   infoSection: {
     backgroundColor: '#F3F4F6',
     borderRadius: 12,
@@ -462,5 +535,10 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 20,
+  },
+  translationSettings: {
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
   },
 }); 
