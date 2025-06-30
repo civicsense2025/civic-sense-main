@@ -5,7 +5,29 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { X, Crown, Settings, Users, Zap, MessageCircle, Timer, Trophy, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
+// import useUIStrings from '@/hooks/useUIStrings' // Temporarily use static strings
+
+// Temporary static strings for build fix
+const uiStrings = {
+  multiplayer: {
+    hostSettings: "Host Settings",
+    gameMode: "Game Mode",
+    players: "players",
+    settings: "Settings",
+    allowNewPlayers: "Allow New Players",
+    allowNewPlayersDesc: "Let new players join during the game",
+    enableBoosts: "Enable Power-ups",
+    enableBoostsDesc: "Allow players to use special abilities",
+    showHints: "Show Hints",
+    showHintsDesc: "Display helpful hints for questions",
+    autoAdvance: "Auto Advance",
+    autoAdvanceDesc: "Automatically move to next question",
+    realTimeScores: "Real-time Scores",
+    realTimeScoresDesc: "Show live score updates",
+    enableChat: "Enable Chat",
+    enableChatDesc: "Allow players to chat during game"
+  }
+}
 
 interface HostSettings {
   allowNewPlayers: boolean
@@ -33,7 +55,6 @@ export function HostSettingsMenu({
   maxPlayers,
   gameMode
 }: HostSettingsMenuProps) {
-  const { uiStrings } = useUIStrings()
   
   const updateSetting = (key: keyof HostSettings, value: boolean) => {
     onSettingsChange({

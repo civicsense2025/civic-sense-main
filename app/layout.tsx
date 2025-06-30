@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from "next"
 import { Space_Mono } from "next/font/google"
 import "./globals.css"
+import "./fonts.css" 
 import "../styles/accessibility.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
@@ -15,6 +16,7 @@ import { Footer } from "@/components/ui/footer"
 import { GlobalAudioWrapper } from "@/components/client-global-audio-wrapper"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { performanceMonitor } from "@/lib/performance-monitor"
 import { PWAStatus } from "@/components/pwa-status"
 import { DebugSettingsPanel } from "@/components/debug-settings-panel"
 import { cn } from '@/lib/utils'
@@ -114,10 +116,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={spaceMono.variable}>
       <head>
+        {/* ✅ Character encoding declaration - required for SEO */}
+        <meta charSet="utf-8" />
+        
         {/* ✅ DNS prefetch for external resources */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//vercel-insights.com" />
         <link rel="dns-prefetch" href="//vercel-analytics.com" />
+        <link rel="dns-prefetch" href="//supabase.com" />
+        <link rel="dns-prefetch" href="//api.supabase.io" />
         
         {/* ✅ Preconnect for critical third-party origins */}
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
@@ -166,6 +173,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="CivicSense" />
         
+        {/* Performance monitoring initialization */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Initialize performance monitoring as early as possible
+            (function() {
+              if ('performance' in window && 'PerformanceObserver' in window) {
+                // Track navigation timing
+                window.addEventListener('load', function() {
+                  const navEntry = performance.getEntriesByType('navigation')[0];
+                  if (navEntry) {
+                    console.log('🚀 Page loaded in ' + Math.round(navEntry.loadEventEnd - navEntry.fetchStart) + 'ms');
+                  }
+                });
+              }
+            })();
+          `
+        }} />
 
       </head>
       <body className={cn(

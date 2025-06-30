@@ -9,7 +9,21 @@ import { Card } from "@/components/ui/card"
 import { Shield, Sword, Brain, Lightbulb } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuizQuestion, getQuestionOptions } from "@/lib/types/quiz"
-import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
+// import useUIStrings from "@/hooks/useUIStrings" // Temporarily use static strings
+
+// Temporary static strings for build fix
+const uiStrings = {
+  multiplayer: {
+    question: "Question",
+    hint: "Hint",
+    explanation: "Explanation", 
+    showHint: "Show Hint",
+    submitAnswer: "Submit Answer",
+    shield: "Shield",
+    attack: "Attack",
+    focus: "Focus"
+  }
+}
 
 // Updated interface to match props from base-multiplayer-engine
 export interface QuestionPhaseProps {
@@ -74,7 +88,6 @@ export function QuestionPhase({
   isAnswerSubmitted,
   showHint
 }: QuestionPhaseProps) {
-  const { uiStrings } = useUIStrings()
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(gameState.selectedAnswer)
 
   const handleAnswerSelect = (answer: string) => {
@@ -214,7 +227,6 @@ export function NPCQuestionPhase({
   playerScore,
   opponentScore
 }: NPCQuestionPhaseProps) {
-  const { uiStrings } = useUIStrings()
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [timeSpent, setTimeSpent] = useState(0)
   const [powerUpUsed, setPowerUpUsed] = useState<string | null>(null)

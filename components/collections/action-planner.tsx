@@ -7,7 +7,30 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Target, CheckCircle, Calendar, Users, ExternalLink } from 'lucide-react'
-import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
+// import useUIStrings from '@/hooks/useUIStrings' // Temporarily use static strings
+
+// Temporary static strings for build fix
+const uiStrings = {
+  collections: {
+    takeAction: "Take Action",
+    planned: "planned",
+    completed: "completed",
+    immediateActions: "Immediate Actions",
+    immediateActionsDesc: "These actions can be taken right away to make a difference.",
+    markAsCompleted: "Mark as completed",
+    civicEngagementOpportunities: "Civic Engagement Opportunities",
+    civicEngagementDesc: "Ways to get involved in your community and democracy.",
+    yourActionPlan: "Your Action Plan",
+    youvePlannedActions: "You've planned {count} action{plural}",
+    andCompleted: " and completed {count}",
+    greatJobTakingAction: "Great job taking action!",
+    keepGoing: "Keep going with your planned actions.",
+    readyToTakeAction: "Ready to Take Action?",
+    checkOffActions: "Check off actions you want to plan or complete.",
+    outstanding: "Outstanding!",
+    completedAllActions: "You've completed all available actions. You're making a real difference!"
+  }
+}
 
 interface ActionPlannerProps {
   actionItems: string[]
@@ -28,7 +51,6 @@ export function ActionPlanner({
   initialCompleted = [],
   className
 }: ActionPlannerProps) {
-  const { uiStrings } = useUIStrings()
   const [plannedActions, setPlannedActions] = useState<string[]>(initialPlanned)
   const [completedActions, setCompletedActions] = useState<string[]>(initialCompleted)
 

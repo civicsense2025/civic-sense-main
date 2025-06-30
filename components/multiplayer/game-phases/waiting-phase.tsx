@@ -5,7 +5,30 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { QuizQuestion } from "@/lib/types/quiz"
-import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
+// import useUIStrings from "@/hooks/useUIStrings" // Temporarily use static strings
+
+// Temporary static strings for build fix
+const uiStrings = {
+  multiplayer: {
+    getReadyToPlay: "Get Ready to Play",
+    questions: "questions",
+    gameMode: "Game Mode",
+    features: "Features",
+    hints: "Hints",
+    explanations: "Explanations",
+    teamMode: "Team Mode",
+    powerUps: "Power-Ups",
+    startGame: "Start Game",
+    waitingForPlayers: "Waiting for players",
+    waitingForHost: "Waiting for host",
+    npcBattle: "NPC Battle",
+    testYourKnowledge: "Test your knowledge",
+    skillLevel: "Skill Level",
+    specialties: "Specialties", 
+    weaknesses: "Weaknesses",
+    startBattle: "Start Battle"
+  }
+}
 
 // Updated interface to match props from base-multiplayer-engine
 export interface WaitingPhaseProps {
@@ -48,7 +71,6 @@ export function WaitingPhase({
   isHost, 
   allPlayersReady 
 }: WaitingPhaseProps) {
-  const { uiStrings } = useUIStrings()
   
   return (
     <div className="space-y-8">
@@ -108,7 +130,6 @@ export function WaitingPhase({
 
 // Legacy component for NPC battles
 export function NPCWaitingPhase({ opponent, onStart }: NPCWaitingPhaseProps) {
-  const { uiStrings } = useUIStrings()
   
   return (
     <div className="space-y-8">

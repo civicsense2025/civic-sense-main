@@ -5,7 +5,18 @@ import { NPCPersonality } from "@/lib/multiplayer-npcs"
 import { Card } from "@/components/ui/card"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { QuizQuestion } from "@/lib/types/quiz"
-import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
+// import useUIStrings from "@/hooks/useUIStrings" // Temporarily use static strings
+
+// Temporary static strings for build fix
+const uiStrings = {
+  multiplayer: {
+    getReady: "Get Ready!",
+    gameStartingSoon: "Game Starting Soon",
+    getReadyFirstQuestion: "Get ready for the first question",
+    firstQuestionLoading: "First question loading",
+    battleStarting: "Battle Starting"
+  }
+}
 
 // Updated interface to match props from base-multiplayer-engine
 export interface CountdownPhaseProps {
@@ -20,7 +31,6 @@ export interface NPCCountdownPhaseProps {
 }
 
 export function CountdownPhase({ currentQuestion, countdown }: CountdownPhaseProps) {
-  const { uiStrings } = useUIStrings()
   
   return (
     <div className="space-y-8">
@@ -52,7 +62,6 @@ export function CountdownPhase({ currentQuestion, countdown }: CountdownPhasePro
 
 // Legacy component for NPC battles
 export function NPCCountdownPhase({ opponent, onComplete }: NPCCountdownPhaseProps) {
-  const { uiStrings } = useUIStrings()
   const [countdown, setCountdown] = useState(3)
   const hasCompleted = useRef(false)
 

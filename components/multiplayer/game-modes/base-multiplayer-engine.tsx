@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, MessageCircle, Crown, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
-import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
+// import useUIStrings from "@/hooks/useUIStrings" // Temporarily use static strings
 
 // Import our modular components
 import { WaitingPhase } from "../game-phases/waiting-phase"
@@ -193,7 +193,18 @@ export function BaseMultiplayerEngine({
   // =============================================================================
 
   const { user } = useAuth()
-  const { uiStrings } = useUIStrings()
+  
+  // Temporary static strings for build fix
+  const uiStrings = {
+    quiz: {
+      questionNumber: "Question"
+    },
+    multiplayer: {
+      settings: "Settings",
+      leaderboard: "Leaderboard", 
+      chat: "Chat"
+    }
+  }
   
   // Room state from multiplayer hook with memoization to prevent re-renders
   const { room, players } = useMultiplayerRoom(roomId)

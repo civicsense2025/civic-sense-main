@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Check, Clock, Crown, Zap, Timer, Bot, User } from 'lucide-react'
 import type { MultiplayerPlayer, MultiplayerQuestionResponse } from '@/lib/multiplayer'
-import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
+// import useUIStrings from '@/hooks/useUIStrings' // Temporarily use static strings
 
 interface PlayerPanelProps {
   players: MultiplayerPlayer[]
@@ -70,7 +70,19 @@ export function PlayerPanel({
   gamePhase,
   className
 }: PlayerPanelProps) {
-  const { uiStrings } = useUIStrings()
+  // Temporary static strings for build fix
+  const uiStrings = {
+    multiplayer: {
+      ready: "Ready",
+      notReady: "Not Ready", 
+      thinking: "Thinking",
+      answered: "Answered",
+      correct: "Correct",
+      incorrect: "Incorrect",
+      ai: "AI",
+      host: "Host"
+    }
+  }
   
   const getPlayerStatus = (playerId: string): PlayerStatus => {
     const response = questionResponses.find(r => r.player_id === playerId)
