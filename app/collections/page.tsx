@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { CollectionBookmarkButton } from '@/components/collections/collection-bookmark-button'
 
 interface CollectionWithProgress extends Omit<Collection, 'progress'> {
   progress?: {
@@ -303,9 +304,16 @@ function CollectionCard({
               <Star className="h-4 w-4 text-yellow-500 fill-current" />
             )}
           </div>
-          <Badge className={getDifficultyColor(collection.difficulty_level)}>
-            {getDifficultyLabel(collection.difficulty_level)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={getDifficultyColor(collection.difficulty_level)}>
+              {getDifficultyLabel(collection.difficulty_level)}
+            </Badge>
+            <CollectionBookmarkButton
+              collection={collection}
+              variant="icon"
+              className="p-1"
+            />
+          </div>
         </div>
         
         <CardTitle className="text-lg leading-tight">

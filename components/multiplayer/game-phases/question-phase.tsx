@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Shield, Sword, Brain, Lightbulb } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuizQuestion, getQuestionOptions } from "@/lib/types/quiz"
+import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
 
 // Updated interface to match props from base-multiplayer-engine
 export interface QuestionPhaseProps {
@@ -73,6 +74,7 @@ export function QuestionPhase({
   isAnswerSubmitted,
   showHint
 }: QuestionPhaseProps) {
+  const { uiStrings } = useUIStrings()
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(gameState.selectedAnswer)
 
   const handleAnswerSelect = (answer: string) => {
@@ -95,7 +97,7 @@ export function QuestionPhase({
         {/* Question header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
-            Question {gameState.currentQuestionIndex + 1}
+            {uiStrings.multiplayer.question} {gameState.currentQuestionIndex + 1}
           </h2>
           <p className="text-lg text-muted-foreground">
             {currentQuestion.question}
@@ -107,7 +109,7 @@ export function QuestionPhase({
           <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center gap-2 mb-2">
               <Lightbulb className="h-4 w-4 text-yellow-600" />
-              <span className="font-medium text-yellow-800 dark:text-yellow-200">Hint</span>
+              <span className="font-medium text-yellow-800 dark:text-yellow-200">{uiStrings.multiplayer.hint}</span>
             </div>
             <p className="text-yellow-700 dark:text-yellow-300">{currentQuestion.hint}</p>
           </div>
@@ -136,7 +138,7 @@ export function QuestionPhase({
         {/* Explanation (shown after answer submission) */}
         {isAnswerSubmitted && config.showExplanations && currentQuestion.explanation && (
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Explanation</h4>
+            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">{uiStrings.multiplayer.explanation}</h4>
             <p className="text-blue-800 dark:text-blue-200">{currentQuestion.explanation}</p>
           </div>
         )}
@@ -152,7 +154,7 @@ export function QuestionPhase({
             className="min-w-32"
           >
             <Lightbulb className="mr-2 h-4 w-4" />
-            Show Hint
+            {uiStrings.multiplayer.showHint}
           </Button>
         )}
 
@@ -162,7 +164,7 @@ export function QuestionPhase({
             onClick={handleSubmit}
             className="min-w-32"
           >
-            Submit Answer
+            {uiStrings.multiplayer.submitAnswer}
           </Button>
         )}
       </div>
@@ -177,7 +179,7 @@ export function QuestionPhase({
             disabled
           >
             <Shield className="mr-1 h-3 w-3" />
-            Shield
+            {uiStrings.multiplayer.shield}
           </Button>
           <Button
             variant="outline"
@@ -186,7 +188,7 @@ export function QuestionPhase({
             disabled
           >
             <Sword className="mr-1 h-3 w-3" />
-            Attack
+            {uiStrings.multiplayer.attack}
           </Button>
           <Button
             variant="outline"
@@ -195,7 +197,7 @@ export function QuestionPhase({
             disabled
           >
             <Brain className="mr-1 h-3 w-3" />
-            Focus
+            {uiStrings.multiplayer.focus}
           </Button>
         </div>
       )}
@@ -212,6 +214,7 @@ export function NPCQuestionPhase({
   playerScore,
   opponentScore
 }: NPCQuestionPhaseProps) {
+  const { uiStrings } = useUIStrings()
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [timeSpent, setTimeSpent] = useState(0)
   const [powerUpUsed, setPowerUpUsed] = useState<string | null>(null)
@@ -289,7 +292,7 @@ export function NPCQuestionPhase({
           disabled={!!powerUpUsed || !!selectedAnswer}
         >
           <Shield className="mr-2 h-4 w-4" />
-          Shield
+          {uiStrings.multiplayer.shield}
         </Button>
         <Button
           variant="outline"
@@ -299,7 +302,7 @@ export function NPCQuestionPhase({
           disabled={!!powerUpUsed || !!selectedAnswer}
         >
           <Sword className="mr-2 h-4 w-4" />
-          Sword
+          {uiStrings.multiplayer.attack}
         </Button>
         <Button
           variant="outline"
@@ -309,7 +312,7 @@ export function NPCQuestionPhase({
           disabled={!!powerUpUsed || !!selectedAnswer}
         >
           <Brain className="mr-2 h-4 w-4" />
-          Brain
+          {uiStrings.multiplayer.focus}
         </Button>
       </div>
     </div>

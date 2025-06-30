@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Check, Clock, Crown, Zap, Timer, Bot, User } from 'lucide-react'
 import type { MultiplayerPlayer, MultiplayerQuestionResponse } from '@/lib/multiplayer'
+import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
 
 interface PlayerPanelProps {
   players: MultiplayerPlayer[]
@@ -69,6 +70,8 @@ export function PlayerPanel({
   gamePhase,
   className
 }: PlayerPanelProps) {
+  const { uiStrings } = useUIStrings()
+  
   const getPlayerStatus = (playerId: string): PlayerStatus => {
     const response = questionResponses.find(r => r.player_id === playerId)
     const player = players.find(p => p.id === playerId)
@@ -119,15 +122,15 @@ export function PlayerPanel({
 
   const getStatusText = (status: PlayerStatus, isNPC: boolean) => {
     if (gamePhase === 'waiting') {
-      return status.isReady ? 'Ready' : 'Not Ready'
+      return status.isReady ? uiStrings.multiplayer.ready : uiStrings.multiplayer.notReady
     }
 
     if (showAnswerStatus) {
       if (!status.hasAnswered) {
-        return isNPC ? 'Thinking...' : 'Answering...'
+        return isNPC ? uiStrings.multiplayer.thinking + '...' : uiStrings.multiplayer.answered + '...'
       }
       
-      const correctText = status.isCorrect ? 'Correct' : 'Incorrect'
+      const correctText = status.isCorrect ? uiStrings.multiplayer.correct : uiStrings.multiplayer.incorrect
       return status.responseTime ? `${correctText} (${status.responseTime}s)` : correctText
     }
 
@@ -215,13 +218,13 @@ export function PlayerPanel({
                     
                     {isNPC && (
                       <Badge variant="secondary" className="text-xs px-1 py-0">
-                        AI
+                        {uiStrings.multiplayer.ai}
                       </Badge>
                     )}
                     
                     {player.is_host && (
                       <Badge variant="outline" className="text-xs px-1 py-0">
-                        Host
+                        {uiStrings.multiplayer.host}
                       </Badge>
                     )}
                   </div>

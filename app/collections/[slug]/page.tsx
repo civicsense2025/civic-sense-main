@@ -28,11 +28,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { CollectionBookmarkButton } from '@/components/collections/collection-bookmark-button'
 
 interface CollectionWithItems extends Collection {
   collection_items: (CollectionItem & { content?: any })[]
   progress?: UserCollectionProgress
-  reviews: any[]
 }
 
 interface CollectionPageProps {
@@ -123,7 +123,17 @@ async function getCollection(slug: string): Promise<CollectionWithItems | null> 
       .single()
     
     if (progressData) {
-      progress = progressData
+      // Ensure we have the required fields with defaults
+      progress = {
+        ...progressData,
+        created_at: progressData.created_at || new Date().toISOString(),
+        updated_at: progressData.updated_at || new Date().toISOString(),
+        progress_percentage: progressData.progress_percentage || 0,
+        total_time_spent_minutes: progressData.total_time_spent_minutes || 0,
+        completed_items: progressData.completed_items || [],
+        started_at: progressData.started_at || new Date().toISOString(),
+        last_accessed_at: progressData.last_accessed_at || new Date().toISOString()
+      }
     }
   }
 
@@ -244,6 +254,12 @@ export default async function CollectionDetailPage({ params }: CollectionPagePro
                     View Progress
                   </Button>
                 )}
+
+                <CollectionBookmarkButton
+                  collection={collection}
+                  variant="button"
+                  className="h-11"
+                />
               </div>
             </div>
           </div>
@@ -263,12 +279,21 @@ export default async function CollectionDetailPage({ params }: CollectionPagePro
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  {collection.learning_objectives.map((objective, index) => (
-                    <li key={index} className="flex items-start gap-2">
+                  {collection.learning_objectives && collection.learning_objectives.length > 0 ? (
+                    collection.learning_objectives.map((objective, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 flex-shrink-0" />
+                        <span className="text-gray-700">{objective}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="flex items-start gap-2">
                       <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 flex-shrink-0" />
-                      <span className="text-gray-700">{objective}</span>
+                      <span className="text-gray-700">
+                        Interactive learning experience with quizzes and activities
+                      </span>
                     </li>
-                  ))}
+                  )}
                 </ul>
               </CardContent>
             </Card>
@@ -351,14 +376,22 @@ export default async function CollectionDetailPage({ params }: CollectionPagePro
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Categories</span>
                   <div className="flex flex-wrap gap-1">
-                    {collection.categories.slice(0, 2).map((category, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {category}
-                      </Badge>
-                    ))}
-                    {collection.categories.length > 2 && (
+                    {collection.categories && collection.categories.length > 0 ? (
+                      <>
+                        {collection.categories.slice(0, 2).map((category, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {category}
+                          </Badge>
+                        ))}
+                        {collection.categories.length > 2 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{collection.categories.length - 2}
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
                       <Badge variant="secondary" className="text-xs">
-                        +{collection.categories.length - 2}
+                        General
                       </Badge>
                     )}
                   </div>

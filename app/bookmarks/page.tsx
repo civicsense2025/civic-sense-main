@@ -86,8 +86,9 @@ export default function BookmarksPage() {
   const getContentTypeIcon = (contentType: ContentType) => {
     switch (contentType) {
       case 'quiz': return '🧠'
+      case 'collection': return '📚'
       case 'article': return '📄'
-      case 'glossary': return '📚'
+      case 'glossary': return '📖'
       case 'figure': return '👤'
       case 'custom': return '🔖'
       default: return '📎'
@@ -97,6 +98,7 @@ export default function BookmarksPage() {
   const contentTypes: { value: ContentType | 'all', label: string }[] = [
     { value: 'all', label: 'All Content' },
     { value: 'quiz', label: 'Quiz Questions' },
+    { value: 'collection', label: 'Collections' },
     { value: 'article', label: 'Articles' },
     { value: 'glossary', label: 'Glossary Terms' },
     { value: 'figure', label: 'Public Figures' },

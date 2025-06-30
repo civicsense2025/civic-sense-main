@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, MessageCircle, Crown, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
+import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
 
 // Import our modular components
 import { WaitingPhase } from "../game-phases/waiting-phase"
@@ -192,6 +193,7 @@ export function BaseMultiplayerEngine({
   // =============================================================================
 
   const { user } = useAuth()
+  const { uiStrings } = useUIStrings()
   
   // Room state from multiplayer hook with memoization to prevent re-renders
   const { room, players } = useMultiplayerRoom(roomId)
@@ -478,7 +480,7 @@ export function BaseMultiplayerEngine({
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     {config.name}
                     {gameState.gamePhase === 'question' && (
-                      <> • Question {gameState.currentQuestionIndex + 1} of {questions.length}</>
+                      <> • {uiStrings.quiz.questionNumber} {gameState.currentQuestionIndex + 1} of {questions.length}</>
                     )}
                   </p>
                 </div>
@@ -494,7 +496,7 @@ export function BaseMultiplayerEngine({
                 >
                   <Crown className="h-4 w-4" />
                   <Settings className="h-4 w-4" />
-                  Settings
+                  {uiStrings.multiplayer.settings}
                 </button>
               )}
             </div>
@@ -530,11 +532,11 @@ export function BaseMultiplayerEngine({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="leaderboard" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                Leaderboard
+                {uiStrings.multiplayer.leaderboard}
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
-                Chat
+                {uiStrings.multiplayer.chat}
               </TabsTrigger>
             </TabsList>
             

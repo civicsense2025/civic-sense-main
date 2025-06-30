@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { X, Send, MessageCircle, Bot, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MultiplayerPlayer } from '@/lib/multiplayer'
+import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
 
 interface ChatMessage {
   id: string
@@ -33,6 +34,7 @@ export function ChatSidebar({
   isHost,
   onClose
 }: ChatSidebarProps) {
+  const { uiStrings } = useUIStrings()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -53,7 +55,7 @@ export function ChatSidebar({
         playerEmoji: '🏛️',
         isNPC: false,
         isHost: false,
-        message: 'Welcome to the multiplayer quiz! Good luck everyone!',
+        message: uiStrings.multiplayer.welcomeToQuiz + '! Good luck everyone!',
         timestamp: new Date().toISOString(),
         messageType: 'system'
       },
@@ -70,7 +72,7 @@ export function ChatSidebar({
       }
     ]
     setMessages(mockMessages)
-  }, [])
+  }, [uiStrings.multiplayer.welcomeToQuiz])
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isLoading) return
@@ -120,10 +122,10 @@ export function ChatSidebar({
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-blue-600" />
           <h3 className="font-semibold text-slate-900 dark:text-white">
-            Room Chat
+            {uiStrings.multiplayer.roomChat}
           </h3>
           <Badge variant="secondary" className="text-xs">
-            {players.length} players
+            {players.length} {uiStrings.multiplayer.players}
           </Badge>
         </div>
         <Button
@@ -181,12 +183,12 @@ export function ChatSidebar({
                       </span>
                       {message.isNPC && (
                         <Badge variant="secondary" className="text-xs">
-                          AI
+                          {uiStrings.multiplayer.ai}
                         </Badge>
                       )}
                       {message.isHost && (
                         <Badge variant="outline" className="text-xs">
-                          Host
+                          {uiStrings.multiplayer.host}
                         </Badge>
                       )}
                       <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -218,7 +220,7 @@ export function ChatSidebar({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder={uiStrings.multiplayer.typeMessage + '...'}
             disabled={isLoading}
             className="flex-1"
           />
@@ -232,7 +234,7 @@ export function ChatSidebar({
           </Button>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-          Press Enter to send • Be respectful and civil
+          {uiStrings.multiplayer.enterToSend} • {uiStrings.multiplayer.beRespectful}
         </p>
       </div>
     </div>

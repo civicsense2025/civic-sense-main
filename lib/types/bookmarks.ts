@@ -33,7 +33,7 @@ export interface SmartCriteria {
   search_query?: string
 }
 
-export type ContentType = 'quiz' | 'article' | 'glossary' | 'figure' | 'custom'
+export type ContentType = 'quiz' | 'article' | 'glossary' | 'figure' | 'collection' | 'custom'
 
 export interface Bookmark {
   id: string

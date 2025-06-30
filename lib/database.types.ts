@@ -6265,10 +6265,12 @@ export type Database = {
           created_at: string | null
           description_override: string | null
           id: string
+          is_active: boolean | null
           is_featured: boolean | null
           notes: string | null
           sort_order: number
           title_override: string | null
+          updated_at: string | null
         }
         Insert: {
           category?: string | null
@@ -6278,10 +6280,12 @@ export type Database = {
           created_at?: string | null
           description_override?: string | null
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           notes?: string | null
           sort_order: number
           title_override?: string | null
+          updated_at?: string | null
         }
         Update: {
           category?: string | null
@@ -6291,10 +6295,12 @@ export type Database = {
           created_at?: string | null
           description_override?: string | null
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           notes?: string | null
           sort_order?: number
           title_override?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -6588,6 +6594,7 @@ export type Database = {
           action_items: string[] | null
           avg_rating: number | null
           categories: string[] | null
+          category: string | null
           completion_count: number | null
           cover_image_url: string | null
           created_at: string | null
@@ -6596,9 +6603,11 @@ export type Database = {
           description: string
           difficulty_level: number | null
           emoji: string
+          estimated_duration_minutes: number | null
           estimated_minutes: number | null
           featured_order: number | null
           id: string
+          is_active: boolean | null
           is_featured: boolean | null
           learning_objectives: string[] | null
           political_balance_score: number | null
@@ -6618,6 +6627,7 @@ export type Database = {
           action_items?: string[] | null
           avg_rating?: number | null
           categories?: string[] | null
+          category?: string | null
           completion_count?: number | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -6626,9 +6636,11 @@ export type Database = {
           description: string
           difficulty_level?: number | null
           emoji: string
+          estimated_duration_minutes?: number | null
           estimated_minutes?: number | null
           featured_order?: number | null
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           learning_objectives?: string[] | null
           political_balance_score?: number | null
@@ -6648,6 +6660,7 @@ export type Database = {
           action_items?: string[] | null
           avg_rating?: number | null
           categories?: string[] | null
+          category?: string | null
           completion_count?: number | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -6656,9 +6669,11 @@ export type Database = {
           description?: string
           difficulty_level?: number | null
           emoji?: string
+          estimated_duration_minutes?: number | null
           estimated_minutes?: number | null
           featured_order?: number | null
           id?: string
+          is_active?: boolean | null
           is_featured?: boolean | null
           learning_objectives?: string[] | null
           political_balance_score?: number | null
@@ -7642,6 +7657,66 @@ export type Database = {
           target_content_id?: string
           target_content_type?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      content_reviews: {
+        Row: {
+          completion_context: Json | null
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at: string
+          helpful_count: number
+          id: string
+          is_flagged: boolean
+          is_public: boolean
+          is_verified_reviewer: boolean
+          moderator_notes: string | null
+          not_helpful_count: number
+          rating: number
+          review_text: string | null
+          reviewer_expertise_level: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completion_context?: Json | null
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          is_flagged?: boolean
+          is_public?: boolean
+          is_verified_reviewer?: boolean
+          moderator_notes?: string | null
+          not_helpful_count?: number
+          rating: number
+          review_text?: string | null
+          reviewer_expertise_level?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completion_context?: Json | null
+          content_id?: string
+          content_title?: string
+          content_type?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          is_flagged?: boolean
+          is_public?: boolean
+          is_verified_reviewer?: boolean
+          moderator_notes?: string | null
+          not_helpful_count?: number
+          rating?: number
+          review_text?: string | null
+          reviewer_expertise_level?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -10741,6 +10816,99 @@ export type Database = {
             columns: ["primary_sponsor_id"]
             isOneToOne: false
             referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_steps: {
+        Row: {
+          alt_text: string | null
+          audio_url: string | null
+          auto_advance_seconds: number | null
+          can_skip: boolean | null
+          collection_item_id: string
+          content: string
+          created_at: string | null
+          estimated_duration_minutes: number | null
+          estimated_seconds: number | null
+          id: string
+          image_url: string | null
+          interaction_config: Json | null
+          key_concepts: Json | null
+          next_step_id: string | null
+          requires_interaction: boolean | null
+          skip_conditions: Json | null
+          sources: Json | null
+          step_number: number
+          step_type: string
+          title: string | null
+          transcript: string | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          audio_url?: string | null
+          auto_advance_seconds?: number | null
+          can_skip?: boolean | null
+          collection_item_id: string
+          content: string
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          estimated_seconds?: number | null
+          id?: string
+          image_url?: string | null
+          interaction_config?: Json | null
+          key_concepts?: Json | null
+          next_step_id?: string | null
+          requires_interaction?: boolean | null
+          skip_conditions?: Json | null
+          sources?: Json | null
+          step_number: number
+          step_type: string
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          audio_url?: string | null
+          auto_advance_seconds?: number | null
+          can_skip?: boolean | null
+          collection_item_id?: string
+          content?: string
+          created_at?: string | null
+          estimated_duration_minutes?: number | null
+          estimated_seconds?: number | null
+          id?: string
+          image_url?: string | null
+          interaction_config?: Json | null
+          key_concepts?: Json | null
+          next_step_id?: string | null
+          requires_interaction?: boolean | null
+          skip_conditions?: Json | null
+          sources?: Json | null
+          step_number?: number
+          step_type?: string
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_steps_collection_item_id_fkey"
+            columns: ["collection_item_id"]
+            isOneToOne: false
+            referencedRelation: "collection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_steps_next_step_id_fkey"
+            columns: ["next_step_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_steps"
             referencedColumns: ["id"]
           },
         ]
@@ -15365,6 +15533,240 @@ export type Database = {
         }
         Relationships: []
       }
+      review_analytics: {
+        Row: {
+          average_rating: number
+          average_review_length: number | null
+          completion_satisfaction_score: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          difficulty_feedback: Json
+          id: string
+          improvement_areas: string[] | null
+          period_end: string
+          period_start: string
+          positive_themes: string[] | null
+          reviews_with_text_percentage: number | null
+          total_reviews: number
+        }
+        Insert: {
+          average_rating?: number
+          average_review_length?: number | null
+          completion_satisfaction_score?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          difficulty_feedback?: Json
+          id?: string
+          improvement_areas?: string[] | null
+          period_end: string
+          period_start: string
+          positive_themes?: string[] | null
+          reviews_with_text_percentage?: number | null
+          total_reviews?: number
+        }
+        Update: {
+          average_rating?: number
+          average_review_length?: number | null
+          completion_satisfaction_score?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          difficulty_feedback?: Json
+          id?: string
+          improvement_areas?: string[] | null
+          period_end?: string
+          period_start?: string
+          positive_themes?: string[] | null
+          reviews_with_text_percentage?: number | null
+          total_reviews?: number
+        }
+        Relationships: []
+      }
+      review_flags: {
+        Row: {
+          created_at: string
+          flag_description: string | null
+          flag_reason: string
+          flagged_by: string
+          id: string
+          moderator_notes: string | null
+          review_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          flag_description?: string | null
+          flag_reason: string
+          flagged_by: string
+          id?: string
+          moderator_notes?: string | null
+          review_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          flag_description?: string | null
+          flag_reason?: string
+          flagged_by?: string
+          id?: string
+          moderator_notes?: string | null
+          review_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_flags_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "content_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_flags_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_reviewer"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_helpfulness_votes: {
+        Row: {
+          created_at: string
+          id: string
+          is_helpful: boolean
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_helpful: boolean
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_helpful?: boolean
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_helpfulness_votes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "content_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_helpfulness_votes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews_with_reviewer"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_summaries: {
+        Row: {
+          average_rating: number
+          content_id: string
+          content_type: string
+          id: string
+          last_updated: string
+          rating_distribution: Json
+          sentiment_summary: Json | null
+          total_reviews: number
+        }
+        Insert: {
+          average_rating?: number
+          content_id: string
+          content_type: string
+          id?: string
+          last_updated?: string
+          rating_distribution?: Json
+          sentiment_summary?: Json | null
+          total_reviews?: number
+        }
+        Update: {
+          average_rating?: number
+          content_id?: string
+          content_type?: string
+          id?: string
+          last_updated?: string
+          rating_distribution?: Json
+          sentiment_summary?: Json | null
+          total_reviews?: number
+        }
+        Relationships: []
+      }
+      reviewer_profiles: {
+        Row: {
+          avatar_url: string | null
+          average_review_quality_score: number
+          bio: string | null
+          civic_engagement_score: number
+          created_at: string
+          display_name: string | null
+          expertise_areas: string[]
+          helpful_votes_received: number
+          id: string
+          is_verified: boolean
+          review_count: number
+          updated_at: string
+          user_id: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          average_review_quality_score?: number
+          bio?: string | null
+          civic_engagement_score?: number
+          created_at?: string
+          display_name?: string | null
+          expertise_areas?: string[]
+          helpful_votes_received?: number
+          id?: string
+          is_verified?: boolean
+          review_count?: number
+          updated_at?: string
+          user_id: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          average_review_quality_score?: number
+          bio?: string | null
+          civic_engagement_score?: number
+          created_at?: string
+          display_name?: string | null
+          expertise_areas?: string[]
+          helpful_votes_received?: number
+          id?: string
+          is_verified?: boolean
+          review_count?: number
+          updated_at?: string
+          user_id?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       reward_fulfillments: {
         Row: {
           admin_notes: string | null
@@ -16659,6 +17061,98 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      step_analytics: {
+        Row: {
+          avg_time_spent_seconds: number | null
+          cards_viewed_avg: number | null
+          completions: number | null
+          confusing_percentage: number | null
+          created_at: string | null
+          date: string
+          helpful_percentage: number | null
+          id: string
+          interaction_rate: number | null
+          lesson_step_id: string
+          quiz_correct_rate: number | null
+          skip_rate: number | null
+          time_to_reveal_avg: number | null
+          views: number | null
+        }
+        Insert: {
+          avg_time_spent_seconds?: number | null
+          cards_viewed_avg?: number | null
+          completions?: number | null
+          confusing_percentage?: number | null
+          created_at?: string | null
+          date?: string
+          helpful_percentage?: number | null
+          id?: string
+          interaction_rate?: number | null
+          lesson_step_id: string
+          quiz_correct_rate?: number | null
+          skip_rate?: number | null
+          time_to_reveal_avg?: number | null
+          views?: number | null
+        }
+        Update: {
+          avg_time_spent_seconds?: number | null
+          cards_viewed_avg?: number | null
+          completions?: number | null
+          confusing_percentage?: number | null
+          created_at?: string | null
+          date?: string
+          helpful_percentage?: number | null
+          id?: string
+          interaction_rate?: number | null
+          lesson_step_id?: string
+          quiz_correct_rate?: number | null
+          skip_rate?: number | null
+          time_to_reveal_avg?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "step_analytics_lesson_step_id_fkey"
+            columns: ["lesson_step_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      step_templates: {
+        Row: {
+          content_placeholders: Json | null
+          created_at: string | null
+          default_interaction_config: Json
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          step_type: string
+        }
+        Insert: {
+          content_placeholders?: Json | null
+          created_at?: string | null
+          default_interaction_config?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          step_type: string
+        }
+        Update: {
+          content_placeholders?: Json | null
+          created_at?: string | null
+          default_interaction_config?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          step_type?: string
+        }
+        Relationships: []
       }
       subscription_tier_limits: {
         Row: {
@@ -20034,6 +20528,66 @@ export type Database = {
           },
         ]
       }
+      user_step_progress: {
+        Row: {
+          collection_item_id: string
+          completed_at: string | null
+          created_at: string | null
+          found_confusing: boolean | null
+          found_helpful: boolean | null
+          id: string
+          interaction_data: Json | null
+          lesson_step_id: string
+          notes: string | null
+          time_spent_seconds: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          collection_item_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          found_confusing?: boolean | null
+          found_helpful?: boolean | null
+          id?: string
+          interaction_data?: Json | null
+          lesson_step_id: string
+          notes?: string | null
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          collection_item_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          found_confusing?: boolean | null
+          found_helpful?: boolean | null
+          id?: string
+          interaction_data?: Json | null
+          lesson_step_id?: string
+          notes?: string | null
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_step_progress_collection_item_id_fkey"
+            columns: ["collection_item_id"]
+            isOneToOne: false
+            referencedRelation: "collection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_step_progress_lesson_step_id_fkey"
+            columns: ["lesson_step_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_streak_history: {
         Row: {
           category: string | null
@@ -20659,6 +21213,36 @@ export type Database = {
           unique_guests: number | null
           unique_sessions: number | null
           unique_users: number | null
+        }
+        Relationships: []
+      }
+      content_performance: {
+        Row: {
+          average_rating: number | null
+          confidence_level: string | null
+          content_id: string | null
+          content_type: string | null
+          last_updated: string | null
+          rating_distribution: Json | null
+          total_reviews: number | null
+        }
+        Insert: {
+          average_rating?: number | null
+          confidence_level?: never
+          content_id?: string | null
+          content_type?: string | null
+          last_updated?: string | null
+          rating_distribution?: Json | null
+          total_reviews?: number | null
+        }
+        Update: {
+          average_rating?: number | null
+          confidence_level?: never
+          content_id?: string | null
+          content_type?: string | null
+          last_updated?: string | null
+          rating_distribution?: Json | null
+          total_reviews?: number | null
         }
         Relationships: []
       }
@@ -21555,6 +22139,33 @@ export type Database = {
             referencedColumns: ["topic_id"]
           },
         ]
+      }
+      reviews_with_reviewer: {
+        Row: {
+          avatar_url: string | null
+          civic_engagement_score: number | null
+          completion_context: Json | null
+          content_id: string | null
+          content_title: string | null
+          content_type: string | null
+          created_at: string | null
+          display_name: string | null
+          expertise_areas: string[] | null
+          helpful_count: number | null
+          id: string | null
+          is_flagged: boolean | null
+          is_public: boolean | null
+          is_verified: boolean | null
+          is_verified_reviewer: boolean | null
+          moderator_notes: string | null
+          not_helpful_count: number | null
+          rating: number | null
+          review_text: string | null
+          reviewer_expertise_level: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
       }
       survey_summary: {
         Row: {
@@ -24322,6 +24933,7 @@ export type DbContentItemSkills = Database['public']['Tables']['content_item_ski
 export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
 export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
 export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
+export type DbContentReviews = Database['public']['Tables']['content_reviews']['Row']
 export type DbCustomCollectionItems = Database['public']['Tables']['custom_collection_items']['Row']
 export type DbCustomContentCollections = Database['public']['Tables']['custom_content_collections']['Row']
 export type DbCustomContentGenerations = Database['public']['Tables']['custom_content_generations']['Row']
@@ -24370,6 +24982,7 @@ export type DbKnowledgeConnections = Database['public']['Tables']['knowledge_con
 export type DbLearningObjectives = Database['public']['Tables']['learning_objectives']['Row']
 export type DbLearningPods = Database['public']['Tables']['learning_pods']['Row']
 export type DbLegislativeDocuments = Database['public']['Tables']['legislative_documents']['Row']
+export type DbLessonSteps = Database['public']['Tables']['lesson_steps']['Row']
 export type DbLocationCoverage = Database['public']['Tables']['location_coverage']['Row']
 export type DbMediaOrganizations = Database['public']['Tables']['media_organizations']['Row']
 export type DbMemberIndividualSettings = Database['public']['Tables']['member_individual_settings']['Row']
@@ -24440,6 +25053,11 @@ export type DbQuizAttempts = Database['public']['Tables']['quiz_attempts']['Row'
 export type DbRaffleEntries = Database['public']['Tables']['raffle_entries']['Row']
 export type DbRepresentativeContentMapping = Database['public']['Tables']['representative_content_mapping']['Row']
 export type DbResearchValidation = Database['public']['Tables']['research_validation']['Row']
+export type DbReviewAnalytics = Database['public']['Tables']['review_analytics']['Row']
+export type DbReviewFlags = Database['public']['Tables']['review_flags']['Row']
+export type DbReviewHelpfulnessVotes = Database['public']['Tables']['review_helpfulness_votes']['Row']
+export type DbReviewSummaries = Database['public']['Tables']['review_summaries']['Row']
+export type DbReviewerProfiles = Database['public']['Tables']['reviewer_profiles']['Row']
 export type DbRewardFulfillments = Database['public']['Tables']['reward_fulfillments']['Row']
 export type DbScenarioCharacters = Database['public']['Tables']['scenario_characters']['Row']
 export type DbScenarioDecisions = Database['public']['Tables']['scenario_decisions']['Row']
@@ -24465,6 +25083,8 @@ export type DbSourceCredibilityIndicators = Database['public']['Tables']['source
 export type DbSourceFetchQueue = Database['public']['Tables']['source_fetch_queue']['Row']
 export type DbSourceMetadata = Database['public']['Tables']['source_metadata']['Row']
 export type DbSpacedRepetitionSchedule = Database['public']['Tables']['spaced_repetition_schedule']['Row']
+export type DbStepAnalytics = Database['public']['Tables']['step_analytics']['Row']
+export type DbStepTemplates = Database['public']['Tables']['step_templates']['Row']
 export type DbSubscriptionTierLimits = Database['public']['Tables']['subscription_tier_limits']['Row']
 export type DbSurveyAnswers = Database['public']['Tables']['survey_answers']['Row']
 export type DbSurveyIncentives = Database['public']['Tables']['survey_incentives']['Row']
@@ -24527,6 +25147,7 @@ export type DbUserScenarioDecisions = Database['public']['Tables']['user_scenari
 export type DbUserSkillAssessmentCriteria = Database['public']['Tables']['user_skill_assessment_criteria']['Row']
 export type DbUserSkillPreferences = Database['public']['Tables']['user_skill_preferences']['Row']
 export type DbUserSkillProgress = Database['public']['Tables']['user_skill_progress']['Row']
+export type DbUserStepProgress = Database['public']['Tables']['user_step_progress']['Row']
 export type DbUserStreakHistory = Database['public']['Tables']['user_streak_history']['Row']
 export type DbUserSubscriptions = Database['public']['Tables']['user_subscriptions']['Row']
 export type DbUserSurveyCompletions = Database['public']['Tables']['user_survey_completions']['Row']
@@ -24602,6 +25223,7 @@ export type DbContentItemSkillsInsert = Database['public']['Tables']['content_it
 export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
 export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
 export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
+export type DbContentReviewsInsert = Database['public']['Tables']['content_reviews']['Insert']
 export type DbCustomCollectionItemsInsert = Database['public']['Tables']['custom_collection_items']['Insert']
 export type DbCustomContentCollectionsInsert = Database['public']['Tables']['custom_content_collections']['Insert']
 export type DbCustomContentGenerationsInsert = Database['public']['Tables']['custom_content_generations']['Insert']
@@ -24650,6 +25272,7 @@ export type DbKnowledgeConnectionsInsert = Database['public']['Tables']['knowled
 export type DbLearningObjectivesInsert = Database['public']['Tables']['learning_objectives']['Insert']
 export type DbLearningPodsInsert = Database['public']['Tables']['learning_pods']['Insert']
 export type DbLegislativeDocumentsInsert = Database['public']['Tables']['legislative_documents']['Insert']
+export type DbLessonStepsInsert = Database['public']['Tables']['lesson_steps']['Insert']
 export type DbLocationCoverageInsert = Database['public']['Tables']['location_coverage']['Insert']
 export type DbMediaOrganizationsInsert = Database['public']['Tables']['media_organizations']['Insert']
 export type DbMemberIndividualSettingsInsert = Database['public']['Tables']['member_individual_settings']['Insert']
@@ -24720,6 +25343,11 @@ export type DbQuizAttemptsInsert = Database['public']['Tables']['quiz_attempts']
 export type DbRaffleEntriesInsert = Database['public']['Tables']['raffle_entries']['Insert']
 export type DbRepresentativeContentMappingInsert = Database['public']['Tables']['representative_content_mapping']['Insert']
 export type DbResearchValidationInsert = Database['public']['Tables']['research_validation']['Insert']
+export type DbReviewAnalyticsInsert = Database['public']['Tables']['review_analytics']['Insert']
+export type DbReviewFlagsInsert = Database['public']['Tables']['review_flags']['Insert']
+export type DbReviewHelpfulnessVotesInsert = Database['public']['Tables']['review_helpfulness_votes']['Insert']
+export type DbReviewSummariesInsert = Database['public']['Tables']['review_summaries']['Insert']
+export type DbReviewerProfilesInsert = Database['public']['Tables']['reviewer_profiles']['Insert']
 export type DbRewardFulfillmentsInsert = Database['public']['Tables']['reward_fulfillments']['Insert']
 export type DbScenarioCharactersInsert = Database['public']['Tables']['scenario_characters']['Insert']
 export type DbScenarioDecisionsInsert = Database['public']['Tables']['scenario_decisions']['Insert']
@@ -24745,6 +25373,8 @@ export type DbSourceCredibilityIndicatorsInsert = Database['public']['Tables']['
 export type DbSourceFetchQueueInsert = Database['public']['Tables']['source_fetch_queue']['Insert']
 export type DbSourceMetadataInsert = Database['public']['Tables']['source_metadata']['Insert']
 export type DbSpacedRepetitionScheduleInsert = Database['public']['Tables']['spaced_repetition_schedule']['Insert']
+export type DbStepAnalyticsInsert = Database['public']['Tables']['step_analytics']['Insert']
+export type DbStepTemplatesInsert = Database['public']['Tables']['step_templates']['Insert']
 export type DbSubscriptionTierLimitsInsert = Database['public']['Tables']['subscription_tier_limits']['Insert']
 export type DbSurveyAnswersInsert = Database['public']['Tables']['survey_answers']['Insert']
 export type DbSurveyIncentivesInsert = Database['public']['Tables']['survey_incentives']['Insert']
@@ -24807,6 +25437,7 @@ export type DbUserScenarioDecisionsInsert = Database['public']['Tables']['user_s
 export type DbUserSkillAssessmentCriteriaInsert = Database['public']['Tables']['user_skill_assessment_criteria']['Insert']
 export type DbUserSkillPreferencesInsert = Database['public']['Tables']['user_skill_preferences']['Insert']
 export type DbUserSkillProgressInsert = Database['public']['Tables']['user_skill_progress']['Insert']
+export type DbUserStepProgressInsert = Database['public']['Tables']['user_step_progress']['Insert']
 export type DbUserStreakHistoryInsert = Database['public']['Tables']['user_streak_history']['Insert']
 export type DbUserSubscriptionsInsert = Database['public']['Tables']['user_subscriptions']['Insert']
 export type DbUserSurveyCompletionsInsert = Database['public']['Tables']['user_survey_completions']['Insert']
@@ -24882,6 +25513,7 @@ export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_it
 export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
 export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
 export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
+export type DbContentReviewsUpdate = Database['public']['Tables']['content_reviews']['Update']
 export type DbCustomCollectionItemsUpdate = Database['public']['Tables']['custom_collection_items']['Update']
 export type DbCustomContentCollectionsUpdate = Database['public']['Tables']['custom_content_collections']['Update']
 export type DbCustomContentGenerationsUpdate = Database['public']['Tables']['custom_content_generations']['Update']
@@ -24930,6 +25562,7 @@ export type DbKnowledgeConnectionsUpdate = Database['public']['Tables']['knowled
 export type DbLearningObjectivesUpdate = Database['public']['Tables']['learning_objectives']['Update']
 export type DbLearningPodsUpdate = Database['public']['Tables']['learning_pods']['Update']
 export type DbLegislativeDocumentsUpdate = Database['public']['Tables']['legislative_documents']['Update']
+export type DbLessonStepsUpdate = Database['public']['Tables']['lesson_steps']['Update']
 export type DbLocationCoverageUpdate = Database['public']['Tables']['location_coverage']['Update']
 export type DbMediaOrganizationsUpdate = Database['public']['Tables']['media_organizations']['Update']
 export type DbMemberIndividualSettingsUpdate = Database['public']['Tables']['member_individual_settings']['Update']
@@ -25000,6 +25633,11 @@ export type DbQuizAttemptsUpdate = Database['public']['Tables']['quiz_attempts']
 export type DbRaffleEntriesUpdate = Database['public']['Tables']['raffle_entries']['Update']
 export type DbRepresentativeContentMappingUpdate = Database['public']['Tables']['representative_content_mapping']['Update']
 export type DbResearchValidationUpdate = Database['public']['Tables']['research_validation']['Update']
+export type DbReviewAnalyticsUpdate = Database['public']['Tables']['review_analytics']['Update']
+export type DbReviewFlagsUpdate = Database['public']['Tables']['review_flags']['Update']
+export type DbReviewHelpfulnessVotesUpdate = Database['public']['Tables']['review_helpfulness_votes']['Update']
+export type DbReviewSummariesUpdate = Database['public']['Tables']['review_summaries']['Update']
+export type DbReviewerProfilesUpdate = Database['public']['Tables']['reviewer_profiles']['Update']
 export type DbRewardFulfillmentsUpdate = Database['public']['Tables']['reward_fulfillments']['Update']
 export type DbScenarioCharactersUpdate = Database['public']['Tables']['scenario_characters']['Update']
 export type DbScenarioDecisionsUpdate = Database['public']['Tables']['scenario_decisions']['Update']
@@ -25025,6 +25663,8 @@ export type DbSourceCredibilityIndicatorsUpdate = Database['public']['Tables']['
 export type DbSourceFetchQueueUpdate = Database['public']['Tables']['source_fetch_queue']['Update']
 export type DbSourceMetadataUpdate = Database['public']['Tables']['source_metadata']['Update']
 export type DbSpacedRepetitionScheduleUpdate = Database['public']['Tables']['spaced_repetition_schedule']['Update']
+export type DbStepAnalyticsUpdate = Database['public']['Tables']['step_analytics']['Update']
+export type DbStepTemplatesUpdate = Database['public']['Tables']['step_templates']['Update']
 export type DbSubscriptionTierLimitsUpdate = Database['public']['Tables']['subscription_tier_limits']['Update']
 export type DbSurveyAnswersUpdate = Database['public']['Tables']['survey_answers']['Update']
 export type DbSurveyIncentivesUpdate = Database['public']['Tables']['survey_incentives']['Update']
@@ -25087,6 +25727,7 @@ export type DbUserScenarioDecisionsUpdate = Database['public']['Tables']['user_s
 export type DbUserSkillAssessmentCriteriaUpdate = Database['public']['Tables']['user_skill_assessment_criteria']['Update']
 export type DbUserSkillPreferencesUpdate = Database['public']['Tables']['user_skill_preferences']['Update']
 export type DbUserSkillProgressUpdate = Database['public']['Tables']['user_skill_progress']['Update']
+export type DbUserStepProgressUpdate = Database['public']['Tables']['user_step_progress']['Update']
 export type DbUserStreakHistoryUpdate = Database['public']['Tables']['user_streak_history']['Update']
 export type DbUserSubscriptionsUpdate = Database['public']['Tables']['user_subscriptions']['Update']
 export type DbUserSurveyCompletionsUpdate = Database['public']['Tables']['user_survey_completions']['Update']
@@ -25102,6 +25743,7 @@ export type DbCivicEngagementImpactView = Database['public']['Views']['civic_eng
 export type DbCivicLearningImpactView = Database['public']['Views']['civic_learning_impact']['Row']
 export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_attempts']['Row']
 export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
+export type DbContentPerformanceView = Database['public']['Views']['content_performance']['Row']
 export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
 export type DbCurrentAssessmentStatusView = Database['public']['Views']['current_assessment_status']['Row']
 export type DbDiscoverableCollectionsView = Database['public']['Views']['discoverable_collections']['Row']
@@ -25127,6 +25769,7 @@ export type DbQuestionResponseStatsView = Database['public']['Views']['question_
 export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
 export type DbRecentUrlFailuresView = Database['public']['Views']['recent_url_failures']['Row']
 export type DbResponseTimeAnalyticsView = Database['public']['Views']['response_time_analytics']['Row']
+export type DbReviewsWithReviewerView = Database['public']['Views']['reviews_with_reviewer']['Row']
 export type DbSurveySummaryView = Database['public']['Views']['survey_summary']['Row']
 export type DbTranslationJobStatsView = Database['public']['Views']['translation_job_stats']['Row']
 export type DbUserComprehensiveStatsView = Database['public']['Views']['user_comprehensive_stats']['Row']

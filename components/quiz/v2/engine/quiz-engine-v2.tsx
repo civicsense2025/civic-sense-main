@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
+import useUIStrings from "../../../../apps/mobile/lib/hooks/useUIStrings"
 import type { QuizResults, QuizTopic, QuizQuestion, QuizGameMode, MultipleChoiceQuestion, TrueFalseQuestion, ShortAnswerQuestion } from "@/lib/types/quiz"
 import { MultipleChoiceQuestion as MultipleChoiceQuestionComponent } from "../../question-types/multiple-choice"
 import { TrueFalseQuestion as TrueFalseQuestionComponent } from "../../question-types/true-false"
@@ -247,6 +248,7 @@ export function QuizEngineV2({
     guestToken: guestToken ? 'provided' : 'none'
   })
   
+  const { uiStrings } = useUIStrings()
   const router = useRouter()
   const { user } = useAuth()
   const { getOrCreateGuestToken } = useGuestAccess()
@@ -352,9 +354,9 @@ export function QuizEngineV2({
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md mx-auto p-8">
-          <h1 className="text-2xl font-bold mb-4">Quiz Unavailable</h1>
+          <h1 className="text-2xl font-bold mb-4">{uiStrings.quiz.questionsComplete}</h1>
           <p className="text-muted-foreground mb-6">
-            This quiz doesn't have any valid questions yet. Please try another topic.
+            {uiStrings.quiz.noQuestionsAvailable}
           </p>
           <p className="text-xs text-muted-foreground mb-4">
             Debug: Received {singleTopicQuestions?.length || 0} raw questions, but none passed validation.
@@ -370,7 +372,7 @@ export function QuizEngineV2({
             }} 
             className="rounded-xl"
           >
-            Back to Topics
+            {uiStrings.quiz.backToTopics}
           </Button>
         </div>
       </div>

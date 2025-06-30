@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Trophy, ArrowRight, RotateCw, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
 
 // Updated interface to match props from base-multiplayer-engine
 export interface CompletedPhaseProps {
@@ -24,6 +25,8 @@ export interface NPCCompletedPhaseProps {
 }
 
 export function CompletedPhase({ onComplete }: CompletedPhaseProps) {
+  const { uiStrings } = useUIStrings()
+  
   return (
     <div className="space-y-8">
       <Card className="p-8 text-center">
@@ -34,10 +37,10 @@ export function CompletedPhase({ onComplete }: CompletedPhaseProps) {
 
           <div className="space-y-2">
             <h2 className="text-3xl font-bold">
-              Game Complete!
+              {uiStrings.multiplayer.gameComplete}!
             </h2>
             <p className="text-xl text-muted-foreground">
-              Great job learning about civic topics together!
+              {uiStrings.multiplayer.greatJobLearning}
             </p>
           </div>
 
@@ -51,14 +54,14 @@ export function CompletedPhase({ onComplete }: CompletedPhaseProps) {
               }}
             >
               <Share2 className="mr-2 h-4 w-4" />
-              Share Results
+              {uiStrings.multiplayer.shareResults}
             </Button>
             <Button
               size="lg"
               onClick={onComplete}
             >
               <ArrowRight className="mr-2 h-4 w-4" />
-              Continue
+              {uiStrings.multiplayer.continue}
             </Button>
           </div>
         </div>
@@ -77,6 +80,7 @@ export function NPCCompletedPhase({
   onPlayAgain,
   onExit
 }: NPCCompletedPhaseProps) {
+  const { uiStrings } = useUIStrings()
   const playerWon = playerScore > opponentScore
   const message = playerWon
     ? opponent.chatMessages.onLosing[Math.floor(Math.random() * opponent.chatMessages.onLosing.length)]
@@ -107,7 +111,7 @@ export function NPCCompletedPhase({
 
           <div className="space-y-2">
             <h2 className="text-3xl font-bold">
-              {playerWon ? 'Victory!' : 'Good Try!'}
+              {playerWon ? uiStrings.multiplayer.victory : uiStrings.multiplayer.goodTry}
             </h2>
             <p className="text-xl text-muted-foreground">
               {message}
@@ -120,7 +124,7 @@ export function NPCCompletedPhase({
                 {correctAnswers}
               </div>
               <div className="text-sm text-muted-foreground">
-                Correct Answers
+                {uiStrings.multiplayer.correctAnswers}
               </div>
             </div>
             <div className="text-center">
@@ -128,7 +132,7 @@ export function NPCCompletedPhase({
                 {Math.round((correctAnswers / totalQuestions) * 100)}%
               </div>
               <div className="text-sm text-muted-foreground">
-                Accuracy
+                {uiStrings.multiplayer.accuracy}
               </div>
             </div>
           </div>
@@ -140,14 +144,14 @@ export function NPCCompletedPhase({
               onClick={onPlayAgain}
             >
               <RotateCw className="mr-2 h-4 w-4" />
-              Play Again
+              {uiStrings.multiplayer.playAgain}
             </Button>
             <Button
               size="lg"
               onClick={onExit}
             >
               <ArrowRight className="mr-2 h-4 w-4" />
-              Exit
+              {uiStrings.multiplayer.exit}
             </Button>
           </div>
         </div>

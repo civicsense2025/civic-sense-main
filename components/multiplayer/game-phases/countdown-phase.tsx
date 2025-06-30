@@ -5,6 +5,7 @@ import { NPCPersonality } from "@/lib/multiplayer-npcs"
 import { Card } from "@/components/ui/card"
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { QuizQuestion } from "@/lib/types/quiz"
+import useUIStrings from "@/apps/mobile/lib/hooks/useUIStrings"
 
 // Updated interface to match props from base-multiplayer-engine
 export interface CountdownPhaseProps {
@@ -19,14 +20,16 @@ export interface NPCCountdownPhaseProps {
 }
 
 export function CountdownPhase({ currentQuestion, countdown }: CountdownPhaseProps) {
+  const { uiStrings } = useUIStrings()
+  
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center justify-center min-h-[300px] space-y-8">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold">Game Starting Soon!</h2>
+          <h2 className="text-3xl font-bold">{uiStrings.multiplayer.gameStartingSoon}!</h2>
           {currentQuestion && (
             <p className="text-xl text-muted-foreground">
-              Get ready for the first question...
+              {uiStrings.multiplayer.getReadyFirstQuestion}...
             </p>
           )}
         </div>
@@ -38,7 +41,7 @@ export function CountdownPhase({ currentQuestion, countdown }: CountdownPhasePro
         {currentQuestion && countdown <= 0 && (
           <div className="text-center">
             <p className="text-lg text-muted-foreground">
-              First question loading...
+              {uiStrings.multiplayer.firstQuestionLoading}...
             </p>
           </div>
         )}
@@ -49,6 +52,7 @@ export function CountdownPhase({ currentQuestion, countdown }: CountdownPhasePro
 
 // Legacy component for NPC battles
 export function NPCCountdownPhase({ opponent, onComplete }: NPCCountdownPhaseProps) {
+  const { uiStrings } = useUIStrings()
   const [countdown, setCountdown] = useState(3)
   const hasCompleted = useRef(false)
 
@@ -97,7 +101,7 @@ export function NPCCountdownPhase({ opponent, onComplete }: NPCCountdownPhasePro
 
       <div className="flex flex-col items-center justify-center min-h-[300px] space-y-8">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold">Battle Starting</h2>
+          <h2 className="text-3xl font-bold">{uiStrings.multiplayer.battleStarting}</h2>
           <p className="text-xl text-muted-foreground">
             {opponent.chatMessages.onGameStart[Math.floor(Math.random() * opponent.chatMessages.onGameStart.length)]}
           </p>

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { X, Crown, Settings, Users, Zap, MessageCircle, Timer, Trophy, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
 
 interface HostSettings {
   allowNewPlayers: boolean
@@ -32,6 +33,8 @@ export function HostSettingsMenu({
   maxPlayers,
   gameMode
 }: HostSettingsMenuProps) {
+  const { uiStrings } = useUIStrings()
+  
   const updateSetting = (key: keyof HostSettings, value: boolean) => {
     onSettingsChange({
       ...settings,
@@ -42,43 +45,43 @@ export function HostSettingsMenu({
   const settingsOptions = [
     {
       key: 'allowNewPlayers' as keyof HostSettings,
-      label: 'Allow New Players',
-      description: 'Let players join during the game',
+      label: uiStrings.multiplayer.allowNewPlayers,
+      description: uiStrings.multiplayer.allowNewPlayersDesc,
       icon: Users,
       enabled: settings.allowNewPlayers
     },
     {
       key: 'allowBoosts' as keyof HostSettings,
-      label: 'Enable Boosts',
-      description: 'Allow power-ups and special abilities',
+      label: uiStrings.multiplayer.enableBoosts,
+      description: uiStrings.multiplayer.enableBoostsDesc,
       icon: Zap,
       enabled: settings.allowBoosts
     },
     {
       key: 'allowHints' as keyof HostSettings,
-      label: 'Show Hints',
-      description: 'Display question hints when available',
+      label: uiStrings.multiplayer.showHints,
+      description: uiStrings.multiplayer.showHintsDesc,
       icon: MessageCircle,
       enabled: settings.allowHints
     },
     {
       key: 'autoAdvanceQuestions' as keyof HostSettings,
-      label: 'Auto-Advance',
-      description: 'Automatically move to next question',
+      label: uiStrings.multiplayer.autoAdvance,
+      description: uiStrings.multiplayer.autoAdvanceDesc,
       icon: Timer,
       enabled: settings.autoAdvanceQuestions
     },
     {
       key: 'showRealTimeScores' as keyof HostSettings,
-      label: 'Real-Time Scores',
-      description: 'Show live leaderboard during game',
+      label: uiStrings.multiplayer.realTimeScores,
+      description: uiStrings.multiplayer.realTimeScoresDesc,
       icon: Trophy,
       enabled: settings.showRealTimeScores
     },
     {
       key: 'chatEnabled' as keyof HostSettings,
-      label: 'Enable Chat',
-      description: 'Allow players to chat during game',
+      label: uiStrings.multiplayer.enableChat,
+      description: uiStrings.multiplayer.enableChatDesc,
       icon: MessageCircle,
       enabled: settings.chatEnabled
     }
@@ -91,7 +94,7 @@ export function HostSettingsMenu({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-500" />
-              <CardTitle className="text-lg">Host Settings</CardTitle>
+              <CardTitle className="text-lg">Host {uiStrings.multiplayer.settings}</CardTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -101,7 +104,7 @@ export function HostSettingsMenu({
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             <Badge variant="outline">{gameMode}</Badge>
             <span>•</span>
-            <span>{playerCount}/{maxPlayers} players</span>
+            <span>{playerCount}/{maxPlayers} {uiStrings.multiplayer.players}</span>
           </div>
         </CardHeader>
 
