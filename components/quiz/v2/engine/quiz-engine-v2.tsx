@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import useUIStrings from "../../../../apps/mobile/lib/hooks/useUIStrings"
+// import useUIStrings from "@/hooks/useUIStrings" // Temporarily removed
 import type { QuizResults, QuizTopic, QuizQuestion, QuizGameMode, MultipleChoiceQuestion, TrueFalseQuestion, ShortAnswerQuestion } from "@/lib/types/quiz"
 import { MultipleChoiceQuestion as MultipleChoiceQuestionComponent } from "../../question-types/multiple-choice"
 import { TrueFalseQuestion as TrueFalseQuestionComponent } from "../../question-types/true-false"
@@ -248,7 +248,14 @@ export function QuizEngineV2({
     guestToken: guestToken ? 'provided' : 'none'
   })
   
-  const { uiStrings } = useUIStrings()
+  // Temporary static strings for build fix
+  const uiStrings = {
+    quiz: {
+      questionsComplete: "Quiz Complete",
+      noQuestionsAvailable: "No questions available",
+      backToTopics: "Back to Topics"
+    }
+  }
   const router = useRouter()
   const { user } = useAuth()
   const { getOrCreateGuestToken } = useGuestAccess()

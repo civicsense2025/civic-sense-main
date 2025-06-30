@@ -3,7 +3,17 @@
  * Extends automatic translation to collections/lessons beyond just quiz questions
  */
 
-import { deepLTranslationService } from './deepl-service'
+// import { deepLTranslationService } from './deepl-service' // Temporarily removed - file doesn't exist in web app
+
+// Temporary stub for deepL service to fix build
+const deepLTranslationService = {
+  isReady: () => false,
+  initialize: async () => Promise.resolve(),
+  translateText: async (text: string, targetLanguage: string, options?: any) => {
+    console.warn('DeepL service not available in web app, returning original text')
+    return text
+  }
+}
 
 export interface CollectionContent {
   id: string
@@ -292,4 +302,4 @@ class CollectionTranslationService {
 export const collectionTranslationService = new CollectionTranslationService()
 
 // Export types for use in other parts of the app
-export type { CollectionContent, TranslatedCollection } 
+export type { TranslatedCollection } 

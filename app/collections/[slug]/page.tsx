@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
   Clock, 
@@ -27,7 +26,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { CollectionBookmarkButton } from '@/components/collections/collection-bookmark-button'
 
 interface CollectionWithItems extends Collection {
@@ -37,34 +36,6 @@ interface CollectionWithItems extends Collection {
 
 interface CollectionPageProps {
   params: { slug: string }
-}
-
-// Generate metadata for the page
-export async function generateMetadata({ params }: CollectionPageProps) {
-  const supabase = await createClient()
-  
-  const { data: collection } = await supabase
-    .from('collections')
-    .select('title, description, emoji')
-    .eq('slug', params.slug)
-    .single()
-
-  if (!collection) {
-    return {
-      title: 'Collection Not Found | CivicSense',
-      description: 'The requested collection could not be found.'
-    }
-  }
-
-  return {
-    title: `${collection.title} | CivicSense Collections`,
-    description: collection.description,
-    openGraph: {
-      title: collection.title,
-      description: collection.description,
-      type: 'article'
-    }
-  }
 }
 
 async function getCollection(slug: string): Promise<CollectionWithItems | null> {

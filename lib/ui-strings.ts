@@ -54,6 +54,7 @@ export const uiStrings = {
     home: 'Home',
     dashboard: 'Dashboard',
     categories: 'Categories',
+    learn: 'Learn',
     quizzes: 'Quizzes',
     skills: 'Skills',
     multiplayer: 'Multiplayer',
@@ -72,7 +73,8 @@ export const uiStrings = {
     publicFigures: 'Public Figures',
     glossary: 'Glossary',
     news: 'News',
-    topicsSearch: 'Search Topics'
+    topicsSearch: 'Search Topics',
+    bookmarks: 'Saved'
   },
 
   // Authentication

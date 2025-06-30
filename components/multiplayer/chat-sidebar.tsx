@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { X, Send, MessageCircle, Bot, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MultiplayerPlayer } from '@/lib/multiplayer'
-import useUIStrings from '@/apps/mobile/lib/hooks/useUIStrings'
-
 interface ChatMessage {
   id: string
   playerId: string
@@ -34,7 +32,19 @@ export function ChatSidebar({
   isHost,
   onClose
 }: ChatSidebarProps) {
-  const { uiStrings } = useUIStrings()
+  // Using static strings for now - can be updated to use UI strings later
+  const uiStrings = {
+    multiplayer: {
+      welcomeToQuiz: "Welcome to the quiz",
+      roomChat: "Room Chat",
+      players: "players",
+      ai: "AI",
+      host: "Host",
+      typeMessage: "Type a message",
+      enterToSend: "Press Enter to send",
+      beRespectful: "Be respectful"
+    }
+  }
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
