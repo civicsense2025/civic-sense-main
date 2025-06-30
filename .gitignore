@@ -146,7 +146,6 @@ lib/database.types.ts.backup.*
 sql/admin_panel_schema.sql
 ADMIN_ACCESS_MIGRATION_GUIDE.md
 ADMIN_MIGRATION.md
-lib/admin-access.ts
 
 # Debug and Development Routes
 /app/debug-*/
