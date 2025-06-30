@@ -159,6 +159,7 @@ export const uiStrings = {
     loading: 'Loading quiz...',
     error: 'Failed to load quiz',
     noQuestions: 'No questions available',
+    noQuestionsAvailable: 'No questions available for this topic',
     questionTypes: {
       multipleChoice: 'Multiple Choice',
       trueFalse: 'True or False',

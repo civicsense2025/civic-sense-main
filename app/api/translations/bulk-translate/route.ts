@@ -58,10 +58,9 @@ export async function POST(request: NextRequest) {
       const { data: job, error: jobError } = await supabase
         .from('translation_jobs')
         .insert({
-          id: jobId,
           content_type: contentType,
           target_language: targetLanguage,
-          requested_by: user.id,
+          user_id: user.id,
           status: 'queued',
           settings: {
             preserveCivicTerms,
@@ -162,37 +161,43 @@ async function processTopicTranslations(
             title: topic.topic_title,
             description: topic.description || '',
             content: topic.content || {},
-            translations: topic.translations || {}
+            translations: (topic.translations as any) || {}
           },
           targetLanguage
         )
 
         // Save translations back to database
+        const updateData: any = {
+          translations: {
+            ...(topic.translations as any),
+            title: {
+              ...(topic.translations as any)?.title,
+              [targetLanguage]: {
+                text: translated.title,
+                lastUpdated: new Date().toISOString(),
+                autoTranslated: true,
+                quality: settings.quality
+              }
+            }
+          }
+        }
+
+        // Add description translation if available
+        if (translated.description) {
+          updateData.translations.description = {
+            ...(topic.translations as any)?.description,
+            [targetLanguage]: {
+              text: translated.description,
+              lastUpdated: new Date().toISOString(),
+              autoTranslated: true,
+              quality: settings.quality
+            }
+          }
+        }
+
         const { error: updateError } = await supabase
           .from('question_topics')
-          .update({
-            translations: {
-              ...topic.translations,
-              title: {
-                ...topic.translations?.title,
-                [targetLanguage]: {
-                  text: translated.title,
-                  lastUpdated: new Date().toISOString(),
-                  autoTranslated: true,
-                  quality: settings.quality
-                }
-              },
-              description: translated.description ? {
-                ...topic.translations?.description,
-                [targetLanguage]: {
-                  text: translated.description,
-                  lastUpdated: new Date().toISOString(),
-                  autoTranslated: true,
-                  quality: settings.quality
-                }
-              } : topic.translations?.description
-            }
-          })
+          .update(updateData)
           .eq('topic_id', topic.topic_id)
 
         if (!updateError) {
@@ -249,24 +254,9 @@ async function processNewsTranslations(
   targetLanguage: string, 
   settings: { preserveCivicTerms: boolean; quality: string; batchSize: number }
 ) {
-  // Implementation for news article translations
+  // TODO: Implement when news_articles table is added to database
   try {
-    const supabase = await createClient()
-    
-    const { data: articles } = await supabase
-      .from('news_articles')
-      .select('*')
-      .is(`translations->title->${targetLanguage}`, null)
-      .limit(settings.batchSize)
-
-    if (!articles || articles.length === 0) {
-      await updateJobStatus(jobId, 'completed', 'No articles to translate')
-      return
-    }
-
-    // Process news translations...
-    await updateJobStatus(jobId, 'completed', `Translated ${articles.length} articles`)
-
+    await updateJobStatus(jobId, 'completed', 'News translations not implemented yet')
   } catch (error) {
     await updateJobStatus(jobId, 'failed', error instanceof Error ? error.message : 'Unknown error')
   }

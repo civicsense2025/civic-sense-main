@@ -6320,6 +6320,7 @@ export type Database = {
           tags: string[] | null
           title: string | null
           topic_id: string | null
+          translations: Json | null
           updated_at: string
         }
         Insert: {
@@ -6348,6 +6349,7 @@ export type Database = {
           tags?: string[] | null
           title?: string | null
           topic_id?: string | null
+          translations?: Json | null
           updated_at?: string
         }
         Update: {
@@ -6376,6 +6378,7 @@ export type Database = {
           tags?: string[] | null
           title?: string | null
           topic_id?: string | null
+          translations?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -6693,6 +6696,7 @@ export type Database = {
           status: string | null
           tags: string[] | null
           title: string
+          translations: Json | null
           updated_at: string
           version: number | null
         }
@@ -6724,6 +6728,7 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           title: string
+          translations?: Json | null
           updated_at?: string
           version?: number | null
         }
@@ -6755,6 +6760,7 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           title?: string
+          translations?: Json | null
           updated_at?: string
           version?: number | null
         }
@@ -10916,6 +10922,7 @@ export type Database = {
           step_type: string
           title: string | null
           transcript: string | null
+          translations: Json | null
           updated_at: string
           video_url: string | null
         }
@@ -10945,6 +10952,7 @@ export type Database = {
           step_type: string
           title?: string | null
           transcript?: string | null
+          translations?: Json | null
           updated_at?: string
           video_url?: string | null
         }
@@ -10974,6 +10982,7 @@ export type Database = {
           step_type?: string
           title?: string | null
           transcript?: string | null
+          translations?: Json | null
           updated_at?: string
           video_url?: string | null
         }
