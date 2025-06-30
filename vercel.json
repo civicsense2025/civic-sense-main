@@ -10,5 +10,5 @@
       "maxDuration": 30
     }
   },
-  "installCommand": "npm ci --omit=optional"
+  "installCommand": "npm install --legacy-peer-deps --omit=optional"
 } 

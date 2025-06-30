@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { GiftCreditsDashboard } from "./gift-credits-dashboard"
+import { LanguageSettings } from "@/components/language-settings"
 
 interface UserPreferences {
   emailNotifications: boolean
@@ -327,6 +328,16 @@ export default function SettingsPage() {
         </h1>
 
         <div className="space-y-8">
+          {/* Language Settings */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-light text-slate-900 dark:text-white">
+              Language & Translation
+            </h2>
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6">
+              <LanguageSettings />
+            </div>
+          </div>
+
           {/* Gift Credits */}
           <div className="space-y-4">
             <h2 className="text-2xl font-light text-slate-900 dark:text-white">
