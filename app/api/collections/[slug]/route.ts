@@ -20,11 +20,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select(`
         *,
         collection_items (
-          *,
-          content:collection_items (
-            content_type,
-            content_id
-          )
+          id,
+          collection_id,
+          content_type,
+          content_id,
+          sort_order,
+          category,
+          is_featured,
+          title,
+          description,
+          notes,
+          estimated_duration_minutes,
+          learning_objectives,
+          key_concepts,
+          created_at
         )
       `)
       .eq('slug', slug)
@@ -38,11 +47,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Increment view count
-    await supabase
-      .from('collections')
-      .update({ view_count: collection.view_count + 1 })
-      .eq('id', collection.id)
+    // Increment view count (handle potential missing field gracefully)
+    if (collection.view_count !== undefined) {
+      await supabase
+        .from('collections')
+        .update({ view_count: collection.view_count + 1 })
+        .eq('id', collection.id)
+    }
 
     // Get user progress if authenticated
     const { data: { user } } = await supabase.auth.getUser()

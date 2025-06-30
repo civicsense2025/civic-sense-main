@@ -5283,6 +5283,65 @@ export type Database = {
           },
         ]
       }
+      bookmark_collection_items: {
+        Row: {
+          added_at: string
+          collection_id: string
+          content_id: string
+          content_type: string
+          description: string | null
+          emoji: string | null
+          id: string
+          image_url: string | null
+          sort_order: number | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          user_notes: string | null
+          user_tags: string[] | null
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          content_id: string
+          content_type: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          user_notes?: string | null
+          user_tags?: string[] | null
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          content_id?: string
+          content_type?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          user_notes?: string | null
+          user_tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmark_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookmark_collections: {
         Row: {
           color: string | null
@@ -5911,29 +5970,7 @@ export type Database = {
           starts?: number | null
           views?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "collection_analytics_biggest_drop_off_item_id_fkey"
-            columns: ["biggest_drop_off_item_id"]
-            isOneToOne: false
-            referencedRelation: "collection_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "collection_analytics_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "collection_analytics_most_popular_item_id_fkey"
-            columns: ["most_popular_item_id"]
-            isOneToOne: false
-            referencedRelation: "collection_items"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       collection_analytics_daily: {
         Row: {
@@ -6259,48 +6296,87 @@ export type Database = {
       collection_items: {
         Row: {
           category: string | null
-          collection_id: string | null
-          content_id: string
-          content_type: string
-          created_at: string | null
-          description_override: string | null
+          collection_id: string
+          content: string | null
+          content_id: string | null
+          content_type: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_duration_minutes: number | null
+          estimated_minutes: number | null
+          external_url: string | null
           id: string
-          is_active: boolean | null
-          is_featured: boolean | null
-          notes: string | null
+          is_optional: boolean | null
+          is_published: boolean | null
+          is_required: boolean | null
+          key_concepts: Json | null
+          learning_objectives: Json | null
+          lesson_type: string | null
+          metadata: Json | null
+          prerequisites: Json | null
           sort_order: number
-          title_override: string | null
-          updated_at: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string | null
+          topic_id: string | null
+          updated_at: string
         }
         Insert: {
           category?: string | null
-          collection_id?: string | null
-          content_id: string
-          content_type: string
-          created_at?: string | null
-          description_override?: string | null
+          collection_id: string
+          content?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          estimated_minutes?: number | null
+          external_url?: string | null
           id?: string
-          is_active?: boolean | null
-          is_featured?: boolean | null
-          notes?: string | null
-          sort_order: number
-          title_override?: string | null
-          updated_at?: string | null
+          is_optional?: boolean | null
+          is_published?: boolean | null
+          is_required?: boolean | null
+          key_concepts?: Json | null
+          learning_objectives?: Json | null
+          lesson_type?: string | null
+          metadata?: Json | null
+          prerequisites?: Json | null
+          sort_order?: number
+          summary?: string | null
+          tags?: string[] | null
+          title?: string | null
+          topic_id?: string | null
+          updated_at?: string
         }
         Update: {
           category?: string | null
-          collection_id?: string | null
-          content_id?: string
-          content_type?: string
-          created_at?: string | null
-          description_override?: string | null
+          collection_id?: string
+          content?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          estimated_minutes?: number | null
+          external_url?: string | null
           id?: string
-          is_active?: boolean | null
-          is_featured?: boolean | null
-          notes?: string | null
+          is_optional?: boolean | null
+          is_published?: boolean | null
+          is_required?: boolean | null
+          key_concepts?: Json | null
+          learning_objectives?: Json | null
+          lesson_type?: string | null
+          metadata?: Json | null
+          prerequisites?: Json | null
           sort_order?: number
-          title_override?: string | null
-          updated_at?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string | null
+          topic_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -6308,6 +6384,20 @@ export type Database = {
             columns: ["collection_id"]
             isOneToOne: false
             referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "course_structure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "published_collections"
             referencedColumns: ["id"]
           },
         ]
@@ -6446,15 +6536,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "collection_reviews_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       collection_shares: {
         Row: {
@@ -6574,13 +6656,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "collection_skill_progress_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "collection_skill_progress_skill_id_fkey"
             columns: ["skill_id"]
             isOneToOne: false
@@ -6592,24 +6667,24 @@ export type Database = {
       collections: {
         Row: {
           action_items: string[] | null
-          avg_rating: number | null
           categories: string[] | null
-          category: string | null
-          completion_count: number | null
-          cover_image_url: string | null
-          created_at: string | null
+          content_type: string | null
+          course_category: string | null
+          created_at: string
           created_by: string | null
           current_events_relevance: number | null
-          description: string
+          description: string | null
           difficulty_level: number | null
-          emoji: string
+          emoji: string | null
           estimated_duration_minutes: number | null
           estimated_minutes: number | null
           featured_order: number | null
           id: string
-          is_active: boolean | null
+          internal_notes: string | null
           is_featured: boolean | null
+          is_public: boolean | null
           learning_objectives: string[] | null
+          metadata: Json | null
           political_balance_score: number | null
           prerequisites: string[] | null
           published_at: string | null
@@ -6618,31 +6693,29 @@ export type Database = {
           status: string | null
           tags: string[] | null
           title: string
-          total_ratings: number | null
-          updated_at: string | null
-          view_count: number | null
-          visibility: string | null
+          updated_at: string
+          version: number | null
         }
         Insert: {
           action_items?: string[] | null
-          avg_rating?: number | null
           categories?: string[] | null
-          category?: string | null
-          completion_count?: number | null
-          cover_image_url?: string | null
-          created_at?: string | null
+          content_type?: string | null
+          course_category?: string | null
+          created_at?: string
           created_by?: string | null
           current_events_relevance?: number | null
-          description: string
+          description?: string | null
           difficulty_level?: number | null
-          emoji: string
+          emoji?: string | null
           estimated_duration_minutes?: number | null
           estimated_minutes?: number | null
           featured_order?: number | null
           id?: string
-          is_active?: boolean | null
+          internal_notes?: string | null
           is_featured?: boolean | null
+          is_public?: boolean | null
           learning_objectives?: string[] | null
+          metadata?: Json | null
           political_balance_score?: number | null
           prerequisites?: string[] | null
           published_at?: string | null
@@ -6651,31 +6724,29 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           title: string
-          total_ratings?: number | null
-          updated_at?: string | null
-          view_count?: number | null
-          visibility?: string | null
+          updated_at?: string
+          version?: number | null
         }
         Update: {
           action_items?: string[] | null
-          avg_rating?: number | null
           categories?: string[] | null
-          category?: string | null
-          completion_count?: number | null
-          cover_image_url?: string | null
-          created_at?: string | null
+          content_type?: string | null
+          course_category?: string | null
+          created_at?: string
           created_by?: string | null
           current_events_relevance?: number | null
-          description?: string
+          description?: string | null
           difficulty_level?: number | null
-          emoji?: string
+          emoji?: string | null
           estimated_duration_minutes?: number | null
           estimated_minutes?: number | null
           featured_order?: number | null
           id?: string
-          is_active?: boolean | null
+          internal_notes?: string | null
           is_featured?: boolean | null
+          is_public?: boolean | null
           learning_objectives?: string[] | null
+          metadata?: Json | null
           political_balance_score?: number | null
           prerequisites?: string[] | null
           published_at?: string | null
@@ -6684,10 +6755,8 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           title?: string
-          total_ratings?: number | null
-          updated_at?: string | null
-          view_count?: number | null
-          visibility?: string | null
+          updated_at?: string
+          version?: number | null
         }
         Relationships: []
       }
@@ -10827,15 +10896,19 @@ export type Database = {
           auto_advance_seconds: number | null
           can_skip: boolean | null
           collection_item_id: string
+          completion_criteria: Json | null
           content: string
-          created_at: string | null
+          created_at: string
           estimated_duration_minutes: number | null
           estimated_seconds: number | null
           id: string
           image_url: string | null
           interaction_config: Json | null
           key_concepts: Json | null
+          media_type: string | null
+          media_url: string | null
           next_step_id: string | null
+          prerequisites: Json | null
           requires_interaction: boolean | null
           skip_conditions: Json | null
           sources: Json | null
@@ -10843,7 +10916,7 @@ export type Database = {
           step_type: string
           title: string | null
           transcript: string | null
-          updated_at: string | null
+          updated_at: string
           video_url: string | null
         }
         Insert: {
@@ -10852,15 +10925,19 @@ export type Database = {
           auto_advance_seconds?: number | null
           can_skip?: boolean | null
           collection_item_id: string
+          completion_criteria?: Json | null
           content: string
-          created_at?: string | null
+          created_at?: string
           estimated_duration_minutes?: number | null
           estimated_seconds?: number | null
           id?: string
           image_url?: string | null
           interaction_config?: Json | null
           key_concepts?: Json | null
+          media_type?: string | null
+          media_url?: string | null
           next_step_id?: string | null
+          prerequisites?: Json | null
           requires_interaction?: boolean | null
           skip_conditions?: Json | null
           sources?: Json | null
@@ -10868,7 +10945,7 @@ export type Database = {
           step_type: string
           title?: string | null
           transcript?: string | null
-          updated_at?: string | null
+          updated_at?: string
           video_url?: string | null
         }
         Update: {
@@ -10877,15 +10954,19 @@ export type Database = {
           auto_advance_seconds?: number | null
           can_skip?: boolean | null
           collection_item_id?: string
+          completion_criteria?: Json | null
           content?: string
-          created_at?: string | null
+          created_at?: string
           estimated_duration_minutes?: number | null
           estimated_seconds?: number | null
           id?: string
           image_url?: string | null
           interaction_config?: Json | null
           key_concepts?: Json | null
+          media_type?: string | null
+          media_url?: string | null
           next_step_id?: string | null
+          prerequisites?: Json | null
           requires_interaction?: boolean | null
           skip_conditions?: Json | null
           sources?: Json | null
@@ -10893,7 +10974,7 @@ export type Database = {
           step_type?: string
           title?: string | null
           transcript?: string | null
-          updated_at?: string | null
+          updated_at?: string
           video_url?: string | null
         }
         Relationships: [
@@ -10903,6 +10984,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "collection_items"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_steps_collection_item_id_fkey"
+            columns: ["collection_item_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_structure"
+            referencedColumns: ["lesson_id"]
           },
           {
             foreignKeyName: "lesson_steps_next_step_id_fkey"
@@ -15037,7 +15125,9 @@ export type Database = {
           date: string | null
           day_of_week: string | null
           description: string
+          difficulty_level: string | null
           emoji: string
+          estimated_duration_minutes: number | null
           id: string
           is_active: boolean | null
           is_breaking: boolean | null
@@ -15063,7 +15153,9 @@ export type Database = {
           date?: string | null
           day_of_week?: string | null
           description: string
+          difficulty_level?: string | null
           emoji: string
+          estimated_duration_minutes?: number | null
           id?: string
           is_active?: boolean | null
           is_breaking?: boolean | null
@@ -15089,7 +15181,9 @@ export type Database = {
           date?: string | null
           day_of_week?: string | null
           description?: string
+          difficulty_level?: string | null
           emoji?: string
+          estimated_duration_minutes?: number | null
           id?: string
           is_active?: boolean | null
           is_breaking?: boolean | null
@@ -15127,6 +15221,7 @@ export type Database = {
           question_type: string
           sources: Json | null
           tags: Json | null
+          text: string | null
           topic_id: string
           translations: Json | null
           updated_at: string | null
@@ -15152,6 +15247,7 @@ export type Database = {
           question_type: string
           sources?: Json | null
           tags?: Json | null
+          text?: string | null
           topic_id: string
           translations?: Json | null
           updated_at?: string | null
@@ -15177,6 +15273,7 @@ export type Database = {
           question_type?: string
           sources?: Json | null
           tags?: Json | null
+          text?: string | null
           topic_id?: string
           translations?: Json | null
           updated_at?: string | null
@@ -17111,15 +17208,7 @@ export type Database = {
           time_to_reveal_avg?: number | null
           views?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "step_analytics_lesson_step_id_fkey"
-            columns: ["lesson_step_id"]
-            isOneToOne: false
-            referencedRelation: "lesson_steps"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       step_templates: {
         Row: {
@@ -18430,22 +18519,7 @@ export type Database = {
           user_id?: string | null
           user_rating?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_collection_progress_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_collection_progress_current_item_id_fkey"
-            columns: ["current_item_id"]
-            isOneToOne: false
-            referencedRelation: "collection_items"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_content_annotations: {
         Row: {
@@ -18504,86 +18578,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           why_saved?: string | null
-        }
-        Relationships: []
-      }
-      user_content_collection_items: {
-        Row: {
-          added_note: string | null
-          collection_id: string
-          content_id: string
-          content_type: string
-          created_at: string
-          id: string
-          sort_order: number | null
-          user_id: string
-        }
-        Insert: {
-          added_note?: string | null
-          collection_id: string
-          content_id: string
-          content_type: string
-          created_at?: string
-          id?: string
-          sort_order?: number | null
-          user_id: string
-        }
-        Update: {
-          added_note?: string | null
-          collection_id?: string
-          content_id?: string
-          content_type?: string
-          created_at?: string
-          id?: string
-          sort_order?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_content_collection_items_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "user_content_collections"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_content_collections: {
-        Row: {
-          color_theme: string | null
-          created_at: string
-          description: string | null
-          emoji: string | null
-          id: string
-          is_favorite: boolean | null
-          name: string
-          sort_order: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          color_theme?: string | null
-          created_at?: string
-          description?: string | null
-          emoji?: string | null
-          id?: string
-          is_favorite?: boolean | null
-          name: string
-          sort_order?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          color_theme?: string | null
-          created_at?: string
-          description?: string | null
-          emoji?: string | null
-          id?: string
-          is_favorite?: boolean | null
-          name?: string
-          sort_order?: number | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -20571,22 +20565,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_step_progress_collection_item_id_fkey"
-            columns: ["collection_item_id"]
-            isOneToOne: false
-            referencedRelation: "collection_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_step_progress_lesson_step_id_fkey"
-            columns: ["lesson_step_id"]
-            isOneToOne: false
-            referencedRelation: "lesson_steps"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_streak_history: {
         Row: {
@@ -20858,13 +20837,6 @@ export type Database = {
           week_start_date?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "weekly_recap_collections_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "weekly_recap_collections_config_used_fkey"
             columns: ["config_used"]
@@ -21260,6 +21232,30 @@ export type Database = {
         }
         Relationships: []
       }
+      course_structure: {
+        Row: {
+          course_category: string | null
+          created_at: string | null
+          description: string | null
+          difficulty_level: number | null
+          emoji: string | null
+          estimated_duration_minutes: number | null
+          estimated_minutes_calculated: number | null
+          featured_order: number | null
+          id: string | null
+          interactive_steps: number | null
+          is_featured: boolean | null
+          is_public: boolean | null
+          learning_objectives: string[] | null
+          lesson_count: number | null
+          slug: string | null
+          title: string | null
+          total_estimated_seconds: number | null
+          total_steps: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       current_assessment_status: {
         Row: {
           assessment_date: string | null
@@ -21491,6 +21487,49 @@ export type Database = {
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "assessment_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_structure: {
+        Row: {
+          calculated_duration_minutes: number | null
+          collection_id: string | null
+          created_at: string | null
+          estimated_duration_minutes: number | null
+          interactive_step_count: number | null
+          is_published: boolean | null
+          key_concepts: Json | null
+          learning_objectives: Json | null
+          lesson_description: string | null
+          lesson_id: string | null
+          lesson_title: string | null
+          lesson_type: string | null
+          sort_order: number | null
+          step_count: number | null
+          total_step_seconds: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "course_structure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "published_collections"
             referencedColumns: ["id"]
           },
         ]
@@ -21966,6 +22005,45 @@ export type Database = {
           },
         ]
       }
+      published_collections: {
+        Row: {
+          action_items: string[] | null
+          categories: string[] | null
+          content_type: string | null
+          course_category: string | null
+          created_at: string | null
+          created_by: string | null
+          current_events_relevance: number | null
+          description: string | null
+          difficulty_level: number | null
+          emoji: string | null
+          estimated_duration_minutes: number | null
+          estimated_minutes: number | null
+          featured_order: number | null
+          id: string | null
+          interactive_steps: number | null
+          internal_notes: string | null
+          is_featured: boolean | null
+          is_public: boolean | null
+          learning_objectives: string[] | null
+          lesson_count: number | null
+          metadata: Json | null
+          political_balance_score: number | null
+          prerequisites: string[] | null
+          published_at: string | null
+          slug: string | null
+          source_diversity_score: number | null
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          total_item_minutes: number | null
+          total_step_seconds: number | null
+          total_steps: number | null
+          updated_at: string | null
+          version: number | null
+        }
+        Relationships: []
+      }
       question_feedback_stats: {
         Row: {
           category: string | null
@@ -22415,6 +22493,21 @@ export type Database = {
       }
     }
     Functions: {
+      add_content_to_collection: {
+        Args: {
+          p_collection_id: string
+          p_user_id: string
+          p_content_type: string
+          p_content_id: string
+          p_title?: string
+          p_description?: string
+          p_image_url?: string
+          p_emoji?: string
+          p_user_notes?: string
+          p_user_tags?: string[]
+        }
+        Returns: Json
+      }
       add_npc_to_multiplayer_room: {
         Args: { p_room_code: string; p_npc_code: string }
         Returns: {
@@ -22855,6 +22948,23 @@ export type Database = {
           avg_difficulty: number
         }[]
       }
+      get_collection_contents: {
+        Args: { p_collection_id: string; p_user_id: string }
+        Returns: {
+          id: string
+          content_type: string
+          content_id: string
+          title: string
+          description: string
+          image_url: string
+          emoji: string
+          user_notes: string
+          user_tags: string[]
+          sort_order: number
+          added_at: string
+          updated_at: string
+        }[]
+      }
       get_collection_skills: {
         Args: { collection_uuid: string }
         Returns: {
@@ -22868,6 +22978,16 @@ export type Database = {
           primary_items: number
           avg_proficiency: number
           source_table: string
+        }[]
+      }
+      get_collection_stats: {
+        Args: { collection_slug: string }
+        Returns: {
+          lesson_count: number
+          total_steps: number
+          estimated_minutes: number
+          interactive_steps: number
+          completion_rate: number
         }[]
       }
       get_collections_with_skill_categories: {
@@ -22901,6 +23021,21 @@ export type Database = {
           pending_items: Json
           in_progress_items: Json
           error_items: Json
+        }[]
+      }
+      get_course_structure: {
+        Args: { course_slug: string }
+        Returns: {
+          course_id: string
+          course_title: string
+          course_description: string
+          course_emoji: string
+          difficulty_level: number
+          course_category: string
+          total_lessons: number
+          total_steps: number
+          estimated_duration_minutes: number
+          lessons: Json
         }[]
       }
       get_detailed_gift_credits: {
@@ -22983,6 +23118,15 @@ export type Database = {
           name: string
           generation_settings: Json
           created_by: string
+        }[]
+      }
+      get_lesson_progress_stats: {
+        Args: { lesson_id: string }
+        Returns: {
+          total_steps: number
+          interactive_steps: number
+          estimated_duration_minutes: number
+          step_types: Json
         }[]
       }
       get_member_photo_urls: {
@@ -23802,6 +23946,23 @@ export type Database = {
           error_message: string
         }[]
       }
+      remove_content_from_collection: {
+        Args: {
+          p_collection_id: string
+          p_user_id: string
+          p_content_type: string
+          p_content_id: string
+        }
+        Returns: Json
+      }
+      reorder_collection_items: {
+        Args: {
+          p_collection_id: string
+          p_user_id: string
+          p_item_orders: Json[]
+        }
+        Returns: Json
+      }
       repair_rooms_without_hosts: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -24052,6 +24213,14 @@ export type Database = {
       user_is_in_room: {
         Args: { p_room_id: string; p_user_id: string }
         Returns: boolean
+      }
+      validate_collection_integrity: {
+        Args: { collection_id: string }
+        Returns: {
+          issue_type: string
+          issue_description: string
+          severity: string
+        }[]
       }
       validate_function_table_types: {
         Args: { function_name_param: string; table_name_param: string }
@@ -24894,6 +25063,7 @@ export type DbBillRelationships = Database['public']['Tables']['bill_relationshi
 export type DbBillSubjects = Database['public']['Tables']['bill_subjects']['Row']
 export type DbBillSummaries = Database['public']['Tables']['bill_summaries']['Row']
 export type DbBookmarkAnalytics = Database['public']['Tables']['bookmark_analytics']['Row']
+export type DbBookmarkCollectionItems = Database['public']['Tables']['bookmark_collection_items']['Row']
 export type DbBookmarkCollections = Database['public']['Tables']['bookmark_collections']['Row']
 export type DbBookmarkSnippets = Database['public']['Tables']['bookmark_snippets']['Row']
 export type DbBookmarkTags = Database['public']['Tables']['bookmark_tags']['Row']
@@ -25114,8 +25284,6 @@ export type DbUserCategoryPreferences = Database['public']['Tables']['user_categ
 export type DbUserCategorySkills = Database['public']['Tables']['user_category_skills']['Row']
 export type DbUserCollectionProgress = Database['public']['Tables']['user_collection_progress']['Row']
 export type DbUserContentAnnotations = Database['public']['Tables']['user_content_annotations']['Row']
-export type DbUserContentCollectionItems = Database['public']['Tables']['user_content_collection_items']['Row']
-export type DbUserContentCollections = Database['public']['Tables']['user_content_collections']['Row']
 export type DbUserContentConnections = Database['public']['Tables']['user_content_connections']['Row']
 export type DbUserCredits = Database['public']['Tables']['user_credits']['Row']
 export type DbUserCustomDecks = Database['public']['Tables']['user_custom_decks']['Row']
@@ -25184,6 +25352,7 @@ export type DbBillRelationshipsInsert = Database['public']['Tables']['bill_relat
 export type DbBillSubjectsInsert = Database['public']['Tables']['bill_subjects']['Insert']
 export type DbBillSummariesInsert = Database['public']['Tables']['bill_summaries']['Insert']
 export type DbBookmarkAnalyticsInsert = Database['public']['Tables']['bookmark_analytics']['Insert']
+export type DbBookmarkCollectionItemsInsert = Database['public']['Tables']['bookmark_collection_items']['Insert']
 export type DbBookmarkCollectionsInsert = Database['public']['Tables']['bookmark_collections']['Insert']
 export type DbBookmarkSnippetsInsert = Database['public']['Tables']['bookmark_snippets']['Insert']
 export type DbBookmarkTagsInsert = Database['public']['Tables']['bookmark_tags']['Insert']
@@ -25404,8 +25573,6 @@ export type DbUserCategoryPreferencesInsert = Database['public']['Tables']['user
 export type DbUserCategorySkillsInsert = Database['public']['Tables']['user_category_skills']['Insert']
 export type DbUserCollectionProgressInsert = Database['public']['Tables']['user_collection_progress']['Insert']
 export type DbUserContentAnnotationsInsert = Database['public']['Tables']['user_content_annotations']['Insert']
-export type DbUserContentCollectionItemsInsert = Database['public']['Tables']['user_content_collection_items']['Insert']
-export type DbUserContentCollectionsInsert = Database['public']['Tables']['user_content_collections']['Insert']
 export type DbUserContentConnectionsInsert = Database['public']['Tables']['user_content_connections']['Insert']
 export type DbUserCreditsInsert = Database['public']['Tables']['user_credits']['Insert']
 export type DbUserCustomDecksInsert = Database['public']['Tables']['user_custom_decks']['Insert']
@@ -25474,6 +25641,7 @@ export type DbBillRelationshipsUpdate = Database['public']['Tables']['bill_relat
 export type DbBillSubjectsUpdate = Database['public']['Tables']['bill_subjects']['Update']
 export type DbBillSummariesUpdate = Database['public']['Tables']['bill_summaries']['Update']
 export type DbBookmarkAnalyticsUpdate = Database['public']['Tables']['bookmark_analytics']['Update']
+export type DbBookmarkCollectionItemsUpdate = Database['public']['Tables']['bookmark_collection_items']['Update']
 export type DbBookmarkCollectionsUpdate = Database['public']['Tables']['bookmark_collections']['Update']
 export type DbBookmarkSnippetsUpdate = Database['public']['Tables']['bookmark_snippets']['Update']
 export type DbBookmarkTagsUpdate = Database['public']['Tables']['bookmark_tags']['Update']
@@ -25694,8 +25862,6 @@ export type DbUserCategoryPreferencesUpdate = Database['public']['Tables']['user
 export type DbUserCategorySkillsUpdate = Database['public']['Tables']['user_category_skills']['Update']
 export type DbUserCollectionProgressUpdate = Database['public']['Tables']['user_collection_progress']['Update']
 export type DbUserContentAnnotationsUpdate = Database['public']['Tables']['user_content_annotations']['Update']
-export type DbUserContentCollectionItemsUpdate = Database['public']['Tables']['user_content_collection_items']['Update']
-export type DbUserContentCollectionsUpdate = Database['public']['Tables']['user_content_collections']['Update']
 export type DbUserContentConnectionsUpdate = Database['public']['Tables']['user_content_connections']['Update']
 export type DbUserCreditsUpdate = Database['public']['Tables']['user_credits']['Update']
 export type DbUserCustomDecksUpdate = Database['public']['Tables']['user_custom_decks']['Update']
@@ -25745,6 +25911,7 @@ export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_
 export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
 export type DbContentPerformanceView = Database['public']['Views']['content_performance']['Row']
 export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
+export type DbCourseStructureView = Database['public']['Views']['course_structure']['Row']
 export type DbCurrentAssessmentStatusView = Database['public']['Views']['current_assessment_status']['Row']
 export type DbDiscoverableCollectionsView = Database['public']['Views']['discoverable_collections']['Row']
 export type DbDomainReliabilityReportView = Database['public']['Views']['domain_reliability_report']['Row']
@@ -25752,6 +25919,7 @@ export type DbEnhancedSourceAnalysisView = Database['public']['Views']['enhanced
 export type DbFunctionTypeValidationView = Database['public']['Views']['function_type_validation']['Row']
 export type DbFunctionValidationSummaryView = Database['public']['Views']['function_validation_summary']['Row']
 export type DbIndicatorTrendsView = Database['public']['Views']['indicator_trends']['Row']
+export type DbLessonStructureView = Database['public']['Views']['lesson_structure']['Row']
 export type DbMultiplayerAttemptsView = Database['public']['Views']['multiplayer_attempts']['Row']
 export type DbMultiplayerRoomFunctionValidationView = Database['public']['Views']['multiplayer_room_function_validation']['Row']
 export type DbMultiplayerRoomsViewView = Database['public']['Views']['multiplayer_rooms_view']['Row']
@@ -25764,6 +25932,7 @@ export type DbPodMemberDetailsView = Database['public']['Views']['pod_member_det
 export type DbPracticeAttemptsView = Database['public']['Views']['practice_attempts']['Row']
 export type DbProviderPerformanceView = Database['public']['Views']['provider_performance']['Row']
 export type DbPublicCollectionsWithAuthorsView = Database['public']['Views']['public_collections_with_authors']['Row']
+export type DbPublishedCollectionsView = Database['public']['Views']['published_collections']['Row']
 export type DbQuestionFeedbackStatsView = Database['public']['Views']['question_feedback_stats']['Row']
 export type DbQuestionResponseStatsView = Database['public']['Views']['question_response_stats']['Row']
 export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
@@ -25788,6 +25957,9 @@ export type DbSyncStatusEnum = Database['public']['Enums']['sync_status']
 export type DbSyncTypeEnum = Database['public']['Enums']['sync_type']
 
 // public Functions
+export type DbAddContentToCollectionFunction = Database['public']['Functions']['add_content_to_collection']
+export type DbAddContentToCollectionArgs = Database['public']['Functions']['add_content_to_collection']['Args']
+export type DbAddContentToCollectionReturns = Database['public']['Functions']['add_content_to_collection']['Returns']
 export type DbAddNpcToMultiplayerRoomFunction = Database['public']['Functions']['add_npc_to_multiplayer_room']
 export type DbAddNpcToMultiplayerRoomArgs = Database['public']['Functions']['add_npc_to_multiplayer_room']['Args']
 export type DbAddNpcToMultiplayerRoomReturns = Database['public']['Functions']['add_npc_to_multiplayer_room']['Returns']
@@ -25968,9 +26140,15 @@ export type DbGetAvailableBoostsForUserReturns = Database['public']['Functions']
 export type DbGetCategoryStatsBatchFunction = Database['public']['Functions']['get_category_stats_batch']
 export type DbGetCategoryStatsBatchArgs = Database['public']['Functions']['get_category_stats_batch']['Args']
 export type DbGetCategoryStatsBatchReturns = Database['public']['Functions']['get_category_stats_batch']['Returns']
+export type DbGetCollectionContentsFunction = Database['public']['Functions']['get_collection_contents']
+export type DbGetCollectionContentsArgs = Database['public']['Functions']['get_collection_contents']['Args']
+export type DbGetCollectionContentsReturns = Database['public']['Functions']['get_collection_contents']['Returns']
 export type DbGetCollectionSkillsFunction = Database['public']['Functions']['get_collection_skills']
 export type DbGetCollectionSkillsArgs = Database['public']['Functions']['get_collection_skills']['Args']
 export type DbGetCollectionSkillsReturns = Database['public']['Functions']['get_collection_skills']['Returns']
+export type DbGetCollectionStatsFunction = Database['public']['Functions']['get_collection_stats']
+export type DbGetCollectionStatsArgs = Database['public']['Functions']['get_collection_stats']['Args']
+export type DbGetCollectionStatsReturns = Database['public']['Functions']['get_collection_stats']['Returns']
 export type DbGetCollectionsWithSkillCategoriesFunction = Database['public']['Functions']['get_collections_with_skill_categories']
 export type DbGetCollectionsWithSkillCategoriesArgs = Database['public']['Functions']['get_collections_with_skill_categories']['Args']
 export type DbGetCollectionsWithSkillCategoriesReturns = Database['public']['Functions']['get_collections_with_skill_categories']['Returns']
@@ -25983,6 +26161,9 @@ export type DbGetContentRelationshipsReturns = Database['public']['Functions']['
 export type DbGetContentTranslationStatsFunction = Database['public']['Functions']['get_content_translation_stats']
 export type DbGetContentTranslationStatsArgs = Database['public']['Functions']['get_content_translation_stats']['Args']
 export type DbGetContentTranslationStatsReturns = Database['public']['Functions']['get_content_translation_stats']['Returns']
+export type DbGetCourseStructureFunction = Database['public']['Functions']['get_course_structure']
+export type DbGetCourseStructureArgs = Database['public']['Functions']['get_course_structure']['Args']
+export type DbGetCourseStructureReturns = Database['public']['Functions']['get_course_structure']['Returns']
 export type DbGetDetailedGiftCreditsFunction = Database['public']['Functions']['get_detailed_gift_credits']
 export type DbGetDetailedGiftCreditsArgs = Database['public']['Functions']['get_detailed_gift_credits']['Args']
 export type DbGetDetailedGiftCreditsReturns = Database['public']['Functions']['get_detailed_gift_credits']['Returns']
@@ -26010,6 +26191,9 @@ export type DbGetGuestTestSummaryReturns = Database['public']['Functions']['get_
 export type DbGetJobsReadyForExecutionFunction = Database['public']['Functions']['get_jobs_ready_for_execution']
 export type DbGetJobsReadyForExecutionArgs = Database['public']['Functions']['get_jobs_ready_for_execution']['Args']
 export type DbGetJobsReadyForExecutionReturns = Database['public']['Functions']['get_jobs_ready_for_execution']['Returns']
+export type DbGetLessonProgressStatsFunction = Database['public']['Functions']['get_lesson_progress_stats']
+export type DbGetLessonProgressStatsArgs = Database['public']['Functions']['get_lesson_progress_stats']['Args']
+export type DbGetLessonProgressStatsReturns = Database['public']['Functions']['get_lesson_progress_stats']['Returns']
 export type DbGetMemberPhotoUrlsFunction = Database['public']['Functions']['get_member_photo_urls']
 export type DbGetMemberPhotoUrlsArgs = Database['public']['Functions']['get_member_photo_urls']['Args']
 export type DbGetMemberPhotoUrlsReturns = Database['public']['Functions']['get_member_photo_urls']['Returns']
@@ -26247,6 +26431,12 @@ export type DbRecordRoomEventReturns = Database['public']['Functions']['record_r
 export type DbRedeemGiftCodeFunction = Database['public']['Functions']['redeem_gift_code']
 export type DbRedeemGiftCodeArgs = Database['public']['Functions']['redeem_gift_code']['Args']
 export type DbRedeemGiftCodeReturns = Database['public']['Functions']['redeem_gift_code']['Returns']
+export type DbRemoveContentFromCollectionFunction = Database['public']['Functions']['remove_content_from_collection']
+export type DbRemoveContentFromCollectionArgs = Database['public']['Functions']['remove_content_from_collection']['Args']
+export type DbRemoveContentFromCollectionReturns = Database['public']['Functions']['remove_content_from_collection']['Returns']
+export type DbReorderCollectionItemsFunction = Database['public']['Functions']['reorder_collection_items']
+export type DbReorderCollectionItemsArgs = Database['public']['Functions']['reorder_collection_items']['Args']
+export type DbReorderCollectionItemsReturns = Database['public']['Functions']['reorder_collection_items']['Returns']
 export type DbRepairRoomsWithoutHostsFunction = Database['public']['Functions']['repair_rooms_without_hosts']
 export type DbRepairRoomsWithoutHostsArgs = Database['public']['Functions']['repair_rooms_without_hosts']['Args']
 export type DbRepairRoomsWithoutHostsReturns = Database['public']['Functions']['repair_rooms_without_hosts']['Returns']
@@ -26331,6 +26521,9 @@ export type DbUpsertUserEmailPreferencesReturns = Database['public']['Functions'
 export type DbUserIsInRoomFunction = Database['public']['Functions']['user_is_in_room']
 export type DbUserIsInRoomArgs = Database['public']['Functions']['user_is_in_room']['Args']
 export type DbUserIsInRoomReturns = Database['public']['Functions']['user_is_in_room']['Returns']
+export type DbValidateCollectionIntegrityFunction = Database['public']['Functions']['validate_collection_integrity']
+export type DbValidateCollectionIntegrityArgs = Database['public']['Functions']['validate_collection_integrity']['Args']
+export type DbValidateCollectionIntegrityReturns = Database['public']['Functions']['validate_collection_integrity']['Returns']
 export type DbValidateFunctionTableTypesFunction = Database['public']['Functions']['validate_function_table_types']
 export type DbValidateFunctionTableTypesArgs = Database['public']['Functions']['validate_function_table_types']['Args']
 export type DbValidateFunctionTableTypesReturns = Database['public']['Functions']['validate_function_table_types']['Returns']

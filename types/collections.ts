@@ -52,6 +52,11 @@ export interface Collection {
   progress?: UserCollectionProgress
   items_count?: number
   estimated_read_time?: string
+  
+  // Mobile-specific fields
+  mobile_thumbnail_url?: string
+  mobile_hero_image_url?: string
+  mobile_preview_text?: string
 }
 
 export interface CollectionItem {
@@ -67,10 +72,15 @@ export interface CollectionItem {
   category?: string
   is_featured: boolean
   
-  // Context
-  title_override?: string
-  description_override?: string
+  // Content metadata (direct fields, no overrides)
+  title: string
+  description: string
   notes?: string
+  
+  // Learning metadata for items
+  estimated_duration_minutes?: number
+  learning_objectives?: string[] // JSON array
+  key_concepts?: string[] // JSON array
   
   created_at: string
   
@@ -81,14 +91,99 @@ export interface CollectionItem {
   skills?: CollectionSkill[]
   
   // Populated item data
-  title?: string
-  description?: string
   difficulty_level?: number
   estimated_minutes?: number
   
   // Skills progress from this collection
   skills_earned?: CollectionSkill[]
   skills_progress?: Record<string, number> // skill_id -> progress percentage
+  
+  // Lesson steps for detailed content
+  lesson_steps?: LessonStep[]
+}
+
+// New types for lesson steps based on the SQL template
+export interface LessonStep {
+  id: string
+  collection_item_id: string
+  step_number: number
+  step_type: 'intro' | 'concept' | 'interaction' | 'example' | 'quiz' | 'summary'
+  title: string
+  content: string
+  
+  // Timing
+  estimated_seconds: number
+  estimated_duration_minutes?: number
+  auto_advance_seconds?: number
+  
+  // Interaction
+  requires_interaction: boolean
+  can_skip: boolean
+  interaction_config?: Record<string, any> // JSONB
+  skip_conditions?: Record<string, any> // JSONB
+  
+  // Media
+  image_url?: string
+  video_url?: string
+  audio_url?: string
+  media_url?: string
+  media_type?: string
+  alt_text?: string
+  transcript?: string
+  
+  // Learning metadata
+  key_concepts: string[] // JSONB array
+  sources: LessonSource[] // JSONB array
+  completion_criteria?: Record<string, any> // JSONB
+  
+  // Navigation
+  next_step_id?: string
+  
+  // Timestamps
+  created_at: string
+  updated_at: string
+}
+
+export interface LessonSource {
+  url: string
+  title: string
+  author: string
+  publication: string
+  date: string
+  credibility_score: number
+  verified_working: boolean
+  summary: string
+}
+
+// Mobile-specific types
+export interface MobileLessonCard {
+  collection: Collection
+  progress?: UserCollectionProgress
+  isNew?: boolean
+  isFeatured?: boolean
+  estimatedReadTime: string
+  completionRate: number
+  thumbnailUrl?: string
+}
+
+export interface MobileLessonProgress {
+  currentStep: number
+  totalSteps: number
+  timeSpent: number
+  canContinue: boolean
+  nextStepType: LessonStep['step_type']
+  progressPercentage: number
+}
+
+export interface MobileLessonSession {
+  collection_id: string
+  current_step_id?: string
+  started_at: string
+  last_accessed_at: string
+  steps_completed: string[]
+  time_spent_minutes: number
+  is_paused: boolean
+  pause_reason?: 'user_choice' | 'interruption' | 'background'
 }
 
 export interface UserCollectionProgress {
@@ -115,6 +210,9 @@ export interface UserCollectionProgress {
   skills_earned?: CollectionSkill[]
   skills_progress?: Record<string, number> // skill_id -> progress percentage
   
+  // Mobile session tracking
+  mobile_session?: MobileLessonSession
+  
   created_at: string
   updated_at: string
 }
@@ -129,6 +227,10 @@ export interface UserCollectionItemProgress {
   attempts: number
   time_spent_minutes: number
   is_skipped: boolean
+  
+  // Step-level progress for lessons
+  completed_steps?: string[] // lesson_step.id[]
+  current_step_id?: string
   
   // Skills gained from completing this item
   skills_gained?: string[] // Array of skill IDs
@@ -206,8 +308,8 @@ export interface AddCollectionItemRequest {
   content_type: 'topic' | 'question' | 'glossary_term' | 'survey' | 'event' | 'article'
   content_id: string
   category?: string
-  title_override?: string
-  description_override?: string
+  title: string
+  description: string
   is_featured?: boolean
 }
 
@@ -216,6 +318,8 @@ export interface UpdateProgressRequest {
   completed_item_id?: string
   current_item_id?: string
   time_spent_minutes?: number
+  completed_step_id?: string
+  current_step_id?: string
 }
 
 export interface CreateReviewRequest {
@@ -243,6 +347,8 @@ export interface CollectionFilters {
   estimated_time_min?: number
   estimated_time_max?: number
   user_id?: string
+  content_type?: 'course' | 'lesson' | 'module' // For mobile filtering
+  mobile_optimized?: boolean // Filter for mobile-optimized content
 }
 
 export interface CollectionStats {
@@ -263,18 +369,27 @@ export interface CollectionStats {
   }>
 }
 
-// UI component props
+// Mobile UI component props
 export interface CollectionCardProps {
   collection: Collection
   showProgress?: boolean
   onClick?: () => void
   className?: string
+  variant?: 'default' | 'compact' | 'featured' | 'mobile-card'
+}
+
+export interface MobileLessonCardProps {
+  lesson: MobileLessonCard
+  onPress: () => void
+  showProgress?: boolean
+  variant?: 'default' | 'compact' | 'featured'
 }
 
 export interface CollectionProgressProps {
   progress: UserCollectionProgress
   collection: Collection
   onItemComplete?: (itemId: string) => void
+  onStepComplete?: (stepId: string) => void
 }
 
 export interface CollectionItemProps {
@@ -284,13 +399,36 @@ export interface CollectionItemProps {
   onClick?: () => void
 }
 
+export interface LessonStepProps {
+  step: LessonStep
+  isActive: boolean
+  isCompleted: boolean
+  onComplete?: () => void
+  onNext?: () => void
+  onPrevious?: () => void
+}
+
+// Mobile-specific lesson navigation
+export interface MobileLessonNavigation {
+  canGoBack: boolean
+  canGoNext: boolean
+  canSkip: boolean
+  showMenu: boolean
+  progress: MobileLessonProgress
+  onBack: () => void
+  onNext: () => void
+  onSkip: () => void
+  onMenu: () => void
+  onExit: () => void
+}
+
 // Difficulty level helpers
 export const DIFFICULTY_LEVELS = {
-  1: { label: 'Beginner', color: 'bg-green-100 text-green-700', description: 'Basic civic concepts' },
-  2: { label: 'Easy', color: 'bg-blue-100 text-blue-700', description: 'Some background helpful' },
-  3: { label: 'Moderate', color: 'bg-yellow-100 text-yellow-700', description: 'Requires civic knowledge' },
-  4: { label: 'Advanced', color: 'bg-orange-100 text-orange-700', description: 'Deep understanding needed' },
-  5: { label: 'Expert', color: 'bg-red-100 text-red-700', description: 'Graduate-level analysis' }
+  1: { label: 'Beginner', color: 'bg-green-100 text-green-700', description: 'Basic civic concepts', icon: '🌱' },
+  2: { label: 'Easy', color: 'bg-blue-100 text-blue-700', description: 'Some background helpful', icon: '📘' },
+  3: { label: 'Moderate', color: 'bg-yellow-100 text-yellow-700', description: 'Requires civic knowledge', icon: '⚖️' },
+  4: { label: 'Advanced', color: 'bg-orange-100 text-orange-700', description: 'Deep understanding needed', icon: '🎓' },
+  5: { label: 'Expert', color: 'bg-red-100 text-red-700', description: 'Graduate-level analysis', icon: '🔬' }
 } as const
 
 // Content type helpers
@@ -301,6 +439,16 @@ export const CONTENT_TYPES = {
   survey: { label: 'Survey', icon: '📊', color: 'bg-orange-100 text-orange-700' },
   event: { label: 'Event', icon: '📅', color: 'bg-red-100 text-red-700' },
   article: { label: 'Article', icon: '📰', color: 'bg-indigo-100 text-indigo-700' }
+} as const
+
+// Lesson step types
+export const LESSON_STEP_TYPES = {
+  intro: { label: 'Introduction', icon: '👋', color: 'bg-blue-100 text-blue-700', description: 'Welcome and overview' },
+  concept: { label: 'Concept', icon: '💡', color: 'bg-green-100 text-green-700', description: 'Core learning content' },
+  interaction: { label: 'Activity', icon: '🎯', color: 'bg-purple-100 text-purple-700', description: 'Interactive exercise' },
+  example: { label: 'Example', icon: '📋', color: 'bg-orange-100 text-orange-700', description: 'Real-world case study' },
+  quiz: { label: 'Quiz', icon: '❓', color: 'bg-red-100 text-red-700', description: 'Knowledge check' },
+  summary: { label: 'Summary', icon: '📝', color: 'bg-indigo-100 text-indigo-700', description: 'Recap and review' }
 } as const
 
 // Collection categories (predefined options)
@@ -348,6 +496,29 @@ export const getDifficultyInfo = (level: 1 | 2 | 3 | 4 | 5) => {
 
 export const getContentTypeInfo = (type: keyof typeof CONTENT_TYPES) => {
   return CONTENT_TYPES[type]
+}
+
+export const getLessonStepTypeInfo = (type: keyof typeof LESSON_STEP_TYPES) => {
+  return LESSON_STEP_TYPES[type]
+}
+
+// Mobile-specific utilities
+export const formatMobileEstimatedTime = (minutes: number): string => {
+  if (minutes < 5) return 'Quick read'
+  if (minutes < 15) return `${minutes}m read`
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  if (remainingMinutes === 0) return `${hours}h`
+  return `${hours}h ${remainingMinutes}m`
+}
+
+export const getMobileProgressColor = (percentage: number): string => {
+  if (percentage === 0) return '#E5E7EB' // gray-200
+  if (percentage < 25) return '#FEF3C7' // yellow-100
+  if (percentage < 50) return '#DBEAFE' // blue-100
+  if (percentage < 75) return '#D1FAE5' // green-100
+  return '#10B981' // green-500
 }
 
 export interface FeaturedCollection {

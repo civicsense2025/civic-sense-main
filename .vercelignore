@@ -1,36 +1,30 @@
-# Exclude AI-related files from Vercel builds
-app/api/assistant/
+# AI-related files and folders to exclude from deployment
+app/api/assistant/**
+app/api/admin/**
+app/admin/**
+components/admin/**
 scripts/*ai*
 scripts/*generate*
 scripts/test-*
 ai-config.json*
-
-# Exclude admin functionality from Vercel builds
-app/api/admin/
-app/admin/
-app/**/admin/
-components/admin/
 lib/admin*
 
 # Development and testing files
+debug/
+test-output/
+optimization-reports/
+__tests__/
 *.test.ts
 *.test.js
-__tests__/
-test-output/
-debug/
 
-# Large dependencies that aren't needed in production
-node_modules/@anthropic-ai/
-node_modules/openai/
-node_modules/@google-cloud/
-node_modules/deepl-node/
-
-# SQL files and database scripts
+# Large generated files and database
+generated/
 *.sql
 migrations/
 database/
+localhost_*.json
 
-# Documentation
+# Documentation (keep main README)
 docs/
 *.md
 !README.md
@@ -41,9 +35,8 @@ Dockerfile*
 .env.docker
 environment-template.txt
 
-# Optimization reports
-optimization-reports/
-
-# Generated files
-generated/
-localhost_*.json 
+# Large dependencies that aren't needed in production
+node_modules/@anthropic-ai/
+node_modules/openai/
+node_modules/@google-cloud/
+node_modules/deepl-node/ 
