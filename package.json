@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:no-ai": "node scripts/build-for-vercel.js",
-    "build:vercel": "node scripts/build-for-vercel.js",
+    "build:no-ai": "DISABLE_AI_FEATURES=true next build",
+    "build:vercel": "DISABLE_AI_FEATURES=true next build",
     "start": "next start",
     "lint": "next lint",
     "deploy:vercel": "bash scripts/deploy-vercel.sh",

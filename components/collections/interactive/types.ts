@@ -216,6 +216,72 @@ export interface DecisionTreeConfig {
   }>
 }
 
+// Learning content configurations
+export interface ConceptConfig {
+  type: 'concept'
+  key_points: string[]
+  definition?: string
+  importance?: string
+  related_concepts?: string[]
+}
+
+export interface ExampleConfig {
+  type: 'example'
+  examples: Array<{
+    title: string
+    description: string
+    source?: string
+    highlight?: string
+  }>
+  takeaway?: string
+}
+
+export interface SummaryConfig {
+  type: 'summary'
+  key_points: string[]
+  next_steps?: string[]
+  resources?: Array<{ title: string; url: string }>
+}
+
+export interface CaseStudyConfig {
+  type: 'case_study'
+  background: string
+  challenge: string
+  solution?: string
+  outcome?: string
+  lessons_learned: string[]
+  discussion_questions?: string[]
+}
+
+export interface ComparisonConfig {
+  type: 'comparison'
+  items: Array<{
+    name: string
+    features: Record<string, string | boolean>
+    description?: string
+  }>
+  criteria: string[]
+}
+
+export interface ResearchConfig {
+  type: 'research'
+  research_prompt: string
+  suggested_sources?: string[]
+  guiding_questions: string[]
+  deliverable: 'notes' | 'summary' | 'presentation'
+}
+
+export interface DebateConfig {
+  type: 'debate'
+  topic: string
+  positions: Array<{
+    side: string
+    arguments: string[]
+    evidence?: string[]
+  }>
+  reflection_questions: string[]
+}
+
 // Union type for all configurations
 export type InteractionConfig = 
   | MultipleChoiceConfig
@@ -239,6 +305,13 @@ export type InteractionConfig =
   | SimulationConfig
   | RolePlayConfig
   | DecisionTreeConfig
+  | ConceptConfig
+  | ExampleConfig
+  | SummaryConfig
+  | CaseStudyConfig
+  | ComparisonConfig
+  | ResearchConfig
+  | DebateConfig
 
 // Component step interface
 export interface InteractiveStep {

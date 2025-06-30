@@ -8,6 +8,9 @@ export { Reflection, ActionChecklist, ContactForm } from './reflection-and-actio
 export { QuickPoll, SurveyEmbed, OpinionSlider } from './polls-and-surveys'
 export { Simulation, RolePlay, DecisionTree } from './simulations'
 
+// Learning content components
+export { Concept, Example, Summary, CaseStudy, Comparison, Research, Debate } from './learning-content'
+
 // All components can be used individually
 // No main wrapper needed - use specific components as needed
 

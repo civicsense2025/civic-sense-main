@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { UpdateCollectionRequest } from '@/types/collections'
+import { cookies } from 'next/headers'
+import type { Collection, CollectionItem } from '@/types/collections'
 
 interface RouteParams {
   params: {
@@ -8,170 +10,95 @@ interface RouteParams {
   }
 }
 
-// GET /api/collections/[slug] - Get a specific collection with items and progress
+// GET /api/collections/[slug] - Get collection with items and lesson steps
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const supabase = await createClient()
     const { slug } = params
 
-    // Get collection with items
-    const { data: collection, error } = await supabase
+    // First get the collection
+    const { data: collection, error: collectionError } = await supabase
       .from('collections')
-      .select(`
-        *,
-        collection_items (
-          id,
-          collection_id,
-          content_type,
-          content_id,
-          sort_order,
-          category,
-          is_featured,
-          title,
-          description,
-          notes,
-          estimated_duration_minutes,
-          learning_objectives,
-          key_concepts,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('slug', slug)
       .eq('status', 'published')
       .single()
 
-    if (error || !collection) {
+    if (collectionError || !collection) {
+      console.error('Collection not found:', collectionError)
       return NextResponse.json(
         { error: 'Collection not found' },
         { status: 404 }
       )
     }
 
-    // Increment view count (handle potential missing field gracefully)
-    if (collection.view_count !== undefined) {
-      await supabase
-        .from('collections')
-        .update({ view_count: collection.view_count + 1 })
-        .eq('id', collection.id)
-    }
-
-    // Get user progress if authenticated
-    const { data: { user } } = await supabase.auth.getUser()
-    let progress = null
-
-    if (user) {
-      const { data: progressData } = await supabase
-        .from('user_collection_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('collection_id', collection.id)
-        .single()
-
-      progress = progressData
-    }
-
-    // Get skills summary for collection
-    let skillsSummary = null
-    try {
-      const { data: skillsData } = await supabase
-        .rpc('get_collection_skills_summary', { collection_uuid: collection.id })
-        .single()
-      skillsSummary = skillsData
-    } catch (skillsError) {
-      console.warn('Failed to load skills for collection:', skillsError)
-    }
-
-    // Get user's skill progress for this collection if authenticated
-    let userSkillProgress = null
-    if (user) {
-      const { data: skillProgressData } = await supabase
-        .from('collection_skill_progress')
-        .select(`
-          *,
-          skill:skills (
-            skill_name,
-            skill_slug,
-            category,
-            difficulty_level
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('collection_id', collection.id)
-      
-      userSkillProgress = skillProgressData
-    }
-
-    // Get reviews
-    const { data: reviews } = await supabase
-      .from('collection_reviews')
-      .select(`
-        *,
-        user:profiles!collection_reviews_user_id_fkey (
-          email,
-          display_name
-        )
-      `)
+    // Get collection items for this collection
+    const { data: collectionItems, error: itemsError } = await supabase
+      .from('collection_items')
+      .select('*')
       .eq('collection_id', collection.id)
-      .order('created_at', { ascending: false })
-      .limit(10)
+      .eq('is_published', true)
+      .order('sort_order', { ascending: true })
 
-    // Populate actual content for each item
-    const itemsWithContent = await Promise.all(
-      (collection.collection_items || []).map(async (item: any) => {
-        let content = null
-        
-        try {
-          switch (item.content_type) {
-            case 'topic':
-              const { data: topic } = await supabase
-                .from('question_topics')
-                .select('*')
-                .eq('id', item.content_id)
-                .single()
-              content = topic
-              break
-            case 'question':
-              const { data: question } = await supabase
-                .from('questions')
-                .select('*')
-                .eq('id', item.content_id)
-                .single()
-              content = question
-              break
-            case 'glossary_term':
-              const { data: term } = await supabase
-                .from('glossary_terms')
-                .select('*')
-                .eq('id', item.content_id)
-                .single()
-              content = term
-              break
-            // Add other content types as needed
+    if (itemsError) {
+      console.error('Error fetching collection items:', itemsError)
+      return NextResponse.json(
+        { error: 'Error fetching collection items' },
+        { status: 500 }
+      )
+    }
+
+    // Get lesson steps for each collection item
+    const itemsWithSteps = await Promise.all(
+      (collectionItems || []).map(async (item) => {
+        const { data: lessonSteps, error: stepsError } = await supabase
+          .from('lesson_steps')
+          .select('*')
+          .eq('collection_item_id', item.id)
+          .order('step_number', { ascending: true })
+
+        if (stepsError) {
+          console.error(`Error fetching lesson steps for item ${item.id}:`, stepsError)
+          return {
+            ...item,
+            lesson_steps: []
           }
-        } catch (err) {
-          console.warn(`Failed to load content for item ${item.id}:`, err)
         }
 
         return {
           ...item,
-          content
+          lesson_steps: lessonSteps || []
         }
       })
     )
 
+    // Get user progress if authenticated
+    const { data: { user } } = await supabase.auth.getUser()
+    let userProgress = null
+
+    if (user) {
+      const { data: progress } = await supabase
+        .from('user_collection_progress')
+        .select('*')
+        .eq('collection_id', collection.id)
+        .eq('user_id', user.id)
+        .single()
+
+      userProgress = progress
+    }
+
     const response = {
       ...collection,
-      collection_items: itemsWithContent,
-      progress,
-      reviews: reviews || [],
-      skills_summary: skillsSummary,
-      user_skill_progress: userSkillProgress
+      collection_items: itemsWithSteps,
+      progress: userProgress,
+      items_count: itemsWithSteps.length,
+      total_steps: itemsWithSteps.reduce((total, item) => total + (item.lesson_steps?.length || 0), 0)
     }
 
     return NextResponse.json(response)
 
   } catch (error) {
-    console.error('Get collection error:', error)
+    console.error('Error in GET /api/collections/[slug]:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -351,15 +278,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         .eq('is_featured', true)
         .gt('featured_order', collection.featured_order)
 
-      // Update each one to decrement order
-      if (higherOrderCollections) {
-        for (const col of higherOrderCollections) {
-          await supabase
-            .from('collections')
-            .update({ featured_order: col.featured_order - 1 })
-            .eq('id', col.id)
+              // Update each one to decrement order
+        if (higherOrderCollections) {
+          for (const col of higherOrderCollections) {
+            if (col.featured_order !== null) {
+              await supabase
+                .from('collections')
+                .update({ featured_order: col.featured_order - 1 })
+                .eq('id', col.id)
+            }
+          }
         }
-      }
     }
 
     return NextResponse.json({ message: 'Collection deleted successfully' })
