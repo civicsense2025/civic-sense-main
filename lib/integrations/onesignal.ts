@@ -57,19 +57,33 @@ interface CivicUserData {
 }
 
 export class OneSignalService {
-  private config: OneSignalConfig
+  private config: OneSignalConfig | null = null
   private baseUrl = 'https://api.onesignal.com'
+  private enabled = false
 
   constructor() {
-    this.config = {
-      appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
-      restApiKey: process.env.ONESIGNAL_REST_API_KEY!,
-      userAuthKey: process.env.ONESIGNAL_USER_AUTH_KEY
+    const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
+    const restApiKey = process.env.ONESIGNAL_REST_API_KEY
+    
+    if (appId && restApiKey) {
+      this.config = {
+        appId,
+        restApiKey,
+        userAuthKey: process.env.ONESIGNAL_USER_AUTH_KEY
+      }
+      this.enabled = true
+    } else {
+      console.warn('OneSignal configuration missing. Service will operate in disabled mode.')
+      this.enabled = false
     }
+  }
 
-    if (!this.config.appId || !this.config.restApiKey) {
-      throw new Error('OneSignal configuration missing. Check environment variables.')
+  private checkEnabled(): boolean {
+    if (!this.enabled || !this.config) {
+      console.warn('OneSignal service is disabled due to missing configuration')
+      return false
     }
+    return true
   }
 
   // =============================================================================
@@ -80,14 +94,18 @@ export class OneSignalService {
    * Create or update a user in OneSignal with CivicSense-specific data
    */
   async createOrUpdateUser(userData: CivicUserData): Promise<{ success: boolean; oneSignalId?: string; error?: string }> {
+    if (!this.checkEnabled()) {
+      return { success: false, error: 'OneSignal service is disabled' }
+    }
+
     try {
       const oneSignalUser = this.mapCivicUserToOneSignal(userData)
       
-      const response = await fetch(`${this.baseUrl}/apps/${this.config.appId}/users`, {
+      const response = await fetch(`${this.baseUrl}/apps/${this.config!.appId}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.config.restApiKey}`
+          'Authorization': `Basic ${this.config!.restApiKey}`
         },
         body: JSON.stringify(oneSignalUser)
       })
@@ -121,12 +139,16 @@ export class OneSignalService {
    * Update user tags for civic engagement segmentation
    */
   async updateUserTags(externalId: string, tags: Record<string, string | number>): Promise<boolean> {
+    if (!this.checkEnabled()) {
+      return false
+    }
+
     try {
-      const response = await fetch(`${this.baseUrl}/apps/${this.config.appId}/users/by/external_id/${externalId}`, {
+      const response = await fetch(`${this.baseUrl}/apps/${this.config!.appId}/users/by/external_id/${externalId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.config.restApiKey}`
+          'Authorization': `Basic ${this.config!.restApiKey}`
         },
         body: JSON.stringify({
           properties: { tags }
@@ -152,6 +174,10 @@ export class OneSignalService {
       appVersion: string
     }
   ): Promise<boolean> {
+    if (!this.checkEnabled()) {
+      return false
+    }
+
     try {
       const subscription = {
         type: 'iOSPush' as const,
@@ -164,11 +190,11 @@ export class OneSignalService {
         sdk: 'react-native-onesignal'
       }
 
-      const response = await fetch(`${this.baseUrl}/apps/${this.config.appId}/users/by/external_id/${externalId}`, {
+      const response = await fetch(`${this.baseUrl}/apps/${this.config!.appId}/users/by/external_id/${externalId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.config.restApiKey}`
+          'Authorization': `Basic ${this.config!.restApiKey}`
         },
         body: JSON.stringify({
           subscriptions: [subscription]
@@ -201,9 +227,13 @@ export class OneSignalService {
     }
     scheduledTime?: Date
   }): Promise<{ success: boolean; notificationId?: string }> {
+    if (!this.checkEnabled()) {
+      return { success: false }
+    }
+
     try {
       const notification = {
-        app_id: this.config.appId,
+        app_id: this.config!.appId,
         headings: { en: options.title },
         contents: { en: options.message },
         ...(options.userIds && {
@@ -229,7 +259,7 @@ export class OneSignalService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.config.restApiKey}`
+          'Authorization': `Basic ${this.config!.restApiKey}`
         },
         body: JSON.stringify(notification)
       })

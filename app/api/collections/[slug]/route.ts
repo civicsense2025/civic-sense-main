@@ -5,16 +5,14 @@ import { cookies } from 'next/headers'
 import type { Collection, CollectionItem } from '@/types/collections'
 
 interface RouteParams {
-  params: {
-    slug: string
-  }
+  params: { slug: string } | Promise<{ slug: string }>
 }
 
 // GET /api/collections/[slug] - Get collection with items and lesson steps
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const supabase = await createClient()
-    const { slug } = params
+    const { slug } = await params
 
     // First get the collection
     const { data: collection, error: collectionError } = await supabase
@@ -110,7 +108,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const supabase = await createClient()
-    const { slug } = params
+    const { slug } = await params
 
     // Check authentication and admin role
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -226,7 +224,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const supabase = await createClient()
-    const { slug } = params
+    const { slug } = await params
 
     // Check authentication and admin role
     const { data: { user }, error: authError } = await supabase.auth.getUser()

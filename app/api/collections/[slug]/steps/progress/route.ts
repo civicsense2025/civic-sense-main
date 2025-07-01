@@ -5,10 +5,11 @@ import { UpdateLessonStepProgressRequest } from '@/types/lesson-steps'
 // POST /api/collections/[slug]/steps/progress - Update lesson step progress
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { slug: string } | Promise<{ slug: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { slug } = await params
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -20,7 +21,7 @@ export async function POST(
     const { data: collection, error: collectionError } = await supabase
       .from('collections')
       .select('id, status')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .single()
 
     if (collectionError || !collection) {
@@ -114,10 +115,11 @@ export async function POST(
 // GET /api/collections/[slug]/steps/progress - Get user's progress for all steps in collection
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { slug: string } | Promise<{ slug: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { slug } = await params
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -129,7 +131,7 @@ export async function GET(
     const { data: collection, error: collectionError } = await supabase
       .from('collections')
       .select('id')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .single()
 
     if (collectionError || !collection) {

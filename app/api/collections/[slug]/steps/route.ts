@@ -5,16 +5,18 @@ import { LessonStep, LessonStepsResponse } from '@/types/lesson-steps'
 // GET /api/collections/[slug]/steps - Get lesson steps for a collection
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { slug: string } | Promise<{ slug: string }> }
 ) {
   try {
     const supabase = await createClient()
     
+    const { slug } = await params
+
     // Get collection by slug
     const { data: collection, error: collectionError } = await supabase
       .from('collections')
       .select('id, status')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .single()
 
     if (collectionError || !collection) {

@@ -491,7 +491,11 @@ export const uiStrings = {
     support: 'Support',
     donate: 'Donate',
     socialMedia: 'Follow us'
-  }
+  },
+
+  profileScreenTitle: 'My Profile',
+  loadingProfile: 'Loading your profile...',
+  redirectingToLogin: 'Redirecting to login...'
 } as const
 
 // Type for the UI strings structure
@@ -548,5 +552,8 @@ export const {
   time,
   learningPods,
   accessibility,
-  footer
+  footer,
+  profileScreenTitle,
+  loadingProfile,
+  redirectingToLogin
 } = uiStrings 
