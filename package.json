@@ -133,7 +133,6 @@
     "sonner": "^1.7.1",
     "statsig-js": "^5.1.0",
     "stripe": "^18.2.1",
-    "supabase": "^2.24.3",
     "supabase-cli": "^0.0.21",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
@@ -170,7 +169,10 @@
         "react": "19",
         "react-dom": "19"
       }
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "supabase"
+    ]
   },
   "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
 }

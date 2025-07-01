@@ -124,18 +124,23 @@ export function useUITranslationAdmin() {
 }
 
 /**
- * Typed helper for common UI string paths
- * This provides better IDE support and prevents typos
+ * Enhanced typed helper for CivicSense UI string paths with better IDE support
  */
 export const ui = {
-  // Common actions
+  // Common actions with CivicSense context
   actions: {
     continue: () => useUIString('actions.continue'),
+    continueQuiz: () => useUIString('quiz.continueQuiz'), 
+    continueLearning: () => useUIString('actions.continue'), // Reuse for consistency
     cancel: () => useUIString('actions.cancel'),
     save: () => useUIString('actions.save'),
     delete: () => useUIString('actions.delete'),
     loading: () => useUIString('actions.loading'),
     retry: () => useUIString('actions.retry'),
+    back: () => useUIString('actions.back'),
+    next: () => useUIString('actions.next'),
+    submit: () => useUIString('actions.submit'),
+    share: () => useUIString('actions.share'),
   },
   
   // Navigation
@@ -146,6 +151,8 @@ export const ui = {
     quizzes: () => useUIString('navigation.quizzes'),
     multiplayer: () => useUIString('navigation.multiplayer'),
     settings: () => useUIString('navigation.settings'),
+    signIn: () => useUIString('navigation.login'),
+    signUp: () => useUIString('navigation.signUp'),
   },
   
   // Authentication
@@ -155,31 +162,148 @@ export const ui = {
     email: () => useUIString('auth.signIn.emailLabel'),
     password: () => useUIString('auth.signIn.passwordLabel'),
     forgotPassword: () => useUIString('auth.signIn.forgotPassword'),
+    continueWithGoogle: () => useUIString('auth.signIn.continueWithGoogle'),
+    signingIn: () => useUIString('auth.signIn.signingIn'),
+    creatingAccount: () => useUIString('auth.signUp.creatingAccount'),
   },
   
-  // Quiz
+  // Quiz specific helpers
   quiz: {
     startQuiz: () => useUIString('quiz.startQuiz'),
+    continueQuiz: () => useUIString('quiz.continueQuiz'),
+    retakeQuiz: () => useUIString('quiz.retakeQuiz'),
     nextQuestion: () => useUIString('quiz.nextQuestion'),
+    previousQuestion: () => useUIString('quiz.previousQuestion'),
+    submitAnswer: () => useUIString('quiz.submitAnswer'),
+    skipQuestion: () => useUIString('quiz.skipQuestion'),
     explanation: () => useUIString('quiz.explanation'),
     score: () => useUIString('quiz.score'),
     complete: () => useUIString('quiz.complete'),
+    loading: () => useUIString('quiz.loading'),
+    comingSoon: () => useUIString('messages.comingSoon'),
+    signInToContinue: () => 'Sign In to Continue', // Common pattern
   },
   
-  // Errors
+  // Results and achievements
+  results: {
+    continueLearning: () => useUIString('results.continueLearning'), // Very common CivicSense pattern
+    shareResults: () => useUIString('results.share'),
+    tryAgain: () => useUIString('results.tryAgain'),
+    backToHome: () => useUIString('results.backToHome'),
+    viewDetails: () => useUIString('results.viewDetails'),
+    retakeQuiz: () => useUIString('results.retakeQuiz'),
+  },
+  
+  // Error handling
   errors: {
     generic: () => useUIString('errors.generic'),
     network: () => useUIString('errors.network'),
     tryAgain: () => useUIString('errors.tryAgain'),
+    loading: () => 'Loading...', // Very common
   },
   
-  // Messages
+  // Messages and feedback
   messages: {
     success: () => useUIString('messages.success'),
     saved: () => useUIString('messages.saved'),
     welcome: () => useUIString('messages.welcome'),
+    goodJob: () => useUIString('messages.goodJob'),
+    wellDone: () => useUIString('messages.wellDone'),
+    congratulations: () => useUIString('messages.congratulations'),
+  },
+
+  // CivicSense brand specific
+  brand: {
+    name: () => useUIString('brand.name'),
+    tagline: () => useUIString('brand.tagline'),
+    description: () => useUIString('brand.description'),
   }
 } as const
+
+/**
+ * Higher-order component for UI strings context
+ */
+export function withUIStrings<P extends object>(
+  Component: React.ComponentType<P>
+): React.ComponentType<P> {
+  return function WrappedComponent(props: P) {
+    // Use a simple hook approach rather than the generic useUIStrings
+    const { currentLanguage } = useLanguage()
+    const uiStringsSection = useUISection('brand') // Just an example section
+    return React.createElement(Component, { ...props, uiStrings: uiStringsSection })
+  }
+}
+
+/**
+ * Component helper for common CivicSense button patterns
+ */
+export function UIButton({ 
+  stringPath, 
+  variant = 'default',
+  className, 
+  children,
+  ...props 
+}: { 
+  stringPath?: string;
+  variant?: 'default' | 'outline' | 'ghost';
+  className?: string;
+  children?: React.ReactNode;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const text = stringPath ? useUIString(stringPath) : children
+  
+  return React.createElement('button', { 
+    className: `btn btn-${variant} ${className || ''}`,
+    ...props 
+  }, text)
+}
+
+/**
+ * Specialized hooks for CivicSense patterns
+ */
+export function useQuizStrings() {
+  return {
+    startQuiz: useUIString('quiz.startQuiz'),
+    continueQuiz: useUIString('quiz.continueQuiz'),
+    retakeQuiz: useUIString('quiz.retakeQuiz'),
+    nextQuestion: useUIString('quiz.nextQuestion'),
+    previousQuestion: useUIString('quiz.previousQuestion'),
+    submitAnswer: useUIString('quiz.submitAnswer'),
+    skipQuestion: useUIString('quiz.skipQuestion'),
+    complete: useUIString('quiz.complete'),
+    loading: useUIString('quiz.loading'),
+    // Common civic patterns
+    continueLearning: useUIString('results.continueLearning'),
+    signInToContinue: 'Sign In to Continue',
+    comingSoon: useUIString('messages.comingSoon'),
+  }
+}
+
+export function useAuthStrings() {
+  return {
+    signIn: useUIString('auth.signIn.title'),
+    signUp: useUIString('auth.signUp.title'),
+    email: useUIString('auth.signIn.emailLabel'),
+    password: useUIString('auth.signIn.passwordLabel'),
+    continueWithGoogle: useUIString('auth.signIn.continueWithGoogle'),
+    forgotPassword: useUIString('auth.signIn.forgotPassword'),
+    signingIn: useUIString('auth.signIn.signingIn'),
+    creatingAccount: useUIString('auth.signUp.creatingAccount'),
+  }
+}
+
+export function useCommonActionStrings() {
+  return {
+    continue: useUIString('actions.continue'),
+    cancel: useUIString('actions.cancel'),
+    save: useUIString('actions.save'),
+    back: useUIString('actions.back'),
+    next: useUIString('actions.next'),
+    submit: useUIString('actions.submit'),
+    retry: useUIString('actions.retry'),
+    loading: useUIString('actions.loading'),
+    share: useUIString('actions.share'),
+  }
+}
 
 /**
  * Component helper to create localized text components

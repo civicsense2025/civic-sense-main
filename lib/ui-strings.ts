@@ -198,7 +198,9 @@ export const uiStrings = {
     share: 'Share Results',
     tryAgain: 'Try Again',
     nextQuiz: 'Next Quiz',
-    backToHome: 'Back to Home'
+    backToHome: 'Back to Home',
+    continueLearning: 'Continue Learning',
+    retakeQuiz: 'Retake Quiz'
   },
 
   // Dashboard
@@ -408,7 +410,7 @@ export const uiStrings = {
     almostThere: 'Almost there!',
     congratulations: 'Congratulations!',
     thankYou: 'Thank you!',
-    comingSoon: 'Coming soon',
+    comingSoon: 'Coming Soon',
     maintenanceMode: 'We\'re currently under maintenance',
     newFeature: 'New feature available!',
     updateAvailable: 'Update available'
