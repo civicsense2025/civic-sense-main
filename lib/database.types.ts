@@ -4181,6 +4181,13 @@ export type Database = {
             foreignKeyName: "analytics_events_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "v_topics_with_questions_and_translations"
             referencedColumns: ["topic_id"]
           },
@@ -7684,6 +7691,75 @@ export type Database = {
         }
         Relationships: []
       }
+      content_recommendations: {
+        Row: {
+          clicked_at: string | null
+          clicked_by_user: boolean | null
+          completed_at: string | null
+          completed_by_user: boolean | null
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at: string | null
+          expires_at: string | null
+          feedback_at: string | null
+          generated_at: string | null
+          id: string
+          reasoning_factors: Json | null
+          recommendation_engine_version: string | null
+          recommendation_score: number
+          recommendation_type: string
+          shown_at: string | null
+          shown_to_user: boolean | null
+          user_feedback: number | null
+          user_id: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          clicked_by_user?: boolean | null
+          completed_at?: string | null
+          completed_by_user?: boolean | null
+          content_id: string
+          content_title: string
+          content_type: string
+          created_at?: string | null
+          expires_at?: string | null
+          feedback_at?: string | null
+          generated_at?: string | null
+          id?: string
+          reasoning_factors?: Json | null
+          recommendation_engine_version?: string | null
+          recommendation_score: number
+          recommendation_type: string
+          shown_at?: string | null
+          shown_to_user?: boolean | null
+          user_feedback?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          clicked_by_user?: boolean | null
+          completed_at?: string | null
+          completed_by_user?: boolean | null
+          content_id?: string
+          content_title?: string
+          content_type?: string
+          created_at?: string | null
+          expires_at?: string | null
+          feedback_at?: string | null
+          generated_at?: string | null
+          id?: string
+          reasoning_factors?: Json | null
+          recommendation_engine_version?: string | null
+          recommendation_score?: number
+          recommendation_type?: string
+          shown_at?: string | null
+          shown_to_user?: boolean | null
+          user_feedback?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       content_relationships: {
         Row: {
           admin_notes: string | null
@@ -7793,7 +7869,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_reviews_reviewer_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviewer_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       custom_collection_items: {
         Row: {
@@ -14547,43 +14631,7 @@ export type Database = {
           topic_id?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "ai_generated_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_topics_with_questions_and_translations"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_topics_without_questions"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "progress_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_translation_coverage_summary"
-            referencedColumns: ["topic_id"]
-          },
-        ]
+        Relationships: []
       }
       public_figures: {
         Row: {
@@ -15109,6 +15157,13 @@ export type Database = {
             foreignKeyName: "question_topic_categories_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_topic_categories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "v_topics_with_questions_and_translations"
             referencedColumns: ["topic_internal_id"]
           },
@@ -15288,108 +15343,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      questions_test: {
-        Row: {
-          category: string
-          correct_answer: string
-          created_at: string | null
-          difficulty_level: number | null
-          explanation: string
-          hint: string
-          id: string
-          is_active: boolean | null
-          option_a: string | null
-          option_b: string | null
-          option_c: string | null
-          option_d: string | null
-          question: string
-          question_number: number
-          question_type: string
-          sources: Json | null
-          tags: Json | null
-          topic_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          category: string
-          correct_answer: string
-          created_at?: string | null
-          difficulty_level?: number | null
-          explanation: string
-          hint: string
-          id?: string
-          is_active?: boolean | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question: string
-          question_number: number
-          question_type: string
-          sources?: Json | null
-          tags?: Json | null
-          topic_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string
-          correct_answer?: string
-          created_at?: string | null
-          difficulty_level?: number | null
-          explanation?: string
-          hint?: string
-          id?: string
-          is_active?: boolean | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question?: string
-          question_number?: number
-          question_type?: string
-          sources?: Json | null
-          tags?: Json | null
-          topic_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "ai_generated_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "question_topics"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_topics_with_questions_and_translations"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_topics_without_questions"
-            referencedColumns: ["topic_id"]
-          },
-          {
-            foreignKeyName: "questions_test_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "v_translation_coverage_summary"
-            referencedColumns: ["topic_id"]
-          },
-        ]
       }
       quiz_attempts: {
         Row: {
@@ -16353,6 +16306,72 @@ export type Database = {
         }
         Relationships: []
       }
+      search_analytics_daily: {
+        Row: {
+          abandoned_searches: number | null
+          analytics_date: string
+          avg_results_per_search: number | null
+          avg_searches_per_user: number | null
+          avg_time_to_selection_ms: number | null
+          created_at: string | null
+          device_breakdown: Json | null
+          id: string
+          platform_breakdown: Json | null
+          search_success_rate: number | null
+          searches_with_results: number | null
+          searches_with_selection: number | null
+          top_search_terms: Json | null
+          top_selected_content: Json | null
+          total_searches: number | null
+          unique_searchers: number | null
+          updated_at: string | null
+          user_segment: string | null
+          zero_result_searches: number | null
+        }
+        Insert: {
+          abandoned_searches?: number | null
+          analytics_date: string
+          avg_results_per_search?: number | null
+          avg_searches_per_user?: number | null
+          avg_time_to_selection_ms?: number | null
+          created_at?: string | null
+          device_breakdown?: Json | null
+          id?: string
+          platform_breakdown?: Json | null
+          search_success_rate?: number | null
+          searches_with_results?: number | null
+          searches_with_selection?: number | null
+          top_search_terms?: Json | null
+          top_selected_content?: Json | null
+          total_searches?: number | null
+          unique_searchers?: number | null
+          updated_at?: string | null
+          user_segment?: string | null
+          zero_result_searches?: number | null
+        }
+        Update: {
+          abandoned_searches?: number | null
+          analytics_date?: string
+          avg_results_per_search?: number | null
+          avg_searches_per_user?: number | null
+          avg_time_to_selection_ms?: number | null
+          created_at?: string | null
+          device_breakdown?: Json | null
+          id?: string
+          platform_breakdown?: Json | null
+          search_success_rate?: number | null
+          searches_with_results?: number | null
+          searches_with_selection?: number | null
+          top_search_terms?: Json | null
+          top_selected_content?: Json | null
+          total_searches?: number | null
+          unique_searchers?: number | null
+          updated_at?: string | null
+          user_segment?: string | null
+          zero_result_searches?: number | null
+        }
+        Relationships: []
+      }
       shareable_gift_links: {
         Row: {
           access_type: string
@@ -17046,6 +17065,7 @@ export type Database = {
           published_time: string | null
           response_time_ms: number | null
           title: string
+          translations: Json | null
           twitter_description: string | null
           twitter_image: string | null
           twitter_title: string | null
@@ -17081,6 +17101,7 @@ export type Database = {
           published_time?: string | null
           response_time_ms?: number | null
           title: string
+          translations?: Json | null
           twitter_description?: string | null
           twitter_image?: string | null
           twitter_title?: string | null
@@ -17116,6 +17137,7 @@ export type Database = {
           published_time?: string | null
           response_time_ms?: number | null
           title?: string
+          translations?: Json | null
           twitter_description?: string | null
           twitter_image?: string | null
           twitter_title?: string | null
@@ -18632,6 +18654,93 @@ export type Database = {
         }
         Relationships: []
       }
+      user_content_views: {
+        Row: {
+          app_version: string | null
+          completed_at: string | null
+          content_id: string
+          content_slug: string | null
+          content_title: string
+          content_type: string
+          created_at: string | null
+          device_type: string | null
+          first_viewed_at: string | null
+          guest_token: string | null
+          id: string
+          interactions_count: number | null
+          last_viewed_at: string | null
+          platform: string | null
+          progress_percentage: number | null
+          quiz_score: number | null
+          referrer_id: string | null
+          referrer_type: string | null
+          return_visits: number | null
+          scroll_depth_percentage: number | null
+          session_id: string
+          started_at: string | null
+          time_to_first_interaction_ms: number | null
+          updated_at: string | null
+          user_id: string | null
+          view_duration_seconds: number | null
+        }
+        Insert: {
+          app_version?: string | null
+          completed_at?: string | null
+          content_id: string
+          content_slug?: string | null
+          content_title: string
+          content_type: string
+          created_at?: string | null
+          device_type?: string | null
+          first_viewed_at?: string | null
+          guest_token?: string | null
+          id?: string
+          interactions_count?: number | null
+          last_viewed_at?: string | null
+          platform?: string | null
+          progress_percentage?: number | null
+          quiz_score?: number | null
+          referrer_id?: string | null
+          referrer_type?: string | null
+          return_visits?: number | null
+          scroll_depth_percentage?: number | null
+          session_id: string
+          started_at?: string | null
+          time_to_first_interaction_ms?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Update: {
+          app_version?: string | null
+          completed_at?: string | null
+          content_id?: string
+          content_slug?: string | null
+          content_title?: string
+          content_type?: string
+          created_at?: string | null
+          device_type?: string | null
+          first_viewed_at?: string | null
+          guest_token?: string | null
+          id?: string
+          interactions_count?: number | null
+          last_viewed_at?: string | null
+          platform?: string | null
+          progress_percentage?: number | null
+          quiz_score?: number | null
+          referrer_id?: string | null
+          referrer_type?: string | null
+          return_visits?: number | null
+          scroll_depth_percentage?: number | null
+          session_id?: string
+          started_at?: string | null
+          time_to_first_interaction_ms?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Relationships: []
+      }
       user_credits: {
         Row: {
           amount: number
@@ -18802,6 +18911,13 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
             referencedColumns: ["topic_id"]
           },
           {
@@ -19327,6 +19443,81 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      user_learning_patterns: {
+        Row: {
+          analysis_date: string | null
+          avg_quiz_score: number | null
+          avg_searches_per_session: number | null
+          avoided_content_types: string[] | null
+          completion_rate: number | null
+          created_at: string | null
+          id: string
+          last_calculated_at: string | null
+          learning_streak_days: number | null
+          peak_activity_days: number[] | null
+          peak_activity_hours: number[] | null
+          preferred_categories: string[] | null
+          preferred_content_types: string[] | null
+          preferred_difficulty_levels: string[] | null
+          preferred_session_length_minutes: number | null
+          recommended_content_ids: string[] | null
+          retention_score: number | null
+          search_success_rate: number | null
+          top_search_terms: string[] | null
+          total_sessions: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          analysis_date?: string | null
+          avg_quiz_score?: number | null
+          avg_searches_per_session?: number | null
+          avoided_content_types?: string[] | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          learning_streak_days?: number | null
+          peak_activity_days?: number[] | null
+          peak_activity_hours?: number[] | null
+          preferred_categories?: string[] | null
+          preferred_content_types?: string[] | null
+          preferred_difficulty_levels?: string[] | null
+          preferred_session_length_minutes?: number | null
+          recommended_content_ids?: string[] | null
+          retention_score?: number | null
+          search_success_rate?: number | null
+          top_search_terms?: string[] | null
+          total_sessions?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          analysis_date?: string | null
+          avg_quiz_score?: number | null
+          avg_searches_per_session?: number | null
+          avoided_content_types?: string[] | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          learning_streak_days?: number | null
+          peak_activity_days?: number[] | null
+          peak_activity_hours?: number[] | null
+          preferred_categories?: string[] | null
+          preferred_content_types?: string[] | null
+          preferred_difficulty_levels?: string[] | null
+          preferred_session_length_minutes?: number | null
+          recommended_content_ids?: string[] | null
+          retention_score?: number | null
+          search_success_rate?: number | null
+          top_search_terms?: string[] | null
+          total_sessions?: number | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -19954,6 +20145,13 @@ export type Database = {
             foreignKeyName: "user_quiz_analytics_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "user_quiz_analytics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "v_topics_with_questions_and_translations"
             referencedColumns: ["topic_id"]
           },
@@ -20377,6 +20575,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_search_analytics: {
+        Row: {
+          created_at: string | null
+          guest_token: string | null
+          id: string
+          results_count: number | null
+          search_query: string
+          search_timestamp: string | null
+          search_type: string | null
+          selected_result: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string
+          results_count?: number | null
+          search_query: string
+          search_timestamp?: string | null
+          search_type?: string | null
+          selected_result?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          guest_token?: string | null
+          id?: string
+          results_count?: number | null
+          search_query?: string
+          search_timestamp?: string | null
+          search_type?: string | null
+          selected_result?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_search_history: {
+        Row: {
+          app_version: string | null
+          created_at: string | null
+          device_type: string | null
+          guest_token: string | null
+          id: string
+          platform: string | null
+          result_selected: Json | null
+          results_count: number | null
+          results_preview: Json | null
+          search_abandoned: boolean | null
+          search_filters: Json | null
+          search_query: string
+          search_type: string | null
+          searched_at: string | null
+          session_id: string
+          time_to_selection_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          guest_token?: string | null
+          id?: string
+          platform?: string | null
+          result_selected?: Json | null
+          results_count?: number | null
+          results_preview?: Json | null
+          search_abandoned?: boolean | null
+          search_filters?: Json | null
+          search_query: string
+          search_type?: string | null
+          searched_at?: string | null
+          session_id: string
+          time_to_selection_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          guest_token?: string | null
+          id?: string
+          platform?: string | null
+          result_selected?: Json | null
+          results_count?: number | null
+          results_preview?: Json | null
+          search_abandoned?: boolean | null
+          search_filters?: Json | null
+          search_query?: string
+          search_type?: string | null
+          searched_at?: string | null
+          session_id?: string
+          time_to_selection_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_skill_assessment_criteria: {
         Row: {
@@ -21098,6 +21392,13 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "question_topics"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
             referencedColumns: ["topic_id"]
           },
           {
@@ -22113,6 +22414,38 @@ export type Database = {
         }
         Relationships: []
       }
+      question_topics_few_questions: {
+        Row: {
+          ai_extraction_metadata: Json | null
+          ai_generated: boolean | null
+          ai_generation_method: string | null
+          ai_model_used: string | null
+          ai_quality_score: number | null
+          categories: Json | null
+          content_package_id: string | null
+          created_at: string | null
+          date: string | null
+          day_of_week: string | null
+          description: string | null
+          difficulty_level: string | null
+          emoji: string | null
+          estimated_duration_minutes: number | null
+          id: string | null
+          is_active: boolean | null
+          is_breaking: boolean | null
+          is_featured: boolean | null
+          key_takeaways: Json | null
+          question_count: number | null
+          source_analysis_id: string | null
+          source_credibility_score: number | null
+          topic_id: string | null
+          topic_title: string | null
+          translations: Json | null
+          updated_at: string | null
+          why_this_matters: string | null
+        }
+        Relationships: []
+      }
       recent_url_failures: {
         Row: {
           domain: string | null
@@ -22208,6 +22541,13 @@ export type Database = {
             foreignKeyName: "analytics_events_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
+            referencedRelation: "question_topics_few_questions"
+            referencedColumns: ["topic_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
             referencedRelation: "v_topics_with_questions_and_translations"
             referencedColumns: ["topic_id"]
           },
@@ -22252,7 +22592,15 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_reviews_reviewer_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "reviewer_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       survey_summary: {
         Row: {
@@ -25111,6 +25459,7 @@ export type DbContentGenerationQueue = Database['public']['Tables']['content_gen
 export type DbContentItemSkills = Database['public']['Tables']['content_item_skills']['Row']
 export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
 export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
+export type DbContentRecommendations = Database['public']['Tables']['content_recommendations']['Row']
 export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
 export type DbContentReviews = Database['public']['Tables']['content_reviews']['Row']
 export type DbCustomCollectionItems = Database['public']['Tables']['custom_collection_items']['Row']
@@ -25227,7 +25576,6 @@ export type DbQuestionSourceLinks = Database['public']['Tables']['question_sourc
 export type DbQuestionTopicCategories = Database['public']['Tables']['question_topic_categories']['Row']
 export type DbQuestionTopics = Database['public']['Tables']['question_topics']['Row']
 export type DbQuestions = Database['public']['Tables']['questions']['Row']
-export type DbQuestionsTest = Database['public']['Tables']['questions_test']['Row']
 export type DbQuizAttempts = Database['public']['Tables']['quiz_attempts']['Row']
 export type DbRaffleEntries = Database['public']['Tables']['raffle_entries']['Row']
 export type DbRepresentativeContentMapping = Database['public']['Tables']['representative_content_mapping']['Row']
@@ -25245,6 +25593,7 @@ export type DbScenarioResources = Database['public']['Tables']['scenario_resourc
 export type DbScenarioSituations = Database['public']['Tables']['scenario_situations']['Row']
 export type DbScenarios = Database['public']['Tables']['scenarios']['Row']
 export type DbScheduledContentJobs = Database['public']['Tables']['scheduled_content_jobs']['Row']
+export type DbSearchAnalyticsDaily = Database['public']['Tables']['search_analytics_daily']['Row']
 export type DbShareableGiftLinks = Database['public']['Tables']['shareable_gift_links']['Row']
 export type DbShareableLinkClaims = Database['public']['Tables']['shareable_link_claims']['Row']
 export type DbSharedCollectionAccess = Database['public']['Tables']['shared_collection_access']['Row']
@@ -25294,6 +25643,7 @@ export type DbUserCategorySkills = Database['public']['Tables']['user_category_s
 export type DbUserCollectionProgress = Database['public']['Tables']['user_collection_progress']['Row']
 export type DbUserContentAnnotations = Database['public']['Tables']['user_content_annotations']['Row']
 export type DbUserContentConnections = Database['public']['Tables']['user_content_connections']['Row']
+export type DbUserContentViews = Database['public']['Tables']['user_content_views']['Row']
 export type DbUserCredits = Database['public']['Tables']['user_credits']['Row']
 export type DbUserCustomDecks = Database['public']['Tables']['user_custom_decks']['Row']
 export type DbUserDeckContent = Database['public']['Tables']['user_deck_content']['Row']
@@ -25307,6 +25657,7 @@ export type DbUserGenerationUsage = Database['public']['Tables']['user_generatio
 export type DbUserIntegrations = Database['public']['Tables']['user_integrations']['Row']
 export type DbUserLearningGoals = Database['public']['Tables']['user_learning_goals']['Row']
 export type DbUserLearningInsights = Database['public']['Tables']['user_learning_insights']['Row']
+export type DbUserLearningPatterns = Database['public']['Tables']['user_learning_patterns']['Row']
 export type DbUserLocations = Database['public']['Tables']['user_locations']['Row']
 export type DbUserNotificationSubscriptions = Database['public']['Tables']['user_notification_subscriptions']['Row']
 export type DbUserOnboardingState = Database['public']['Tables']['user_onboarding_state']['Row']
@@ -25321,6 +25672,8 @@ export type DbUserRepresentatives = Database['public']['Tables']['user_represent
 export type DbUserRoles = Database['public']['Tables']['user_roles']['Row']
 export type DbUserScenarioAttempts = Database['public']['Tables']['user_scenario_attempts']['Row']
 export type DbUserScenarioDecisions = Database['public']['Tables']['user_scenario_decisions']['Row']
+export type DbUserSearchAnalytics = Database['public']['Tables']['user_search_analytics']['Row']
+export type DbUserSearchHistory = Database['public']['Tables']['user_search_history']['Row']
 export type DbUserSkillAssessmentCriteria = Database['public']['Tables']['user_skill_assessment_criteria']['Row']
 export type DbUserSkillPreferences = Database['public']['Tables']['user_skill_preferences']['Row']
 export type DbUserSkillProgress = Database['public']['Tables']['user_skill_progress']['Row']
@@ -25400,6 +25753,7 @@ export type DbContentGenerationQueueInsert = Database['public']['Tables']['conte
 export type DbContentItemSkillsInsert = Database['public']['Tables']['content_item_skills']['Insert']
 export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
 export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
+export type DbContentRecommendationsInsert = Database['public']['Tables']['content_recommendations']['Insert']
 export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
 export type DbContentReviewsInsert = Database['public']['Tables']['content_reviews']['Insert']
 export type DbCustomCollectionItemsInsert = Database['public']['Tables']['custom_collection_items']['Insert']
@@ -25516,7 +25870,6 @@ export type DbQuestionSourceLinksInsert = Database['public']['Tables']['question
 export type DbQuestionTopicCategoriesInsert = Database['public']['Tables']['question_topic_categories']['Insert']
 export type DbQuestionTopicsInsert = Database['public']['Tables']['question_topics']['Insert']
 export type DbQuestionsInsert = Database['public']['Tables']['questions']['Insert']
-export type DbQuestionsTestInsert = Database['public']['Tables']['questions_test']['Insert']
 export type DbQuizAttemptsInsert = Database['public']['Tables']['quiz_attempts']['Insert']
 export type DbRaffleEntriesInsert = Database['public']['Tables']['raffle_entries']['Insert']
 export type DbRepresentativeContentMappingInsert = Database['public']['Tables']['representative_content_mapping']['Insert']
@@ -25534,6 +25887,7 @@ export type DbScenarioResourcesInsert = Database['public']['Tables']['scenario_r
 export type DbScenarioSituationsInsert = Database['public']['Tables']['scenario_situations']['Insert']
 export type DbScenariosInsert = Database['public']['Tables']['scenarios']['Insert']
 export type DbScheduledContentJobsInsert = Database['public']['Tables']['scheduled_content_jobs']['Insert']
+export type DbSearchAnalyticsDailyInsert = Database['public']['Tables']['search_analytics_daily']['Insert']
 export type DbShareableGiftLinksInsert = Database['public']['Tables']['shareable_gift_links']['Insert']
 export type DbShareableLinkClaimsInsert = Database['public']['Tables']['shareable_link_claims']['Insert']
 export type DbSharedCollectionAccessInsert = Database['public']['Tables']['shared_collection_access']['Insert']
@@ -25583,6 +25937,7 @@ export type DbUserCategorySkillsInsert = Database['public']['Tables']['user_cate
 export type DbUserCollectionProgressInsert = Database['public']['Tables']['user_collection_progress']['Insert']
 export type DbUserContentAnnotationsInsert = Database['public']['Tables']['user_content_annotations']['Insert']
 export type DbUserContentConnectionsInsert = Database['public']['Tables']['user_content_connections']['Insert']
+export type DbUserContentViewsInsert = Database['public']['Tables']['user_content_views']['Insert']
 export type DbUserCreditsInsert = Database['public']['Tables']['user_credits']['Insert']
 export type DbUserCustomDecksInsert = Database['public']['Tables']['user_custom_decks']['Insert']
 export type DbUserDeckContentInsert = Database['public']['Tables']['user_deck_content']['Insert']
@@ -25596,6 +25951,7 @@ export type DbUserGenerationUsageInsert = Database['public']['Tables']['user_gen
 export type DbUserIntegrationsInsert = Database['public']['Tables']['user_integrations']['Insert']
 export type DbUserLearningGoalsInsert = Database['public']['Tables']['user_learning_goals']['Insert']
 export type DbUserLearningInsightsInsert = Database['public']['Tables']['user_learning_insights']['Insert']
+export type DbUserLearningPatternsInsert = Database['public']['Tables']['user_learning_patterns']['Insert']
 export type DbUserLocationsInsert = Database['public']['Tables']['user_locations']['Insert']
 export type DbUserNotificationSubscriptionsInsert = Database['public']['Tables']['user_notification_subscriptions']['Insert']
 export type DbUserOnboardingStateInsert = Database['public']['Tables']['user_onboarding_state']['Insert']
@@ -25610,6 +25966,8 @@ export type DbUserRepresentativesInsert = Database['public']['Tables']['user_rep
 export type DbUserRolesInsert = Database['public']['Tables']['user_roles']['Insert']
 export type DbUserScenarioAttemptsInsert = Database['public']['Tables']['user_scenario_attempts']['Insert']
 export type DbUserScenarioDecisionsInsert = Database['public']['Tables']['user_scenario_decisions']['Insert']
+export type DbUserSearchAnalyticsInsert = Database['public']['Tables']['user_search_analytics']['Insert']
+export type DbUserSearchHistoryInsert = Database['public']['Tables']['user_search_history']['Insert']
 export type DbUserSkillAssessmentCriteriaInsert = Database['public']['Tables']['user_skill_assessment_criteria']['Insert']
 export type DbUserSkillPreferencesInsert = Database['public']['Tables']['user_skill_preferences']['Insert']
 export type DbUserSkillProgressInsert = Database['public']['Tables']['user_skill_progress']['Insert']
@@ -25689,6 +26047,7 @@ export type DbContentGenerationQueueUpdate = Database['public']['Tables']['conte
 export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_item_skills']['Update']
 export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
 export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
+export type DbContentRecommendationsUpdate = Database['public']['Tables']['content_recommendations']['Update']
 export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
 export type DbContentReviewsUpdate = Database['public']['Tables']['content_reviews']['Update']
 export type DbCustomCollectionItemsUpdate = Database['public']['Tables']['custom_collection_items']['Update']
@@ -25805,7 +26164,6 @@ export type DbQuestionSourceLinksUpdate = Database['public']['Tables']['question
 export type DbQuestionTopicCategoriesUpdate = Database['public']['Tables']['question_topic_categories']['Update']
 export type DbQuestionTopicsUpdate = Database['public']['Tables']['question_topics']['Update']
 export type DbQuestionsUpdate = Database['public']['Tables']['questions']['Update']
-export type DbQuestionsTestUpdate = Database['public']['Tables']['questions_test']['Update']
 export type DbQuizAttemptsUpdate = Database['public']['Tables']['quiz_attempts']['Update']
 export type DbRaffleEntriesUpdate = Database['public']['Tables']['raffle_entries']['Update']
 export type DbRepresentativeContentMappingUpdate = Database['public']['Tables']['representative_content_mapping']['Update']
@@ -25823,6 +26181,7 @@ export type DbScenarioResourcesUpdate = Database['public']['Tables']['scenario_r
 export type DbScenarioSituationsUpdate = Database['public']['Tables']['scenario_situations']['Update']
 export type DbScenariosUpdate = Database['public']['Tables']['scenarios']['Update']
 export type DbScheduledContentJobsUpdate = Database['public']['Tables']['scheduled_content_jobs']['Update']
+export type DbSearchAnalyticsDailyUpdate = Database['public']['Tables']['search_analytics_daily']['Update']
 export type DbShareableGiftLinksUpdate = Database['public']['Tables']['shareable_gift_links']['Update']
 export type DbShareableLinkClaimsUpdate = Database['public']['Tables']['shareable_link_claims']['Update']
 export type DbSharedCollectionAccessUpdate = Database['public']['Tables']['shared_collection_access']['Update']
@@ -25872,6 +26231,7 @@ export type DbUserCategorySkillsUpdate = Database['public']['Tables']['user_cate
 export type DbUserCollectionProgressUpdate = Database['public']['Tables']['user_collection_progress']['Update']
 export type DbUserContentAnnotationsUpdate = Database['public']['Tables']['user_content_annotations']['Update']
 export type DbUserContentConnectionsUpdate = Database['public']['Tables']['user_content_connections']['Update']
+export type DbUserContentViewsUpdate = Database['public']['Tables']['user_content_views']['Update']
 export type DbUserCreditsUpdate = Database['public']['Tables']['user_credits']['Update']
 export type DbUserCustomDecksUpdate = Database['public']['Tables']['user_custom_decks']['Update']
 export type DbUserDeckContentUpdate = Database['public']['Tables']['user_deck_content']['Update']
@@ -25885,6 +26245,7 @@ export type DbUserGenerationUsageUpdate = Database['public']['Tables']['user_gen
 export type DbUserIntegrationsUpdate = Database['public']['Tables']['user_integrations']['Update']
 export type DbUserLearningGoalsUpdate = Database['public']['Tables']['user_learning_goals']['Update']
 export type DbUserLearningInsightsUpdate = Database['public']['Tables']['user_learning_insights']['Update']
+export type DbUserLearningPatternsUpdate = Database['public']['Tables']['user_learning_patterns']['Update']
 export type DbUserLocationsUpdate = Database['public']['Tables']['user_locations']['Update']
 export type DbUserNotificationSubscriptionsUpdate = Database['public']['Tables']['user_notification_subscriptions']['Update']
 export type DbUserOnboardingStateUpdate = Database['public']['Tables']['user_onboarding_state']['Update']
@@ -25899,6 +26260,8 @@ export type DbUserRepresentativesUpdate = Database['public']['Tables']['user_rep
 export type DbUserRolesUpdate = Database['public']['Tables']['user_roles']['Update']
 export type DbUserScenarioAttemptsUpdate = Database['public']['Tables']['user_scenario_attempts']['Update']
 export type DbUserScenarioDecisionsUpdate = Database['public']['Tables']['user_scenario_decisions']['Update']
+export type DbUserSearchAnalyticsUpdate = Database['public']['Tables']['user_search_analytics']['Update']
+export type DbUserSearchHistoryUpdate = Database['public']['Tables']['user_search_history']['Update']
 export type DbUserSkillAssessmentCriteriaUpdate = Database['public']['Tables']['user_skill_assessment_criteria']['Update']
 export type DbUserSkillPreferencesUpdate = Database['public']['Tables']['user_skill_preferences']['Update']
 export type DbUserSkillProgressUpdate = Database['public']['Tables']['user_skill_progress']['Update']
@@ -25945,6 +26308,7 @@ export type DbPublishedCollectionsView = Database['public']['Views']['published_
 export type DbQuestionFeedbackStatsView = Database['public']['Views']['question_feedback_stats']['Row']
 export type DbQuestionResponseStatsView = Database['public']['Views']['question_response_stats']['Row']
 export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
+export type DbQuestionTopicsFewQuestionsView = Database['public']['Views']['question_topics_few_questions']['Row']
 export type DbRecentUrlFailuresView = Database['public']['Views']['recent_url_failures']['Row']
 export type DbResponseTimeAnalyticsView = Database['public']['Views']['response_time_analytics']['Row']
 export type DbReviewsWithReviewerView = Database['public']['Views']['reviews_with_reviewer']['Row']

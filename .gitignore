@@ -129,7 +129,7 @@ lib/database.types.ts.backup.*
 # Sandbox - Demo and test pages for development
 /app/sandbox/
 
-# Test and Demo Routes - Development only
+# Test, Demo, and Example Routes - Development only
 /app/test-*/
 /app/*-demo/
 /app/admin-content-demo/
@@ -138,6 +138,13 @@ lib/database.types.ts.backup.*
 /app/news-ticker-demo/
 /app/npc-demo/
 /app/survey-demo/
+
+# Test and Debug Components
+/components/debug/
+/components/examples/
+*-demo.tsx
+*-test.tsx
+*-example.tsx
 
 # Admin Panel - Exclude entire admin system from deployment
 /app/admin/
@@ -153,29 +160,47 @@ ADMIN_MIGRATION.md
 /app/test-ai-extraction/
 /app/test-analytics/
 /app/test-auth-fix/
+/app/test-calendar-sync/
 /app/test-classroom-setup/
 /app/test-dynamic-images/
 /app/test-educational-access/
 /app/test-email-preferences-flow/
 /app/test-ghost-player-fix/
 /app/test-gift-analytics/
+/app/test-guest-debug/
 /app/test-heartbeat-system/
+/app/test-highlighting/
 /app/test-institutional-integration/
 /app/test-jsonb-translation/
 /app/test-localStorage-fix/
+/app/test-location-civic/
+/app/test-mailerlite/
 /app/test-media-bias-analysis/
 /app/test-multi-lms-integration/
 /app/test-multiplayer/
 /app/test-multiplayer-debug/
 /app/test-multiplayer-modes/
 /app/test-npc-integration/
+/app/test-npc-rls/
 /app/test-plunk-integration/
+/app/test-quiz-navigation/
 /app/test-room-management/
 /app/test-source-maintenance/
 /app/test-stripe/
 /app/test-toast/
 /app/test-translation/
 /app/test-tts/
+/app/test-ui-fixes/
+
+# Development and Testing Directories
+/test-output/
+/optimization-reports/
+/generated/
+
+# Hooks and utilities for testing
+/hooks/*-example.tsx
+/hooks/*-test.ts
+/hooks/*-demo.ts
 /apps/*
 /packages/
 /migrations/

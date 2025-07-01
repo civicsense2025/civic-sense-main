@@ -16,27 +16,97 @@ optimization-reports/
 __tests__/
 *.test.ts
 *.test.js
+*.test.tsx
+*.spec.ts
+*.spec.js
+*.spec.tsx
 
 # Large generated files and database
 generated/
 *.sql
 migrations/
 database/
+supabase/migrations/
 localhost_*.json
 
 # Documentation (keep main README)
 docs/
 *.md
 !README.md
+CONGRESSIONAL_PHOTO_SETUP.md
+DEPLOYMENT.md
 
 # Development configuration
 docker-compose.yml
 Dockerfile*
 .env.docker
+.env.example
+.env.template
 environment-template.txt
 
 # Large dependencies that aren't needed in production
 node_modules/@anthropic-ai/
 node_modules/openai/
 node_modules/@google-cloud/
-node_modules/deepl-node/ 
+node_modules/deepl-node/
+
+# Additional exclusions to reduce file count
+.git/
+.next/
+.vercel/
+apps/mobile/
+packages/
+.cursor/
+hooks/use-*example*
+components/debug/
+components/examples/
+lib/debug/
+
+# Test and demo files
+**/demo/**
+**/test/**
+**/*-demo.tsx
+**/*-test.tsx
+**/*-example.tsx
+
+# Build artifacts and cache
+.turbo/
+.pnpm-cache/
+.cache/
+dist/
+build/
+out/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*~ 

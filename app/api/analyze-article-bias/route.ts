@@ -1,20 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
-import { createClient } from '@supabase/supabase-js'
-import { getBiasDimensions } from '@/lib/media-bias-engine'
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+interface BiasAnalysisRequest {
+  articleUrl: string
+  organizationId: string
+  sourceMetadataId?: string
+}
 
-// Server-side Supabase client with service role
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+export async function POST(request: NextRequest) {
+  // Early return if AI features are disabled
+  if (process.env.DISABLE_AI_FEATURES === 'true') {
+    return NextResponse.json(
+      { error: 'AI features are disabled in this deployment' },
+      { status: 503 }
+    )
+  }
 
-const BIAS_ANALYSIS_PROMPT = `You are CivicSense's media bias analyst. We tell uncomfortable truths about how power actually works in America.
+  try {
+    // Dynamic imports to prevent loading AI dependencies when disabled
+    const [
+      { default: OpenAI },
+      { createClient },
+      { getBiasDimensions }
+    ] = await Promise.all([
+      import('openai'),
+      import('@supabase/supabase-js'),
+      import('@/lib/media-bias-engine')
+    ])
+
+    // Initialize OpenAI
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+
+    // Server-side Supabase client with service role
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const BIAS_ANALYSIS_PROMPT = `You are CivicSense's media bias analyst. We tell uncomfortable truths about how power actually works in America.
 
 Analyze this article with our brand voice:
 - Uncompromisingly honest about bias and manipulation techniques
@@ -51,14 +75,6 @@ Remember: We're not afraid to call out bias from ANY source. If the New York Tim
 
 Be specific. Name names. Show receipts. This is civic education for people who want to understand power, not just consume news.`
 
-interface BiasAnalysisRequest {
-  articleUrl: string
-  organizationId: string
-  sourceMetadataId?: string
-}
-
-export async function POST(request: NextRequest) {
-  try {
     const { articleUrl, organizationId, sourceMetadataId }: BiasAnalysisRequest = await request.json()
     
     if (!articleUrl || !organizationId) {
@@ -151,7 +167,7 @@ Format your response as JSON with these exact fields:
 
     // Step 2: Get bias dimensions from database
     const dimensions = await getBiasDimensions()
-    const dimensionMap = new Map(dimensions.map(d => [d.dimension_slug, d]))
+    const dimensionMap = new Map(dimensions.map((d: any) => [d.dimension_slug, d]))
 
     // Step 3: Format dimension scores for database
     const dimensionScores: Record<string, any> = {}
@@ -174,6 +190,222 @@ Format your response as JSON with these exact fields:
           indicators: analysis.bias_scores[mapping.key].evidence
         }
       }
+    }
+
+    // Helper functions
+    function calculateOverallBias(biasScores: any): number {
+      // Weight different bias types
+      const weights = {
+        political_lean: 0.3,
+        factual_accuracy: 0.3,
+        sensationalism: 0.2,
+        corporate_influence: 0.1,
+        establishment_bias: 0.1
+      }
+      
+      let totalBias = 0
+      totalBias += Math.abs(biasScores.political_lean.score) * weights.political_lean
+      totalBias += (100 - biasScores.factual_accuracy.score) * weights.factual_accuracy
+      totalBias += biasScores.sensationalism.score * weights.sensationalism
+      totalBias += biasScores.corporate_influence.score * weights.corporate_influence
+      totalBias += Math.abs(biasScores.establishment_bias.score) * weights.establishment_bias
+      
+      return Math.round(totalBias)
+    }
+
+    function calculateOverallConfidence(biasScores: any): number {
+      const scores = Object.values(biasScores).map((s: any) => s.confidence)
+      return scores.reduce((a: number, b: number) => a + b, 0) / scores.length
+    }
+
+    function calculateSourceDiversity(factualClaims: any[]): number {
+      if (!factualClaims || factualClaims.length === 0) return 0
+      
+      const verifiableClaims = factualClaims.filter(c => c.verifiable)
+      const diversityScore = (verifiableClaims.length / factualClaims.length) * 100
+      
+      return Math.round(diversityScore)
+    }
+
+    function identifyPrimaryConcern(analysis: any): string {
+      const concerns = []
+      
+      if (Math.abs(analysis.bias_scores.political_lean.score) > 66) {
+        concerns.push('extreme political bias')
+      }
+      if (analysis.bias_scores.factual_accuracy.score < 50) {
+        concerns.push('factual accuracy issues')
+      }
+      if (analysis.bias_scores.sensationalism.score > 70) {
+        concerns.push('emotional manipulation')
+      }
+      if (analysis.bias_scores.corporate_influence.score > 70) {
+        concerns.push('corporate capture')
+      }
+      
+      return concerns[0] || 'moderate bias detected'
+    }
+
+    function generateShareMessage(analysis: any): string {
+      const concern = identifyPrimaryConcern(analysis)
+      return `This article shows ${concern}. Here's what they don't want you to know: ${analysis.metadata.title.substring(0, 50)}...`
+    }
+
+    // Save civic education content to database
+    async function saveCivicEducationContent(civicContent: any, analysisId: string) {
+      const results = {
+        question_topics: { created: 0, existing: 0 },
+        public_figures: { created: 0, existing: 0 },
+        events: { created: 0, existing: 0 }
+      }
+
+      try {
+        // Save question topics
+        if (civicContent.question_topics && civicContent.question_topics.length > 0) {
+          for (const topic of civicContent.question_topics) {
+            try {
+              // Check if topic already exists
+              const { data: existingTopic } = await supabase
+                .from('question_topics')
+                .select('id')
+                .eq('topic_title', topic.name)
+                .single()
+
+              if (existingTopic) {
+                results.question_topics.existing++
+              } else {
+                // Create new topic with proper schema
+                const topicId = `ai-extracted-${Date.now()}-${topic.name.toLowerCase().replace(/\s+/g, '-')}`
+                const { data: newTopic, error } = await supabase
+                  .from('question_topics')
+                  .insert({
+                    topic_id: topicId,
+                    topic_title: topic.name,
+                    description: topic.description,
+                    why_this_matters: `Understanding ${topic.name} is crucial for civic participation and democratic engagement.`,
+                    emoji: '🏛️', // Default emoji for AI-extracted topics
+                    categories: [topic.category],
+                    is_active: true,
+                    source_type: 'ai_extracted',
+                    source_analysis_id: analysisId,
+                    ai_extraction_metadata: {
+                      difficulty: topic.difficulty,
+                      level: topic.level,
+                      extraction_date: new Date().toISOString()
+                    }
+                  })
+                  .select('id')
+                  .single()
+
+                if (!error && newTopic) {
+                  results.question_topics.created++
+                }
+              }
+            } catch (error) {
+              console.error('Error saving question topic:', error)
+            }
+          }
+        }
+
+        // Save public figures
+        if (civicContent.public_figures && civicContent.public_figures.length > 0) {
+          for (const figure of civicContent.public_figures) {
+            try {
+              // Check if figure already exists
+              const { data: existingFigure } = await supabase
+                .from('public_figures')
+                .select('id')
+                .eq('full_name', figure.name)
+                .single()
+
+              if (existingFigure) {
+                results.public_figures.existing++
+              } else {
+                // Create new figure with proper schema
+                const figureSlug = figure.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+                const { data: newFigure, error } = await supabase
+                  .from('public_figures')
+                  .insert({
+                    full_name: figure.name,
+                    display_name: figure.name,
+                    slug: figureSlug,
+                    primary_role_category: figure.role,
+                    party_affiliation: figure.party,
+                    current_positions: [figure.role],
+                    civicsense_priority: 1, // Default priority for AI-extracted figures
+                    content_review_status: 'ai_generated',
+                    source_type: 'ai_extracted',
+                    source_analysis_id: analysisId,
+                    ai_extraction_metadata: {
+                      level: figure.level,
+                      extraction_date: new Date().toISOString(),
+                      original_description: figure.description
+                    }
+                  })
+                  .select('id')
+                  .single()
+
+                if (!error && newFigure) {
+                  results.public_figures.created++
+                }
+              }
+            } catch (error) {
+              console.error('Error saving public figure:', error)
+            }
+          }
+        }
+
+        // Save events
+        if (civicContent.events && civicContent.events.length > 0) {
+          for (const event of civicContent.events) {
+            try {
+              // Check if event already exists
+              const { data: existingEvent } = await supabase
+                .from('events')
+                .select('topic_id')
+                .eq('topic_title', event.name)
+                .single()
+
+              if (existingEvent) {
+                results.events.existing++
+              } else {
+                // Create new event with proper schema
+                const eventTopicId = `ai-event-${Date.now()}-${event.name.toLowerCase().replace(/\s+/g, '-')}`
+                const { data: newEvent, error } = await supabase
+                  .from('events')
+                  .insert({
+                    topic_id: eventTopicId,
+                    topic_title: event.name,
+                    date: event.date || new Date().toISOString().split('T')[0],
+                    description: event.description,
+                    why_this_matters: `This event is significant because it affects ${event.significance} level civic processes and democratic participation.`,
+                    sources: { ai_extracted: true, analysis_id: analysisId },
+                    source_type: 'ai_extracted',
+                    source_analysis_id: analysisId,
+                    ai_extraction_metadata: {
+                      event_type: event.type,
+                      significance: event.significance,
+                      extraction_date: new Date().toISOString()
+                    }
+                  })
+                  .select('topic_id')
+                  .single()
+
+                if (!error && newEvent) {
+                  results.events.created++
+                }
+              }
+            } catch (error) {
+              console.error('Error saving event:', error)
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error('Error in saveCivicEducationContent:', error)
+      }
+
+      return results
     }
 
     // Step 4: Calculate overall bias metrics
@@ -240,220 +472,4 @@ Format your response as JSON with these exact fields:
       { status: 500 }
     )
   }
-}
-
-// Helper functions
-function calculateOverallBias(biasScores: any): number {
-  // Weight different bias types
-  const weights = {
-    political_lean: 0.3,
-    factual_accuracy: 0.3,
-    sensationalism: 0.2,
-    corporate_influence: 0.1,
-    establishment_bias: 0.1
-  }
-  
-  let totalBias = 0
-  totalBias += Math.abs(biasScores.political_lean.score) * weights.political_lean
-  totalBias += (100 - biasScores.factual_accuracy.score) * weights.factual_accuracy
-  totalBias += biasScores.sensationalism.score * weights.sensationalism
-  totalBias += biasScores.corporate_influence.score * weights.corporate_influence
-  totalBias += Math.abs(biasScores.establishment_bias.score) * weights.establishment_bias
-  
-  return Math.round(totalBias)
-}
-
-function calculateOverallConfidence(biasScores: any): number {
-  const scores = Object.values(biasScores).map((s: any) => s.confidence)
-  return scores.reduce((a: number, b: number) => a + b, 0) / scores.length
-}
-
-function calculateSourceDiversity(factualClaims: any[]): number {
-  if (!factualClaims || factualClaims.length === 0) return 0
-  
-  const verifiableClaims = factualClaims.filter(c => c.verifiable)
-  const diversityScore = (verifiableClaims.length / factualClaims.length) * 100
-  
-  return Math.round(diversityScore)
-}
-
-function identifyPrimaryConcern(analysis: any): string {
-  const concerns = []
-  
-  if (Math.abs(analysis.bias_scores.political_lean.score) > 66) {
-    concerns.push('extreme political bias')
-  }
-  if (analysis.bias_scores.factual_accuracy.score < 50) {
-    concerns.push('factual accuracy issues')
-  }
-  if (analysis.bias_scores.sensationalism.score > 70) {
-    concerns.push('emotional manipulation')
-  }
-  if (analysis.bias_scores.corporate_influence.score > 70) {
-    concerns.push('corporate capture')
-  }
-  
-  return concerns[0] || 'moderate bias detected'
-}
-
-function generateShareMessage(analysis: any): string {
-  const concern = identifyPrimaryConcern(analysis)
-  return `This article shows ${concern}. Here's what they don't want you to know: ${analysis.metadata.title.substring(0, 50)}...`
-}
-
-// Save civic education content to database
-async function saveCivicEducationContent(civicContent: any, analysisId: string) {
-  const results = {
-    question_topics: { created: 0, existing: 0 },
-    public_figures: { created: 0, existing: 0 },
-    events: { created: 0, existing: 0 }
-  }
-
-  try {
-    // Save question topics
-    if (civicContent.question_topics && civicContent.question_topics.length > 0) {
-      for (const topic of civicContent.question_topics) {
-        try {
-          // Check if topic already exists
-          const { data: existingTopic } = await supabase
-            .from('question_topics')
-            .select('id')
-            .eq('topic_title', topic.name)
-            .single()
-
-          if (existingTopic) {
-            results.question_topics.existing++
-          } else {
-            // Create new topic with proper schema
-            const topicId = `ai-extracted-${Date.now()}-${topic.name.toLowerCase().replace(/\s+/g, '-')}`
-            const { data: newTopic, error } = await supabase
-              .from('question_topics')
-              .insert({
-                topic_id: topicId,
-                topic_title: topic.name,
-                description: topic.description,
-                why_this_matters: `Understanding ${topic.name} is crucial for civic participation and democratic engagement.`,
-                emoji: '🏛️', // Default emoji for AI-extracted topics
-                categories: [topic.category],
-                is_active: true,
-                source_type: 'ai_extracted',
-                source_analysis_id: analysisId,
-                ai_extraction_metadata: {
-                  difficulty: topic.difficulty,
-                  level: topic.level,
-                  extraction_date: new Date().toISOString()
-                }
-              })
-              .select('id')
-              .single()
-
-            if (!error && newTopic) {
-              results.question_topics.created++
-            }
-          }
-        } catch (error) {
-          console.error('Error saving question topic:', error)
-        }
-      }
-    }
-
-    // Save public figures
-    if (civicContent.public_figures && civicContent.public_figures.length > 0) {
-      for (const figure of civicContent.public_figures) {
-        try {
-          // Check if figure already exists
-          const { data: existingFigure } = await supabase
-            .from('public_figures')
-            .select('id')
-            .eq('full_name', figure.name)
-            .single()
-
-          if (existingFigure) {
-            results.public_figures.existing++
-          } else {
-            // Create new figure with proper schema
-            const figureSlug = figure.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-            const { data: newFigure, error } = await supabase
-              .from('public_figures')
-              .insert({
-                full_name: figure.name,
-                display_name: figure.name,
-                slug: figureSlug,
-                primary_role_category: figure.role,
-                party_affiliation: figure.party,
-                current_positions: [figure.role],
-                civicsense_priority: 1, // Default priority for AI-extracted figures
-                content_review_status: 'ai_generated',
-                source_type: 'ai_extracted',
-                source_analysis_id: analysisId,
-                ai_extraction_metadata: {
-                  level: figure.level,
-                  extraction_date: new Date().toISOString(),
-                  original_description: figure.description
-                }
-              })
-              .select('id')
-              .single()
-
-            if (!error && newFigure) {
-              results.public_figures.created++
-            }
-          }
-        } catch (error) {
-          console.error('Error saving public figure:', error)
-        }
-      }
-    }
-
-    // Save events
-    if (civicContent.events && civicContent.events.length > 0) {
-      for (const event of civicContent.events) {
-        try {
-          // Check if event already exists
-          const { data: existingEvent } = await supabase
-            .from('events')
-            .select('topic_id')
-            .eq('topic_title', event.name)
-            .single()
-
-          if (existingEvent) {
-            results.events.existing++
-          } else {
-            // Create new event with proper schema
-            const eventTopicId = `ai-event-${Date.now()}-${event.name.toLowerCase().replace(/\s+/g, '-')}`
-            const { data: newEvent, error } = await supabase
-              .from('events')
-              .insert({
-                topic_id: eventTopicId,
-                topic_title: event.name,
-                date: event.date || new Date().toISOString().split('T')[0],
-                description: event.description,
-                why_this_matters: `This event is significant because it affects ${event.significance} level civic processes and democratic participation.`,
-                sources: { ai_extracted: true, analysis_id: analysisId },
-                source_type: 'ai_extracted',
-                source_analysis_id: analysisId,
-                ai_extraction_metadata: {
-                  event_type: event.type,
-                  significance: event.significance,
-                  extraction_date: new Date().toISOString()
-                }
-              })
-              .select('topic_id')
-              .single()
-
-            if (!error && newEvent) {
-              results.events.created++
-            }
-          }
-        } catch (error) {
-          console.error('Error saving event:', error)
-        }
-      }
-    }
-
-  } catch (error) {
-    console.error('Error in saveCivicEducationContent:', error)
-  }
-
-  return results
 } 
