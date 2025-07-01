@@ -1,15 +1,13 @@
 /**
- * Unified Admin Access System for CivicSense
+ * Server-side Admin Access System for CivicSense
  * 
- * This replaces the complex multi-layer system with a single, clean interface
- * that works both server-side and client-side.
+ * This handles admin authentication for middleware and API routes.
+ * Separated from client-side code to avoid build issues.
  */
 
-'use client'
+import { createClient } from '@/lib/supabase/server'
 
-import React from 'react'
-
-// Simple role definitions
+// Simple role definitions (keeping consistent with client)
 export const ROLES = {
   USER: 'user',
   ADMIN: 'admin', 
@@ -37,8 +35,6 @@ export async function checkAdminAccessServer(): Promise<AdminCheck> {
   }
 
   try {
-    // Dynamic import for server-side only
-    const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
 
     // Get current user
@@ -68,70 +64,6 @@ export async function checkAdminAccessServer(): Promise<AdminCheck> {
   } catch (error) {
     console.error('Server admin access check failed:', error)
     return defaultResult
-  }
-}
-
-/**
- * Client-side admin checking for React components
- */
-export async function checkAdminAccessClient(): Promise<AdminCheck> {
-  const defaultResult: AdminCheck = {
-    isAdmin: false,
-    isSuperAdmin: false,
-    role: ROLES.USER
-  }
-
-  try {
-    // Only import client on the client side
-    if (typeof window === 'undefined') {
-      return defaultResult
-    }
-
-    const { supabase } = await import('@/lib/supabase/client')
-
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return defaultResult
-    }
-
-    // Check user role in user_roles table
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    const role = (roleData?.role as UserRole) || ROLES.USER
-    
-    return {
-      isAdmin: role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN,
-      isSuperAdmin: role === ROLES.SUPER_ADMIN,
-      role,
-      userId: user.id,
-      email: user.email
-    }
-
-  } catch (error) {
-    console.error('Client admin access check failed:', error)
-    return defaultResult
-  }
-}
-
-/**
- * Universal admin checking that works in both environments
- */
-export async function checkAdminAccess(): Promise<AdminCheck> {
-  // For server-side, delegate to server functions
-  if (typeof window === 'undefined') {
-    return {
-      isAdmin: false,
-      isSuperAdmin: false,
-      role: ROLES.USER
-    }
-  } else {
-    return checkAdminAccessClient()
   }
 }
 
@@ -215,24 +147,4 @@ export async function requireSuperAdmin(request?: any): Promise<{
       })
     }
   }
-}
-
-/**
- * React hook for client-side admin checking
- */
-export function useAdmin() {
-  const [adminStatus, setAdminStatus] = React.useState<AdminCheck>({
-    isAdmin: false,
-    isSuperAdmin: false, 
-    role: ROLES.USER
-  })
-  const [loading, setLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    checkAdminAccessClient()
-      .then(setAdminStatus)
-      .finally(() => setLoading(false))
-  }, [])
-
-  return { ...adminStatus, loading }
 } 

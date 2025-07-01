@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { requireAdmin, requireSuperAdmin } from '@/lib/admin-access'
+import { requireAdmin, requireSuperAdmin } from '@/lib/admin-access-server'
 
 // Cache admin route patterns for performance
 const ADMIN_ROUTE_CACHE = new Set([

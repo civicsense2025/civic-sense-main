@@ -57,7 +57,9 @@ export async function POST(
     }
 
     // Update progress using the database function
-    const { error: updateError } = await supabase
+    // Using cast to any because custom RPC function isn't in generated types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const { error: updateError } = await (supabase as any)
       .rpc('update_lesson_step_progress', {
         p_user_id: user.id,
         p_lesson_step_id: body.lesson_step_id,
@@ -77,7 +79,8 @@ export async function POST(
     }
 
     // Get the updated progress
-    const { data: updatedProgress, error: progressError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const { data: updatedProgress, error: progressError } = await (supabase as any)
       .from('user_lesson_step_progress')
       .select('*')
       .eq('user_id', user.id)
@@ -90,7 +93,8 @@ export async function POST(
     }
 
     // Also return updated collection progress
-    const { data: collectionProgress } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const { data: collectionProgress } = await (supabase as any)
       .from('user_collection_progress')
       .select('progress_percentage, completed_at')
       .eq('user_id', user.id)
@@ -142,7 +146,8 @@ export async function GET(
     }
 
     // Get all progress for this user and collection
-    const { data: progressData, error: progressError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const { data: progressData, error: progressError } = await (supabase as any)
       .from('user_lesson_step_progress')
       .select(`
         *,
@@ -158,7 +163,8 @@ export async function GET(
     }
 
     // Get collection progress summary
-    const { data: collectionProgress } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const { data: collectionProgress } = await (supabase as any)
       .from('user_collection_progress')
       .select('*')
       .eq('user_id', user.id)
