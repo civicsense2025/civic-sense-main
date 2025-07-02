@@ -17,7 +17,22 @@ import { usePremium } from "@civicsense/shared/hooks/usePremium"
 import { enhancedProgressOperations, type EnhancedUserProgress } from "@civicsense/shared/lib/enhanced-gamification"
 import { envFeatureFlags } from '@civicsense/shared/lib/env-feature-flags'
 import Link from "next/link"
-import { Icons } from "@/components/icons"
+// TEMPORARILY DISABLED: Web app specific icons during monorepo migration
+// import { Icons } from "@/components/icons"
+
+// Temporary icon stubs using lucide-react
+const Icons = {
+  crown: Crown,
+  flag: FileText,
+  brain: Brain,
+  activity: BarChart3,
+  layout: BarChart3,
+  settings: Settings,
+  shield: Settings,
+  sun: Target,
+  moon: Target,
+  logOut: LogOut
+}
 import { useFeatureFlag } from '@civicsense/shared/hooks/useFeatureFlags-statsig'
 
 interface UserMenuProps {

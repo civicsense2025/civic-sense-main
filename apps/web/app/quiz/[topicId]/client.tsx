@@ -5,23 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@civicsense/ui-web"
 import { Header } from '@civicsense/ui-web'
-import { QuizLoadingScreen } from "@civicsense/ui-web/components/quiz/quiz-loading-screen"
-import { TopicInfo } from "@civicsense/ui-web/components/quiz/topic-info"
-import { useAuth } from "@civicsense/ui-web/components/auth/auth-provider"
+import { QuizLoadingScreen } from "@civicsense/ui-web/src/quiz/quiz-loading-screen"
+import { TopicInfo } from "@civicsense/ui-web/src/quiz/topic-info"
+import { useAuth } from "@civicsense/ui-web/src/auth/auth-provider"
 import { AuthDialog } from '@civicsense/ui-web'
-import { usePremium } from "@civicsense/shared/hooks/usePremium"
-import { dataService } from "@civicsense/shared/lib/data-service"
-import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"
-import { useIsMobile } from "@civicsense/shared/hooks/useIsMobile"
-import type { TopicMetadata, QuizQuestion } from "@civicsense/shared/lib/quiz-data"
-import type { QuizGameMode, QuizModeConfig } from '@civicsense/shared/lib/types/quiz'
-import { FULL_MODE_CONFIGS } from '@civicsense/shared/lib/types/quiz'
-import { cn } from "@civicsense/shared/lib/utils"
+import { usePremium } from "@civicsense/shared"
+import { dataService } from "@civicsense/shared"
+import { useGuestAccess } from "@civicsense/shared"
+import { useIsMobile } from "@civicsense/shared"
+import type { TopicMetadata, QuizQuestion } from "@civicsense/shared"
+import type { QuizGameMode, QuizModeConfig } from '@civicsense/shared'
+import { FULL_MODE_CONFIGS } from '@civicsense/shared'
+import { cn } from "@civicsense/shared"
 import { toast } from '@civicsense/ui-web'
-import { useAnalytics } from "@civicsense/shared/utils/analytics"
-import { useGlobalAudio } from "@civicsense/ui-web/components/global-audio-controls"
-import type { PremiumFeature } from "@civicsense/shared/lib/types/premium"
-import { PvPGameEngine } from "@civicsense/ui-web/components/multiplayer/pvp-game-engine"
+// TEMPORARILY DISABLED: Analytics has web dependencies  
+// import { useAnalytics } from "@civicsense/shared/utils/analytics"
+import { useGlobalAudio } from "@civicsense/ui-web/src/global-audio-controls"
+import type { PremiumFeature } from "@civicsense/shared"
+import { PvPGameEngine } from "@civicsense/ui-web/src/multiplayer/pvp-game-engine"
 
 interface QuizPageProps {
   params: {
@@ -44,7 +45,12 @@ export default function QuizPageClient({ params, searchParams = {} }: QuizPagePr
   const urlSearchParams = useSearchParams()
   const { user } = useAuth()
   const { isPremium, hasFeatureAccess } = usePremium()
-  const { trackEvent } = useAnalytics()
+  // TEMPORARILY DISABLED: Analytics hook disabled
+  // const { trackEvent } = useAnalytics()
+  const trackEvent = (event: string, value?: number, properties?: any) => {
+    // Temporary stub - analytics disabled during monorepo migration
+    console.log('Analytics disabled:', event, value, properties)
+  }
   const { autoPlayEnabled, playText } = useGlobalAudio()
   const isMobile = useIsMobile()
   const { recordQuizAttempt, quizAttemptsToday, hasCompletedTopic, GUEST_DAILY_QUIZ_LIMIT } = useGuestAccess()

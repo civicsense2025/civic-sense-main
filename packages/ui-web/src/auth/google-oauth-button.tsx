@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "../ui/button"
-import { authHelpers } from "@civicsense/shared/lib/supabase/client"
+import { authHelpers } from "@civicsense/shared/src/lib/supabase/client"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
 

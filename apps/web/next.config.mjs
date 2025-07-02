@@ -13,8 +13,15 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   reactStrictMode: true,
-  // Move transpilePackages out of experimental (Next.js 15+ requirement)
-  transpilePackages: ['@civicsense/shared', '@civicsense/ui-shared', '@civicsense/ui-web'],
+  
+  // CRITICAL: Transpile workspace packages for Next.js 15
+  transpilePackages: [
+    '@civicsense/shared',
+    '@civicsense/ui-shared', 
+    '@civicsense/ui-web',
+    '@civicsense/ui-mobile'
+  ],
+  
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -49,89 +56,60 @@ const nextConfig = {
       },
     ],
   },
+  
   experimental: {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react', '@supabase/supabase-js'],
     serverActions: {
       bodySizeLimit: '10mb',
     },
   },
-  // Move turbo config to turbopack (for Next.js 15+)
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
+  
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
   webpack: (config, { dev, isServer, webpack }) => {
-    // Find the workspace root
-    const projectRoot = process.cwd()
-    const workspaceRoot = path.resolve(projectRoot, '../..')
-    
-    // Configure module resolution for monorepo
+    // Simplified webpack config for monorepo support
     config.resolve = config.resolve || {}
-    config.resolve.symlinks = false // Important for pnpm workspaces
+    config.resolve.symlinks = false // Critical for pnpm workspaces
     
-    // Add workspace packages to resolve modules
+    // Add workspace root to module resolution
+    const workspaceRoot = path.resolve(process.cwd(), '../..')
     config.resolve.modules = [
       ...(config.resolve.modules || []),
       path.resolve(workspaceRoot, 'node_modules'),
-      path.resolve(projectRoot, 'node_modules'),
       'node_modules'
     ]
     
-    // Configure watchOptions for better monorepo support
-    config.watchOptions = {
-      ...config.watchOptions,
-      followSymlinks: true,
-      ignored: /node_modules\/(?!(@civicsense)\/).*/,
-    }
+    // Ensure workspace packages are transpiled
+    config.module = config.module || { rules: [] }
+    config.module.rules = config.module.rules || []
     
-    // Add workspace package aliases
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@civicsense/shared': path.resolve(workspaceRoot, 'packages/shared'),
-      '@civicsense/ui-shared': path.resolve(workspaceRoot, 'packages/ui-shared'),
-      '@civicsense/ui-web': path.resolve(workspaceRoot, 'packages/ui-web'),
-    }
-    
-    // Ensure workspace packages are included in compilation
+    // Add rule to transpile workspace packages
     config.module.rules.push({
       test: /\.(ts|tsx|js|jsx)$/,
       include: [
-        path.resolve(workspaceRoot, 'packages'),
+        path.resolve(workspaceRoot, 'packages/shared'),
+        path.resolve(workspaceRoot, 'packages/ui-shared'),
+        path.resolve(workspaceRoot, 'packages/ui-web'),
+        path.resolve(workspaceRoot, 'packages/ui-mobile'),
       ],
-                      use: {
-          loader: 'next/dist/build/webpack/loaders/next-swc-loader.js',
-          options: {
-            isServer,
-            appDir: path.resolve(projectRoot, 'app'), // Standard App Router structure
-            hasReactRefresh: dev && !isServer,
-            nextConfig: nextConfig,
-          },
+      use: {
+        loader: 'next/dist/build/webpack/loaders/next-swc-loader.js',
+        options: {
+          isServer,
+          hasReactRefresh: dev && !isServer,
         },
+      },
     })
 
-    // Basic webpack configuration for compatibility
+    // Suppress warnings for better build output
     config.ignoreWarnings = [
       /Critical dependency: the request of a dependency is an expression/,
       /Module not found: Can't resolve/,
     ]
     
-    config.stats = {
-      ...config.stats,
-      warnings: false,
-      warningsFilter: [
-        /node_modules\/@supabase\/realtime-js/,
-        /Critical dependency: the request of a dependency is an expression/,
-      ],
-    }
-
-    // Exclude AI dependencies when building for Vercel
+    // When AI features are disabled, ignore AI-related modules
     if (process.env.DISABLE_AI_FEATURES === 'true') {
       config.externals = config.externals || []
       config.externals.push({
@@ -142,32 +120,16 @@ const nextConfig = {
         'deepl-node': 'commonjs deepl-node'
       })
 
-      // Ignore AI-related modules and admin routes
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^(openai|@anthropic-ai\/sdk|@google-cloud\/(text-to-speech|translate)|deepl-node)$/,
-        }),
-        new webpack.IgnorePlugin({
-          resourceRegExp: /\/admin\//,
-        }),
-        new webpack.IgnorePlugin({
-          resourceRegExp: /\/ai\//,
-        })
-      )
-    }
-    
-    // When AI features are disabled, ignore AI-related imports in API routes only
-    if (process.env.DISABLE_AI_FEATURES === 'true' && isServer) {
-      config.plugins.push(
-        new webpack.IgnorePlugin({
-          resourceRegExp: /^(openai|@anthropic-ai\/sdk|@google\/generative-ai|deepl-node)$/,
-          contextRegExp: /app\/api\/(assistant|admin)/,
         })
       )
     }
     
     return config
   },
+  
   async redirects() {
     return [
       {
@@ -183,6 +145,7 @@ const nextConfig = {
       },
     ]
   },
+  
   async headers() {
     return [
       {
@@ -252,6 +215,7 @@ const nextConfig = {
       },
     ]
   },
+  
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

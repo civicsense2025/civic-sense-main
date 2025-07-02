@@ -1,7 +1,7 @@
 "use client"
 
 import { Header } from '@civicsense/ui-web'
-import { Container, Stack, Text } from "@civicsense/ui-web/components/ui"
+import { Container, Stack, Text } from "@civicsense/ui-web"
 import { Badge } from "@civicsense/ui-web"
 import Link from "next/link"
 

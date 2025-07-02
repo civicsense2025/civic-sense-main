@@ -7,6 +7,15 @@ import { Card } from '@civicsense/ui-web'
 import { cn } from '@civicsense/ui-web'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
+// Define the structure for crossword words
+interface CrosswordWord {
+  position: { row: number; col: number }
+  direction: 'across' | 'down'
+  word: string
+  clue: string
+  number: number
+}
+
 interface CrosswordQuestionProps {
   question: QuizQuestion
   onAnswer: (answer: string, isCorrect: boolean) => void
@@ -83,7 +92,7 @@ export function CrosswordQuestion({
     }
     
     // Mark cells with word numbers
-    words.forEach(word => {
+    words.forEach((word: CrosswordWord) => {
       const { position, direction, number } = word
       const { row, col } = position
       
@@ -109,7 +118,7 @@ export function CrosswordQuestion({
     const acrossClues: Array<{ number: number; clue: string }> = []
     const downClues: Array<{ number: number; clue: string }> = []
     
-    words.forEach(word => {
+    words.forEach((word: CrosswordWord) => {
       const { clue, direction, number } = word
       if (direction === 'across') {
         acrossClues.push({ number, clue })
@@ -127,7 +136,7 @@ export function CrosswordQuestion({
   
   // Find word by number and direction
   const findWord = useCallback((number: number, direction: 'across' | 'down') => {
-    return words.find(word => word.number === number && word.direction === direction)
+    return words.find((word: CrosswordWord) => word.number === number && word.direction === direction)
   }, [words])
   
   // Highlight cells for the active word
@@ -185,14 +194,14 @@ export function CrosswordQuestion({
     if (disabled || isSubmitted) return
     
     // Find words that include this cell
-    const acrossWord = words.find(word => 
+    const acrossWord = words.find((word: CrosswordWord) => 
       word.direction === 'across' && 
       word.position.row === row && 
       col >= word.position.col && 
       col < word.position.col + word.word.length
     )
     
-    const downWord = words.find(word => 
+    const downWord = words.find((word: CrosswordWord) => 
       word.direction === 'down' && 
       word.position.col === col && 
       row >= word.position.row && 
@@ -341,14 +350,14 @@ export function CrosswordQuestion({
     if (row < 0 || row >= rows || col < 0 || col >= cols) return
     
     // Check if cell is part of a word
-    const acrossWord = words.find(word => 
+    const acrossWord = words.find((word: CrosswordWord) => 
       word.direction === 'across' && 
       word.position.row === row && 
       col >= word.position.col && 
       col < word.position.col + word.word.length
     )
     
-    const downWord = words.find(word => 
+    const downWord = words.find((word: CrosswordWord) => 
       word.direction === 'down' && 
       word.position.col === col && 
       row >= word.position.row && 
@@ -390,7 +399,7 @@ export function CrosswordQuestion({
   
   // Check if grid is complete
   const isGridComplete = useMemo(() => {
-    for (const word of words) {
+    for (const word of words as CrosswordWord[]) {
       const { position, direction, word: correctWord } = word
       const { row, col } = position
       
@@ -418,7 +427,7 @@ export function CrosswordQuestion({
     setGrid(prevGrid => {
       const newGrid = prevGrid.map(row => [...row])
       
-      words.forEach(word => {
+      words.forEach((word: CrosswordWord) => {
         const { position, direction, word: correctWord } = word
         const { row, col } = position
         let isWordCorrect = true
@@ -455,7 +464,7 @@ export function CrosswordQuestion({
   // Determine if a cell is part of a word
   const isCellInWord = useCallback((row: number, col: number) => {
     if (isBlockedCell(row, col)) return false
-    return words.some(word => {
+    return words.some((word: CrosswordWord) => {
       const { position, direction, word: wordText } = word
       const { row: wordRow, col: wordCol } = position
       

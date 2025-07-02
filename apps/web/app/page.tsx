@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import { DailyCardStack, Calendar, AuthDialog, Header, ContinueQuizCard } from "@civicsense/ui-web"
-import { useAuth } from "@civicsense/ui-web/components/auth/auth-provider"
-import { UserMenu } from "@civicsense/ui-web/components/auth/user-menu"
-import type { CategoryType, TopicMetadata } from "@civicsense/shared/lib/quiz-data"
-import { dataService } from "@civicsense/shared/lib/data-service"
+import { useAuth } from "@civicsense/ui-web/src/auth/auth-provider"
+import { UserMenu } from "@civicsense/ui-web/src/auth/user-menu"
+import type { CategoryType, TopicMetadata } from "@civicsense/shared"
+import { dataService } from "@civicsense/shared"
 import Link from "next/link"
-import { enhancedQuizDatabase } from "@civicsense/shared/lib/quiz-database"
+import { enhancedQuizDatabase } from "@civicsense/shared/src/lib/quiz-database"
 import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 
 // Lazy load FeaturesShowcase only when needed (for non-authenticated users)
 const FeaturesShowcase = dynamic(
-  () => import('@civicsense/ui-web/components/features-showcase').then(mod => ({ 
+  () => import('@civicsense/ui-web/src/features-showcase').then(mod => ({ 
     default: mod.FeaturesShowcase || (() => null) 
   })).catch(() => ({ 
     default: () => null 
@@ -33,9 +33,9 @@ const FeaturesShowcase = dynamic(
   }
 )
 
-import { supabase } from "@civicsense/shared/lib/supabase"
+import { createClient } from "@civicsense/shared"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Button } from "@civicsense/ui-web"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "@civicsense/shared"
 
 type ViewMode = 'cards' | 'calendar'
 

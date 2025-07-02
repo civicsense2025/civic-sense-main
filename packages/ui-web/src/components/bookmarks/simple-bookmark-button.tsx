@@ -3,7 +3,7 @@
 // =============================================================================
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@/components/auth/auth-provider'
+import { useAuth } from '../auth/auth-provider'
 import { useToast } from '../ui/use-toast'
 import { Button, type ButtonProps } from '../ui/button'
 import { cn } from '../../utils'

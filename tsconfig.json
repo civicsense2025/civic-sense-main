@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/web/*"],
+      "@civicsense/shared": ["./packages/shared/src"],
+      "@civicsense/shared/*": ["./packages/shared/src/*"],
+      "@civicsense/ui-shared": ["./packages/ui-shared/src"],
+      "@civicsense/ui-shared/*": ["./packages/ui-shared/src/*"],
+      "@civicsense/ui-web": ["./packages/ui-web/src"],
+      "@civicsense/ui-web/*": ["./packages/ui-web/src/*"],
+      "@civicsense/ui-mobile": ["./packages/ui-mobile/src"],
+      "@civicsense/ui-mobile/*": ["./packages/ui-mobile/src/*"]
+    }
+  },
+  "include": [
+    "apps/*/src/**/*.ts",
+    "apps/*/src/**/*.tsx",
+    "apps/*/**/*.ts",
+    "apps/*/**/*.tsx",
+    "packages/*/src/**/*.ts", 
+    "packages/*/src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next"
+  ],
+  "references": [
+    { "path": "./apps/web" },
+    { "path": "./apps/mobile" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/ui-shared" },
+    { "path": "./packages/ui-web" },
+    { "path": "./packages/ui-mobile" }
+  ]
+} 

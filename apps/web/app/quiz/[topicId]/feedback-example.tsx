@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FeedbackDialog, FeedbackButton } from "@civicsense/ui-web/components/feedback"
+import { FeedbackDialog, FeedbackButton } from "@/components/feedback/index"
 import { Button } from "@civicsense/ui-web"
 import { MessageSquareText } from "lucide-react"
 

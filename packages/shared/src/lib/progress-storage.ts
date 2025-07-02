@@ -16,8 +16,6 @@
  * - Automatic expiration handling
  */
 
-import { useAuth } from '@/components/auth/auth-provider'
-import { useGuestAccess } from '../hooks/useGuestAccess'
 import { debug } from '../lib/debug-config'
 
 // Base interface for all quiz state
@@ -499,7 +497,6 @@ export function convertSurveyStateToBaseSurvey(surveyState: {
     responses: surveyState.responses,
     startTime: surveyState.startTime,
     savedAt: Date.now(),
-    // Required compatibility fields
     answers,
     streak: 0,
     maxStreak: 0,
@@ -521,42 +518,4 @@ export function convertBaseSurveyStateToSurvey(baseState: BaseSurveyState): {
     startTime: baseState.startTime,
     sessionId: baseState.sessionId
   }
-}
-
-/**
- * Hook for easy progress storage access
- */
-export function useProgressStorage() {
-  const { user } = useAuth()
-  const { guestToken } = useGuestAccess()
-
-  return {
-    // Quiz functions
-    createRegularQuizProgress: (topicId: string) => 
-      createRegularQuizProgress(user?.id || undefined, guestToken || undefined, topicId),
-    createCivicsTestProgress: () => 
-      createCivicsTestProgress(user?.id || undefined, guestToken || undefined),
-    createOnboardingAssessmentProgress: () => 
-      createOnboardingAssessmentProgress(user?.id || undefined, guestToken || undefined),
-    createMultiplayerQuizProgress: (topicId: string) => 
-      createMultiplayerQuizProgress(user?.id || undefined, guestToken || undefined, topicId),
-    
-    // Survey functions
-    createSurveyProgress: (surveyId: string, sessionId: string) => 
-      createSurveyProgress(surveyId, sessionId, user?.id || undefined, guestToken || undefined),
-    
-    // Utility functions
-    cleanupExpiredEntries: () => QuizProgressStorage.cleanupExpiredProgress(),
-    getAllProgressEntries: () => QuizProgressStorage.getAllProgress(),
-    
-    // User info
-    userId: user?.id,
-    guestToken,
-    isAuthenticated: !!user
-  }
-}
-
-// Initialize cleanup when module loads
-if (typeof window !== 'undefined') {
-  QuizProgressStorage.initialize()
 } 

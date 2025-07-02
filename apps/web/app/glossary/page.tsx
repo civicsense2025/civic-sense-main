@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Input } from '@civicsense/ui-web'
 import { Card, CardContent } from '@civicsense/ui-web'
-import { AutoReadPage } from '@civicsense/ui-web/components/auto-read-page'
+import { AutoReadPage } from '@/components/auto-read/auto-read-page'
 import { Skeleton } from "@civicsense/ui-web"
 import { Header } from '@civicsense/ui-web'
 import { SimpleBookmarkButton } from '@civicsense/ui-web/components/bookmarks/simple-bookmark-button'

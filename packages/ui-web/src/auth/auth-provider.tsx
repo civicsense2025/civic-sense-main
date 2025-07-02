@@ -1,12 +1,12 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
-import { supabase, authHelpers } from "@civicsense/shared/lib/supabase/client"
+import { supabase, authHelpers } from "@civicsense/shared"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
-import { useToast } from "@civicsense/shared/hooks/use-toast"
-import { pendingUserAttribution } from "@civicsense/shared/lib/pending-user-attribution"
-import { DonationThankYouPopover } from "@/components/donation-thank-you-popover"
+import { useToast } from "@civicsense/ui-web"
+import { pendingUserAttribution } from "@civicsense/shared"
+import { DonationThankYouPopover } from "../components/donation-thank-you-popover"
 
 interface AuthContextType {
   user: User | null

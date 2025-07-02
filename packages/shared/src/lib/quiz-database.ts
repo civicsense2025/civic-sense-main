@@ -1264,10 +1264,14 @@ export const enhancedQuizDatabase = {
         // Find the question to get its number
         const q = questions.find((q: any) => q.id === resp.question_id)
         return {
-          questionNumber: q ? q.question_number : 0,
-          answer: resp.user_answer,
-          isCorrect: resp.is_correct,
-          timeSpent: resp.time_spent_seconds || 0
+          // Ensure number, default to 0 if not found or null
+          questionNumber: typeof q?.question_number === 'number' ? q.question_number : 0,
+          // Coerce to string to satisfy strict typing
+          answer: String(resp.user_answer ?? ''),
+          // Boolean coercion
+          isCorrect: !!resp.is_correct,
+          // Ensure numeric value
+          timeSpent: Number(resp.time_spent_seconds ?? 0)
         }
       })
       // 5. Return in expected format

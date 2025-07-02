@@ -21,7 +21,8 @@ import { progressiveXpOperations } from "@civicsense/shared/lib/enhanced-gamific
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
 import { usePremium } from "@civicsense/shared/hooks/usePremium"
-import { useAnalytics } from "@civicsense/shared/utils/analytics"
+// TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
+// import { useAnalytics } from "@civicsense/shared/utils/analytics"
 import { useTopicTitle } from "@civicsense/shared/hooks/useTopicTitle"
 import { skillOperations } from "@civicsense/shared/lib/skill-operations"
 import { Badge } from "../ui/badge"
@@ -131,7 +132,11 @@ export function QuizResults({
 }: QuizResultsProps) {
   const { user } = useAuth()
   const { isPremium, isPro, hasFeatureAccess } = usePremium()
-  const { trackQuiz } = useAnalytics()
+  // TEMPORARILY DISABLED: Analytics hook disabled during monorepo migration
+  // const { trackQuiz } = useAnalytics()
+  const trackQuiz = (data: any) => {
+    console.log('Analytics disabled:', data)
+  }
   const { topicTitle, setTopicTitle } = useTopicTitle(topicId)
   const { progress, refreshProgress } = useGamification()
   const { toast } = useToast()

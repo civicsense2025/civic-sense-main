@@ -1,7 +1,11 @@
 "use client"
 
 import { supabase } from './supabase'
-import { useAuth } from '@/components/auth/auth-provider'
+// TEMPORARILY DISABLED: Web dependency during monorepo migration
+// import { useAuth } from '@/components/auth/auth-provider'
+
+// Temporary stub during monorepo migration
+const useAuth = () => ({ user: null })
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type {

@@ -33,9 +33,17 @@
           <string>com.civicsense.app</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+civicsense</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -47,15 +55,23 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSCalendarsUsageDescription</key>
+    <string>CivicSense needs calendar access to sync your study schedule and quiz reminders with Google Calendar</string>
     <key>NSCameraUsageDescription</key>
     <string>CivicSense needs camera access for profile photos</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <string>Allow $(PRODUCT_NAME) to use Face ID</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>CivicSense needs microphone access for voice features</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>CivicSense needs reminders access to create study reminders and quiz notifications</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
+    </array>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>remote-notification</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

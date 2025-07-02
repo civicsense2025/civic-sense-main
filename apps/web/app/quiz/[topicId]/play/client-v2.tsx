@@ -13,7 +13,7 @@ import { useAuth } from "@civicsense/ui-web/components/auth/auth-provider"
 import { AuthDialog } from '@civicsense/ui-web'
 import { usePremium } from "@civicsense/shared/hooks/usePremium"
 import { PremiumGate } from "@civicsense/ui-web/components/premium-gate"
-import { QuizErrorBoundary } from "@civicsense/ui-web/components/analytics-error-boundary"
+import { QuizErrorBoundary } from "@/components/analytics/analytics-error-boundary"
 import { dataService } from "@civicsense/shared/lib/data-service"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"
 import { ClassroomShareButton } from "@civicsense/ui-web/components/integrations/google-classroom-share-button"

@@ -1,16 +1,21 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@civicsense/ui-web/components/auth/auth-provider'
+import { useAuth } from '@civicsense/ui-web'
 import { Card, CardContent, CardHeader } from '@civicsense/ui-web'
 import { Input } from '@civicsense/ui-web'
 import { Button } from '@civicsense/ui-web'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@civicsense/ui-web'
 import { Badge } from '@civicsense/ui-web'
-import { SnippetCard } from '@civicsense/ui-web/components/bookmarks/snippet-card'
-import { SimpleBookmarkButton } from '@civicsense/ui-web/components/bookmarks/simple-bookmark-button'
+import { SnippetCard } from '@civicsense/ui-web'
+import { SimpleBookmarkButton } from '@civicsense/ui-web'
 import { useToast } from '@civicsense/ui-web'
-import type { Bookmark, BookmarkSnippet, BookmarkSearchFilters, ContentType } from '@civicsense/shared/lib/types/bookmarks'
+import type { 
+  Bookmark, 
+  BookmarkSnippet, 
+  BookmarkSearchFilters, 
+  ContentType 
+} from '@civicsense/shared'
 
 export default function BookmarksPage() {
   const { user } = useAuth()
@@ -76,7 +81,7 @@ export default function BookmarksPage() {
   }, [user, activeTab])
 
   const handleBookmarkDeleted = (bookmarkId: string) => {
-    setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
+    setBookmarks((prev: Bookmark[]) => prev.filter((b: Bookmark) => b.id !== bookmarkId))
     toast({
       title: 'Bookmark removed',
       description: 'The bookmark has been removed successfully'
@@ -186,7 +191,7 @@ export default function BookmarksPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {bookmarks.map((bookmark) => (
+              {bookmarks.map((bookmark: Bookmark) => (
                 <Card key={bookmark.id} className="p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -212,7 +217,7 @@ export default function BookmarksPage() {
                       
                       {bookmark.tags && bookmark.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {bookmark.tags.map((tag, index) => (
+                          {bookmark.tags.map((tag: string, index: number) => (
                             <span
                               key={index}
                               className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded"
@@ -266,7 +271,7 @@ export default function BookmarksPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {snippets.map((snippet) => (
+              {snippets.map((snippet: BookmarkSnippet) => (
                 <SnippetCard key={snippet.id} snippet={snippet} />
               ))}
             </div>

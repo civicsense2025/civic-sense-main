@@ -6,7 +6,8 @@ import "./fonts.css"
 import "../styles/accessibility.css"
 import { ThemeProvider } from "@civicsense/ui-web/components/theme-provider"
 import { AuthProvider } from "@civicsense/ui-web/components/auth/auth-provider"
-import { AccessibilityProvider } from "@civicsense/ui-web/components/accessibility/accessibility-provider"
+// TEMPORARILY DISABLED: Has web dependencies during monorepo migration
+// import { AccessibilityProvider } from "@civicsense/ui-web/components/accessibility/accessibility-provider"
 import { StatsigProvider } from "@civicsense/ui-web/components/providers/statsig-provider"
 import { PWAProvider } from "@civicsense/ui-web/components/providers/pwa-provider"
 import { LanguageProvider } from "@civicsense/ui-web/components/providers/language-provider"
@@ -207,7 +208,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <LanguageProvider>
             <AuthProvider>
-              <AccessibilityProvider>
+              {/* TEMPORARILY DISABLED: AccessibilityProvider has web dependencies during monorepo migration */}
+              {/* <AccessibilityProvider> */}
                 {/* ✅ Skip link for keyboard navigation (WCAG compliance) */}
                 <a href="#main-content" className="skip-link">
                   Skip to main content
@@ -241,7 +243,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </ConnectionProvider>
                   </PWAProvider>
                 </StatsigProvider>
-              </AccessibilityProvider>
+              {/* </AccessibilityProvider> */}
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

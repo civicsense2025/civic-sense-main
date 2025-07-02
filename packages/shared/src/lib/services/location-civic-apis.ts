@@ -1,7 +1,7 @@
 // Location-Aware Civic Engagement API Services
 // Based on updated 2025 API landscape
 
-import { createClient } from './supabase/client'
+import { createClient } from '../supabase/client'
 import { SupabaseClient } from '@supabase/supabase-js'
 
 // Type definitions

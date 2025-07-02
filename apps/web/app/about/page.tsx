@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@civicsense/ui-web'
-import { AutoReadPage } from '@civicsense/ui-web/src/components/auto-read-page'
+import { AutoReadPage } from '@/components/auto-read/auto-read-page'
 import { FeedbackButton } from '@civicsense/ui-web'
 import { ServerHeader } from '@civicsense/ui-web'
 import { useEffect, useRef } from 'react'

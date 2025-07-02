@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/components/auth/auth-provider'
 import { debug } from '../lib/debug-config'
 import { 
   premiumFeatures, 
@@ -12,6 +11,19 @@ import {
   type PremiumFeatureAccess,
   premiumUtils
 } from '../lib/premium'
+
+// Add User type for parameter
+interface User {
+  id: string
+  email?: string
+  user_metadata?: {
+    name?: string
+  }
+}
+
+interface UsePremiumProps {
+  user?: User | null
+}
 
 interface UsePremiumReturn {
   // Subscription state
@@ -68,8 +80,8 @@ const getCachedData = (userId: string | undefined): CacheEntry | null => {
   return cached && isCacheValid(cached) ? cached : null
 }
 
-export function usePremium(): UsePremiumReturn {
-  const { user } = useAuth()
+export function usePremium(props: UsePremiumProps): UsePremiumReturn {
+  const { user } = props
   const [subscription, setSubscription] = useState<UserSubscription | null>(null)
   const [limits, setLimits] = useState<FeatureLimits | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -257,8 +269,8 @@ export function usePremium(): UsePremiumReturn {
 
   // Subscription utilities
   const isActive = subscription ? premiumUtils.isSubscriptionActive(subscription) : false
-  const isPremium = subscription && (subscription.subscription_tier === 'premium' || subscription.subscription_tier === 'pro') && isActive
-  const isPro = subscription?.subscription_tier === 'pro' && isActive
+  const isPremium = Boolean(subscription && (subscription.subscription_tier === 'premium' || subscription.subscription_tier === 'pro') && isActive)
+  const isPro = Boolean(subscription?.subscription_tier === 'pro' && isActive)
   const daysUntilExpiry = subscription ? premiumUtils.getDaysUntilExpiry(subscription) : null
 
   // Debug subscription status

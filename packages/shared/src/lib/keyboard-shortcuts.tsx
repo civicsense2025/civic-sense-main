@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { debug } from '@/lib/debug-config'
+import { debug } from './debug-config'
 
 // Types for keyboard shortcut configuration
 export interface KeyboardShortcut {

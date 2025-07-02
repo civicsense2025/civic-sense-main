@@ -7,8 +7,9 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Badge } from '../ui/badge'
 import { GraduationCap, Check, X, Loader2, AlertCircle } from 'lucide-react'
-import { useEducationalAccess } from '@civicsense/shared/hooks/useEducationalAccess'
-import { useAuth } from '@/components/auth/auth-provider'
+// TEMPORARY: Disabled problematic hook import
+// import { useEducationalAccess } from '../hooks/useEducationalAccess'
+import { useAuth } from '../auth/auth-provider'
 import { formatDistanceToNow } from 'date-fns'
 
 export function EducationalAccessChecker() {

@@ -1,6 +1,6 @@
 // Export all utility functions
-export * from './analytics-enhanced'
-export * from './analytics'
+// export * from './analytics-enhanced' // TEMPORARILY DISABLED - imports analytics with web dependencies
+// export * from './analytics' // TEMPORARILY DISABLED - has web dependencies
 export * from './source-maintenance'
 export * from './source-extraction-utils'
 

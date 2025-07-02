@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { AutoReadPage } from '@civicsense/ui-web/components/auto-read-page'
+import { AutoReadPage } from '@/components/auto-read/auto-read-page'
 import { ServerHeader } from '@civicsense/ui-web/components/server-header'
 import { TableOfContents } from '@civicsense/ui-web'
 

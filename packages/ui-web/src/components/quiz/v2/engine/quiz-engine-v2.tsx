@@ -15,7 +15,8 @@ import { CrosswordQuestion } from "../../question-types/crossword"
 import { QuestionFeedbackDisplay } from "../../question-feedback-display"
 import { QuestionTimer, useQuestionTimer } from "../../question-timer"
 import { QuizResults as QuizResultsComponent } from "../../quiz-results"
-import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from "@civicsense/shared/lib/keyboard-shortcuts"
+// TEMPORARILY DISABLED: Keyboard shortcuts have web dependencies
+// import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from "@civicsense/shared/lib/keyboard-shortcuts"
 import { AdminEditPanel } from "../../admin-edit-panel"
 import { useAdmin } from "@civicsense/shared/lib/admin-access"
 
@@ -28,7 +29,16 @@ import { cn } from "../../utils"
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from "@civicsense/shared/hooks/useGamification"
 import { usePremium } from "@civicsense/shared/hooks/usePremium"
-import { useAnalytics, mapCategoryToAnalytics } from "@civicsense/shared/utils/analytics"
+// TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
+// import { useAnalytics, mapCategoryToAnalytics } from "@civicsense/shared/utils/analytics"
+
+// Temporary analytics stub
+const useAnalytics = () => ({
+  trackQuiz: () => console.log('Analytics disabled - quiz tracking'),
+  trackGameification: () => console.log('Analytics disabled - gamification tracking'),
+  trackEngagement: () => console.log('Analytics disabled - engagement tracking')
+})
+const mapCategoryToAnalytics = (category: string) => category
 import { supabase } from "@civicsense/shared/lib/supabase"
 import { debug } from "@civicsense/shared/lib/debug-config"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"

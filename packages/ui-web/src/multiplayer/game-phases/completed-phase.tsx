@@ -1,11 +1,11 @@
 "use client"
 
-import { NPCPersonality } from "@civicsense/ui-web"
-import { BattlePlayerPanel } from "@civicsense/ui-web"
+import { NPCPersonality } from "@civicsense/shared/lib/multiplayer-npcs"
+import { BattlePlayerPanel } from "../battle-player-panel"
 import { Button } from "@civicsense/ui-web"
 import { Card } from "@civicsense/ui-web"
 import { Trophy, ArrowRight, RotateCw, Share2 } from "lucide-react"
-  import { cn } from "@civicsense/ui-web"
+import { cn } from "@civicsense/ui-web"
 // import useUIStrings from "@civicsense/shared/hooks/useUIStrings" // Temporarily use static strings
 
 // Temporary static strings for build fix  

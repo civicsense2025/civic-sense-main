@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { Suspense, useState, useEffect } from "react"
-import { QuizErrorBoundary } from "@civicsense/ui-web/components/analytics-error-boundary"
+import { QuizErrorBoundary } from "@/components/analytics/analytics-error-boundary"
 
 /**
  * QuizClientWrapper - Loads the V2 quiz engine

@@ -10,11 +10,11 @@ import {
   ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@civicsense/ui-web/components/auth/auth-provider'
+import { useAuth } from '@civicsense/ui-web'
 import { AuthDialog } from '@civicsense/ui-web'
-import { CivicsTestAssessment } from '@civicsense/ui-web/components/civics-test-assessment'
+import { CivicsTestAssessment } from '@civicsense/ui-web'
 import { Header } from '@civicsense/ui-web'
-import { useGuestAccess } from '@civicsense/shared/hooks/useGuestAccess'
+import { useGuestAccess } from '@civicsense/shared'
 import { supabase } from '@civicsense/shared/lib/supabase'
 import { cn } from '@civicsense/shared/lib/utils'
 

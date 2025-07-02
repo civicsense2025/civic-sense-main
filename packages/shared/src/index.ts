@@ -7,21 +7,15 @@ export * from './lib'
 // React hooks
 export * from './hooks'
 
-// TypeScript types
-export * from './types'
-
 // Utility functions  
 export * from './utils'
 
-// Database related (if present)
-export * from './database'
 
 // Re-export commonly used utilities for convenience
 export { cn } from './lib/utils'
 
-// Re-export common types
-export type { Database } from './lib/supabase/types'
-
-// Re-export authentication
+// Re-export authentication clients
 export { createClient } from './lib/supabase/client'
-export { createServerClient } from './lib/supabase/server' 
+export { createClient as createServerClient } from './lib/supabase/server' 
+// Re-export database types
+export type { Database } from './lib/types/supabase'

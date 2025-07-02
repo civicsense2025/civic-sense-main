@@ -4,9 +4,13 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase, authHelpers } from "@civicsense/shared/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
-import { useToast } from "@civicsense/shared/hooks/use-toast"
+import { useToast } from "../../hooks/use-toast"
 import { pendingUserAttribution } from "@civicsense/shared/lib/pending-user-attribution"
-import { DonationThankYouPopover } from "@/components/donation-thank-you-popover"
+// TEMPORARILY DISABLED: Web app specific component during monorepo migration
+// import { DonationThankYouPopover } from "@/components/donation-thank-you-popover"
+
+// Temporary stub component
+const DonationThankYouPopover = ({ children, ...props }: any) => null
 
 interface AuthContextType {
   user: User | null

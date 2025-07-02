@@ -2,8 +2,18 @@
   "name": "@civicsense/shared",
   "version": "0.1.0",
   "private": true,
-  "main": "index.ts",
-  "types": "index.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib/supabase": "./src/lib/supabase/index.ts",
+    "./lib/supabase/client": "./src/lib/supabase/client.ts",
+    "./lib/supabase/server": "./src/lib/supabase/server.ts",
+    "./lib/utils": "./src/lib/utils.ts",
+    "./lib/*": "./src/lib/*",
+    "./hooks/*": "./src/hooks/*",
+    "./utils/*": "./src/utils/*"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -15,13 +25,17 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.2",
     "@tanstack/react-query": "^5.81.5",
+    "clsx": "^2.1.1",
     "date-fns": "4.1.0",
     "jsonrepair": "^3.12.0",
+    "react": "^19.1.0",
+    "tailwind-merge": "^3.3.1",
     "uuid": "^9.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
+    "@types/react": "^19.1.8",
     "@types/uuid": "^9.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",

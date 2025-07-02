@@ -15,7 +15,6 @@
     "sync-db:watch": "npm run sync-db && echo '🔄 Watching for database changes...' && npx nodemon --watch ../../supabase/migrations --ext sql --exec 'npm run sync-db'",
     "db:status": "supabase status",
     "db:reset": "supabase db reset && npm run sync-db",
-
     "generate-types": "supabase gen types typescript --project-id iiycctbwuklsdqzgndxb --schema public > lib/database.types.ts && node ../../scripts/generate-enum-exports.js",
     "gen:types": "npm run generate-types",
     "sync:db-constants": "node ../../scripts/sync-database-constants.js",
@@ -23,10 +22,10 @@
     "generate-key-takeaways": "tsx ../../scripts/generate-key-takeaways.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
     "@civicsense/shared": "file:../../packages/shared",
     "@civicsense/ui-shared": "file:../../packages/ui-shared",
     "@civicsense/ui-web": "file:../../packages/ui-web",
-    "@anthropic-ai/sdk": "^0.54.0",
     "@flags-sdk/statsig": "^0.2.2",
     "@google-cloud/text-to-speech": "^6.1.0",
     "@google-cloud/translate": "^9.1.0",
@@ -59,6 +58,7 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.3",
+    "@stripe/stripe-js": "^7.4.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.50.0",
     "@tanstack/react-query": "^5.81.5",
@@ -66,6 +66,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "@vercel/analytics": "^1.3.1",
     "@vercel/speed-insights": "^1.0.11",
+    "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "4.1.0",
@@ -78,6 +79,7 @@
     "next-themes": "^0.4.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.55.0",
     "react-hotkeys-hook": "^4.6.1",
     "react-markdown": "^9.0.1",

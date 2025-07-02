@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@civicsense/ui-web/components/auth/auth-provider"
+import { useAuth } from "@civicsense/ui-web"
 import { Header } from '@civicsense/ui-web'
 import { AuthDialog } from '@civicsense/ui-web'
 import { Button } from "@civicsense/ui-web"
