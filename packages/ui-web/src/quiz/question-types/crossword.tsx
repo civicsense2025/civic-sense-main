@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { QuizQuestion } from '@civicsense/shared/lib/quiz-data'
-import { Button } from '../ui/button'
-import { Card } from '../ui/card'
-import { cn } from '../../utils'
+import { QuizQuestion } from '@civicsense/ui-web'
+import { Button } from '@civicsense/ui-web'
+import { Card } from '@civicsense/ui-web'
+import { cn } from '@civicsense/ui-web'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
 interface CrosswordQuestionProps {
