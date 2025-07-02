@@ -4,10 +4,14 @@ import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "../ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
-import { cn } from "../../utils"
+import { cn } from "@civicsense/ui-web"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 import Link from "next/link"
-import { EventSubmissionDialog } from '@/components/events/event-submission-dialog'
+// TEMPORARILY DISABLED: Web app specific component during monorepo migration
+// import { EventSubmissionDialog } from '@/components/events/event-submission-dialog'
+
+// Temporary stub component
+const EventSubmissionDialog = ({ isOpen, onClose, selectedDate }: any) => null
 
 interface CalendarProps {
   topics: TopicMetadata[]

@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { SimpleBookmarkButton } from '@/components/bookmarks/simple-bookmark-button'
+import { SimpleBookmarkButton } from '../bookmarks/simple-bookmark-button'
 import type { Collection } from '@civicsense/shared/types/collections'
 
 interface CollectionBookmarkButtonProps {

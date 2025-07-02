@@ -27,7 +27,16 @@ import { Crown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@civicsense/shared/hooks/usePremium"
-import { useAnalytics } from "@civicsense/shared/utils/analytics"
+// TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
+// import { useAnalytics } from "@civicsense/shared/utils/analytics"
+
+// Temporary analytics stub
+const useAnalytics = () => ({
+  trackEngagement: {
+    audioStarted: () => console.log('Analytics disabled - audio started'),
+    audioStopped: () => console.log('Analytics disabled - audio stopped')
+  }
+})
 import { uiStrings } from "@civicsense/shared/lib/ui-strings"
 
 interface VoiceOption {

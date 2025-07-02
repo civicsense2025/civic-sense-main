@@ -3,7 +3,7 @@
 // =============================================================================
 
 import React, { useState, useRef, useCallback } from 'react'
-import { useAuth } from '@/components/auth/auth-provider'
+import { useAuth } from '../auth/auth-provider'
 import { useTextSelection } from '@civicsense/shared/hooks/use-text-selection'
 import { HighlightColorPicker } from './highlight-color-picker'
 import { bookmarkOperations } from '@civicsense/shared/lib/bookmarks'

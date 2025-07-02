@@ -37,7 +37,16 @@ import type { BoostEffects } from "@civicsense/shared/lib/game-boosts"
 import { useFeatureFlag } from "@civicsense/shared/hooks/useFeatureFlags"
 import { BoostManager } from "@civicsense/shared/lib/game-boosts"
 import { enhancedProgressOperations, updateEnhancedProgress } from "@civicsense/shared/lib/enhanced-gamification"
-import { useAnalytics, mapCategoryToAnalytics } from "@civicsense/shared/utils/analytics"
+// TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
+// import { useAnalytics, mapCategoryToAnalytics } from "@civicsense/shared/utils/analytics"
+
+// Temporary analytics stub
+const useAnalytics = () => ({
+  trackQuiz: () => console.log('Analytics disabled - quiz tracking'),
+  trackGameification: () => console.log('Analytics disabled - gamification tracking'),
+  trackEngagement: () => console.log('Analytics disabled - engagement tracking')
+})
+const mapCategoryToAnalytics = (category: string) => category
 import { supabase } from "@civicsense/shared/lib/supabase"
 import { SocialProofBubble } from "@/components/social-proof-bubble"
 import { createRegularQuizProgress, type BaseQuizState } from "@civicsense/shared/lib/progress-storage"

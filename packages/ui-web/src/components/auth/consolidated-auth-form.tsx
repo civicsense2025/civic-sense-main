@@ -8,7 +8,20 @@ import { supabase } from "@civicsense/shared/lib/supabase"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useToast } from "@civicsense/shared/hooks/use-toast"
-import { useAnalytics } from "@civicsense/shared/utils/analytics"
+// TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
+// import { useAnalytics } from "@civicsense/shared/utils/analytics"
+
+// Temporary analytics stub
+const useAnalytics = () => ({
+  trackEngagement: {
+    signInStarted: () => console.log('Analytics disabled - sign in started'),
+    signUpStarted: () => console.log('Analytics disabled - sign up started'),
+    signInCompleted: () => console.log('Analytics disabled - sign in completed'),
+    signUpCompleted: () => console.log('Analytics disabled - sign up completed'),
+    signInFailed: () => console.log('Analytics disabled - sign in failed'),
+    signUpFailed: () => console.log('Analytics disabled - sign up failed')
+  }
+})
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { SignInForm } from "./sign-in-form"
 import { SignUpForm } from "./sign-up-form"
