@@ -86,4 +86,7 @@ localhost_*.json
 .expo/
 
 # Monorepo specific
-# Note: Individual apps have their own .gitignore files for app-specific exclusions 
+# Note: Individual apps have their own .gitignore files for app-specific exclusions
+
+# Migration backups
+backup/ 

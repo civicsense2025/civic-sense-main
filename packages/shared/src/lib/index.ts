@@ -27,6 +27,9 @@ export type { PremiumFeature } from './types/premium'
 // Data service - SAFE EXPORTS
 export { dataService } from './data-service'
 
+// Quiz database - SAFE EXPORTS
+export { enhancedQuizDatabase } from './quiz-database'
+
 // Pending user attribution - SAFE EXPORTS
 export { pendingUserAttribution } from './pending-user-attribution'
 

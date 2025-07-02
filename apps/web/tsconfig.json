@@ -29,22 +29,22 @@
         "./*"
       ],
       "@civicsense/shared": [
-        "../../packages/shared"
+        "../../packages/shared/src"
       ],
       "@civicsense/shared/*": [
-        "../../packages/shared/*"
+        "../../packages/shared/src/*"
       ],
       "@civicsense/ui-shared": [
-        "../../packages/ui-shared"
+        "../../packages/ui-shared/src"
       ],
       "@civicsense/ui-shared/*": [
-        "../../packages/ui-shared/*"
+        "../../packages/ui-shared/src/*"
       ],
       "@civicsense/ui-web": [
-        "../../packages/ui-web"
+        "../../packages/ui-web/src"
       ],
       "@civicsense/ui-web/*": [
-        "../../packages/ui-web/*"
+        "../../packages/ui-web/src/*"
       ]
     }
   },
@@ -52,15 +52,16 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../../packages/shared/**/*.ts",
-    "../../packages/shared/**/*.tsx",
-    "../../packages/ui-shared/**/*.ts",
-    "../../packages/ui-shared/**/*.tsx",
-    "../../packages/ui-web/**/*.ts",
-    "../../packages/ui-web/**/*.tsx"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist",
+    ".next"
+  ],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/ui-shared" },
+    { "path": "../../packages/ui-web" }
   ]
 }

@@ -8,14 +8,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "pnpm run dev --filter=apps/web",
-    "dev:mobile": "pnpm run start --filter=apps/mobile",
-    "build:web": "pnpm run build --filter=apps/web",
-    "build:mobile": "pnpm run build:android --filter=apps/mobile",
-    "start:web": "pnpm run start --filter=apps/web",
-    "lint:all": "pnpm run lint --filter=apps/*",
-    "test:all": "pnpm run test --filter=apps/*",
-    "clean": "pnpm run clean --filter=apps/* && pnpm run clean --filter=packages/* && rm -rf node_modules",
+    "dev:web": "pnpm --filter=@civicsense/web dev",
+    "dev:mobile": "pnpm --filter=@civicsense/mobile start",
+    "build:web": "pnpm --filter=@civicsense/web build",
+    "build:mobile": "pnpm --filter=@civicsense/mobile build:android",
+    "start:web": "pnpm --filter=@civicsense/web start",
+    "lint:all": "pnpm --filter='apps/*' lint",
+    "test:all": "pnpm --filter='apps/*' test",
+    "type-check:all": "pnpm --filter='apps/*' type-check",
+    "clean": "pnpm --filter='apps/*' clean && pnpm --filter='packages/*' clean && rm -rf node_modules",
     "install:all": "pnpm install",
     "dev": "pnpm run dev:web",
     "build": "pnpm run build:web"
