@@ -22,7 +22,7 @@ import {
   Check,
   X
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useToast } from '@civicsense/shared/hooks/use-toast'
 import { useAuth } from '@/components/auth/auth-provider'
 

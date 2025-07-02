@@ -10,7 +10,7 @@ import { Card, CardContent } from "../ui/card"
 import { Badge } from "../ui/badge"
 import { Separator } from "../ui/separator"
 import { useToast } from "../ui/use-toast"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { QuizResults } from "@civicsense/shared/lib/types/quiz"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 

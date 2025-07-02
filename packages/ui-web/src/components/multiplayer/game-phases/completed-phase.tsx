@@ -5,7 +5,7 @@ import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { Trophy, ArrowRight, RotateCw, Share2 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 // import useUIStrings from "@civicsense/shared/hooks/useUIStrings" // Temporarily use static strings
 
 // Temporary static strings for build fix  

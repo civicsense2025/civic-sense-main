@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Badge } from "../ui/badge"
 import { Zap, Star } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface XPNotificationProps {
   xpGained: number

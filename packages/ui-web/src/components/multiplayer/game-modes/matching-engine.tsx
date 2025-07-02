@@ -25,7 +25,7 @@ import {
   Medal,
   Timer
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 import { useMultiplayerRoom, useMultiplayerQuiz } from "@civicsense/shared/lib/multiplayer"
 import { multiplayerNPCIntegration } from "@civicsense/shared/lib/multiplayer-npc-integration"

@@ -16,7 +16,7 @@ import {
   Zap,
   Target
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { CharacterSelectorProps, ScenarioCharacter } from "./types"
 
 // =============================================================================

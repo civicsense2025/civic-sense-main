@@ -10,7 +10,7 @@ import {
   Volume2, VolumeX, Headphones, Eye, Type, 
   Accessibility, Settings, Play, Pause
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import {
   Dialog,
   DialogContent,

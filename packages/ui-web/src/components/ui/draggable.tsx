@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface DraggableProps {
   children: React.ReactNode

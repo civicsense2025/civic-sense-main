@@ -6,7 +6,7 @@ import { ArrowRight, RotateCcw, Share2, TrendingUp, Clock, Star, Target } from "
 import { Button } from "../ui/button"
 import { Card, CardContent } from "../ui/card"
 import { useToast } from "../ui/use-toast"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { QuizResults } from "@civicsense/shared/lib/types/quiz"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 

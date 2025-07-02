@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useCallback, useMemo } from "react"
 import { Button } from "../ui/button"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { QuizQuestion } from "@civicsense/shared/lib/quiz-data"
 import { QuestionExplanation } from "./question-explanation"
 import { useGlobalAudio } from "@/components/global-audio-controls"

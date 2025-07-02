@@ -1,6 +1,6 @@
 import { Card, CardContent } from '../ui/card'
 import { Skeleton } from '../ui/skeleton'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface PodCardSkeletonProps {
   className?: string

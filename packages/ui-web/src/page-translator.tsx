@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { LanguageSwitcher } from './language-switcher'
 import { useLanguage, Language } from './providers/language-provider'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface TranslationState {
   isTranslating: boolean

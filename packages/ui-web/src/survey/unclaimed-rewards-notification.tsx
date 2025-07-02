@@ -15,7 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@civicsense/shared/hooks/use-guest-access'
 import type { SurveyIncentive, RewardFulfillment } from '@civicsense/shared/types/incentives'

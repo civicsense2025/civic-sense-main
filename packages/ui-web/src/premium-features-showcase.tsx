@@ -9,7 +9,7 @@ import { Badge } from "../ui/badge"
 import { 
   Crown, Star, Check, X, Sparkles, ArrowRight
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { stripeOperations } from "@civicsense/shared/lib/premium"
 
 interface PremiumFeaturesShowcaseProps {

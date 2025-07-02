@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Progress } from '../ui/progress'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { AlertTriangle, CheckCircle, Clock, AlertOctagon } from 'lucide-react'
 import type { AssessmentFramework } from '@civicsense/shared/lib/assessment-framework/types'
 

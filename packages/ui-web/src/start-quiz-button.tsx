@@ -1,6 +1,6 @@
 import { Button } from "../ui/button"
 import { ArrowRight } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { usePremium } from "@civicsense/shared/hooks/usePremium"

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Switch } from '../ui/switch'
 import { X, Crown, Settings, Users, Zap, MessageCircle, Timer, Trophy, Lock } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 // import useUIStrings from '@civicsense/shared/hooks/useUIStrings' // Temporarily use static strings
 
 // Temporary static strings for build fix

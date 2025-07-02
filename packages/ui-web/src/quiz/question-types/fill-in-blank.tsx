@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { QuizQuestion } from '@civicsense/shared/lib/quiz-data'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { CheckCircle, XCircle } from 'lucide-react'
 
 interface FillInBlankQuestionProps {

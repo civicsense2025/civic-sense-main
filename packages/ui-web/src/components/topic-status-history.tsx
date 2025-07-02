@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { topicStatusOperations, type TopicStatus, type TopicStatusType } from '@civicsense/shared/lib/topic-status'
 
 interface TopicStatusHistoryProps {

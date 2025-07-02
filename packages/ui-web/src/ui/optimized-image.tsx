@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { Skeleton } from '../ui/skeleton'
 
 // ============================================================================

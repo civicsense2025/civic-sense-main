@@ -3,7 +3,7 @@
 import { Badge } from '../ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Progress } from '../ui/progress'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import type { Indicator } from '@civicsense/shared/lib/assessment-framework/types'
 

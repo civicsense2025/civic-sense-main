@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "../ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 import Link from "next/link"
 import { EventSubmissionDialog } from '@/components/events/event-submission-dialog'

@@ -6,7 +6,7 @@ import { NPCPersonality } from "@civicsense/shared/lib/multiplayer-npcs"
 import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 export interface NPCSelectionPhaseProps {
   difficulty: 'easy' | 'medium' | 'hard'

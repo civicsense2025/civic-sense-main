@@ -3,7 +3,7 @@
 import type { QuizQuestion } from "@civicsense/shared/lib/quiz-data"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Label } from "../ui/label"
-import { cn, shuffleArray } from "@civicsense/shared/lib/utils"
+import { cn, shuffleArray } from "../../utils"
 import { useState, useMemo, useEffect } from "react"
 import { AudioControls } from "../audio-controls"
 

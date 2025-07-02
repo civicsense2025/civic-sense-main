@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"
 

@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"
 import { useTopicAccess } from "@civicsense/shared/hooks/use-topic-access"
 import { supabase } from "@civicsense/shared/lib/supabase/client"
-import { parseTopicDate } from "@civicsense/shared/lib/utils"
+import { parseTopicDate } from "../../utils"
 import type { CategoryType, TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 
 // Components

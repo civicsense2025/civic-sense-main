@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '../ui/use-toast'
 import { Button, type ButtonProps } from '../ui/button'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { ContentType, CreateBookmarkRequest } from '@civicsense/shared/lib/types/bookmarks'
 
 export interface SimpleBookmarkButtonProps {

@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}

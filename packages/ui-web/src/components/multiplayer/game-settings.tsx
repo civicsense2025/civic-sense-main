@@ -19,7 +19,7 @@ import {
   BookOpen,
   MessageSquare
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 export interface GameConfig {
   gameMode: string

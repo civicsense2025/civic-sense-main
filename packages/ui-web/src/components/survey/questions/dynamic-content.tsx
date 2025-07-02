@@ -6,7 +6,7 @@ import { Card, CardContent } from "../ui/card"
 import { StarRating } from "./star-rating"
 import { ScaleRating } from "./scale-rating"
 import { TextInput } from "./text-input"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { Loader2, AlertCircle } from "lucide-react"
 
 interface DynamicContentConfig {

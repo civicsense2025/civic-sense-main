@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "../ui/button"
 import type { QuizQuestion } from "@civicsense/shared/lib/quiz-data"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { GlossaryLinkText } from '@/components/glossary/glossary-link-text'
 
 interface QuestionExplanationProps {

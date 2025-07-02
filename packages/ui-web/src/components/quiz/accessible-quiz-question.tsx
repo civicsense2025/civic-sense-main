@@ -16,7 +16,7 @@ import {
   Play,
   Pause
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAccessibility, useAccessibilityKeyboardShortcuts } from '@/components/accessibility/accessibility-provider'
 
 interface QuizQuestion {

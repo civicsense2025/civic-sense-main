@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Zap
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { ResourceTrackerProps } from "./types"
 
 // =============================================================================

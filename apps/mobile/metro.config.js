@@ -3,8 +3,24 @@ const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
 
+// Find the workspace root
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '../..');
+
 // Get the default Expo metro config
-const config = getDefaultConfig(__dirname);
+const config = getDefaultConfig(projectRoot);
+
+// Configure Metro for monorepo
+config.watchFolders = [workspaceRoot];
+
+// Add workspace packages to node_modules_paths
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+];
+
+// Configure disableHierarchicalLookup for better performance in monorepo
+config.resolver.disableHierarchicalLookup = false;
 
 // Add source extensions for better module resolution
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'cjs'];
@@ -15,8 +31,30 @@ config.resolver.assetExts = [...config.resolver.assetExts, 'png', 'jpg', 'jpeg',
 // Add platforms for better resolution
 config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
-// Configure resolver to handle missing web dependencies
+// Configure resolver to handle workspace packages and missing web dependencies
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Handle workspace packages
+  if (moduleName.startsWith('@civicsense/')) {
+    const packageName = moduleName.replace('@civicsense/', '');
+    const packagePath = path.resolve(workspaceRoot, 'packages', packageName);
+    
+    try {
+      // Try to resolve from the workspace package
+      const packageJson = require(path.join(packagePath, 'package.json'));
+      const mainFile = packageJson.main || 'index.js';
+      const resolvedPath = path.resolve(packagePath, mainFile);
+      
+      if (require('fs').existsSync(resolvedPath)) {
+        return {
+          filePath: resolvedPath,
+          type: 'sourceFile',
+        };
+      }
+    } catch (error) {
+      // Fall through to default resolution
+    }
+  }
+  
   // Handle shaka-player missing dependency for react-native-track-player web support
   if (moduleName === 'shaka-player/dist/shaka-player.ui' && platform === 'web') {
     // Return a mock module for web that doesn't break bundling
@@ -30,7 +68,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-// Configure transformer with HMR error handling
+// Configure transformer with HMR error handling and monorepo support
 config.transformer = {
   ...config.transformer,
   assetRegistryPath: 'react-native/Libraries/Image/AssetRegistry',
@@ -46,15 +84,17 @@ config.transformer = {
       inlineRequires: true,
     },
   }),
+  // Enable unstable_allowRequireContext for workspace compatibility
+  unstable_allowRequireContext: true,
 };
 
-// Configure Metro cache
+// Configure Metro cache - disable for monorepo development
 config.resetCache = true;
 
 // Add HMR configuration to prevent undefined property errors
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
-// Add CORS configuration for local development
+// Configure server for monorepo development
 config.server = {
   enhanceMiddleware: (middleware) => {
     return (req, res, next) => {

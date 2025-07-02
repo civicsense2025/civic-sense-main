@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react"
 import { Label } from "../ui/label"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { Input } from "../ui/input"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { useKeyboardShortcuts, type KeyboardShortcutGroup } from "@civicsense/shared/lib/keyboard-shortcuts"
 
 interface MultipleChoiceProps {

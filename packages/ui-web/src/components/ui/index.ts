@@ -19,6 +19,7 @@ export { Avatar } from "./avatar"
 export { Badge } from "./badge"
 export { Progress } from "./progress"
 export { Separator } from "./separator"
+export { Skeleton, DailyCardSkeleton, DailyCardCompactSkeleton, DailyCardTransitionSkeleton } from "./skeleton"
 
 // Form components
 export { Checkbox } from "./checkbox"
@@ -36,7 +37,7 @@ export { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip"
 
 // Feedback
-export { Alert } from "./alert"
+export { Alert, AlertTitle, AlertDescription } from "./alert"
 export { Toast } from "./toast"
 export { Toaster } from "./toaster"
 export { useToast } from "./use-toast"

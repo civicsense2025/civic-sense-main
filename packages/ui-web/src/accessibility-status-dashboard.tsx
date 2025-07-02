@@ -21,7 +21,7 @@ import {
   Heart,
   Zap
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { AccessibilitySettings, useAccessibilityPreferences } from './accessibility-settings'
 import { AccessibilityFeedbackForm } from './accessibility-feedback-form'
 

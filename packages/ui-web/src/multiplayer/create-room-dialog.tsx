@@ -17,7 +17,7 @@ import { usePremium } from '@civicsense/shared/hooks/usePremium'
 import { multiplayerOperations, getPlayerEmojiOptions } from '@civicsense/shared/lib/multiplayer'
 import { createBalancedNPCMix, NPCBehaviorEngine } from '@civicsense/shared/lib/multiplayer-npcs'
 import { useToast } from '@civicsense/shared/hooks/use-toast'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface CreateRoomDialogProps {
   topicId: string

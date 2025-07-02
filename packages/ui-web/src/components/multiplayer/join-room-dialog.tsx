@@ -12,7 +12,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@civicsense/shared/hooks/useGuestAccess'
 import { multiplayerOperations, getPlayerEmojiOptions } from '@civicsense/shared/lib/multiplayer'
 import { useToast } from '@civicsense/shared/hooks/use-toast'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface JoinRoomDialogProps {
   children: React.ReactNode

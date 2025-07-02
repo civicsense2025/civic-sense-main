@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { QuizQuestion } from '@civicsense/shared/lib/quiz-data'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
-import { cn, shuffleArray } from '@civicsense/shared/lib/utils'
+import { cn, shuffleArray } from '../../utils'
 import { CheckCircle, XCircle, GripVertical, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface OrderingQuestionProps {

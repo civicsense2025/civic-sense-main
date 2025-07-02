@@ -15,7 +15,7 @@ import { Slider } from "../ui/slider"
 import { Badge } from "../ui/badge"
 import { useToast } from "../ui/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail, Keyboard } from "lucide-react"
 import { 
   useProgressStorage, 

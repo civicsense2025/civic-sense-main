@@ -16,7 +16,7 @@ import {
   ChevronRight, BarChart3, Settings, Plus, Lightbulb
 } from "lucide-react"
 import { useCanonicalCategories } from "@civicsense/shared/lib/hooks/useCanonicalCategories"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { 
   enhancedProgressOperations, 
   skillTrackingOperations, 

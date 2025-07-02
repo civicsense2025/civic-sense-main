@@ -4,7 +4,7 @@ import { Input } from "../ui/input"
 import { Textarea } from "../ui/textarea"
 import { Label } from "../ui/label"
 import { Mail, Phone, Calendar, User } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface TextInputProps {
   questionId: string

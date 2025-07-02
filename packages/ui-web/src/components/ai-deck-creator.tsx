@@ -16,7 +16,7 @@ import {
   Target, Brain, Sparkles, ArrowRight,
   BookOpen, TrendingUp
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface AIDeckCreatorProps {
   className?: string

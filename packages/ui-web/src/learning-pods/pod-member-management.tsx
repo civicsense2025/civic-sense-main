@@ -26,7 +26,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { supabase } from '@civicsense/shared/lib/supabase/client'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useToast } from '@civicsense/shared/hooks/use-toast'
 
 // ============================================================================

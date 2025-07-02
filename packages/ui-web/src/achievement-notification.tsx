@@ -7,7 +7,7 @@ import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
 import { Card, CardContent } from "../ui/card"
 import confetti from "canvas-confetti"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { Achievement } from "@civicsense/shared/lib/enhanced-gamification"
 
 // Type augmentation to fix framer-motion className issue

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { 
   CheckCircle,
   ArrowRight,

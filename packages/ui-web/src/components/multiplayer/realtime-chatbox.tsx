@@ -7,7 +7,7 @@ import { Input } from "../ui/input"
 import { Badge } from "../ui/badge"
 import { ScrollArea } from "../ui/scroll-area"
 import { Send, MessageCircle, Lightbulb, ThumbsUp, Heart, Star } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { NPCPersonality } from "@civicsense/shared/lib/multiplayer-npcs"
 
 interface ChatMessage {

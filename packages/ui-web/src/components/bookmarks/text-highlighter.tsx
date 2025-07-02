@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { Button } from '../ui/button'
 import { useToast } from '../ui/use-toast'
 import { Highlighter, X } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { HighlightSelection, ContentType } from '@civicsense/shared/lib/types/bookmarks'
 
 export interface TextHighlighterProps {

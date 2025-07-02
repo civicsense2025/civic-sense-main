@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { ChevronRight, List, X } from 'lucide-react'
 import { Button } from '../ui/button'
 

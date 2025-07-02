@@ -9,7 +9,7 @@ import { Crown, Zap, Check, ArrowRight, Sparkles } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { usePremium } from "@civicsense/shared/hooks/usePremium"
 import { stripeOperations, STRIPE_CONFIG } from "@civicsense/shared/lib/premium"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface PremiumUpgradeCardProps {
   className?: string

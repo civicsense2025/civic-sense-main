@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
 import { X, Send, MessageCircle, Bot, Crown } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { MultiplayerPlayer } from '@civicsense/shared/lib/multiplayer'
 interface ChatMessage {
   id: string

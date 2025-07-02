@@ -16,7 +16,7 @@ import {
   CheckCircle, PlayCircle, BarChart3, Sparkles, Crown,
   ChevronRight, Activity, Users, Lightbulb
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { 
   EnhancedUserProgress, 
   CategorySkill, 

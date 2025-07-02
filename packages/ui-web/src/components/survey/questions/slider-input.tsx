@@ -1,7 +1,7 @@
 "use client"
 
 import { Slider } from "../ui/slider"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface SliderInputProps {
   questionId: string

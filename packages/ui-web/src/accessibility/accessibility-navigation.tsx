@@ -35,7 +35,7 @@ import {
   Play,
   MoreVertical
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAccessibility } from './accessibility-provider'
 import { AccessibilitySettings } from '@/components/accessibility-settings'
 import { AccessibilityFeedbackForm } from '@/components/accessibility-feedback-form'

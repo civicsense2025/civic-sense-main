@@ -3,7 +3,7 @@
 // =============================================================================
 
 import React from "react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 /**
  * Preset colours offered for text highlights. Feel free to extend this list – keep

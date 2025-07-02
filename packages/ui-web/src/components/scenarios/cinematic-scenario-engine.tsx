@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/components/auth/auth-provider"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 // UI Components
 import { Button } from "../ui/button"

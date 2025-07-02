@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Badge } from "../ui/badge"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { ExternalLink, BookOpen, Target, TrendingUp, ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 

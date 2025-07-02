@@ -2,7 +2,7 @@
 
 import { Badge } from "../ui/badge"
 import { useCanonicalCategories } from "@civicsense/shared/lib/hooks/useCanonicalCategories"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { Tag } from "lucide-react"
 
 interface CanonicalCategoryBadgesProps {

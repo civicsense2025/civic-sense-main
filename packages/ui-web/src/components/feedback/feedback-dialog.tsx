@@ -18,7 +18,7 @@ import { useToast } from "../ui/use-toast"
 import { useAnalytics } from "@civicsense/shared/utils/analytics"
 import { useAuth } from "@/components/auth/auth-provider"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface FeedbackDialogProps {
   trigger?: React.ReactNode

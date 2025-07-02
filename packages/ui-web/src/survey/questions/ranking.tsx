@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { Button } from "../ui/button"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { GripVertical, X, Plus } from "lucide-react"
 
 interface RankingProps {

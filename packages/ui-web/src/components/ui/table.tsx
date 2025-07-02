@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 const Table = React.forwardRef<
   HTMLTableElement,

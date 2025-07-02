@@ -7,7 +7,7 @@ import { Badge } from "../ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Progress } from "../ui/progress"
 import { Users, Crown, TrendingUp, Trophy, Star, Target, Activity, BarChart3, Shield, Plus, ArrowRight } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import Link from "next/link"
 import { envFeatureFlags } from '@civicsense/shared/lib/env-feature-flags'
 

@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
 import { useAuth } from '@/components/auth/auth-provider'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { 
   Play, 
   Pause, 

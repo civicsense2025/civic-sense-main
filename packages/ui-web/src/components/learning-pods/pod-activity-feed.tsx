@@ -22,7 +22,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { createClient } from '@civicsense/shared/lib/supabase/client'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 // ============================================================================
 // TYPES AND INTERFACES

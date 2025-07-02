@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from "react"
 import type { QuizQuestion } from "@civicsense/shared/lib/quiz-data"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 /**
  * IMPORTANT: This component exports `checkAnswerIntelligently` which MUST be used

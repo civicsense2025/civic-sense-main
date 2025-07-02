@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { QuizQuestion } from '@civicsense/shared/lib/quiz-data'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
 interface CrosswordQuestionProps {

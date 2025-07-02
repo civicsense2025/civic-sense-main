@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { QuizQuestion } from '@civicsense/shared/lib/quiz-data'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
-import { cn, shuffleArray } from '@civicsense/shared/lib/utils'
+import { cn, shuffleArray } from '../../utils'
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 
 interface MatchingQuestionProps {

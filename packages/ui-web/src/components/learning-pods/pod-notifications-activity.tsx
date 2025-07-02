@@ -21,7 +21,7 @@ import {
   Users,
   AlertCircle
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useToast } from '@civicsense/shared/hooks/use-toast'
 import Link from 'next/link'

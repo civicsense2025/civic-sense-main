@@ -1,1 +1,20 @@
-// Web-specific UI Components for CivicSense\n// These components use Radix UI, React Hook Form, and other web-specific libraries\n\n// Export all components from the components directory\n// Note: Individual component exports will be added as we organize the component structure\n\n// Example structure (to be filled in as we organize):\n// export * from './components/ui'\n// export * from './components/auth'\n// export * from './components/quiz'\n// export * from './components/dashboard'\n\n// For now, we'll export what's available\nexport * from './components'" 
+// Web-specific UI Components for CivicSense
+// These components use Radix UI, React Hook Form, and other web-specific libraries
+
+// Export utilities
+export { cn } from './utils'
+
+// Export all UI components (these have proper exports)
+export * from './components/ui'
+
+// Export major feature components
+export { Header } from './components/header'
+export { AuthDialog } from './components/auth/auth-dialog'
+export { DailyCardStack } from './components/daily-card-stack'
+export { Calendar } from './components/calendar'
+export { ContinueQuizCard } from './components/continue-quiz-card'
+
+// Export specific component categories that have index files
+export * from './components/survey'
+export * from './components/feedback'
+export * from './bookmarks' 

@@ -18,7 +18,7 @@ import { EnhancedSocialShare } from "@/components/enhanced-social-share"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"
 import { dataService } from "@civicsense/shared/lib/data-service"
 import { questionOperations } from "@civicsense/shared/lib/database"
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS } from '@civicsense/shared/lib/types/quiz'
 import { PremiumFeature } from '@civicsense/shared/lib/premium'

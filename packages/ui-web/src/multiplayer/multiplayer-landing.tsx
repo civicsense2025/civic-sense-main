@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Play, Users, Zap, Trophy, Brain, Gamepad2, ArrowRight } from 'lucide-react'
 import { GameModeCard, type GameMode } from './game-mode-card'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 // All game modes for interactive gallery
 const ALL_GAME_MODES: GameMode[] = [

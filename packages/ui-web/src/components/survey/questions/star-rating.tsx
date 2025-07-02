@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "../ui/button"
 import { Star } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface StarRatingProps {
   questionId: string

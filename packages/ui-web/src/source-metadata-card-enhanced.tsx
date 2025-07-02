@@ -22,7 +22,7 @@ import {
   Building,
   User
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { FeedbackButton } from "@/components/feedback/feedback-button"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useGuestAccess } from "@civicsense/shared/hooks/useGuestAccess"

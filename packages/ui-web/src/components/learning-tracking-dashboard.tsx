@@ -10,7 +10,7 @@ import { Card, CardContent } from "../ui/card"
 import { Badge } from "../ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import type { Bookmark } from "@civicsense/shared/lib/types/bookmarks"
 
 interface QuizResult {

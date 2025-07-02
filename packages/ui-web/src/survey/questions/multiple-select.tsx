@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Checkbox } from "../ui/checkbox"
 import { Input } from "../ui/input"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface MultipleSelectProps {
   questionId: string

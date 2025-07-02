@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Separator } from '../ui/separator'
 import { ShoppingCart, Zap, Clock, Shield, Target, Users, BookOpen, Star } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useAnalytics } from '@civicsense/shared/utils/analytics'
 import { 

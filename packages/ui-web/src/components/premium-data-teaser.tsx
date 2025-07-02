@@ -6,7 +6,7 @@ import { usePremium } from "@civicsense/shared/hooks/usePremium"
 import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { BarChart3, Lock, Eye, Crown } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { supabase } from "@civicsense/shared/lib/supabase"
 
 interface PremiumDataTeaserProps {

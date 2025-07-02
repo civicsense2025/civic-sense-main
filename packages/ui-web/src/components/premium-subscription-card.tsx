@@ -20,7 +20,7 @@ import {
   Download, BarChart3, BookOpen, Zap, Shield,
   ArrowRight, RefreshCw, Gift, Flame, GraduationCap
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { 
   stripeOperations, 
   premiumUtils, 

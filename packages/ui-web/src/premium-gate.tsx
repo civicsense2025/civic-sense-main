@@ -11,7 +11,7 @@ import {
   TrendingUp, BookOpen, BarChart3, Brain,
   Shield, Download, Headphones
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { 
   stripeOperations, 
   STRIPE_CONFIG,

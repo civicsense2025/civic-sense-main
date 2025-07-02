@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/components/auth/auth-provider"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface GuestBannerProps {
   summary: {

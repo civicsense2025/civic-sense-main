@@ -2,7 +2,7 @@
 
 import { Button } from "../ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { parseTopicDate } from "@civicsense/shared/lib/utils"
+import { parseTopicDate } from "../../utils"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 
 interface CardNavigationProps {

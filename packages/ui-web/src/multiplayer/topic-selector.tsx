@@ -5,7 +5,7 @@ import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
 import { Search, ChevronDown, Clock, Users, Zap, Target, MoreHorizontal } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import {
   Tooltip,
   TooltipContent,

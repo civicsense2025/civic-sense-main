@@ -27,7 +27,7 @@ import {
   ChevronRight,
   ChevronDown
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { usePremium } from '@civicsense/shared/hooks/usePremium'
 import { useToast } from '@civicsense/shared/hooks/use-toast'

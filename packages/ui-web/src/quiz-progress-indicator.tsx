@@ -5,7 +5,7 @@ import { Progress } from "../ui/progress"
 import { Badge } from "../ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { Trophy, Zap, Target, Clock, Star, CheckCircle, Flame } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface QuizProgressIndicatorProps {
   current: number

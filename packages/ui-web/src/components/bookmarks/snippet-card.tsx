@@ -4,7 +4,7 @@
 
 import React from 'react'
 import { BookmarkSnippet } from '@civicsense/shared/lib/types/bookmarks'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { Quote, Tag, Calendar } from 'lucide-react'
 import { Badge } from '../ui/badge'
 

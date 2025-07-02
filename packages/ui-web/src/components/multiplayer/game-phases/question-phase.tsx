@@ -7,7 +7,7 @@ import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { Shield, Sword, Brain, Lightbulb } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { QuizQuestion, getQuestionOptions } from "@civicsense/shared/lib/types/quiz"
 // import useUIStrings from "@civicsense/shared/hooks/useUIStrings" // Temporarily use static strings
 

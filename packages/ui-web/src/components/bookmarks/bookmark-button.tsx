@@ -8,7 +8,7 @@ import { useToast } from '../ui/use-toast'
 import { Button } from '../ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { Bookmark, BookmarkCheck, Heart, HeartOff } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { ContentType, CreateBookmarkRequest } from '@civicsense/shared/lib/types/bookmarks'
 
 export interface BookmarkButtonProps {

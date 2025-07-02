@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "../ui/button"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface QuizTopic {

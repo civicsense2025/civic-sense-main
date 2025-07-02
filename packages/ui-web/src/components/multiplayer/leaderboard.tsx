@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { X, Trophy, Medal, Crown, Bot, Zap, Clock } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { MultiplayerPlayer, MultiplayerQuestionResponse } from '@civicsense/shared/lib/multiplayer'
 
 interface MultiplayerLeaderboardProps {

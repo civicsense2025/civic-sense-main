@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 const POLITICAL_QUIPS = [
   "Democracy doesn't pause for coffee breaks...",

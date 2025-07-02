@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId } from 'react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 /**
  * Google Classroom "Share to Classroom" button

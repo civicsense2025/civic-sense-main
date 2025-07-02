@@ -9,7 +9,7 @@ import { Badge } from "../ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Progress } from "../ui/progress"
 import { TrendingUp, Crown, Zap, Trophy, Star, Target, Activity, BarChart3, Flame } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface DashboardStatsProps {
   className?: string

@@ -12,7 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "../ui/select"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { QuizGameMode } from "@civicsense/shared/lib/types/quiz"
 import { PremiumFeature } from "@civicsense/shared/lib/premium"
 import { Play, Target, Users, Zap, LogIn } from "lucide-react"

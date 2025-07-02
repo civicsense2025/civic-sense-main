@@ -18,7 +18,7 @@ import {
   RefreshCw
 } from "lucide-react"
 import Link from "next/link"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface Survey {
   id: string

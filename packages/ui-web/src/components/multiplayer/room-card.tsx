@@ -3,7 +3,7 @@
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Users } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 interface RoomData {
   room: {

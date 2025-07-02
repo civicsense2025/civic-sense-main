@@ -13,7 +13,7 @@ import {
   Smile,
   MoreHorizontal
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { formatDistanceToNow } from 'date-fns'
 
 export interface ChatMessage {

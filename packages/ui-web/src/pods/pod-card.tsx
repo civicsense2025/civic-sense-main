@@ -25,7 +25,7 @@ import {
   Archive,
   Smile
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import Link from 'next/link'
 
 interface LearningPod {

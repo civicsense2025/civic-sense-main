@@ -16,7 +16,7 @@ import { SurveyIncentiveDisplay } from './survey-incentive-display'
 import { useAuth } from '@/components/auth/auth-provider'
 import { useGuestAccess } from '@civicsense/shared/hooks/use-guest-access'
 import { useSurveyIncentive } from '@civicsense/shared/hooks/use-survey-incentives'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import type { 
   SurveyIncentive, 
   ClaimSurveyRewardsResponse,

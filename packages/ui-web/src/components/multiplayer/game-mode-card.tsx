@@ -2,7 +2,7 @@
 
 import { Badge } from '../ui/badge'
 import { Users, Clock } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 export interface GameMode {
   id: string

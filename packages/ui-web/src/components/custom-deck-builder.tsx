@@ -21,7 +21,7 @@ import {
   Crown, Sparkles, Target, Brain, TrendingUp,
   Wand2, Lightbulb, Clock, CheckCircle
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface CustomDeckBuilderProps {
   className?: string

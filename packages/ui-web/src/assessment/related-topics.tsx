@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { BookOpen, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 

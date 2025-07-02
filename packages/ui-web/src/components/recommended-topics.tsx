@@ -10,7 +10,7 @@ import Link from "next/link"
 import { dataService } from "@civicsense/shared/lib/data-service"
 import { enhancedQuizDatabase } from "@civicsense/shared/lib/quiz-database"
 import { supabase } from "@civicsense/shared/lib/supabase"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface RecommendedTopic {
   id: string

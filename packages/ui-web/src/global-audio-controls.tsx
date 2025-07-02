@@ -7,7 +7,7 @@ import {
   Volume2, VolumeX, Play, Pause, RotateCcw, 
   Settings, Headphones, Zap, X, Minimize2, Maximize2, Repeat
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -3,8 +3,8 @@
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Calendar, Lock, Star, Clock } from "lucide-react"
-import { parseTopicDate } from "@civicsense/shared/lib/utils"
-import { cn } from "@civicsense/shared/lib/utils"
+import { parseTopicDate } from "../../utils"
+import { cn } from "../../utils"
 import type { TopicMetadata } from "@civicsense/shared/lib/quiz-data"
 import type { TopicAccessStatus } from "@civicsense/shared/hooks/use-topic-access"
 

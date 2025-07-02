@@ -17,7 +17,7 @@ import {
   CheckCircle,
   AlertTriangle
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 // Import atomic components
 import { SituationDisplay } from "./situation-display"

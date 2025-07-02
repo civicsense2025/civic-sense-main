@@ -2,7 +2,7 @@
 
 import { Card } from "../ui/card"
 import { Badge } from "../ui/badge"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface BattlePlayerPanelProps {
   name: string

@@ -23,7 +23,7 @@ import {
   Settings,
   Zap
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { useAuth } from '@/components/auth/auth-provider'
 import { toast } from 'sonner'
 

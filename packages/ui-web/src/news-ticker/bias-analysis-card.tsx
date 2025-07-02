@@ -19,7 +19,7 @@ import {
   ChevronUp,
   Zap
 } from 'lucide-react'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { 
   ArticleBiasAnalysis, 
   BiasDimension, 

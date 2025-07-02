@@ -11,7 +11,7 @@ import { Button } from '../ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Users, BarChart3, Star, Activity, TrendingUp, TrendingDown, Calendar, Clock, Target } from 'lucide-react'
 import { supabase } from '@civicsense/shared/lib/supabase/client'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 // ============================================================================
 // TYPES AND INTERFACES

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 import { Check, Clock, Crown, Zap, Timer, Bot, User } from 'lucide-react'
 import type { MultiplayerPlayer, MultiplayerQuestionResponse } from '@civicsense/shared/lib/multiplayer'
 // import useUIStrings from '@civicsense/shared/hooks/useUIStrings' // Temporarily use static strings

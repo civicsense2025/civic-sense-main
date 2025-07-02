@@ -1,4 +1,4 @@
-import { cn } from '@civicsense/shared/lib/utils'
+import { cn } from '../../utils'
 
 function Skeleton({
   className,

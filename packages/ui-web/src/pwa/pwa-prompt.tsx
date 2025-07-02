@@ -5,7 +5,7 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Badge } from "../ui/badge"
 import { X, Download, Smartphone, Monitor, Zap, Star, ArrowUp } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { useAuth } from "@/components/auth/auth-provider"
 
 interface BeforeInstallPromptEvent extends Event {

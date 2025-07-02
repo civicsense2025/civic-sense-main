@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface ContinueQuizCardProps {
   attemptId: string

@@ -15,7 +15,7 @@ import {
   ChevronRight, Activity, Users, Lightbulb,
   PieChart, LineChart, BarChart, Lock, Eye, RefreshCw
 } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 import { supabase } from "@civicsense/shared/lib/supabase"
 import { enhancedQuizDatabase, type PremiumAnalyticsData } from "@civicsense/shared/lib/quiz-database"
 

@@ -13,7 +13,7 @@ import {
   CarouselPrevious,
 } from "../ui/carousel"
 import { Target, Star, ChevronRight, ArrowRight } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface Skill {
   id: string

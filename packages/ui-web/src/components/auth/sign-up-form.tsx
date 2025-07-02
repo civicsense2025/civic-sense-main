@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle, UserPlus, Check, X } from "lucide-react"
 import { useToast } from "@civicsense/shared/hooks/use-toast"
 import { GoogleOAuthButton } from "./google-oauth-button"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 
 interface SignUpFormProps {
   onSuccess: () => void

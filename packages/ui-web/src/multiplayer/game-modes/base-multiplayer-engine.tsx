@@ -10,7 +10,7 @@ import { Leaderboard } from "@/components/multiplayer/leaderboard"
 import { Progress } from "../ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Trophy, MessageCircle, Crown, Settings } from "lucide-react"
-import { cn } from "@civicsense/shared/lib/utils"
+import { cn } from "../../utils"
 // import useUIStrings from "@civicsense/shared/hooks/useUIStrings" // Temporarily use static strings
 
 // Import our modular components
