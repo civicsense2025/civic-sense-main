@@ -15197,6 +15197,7 @@ export type Database = {
           is_breaking: boolean | null
           is_featured: boolean | null
           key_takeaways: Json | null
+          related_figures: Json | null
           source_analysis_id: string | null
           source_credibility_score: number | null
           topic_id: string
@@ -15225,6 +15226,7 @@ export type Database = {
           is_breaking?: boolean | null
           is_featured?: boolean | null
           key_takeaways?: Json | null
+          related_figures?: Json | null
           source_analysis_id?: string | null
           source_credibility_score?: number | null
           topic_id: string
@@ -15253,6 +15255,7 @@ export type Database = {
           is_breaking?: boolean | null
           is_featured?: boolean | null
           key_takeaways?: Json | null
+          related_figures?: Json | null
           source_analysis_id?: string | null
           source_credibility_score?: number | null
           topic_id?: string
@@ -19906,39 +19909,60 @@ export type Database = {
       }
       user_question_memory: {
         Row: {
+          average_response_time: number | null
           consecutive_correct: number | null
+          ease_factor: number | null
           easiness_factor: number | null
           id: string
           interval_days: number | null
+          last_attempt_date: string | null
+          last_confidence_level: number | null
           last_reviewed_at: string | null
+          mastery_level: number | null
           next_review_date: string | null
           question_id: string
           repetition_count: number | null
+          review_interval: number | null
           total_attempts: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          average_response_time?: number | null
           consecutive_correct?: number | null
+          ease_factor?: number | null
           easiness_factor?: number | null
           id?: string
           interval_days?: number | null
+          last_attempt_date?: string | null
+          last_confidence_level?: number | null
           last_reviewed_at?: string | null
+          mastery_level?: number | null
           next_review_date?: string | null
           question_id: string
           repetition_count?: number | null
+          review_interval?: number | null
           total_attempts?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          average_response_time?: number | null
           consecutive_correct?: number | null
+          ease_factor?: number | null
           easiness_factor?: number | null
           id?: string
           interval_days?: number | null
+          last_attempt_date?: string | null
+          last_confidence_level?: number | null
           last_reviewed_at?: string | null
+          mastery_level?: number | null
           next_review_date?: string | null
           question_id?: string
           repetition_count?: number | null
+          review_interval?: number | null
           total_attempts?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -19981,34 +20005,58 @@ export type Database = {
       }
       user_question_responses: {
         Row: {
+          assessment_type: string | null
           attempt_id: string
+          confidence_level: number | null
           created_at: string | null
           hint_used: boolean | null
           id: string
           is_correct: boolean
           question_id: string
+          response_time_ms: number | null
+          selected_answer: string | null
           time_spent_seconds: number | null
+          topic_id: string | null
+          updated_at: string | null
           user_answer: string
+          user_id: string | null
+          was_review: boolean | null
         }
         Insert: {
+          assessment_type?: string | null
           attempt_id: string
+          confidence_level?: number | null
           created_at?: string | null
           hint_used?: boolean | null
           id?: string
           is_correct: boolean
           question_id: string
+          response_time_ms?: number | null
+          selected_answer?: string | null
           time_spent_seconds?: number | null
+          topic_id?: string | null
+          updated_at?: string | null
           user_answer: string
+          user_id?: string | null
+          was_review?: boolean | null
         }
         Update: {
+          assessment_type?: string | null
           attempt_id?: string
+          confidence_level?: number | null
           created_at?: string | null
           hint_used?: boolean | null
           id?: string
           is_correct?: boolean
           question_id?: string
+          response_time_ms?: number | null
+          selected_answer?: string | null
           time_spent_seconds?: number | null
+          topic_id?: string | null
+          updated_at?: string | null
           user_answer?: string
+          user_id?: string | null
+          was_review?: boolean | null
         }
         Relationships: [
           {
@@ -22865,6 +22913,10 @@ export type Database = {
         }
         Returns: Json
       }
+      add_figure_to_topic: {
+        Args: { p_topic_id: string; p_figure_id: string }
+        Returns: boolean
+      }
       add_npc_to_multiplayer_room: {
         Args: { p_room_code: string; p_npc_code: string }
         Returns: {
@@ -24312,6 +24364,10 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_figure_from_topic: {
+        Args: { p_topic_id: string; p_figure_id: string }
+        Returns: boolean
+      }
       reorder_collection_items: {
         Args: {
           p_collection_id: string
@@ -24566,6 +24622,30 @@ export type Database = {
           user_id: string
           weekly_digest: boolean | null
         }
+      }
+      upsert_user_question_memory: {
+        Args: {
+          p_user_id: string
+          p_question_id: string
+          p_is_correct: boolean
+          p_response_time_ms?: number
+          p_confidence_level?: number
+        }
+        Returns: Json
+      }
+      upsert_user_question_response: {
+        Args: {
+          p_user_id: string
+          p_question_id: string
+          p_selected_answer: string
+          p_is_correct: boolean
+          p_response_time_ms?: number
+          p_assessment_type?: string
+          p_attempt_id?: string
+          p_topic_id?: string
+          p_confidence_level?: number
+        }
+        Returns: string
       }
       user_is_in_room: {
         Args: { p_room_id: string; p_user_id: string }
@@ -26333,6 +26413,9 @@ export type DbSyncTypeEnum = Database['public']['Enums']['sync_type']
 export type DbAddContentToCollectionFunction = Database['public']['Functions']['add_content_to_collection']
 export type DbAddContentToCollectionArgs = Database['public']['Functions']['add_content_to_collection']['Args']
 export type DbAddContentToCollectionReturns = Database['public']['Functions']['add_content_to_collection']['Returns']
+export type DbAddFigureToTopicFunction = Database['public']['Functions']['add_figure_to_topic']
+export type DbAddFigureToTopicArgs = Database['public']['Functions']['add_figure_to_topic']['Args']
+export type DbAddFigureToTopicReturns = Database['public']['Functions']['add_figure_to_topic']['Returns']
 export type DbAddNpcToMultiplayerRoomFunction = Database['public']['Functions']['add_npc_to_multiplayer_room']
 export type DbAddNpcToMultiplayerRoomArgs = Database['public']['Functions']['add_npc_to_multiplayer_room']['Args']
 export type DbAddNpcToMultiplayerRoomReturns = Database['public']['Functions']['add_npc_to_multiplayer_room']['Returns']
@@ -26807,6 +26890,9 @@ export type DbRedeemGiftCodeReturns = Database['public']['Functions']['redeem_gi
 export type DbRemoveContentFromCollectionFunction = Database['public']['Functions']['remove_content_from_collection']
 export type DbRemoveContentFromCollectionArgs = Database['public']['Functions']['remove_content_from_collection']['Args']
 export type DbRemoveContentFromCollectionReturns = Database['public']['Functions']['remove_content_from_collection']['Returns']
+export type DbRemoveFigureFromTopicFunction = Database['public']['Functions']['remove_figure_from_topic']
+export type DbRemoveFigureFromTopicArgs = Database['public']['Functions']['remove_figure_from_topic']['Args']
+export type DbRemoveFigureFromTopicReturns = Database['public']['Functions']['remove_figure_from_topic']['Returns']
 export type DbReorderCollectionItemsFunction = Database['public']['Functions']['reorder_collection_items']
 export type DbReorderCollectionItemsArgs = Database['public']['Functions']['reorder_collection_items']['Args']
 export type DbReorderCollectionItemsReturns = Database['public']['Functions']['reorder_collection_items']['Returns']
@@ -26891,6 +26977,12 @@ export type DbUpsertCongressionalMemberReturns = Database['public']['Functions']
 export type DbUpsertUserEmailPreferencesFunction = Database['public']['Functions']['upsert_user_email_preferences']
 export type DbUpsertUserEmailPreferencesArgs = Database['public']['Functions']['upsert_user_email_preferences']['Args']
 export type DbUpsertUserEmailPreferencesReturns = Database['public']['Functions']['upsert_user_email_preferences']['Returns']
+export type DbUpsertUserQuestionMemoryFunction = Database['public']['Functions']['upsert_user_question_memory']
+export type DbUpsertUserQuestionMemoryArgs = Database['public']['Functions']['upsert_user_question_memory']['Args']
+export type DbUpsertUserQuestionMemoryReturns = Database['public']['Functions']['upsert_user_question_memory']['Returns']
+export type DbUpsertUserQuestionResponseFunction = Database['public']['Functions']['upsert_user_question_response']
+export type DbUpsertUserQuestionResponseArgs = Database['public']['Functions']['upsert_user_question_response']['Args']
+export type DbUpsertUserQuestionResponseReturns = Database['public']['Functions']['upsert_user_question_response']['Returns']
 export type DbUserIsInRoomFunction = Database['public']['Functions']['user_is_in_room']
 export type DbUserIsInRoomArgs = Database['public']['Functions']['user_is_in_room']['Args']
 export type DbUserIsInRoomReturns = Database['public']['Functions']['user_is_in_room']['Returns']

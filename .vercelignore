@@ -7,7 +7,7 @@ scripts/*ai*
 scripts/*generate*
 scripts/test-*
 ai-config.json*
-lib/admin*
+# lib/admin*  # Too broad - breaks admin-access.ts import
 
 # Development and testing files
 debug/
@@ -62,12 +62,23 @@ components/debug/
 components/examples/
 lib/debug/
 
-# Test and demo files
-**/demo/**
-**/test/**
-**/*-demo.tsx
-**/*-test.tsx
-**/*-example.tsx
+# Test and demo routes (specific exclusions)
+app/test-*/
+app/*-demo/
+app/admin-content-demo/
+app/donation-demo/
+app/learning-pods-demo/
+app/news-ticker-demo/
+app/npc-demo/
+app/survey-demo/
+app/debug-*/
+app/sandbox/
+
+# Component files - keeping broad demo/test patterns commented out
+# to avoid breaking imports needed by excluded routes
+# **/*-demo.tsx  # Too broad - breaks needed demo component imports
+# **/*-test.tsx  # Too broad - breaks needed test component imports
+# **/*-example.tsx  # Too broad - breaks needed example component imports
 
 # Build artifacts and cache
 .turbo/

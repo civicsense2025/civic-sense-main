@@ -142,9 +142,10 @@ lib/database.types.ts.backup.*
 # Test and Debug Components
 /components/debug/
 /components/examples/
-*-demo.tsx
-*-test.tsx
-*-example.tsx
+# Note: Be specific with demo exclusions to avoid breaking imports
+# *-demo.tsx  # Too broad - breaks needed imports
+# *-test.tsx  # Too broad - breaks needed imports  
+# *-example.tsx  # Too broad - breaks needed imports
 
 # Admin Panel - Exclude entire admin system from deployment
 /app/admin/
