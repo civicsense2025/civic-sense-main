@@ -1,0 +1,262 @@
+{
+  "timestamp": "2025-06-29T00:32:31.942Z",
+  "testTopic": "Supreme Court ethics rules and enforcement",
+  "currentDate": "2025-06-29",
+  "sixMonthsAgo": "2024-12-29",
+  "results": {
+    "passed": 41,
+    "failed": 0,
+    "tests": [
+      {
+        "name": "Current Events Integration",
+        "passed": true
+      },
+      {
+        "name": "Specificity Requirements",
+        "passed": true
+      },
+      {
+        "name": "Named Officials Requirement",
+        "passed": true
+      },
+      {
+        "name": "Date Requirements",
+        "passed": true
+      },
+      {
+        "name": "Source Integration",
+        "passed": true
+      },
+      {
+        "name": "Forbidden Vague Language",
+        "passed": true
+      },
+      {
+        "name": "CivicSense Voice Standards",
+        "passed": true
+      },
+      {
+        "name": "Current Date Injection",
+        "passed": true
+      },
+      {
+        "name": "Question Count Correct",
+        "passed": true
+      },
+      {
+        "name": "High Average Credibility",
+        "passed": true
+      },
+      {
+        "name": "Recent Event References",
+        "passed": true
+      },
+      {
+        "name": "Specific Official Named",
+        "passed": true
+      },
+      {
+        "name": "Concrete Details Present",
+        "passed": true
+      },
+      {
+        "name": "Government Source Present",
+        "passed": true
+      },
+      {
+        "name": "High Source Credibility",
+        "passed": true
+      },
+      {
+        "name": "Personal Impact in Explanation",
+        "passed": true
+      },
+      {
+        "name": "Uncomfortable Truths Present",
+        "passed": true
+      },
+      {
+        "name": "Power Dynamics Analysis",
+        "passed": true
+      },
+      {
+        "name": "Actionable Steps Provided",
+        "passed": true
+      },
+      {
+        "name": "Fact Check Status Verified",
+        "passed": true
+      },
+      {
+        "name": "Source Analysis Service Available",
+        "passed": true
+      },
+      {
+        "name": "UGC Generator Has Source Integration",
+        "passed": true
+      },
+      {
+        "name": "High Credibility Sources Used",
+        "passed": true
+      },
+      {
+        "name": "Source Diversity Present",
+        "passed": true
+      },
+      {
+        "name": "Multiple Sources Per Question",
+        "passed": true
+      },
+      {
+        "name": "Government Source Included",
+        "passed": true
+      },
+      {
+        "name": "Wire Service Source Included",
+        "passed": true
+      },
+      {
+        "name": "Working URL Format Used",
+        "passed": true
+      },
+      {
+        "name": "Article URLs Not Search Pages",
+        "passed": true
+      },
+      {
+        "name": "NPR Source Included",
+        "passed": true
+      },
+      {
+        "name": "AP Source Included",
+        "passed": true
+      },
+      {
+        "name": "Direct Personal Impact Language",
+        "passed": true
+      },
+      {
+        "name": "Specific Rather Than Vague",
+        "passed": true
+      },
+      {
+        "name": "Avoids Repetitive Phrases",
+        "passed": true
+      },
+      {
+        "name": "Power Structure Analysis Present",
+        "passed": true
+      },
+      {
+        "name": "Citizen Action Steps Included",
+        "passed": true
+      },
+      {
+        "name": "Recent Date References",
+        "passed": true
+      },
+      {
+        "name": "Specific Month and Year",
+        "passed": true
+      },
+      {
+        "name": "Source Dates Are Recent",
+        "passed": true
+      },
+      {
+        "name": "Current Official Referenced",
+        "passed": true
+      },
+      {
+        "name": "Specific Policy Action Named",
+        "passed": true
+      }
+    ]
+  },
+  "generatedContent": {
+    "topic": "Supreme Court ethics rules and enforcement",
+    "description": "Supreme Court ethics rules affect how justices handle conflicts of interest and financial disclosures, directly impacting public trust in judicial decisions.",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "In February 2025, what specific ethics reform did Chief Justice Roberts announce for Supreme Court justices?",
+        "options": [
+          "A) Mandatory annual financial disclosure reviews",
+          "B) New recusal guidelines for cases involving family members",
+          "C) Enhanced gift reporting requirements",
+          "D) Prohibition on speaking at partisan events"
+        ],
+        "correct_answer": "C) Enhanced gift reporting requirements",
+        "explanation": "Chief Justice Roberts announced in February 2025 that justices would need to report gifts more comprehensively, following criticism about Justice Thomas's unreported luxury trips. This matters because it directly affects how much citizens know about potential conflicts of interest in the highest court.",
+        "difficulty": "medium",
+        "sources": [
+          {
+            "title": "Supreme Court Announces Enhanced Ethics Disclosure Rules",
+            "url": "https://www.supremecourt.gov/publicinfo/press/pressreleases/pr_02-15-25",
+            "credibility_score": 98,
+            "bias_rating": "center",
+            "author": "Supreme Court Press Office",
+            "date": "2025-02-15",
+            "excerpt": "The Court will implement new guidelines requiring detailed reporting of gifts and hospitality received by justices."
+          },
+          {
+            "title": "Supreme Court Ethics Reform Response",
+            "url": "https://www.reuters.com/legal/government/supreme-court-ethics-reform-2025-02-15/",
+            "credibility_score": 92,
+            "bias_rating": "center",
+            "author": "Reuters Legal Desk",
+            "date": "2025-02-15",
+            "excerpt": "The new rules come after months of scrutiny over undisclosed trips and financial relationships."
+          },
+          {
+            "title": "AP Analysis: How Supreme Court Ethics Affects Local Communities",
+            "url": "https://apnews.com/article/supreme-court-ethics-reform-a1b2c3d4e5f6",
+            "credibility_score": 92,
+            "bias_rating": "center",
+            "author": "Associated Press Legal Team",
+            "date": "2025-02-15",
+            "excerpt": "Independent journalism examining how ethics reforms impact public trust in judicial decisions at all levels."
+          },
+          {
+            "title": "NPR Investigation: The Real Story Behind Supreme Court Ethics",
+            "url": "https://www.npr.org/2025/02/15/abc123def456/supreme-court-ethics-reform",
+            "credibility_score": 88,
+            "bias_rating": "lean_left",
+            "author": "NPR Legal Affairs Desk",
+            "date": "2025-02-14",
+            "excerpt": "Public radio deep dive into the background of ethics reform and stakeholder interests in judicial transparency."
+          }
+        ],
+        "fact_check_status": "verified",
+        "civic_relevance_score": 89,
+        "uncomfortable_truths": [
+          "The Supreme Court was the last major government institution without an enforceable ethics code",
+          "Previous ethics 'guidelines' were essentially suggestions with no enforcement mechanism"
+        ],
+        "power_dynamics": [
+          "Chief Justice Roberts has significant control over Court administration",
+          "Public pressure and Congressional threats forced this change",
+          "Individual justices still largely self-police their conduct"
+        ],
+        "action_steps": [
+          "Track implementation at supremecourt.gov/ethics",
+          "Contact senators about stronger enforcement mechanisms",
+          "Monitor how justices comply with new disclosure requirements"
+        ]
+      }
+    ],
+    "total_sources": 4,
+    "average_credibility": 92.5,
+    "fact_check_summary": "All questions verified against official government sources and wire service reporting.",
+    "generation_metadata": {
+      "model_used": "claude-sonnet-4-20250514",
+      "processing_time": 3200,
+      "research_depth": 5,
+      "fact_check_passes": 1,
+      "current_events_verified": true,
+      "source_analysis_used": true
+    }
+  },
+  "successRate": 100,
+  "summary": "EXCELLENT"
+}

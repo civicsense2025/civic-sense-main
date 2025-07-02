@@ -1,0 +1,33 @@
+# CivicSense Google OAuth Configuration Template
+# Copy these lines to your .env file and replace with your actual client IDs
+
+# Google OAuth Configuration  
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=1081363844633-6ak3kq6rqd8j6ohcm9fc8hgts8oj9s75.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your_android_client_id_here
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your_ios_client_id_here
+
+# Instructions:
+# 1. Get your Android Client ID from Google Cloud Console after creating Android OAuth client
+# 2. Get your iOS Client ID from Google Cloud Console after creating iOS OAuth client  
+# 3. Replace the placeholder values above with your actual client IDs
+# 4. Add these lines to your .env file
+
+# Required for Android OAuth Client ID creation:
+# - Package name: com.civicsense.app
+# - SHA-1 certificate fingerprint: Get this using one of the methods mentioned in the setup guide
+
+# Required for iOS OAuth Client ID creation:
+# - Bundle Identifier: com.civicsense.app
+# - No additional configuration needed 
+
+# Expo
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url_here
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# OneSignal Configuration for iOS Push Notifications
+EXPO_PUBLIC_ONESIGNAL_APP_ID=your_onesignal_app_id_here
+ONESIGNAL_REST_API_KEY=your_onesignal_rest_api_key_here
+ONESIGNAL_USER_AUTH_KEY=your_onesignal_user_auth_key_here
+
+# Apple Developer Configuration (for OneSignal iOS setup)
+APPLE_DEVELOPER_TEAM_ID=your_apple_team_id_here 

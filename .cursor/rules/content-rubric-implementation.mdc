@@ -1,0 +1,390 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CivicSense Content Rubric - Developer Implementation Guide
+
+*Quick reference for implementing content quality standards in code*
+
+## Quick Quality Check (30 Second Assessment)
+
+Before any content goes live, ask these **5 CRITICAL QUESTIONS**:
+
+1. **🔥 Would politicians prefer people not know this?** (Uncomfortable Truth Test)
+2. **⚔️ Does it name specific actors and assign responsibility?** (Active Voice Test)  
+3. **💰 Does it follow the money and reveal power dynamics?** (Power Analysis Test)
+4. **🎯 Can someone take action in the next 24 hours?** (Actionability Test)
+5. **📊 Are all claims backed by primary sources?** (Accuracy Test)
+
+**If any answer is "NO" → Content needs improvement before publication**
+
+## Automated Quality Gates
+
+### TypeScript Implementation
+```typescript
+// REQUIRED: Implement these quality gates in your content pipeline
+interface ContentQualityGate {
+  // CRITICAL: Must pass all gates to publish
+  uncomfortable_truth_detected: boolean     // 🔥 Makes politicians uncomfortable
+  active_voice_percentage: number          // ⚔️ > 80% active voice required
+  specific_actors_named: number            // ⚔️ Minimum 2 specific institutions/officials
+  power_dynamics_revealed: boolean         // 💰 Exposes hidden power structures
+  action_steps_count: number              // 🎯 Minimum 3 specific action steps
+  primary_sources_count: number           // 📊 Minimum 2 primary sources
+  
+  // SCORING: Must meet minimums
+  overall_score: number                    // ≥ 70/100 required
+  brand_voice_score: number              // ≥ 21/30 required  
+  power_dynamics_score: number           // ≥ 18/25 required
+  civic_engagement_score: number         // ≥ 14/20 required
+  accuracy_score: number                 // ≥ 12/15 required
+  
+  // STATUS
+  ready_for_publication: boolean
+  politician_discomfort_level: 'high' | 'medium' | 'low'
+}
+
+// Implementation example
+const validateContentQuality = (content: Content): ContentQualityGate => {
+  const qualityGate = {
+    uncomfortable_truth_detected: detectUncomfortableTruth(content),
+    active_voice_percentage: calculateActiveVoicePercentage(content),
+    specific_actors_named: countSpecificActors(content),
+    power_dynamics_revealed: detectPowerDynamics(content),
+    action_steps_count: countActionSteps(content),
+    primary_sources_count: countPrimarySources(content),
+    
+    overall_score: calculateOverallScore(content),
+    brand_voice_score: calculateBrandVoiceScore(content),
+    power_dynamics_score: calculatePowerScore(content),
+    civic_engagement_score: calculateEngagementScore(content),
+    accuracy_score: calculateAccuracyScore(content),
+    
+    ready_for_publication: false,
+    politician_discomfort_level: 'low'
+  }
+  
+  // Determine publication readiness
+  qualityGate.ready_for_publication = (
+    qualityGate.overall_score >= 70 &&
+    qualityGate.brand_voice_score >= 21 &&
+    qualityGate.power_dynamics_score >= 18 &&
+    qualityGate.civic_engagement_score >= 14 &&
+    qualityGate.accuracy_score >= 12 &&
+    qualityGate.uncomfortable_truth_detected &&
+    qualityGate.action_steps_count >= 3 &&
+    qualityGate.primary_sources_count >= 2
+  )
+  
+  return qualityGate
+}
+```
+
+## Content Status Workflow
+
+### Publication Pipeline
+```typescript
+enum ContentPublicationStatus {
+  DRAFT = 'draft',                    // Initial creation
+  QUALITY_REVIEW = 'quality_review',  // Automated quality check
+  NEEDS_BOLDNESS = 'needs_boldness',  // Failed uncomfortable truth test
+  NEEDS_POWER_ANALYSIS = 'needs_power_analysis', // Missing power dynamics
+  NEEDS_ACTIONS = 'needs_actions',    // Insufficient action steps
+  NEEDS_SOURCES = 'needs_sources',    // Inadequate source verification
+  HUMAN_REVIEW = 'human_review',      // Requires human validation
+  APPROVED = 'approved',              // Ready for publication
+  PUBLISHED = 'published',            // Live on platform
+  REJECTED = 'rejected'               // Failed quality standards
+}
+
+// Automatic quality routing
+const routeContentByQuality = (quality: ContentQualityGate): ContentPublicationStatus => {
+  // Red flags - automatic rejection
+  if (!quality.uncomfortable_truth_detected) return ContentPublicationStatus.NEEDS_BOLDNESS
+  if (quality.power_dynamics_score < 18) return ContentPublicationStatus.NEEDS_POWER_ANALYSIS  
+  if (quality.action_steps_count < 3) return ContentPublicationStatus.NEEDS_ACTIONS
+  if (quality.primary_sources_count < 2) return ContentPublicationStatus.NEEDS_SOURCES
+  
+  // Quality thresholds
+  if (quality.overall_score < 70) return ContentPublicationStatus.QUALITY_REVIEW
+  if (quality.overall_score < 80) return ContentPublicationStatus.HUMAN_REVIEW
+  
+  return ContentPublicationStatus.APPROVED
+}
+```
+
+## Quality Detection Functions
+
+### Brand Voice Detection
+```typescript
+// Detect uncomfortable truths
+const detectUncomfortableTruth = (content: string): boolean => {
+  const uncomfortableTruthIndicators = [
+    /here's what they don't want you to know/i,
+    /politicians don't want people to understand/i,
+    /the real reason.*is/i,
+    /behind the political theater/i,
+    /what.*actually happening/i,
+    /how.*actually works/i,
+    /while officials claim.*they actually/i
+  ]
+  
+  return uncomfortableTruthIndicators.some(pattern => pattern.test(content))
+}
+
+// Calculate active voice percentage
+const calculateActiveVoicePercentage = (content: string): number => {
+  const sentences = content.split(/[.!?]+/)
+  let activeVoiceCount = 0
+  
+  sentences.forEach(sentence => {
+    // Check for passive voice indicators
+    const passiveIndicators = /\b(was|were|been|being)\s+([\w]+ed|[\w]+en)\b/i
+    const activeIndicators = /\b(congress|senate|republicans|democrats|biden|trump|officials?\s+\w+)\s+(voted|decided|blocked|passed|signed|rejected)/i
+    
+    if (!passiveIndicators.test(sentence) || activeIndicators.test(sentence)) {
+      activeVoiceCount++
+    }
+  })
+  
+  return (activeVoiceCount / sentences.length) * 100
+}
+
+// Count specific actors named
+const countSpecificActors = (content: string): number => {
+  const specificActorPatterns = [
+    /\b(senator|representative|congressman|congresswoman)\s+[A-Z][a-z]+/g,
+    /\b(secretary|director|commissioner|administrator)\s+[A-Z][a-z]+/g,
+    /\b(department of|agency|bureau|commission|committee)\s+[A-Z]/g,
+    /\$([\d,]+)\s+(million|billion|trillion)/g,
+    /\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/g // Specific dates
+  ]
+  
+  let actorCount = 0
+  specificActorPatterns.forEach(pattern => {
+    const matches = content.match(pattern)
+    if (matches) actorCount += matches.length
+  })
+  
+  return actorCount
+}
+```
+
+### Power Dynamics Detection
+```typescript
+// Detect power dynamics analysis
+const detectPowerDynamics = (content: string): boolean => {
+  const powerDynamicsIndicators = [
+    /who actually (decides|controls|makes|determines)/i,
+    /real power (lies|flows|rests) (with|in|through)/i,
+    /behind the scenes/i,
+    /follow the money/i,
+    /who benefits (financially|from)/i,
+    /hidden (stakeholders|interests|influence)/i,
+    /actual process.*different.*official/i,
+    /gap between.*supposed.*actually/i
+  ]
+  
+  return powerDynamicsIndicators.some(pattern => pattern.test(content))
+}
+
+// Detect financial analysis
+const detectMoneyTrails = (content: string): boolean => {
+  const moneyTrailIndicators = [
+    /\$[\d,]+\s+(million|billion|trillion)/i,
+    /(campaign|lobbying|donation).*\$[\d,]+/i,
+    /funded by|financing|financial interest/i,
+    /contracts? worth/i,
+    /who (pays|funds|benefits)/i
+  ]
+  
+  return moneyTrailIndicators.some(pattern => pattern.test(content))
+}
+```
+
+### Action Step Detection
+```typescript
+// Count actionable steps
+const countActionSteps = (content: string): number => {
+  const actionStepPatterns = [
+    /call\s+(your\s+)?(representative|senator|congressman)/i,
+    /contact\s+.+\s+at\s+\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/i,
+    /email\s+.+@.+\.(gov|org|com)/i,
+    /attend.*meeting.*\d{1,2}\/\d{1,2}\/\d{4}/i,
+    /join\s+[A-Z][a-z]+.*organization/i,
+    /vote (in|for|against|on)/i
+  ]
+  
+  let actionCount = 0
+  actionStepPatterns.forEach(pattern => {
+    const matches = content.match(pattern)
+    if (matches) actionCount += matches.length
+  })
+  
+  return actionCount
+}
+```
+
+## Quality Enhancement Suggestions
+
+### Automated Improvement Prompts
+```typescript
+const generateImprovementSuggestions = (quality: ContentQualityGate): string[] => {
+  const suggestions = []
+  
+  if (!quality.uncomfortable_truth_detected) {
+    suggestions.push("🔥 Add uncomfortable truth: What don't politicians want people to know about this topic?")
+  }
+  
+  if (quality.active_voice_percentage < 80) {
+    suggestions.push("⚔️ Convert passive voice: Replace 'decisions were made' with 'Senator X decided to...'")
+  }
+  
+  if (quality.specific_actors_named < 2) {
+    suggestions.push("⚔️ Name specific actors: Replace 'government' with specific agencies/officials")
+  }
+  
+  if (!quality.power_dynamics_revealed) {
+    suggestions.push("💰 Add power analysis: Who actually makes this decision vs. who appears to?")
+  }
+  
+  if (quality.action_steps_count < 3) {
+    suggestions.push("🎯 Add action steps: Include specific contact info and exact language to use")
+  }
+  
+  if (quality.primary_sources_count < 2) {
+    suggestions.push("📊 Add primary sources: Link to government documents, voting records, or official statements")
+  }
+  
+  return suggestions
+}
+```
+
+## Database Schema Integration
+
+### Content Quality Tracking
+```sql
+-- Add to content tables
+ALTER TABLE question_topics ADD COLUMN IF NOT EXISTS 
+quality_score INTEGER DEFAULT 0,
+brand_voice_score INTEGER DEFAULT 0,
+power_dynamics_score INTEGER DEFAULT 0,
+civic_engagement_score INTEGER DEFAULT 0,
+accuracy_score INTEGER DEFAULT 0,
+uncomfortable_truth_validated BOOLEAN DEFAULT FALSE,
+politician_discomfort_level TEXT DEFAULT 'low',
+last_quality_check TIMESTAMPTZ DEFAULT NOW();
+
+-- Quality tracking table
+CREATE TABLE IF NOT EXISTS content_quality_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id UUID NOT NULL,
+  content_type TEXT NOT NULL,
+  quality_score INTEGER NOT NULL,
+  quality_details JSONB NOT NULL,
+  improvement_suggestions TEXT[],
+  checked_at TIMESTAMPTZ DEFAULT NOW(),
+  checked_by TEXT
+);
+```
+
+## Component Implementation
+
+### Quality Indicator Components
+```typescript
+// Quality score display component
+const QualityScoreIndicator = ({ quality }: { quality: ContentQualityGate }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600 bg-green-100'
+    if (score >= 80) return 'text-blue-600 bg-blue-100'  
+    if (score >= 70) return 'text-yellow-600 bg-yellow-100'
+    return 'text-red-600 bg-red-100'
+  }
+  
+  return (
+    <div className="flex items-center gap-2">
+      <Badge className={getScoreColor(quality.overall_score)}>
+        Quality: {quality.overall_score}/100
+      </Badge>
+      {quality.politician_discomfort_level === 'high' && (
+        <Badge className="bg-red-100 text-red-800">
+          🔥 High Political Discomfort
+        </Badge>
+      )}
+      {quality.uncomfortable_truth_detected && (
+        <Badge className="bg-orange-100 text-orange-800">
+          ⚡ Uncomfortable Truth
+        </Badge>
+      )}
+    </div>
+  )
+}
+
+// Quality improvement suggestions
+const QualityImprovementPanel = ({ suggestions }: { suggestions: string[] }) => {
+  return (
+    <Card className="border-yellow-200 bg-yellow-50">
+      <CardHeader>
+        <CardTitle className="text-yellow-800">Quality Improvements Needed</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {suggestions.map((suggestion, index) => (
+            <li key={index} className="flex items-start gap-2">
+              <span className="text-yellow-600">•</span>
+              <span className="text-yellow-800">{suggestion}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+## Daily Quality Monitoring
+
+### Quality Dashboard Metrics
+```typescript
+interface QualityMetrics {
+  // Content quality trends
+  avg_quality_score: number
+  content_below_threshold: number
+  uncomfortable_truth_percentage: number
+  action_steps_per_content: number
+  
+  // Brand impact
+  politician_discomfort_rate: number
+  civic_actions_generated: number
+  misconceptions_corrected: number
+  
+  // Quality improvement trends
+  quality_improvement_rate: number
+  human_review_percentage: number
+  rejection_rate: number
+}
+
+// Daily quality report
+const generateQualityReport = async (): Promise<QualityMetrics> => {
+  // Implement quality metrics calculation
+  // Track trends and alert on quality degradation
+}
+```
+
+## The Bottom Line
+
+**Use this rubric as your quality gate - nothing gets published without meeting our standards.**
+
+### Quick Checklist for Every Content Piece:
+- [ ] 🔥 **Uncomfortable Truth**: Would politicians prefer people not know this?
+- [ ] ⚔️ **Active Voice**: Names specific actors and assigns responsibility  
+- [ ] 💰 **Power Analysis**: Reveals who actually makes decisions and who benefits
+- [ ] 🎯 **Action Steps**: Provides 3+ specific things people can do immediately
+- [ ] 📊 **Primary Sources**: Backs all claims with verifiable evidence
+- [ ] 📈 **Overall Score**: Achieves 70+ points with required minimums
+
+### Remember:
+**We're not building content to make people feel good about government. We're building content to give them the tools to understand and change it.**
+
+*Every line of code should uphold our promise: civic education that politicians don't want you to have.*

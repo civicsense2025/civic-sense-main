@@ -6,14 +6,14 @@ alwaysApply: true
 # CivicSense Mobile Development Rules (Consolidated)
 
 ## 📋 Table of Contents
-1. [Project Architecture](#project-architecture)
-2. [Development Standards](#development-standards)
-3. [Performance Optimization](#performance-optimization)
-4. [iOS-Specific Guidelines](#ios-specific-guidelines)
-5. [Testing & Quality Assurance](#testing--quality-assurance)
-6. [Security Implementation](#security-implementation)
-7. [Common Scenarios Q&A](#common-scenarios-qa)
-8. [Troubleshooting Guide](#troubleshooting-guide)
+1. [Project Architecture](mdc:#project-architecture)
+2. [Development Standards](mdc:#development-standards)
+3. [Performance Optimization](mdc:#performance-optimization)
+4. [iOS-Specific Guidelines](mdc:#ios-specific-guidelines)
+5. [Testing & Quality Assurance](mdc:#testing--quality-assurance)
+6. [Security Implementation](mdc:#security-implementation)
+7. [Common Scenarios Q&A](mdc:#common-scenarios-qa)
+8. [Troubleshooting Guide](mdc:#troubleshooting-guide)
 
 ---
 

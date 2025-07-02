@@ -1,0 +1,1282 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# CivicSense Accessibility Standards
+
+## Core Philosophy
+**Accessibility is democracy in action.** Every citizen deserves equal access to civic education, regardless of ability. When we exclude people from learning about their government, we exclude them from democracy itself.
+
+Just as CivicSense reveals uncomfortable truths about power, we must confront the uncomfortable truth that most civic education platforms fail disabled citizens. We will not.
+
+---
+
+## 1. Accessibility as Democratic Right
+
+### 1.1 Mission Alignment
+**PRINCIPLE**: If you can't access civic education, you can't fully participate in democracy.
+
+**Our Commitment:**
+- 100% of civic learning content must be accessible
+- Every interactive feature must work with assistive technology
+- No citizen is excluded from understanding how power works
+- Accessibility features enhance the experience for all users
+
+### 1.2 Legal and Ethical Standards
+**REQUIRED**: Meet and exceed WCAG 2.1 AA standards
+- **Legal Compliance**: ADA Section 508 requirements
+- **Ethical Standard**: WCAG 2.1 AAA where feasible
+- **Future-Proof**: Preparation for WCAG 3.0
+- **Testing Standard**: Real users with disabilities validate our approach
+
+---
+
+## 2. Keyboard Navigation Standards
+
+### 2.1 Universal Keyboard Access
+**RULE**: Every interactive element must be keyboard accessible.
+
+```typescript
+// REQUIRED: All interactive components must support keyboard navigation
+interface KeyboardAccessible {
+  // Focus management
+  tabIndex: number | 'auto'
+  onKeyDown: (event: KeyboardEvent) => void
+  onFocus: (event: FocusEvent) => void
+  onBlur: (event: FocusEvent) => void
+  
+  // ARIA attributes
+  'aria-label'?: string
+  'aria-describedby'?: string
+  'aria-expanded'?: boolean
+  role?: string
+}
+
+// REQUIRED: Custom keyboard event handler
+const handleKeyDown = (event: KeyboardEvent) => {
+  switch (event.key) {
+    case 'Enter':
+    case ' ': // Space key
+      event.preventDefault()
+      handleActivation()
+      break
+    case 'Escape':
+      handleEscape()
+      break
+    case 'ArrowUp':
+    case 'ArrowDown':
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      handleArrowNavigation(event.key)
+      break
+    case 'Home':
+    case 'End':
+      handleHomeEnd(event.key)
+      break
+  }
+}
+```
+
+### 2.2 Focus Management
+**REQUIRED**: Logical, predictable focus flow
+
+```typescript
+// Focus management utility for CivicSense components
+class FocusManager {
+  // REQUIRED: Trap focus within modals/dialogs
+  trapFocus(container: HTMLElement) {
+    const focusableElements = container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const firstElement = focusableElements[0] as HTMLElement
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+    
+    container.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement.focus()
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement.focus()
+        }
+      }
+    })
+  }
+  
+  // REQUIRED: Restore focus after modal closes
+  restoreFocus(previousElement: HTMLElement) {
+    previousElement?.focus()
+  }
+  
+  // REQUIRED: Skip to main content
+  addSkipLink() {
+    const skipLink = document.createElement('a')
+    skipLink.href = '#main-content'
+    skipLink.textContent = 'Skip to main content'
+    skipLink.className = 'skip-link'
+    document.body.insertBefore(skipLink, document.body.firstChild)
+  }
+}
+```
+
+### 2.3 Quiz and Interactive Component Navigation
+**REQUIRED**: Keyboard navigation for all quiz interactions
+
+```typescript
+// Quiz component keyboard accessibility
+interface AccessibleQuizComponent {
+  // Question navigation
+  handleQuestionNavigation: (direction: 'next' | 'previous') => void
+  
+  // Answer selection with keyboard
+  handleAnswerSelection: (answerIndex: number) => void
+  
+  // Submit and review with keyboard
+  handleSubmission: () => void
+  
+  // Keyboard shortcuts for power users
+  keyboardShortcuts: {
+    'n': 'next question'
+    'p': 'previous question'
+    '1-9': 'select answer option'
+    'Enter': 'submit answer'
+    'r': 'review answers'
+    'h': 'show help/instructions'
+  }
+}
+
+// Implementation example
+const QuizKeyboardHandler = ({ onAnswerSelect, onNext, onPrevious }: QuizProps) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Prevent default for our handled keys
+    const handledKeys = ['n', 'p', '1', '2', '3', '4', '5', 'Enter', 'r', 'h']
+    if (handledKeys.includes(event.key.toLowerCase())) {
+      event.preventDefault()
+    }
+    
+    switch (event.key.toLowerCase()) {
+      case 'n':
+        onNext()
+        announceToScreenReader('Moving to next question')
+        break
+      case 'p':
+        onPrevious()
+        announceToScreenReader('Moving to previous question')
+        break
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+        const answerIndex = parseInt(event.key) - 1
+        onAnswerSelect(answerIndex)
+        announceToScreenReader(`Selected answer ${event.key}`)
+        break
+    }
+  }, [onAnswerSelect, onNext, onPrevious])
+  
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+}
+```
+
+---
+
+## 3. Screen Reader Support
+
+### 3.1 ARIA Standards
+**REQUIRED**: Comprehensive ARIA implementation
+
+```typescript
+// REQUIRED: ARIA attributes for all CivicSense components
+interface ARIARequirements {
+  // Identify the component
+  role: string
+  'aria-label': string
+  'aria-labelledby'?: string
+  'aria-describedby'?: string
+  
+  // State information
+  'aria-expanded'?: boolean
+  'aria-selected'?: boolean
+  'aria-checked'?: boolean
+  'aria-disabled'?: boolean
+  
+  // Live regions for dynamic content
+  'aria-live'?: 'polite' | 'assertive' | 'off'
+  'aria-atomic'?: boolean
+  
+  // Progress and status
+  'aria-valuenow'?: number
+  'aria-valuemin'?: number
+  'aria-valuemax'?: number
+  'aria-valuetext'?: string
+}
+
+// Quiz progress example
+const QuizProgress = ({ currentQuestion, totalQuestions, score }: QuizProgressProps) => (
+  <div
+    role="progressbar"
+    aria-label="Quiz progress"
+    aria-valuenow={currentQuestion}
+    aria-valuemin={1}
+    aria-valuemax={totalQuestions}
+    aria-valuetext={`Question ${currentQuestion} of ${totalQuestions}, current score: ${score}%`}
+    aria-live="polite"
+  >
+    <span className="sr-only">
+      Question {currentQuestion} of {totalQuestions}. 
+      Current score: {score}%. 
+      You are learning about {topicTitle}.
+    </span>
+  </div>
+)
+```
+
+### 3.2 Live Regions and Announcements
+**REQUIRED**: Dynamic content must be announced
+
+```typescript
+// Screen reader announcement utility
+class ScreenReaderAnnouncer {
+  private liveRegion: HTMLElement
+  
+  constructor() {
+    this.createLiveRegion()
+  }
+  
+  private createLiveRegion() {
+    this.liveRegion = document.createElement('div')
+    this.liveRegion.setAttribute('aria-live', 'polite')
+    this.liveRegion.setAttribute('aria-atomic', 'true')
+    this.liveRegion.className = 'sr-only'
+    document.body.appendChild(this.liveRegion)
+  }
+  
+  // REQUIRED: Announce civic learning progress
+  announceQuizProgress(correct: boolean, questionNumber: number, topic: string) {
+    const message = correct 
+      ? `Correct! You're building civic knowledge about ${topic}. Question ${questionNumber} complete.`
+      : `That's not quite right. Let's learn about ${topic} together. Question ${questionNumber} complete.`
+    
+    this.announce(message)
+  }
+  
+  // REQUIRED: Announce navigation changes
+  announceNavigation(newLocation: string, civicContext?: string) {
+    const context = civicContext 
+      ? `Now learning about ${civicContext}. `
+      : ''
+    this.announce(`${context}Navigated to ${newLocation}`)
+  }
+  
+  // REQUIRED: Announce errors with helpful context
+  announceError(error: string, civicAction?: string) {
+    const action = civicAction 
+      ? ` This affects your ability to ${civicAction}.`
+      : ''
+    this.announce(`Error: ${error}${action} Please try again or contact support.`)
+  }
+  
+  private announce(message: string) {
+    this.liveRegion.textContent = message
+    
+    // Clear after announcement to avoid repetition
+    setTimeout(() => {
+      this.liveRegion.textContent = ''
+    }, 1000)
+  }
+}
+
+// Global announcer instance
+export const screenReaderAnnouncer = new ScreenReaderAnnouncer()
+```
+
+### 3.3 Content Structure for Screen Readers
+**REQUIRED**: Semantic HTML with proper heading hierarchy
+
+```typescript
+// REQUIRED: Semantic component structure
+const AccessibleQuizQuestion = ({ 
+  question, 
+  questionNumber, 
+  totalQuestions, 
+  civicTopic 
+}: QuizQuestionProps) => (
+  <section 
+    role="main" 
+    aria-labelledby={`question-${questionNumber}-title`}
+    aria-describedby={`question-${questionNumber}-context`}
+  >
+    {/* REQUIRED: Clear heading hierarchy */}
+    <h1 id={`question-${questionNumber}-title`} className="quiz-question-title">
+      Question {questionNumber} of {totalQuestions}: {civicTopic}
+    </h1>
+    
+    {/* REQUIRED: Context for civic education */}
+    <div id={`question-${questionNumber}-context`} className="sr-only">
+      This question tests your knowledge about {civicTopic}, 
+      helping you understand how power works in your government.
+    </div>
+    
+    {/* REQUIRED: Question content with proper markup */}
+    <h2 className="question-text">{question.text}</h2>
+    
+    {/* REQUIRED: Answer options with proper roles */}
+    <fieldset role="radiogroup" aria-labelledby={`question-${questionNumber}-title`}>
+      <legend className="sr-only">Choose your answer</legend>
+      {question.options.map((option, index) => (
+        <label key={index} className="answer-option">
+          <input
+            type="radio"
+            name={`question-${questionNumber}`}
+            value={option.id}
+            aria-describedby={`option-${index}-description`}
+            onChange={() => handleAnswerSelect(option.id)}
+          />
+          <span className="option-text">{option.text}</span>
+          <span id={`option-${index}-description`} className="sr-only">
+            Option {index + 1} of {question.options.length}
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  </section>
+)
+```
+
+---
+
+## 4. Audio Accessibility
+
+### 4.1 Audio Controls and Alternatives
+**REQUIRED**: Full audio control for users
+
+```typescript
+// REQUIRED: Accessible audio player for CivicSense content
+interface AccessibleAudioPlayer {
+  // Essential controls
+  play: () => void
+  pause: () => void
+  stop: () => void
+  
+  // Accessibility features
+  volume: number
+  playbackRate: number
+  currentTime: number
+  duration: number
+  
+  // REQUIRED: Text alternatives
+  transcript: string
+  captions?: Caption[]
+  audioDescription?: string
+  
+  // REQUIRED: Keyboard controls
+  keyboardShortcuts: {
+    'Space': 'play/pause'
+    'ArrowLeft': 'rewind 10 seconds'
+    'ArrowRight': 'forward 10 seconds'
+    'ArrowUp': 'increase volume'
+    'ArrowDown': 'decrease volume'
+    'm': 'mute/unmute'
+    'c': 'toggle captions'
+  }
+}
+
+// Implementation with full accessibility
+const CivicAudioPlayer = ({ audioUrl, transcript, title }: AudioPlayerProps) => {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [volume, setVolume] = useState(1)
+  const [showTranscript, setShowTranscript] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  
+  // REQUIRED: Keyboard controls
+  const handleKeyDown = (event: KeyboardEvent) => {
+    switch (event.key) {
+      case ' ':
+        event.preventDefault()
+        togglePlayPause()
+        break
+      case 'ArrowLeft':
+        event.preventDefault()
+        seek(currentTime - 10)
+        break
+      case 'ArrowRight':
+        event.preventDefault()
+        seek(currentTime + 10)
+        break
+      case 'm':
+        event.preventDefault()
+        toggleMute()
+        break
+      case 'c':
+        event.preventDefault()
+        setShowTranscript(!showTranscript)
+        break
+    }
+  }
+  
+  return (
+    <div 
+      className="civic-audio-player"
+      role="region"
+      aria-label={`Audio player for ${title}`}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+    >
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        aria-label={title}
+        onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+        onEnded={() => setIsPlaying(false)}
+      />
+      
+      {/* REQUIRED: Accessible controls */}
+      <div className="audio-controls" role="toolbar" aria-label="Audio controls">
+        <button
+          onClick={togglePlayPause}
+          aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+          aria-pressed={isPlaying}
+        >
+          {isPlaying ? <Pause /> : <Play />}
+          {isPlaying ? 'Pause' : 'Play'}
+        </button>
+        
+        {/* REQUIRED: Volume control with labels */}
+        <label htmlFor="volume-slider">Volume</label>
+        <input
+          id="volume-slider"
+          type="range"
+          min="0"
+          max="1"
+          step="0.1"
+          value={volume}
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          aria-valuetext={`${Math.round(volume * 100)}%`}
+        />
+        
+        {/* REQUIRED: Transcript toggle */}
+        <button
+          onClick={() => setShowTranscript(!showTranscript)}
+          aria-expanded={showTranscript}
+          aria-controls="transcript-content"
+        >
+          {showTranscript ? 'Hide' : 'Show'} Transcript
+        </button>
+      </div>
+      
+      {/* REQUIRED: Always available transcript */}
+      {showTranscript && (
+        <div 
+          id="transcript-content"
+          role="region"
+          aria-label="Audio transcript"
+          className="transcript"
+        >
+          <h3>Transcript</h3>
+          <div className="transcript-text">{transcript}</div>
+        </div>
+      )}
+      
+      {/* REQUIRED: Keyboard shortcut help */}
+      <details className="keyboard-shortcuts">
+        <summary>Keyboard shortcuts</summary>
+        <ul>
+          <li><kbd>Space</kbd>: Play/Pause</li>
+          <li><kbd>←</kbd>: Rewind 10 seconds</li>
+          <li><kbd>→</kbd>: Forward 10 seconds</li>
+          <li><kbd>M</kbd>: Mute/Unmute</li>
+          <li><kbd>C</kbd>: Toggle transcript</li>
+        </ul>
+      </details>
+    </div>
+  )
+}
+```
+
+### 4.2 Audio Feedback for Interactions
+**REQUIRED**: Audio cues for user actions
+
+```typescript
+// Audio feedback system for CivicSense interactions
+class AudioFeedbackManager {
+  private audioContext: AudioContext
+  private sounds: Map<string, AudioBuffer>
+  
+  constructor() {
+    this.audioContext = new AudioContext()
+    this.loadSounds()
+  }
+  
+  // REQUIRED: Load civic education audio cues
+  private async loadSounds() {
+    const soundFiles = {
+      'correct-answer': '/sounds/correct-civic-knowledge.wav',
+      'incorrect-answer': '/sounds/learning-opportunity.wav',
+      'progress-milestone': '/sounds/civic-achievement.wav',
+      'navigation': '/sounds/subtle-click.wav',
+      'error': '/sounds/gentle-error.wav',
+      'success': '/sounds/democratic-success.wav'
+    }
+    
+    for (const [name, url] of Object.entries(soundFiles)) {
+      try {
+        const response = await fetch(url)
+        const arrayBuffer = await response.arrayBuffer()
+        const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer)
+        this.sounds.set(name, audioBuffer)
+      } catch (error) {
+        console.warn(`Could not load sound ${name}:`, error)
+      }
+    }
+  }
+  
+  // REQUIRED: Play sound with user preference respect
+  playSound(soundName: string, volume: number = 0.5) {
+    if (!this.userWantsAudio()) return
+    
+    const audioBuffer = this.sounds.get(soundName)
+    if (!audioBuffer) return
+    
+    const source = this.audioContext.createBufferSource()
+    const gainNode = this.audioContext.createGain()
+    
+    source.buffer = audioBuffer
+    gainNode.gain.value = volume
+    
+    source.connect(gainNode)
+    gainNode.connect(this.audioContext.destination)
+    
+    source.start()
+  }
+  
+  private userWantsAudio(): boolean {
+    // Respect user's preference and system settings
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+           localStorage.getItem('civicsense-audio-enabled') !== 'false'
+  }
+}
+```
+
+---
+
+## 5. Visual Accessibility
+
+### 5.1 Color and Contrast
+**REQUIRED**: WCAG AA contrast ratios minimum
+
+```css
+/* REQUIRED: High contrast color palette for CivicSense */
+:root {
+  /* Text on background - WCAG AA: 4.5:1 minimum */
+  --text-primary: #1a1a1a; /* 19.47:1 on white */
+  --text-secondary: #4a4a4a; /* 9.74:1 on white */
+  --background: #ffffff;
+  
+  /* Interactive elements - Higher contrast for clarity */
+  --interactive-primary: #0052cc; /* 7.33:1 on white */
+  --interactive-hover: #003d99; /* 9.33:1 on white */
+  --interactive-active: #002966; /* 12.56:1 on white */
+  
+  /* Status colors with sufficient contrast */
+  --success: #006644; /* 6.42:1 on white */
+  --warning: #b25000; /* 5.89:1 on white */
+  --error: #cc0000; /* 5.25:1 on white */
+  
+  /* Quiz and civic education specific */
+  --civic-knowledge: #1e4d8b; /* Authority blue with high contrast */
+  --democratic-action: #cc2936; /* Action red with high contrast */
+  --power-structure: #6b46c1; /* Purple with sufficient contrast */
+}
+
+/* REQUIRED: Dark mode with proper contrast */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #ffffff; /* 21:1 on dark background */
+    --text-secondary: #cccccc; /* 12.63:1 on dark background */
+    --background: #0a0a0a;
+    
+    --interactive-primary: #4d9fff; /* 8.59:1 on dark */
+    --interactive-hover: #80b3ff; /* 12.05:1 on dark */
+    --interactive-active: #b3d1ff; /* 16.75:1 on dark */
+  }
+}
+
+/* REQUIRED: High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #000000;
+    --text-secondary: #000000;
+    --interactive-primary: #0000ee;
+    --interactive-hover: #0000cc;
+    --interactive-active: #0000aa;
+  }
+}
+
+/* REQUIRED: Focus indicators with high contrast */
+*:focus {
+  outline: 3px solid var(--interactive-primary);
+  outline-offset: 2px;
+}
+
+/* REQUIRED: Skip link styling */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--text-primary);
+  color: var(--background);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  z-index: 9999;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+```
+
+### 5.2 Typography and Readability
+**REQUIRED**: Accessible typography standards
+
+```css
+/* REQUIRED: Accessible typography for civic education */
+.civic-text {
+  /* Readable font sizes */
+  font-size: clamp(1rem, 2.5vw, 1.125rem); /* Minimum 16px, scales responsively */
+  line-height: 1.6; /* WCAG recommendation for readability */
+  
+  /* Font choices for accessibility */
+  font-family: 
+    'Inter', /* Primary - excellent readability */
+    -apple-system, 
+    BlinkMacSystemFont, 
+    'Segoe UI', 
+    Roboto, 
+    sans-serif;
+    
+  /* Letter spacing for readability */
+  letter-spacing: 0.025em;
+  
+  /* Prevent text from being too wide */
+  max-width: 65ch; /* Optimal reading line length */
+}
+
+/* REQUIRED: Heading hierarchy with clear visual distinction */
+.civic-heading-1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; }
+.civic-heading-2 { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 600; }
+.civic-heading-3 { font-size: clamp(1.25rem, 3vw, 1.5rem); font-weight: 600; }
+.civic-heading-4 { font-size: clamp(1.125rem, 2.5vw, 1.25rem); font-weight: 500; }
+
+/* REQUIRED: Support for user font size preferences */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* REQUIRED: Respect user's font size settings */
+body {
+  font-size: inherit; /* Don't override user preferences */
+}
+```
+
+---
+
+## 6. Interactive Component Accessibility
+
+### 6.1 Quiz Components
+**REQUIRED**: Full accessibility for quiz interactions
+
+```typescript
+// REQUIRED: Accessible quiz question component
+const AccessibleQuizQuestion = ({ 
+  question, 
+  selectedAnswer, 
+  onAnswerSelect,
+  questionNumber,
+  totalQuestions 
+}: QuizQuestionProps) => {
+  const [hasAnswered, setHasAnswered] = useState(false)
+  const questionId = `question-${question.id}`
+  
+  const handleAnswerChange = (answerId: string) => {
+    onAnswerSelect(answerId)
+    setHasAnswered(true)
+    
+    // Announce selection to screen readers
+    screenReaderAnnouncer.announce(
+      `Answer selected. ${hasAnswered ? 'You can change your answer before continuing.' : ''}`
+    )
+  }
+  
+  return (
+    <div 
+      role="region" 
+      aria-labelledby={`${questionId}-title`}
+      className="quiz-question"
+    >
+      {/* REQUIRED: Question progress for screen readers */}
+      <div className="sr-only" aria-live="polite">
+        Question {questionNumber} of {totalQuestions}
+      </div>
+      
+      {/* REQUIRED: Clear question title */}
+      <h2 id={`${questionId}-title`} className="question-title">
+        {question.title}
+      </h2>
+      
+      {/* REQUIRED: Question text with proper markup */}
+      <div className="question-text">
+        {question.text}
+      </div>
+      
+      {/* REQUIRED: Answer options with proper ARIA */}
+      <fieldset 
+        role="radiogroup" 
+        aria-labelledby={`${questionId}-title`}
+        aria-required="true"
+        aria-describedby={`${questionId}-instructions`}
+      >
+        <legend className="sr-only">
+          Select one answer from the following options
+        </legend>
+        
+        <div id={`${questionId}-instructions`} className="sr-only">
+          Use arrow keys to navigate between options, space to select
+        </div>
+        
+        {question.options.map((option, index) => (
+          <label 
+            key={option.id}
+            className={`answer-option ${selectedAnswer === option.id ? 'selected' : ''}`}
+          >
+            <input
+              type="radio"
+              name={questionId}
+              value={option.id}
+              checked={selectedAnswer === option.id}
+              onChange={() => handleAnswerChange(option.id)}
+              aria-describedby={`${questionId}-option-${index}-description`}
+              className="answer-input"
+            />
+            
+            <span className="option-indicator" aria-hidden="true">
+              {String.fromCharCode(65 + index)} {/* A, B, C, D */}
+            </span>
+            
+            <span className="option-text">
+              {option.text}
+            </span>
+            
+            <span 
+              id={`${questionId}-option-${index}-description`} 
+              className="sr-only"
+            >
+              Option {String.fromCharCode(65 + index)}, 
+              {selectedAnswer === option.id ? 'selected' : 'not selected'}
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      
+      {/* REQUIRED: Answer feedback */}
+      {hasAnswered && (
+        <div 
+          role="status" 
+          aria-live="polite"
+          className="answer-feedback"
+        >
+          <p>
+            Answer selected. You can review and change your answer before submitting.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### 6.2 Multiplayer Components
+**REQUIRED**: Accessible multiplayer civic education
+
+```typescript
+// REQUIRED: Accessible multiplayer room interface
+const AccessibleMultiplayerRoom = ({ 
+  roomCode, 
+  players, 
+  currentQuestion,
+  isHost 
+}: MultiplayerRoomProps) => {
+  const [roomUpdate, setRoomUpdate] = useState('')
+  
+  // Announce player joins/leaves
+  useEffect(() => {
+    const announcement = `${players.length} player${players.length === 1 ? '' : 's'} in the room. ${
+      players.map(p => p.name).join(', ')
+    }`
+    screenReaderAnnouncer.announce(announcement)
+  }, [players])
+  
+  return (
+    <div role="main" aria-labelledby="multiplayer-room-title">
+      <h1 id="multiplayer-room-title">
+        Multiplayer Civic Learning Room: {roomCode}
+      </h1>
+      
+      {/* REQUIRED: Room status for screen readers */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-label="Room status"
+        className="sr-only"
+      >
+        {roomUpdate}
+      </div>
+      
+      {/* REQUIRED: Player list with proper semantics */}
+      <section aria-labelledby="players-heading">
+        <h2 id="players-heading">
+          Players ({players.length})
+        </h2>
+        
+        <ul role="list" className="players-list">
+          {players.map((player) => (
+            <li 
+              key={player.id}
+              role="listitem"
+              aria-label={`Player: ${player.name}${player.isHost ? ', host' : ''}${player.ready ? ', ready' : ', not ready'}`}
+            >
+              <span className="player-name">{player.name}</span>
+              {player.isHost && <span className="host-badge">Host</span>}
+              <span 
+                className={`ready-status ${player.ready ? 'ready' : 'not-ready'}`}
+                aria-label={player.ready ? 'Ready' : 'Not ready'}
+              >
+                {player.ready ? '✓' : '○'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      
+      {/* REQUIRED: Game controls with accessibility */}
+      {isHost && (
+        <section aria-labelledby="host-controls-heading">
+          <h2 id="host-controls-heading">Host Controls</h2>
+          
+          <button
+            onClick={startGame}
+            disabled={!allPlayersReady}
+            aria-describedby="start-game-description"
+          >
+            Start Civic Learning Game
+          </button>
+          
+          <div id="start-game-description" className="sr-only">
+            {allPlayersReady 
+              ? 'All players are ready. Click to start the game.'
+              : `Waiting for ${notReadyCount} player${notReadyCount === 1 ? '' : 's'} to ready up.`
+            }
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## 7. Testing and Validation
+
+### 7.1 Automated Testing Requirements
+**REQUIRED**: Accessibility testing in CI/CD
+
+```typescript
+// REQUIRED: Accessibility testing with jest-axe
+import { axe, toHaveNoViolations } from 'jest-axe'
+import { render } from '@testing-library/react'
+
+expect.extend(toHaveNoViolations)
+
+describe('CivicSense Accessibility Tests', () => {
+  // REQUIRED: Test all interactive components
+  it('quiz question should have no accessibility violations', async () => {
+    const { container } = render(
+      <QuizQuestion 
+        question={mockQuestion}
+        onAnswerSelect={jest.fn()}
+        questionNumber={1}
+        totalQuestions={10}
+      />
+    )
+    
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
+  
+  // REQUIRED: Test keyboard navigation
+  it('should support keyboard navigation', async () => {
+    const { getByRole } = render(<QuizComponent />)
+    
+    const firstOption = getByRole('radio', { name: /option a/i })
+    firstOption.focus()
+    
+    // Test arrow key navigation
+    fireEvent.keyDown(firstOption, { key: 'ArrowDown' })
+    const secondOption = getByRole('radio', { name: /option b/i })
+    expect(secondOption).toHaveFocus()
+  })
+  
+  // REQUIRED: Test screen reader announcements
+  it('should announce quiz progress', async () => {
+    const announcer = jest.spyOn(screenReaderAnnouncer, 'announce')
+    
+    const { getByRole } = render(<QuizComponent />)
+    const nextButton = getByRole('button', { name: /next question/i })
+    
+    fireEvent.click(nextButton)
+    
+    expect(announcer).toHaveBeenCalledWith(
+      expect.stringContaining('Moving to next question')
+    )
+  })
+})
+```
+
+### 7.2 Manual Testing Checklist
+**REQUIRED**: Human testing with assistive technology
+
+#### Pre-Release Accessibility Checklist
+- [ ] **Keyboard Navigation**
+  - [ ] All interactive elements reachable with keyboard
+  - [ ] Tab order is logical and follows visual layout
+  - [ ] No keyboard traps (except intentional modal focus trapping)
+  - [ ] Skip links work and are visible on focus
+  - [ ] Custom keyboard shortcuts work and are documented
+
+- [ ] **Screen Reader Testing**
+  - [ ] Test with NVDA (Windows), JAWS (Windows), VoiceOver (Mac)
+  - [ ] All content is announced correctly
+  - [ ] Headings create logical document outline
+  - [ ] ARIA labels and descriptions are helpful
+  - [ ] Live regions announce dynamic content appropriately
+
+- [ ] **Visual Accessibility**
+  - [ ] Text contrast meets WCAG AA standards (4.5:1)
+  - [ ] Focus indicators are clearly visible
+  - [ ] Content works at 200% zoom
+  - [ ] No information conveyed by color alone
+  - [ ] High contrast mode is supported
+
+- [ ] **Audio Accessibility**
+  - [ ] All audio has text alternatives (transcripts)
+  - [ ] Audio controls are keyboard accessible
+  - [ ] Volume can be controlled independently
+  - [ ] Audio doesn't auto-play or can be paused
+
+- [ ] **Civic Education Specific**
+  - [ ] Quiz questions are clearly structured for screen readers
+  - [ ] Progress through civic learning content is announced
+  - [ ] Multiplayer features work with assistive technology
+  - [ ] Error messages are clear and actionable
+  - [ ] Success messages celebrate civic learning progress
+
+### 7.3 Real User Testing
+**REQUIRED**: Testing with disabled users
+
+```typescript
+// User testing feedback integration
+interface AccessibilityFeedback {
+  userId: string
+  assistiveTechnology: 'screen_reader' | 'keyboard_only' | 'voice_control' | 'switch_navigation'
+  component: string
+  issue: string
+  severity: 'blocker' | 'major' | 'minor' | 'enhancement'
+  suggestion: string
+  civicLearningImpact: string // How this affects their civic education
+}
+
+// REQUIRED: Accessibility feedback system
+const reportAccessibilityIssue = async (feedback: AccessibilityFeedback) => {
+  // High priority for accessibility issues
+  await fetch('/api/accessibility/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...feedback,
+      priority: feedback.severity === 'blocker' ? 'critical' : 'high',
+      democraticImpact: 'Accessibility barriers prevent full civic participation'
+    })
+  })
+}
+```
+
+---
+
+## 8. Performance and Accessibility
+
+### 8.1 Accessible Performance
+**REQUIRED**: Performance that doesn't compromise accessibility
+
+```typescript
+// REQUIRED: Lazy loading that respects accessibility
+const AccessibleLazyComponent = ({ 
+  componentName, 
+  civicContext 
+}: LazyComponentProps) => {
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  
+  return (
+    <Suspense 
+      fallback={
+        <div 
+          role="status" 
+          aria-live="polite"
+          aria-label={`Loading ${componentName} for ${civicContext}`}
+        >
+          <span className="sr-only">
+            Loading {componentName}. This will help you learn about {civicContext}.
+          </span>
+          <div className="loading-spinner" aria-hidden="true" />
+        </div>
+      }
+    >
+      <LazyComponent 
+        onLoad={() => {
+          setIsLoading(false)
+          screenReaderAnnouncer.announce(
+            `${componentName} loaded. Ready to continue learning about ${civicContext}.`
+          )
+        }}
+        onError={() => {
+          setHasError(true)
+          screenReaderAnnouncer.announce(
+            `Error loading ${componentName}. Please refresh or contact support.`
+          )
+        }}
+      />
+    </Suspense>
+  )
+}
+```
+
+### 8.2 Reduced Motion Support
+**REQUIRED**: Respect user motion preferences
+
+```css
+/* REQUIRED: Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Keep essential animations but make them faster */
+  .focus-indicator {
+    transition-duration: 0.1s !important;
+  }
+  
+  /* Remove parallax and auto-playing animations */
+  .parallax-element {
+    transform: none !important;
+  }
+  
+  .auto-carousel {
+    animation-play-state: paused !important;
+  }
+}
+
+/* REQUIRED: Provide alternative feedback for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .quiz-correct-animation {
+    /* Replace animation with color change */
+    background-color: var(--success);
+    color: white;
+  }
+  
+  .progress-indicator {
+    /* Replace animated progress with instant update */
+    transition: none;
+  }
+}
+```
+
+---
+
+## 9. Implementation Guidelines
+
+### 9.1 Development Workflow
+**REQUIRED**: Accessibility-first development
+
+1. **Design Phase**
+   - Include accessibility requirements in all user stories
+   - Design with keyboard navigation in mind
+   - Plan ARIA structure before implementation
+
+2. **Development Phase**
+   - Write accessibility tests alongside feature code
+   - Use semantic HTML as foundation
+   - Test with keyboard navigation during development
+
+3. **Testing Phase**
+   - Automated accessibility testing in CI/CD
+   - Manual testing with assistive technology
+   - Real user testing with disabled community
+
+4. **Release Phase**
+   - Accessibility review required for all releases
+   - Documentation of accessibility features
+   - User feedback channels for accessibility issues
+
+### 9.2 Component Library Standards
+**REQUIRED**: All UI components must be accessibility-first
+
+```typescript
+// REQUIRED: Base accessibility props for all components
+interface AccessibilityProps {
+  // ARIA attributes
+  'aria-label'?: string
+  'aria-labelledby'?: string
+  'aria-describedby'?: string
+  'aria-expanded'?: boolean
+  'aria-controls'?: string
+  'aria-live'?: 'polite' | 'assertive' | 'off'
+  
+  // Keyboard navigation
+  tabIndex?: number
+  onKeyDown?: (event: KeyboardEvent) => void
+  
+  // Screen reader content
+  srOnly?: string // Screen reader only text
+  
+  // Visual accessibility
+  highContrast?: boolean
+  reducedMotion?: boolean
+}
+
+// REQUIRED: Accessible component factory
+const createAccessibleComponent = <T extends Record<string, any>>(
+  Component: React.ComponentType<T>,
+  defaultAccessibility: Partial<AccessibilityProps>
+) => {
+  return (props: T & AccessibilityProps) => {
+    const accessibilityProps = { ...defaultAccessibility, ...props }
+    
+    return (
+      <>
+        {accessibilityProps.srOnly && (
+          <span className="sr-only">{accessibilityProps.srOnly}</span>
+        )}
+        <Component {...props} {...accessibilityProps} />
+      </>
+    )
+  }
+}
+```
+
+---
+
+## 10. Monitoring and Maintenance
+
+### 10.1 Accessibility Metrics
+**REQUIRED**: Track accessibility KPIs
+
+```typescript
+interface AccessibilityMetrics {
+  // Technical metrics
+  axeViolations: number
+  keyboardNavigationCoverage: number
+  screenReaderCompatibility: number
+  contrastRatioCompliance: number
+  
+  // User experience metrics
+  assistiveTechnologyUserSatisfaction: number
+  accessibilityFeatureUsage: Record<string, number>
+  userReportedAccessibilityIssues: number
+  
+  // Civic education metrics
+  disabledUserCivicLearningCompletion: number
+  accessibilityBarrierReports: number
+  inclusiveLearningEffectiveness: number
+}
+
+// REQUIRED: Monitor accessibility in production
+const trackAccessibilityMetrics = () => {
+  // Automated testing results
+  const axeResults = runAxeAudit()
+  
+  // User behavior analytics
+  const usageMetrics = getAccessibilityFeatureUsage()
+  
+  // Feedback and issues
+  const userFeedback = getAccessibilityFeedback()
+  
+  return {
+    timestamp: new Date().toISOString(),
+    metrics: {
+      technicalScore: calculateTechnicalScore(axeResults),
+      userExperienceScore: calculateUXScore(usageMetrics),
+      civicImpactScore: calculateCivicImpact(userFeedback)
+    }
+  }
+}
+```
+
+### 10.2 Continuous Improvement
+**REQUIRED**: Regular accessibility updates
+
+1. **Monthly Accessibility Review**
+   - Review user feedback and reported issues
+   - Update accessibility features based on user needs
+   - Test with latest assistive technology updates
+
+2. **Quarterly Accessibility Audit**
+   - Comprehensive testing with external accessibility experts
+   - User testing with disabled community members
+   - Review and update accessibility guidelines
+
+3. **Annual Accessibility Assessment**
+   - Full WCAG compliance audit
+   - Strategic planning for accessibility improvements
+   - Community feedback on civic education accessibility
+
+---
+
+## 11. Success Metrics
+
+### 11.1 Technical Accessibility Goals
+- **100%** WCAG 2.1 AA compliance across all components
+- **0** critical accessibility violations in production
+- **100%** keyboard navigation coverage
+- **>95%** screen reader compatibility
+
+### 11.2 User Experience Goals
+- **>90%** satisfaction rating from disabled users
+- **<5%** accessibility-related support requests
+- **100%** of civic learning content accessible to assistive technology
+- **Equal** civic learning outcomes for disabled and non-disabled users
+
+### 11.3 Democratic Participation Goals
+- **No reduction** in civic engagement for disabled users
+- **Equal access** to all democratic learning tools and resources
+- **Inclusive** civic education that serves all citizens
+- **Barrier-free** path from civic learning to democratic participation
+
+---
+
+**Remember**: Accessibility is not a feature—it's a fundamental requirement for democracy. When we exclude people from civic education, we exclude them from democracy itself. Every accessibility improvement is a step toward a more inclusive democracy.
+
+**This is accessibility for people who believe democracy means everyone.**

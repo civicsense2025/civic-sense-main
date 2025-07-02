@@ -1,0 +1,68 @@
+# =============================================================================
+# CivicSense Mobile App Environment Configuration Template
+# =============================================================================
+# INSTRUCTIONS:
+# 1. Copy this file to .env in your mobile app directory (apps/mobile/.env)
+# 2. Get your remote Supabase credentials from: https://app.supabase.com/project/[your-project]/settings/api
+# 3. Replace the placeholder values with your actual credentials
+# 4. The .env file will be ignored by git for security
+
+# =============================================================================
+# REMOTE SUPABASE CONFIGURATION (Production/Hosted)
+# =============================================================================
+# Replace these with your actual remote Supabase project credentials
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-actual-anon-key-here
+
+# SERVICE ROLE KEY (for server-side operations like source analysis)
+SUPABASE_SERVICE_ROLE_KEY=your-actual-service-role-key-here
+
+# =============================================================================
+# AI SERVICES CONFIGURATION
+# =============================================================================
+# OpenAI API key for AI source analysis and NPC features
+EXPO_PUBLIC_OPENAI_API_KEY=your-openai-api-key-here
+
+# Anthropic API key for AI content generation (alternative to OpenAI)
+EXPO_PUBLIC_ANTHROPIC_API_KEY=your-anthropic-api-key-here
+
+# DeepL API key for translation services (required for multi-language support)
+# Get your API key from: https://www.deepl.com/pro#developer
+# Free tier supports 500,000 characters per month
+EXPO_PUBLIC_DEEPL_API_KEY=your-deepl-api-key-here
+
+# =============================================================================
+# GOOGLE OAUTH CONFIGURATION
+# =============================================================================
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=1081363844633-6ak3kq6rqd8j6ohcm9fc8hgts8oj9s75.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your_android_client_id_here
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your_ios_client_id_here
+
+# =============================================================================
+# DEVELOPMENT FLAGS
+# =============================================================================
+NODE_ENV=production
+DEBUG=false
+
+# =============================================================================
+# WHERE TO FIND YOUR SUPABASE CREDENTIALS:
+# =============================================================================
+# 1. Go to https://app.supabase.com
+# 2. Select your project
+# 3. Go to Settings > API
+# 4. Copy the following:
+#    - Project URL → use as EXPO_PUBLIC_SUPABASE_URL
+#    - anon/public key → use as EXPO_PUBLIC_SUPABASE_ANON_KEY  
+#    - service_role key → use as SUPABASE_SERVICE_ROLE_KEY
+#
+# Your Project URL will look like: https://abcdefghijklmnop.supabase.co
+# Your anon key will be a long JWT token starting with: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# Your service role key will be a long JWT token starting with: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# =============================================================================
+# LOCAL DEVELOPMENT CONFIGURATION (commented out)
+# =============================================================================
+# Uncomment these lines if you want to switch back to local Supabase
+# EXPO_PUBLIC_SUPABASE_URL=http://localhost:54321
+# EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+# SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU 

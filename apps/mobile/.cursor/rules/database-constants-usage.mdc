@@ -1,0 +1,338 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CivicSense Database Constants Usage Rules
+
+*Mandatory schema referencing using `database-constants.ts` to prevent schema errors and ensure type safety*
+
+## 🎯 Core Principle
+
+**ALWAYS use `database-constants.ts` as the single source of truth for database schema information.** This file contains the complete, auto-generated schema from the actual database and prevents schema mismatches.
+
+## 📋 Mandatory Rules
+
+### 1. Table Name References
+```typescript
+// ❌ NEVER hardcode table names
+const { data } = await supabase.from('question_topics').select('*');
+const { data } = await supabase.from('questions').select('difficulty_level');
+
+// ✅ ALWAYS use DB_TABLES constants
+import { DB_TABLES } from '../lib/database-constants';
+const { data } = await supabase.from(DB_TABLES.QUESTION_TOPICS).select('*');
+const { data } = await supabase.from(DB_TABLES.QUESTIONS).select('*');
+```
+
+### 2. Column Name References
+```typescript
+// ❌ NEVER hardcode column names
+const { data } = await supabase
+  .from('questions')
+  .select('difficulty_level, question_type');
+
+// ✅ ALWAYS use DB_COLUMNS constants
+import { DB_TABLES, DB_COLUMNS } from '../lib/database-constants';
+const { data } = await supabase
+  .from(DB_TABLES.QUESTIONS)
+  .select(`
+    ${DB_COLUMNS.QUESTIONS.DIFFICULTY_LEVEL},
+    ${DB_COLUMNS.QUESTIONS.QUESTION_TYPE}
+  `);
+```
+
+### 3. Schema Validation Before Access
+```typescript
+// ❌ NEVER assume properties exist without checking schema
+if (topic.difficulty_level) {
+  // This will fail - difficulty_level is in questions table, not question_topics
+}
+
+// ✅ ALWAYS check schema first
+import { DB_COLUMNS } from '../lib/database-constants';
+
+// Check if column exists in the table schema
+const hasColumn = Object.values(DB_COLUMNS.QUESTION_TOPICS).includes('difficulty_level');
+if (!hasColumn) {
+  console.warn('difficulty_level does not exist in question_topics table');
+}
+
+// Use correct table for the property
+const questionDifficulty = question[DB_COLUMNS.QUESTIONS.DIFFICULTY_LEVEL];
+```
+
+### 4. Type-Safe Database Operations
+```typescript
+// ❌ NEVER use raw strings for database operations
+type DbQuestionTopicWithDifficulty = {
+  topic_id: string;
+  topic_title: string;
+  difficulty_level: number; // This doesn't exist in question_topics!
+};
+
+// ✅ ALWAYS use generated types from database-constants
+import { DbQuestionTopics, DbQuestions } from '../lib/database-constants';
+
+// Use the correct type for the table
+type TopicWithQuestionStats = DbQuestionTopics & {
+  question_count: number;
+  average_difficulty?: number; // Computed from related questions
+};
+```
+
+## 🔍 Schema Discovery Patterns
+
+### 1. Before Writing Queries
+```typescript
+// ALWAYS check what columns are available
+import { DB_TABLES, DB_COLUMNS, discoverTableSchema } from '../lib/database-constants';
+
+// Discover schema before writing queries
+const questionTopicsSchema = discoverTableSchema(DB_TABLES.QUESTION_TOPICS);
+console.log('Available columns:', questionTopicsSchema.columns);
+
+// Check if a specific column exists
+const hasColumn = (tableName: string, columnName: string): boolean => {
+  const tableKey = tableName.toUpperCase() as keyof typeof DB_COLUMNS;
+  const columns = DB_COLUMNS[tableKey];
+  return columns ? Object.values(columns).includes(columnName) : false;
+};
+```
+
+### 2. Cross-Table Relationships
+```typescript
+// ❌ NEVER assume relationships without checking schema
+const topicsWithDifficulty = topics.map(topic => ({
+  ...topic,
+  difficulty: topic.difficulty_level // This doesn't exist!
+}));
+
+// ✅ ALWAYS use proper joins or separate queries
+import { DB_TABLES, DB_COLUMNS } from '../lib/database-constants';
+
+// Get topics with aggregated difficulty from related questions
+const { data: topicsWithStats } = await supabase
+  .from(DB_TABLES.QUESTION_TOPICS)
+  .select(`
+    ${DB_COLUMNS.QUESTION_TOPICS.TOPIC_ID},
+    ${DB_COLUMNS.QUESTION_TOPICS.TOPIC_TITLE},
+    questions:${DB_TABLES.QUESTIONS}(
+      ${DB_COLUMNS.QUESTIONS.DIFFICULTY_LEVEL}
+    )
+  `);
+```
+
+## 🚫 Common Anti-Patterns to Avoid
+
+### 1. Hardcoded Schema References
+```typescript
+// ❌ NEVER do this
+const badQuery = `
+  SELECT difficulty_level, topic_title 
+  FROM question_topics 
+  WHERE is_active = true
+`;
+
+// ❌ NEVER do this
+const { data } = await supabase
+  .from('user_quiz_responses') // Wrong table name!
+  .insert(responseData);
+
+// ✅ ALWAYS do this
+import { DB_TABLES, DB_COLUMNS } from '../lib/database-constants';
+
+const { data } = await supabase
+  .from(DB_TABLES.USER_QUESTION_RESPONSES) // Correct table name
+  .insert(responseData);
+```
+
+### 2. Mixing Table Schemas
+```typescript
+// ❌ NEVER mix properties from different tables
+interface BadTopicType {
+  topic_id: string;        // From question_topics
+  topic_title: string;     // From question_topics  
+  difficulty_level: number; // From questions - WRONG!
+}
+
+// ✅ ALWAYS use separate types or proper joins
+import { DbQuestionTopics, DbQuestions } from '../lib/database-constants';
+
+interface TopicWithQuestionData {
+  topic: DbQuestionTopics;
+  questions: Pick<DbQuestions, 'difficulty_level'>[];
+  averageDifficulty?: number; // Computed field
+}
+```
+
+### 3. Assuming Column Existence
+```typescript
+// ❌ NEVER assume columns exist
+const displayText = `${topic.title || topic.topic_title}`; // Unsafe
+
+// ✅ ALWAYS check schema or use known properties
+import { DB_COLUMNS } from '../lib/database-constants';
+
+const displayText = topic[DB_COLUMNS.QUESTION_TOPICS.TOPIC_TITLE] || 'Untitled';
+```
+
+## 📊 Required Imports Pattern
+
+```typescript
+// Standard import pattern for database operations
+import { 
+  DB_TABLES, 
+  DB_COLUMNS, 
+  DB_ENUMS,
+  DB_FUNCTIONS,
+  // Type imports
+  DbQuestionTopics,
+  DbQuestions,
+  DbCategories,
+  // Utility functions
+  isValidTableName,
+  getTableColumns,
+  discoverTableSchema
+} from '../lib/database-constants';
+```
+
+## 🔧 Development Workflow
+
+### 1. Before Writing Database Code
+1. **Check Schema**: Always verify table and column names in `database-constants.ts`
+2. **Import Constants**: Import required constants and types
+3. **Validate Assumptions**: Use discovery functions to verify schema
+4. **Write Type-Safe Code**: Use generated types, not custom interfaces
+
+### 2. When Adding New Features
+```typescript
+// 1. Check available tables
+console.log('Available tables:', Object.values(DB_TABLES));
+
+// 2. Discover table schema
+const schema = discoverTableSchema(DB_TABLES.YOUR_TABLE);
+console.log('Table schema:', schema);
+
+// 3. Use proper types
+import { DbYourTable } from '../lib/database-constants';
+
+// 4. Write type-safe queries
+const { data } = await supabase
+  .from(DB_TABLES.YOUR_TABLE)
+  .select(`${DB_COLUMNS.YOUR_TABLE.COLUMN_NAME}`)
+  .returns<DbYourTable[]>();
+```
+
+### 3. Error Prevention Checklist
+- [ ] All table names use `DB_TABLES` constants
+- [ ] All column names use `DB_COLUMNS` constants  
+- [ ] Types imported from `database-constants.ts`
+- [ ] No hardcoded strings for database operations
+- [ ] Schema validated before property access
+- [ ] Proper error handling for missing columns
+
+## 🎯 Service Layer Pattern
+
+```typescript
+// packages/shared/database/standardized-service.ts
+import { 
+  DB_TABLES, 
+  DB_COLUMNS, 
+  DbQuestionTopics,
+  DbQuestions 
+} from '../database-constants';
+
+export class DatabaseService {
+  // Always use constants for queries
+  static async getTopics(): Promise<DbQuestionTopics[]> {
+    const { data, error } = await supabase
+      .from(DB_TABLES.QUESTION_TOPICS)
+      .select(`
+        ${DB_COLUMNS.QUESTION_TOPICS.TOPIC_ID},
+        ${DB_COLUMNS.QUESTION_TOPICS.TOPIC_TITLE},
+        ${DB_COLUMNS.QUESTION_TOPICS.DESCRIPTION},
+        ${DB_COLUMNS.QUESTION_TOPICS.IS_ACTIVE}
+      `)
+      .eq(DB_COLUMNS.QUESTION_TOPICS.IS_ACTIVE, true);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Use proper types and relationships
+  static async getTopicsWithQuestionCount(): Promise<(DbQuestionTopics & { question_count: number })[]> {
+    const { data, error } = await supabase
+      .from(DB_TABLES.QUESTION_TOPICS)
+      .select(`
+        *,
+        questions:${DB_TABLES.QUESTIONS}(count)
+      `)
+      .eq(DB_COLUMNS.QUESTION_TOPICS.IS_ACTIVE, true);
+
+    if (error) throw error;
+    return data || [];
+  }
+}
+```
+
+## ⚠️ Critical Warnings
+
+### 1. Schema Mismatch Errors
+```typescript
+// These are the exact errors we want to prevent:
+
+// ❌ Property 'difficulty_level' does not exist on type 'DbQuestionTopics'
+const difficulty = topic.difficulty_level; 
+
+// ❌ Argument of type '"user_quiz_responses"' is not assignable to parameter
+await supabase.from('user_quiz_responses'); // Wrong table name
+
+// ❌ Property 'title' does not exist on type 'StandardTopic' 
+const title = topic.title; // Use topic_title instead
+```
+
+### 2. Always Verify Before Using
+```typescript
+// Before using any database property, verify it exists in the schema
+import { DB_COLUMNS } from '../lib/database-constants';
+
+// Check if property exists in the table
+const hasProperty = (tableName: keyof typeof DB_COLUMNS, propertyName: string): boolean => {
+  const tableColumns = DB_COLUMNS[tableName];
+  return Object.values(tableColumns).includes(propertyName as any);
+};
+
+// Use it safely
+if (hasProperty('QUESTION_TOPICS', 'difficulty_level')) {
+  // This will return false - preventing the error
+  console.log('Property exists');
+} else {
+  console.warn('Property does not exist in this table');
+}
+```
+
+## 🔄 Migration and Updates
+
+When `database-constants.ts` is updated:
+
+1. **Review Changes**: Check what tables/columns were added/removed
+2. **Update Code**: Fix any breaking changes in your code
+3. **Test Thoroughly**: Verify all database operations still work
+4. **Update Types**: Ensure all custom types align with new schema
+
+## ✅ Compliance Checklist
+
+Before committing database-related code:
+
+- [ ] **No hardcoded table names** - All use `DB_TABLES`
+- [ ] **No hardcoded column names** - All use `DB_COLUMNS`  
+- [ ] **Proper type imports** - From `database-constants.ts`
+- [ ] **Schema validation** - Properties verified before access
+- [ ] **Error handling** - Graceful handling of missing columns
+- [ ] **Consistent patterns** - Following service layer conventions
+- [ ] **Documentation** - Complex queries documented with schema references
+
+---
+
+**Remember: `database-constants.ts` is auto-generated from the actual database schema. It's the single source of truth that prevents schema mismatches and runtime errors.**

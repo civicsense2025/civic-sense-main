@@ -1,0 +1,876 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CivicSense AI Components Migration Guide
+
+*Step-by-step instructions for integrating existing AI components with the new quality enforcement system*
+
+## Overview
+
+This guide shows you exactly how to update your existing AI components to use the new `CivicSenseAIAgent` system, ensuring all AI outputs meet quality standards and brand voice requirements.
+
+## Migration Checklist
+
+- [ ] Update `ai-survey-optimizer.tsx` 
+- [ ] Update `admin-content-generator.tsx`
+- [ ] Update `optimize-question-content.ts`
+- [ ] Add quality gate validation to all AI outputs
+- [ ] Implement centralized configuration
+- [ ] Add monitoring and analytics
+- [ ] Test quality enforcement
+
+## Step 1: Update AI Survey Optimizer
+
+### Current Code (components/admin/ai-survey-optimizer.tsx)
+```typescript
+// BEFORE: Individual AI calls with inconsistent quality
+const analyzeSurvey = async () => {
+  setLoading(true)
+  try {
+    const response = await fetch('/api/admin/ai-survey-optimizer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        survey,
+        provider: selectedProvider,
+        analysisType,
+        customPrompt: customPrompt.trim() || undefined
+      })
+    })
+    // ... basic response handling
+  } catch (error) {
+    // ... basic error handling
+  }
+}
+```
+
+### Updated Code (with Quality Enforcement)
+```typescript
+// AFTER: Using CivicSense AI Agent with enforced quality standards
+import { createSurveyOptimizer, AIIntegrationHelper } from '@/lib/ai/integration-examples'
+import { AIQualityGateIntegration } from '@/lib/ai/civic-sense-ai-agent'
+
+const analyzeSurvey = async () => {
+  setLoading(true)
+  
+  try {
+    const optimizer = createSurveyOptimizer()
+    
+    // Use the quality-enforced pipeline with progress tracking
+    const result = await AIIntegrationHelper.withProgressTracking(
+      () => optimizer.optimizeSurvey(survey, {
+        provider: selectedProvider,
+        analysisType,
+        customPrompt: customPrompt.trim() || undefined
+      }),
+      (status) => {
+        setGenerationStatus(status) // Update your existing status UI
+      }
+    )
+
+    // Validate output meets CivicSense standards
+    const validation = AIIntegrationHelper.validateOutput(result.qualityReport)
+    
+    if (!validation.valid) {
+      console.warn('AI output quality issues:', validation.issues)
+      // Show warning to user but allow manual review
+    }
+
+    // Update UI with high-quality results
+    setSuggestions(result.improvements)
+    setOptimizedSurvey(result.optimizedSurvey)
+    
+    toast({
+      title: "Analysis complete",
+      description: `Quality Score: ${result.qualityReport.qualityScore.overall_score}/100`
+    })
+    
+  } catch (error) {
+    console.error('Survey optimization failed:', error)
+    toast({
+      title: "Analysis failed", 
+      variant: "destructive"
+    })
+  } finally {
+    setLoading(false)
+  }
+}
+
+// Add quality display component
+const QualityIndicator = ({ qualityReport }: { qualityReport: any }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return 'text-green-600 bg-green-100'
+    if (score >= 70) return 'text-yellow-600 bg-yellow-100'
+    return 'text-red-600 bg-red-100'
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-4">
+      <Badge className={getScoreColor(qualityReport.qualityScore.overall_score)}>
+        Quality: {qualityReport.qualityScore.overall_score}/100
+      </Badge>
+      
+      {qualityReport.qualityScore.uncomfortable_truth_detected && (
+        <Badge className="bg-orange-100 text-orange-800">
+          🔥 Uncomfortable Truth
+        </Badge>
+      )}
+      
+      {qualityReport.brandVoiceScore >= 21 && (
+        <Badge className="bg-blue-100 text-blue-800">
+          ✅ Brand Voice
+        </Badge>
+      )}
+      
+      {qualityReport.warningFlags.length > 0 && (
+        <Badge variant="destructive">
+          ⚠️ {qualityReport.warningFlags.length} Issues
+        </Badge>
+      )}
+    </div>
+  )
+}
+```
+
+### API Route Update (app/api/admin/ai-survey-optimizer/route.ts)
+```typescript
+// BEFORE: Direct AI calls
+export async function POST(request: NextRequest) {
+  const { survey, provider, analysisType } = await request.json()
+  
+  // Direct AI call without quality enforcement
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: basicPrompt }]
+  })
+  
+  return NextResponse.json({ suggestions: response.choices[0].message.content })
+}
+
+// AFTER: Quality-enforced AI pipeline
+import { createSurveyOptimizer } from '@/lib/ai/integration-examples'
+import { AIConfigMonitor } from '@/lib/ai/civic-sense-ai-config'
+
+export async function POST(request: NextRequest) {
+  try {
+    const { survey, provider, analysisType, customPrompt } = await request.json()
+    
+    // Use the quality-enforced AI agent
+    const optimizer = createSurveyOptimizer()
+    
+    const result = await optimizer.optimizeSurvey(survey, {
+      provider,
+      analysisType,
+      customPrompt
+    })
+    
+    // Track quality metrics
+    AIConfigMonitor.updateMetrics(
+      'survey-optimizer',
+      result.qualityReport.qualityScore.overall_score,
+      result.qualityReport.warningFlags
+    )
+    
+    // Log to database for monitoring
+    await logAIGeneration({
+      agentType: 'survey-optimizer',
+      input: { survey, provider, analysisType },
+      output: result,
+      qualityScore: result.qualityReport.qualityScore.overall_score
+    })
+    
+    return NextResponse.json({
+      success: true,
+      result,
+      qualityMetrics: {
+        score: result.qualityReport.qualityScore.overall_score,
+        brandVoice: result.qualityReport.brandVoiceScore,
+        warningFlags: result.qualityReport.warningFlags,
+        publishRecommendation: result.qualityReport.publishRecommendation
+      }
+    })
+    
+  } catch (error) {
+    console.error('AI Survey Optimizer error:', error)
+    return NextResponse.json(
+      { error: 'Survey optimization failed', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Step 2: Update Admin Content Generator
+
+### Current Code (components/admin-content-generator.tsx)
+```typescript
+// BEFORE: Basic content generation without quality gates
+const generateQuizFromArticle = async (article: NewsArticle) => {
+  setGenerationStatus({
+    stage: 'analyzing-article',
+    progress: 10,
+    message: 'Analyzing article content...'
+  })
+  
+  try {
+    const response = await fetch('/api/admin/generate-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article, settings, user_id: user?.id })
+    })
+    
+    // Basic response handling without quality validation
+    if (response.ok) {
+      const data = await response.json()
+      setGeneratedQuizzes(prev => [...prev, data.quiz])
+    }
+  } catch (error) {
+    // Basic error handling
+  }
+}
+```
+
+### Updated Code (with Quality Enforcement)
+```typescript
+// AFTER: Quality-enforced content generation
+import { createContentGenerator, AIIntegrationHelper } from '@/lib/ai/integration-examples'
+import { AIConfigMonitor } from '@/lib/ai/civic-sense-ai-config'
+
+const generateQuizFromArticle = async (article: NewsArticle) => {
+  try {
+    const generator = createContentGenerator()
+    
+    // Use quality-enforced pipeline with detailed progress tracking
+    const quiz = await AIIntegrationHelper.withProgressTracking(
+      async () => {
+        const result = await generator.generateQuizFromNews(article, settings)
+        
+        // Additional quality validation for content generation
+        const validation = await AIQualityGateIntegration.validateAIOutput(
+          result,
+          'content-generator'
+        )
+        
+        if (!validation.passed) {
+          throw new Error(`Quality validation failed: ${validation.criticalIssues.join(', ')}`)
+        }
+        
+        return result
+      },
+      (status) => {
+        setGenerationStatus(status)
+        
+        // Enhanced status messages for content generation
+        if (status.stage === 'analyzing-article') {
+          status.message = `Analyzing: ${article.title.substring(0, 50)}...`
+        } else if (status.stage === 'generating-questions') {
+          status.message = 'Generating questions that reveal power dynamics...'
+        } else if (status.stage === 'validating-sources') {
+          status.message = 'Verifying facts with primary sources...'
+        }
+      }
+    )
+    
+    // Enhanced quiz with quality metadata
+    const enhancedQuiz = {
+      ...quiz,
+      qualityMetrics: {
+        overallScore: quiz.qualityScore?.overall_score || 0,
+        uncomfortableTruths: quiz.uncomfortableTruthsExposed?.length || 0,
+        powerDynamicsRevealed: quiz.powerDynamicsRevealed?.length || 0,
+        civicActionSteps: quiz.civicActionSteps?.length || 0,
+        sourceUrls: quiz.sourceUrls?.length || 0
+      },
+      metadata: {
+        ...quiz.metadata,
+        generatedWithQualityEnforcement: true,
+        qualityScore: quiz.qualityScore?.overall_score,
+        publishRecommendation: quiz.publishRecommendation
+      }
+    }
+    
+    setGeneratedQuizzes(prev => [...prev, enhancedQuiz])
+    
+    // Track metrics
+    AIConfigMonitor.updateMetrics(
+      'content-generator',
+      quiz.qualityScore?.overall_score || 0,
+      quiz.warningFlags || []
+    )
+    
+    setGenerationStatus({
+      stage: 'complete',
+      progress: 100,
+      message: `Quiz generated! Quality: ${quiz.qualityScore?.overall_score || 0}/100`
+    })
+    
+  } catch (error) {
+    console.error('Content generation error:', error)
+    setGenerationStatus({
+      stage: 'error',
+      progress: 0,
+      message: `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    })
+  }
+}
+
+// Enhanced quiz preview with quality indicators
+const QuizPreviewCard = ({ quiz, onEdit, onSave, onExport }) => {
+  return (
+    <Card className="border-green-200 dark:border-green-800 bg-green-50">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg text-green-800 mb-2">
+              {quiz.topic}
+            </CardTitle>
+            
+            {/* Quality indicators */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <Badge className="bg-green-100 text-green-800">
+                {quiz.questions.length} Questions
+              </Badge>
+              
+              {quiz.qualityMetrics && (
+                <>
+                  <Badge 
+                    className={
+                      quiz.qualityMetrics.overallScore >= 85 ? 'bg-green-100 text-green-800' :
+                      quiz.qualityMetrics.overallScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }
+                  >
+                    Quality: {quiz.qualityMetrics.overallScore}/100
+                  </Badge>
+                  
+                  {quiz.qualityMetrics.uncomfortableTruths > 0 && (
+                    <Badge className="bg-orange-100 text-orange-800">
+                      🔥 {quiz.qualityMetrics.uncomfortableTruths} Uncomfortable Truths
+                    </Badge>
+                  )}
+                  
+                  {quiz.qualityMetrics.powerDynamicsRevealed > 0 && (
+                    <Badge className="bg-purple-100 text-purple-800">
+                      💰 Power Analysis
+                    </Badge>
+                  )}
+                  
+                  {quiz.qualityMetrics.civicActionSteps >= 3 && (
+                    <Badge className="bg-blue-100 text-blue-800">
+                      🎯 {quiz.qualityMetrics.civicActionSteps} Actions
+                    </Badge>
+                  )}
+                </>
+              )}
+              
+              {quiz.metadata?.publishRecommendation && (
+                <Badge 
+                  className={
+                    quiz.metadata.publishRecommendation === 'publish' ? 'bg-green-100 text-green-800' :
+                    quiz.metadata.publishRecommendation === 'revise' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }
+                >
+                  {quiz.metadata.publishRecommendation.toUpperCase()}
+                </Badge>
+              )}
+            </div>
+            
+            <p className="text-sm text-green-700 mb-3">
+              {quiz.description}
+            </p>
+          </div>
+        </div>
+      </CardHeader>
+      
+      {/* Rest of component... */}
+    </Card>
+  )
+}
+```
+
+## Step 3: Update Question Content Optimizer
+
+### Current Script (scripts/optimize-question-content.ts)
+```typescript
+// BEFORE: Manual AI calls with inconsistent quality
+class EnhancedAIOptimizer {
+  async optimizeQuestionContent(question: any): Promise<ContentOptimizationResult> {
+    // Manual prompt construction and AI calling
+    const prompt = `Optimize this question: ${question.question}`
+    const response = await this.callOpenAI(prompt, 400)
+    
+    // Basic result processing without quality gates
+    return {
+      originalContent: question.question,
+      optimizedContent: response,
+      // ... other fields
+    }
+  }
+}
+```
+
+### Updated Script (with Quality Enforcement)
+```typescript
+// AFTER: Using CivicSense AI Agent system
+import { CivicSenseAIAgent, type AIGenerationOptions } from '../lib/ai/civic-sense-ai-agent'
+import { createCivicSenseAIAgent, CIVIC_SENSE_AI_CONFIG } from '../lib/ai/civic-sense-ai-config'
+
+class CivicSenseQuestionOptimizer extends CivicSenseAIAgent {
+  readonly agentType = 'question-optimizer' as const
+
+  async optimizeQuestion(question: any): Promise<EnhancedOptimizationReport> {
+    const startTime = Date.now()
+    
+    console.log(`🔬 Optimizing Question ${question.question_number}`)
+    console.log(`   Topic: ${question.topic_id}`)
+    console.log(`   Category: ${question.category}`)
+    
+    try {
+      // Use the quality-enforced pipeline
+      const result = await this.generateQualityContent(question, {
+        strictMode: true,
+        maxIterations: 3
+      })
+      
+      // Generate comprehensive report
+      const report: EnhancedOptimizationReport = {
+        questionId: question.id,
+        questionNumber: question.question_number,
+        topicId: question.topic_id,
+        originalQuestion: question,
+        optimizationResult: {
+          originalContent: `${question.question} | ${question.explanation}`,
+          optimizedContent: result.content,
+          factChecks: result.factCheckResults,
+          brandVoiceScore: result.brandVoiceScore,
+          readabilityScore: this.calculateReadability(result.content),
+          civicEducationValue: this.assessCivicEducationValue(result.content),
+          sources: this.aggregateSources(result.factCheckResults),
+          improvements: this.generateImprovements(question, result),
+          warningFlags: result.warningFlags,
+          confidenceScore: result.confidenceLevel
+        },
+        actionItems: this.generateActionItems(result),
+        publishRecommendation: result.publishRecommendation,
+        qualityMetrics: this.calculateQualityMetrics(result),
+        processingTime: Date.now() - startTime
+      }
+      
+      console.log(`   ✅ Completed - Score: ${report.qualityMetrics.overallScore}/100`)
+      return report
+      
+    } catch (error) {
+      console.error(`❌ Failed to optimize question ${question.question_number}:`, error)
+      return this.createErrorReport(question, error, Date.now() - startTime)
+    }
+  }
+
+  protected async generateInitialContent(question: any): Promise<string> {
+    const prompt = `${this.promptTemplates.brandVoiceEnforcement}
+
+QUESTION OPTIMIZATION TASK:
+Optimize this existing civic education question to meet CivicSense standards.
+
+ORIGINAL QUESTION: ${question.question}
+ORIGINAL EXPLANATION: ${question.explanation}
+CATEGORY: ${question.category}
+TOPIC: ${question.topic_id}
+
+${this.promptTemplates.questionGeneration}
+
+Requirements:
+1. Test understanding of how power actually works (not just civics facts)
+2. Include uncomfortable truths in explanations that politicians prefer people not know
+3. Provide specific civic action steps with contact information
+4. Use only verified sources and current examples
+5. Challenge common misconceptions about government
+6. Build strategic thinking about power dynamics
+
+Generate optimized question and explanation that reveals uncomfortable truths.`
+
+    return await this.callAI(prompt, 800)
+  }
+
+  protected async enforceUncomfortableTruth(content: string, question?: any): Promise<string> {
+    const enhancementPrompt = `
+This civic education content lacks uncomfortable truths. Enhance it to reveal what politicians don't want people to understand.
+
+CURRENT CONTENT: ${content}
+QUESTION CONTEXT: ${question?.category} - ${question?.topic_id}
+
+Add uncomfortable truths about:
+- How this topic reveals gaps between official process and actual power
+- What citizens aren't supposed to understand about this issue
+- Who benefits from people not knowing this information
+- How this connects to institutional capture or influence networks
+- What actions would make officials uncomfortable
+
+Make the uncomfortable truth prominent and central to the learning objective.`
+
+    return await this.callAI(enhancementPrompt, 500)
+  }
+
+  protected async addPowerDynamicsAnalysis(content: string, question?: any): Promise<string> {
+    const enhancementPrompt = `
+Enhance this content to reveal actual power dynamics and decision-making processes.
+
+CURRENT CONTENT: ${content}
+QUESTION CONTEXT: ${question?.category}
+
+Add power analysis showing:
+- Who ACTUALLY makes decisions on this issue vs. who officially makes them
+- What financial interests and lobbying pressure influence outcomes
+- How informal networks and relationships shape this area of policy
+- What citizens aren't supposed to understand about these power dynamics
+- Where citizen pressure can actually create change
+
+Use specific examples, names, dollar amounts, and institutional relationships.`
+
+    return await this.callAI(enhancementPrompt, 500)
+  }
+
+  protected async ensureActionableSteps(content: string, question?: any): Promise<string> {
+    const enhancementPrompt = `
+Add specific, actionable civic engagement steps to this educational content.
+
+CURRENT CONTENT: ${content}
+TOPIC: ${question?.topic_id}
+
+Include 3-5 specific actions citizens can take:
+1. Contact information for relevant officials (phone, email, address)
+2. Specific language to use when contacting them
+3. Optimal timing for maximum impact
+4. How to escalate if officials don't respond
+5. Connection to broader advocacy strategies
+
+Actions must be immediately doable and strategically targeted to actual decision-makers.`
+
+    return await this.callAI(enhancementPrompt, 400)
+  }
+
+  // Implement remaining required methods...
+  protected async callAI(prompt: string, maxTokens = 500): Promise<string> {
+    // Your existing AI calling logic
+    return ''
+  }
+
+  // Helper methods for reporting...
+  private generateActionItems(result: any): any[] { return [] }
+  private calculateQualityMetrics(result: any): any { return {} }
+  private createErrorReport(question: any, error: any, processingTime: number): any { return {} }
+}
+
+// Update main function to use new optimizer
+async function main() {
+  console.log('\n🔍 ENHANCED CIVICSENSE CONTENT OPTIMIZER')
+  console.log('Using CivicSense AI Agent system with quality enforcement')
+  
+  const optimizer = createCivicSenseAIAgent(CivicSenseQuestionOptimizer)
+  
+  // ... rest of main function using the new optimizer
+}
+```
+
+## Step 4: Add Quality Monitoring Dashboard
+
+### Create Quality Dashboard Component
+```typescript
+// components/admin/ai-quality-dashboard.tsx
+import { AIConfigMonitor, type AIAgentMetrics } from '@/lib/ai/civic-sense-ai-config'
+
+export function AIQualityDashboard() {
+  const [metrics, setMetrics] = useState<AIAgentMetrics[]>([])
+  
+  useEffect(() => {
+    const allMetrics = AIConfigMonitor.getMetrics() as AIAgentMetrics[]
+    setMetrics(allMetrics)
+  }, [])
+
+  const overallAverage = metrics.reduce((sum, m) => sum + m.averageQualityScore, 0) / metrics.length
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          📊 AI Quality Monitoring
+          <Badge 
+            className={
+              overallAverage >= 85 ? 'bg-green-100 text-green-800' :
+              overallAverage >= 70 ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+            }
+          >
+            {overallAverage.toFixed(1)}/100
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map(metric => (
+            <Card key={metric.agentType} className="p-4">
+              <h3 className="font-semibold capitalize mb-2">
+                {metric.agentType.replace('-', ' ')}
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Total Generations:</span>
+                  <span className="font-medium">{metric.totalGenerations}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Avg Quality:</span>
+                  <span className="font-medium">{metric.averageQualityScore.toFixed(1)}/100</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Uncomfortable Truths:</span>
+                  <span className="font-medium">{metric.uncomfortableTruthsDetected}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Power Dynamics:</span>
+                  <span className="font-medium">{metric.powerDynamicsRevealed}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Civic Actions:</span>
+                  <span className="font-medium">{metric.civicActionsGenerated}</span>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+        
+        {overallAverage < 70 && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <h4 className="font-semibold text-red-800">Quality Alert</h4>
+            </div>
+            <p className="text-red-700 mt-2">
+              AI quality below minimum threshold. Review and retrain agents.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+## Step 5: Environment Variables & Configuration
+
+### Add to .env.local
+```bash
+# AI Configuration
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+PERPLEXITY_API_KEY=your_perplexity_key
+BRAVE_SEARCH_API_KEY=your_brave_search_key
+
+# Quality enforcement settings
+CIVICSENSE_MIN_QUALITY_SCORE=70
+CIVICSENSE_ENABLE_FACT_CHECKING=true
+CIVICSENSE_ENABLE_WEB_SEARCH=true
+```
+
+## Step 6: Database Migration
+
+### Add AI monitoring tables
+```sql
+-- supabase/migrations/041_ai_quality_monitoring.sql
+BEGIN;
+
+-- Track all AI-generated content for quality monitoring
+CREATE TABLE IF NOT EXISTS ai_content_generations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_type TEXT NOT NULL,
+  input_data JSONB NOT NULL,
+  output_content TEXT NOT NULL,
+  quality_scores JSONB NOT NULL,
+  brand_voice_score INTEGER NOT NULL,
+  fact_check_results JSONB NOT NULL,
+  warning_flags TEXT[] DEFAULT '{}',
+  publish_recommendation TEXT NOT NULL,
+  confidence_level INTEGER NOT NULL,
+  generated_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_by UUID REFERENCES auth.users(id),
+  review_status TEXT DEFAULT 'pending',
+  review_notes TEXT
+);
+
+-- Track quality metrics over time
+CREATE TABLE IF NOT EXISTS ai_quality_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  agent_type TEXT NOT NULL,
+  avg_quality_score NUMERIC NOT NULL,
+  total_generations INTEGER NOT NULL,
+  passed_quality_gate INTEGER NOT NULL,
+  uncomfortable_truths_detected INTEGER NOT NULL,
+  action_steps_generated INTEGER NOT NULL,
+  sources_verified INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_ai_generations_agent_type ON ai_content_generations(agent_type);
+CREATE INDEX IF NOT EXISTS idx_ai_generations_date ON ai_content_generations(generated_at);
+CREATE INDEX IF NOT EXISTS idx_ai_metrics_date_agent ON ai_quality_metrics(date, agent_type);
+
+COMMIT;
+```
+
+## Step 7: Testing Your Migration
+
+### Test Script
+```typescript
+// scripts/test-ai-integration.ts
+import { createSurveyOptimizer, createContentGenerator } from '../lib/ai/integration-examples'
+import { AIConfigMonitor } from '../lib/ai/civic-sense-ai-config'
+
+async function testIntegration() {
+  console.log('🧪 Testing CivicSense AI Integration')
+  console.log('=====================================')
+
+  // Test Survey Optimizer
+  console.log('\n1. Testing Survey Optimizer...')
+  const optimizer = createSurveyOptimizer()
+  
+  const testSurvey = {
+    id: 'test-survey',
+    title: 'Civic Knowledge Assessment',
+    description: 'Test survey for optimization',
+    questions: [
+      { id: '1', text: 'Do you trust government?', type: 'yes-no' }
+    ]
+  }
+  
+  try {
+    const result = await optimizer.optimizeSurvey(testSurvey)
+    console.log(`   ✅ Quality Score: ${result.qualityReport.qualityScore.overall_score}/100`)
+    console.log(`   ✅ Brand Voice: ${result.qualityReport.brandVoiceScore}/30`)
+    console.log(`   ✅ Improvements: ${result.improvements.length}`)
+  } catch (error) {
+    console.log(`   ❌ Failed: ${error.message}`)
+  }
+
+  // Test Content Generator
+  console.log('\n2. Testing Content Generator...')
+  const generator = createContentGenerator()
+  
+  const testArticle = {
+    id: 'test-article',
+    title: 'Senate Passes Infrastructure Bill',
+    description: 'Major infrastructure legislation approved',
+    url: 'https://example.com/article',
+    source: { name: 'Test News' },
+    publishedAt: new Date().toISOString()
+  }
+  
+  try {
+    const result = await generator.generateQuizFromNews(testArticle, {
+      questionCount: 5,
+      categories: ['Government'],
+      difficultyDistribution: {}
+    })
+    console.log(`   ✅ Questions Generated: ${result.questions.length}`)
+    console.log(`   ✅ Topic: ${result.topic}`)
+  } catch (error) {
+    console.log(`   ❌ Failed: ${error.message}`)
+  }
+
+  // Display quality report
+  console.log('\n3. Quality Report:')
+  AIConfigMonitor.reportQualityTrends()
+}
+
+testIntegration()
+```
+
+## Common Migration Issues & Solutions
+
+### Issue 1: TypeScript Import Errors
+```typescript
+// PROBLEM: Can't import new AI classes
+import { CivicSenseAIAgent } from '@/lib/ai/civic-sense-ai-agent'
+// Error: Module not found
+
+// SOLUTION: Create the base files first
+// 1. Create lib/ai/civic-sense-ai-agent.ts (see integration guide)
+// 2. Create lib/ai/civic-sense-ai-config.ts 
+// 3. Update tsconfig.json if needed
+```
+
+### Issue 2: Quality Gates Failing
+```typescript
+// PROBLEM: All content fails quality gates
+// Quality score: 45/100, no uncomfortable truths detected
+
+// SOLUTION: Adjust prompts and thresholds temporarily
+const testConfig = {
+  ...CIVIC_SENSE_AI_CONFIG,
+  qualityThresholds: {
+    minimumOverallScore: 50, // Lower temporarily
+    minimumBrandVoiceScore: 15,
+    // ... other thresholds
+  }
+}
+
+// Test with lower thresholds, then gradually increase
+```
+
+### Issue 3: API Rate Limits
+```typescript
+// PROBLEM: AI provider rate limits exceeded
+
+// SOLUTION: Add rate limiting and batching
+export class RateLimitedAIAgent extends CivicSenseAIAgent {
+  private lastCall = 0
+  private minInterval = 1000 // 1 second between calls
+
+  protected async callAI(prompt: string): Promise<string> {
+    const now = Date.now()
+    const timeSinceLastCall = now - this.lastCall
+    
+    if (timeSinceLastCall < this.minInterval) {
+      await new Promise(resolve => 
+        setTimeout(resolve, this.minInterval - timeSinceLastCall)
+      )
+    }
+    
+    this.lastCall = Date.now()
+    return await super.callAI(prompt)
+  }
+}
+```
+
+## Final Validation Checklist
+
+After migration, verify:
+
+- [ ] All AI components extend `CivicSenseAIAgent`
+- [ ] Quality scores consistently above 70/100
+- [ ] Uncomfortable truths detected in all content
+- [ ] Power dynamics analysis included
+- [ ] 3+ civic action steps provided
+- [ ] Primary sources verified
+- [ ] Brand voice scores above 21/30
+- [ ] Warning flags properly handled
+- [ ] Quality metrics tracked and reported
+- [ ] Database logging functional
+- [ ] Error handling robust
+- [ ] Performance acceptable
+
+## Success Metrics
+
+You'll know the migration is successful when:
+
+✅ **Quality Consistency**: All AI outputs score 70+ with uncomfortable truths detected  
+✅ **Brand Voice Alignment**: Content sounds distinctly like CivicSense  
+✅ **Power Dynamics**: Every piece reveals who actually makes decisions  
+✅ **Civic Action**: Specific, actionable steps with contact information  
+✅ **Source Verification**: Primary sources support all claims  
+✅ **Monitoring Active**: Quality trends tracked and reported  
+
+**Remember**: The goal is ensuring every AI agent produces content that lives up to our promise - "civic education that politicians don't want you to have."

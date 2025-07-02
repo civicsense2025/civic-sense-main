@@ -1,0 +1,451 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# CivicSense Content Development Rules
+
+*Civic education that politicians don't want you to have.*
+
+## Quick Reference Documentation
+When working on content-related features, ALWAYS reference these guides:
+- `docs/content-types-guide.md` - Content structure and quality standards
+- `cursor-content-rules.md` - Development implementation rules
+- `docs/comprehensive-prompt-system.md` - AI content generation guidelines
+- `.cursor/rules/branding-content.mdc` - Brand voice and messaging standards
+
+## Core Content Principles
+
+### Brand Voice Integration in Code
+When developing ANY content-related features, ALWAYS ensure:
+
+**Truth Over Comfort**
+- Content validation must check for uncomfortable truths about power structures
+- Never implement features that soften political criticism or create false equivalencies
+- Error messages should be direct, not diplomatic
+
+**Clarity Over Politeness** 
+- Use active voice in content templates and prompts
+- Avoid passive constructions that obscure responsibility
+- Name specific institutions and officials, not vague "government" references
+
+**Action Over Passive Consumption**
+- Every content piece must include actionable next steps for users
+- Implement engagement tracking for real-world actions, not just consumption metrics
+- Build features that connect learning to civic participation
+
+**Evidence Over Opinion**
+- All content must be backed by verifiable sources
+- Implement robust source validation and fact-checking workflows
+- Distinguish clearly between facts and analysis in UI components
+
+## Content Development Standards
+
+### Required Elements for ALL Content
+Every piece of content MUST include:
+1. **Stakes** - Why this matters to the reader's daily life (lead with this)
+2. **Uncomfortable Truth** - Something politicians don't want people to know
+3. **Specific Actors** - Name institutions and officials, not vague "government"
+4. **Power Dynamics** - How influence actually flows vs. how it appears to
+5. **Action Steps** - 3-5 specific things readers can do immediately
+6. **Source Citations** - Verifiable, preferably primary sources
+
+### Forbidden Content Patterns
+NEVER implement features that allow:
+- "Both sides" false equivalencies
+- Passive voice that obscures responsibility ("mistakes were made")
+- Vague action suggestions ("citizens should get involved")
+- Unverified claims or anonymous sources
+- Content that treats politics like entertainment
+
+### TypeScript Interfaces for Content
+
+```typescript
+// REQUIRED: All content must include these fields
+interface CivicSenseContent {
+  id: string
+  title: string
+  description: string
+  
+  // REQUIRED: Brand voice validation
+  uncomfortable_truth: string
+  power_dynamics_revealed: string[]
+  specific_actors_named: string[]
+  
+  // REQUIRED: Action orientation
+  immediate_actions: ActionStep[]
+  leverage_points: string[]
+  coalition_opportunities: string[]
+  
+  // REQUIRED: Source validation
+  primary_sources: SourceReference[]
+  credibility_score: number
+  fact_checked_at?: Date
+  
+  // REQUIRED: Quality tracking
+  challenges_assumptions: boolean
+  uses_active_voice: boolean
+  connects_to_systemic_change: boolean
+}
+
+interface ActionStep {
+  description: string
+  specific_contact?: ContactInfo
+  timing_guidance?: string
+  difficulty_level: 'immediate' | 'moderate' | 'advanced'
+}
+
+interface SourceReference {
+  type: 'primary' | 'secondary' | 'verification'
+  url: string
+  title: string
+  credibility_score: number
+  potential_bias?: string
+}
+```
+
+## Database Schema Requirements
+
+### Content Tables Must Include
+```sql
+-- All content tables MUST include these fields
+CREATE TABLE content_base (
+  -- ... basic fields ...
+  
+  -- REQUIRED: Brand voice validation
+  uses_active_voice BOOLEAN NOT NULL DEFAULT FALSE,
+  names_specific_institutions BOOLEAN NOT NULL DEFAULT FALSE,
+  provides_uncomfortable_truth BOOLEAN NOT NULL DEFAULT FALSE,
+  challenges_assumptions BOOLEAN NOT NULL DEFAULT FALSE,
+  
+  -- REQUIRED: Action orientation
+  provides_action_steps BOOLEAN NOT NULL DEFAULT FALSE,
+  connects_to_systemic_change BOOLEAN NOT NULL DEFAULT FALSE,
+  
+  -- REQUIRED: Source validation
+  primary_sources JSONB NOT NULL,
+  credibility_score INTEGER CHECK (credibility_score >= 0 AND credibility_score <= 100),
+  fact_checked_at TIMESTAMPTZ,
+  
+  -- REQUIRED: Quality tracking
+  civic_action_reported INTEGER DEFAULT 0,
+  misconception_correction_score INTEGER
+);
+```
+
+## API Development Standards
+
+### Content Creation Endpoints
+```typescript
+// REQUIRED: All content creation must include validation
+interface ContentCreationRequest {
+  content: ContentInput
+  validation_required: {
+    brand_voice_check: boolean
+    fact_check: boolean
+    power_dynamics_analysis: boolean
+    action_steps_validation: boolean
+  }
+}
+
+// REQUIRED: Content must be scored before publication
+interface ContentValidationResponse {
+  content_id: string
+  quality_scores: {
+    brand_voice: number      // Must be >= 70
+    accuracy: number         // Must be >= 80
+    actionability: number    // Must be >= 60
+    overall: number         // Must be >= 70
+  }
+  validation_issues: string[]
+  improvement_suggestions: string[]
+  ready_for_publication: boolean
+}
+```
+
+### Content Quality Monitoring
+```typescript
+// REQUIRED: Track content effectiveness
+POST /api/content/{id}/engagement
+{
+  user_id: string,
+  engagement_type: 'viewed' | 'completed' | 'action_taken' | 'shared',
+  action_details?: {
+    contacted_official?: string,
+    joined_organization?: string,
+    attended_meeting?: boolean
+  },
+  civic_engagement_increase?: number
+}
+
+// REQUIRED: Content performance metrics
+GET /api/content/performance-metrics
+Response: {
+  total_content: number,
+  avg_quality_score: number,
+  actions_taken_count: number,
+  misconceptions_corrected: number,
+  power_dynamics_revealed: number
+}
+```
+
+## Frontend Component Standards
+
+### Content Display Components
+```typescript
+// REQUIRED: All content display components must emphasize action
+interface ContentDisplayProps {
+  content: CivicSenseContent
+  
+  // REQUIRED: Emphasize these elements
+  highlightUncomfortableTruths: boolean
+  showPowerDynamics: boolean
+  emphasizeActionSteps: boolean
+  displaySourceCredibility: boolean
+}
+
+// REQUIRED: Content components must include these elements
+const ContentDisplay: React.FC<ContentDisplayProps> = ({ content }) => {
+  return (
+    <div className="content-display">
+      {/* REQUIRED: Lead with stakes */}
+      <StakesHeader stakes={content.stakes} />
+      
+      {/* REQUIRED: Uncomfortable truth prominent */}
+      <UncomfortableTruthCallout truth={content.uncomfortable_truth} />
+      
+      {/* REQUIRED: Power dynamics visualization */}
+      <PowerDynamicsSection dynamics={content.power_dynamics_revealed} />
+      
+      {/* Main content with active voice emphasis */}
+      <ContentBody content={content.body} />
+      
+      {/* REQUIRED: Action steps prominently displayed */}
+      <ActionStepsSection 
+        steps={content.immediate_actions}
+        leveragePoints={content.leverage_points}
+      />
+      
+      {/* REQUIRED: Source credibility display */}
+      <SourceValidationSection sources={content.primary_sources} />
+    </div>
+  )
+}
+```
+
+### User Engagement Tracking
+```typescript
+// REQUIRED: Track civic action, not just consumption
+interface EngagementMetrics {
+  // Consumption metrics (lower priority)
+  views: number
+  completion_rate: number
+  
+  // Civic action metrics (higher priority)
+  actions_taken: number
+  officials_contacted: number
+  meetings_attended: number
+  organizations_joined: number
+  misconceptions_corrected: number
+  
+  // Knowledge application metrics
+  power_dynamics_understood: boolean
+  can_identify_leverage_points: boolean
+  connects_local_to_federal: boolean
+}
+```
+
+## AI Content Generation Integration
+
+### Prompt Engineering Standards
+When building AI content generation features:
+
+```typescript
+interface CivicSensePrompt {
+  // REQUIRED: Brand voice primer
+  brand_voice_instructions: string
+  power_dynamics_focus: string
+  action_orientation_requirement: string
+  source_validation_requirement: string
+  
+  // REQUIRED: Content type specific modifiers
+  content_type: 'quiz' | 'topic' | 'news_analysis' | 'public_figure'
+  uncomfortable_truth_requirement: string
+  specific_naming_requirement: string
+  
+  // REQUIRED: Quality filters
+  forbidden_patterns: string[]  // ["both sides", "some experts suggest"]
+  required_patterns: string[]   // ["Here's what they don't want you to know"]
+  
+  // REQUIRED: Web search integration
+  fact_verification_sources: string[]
+  power_dynamics_research: string[]
+  current_events_context: string[]
+}
+```
+
+### Content Enhancement Pipeline
+```typescript
+class CivicSenseContentPipeline {
+  // REQUIRED: All generated content must go through this pipeline
+  async processContent(rawContent: RawContent): Promise<ValidatedContent> {
+    // 1. Brand voice alignment
+    const brandAligned = await this.alignWithBrandVoice(rawContent)
+    
+    // 2. Power dynamics injection
+    const powerAnalyzed = await this.addPowerDynamicsAnalysis(brandAligned)
+    
+    // 3. Action step generation
+    const actionable = await this.generateActionSteps(powerAnalyzed)
+    
+    // 4. Source validation
+    const sourceValidated = await this.validateSources(actionable)
+    
+    // 5. Quality scoring
+    const scored = await this.scoreContent(sourceValidated)
+    
+    // 6. Publication readiness check
+    if (!this.meetsPublicationStandards(scored)) {
+      throw new ContentQualityError('Does not meet CivicSense standards')
+    }
+    
+    return scored
+  }
+}
+```
+
+## Content Quality Validation
+
+### Automated Quality Checks
+```typescript
+interface ContentQualityCheck {
+  // REQUIRED: Brand voice compliance (30% of score)
+  brand_voice: {
+    uses_active_voice: boolean
+    names_specific_actors: boolean
+    provides_uncomfortable_truths: boolean
+    challenges_assumptions: boolean
+    maintains_civicsense_tone: boolean
+  }
+  
+  // REQUIRED: Educational effectiveness (25% of score)
+  educational_value: {
+    builds_actionable_knowledge: boolean
+    connects_to_personal_impact: boolean
+    reveals_systemic_patterns: boolean
+    empowers_rather_than_overwhelms: boolean
+  }
+  
+  // REQUIRED: Factual accuracy (25% of score)
+  accuracy: {
+    verifiable_claims: boolean
+    primary_source_citations: boolean
+    clear_fact_vs_analysis: boolean
+    bias_disclosure: boolean
+  }
+  
+  // REQUIRED: Action orientation (20% of score)
+  actionability: {
+    specific_immediate_steps: boolean
+    multiple_engagement_levels: boolean
+    connection_to_systemic_change: boolean
+  }
+}
+```
+
+### Quality Standards
+```typescript
+// REQUIRED: Content must meet these minimums to be published
+const PUBLICATION_STANDARDS = {
+  overall_score: 70,           // Out of 100
+  brand_voice_minimum: 70,     // Must reveal uncomfortable truths
+  accuracy_minimum: 80,        // Must be fact-checked and verifiable
+  actionability_minimum: 60,   // Must provide specific action steps
+  
+  required_elements: {
+    uncomfortable_truths: 1,    // At least one uncomfortable truth
+    action_steps: 3,           // At least 3 specific action steps
+    primary_sources: 2,        // At least 2 primary source citations
+    specific_actors: 2         // At least 2 specific institutions/officials named
+  }
+}
+```
+
+## Content Workflow Automation
+
+### Content Monitoring
+```typescript
+// REQUIRED: Monitor content effectiveness
+class ContentMonitor {
+  async monitorQuality(): Promise<void> {
+    const lowQualityContent = await this.findContentBelowStandards()
+    
+    for (const content of lowQualityContent) {
+      await this.flagForImprovement({
+        content_id: content.id,
+        quality_issues: this.identifyQualityIssues(content),
+        improvement_suggestions: this.generateImprovementSuggestions(content),
+        urgency: content.quality_score < 50 ? 'high' : 'medium'
+      })
+    }
+  }
+  
+  async trackCivicImpact(): Promise<void> {
+    const metrics = await this.getCivicEngagementMetrics()
+    
+    // Alert if content isn't driving action
+    if (metrics.action_taken_rate < 0.1) {
+      await this.alertLowActionableContent()
+    }
+    
+    // Alert if misconceptions aren't being corrected
+    if (metrics.misconceptions_corrected < 100) {
+      await this.alertIneffectiveEducation()
+    }
+  }
+}
+```
+
+## Implementation Checklist
+
+### Before Creating Any Content Feature
+- [ ] Review `docs/content-types-guide.md` for content structure requirements
+- [ ] Check `docs/comprehensive-prompt-system.md` for AI generation guidelines
+- [ ] Verify TypeScript interfaces match CivicSense content standards
+- [ ] Implement content validation pipeline with quality scoring
+- [ ] Add source verification and fact-checking capabilities
+- [ ] Include civic action tracking, not just consumption metrics
+
+### Before Publishing Content
+- [ ] Content reveals at least one uncomfortable truth about power
+- [ ] Uses active voice that assigns responsibility to specific actors
+- [ ] Names specific institutions and officials, not vague "government"
+- [ ] Includes 3-5 actionable steps for civic engagement
+- [ ] Challenges at least one common assumption
+- [ ] Cites verifiable primary sources
+- [ ] Connects individual actions to systemic change
+- [ ] Scores >= 70 overall with >= 70 brand voice and >= 80 accuracy
+
+### Content Performance Monitoring
+- [ ] Track civic actions taken, not just content consumption
+- [ ] Monitor misconceptions corrected and power dynamics revealed
+- [ ] Measure user confidence in civic engagement
+- [ ] Track real-world outcomes from content-driven actions
+- [ ] Continuously improve content based on civic impact metrics
+
+## The Bottom Line
+
+**Every line of code should advance our mission: transforming passive observers into confident, effective participants in democracy.**
+
+We're not building a traditional educational platform. We're building civic education that politicians don't want people to have.
+
+**Success Metrics:**
+- Users take more civic actions after engaging with content
+- Misconceptions about power are corrected at scale  
+- People become harder to manipulate and impossible to fool
+- Citizens gain confidence to challenge power structures
+- Real-world political engagement increases measurably
+
+**Remember:** We succeed when our audience becomes more capable of effective political action, not when they feel good about American government.
+
+*This is civic education for people who want to win.*

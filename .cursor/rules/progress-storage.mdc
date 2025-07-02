@@ -1,0 +1,275 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Progress Storage & Data Persistence Rules
+
+## Critical Mission: Never Lose User Progress
+**ALL user interactions that represent progress MUST be saved and restorable**
+
+> This is the most important rule for CivicSense. Users trust us with their learning journey, and losing their progress breaks that trust and hurts democratic participation.
+
+## Progress Storage Integration Requirements
+
+### 1. Universal Coverage
+Every component that tracks user progress MUST use the progress storage system:
+- ✅ Quiz attempts (regular, civics test, multiplayer)
+- ✅ Survey responses and partial completions
+- ✅ Onboarding assessment progress
+- ✅ Learning path progression
+- ✅ Skill assessments
+- ✅ Any multi-step user flows
+
+### 2. Auto-Save Requirements
+Progress MUST be saved automatically on every meaningful interaction:
+- Question answers
+- Step completions
+- Time spent
+- Partial form data
+- Navigation within flows
+
+### 3. Session Isolation
+Each quiz/assessment session MUST have unique identification:
+- Use unique session IDs for each attempt
+- Prevent cross-contamination between sessions
+- Allow multiple concurrent sessions (different topics)
+
+### 4. Guest Support
+Anonymous users MUST have their progress saved locally:
+- Use guest tokens for identification
+- Save to localStorage with proper cleanup
+- Migrate to user account when they sign up
+
+### 5. Restoration Requirements
+Components MUST restore progress on reload/navigation:
+- Check for saved state on mount
+- Restore all relevant state properties
+- Continue from exact position user left off
+
+### 6. Cleanup Requirements
+Completed sessions MUST be cleaned up to prevent storage bloat:
+- Clear progress on successful completion
+- Implement periodic cleanup of expired sessions
+- Provide manual cleanup options for users
+
+## Implementation Pattern
+
+### Standard Component Integration
+```typescript
+import { useProgressStorage, createQuizTypeProgress } from '@/lib/progress-storage'
+
+// In component:
+const progressManager = createQuizTypeProgress(user?.id, guestToken, sessionId)
+
+// Save on every interaction
+useEffect(() => {
+  if (hasProgress) {
+    progressManager.save(currentState)
+  }
+}, [currentQuestionIndex, answers, timeSpent])
+
+// Restore on mount
+useEffect(() => {
+  const savedState = progressManager.load()
+  if (savedState) {
+    restoreFromState(savedState)
+  }
+}, [])
+
+// Clean up on completion
+const handleComplete = () => {
+  progressManager.clear()
+  onComplete()
+}
+```
+
+### Progress Storage Factory Functions
+Use the appropriate factory function for each component type:
+
+- `createRegularQuizProgress()` - Standard quiz attempts
+- `createCivicsTestProgress()` - Civics assessment with analytics
+- `createSurveyProgress()` - Survey forms with conditional logic
+- `createOnboardingAssessmentProgress()` - Onboarding flow
+- `createMultiplayerQuizProgress()` - Multiplayer sessions
+
+### State Conversion Requirements
+All components MUST implement `convertToBaseQuizState()` to standardize saved data:
+
+```typescript
+const convertToBaseQuizState = (): BaseQuizState => ({
+  sessionId: sessionId.current,
+  quizType: 'quiz_type_here',
+  topicId,
+  questions,
+  currentQuestionIndex,
+  answers,
+  streak,
+  maxStreak,
+  startTime,
+  responseTimes,
+  metadata: {
+    // Component-specific data
+  }
+})
+```
+
+## Authentication Integration
+
+### User State Handling
+```typescript
+// Always check auth state properly
+const { user, loading } = useAuth()
+const { getOrCreateGuestToken } = useGuestAccess()
+
+if (loading) return <LoadingSpinner />
+
+// Handle both authenticated and guest users
+const userId = user?.id
+const guestToken = user ? undefined : getOrCreateGuestToken()
+```
+
+### Guest Token Management
+- Generate unique guest tokens for anonymous users
+- Persist guest tokens across sessions
+- Migrate progress when guest converts to user
+
+## Testing Requirements
+
+### Progress Storage Testing Checklist
+- [ ] Test save/restore cycles
+- [ ] Verify session isolation
+- [ ] Confirm guest user support
+- [ ] Validate cleanup behavior
+- [ ] Test edge cases (network issues, rapid navigation)
+- [ ] Test migration from guest to user
+- [ ] Verify progress persistence across browser sessions
+
+### Component Testing Pattern
+```typescript
+// Test that progress is saved
+it('saves progress on each interaction', () => {
+  const { getByText, getByRole } = render(<Component />)
+  fireEvent.click(getByText('Answer A'))
+  expect(mockProgressManager.save).toHaveBeenCalled()
+})
+
+// Test that progress is restored
+it('restores progress on mount', () => {
+  mockProgressManager.load.mockReturnValue(mockSavedState)
+  const { getByText } = render(<Component />)
+  expect(getByText('Question 2')).toBeInTheDocument()
+})
+
+// Test cleanup on completion
+it('clears progress on completion', () => {
+  const { getByText } = render(<Component />)
+  fireEvent.click(getByText('Complete'))
+  expect(mockProgressManager.clear).toHaveBeenCalled()
+})
+```
+
+## Error Handling
+
+### Progress Storage Error Patterns
+```typescript
+// Handle storage failures gracefully
+try {
+  progressManager.save(currentState)
+} catch (error) {
+  console.warn('Failed to save progress:', error)
+  // Continue without blocking user
+}
+
+// Handle restoration failures
+try {
+  const savedState = progressManager.load()
+  if (savedState) {
+    restoreFromState(savedState)
+  }
+} catch (error) {
+  console.warn('Failed to restore progress:', error)
+  // Start fresh, don't block user
+}
+```
+
+## Performance Considerations
+
+### Debounced Saving
+```typescript
+// Debounce frequent saves to prevent performance issues
+const debouncedSave = useMemo(
+  () => debounce((state) => progressManager.save(state), 500),
+  [progressManager]
+)
+
+useEffect(() => {
+  if (hasProgress) {
+    debouncedSave(currentState)
+  }
+}, [currentQuestionIndex, answers, timeSpent])
+```
+
+### Storage Size Management
+- Limit stored data to essential progress information
+- Implement compression for large state objects
+- Regular cleanup of expired entries
+- Monitor localStorage usage to prevent quota exceeded errors
+
+## Migration and Backwards Compatibility
+
+### Legacy Support
+- Handle old localStorage key formats
+- Migrate data to new storage system
+- Provide fallbacks for missing fields
+- Version state data for future migrations
+
+### Future-Proofing
+- Design state structures for extensibility
+- Use version numbers in stored data
+- Plan for schema evolution
+- Document state structure changes
+
+## Documentation Requirements
+
+Every component using progress storage MUST:
+1. Document what progress is saved
+2. Explain restoration behavior
+3. List cleanup triggers
+4. Include testing examples
+5. Document any component-specific metadata
+
+## Enforcement
+
+### Code Review Checklist
+- [ ] Progress storage factory function used
+- [ ] Save/restore pattern implemented correctly
+- [ ] Guest user support included
+- [ ] Cleanup on completion implemented
+- [ ] Error handling for storage failures
+- [ ] Tests cover progress storage scenarios
+- [ ] Documentation updated
+
+### Automated Checks
+- Lint rules to require progress storage imports
+- Tests must verify save/restore behavior
+- CI checks for progress storage integration
+- Performance monitoring for storage operations
+
+## Success Metrics
+
+### User Experience Metrics
+- Zero progress loss incidents
+- Reduced user frustration from lost work
+- Increased completion rates
+- Higher user satisfaction scores
+
+### Technical Metrics
+- Storage operation success rates
+- Average restoration time
+- Storage cleanup efficiency
+- Guest-to-user migration success rate
+
+---
+
+**Remember**: Every saved progress state is a user's investment in their civic education. Losing that progress damages their trust and their democratic participation. This is why progress storage is not optional—it's fundamental to our mission.

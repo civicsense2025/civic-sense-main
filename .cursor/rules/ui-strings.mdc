@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+All new components must use UI strings in [ui-strings.ts](mdc:lib/ui-strings.ts), and the respective ui-strings language files must also be updated.

@@ -1,0 +1,669 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CivicSense AI Agent Integration System
+
+*Ensuring all AI components follow consistent quality standards and brand voice*
+
+## Overview
+
+This system ensures that every AI agent across CivicSense - from survey optimizers to content generators to question validators - follows the same rigorous content quality standards and brand voice requirements.
+
+## Core Integration Principles
+
+### 1. **Single Source of Truth**
+All AI agents must use the central `CivicSenseAIAgent` base class that enforces:
+- Content quality rubric standards (70+ overall score minimum)
+- Brand voice requirements (uncomfortable truths, active voice, power analysis)
+- Source verification and fact-checking protocols
+- Consistent prompt engineering
+
+### 2. **Zero Tolerance for Quality Deviation**
+Any AI output that doesn't meet our standards gets automatically:
+- Flagged for human review
+- Regenerated with stricter prompts
+- Enhanced with web search verification
+- Scored against the quality rubric
+
+### 3. **Mandatory Integration Points**
+Every AI component MUST integrate with:
+- Content Quality Rubric (`ContentQualityGate`)
+- Brand Voice Enforcement (`BrandVoiceValidator`)
+- Source Verification Engine (`SourceVerificationEngine`)
+- Fact-Checking Pipeline (`FactCheckingPipeline`)
+
+## AI Agent Base Architecture
+
+### Core AI Agent Interface
+```typescript
+interface CivicSenseAIAgent {
+  // REQUIRED: All agents must implement these
+  agentType: 'content-generator' | 'survey-optimizer' | 'question-optimizer' | 'news-analyzer'
+  brandVoiceConfig: BrandVoiceConfig
+  qualityGate: ContentQualityGate
+  sourceVerifier: SourceVerificationEngine
+  
+  // REQUIRED: Quality enforcement methods
+  validateOutput(content: string): Promise<ContentQualityAssessment>
+  enforceUncomfortableTruth(content: string): Promise<string>
+  addPowerDynamicsAnalysis(content: string): Promise<string>
+  verifyFactualClaims(content: string): Promise<FactVerificationResult[]>
+  ensureActionableSteps(content: string): Promise<string>
+  
+  // REQUIRED: Generate content that meets standards
+  generateContent(input: any, options?: AIGenerationOptions): Promise<CivicSenseAIOutput>
+}
+
+interface CivicSenseAIOutput {
+  content: string
+  qualityScore: ContentQualityAssessment
+  brandVoiceScore: number
+  factCheckResults: FactVerificationResult[]
+  sourceUrls: string[]
+  warningFlags: string[]
+  civicActionSteps: string[]
+  powerDynamicsRevealed: string[]
+  uncomfortableTruthsExposed: string[]
+  publishRecommendation: 'publish' | 'revise' | 'enhance' | 'reject'
+  confidenceLevel: number
+}
+```
+
+### Shared Configuration System
+```typescript
+// REQUIRED: All AI agents must use this configuration
+interface CivicSenseAIConfig {
+  // Brand voice enforcement (MANDATORY)
+  brandVoice: {
+    uncomfortableTruthRequired: true
+    activeVoiceMinimum: 80 // percent
+    specificActorsRequired: 2 // minimum number
+    powerDynamicsRequired: true
+    diplomaticSofteningForbidden: true
+  }
+  
+  // Quality thresholds (MANDATORY)
+  qualityThresholds: {
+    minimumOverallScore: 70
+    minimumBrandVoiceScore: 21
+    minimumPowerDynamicsScore: 18
+    minimumCivicEngagementScore: 14
+    minimumAccuracyScore: 12
+  }
+  
+  // Content requirements (MANDATORY)
+  contentRequirements: {
+    minimumActionSteps: 3
+    minimumPrimarySources: 2
+    factCheckingRequired: true
+    webSearchVerification: true
+    sourceCredibilityMinimum: 70
+  }
+  
+  // AI model preferences
+  aiProviders: {
+    primary: 'anthropic' // Claude for brand voice alignment
+    secondary: 'openai'  // GPT-4 for analysis
+    factChecking: 'perplexity' // Real-time verification
+  }
+  
+  // Prompt templates (MANDATORY - use these exact templates)
+  promptTemplates: CivicSensePromptTemplates
+}
+```
+
+## Prompt Engineering Standards
+
+### Master Prompt Template (MANDATORY)
+```typescript
+interface CivicSensePromptTemplates {
+  // REQUIRED: All content generation must start with this
+  brandVoiceEnforcement: `
+You are creating civic education content for CivicSense - "civic education that politicians don't want you to have."
+
+MANDATORY REQUIREMENTS:
+🔥 UNCOMFORTABLE TRUTH: Reveal something politicians prefer people not know
+⚔️ ACTIVE VOICE: Name specific actors, assign clear responsibility  
+💰 POWER ANALYSIS: Show who actually makes decisions vs. who appears to
+🎯 CIVIC ACTIONS: Provide 3+ specific steps people can take immediately
+📊 PRIMARY SOURCES: Back every claim with verifiable government/academic sources
+
+BRAND VOICE REQUIREMENTS:
+- Truth over comfort - reveal uncomfortable realities about power
+- Clarity over politeness - call lies "lies", corruption "corruption"
+- Action over consumption - every piece must lead to civic engagement
+- Evidence over opinion - distinguish facts from interpretation
+- Systems thinking - show root causes, not just symptoms
+
+FORBIDDEN LANGUAGE:
+❌ "Some experts suggest" → ✅ "Research proves"
+❌ "Politicians often" → ✅ "Senator X voted to"  
+❌ "It's complicated" → ✅ "Here's exactly how this works"
+❌ "Many people think" → ✅ "Most Americans don't realize"
+❌ Passive voice that obscures responsibility
+
+CONTENT MUST:
+- Score 70+ on quality rubric
+- Include uncomfortable truth politicians don't want known
+- Name specific institutions, officials, dollar amounts, dates
+- Provide immediate actionable steps with contact information
+- Connect individual actions to systemic change
+- Use 8th-10th grade reading level but sophisticated analysis
+`
+
+  // Content-specific templates
+  questionGeneration: string
+  surveyOptimization: string
+  newsAnalysis: string
+  factChecking: string
+  powerDynamicsAnalysis: string
+  civicActionGeneration: string
+}
+```
+
+### Quality Enforcement Prompts
+```typescript
+const QUALITY_ENFORCEMENT_PROMPTS = {
+  uncomfortableTruthDetection: `
+Analyze this content for uncomfortable truths politicians don't want people to know:
+
+CONTENT: {content}
+
+Does this reveal information that:
+- Challenges how people think government actually works?
+- Exposes gaps between official narrative and reality?
+- Shows hidden power dynamics or decision-making processes?
+- Reveals financial interests or conflicts that aren't obvious?
+- Makes politicians/officials uncomfortable if widely known?
+
+If NO uncomfortable truth detected, generate one specific to this topic.
+`,
+
+  powerDynamicsEnhancement: `
+Enhance this content to reveal actual power dynamics:
+
+CONTENT: {content}
+
+Add analysis showing:
+- Who ACTUALLY makes this decision vs. who APPEARS to make it
+- What financial interests are at stake and who benefits
+- What informal power networks influence the outcome
+- How the official process differs from the actual process
+- What citizens aren't supposed to understand about this
+
+Use specific names, dollar amounts, and institutional relationships.
+`,
+
+  civicActionGeneration: `
+Generate specific, actionable civic engagement steps:
+
+CONTENT: {content}
+
+Provide 3-5 specific actions citizens can take, including:
+- Exact contact information (phone numbers, addresses, emails)
+- Specific language to use when contacting officials
+- Optimal timing for maximum impact
+- How this action connects to broader systemic change
+- What to do if officials don't respond appropriately
+
+Make each action immediately doable within 24-48 hours.
+`,
+
+  sourceVerification: `
+Verify all factual claims and enhance with authoritative sources:
+
+CONTENT: {content}
+
+For each factual claim:
+1. Identify if it's verifiable
+2. Find primary sources (government docs, academic research, official records)
+3. Rate source credibility (tier 1: .gov, tier 2: .edu, tier 3: established journalism)
+4. Flag any unverified or questionable claims
+5. Suggest authoritative sources to strengthen weak claims
+
+Prioritize: Congressional records > Government reports > Academic research > Journalism
+`
+}
+```
+
+## Integration Implementation
+
+### 1. Base AI Agent Class
+```typescript
+// lib/ai/civic-sense-ai-agent.ts
+export abstract class CivicSenseAIAgent {
+  protected config: CivicSenseAIConfig
+  protected qualityGate: ContentQualityGate
+  protected sourceVerifier: SourceVerificationEngine
+  protected promptTemplates: CivicSensePromptTemplates
+
+  constructor(config: CivicSenseAIConfig) {
+    this.config = config
+    this.qualityGate = new ContentQualityGate(config.qualityThresholds)
+    this.sourceVerifier = new SourceVerificationEngine()
+    this.promptTemplates = config.promptTemplates
+  }
+
+  // MANDATORY: All subclasses must call this before returning content
+  protected async enforceQualityStandards(
+    content: string, 
+    context?: any
+  ): Promise<CivicSenseAIOutput> {
+    console.log('🔍 Enforcing CivicSense quality standards...')
+
+    // Step 1: Initial quality assessment
+    let qualityScore = await this.qualityGate.assessContent(content)
+    
+    // Step 2: Enforce uncomfortable truth requirement
+    if (!qualityScore.uncomfortable_truth_detected) {
+      console.log('🔥 Adding uncomfortable truth...')
+      content = await this.enforceUncomfortableTruth(content, context)
+      qualityScore = await this.qualityGate.assessContent(content)
+    }
+
+    // Step 3: Enhance power dynamics if missing
+    if (qualityScore.power_dynamics_score < this.config.qualityThresholds.minimumPowerDynamicsScore) {
+      console.log('💰 Enhancing power dynamics analysis...')
+      content = await this.addPowerDynamicsAnalysis(content, context)
+      qualityScore = await this.qualityGate.assessContent(content)
+    }
+
+    // Step 4: Add civic action steps if insufficient
+    if (qualityScore.action_steps_count < this.config.contentRequirements.minimumActionSteps) {
+      console.log('🎯 Adding civic action steps...')
+      content = await this.ensureActionableSteps(content, context)
+      qualityScore = await this.qualityGate.assessContent(content)
+    }
+
+    // Step 5: Verify and enhance sources
+    const factCheckResults = await this.verifyFactualClaims(content)
+    const sourceUrls = factCheckResults
+      .flatMap(fc => fc.supportingEvidence)
+      .map(evidence => evidence.url)
+
+    // Step 6: Final quality check
+    const finalQualityScore = await this.qualityGate.assessContent(content)
+    
+    // Step 7: Generate warnings and recommendations
+    const warningFlags = this.generateWarningFlags(finalQualityScore, factCheckResults)
+    const publishRecommendation = this.determinePublishRecommendation(finalQualityScore, warningFlags)
+
+    return {
+      content,
+      qualityScore: finalQualityScore,
+      brandVoiceScore: finalQualityScore.brand_voice_score,
+      factCheckResults,
+      sourceUrls,
+      warningFlags,
+      civicActionSteps: this.extractActionSteps(content),
+      powerDynamicsRevealed: this.extractPowerDynamics(content),
+      uncomfortableTruthsExposed: this.extractUncomfortableTruths(content),
+      publishRecommendation,
+      confidenceLevel: finalQualityScore.overall_score
+    }
+  }
+
+  // MANDATORY: Implement in all subclasses
+  protected abstract async enforceUncomfortableTruth(content: string, context?: any): Promise<string>
+  protected abstract async addPowerDynamicsAnalysis(content: string, context?: any): Promise<string>
+  protected abstract async ensureActionableSteps(content: string, context?: any): Promise<string>
+  
+  // Shared implementation for fact verification
+  protected async verifyFactualClaims(content: string): Promise<FactVerificationResult[]> {
+    return await this.sourceVerifier.verifyContent(content)
+  }
+
+  // Generate content with quality enforcement (REQUIRED entry point)
+  public async generateQualityContent(
+    input: any, 
+    options?: AIGenerationOptions
+  ): Promise<CivicSenseAIOutput> {
+    // Step 1: Generate initial content
+    const initialContent = await this.generateInitialContent(input, options)
+    
+    // Step 2: Enforce quality standards (MANDATORY)
+    return await this.enforceQualityStandards(initialContent, input)
+  }
+
+  // MANDATORY: Implement in all subclasses
+  protected abstract async generateInitialContent(input: any, options?: AIGenerationOptions): Promise<string>
+}
+```
+
+### 2. Survey Optimizer Integration
+```typescript
+// components/admin/ai-survey-optimizer.tsx - Integration updates
+export class CivicSenseSurveyOptimizer extends CivicSenseAIAgent {
+  agentType = 'survey-optimizer' as const
+
+  protected async generateInitialContent(survey: Survey): Promise<string> {
+    const prompt = `${this.promptTemplates.brandVoiceEnforcement}
+
+SURVEY OPTIMIZATION TASK:
+Analyze and optimize this survey to ensure it follows CivicSense standards.
+
+SURVEY: ${JSON.stringify(survey)}
+
+${this.promptTemplates.surveyOptimization}
+
+Focus on:
+- Questions that reveal uncomfortable truths about civic knowledge gaps
+- Language that empowers rather than intimidates
+- Flow that builds civic agency and confidence
+- Post-completion content that drives civic action
+- Bias detection and elimination
+
+Generate optimized survey with specific improvements.`
+
+    return await this.callAI(prompt)
+  }
+
+  protected async enforceUncomfortableTruth(content: string): Promise<string> {
+    const enhancementPrompt = `${QUALITY_ENFORCEMENT_PROMPTS.uncomfortableTruthDetection.replace('{content}', content)}
+
+For survey optimization, focus on:
+- Questions that reveal gaps in civic knowledge politicians prefer
+- Understanding of how power actually works vs. how it's taught
+- Misconceptions that keep people passive vs. active citizens
+- Hidden aspects of democratic participation`
+
+    return await this.callAI(enhancementPrompt)
+  }
+
+  // Additional survey-specific methods...
+}
+```
+
+### 3. Content Generator Integration
+```typescript
+// components/admin-content-generator.tsx - Integration updates
+export class CivicSenseContentGenerator extends CivicSenseAIAgent {
+  agentType = 'content-generator' as const
+
+  protected async generateInitialContent(article: NewsArticle): Promise<string> {
+    const prompt = `${this.promptTemplates.brandVoiceEnforcement}
+
+CONTENT GENERATION TASK:
+Transform this news article into CivicSense educational content.
+
+ARTICLE: ${JSON.stringify(article)}
+
+${this.promptTemplates.questionGeneration}
+
+Requirements:
+- Generate quiz questions that reveal power dynamics behind the news
+- Show how this affects citizens' daily lives
+- Provide specific actions people can take
+- Connect to broader systemic issues
+- Use only verifiable facts with primary sources`
+
+    return await this.callAI(prompt)
+  }
+
+  protected async enforceUncomfortableTruth(content: string, article: NewsArticle): Promise<string> {
+    const enhancementPrompt = `${QUALITY_ENFORCEMENT_PROMPTS.uncomfortableTruthDetection.replace('{content}', content)}
+
+For news-based content, focus on:
+- What the article doesn't tell you about power dynamics
+- Who benefits from the official narrative
+- What citizens aren't supposed to understand
+- How this connects to larger patterns of power
+- What actions would make officials uncomfortable
+
+Original article: ${article.title}`
+
+    return await this.callAI(enhancementPrompt)
+  }
+
+  // Additional content generation methods...
+}
+```
+
+### 4. Question Optimizer Integration
+```typescript
+// scripts/optimize-question-content.ts - Integration updates
+export class CivicSenseQuestionOptimizer extends CivicSenseAIAgent {
+  agentType = 'question-optimizer' as const
+
+  protected async generateInitialContent(question: any): Promise<string> {
+    const prompt = `${this.promptTemplates.brandVoiceEnforcement}
+
+QUESTION OPTIMIZATION TASK:
+Optimize this existing question to meet CivicSense standards.
+
+QUESTION: ${question.question}
+EXPLANATION: ${question.explanation}
+CATEGORY: ${question.category}
+
+${this.promptTemplates.questionGeneration}
+
+Ensure the optimized question:
+- Tests understanding of how power actually works
+- Includes uncomfortable truths in explanations
+- Provides specific civic action steps
+- Uses verified sources only
+- Challenges common misconceptions`
+
+    return await this.callAI(prompt)
+  }
+
+  // Override for more comprehensive fact-checking
+  protected async verifyFactualClaims(content: string): Promise<FactVerificationResult[]> {
+    // Use enhanced web search verification
+    const claims = await this.extractClaims(content)
+    const verificationResults: FactVerificationResult[] = []
+
+    for (const claim of claims) {
+      const webSearchResults = await this.webSearchEngine.searchForClaim(claim)
+      const verification = await this.analyzeClaimEvidence(claim, webSearchResults)
+      verificationResults.push(verification)
+    }
+
+    return verificationResults
+  }
+
+  // Additional question optimization methods...
+}
+```
+
+## Quality Gate Integration
+
+### Automated Quality Checking
+```typescript
+// lib/ai/quality-gate-integration.ts
+export class AIQualityGateIntegration {
+  static async validateAIOutput(
+    output: CivicSenseAIOutput,
+    agentType: string
+  ): Promise<QualityValidationResult> {
+    const validation = {
+      passed: false,
+      score: output.qualityScore.overall_score,
+      requiredImprovements: [] as string[],
+      criticalIssues: [] as string[],
+      publishReady: false
+    }
+
+    // Check minimum thresholds
+    if (output.qualityScore.overall_score < 70) {
+      validation.criticalIssues.push(`Overall score ${output.qualityScore.overall_score} below minimum 70`)
+    }
+
+    if (!output.qualityScore.uncomfortable_truth_detected) {
+      validation.criticalIssues.push('No uncomfortable truth detected')
+    }
+
+    if (output.qualityScore.action_steps_count < 3) {
+      validation.requiredImprovements.push('Need at least 3 specific action steps')
+    }
+
+    if (output.qualityScore.primary_sources_count < 2) {
+      validation.requiredImprovements.push('Need at least 2 primary sources')
+    }
+
+    // Agent-specific validation
+    switch (agentType) {
+      case 'content-generator':
+        if (output.qualityScore.power_dynamics_score < 18) {
+          validation.criticalIssues.push('Insufficient power dynamics analysis for content generation')
+        }
+        break
+      
+      case 'survey-optimizer':
+        if (output.qualityScore.civic_engagement_score < 14) {
+          validation.criticalIssues.push('Survey must better promote civic engagement')
+        }
+        break
+    }
+
+    validation.passed = validation.criticalIssues.length === 0
+    validation.publishReady = validation.passed && validation.requiredImprovements.length === 0
+
+    return validation
+  }
+}
+```
+
+## Configuration Management
+
+### Central AI Configuration
+```typescript
+// lib/ai/civic-sense-ai-config.ts
+export const CIVIC_SENSE_AI_CONFIG: CivicSenseAIConfig = {
+  brandVoice: {
+    uncomfortableTruthRequired: true,
+    activeVoiceMinimum: 80,
+    specificActorsRequired: 2,
+    powerDynamicsRequired: true,
+    diplomaticSofteningForbidden: true
+  },
+
+  qualityThresholds: {
+    minimumOverallScore: 70,
+    minimumBrandVoiceScore: 21,
+    minimumPowerDynamicsScore: 18,
+    minimumCivicEngagementScore: 14,
+    minimumAccuracyScore: 12
+  },
+
+  contentRequirements: {
+    minimumActionSteps: 3,
+    minimumPrimarySources: 2,
+    factCheckingRequired: true,
+    webSearchVerification: true,
+    sourceCredibilityMinimum: 70
+  },
+
+  aiProviders: {
+    primary: 'anthropic',
+    secondary: 'openai',
+    factChecking: 'perplexity'
+  },
+
+  promptTemplates: {
+    brandVoiceEnforcement: `/* Master prompt template */`,
+    questionGeneration: `/* Question-specific template */`,
+    surveyOptimization: `/* Survey-specific template */`,
+    newsAnalysis: `/* News analysis template */`,
+    factChecking: `/* Fact-checking template */`,
+    powerDynamicsAnalysis: `/* Power dynamics template */`,
+    civicActionGeneration: `/* Civic action template */`
+  }
+}
+
+// REQUIRED: All AI components must use this
+export function createCivicSenseAIAgent<T extends CivicSenseAIAgent>(
+  AgentClass: new (config: CivicSenseAIConfig) => T
+): T {
+  return new AgentClass(CIVIC_SENSE_AI_CONFIG)
+}
+```
+
+## Database Integration
+
+### AI Output Tracking
+```sql
+-- Track all AI-generated content for quality monitoring
+CREATE TABLE ai_content_generations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_type TEXT NOT NULL,
+  input_data JSONB NOT NULL,
+  output_content TEXT NOT NULL,
+  quality_scores JSONB NOT NULL,
+  brand_voice_score INTEGER NOT NULL,
+  fact_check_results JSONB NOT NULL,
+  warning_flags TEXT[] DEFAULT '{}',
+  publish_recommendation TEXT NOT NULL,
+  confidence_level INTEGER NOT NULL,
+  generated_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_by UUID REFERENCES auth.users(id),
+  review_status TEXT DEFAULT 'pending',
+  review_notes TEXT
+);
+
+-- Track quality over time
+CREATE TABLE ai_quality_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  agent_type TEXT NOT NULL,
+  avg_quality_score NUMERIC NOT NULL,
+  total_generations INTEGER NOT NULL,
+  passed_quality_gate INTEGER NOT NULL,
+  uncomfortable_truths_detected INTEGER NOT NULL,
+  action_steps_generated INTEGER NOT NULL,
+  sources_verified INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Implementation Checklist
+
+### For Each AI Component:
+- [ ] Extends `CivicSenseAIAgent` base class
+- [ ] Uses `CIVIC_SENSE_AI_CONFIG` configuration
+- [ ] Calls `enforceQualityStandards()` before returning content
+- [ ] Implements required abstract methods
+- [ ] Integrates with quality gate validation
+- [ ] Logs all outputs to `ai_content_generations` table
+- [ ] Provides agent-specific enhancement methods
+
+### For Quality Assurance:
+- [ ] All content scored against quality rubric
+- [ ] Uncomfortable truth detection automated
+- [ ] Power dynamics analysis required
+- [ ] Fact-checking with web search verification
+- [ ] Source verification and credibility scoring
+- [ ] Action step generation with contact information
+- [ ] Brand voice alignment checking
+
+### For Monitoring:
+- [ ] Quality metrics tracking dashboard
+- [ ] Automated alerts for quality degradation
+- [ ] Agent performance comparison
+- [ ] Content review workflow integration
+- [ ] Source verification failure tracking
+
+## The Bottom Line
+
+**Every AI agent must now pass through the same quality gate - no exceptions.**
+
+### Success Criteria:
+- ✅ 70+ overall quality score on every output
+- ✅ Uncomfortable truth detected in every piece
+- ✅ 3+ specific civic action steps provided
+- ✅ 2+ primary sources verified
+- ✅ Power dynamics analysis included
+- ✅ Active voice and specific actor naming
+- ✅ Brand voice alignment scored 21+ points
+
+### Failure Consequences:
+- ❌ Content flagged for human review
+- ❌ AI agent retrained with stricter prompts
+- ❌ Quality metrics tracked and reported
+- ❌ Publication blocked until standards met
+
+**This ensures every piece of AI-generated content lives up to our promise: civic education that politicians don't want you to have.**
+
+*No AI agent operates outside these standards. No content gets published without meeting the rubric. No exceptions.*

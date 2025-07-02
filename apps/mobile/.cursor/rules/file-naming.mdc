@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+React Native/Expo
+Screens & Components
+PascalCase for all components and screens
+├── src/
+│   ├── screens/
+│   │   ├── HomeScreen.tsx
+│   │   ├── ProfileScreen.tsx
+│   │   └── auth/
+│   │       ├── LoginScreen.tsx
+│   │       └── SignupScreen.tsx
+│   ├── components/
+│   │   ├── Button.tsx
+│   │   ├── UserCard.tsx
+│   │   └── navigation/
+│   │       ├── TabNavigator.tsx
+│   │       └── StackNavigator.tsx
+Navigation
+PascalCase with clear navigation purpose
+├── src/
+│   └── navigation/
+│       ├── AppNavigator.tsx
+│       ├── AuthNavigator.tsx
+│       ├── TabNavigator.tsx
+│       └── types.ts
+Services & API
+camelCase for services, kebab-case for configs
+├── src/
+│   ├── services/
+│   │   ├── apiService.ts
+│   │   ├── authService.ts
+│   │   └── storageService.ts
+│   ├── api/
+│   │   ├── endpoints.ts
+│   │   └── client.ts
+Assets & Styles
+kebab-case for assets, organized by type
+├── assets/
+│   ├── images/
+│   │   ├── logo.png
+│   │   ├── splash-screen.png
+│   │   └── icons/
+│   │       ├── tab-home.png
+│   │       └── tab-profile.png
+│   ├── fonts/
+│   │   ├── inter-regular.ttf
+│   │   └── inter-bold.ttf
+├── src/
+│   └── styles/
+│       ├── colors.ts
+│       ├── typography.ts
+│       └── spacing.ts
+Hooks & Utils
+camelCase with clear purpose
+├── src/
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   ├── usePermissions.ts
+│   │   └── useAsyncStorage.ts
+│   ├── utils/
+│   │   ├── formatters.ts
+│   │   ├── validators.ts
+│   │   └── constants.ts
+
+Quick Reference Rules
+Universal Rules (Both Stacks)
+
+Components: Always PascalCase (UserProfile.tsx)
+Hooks: Always start with use + PascalCase (useAuth.ts)
+Types/Interfaces: PascalCase (User.ts, ApiResponse.ts)
+Constants: SCREAMING_SNAKE_CASE or camelCase in files
+Test files: Same name + .test. or .spec. (Button.test.tsx)
+
+File Extensions
+
+TypeScript Components: .tsx
+TypeScript Logic: .ts
+JavaScript Components: .jsx
+JavaScript Logic: .js
+Styles: .css, .scss, .module.css
