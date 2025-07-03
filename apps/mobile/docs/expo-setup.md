@@ -1,328 +1,437 @@
-# CivicSense Mobile App: Expo Setup Plan
+# CivicSense Mobile App: Revised Expo Setup Plan
+*Proper Web/Mobile Separation with Strategic Code Sharing*
 
-## 🎯 Strategic Overview
+## 🎯 Key Insights from Current Issues
 
-Transform CivicSense into a cross-platform civic education platform by adding native mobile capabilities while maintaining your existing Next.js web app and shared business logic.
+The original plan tried to share too much between Next.js and React Native, causing:
+- **Build conflicts**: Next.js and Expo have different build systems
+- **Import incompatibilities**: Different module resolution strategies  
+- **Platform-specific dependencies**: Web vs Native APIs
+- **UI paradigm differences**: DOM vs Native components
+- **TypeScript compilation errors**: Mixing web and mobile types
+- **Dependency hell**: React Native and Next.js require different versions
 
-## 📁 Proposed Monorepo Structure
+## 📁 Revised Monorepo Structure
 
 ```
 civic-sense-main/
 ├── apps/
-│   ├── web/                    # Existing Next.js app (moved)
-│   └── mobile/                 # New Expo app
+│   ├── web/                           # Next.js app (existing)
+│   │   ├── components/                # Web-specific components
+│   │   ├── pages/ or app/             # Next.js routing
+│   │   ├── lib/                       # Web-specific utilities
+│   │   ├── styles/                    # Web CSS/Tailwind
+│   │   └── package.json               # Web dependencies
+│   └── mobile/                        # Expo app
+│       ├── app/                       # Expo Router
+│       ├── components/                # Mobile-specific components
+│       ├── lib/                       # Mobile-specific utilities
+│       ├── assets/                    # Mobile assets
+│       └── package.json               # Mobile dependencies
 ├── packages/
-│   ├── shared/                 # Shared business logic
-│   │   ├── database/          # Supabase client & types
-│   │   ├── auth/              # Authentication logic
-│   │   ├── quiz/              # Quiz engine & logic
-│   │   ├── multiplayer/       # Multiplayer functionality
-│   │   └── utils/             # Utility functions
-│   ├── ui-web/                # Web-specific UI components
-│   ├── ui-mobile/             # Mobile-specific UI components
-│   └── ui-shared/             # Platform-agnostic components
-├── supabase/                  # Database migrations & config
-└── scripts/                   # Build & deployment scripts
+│   ├── core/                          # 🟢 SAFE TO SHARE
+│   │   ├── database/                  # Supabase types & queries
+│   │   ├── auth/                      # Auth logic (platform-agnostic)
+│   │   ├── quiz/                      # Quiz engine & scoring
+│   │   ├── multiplayer/               # Game logic
+│   │   ├── utils/                     # Pure utility functions
+│   │   └── types/                     # TypeScript types
+│   ├── ui-primitives/                 # 🟡 CAREFULLY SHARED
+│   │   ├── tokens/                    # Design tokens (colors, spacing)
+│   │   ├── icons/                     # Icon definitions (not components)
+│   │   └── themes/                    # Theme configurations
+│   ├── web-ui/                        # 🔴 WEB ONLY
+│   │   ├── components/                # React DOM components
+│   │   ├── hooks/                     # Web-specific hooks
+│   │   └── utils/                     # Web utilities
+│   └── mobile-ui/                     # 🔴 MOBILE ONLY
+│       ├── components/                # React Native components
+│       ├── hooks/                     # Mobile-specific hooks
+│       └── utils/                     # Mobile utilities
+└── tools/
+    ├── eslint-config/                 # Shared linting rules
+    ├── typescript-config/             # Shared TS configs
+    └── scripts/                       # Build scripts
 ```
 
-## 🚀 Phase 1: Setup & Foundation (Week 1-2)
+## 🎨 What Can Be Shared vs Platform-Specific
 
-### Step 1: Initialize Expo App
-```bash
-# Create Expo app with TypeScript
-npx create-expo-app@latest apps/mobile --template blank-typescript
-
-# Navigate to mobile app
-cd apps/mobile
-
-# Install essential dependencies
-npx expo install expo-router expo-constants expo-linking expo-status-bar
-npx expo install @expo/vector-icons expo-font expo-splash-screen
-npx expo install expo-secure-store expo-web-browser expo-auth-session
-```
-
-### Step 2: Configure Expo for CivicSense
+### 🟢 SAFE TO SHARE (packages/core/)
 ```typescript
-// apps/mobile/app.config.ts
-import { ExpoConfig, ConfigContext } from 'expo/config';
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: 'CivicSense',
-  slug: 'civicsense',
-  version: '1.0.0',
-  orientation: 'portrait',
-  icon: './assets/icon.png',
-  userInterfaceStyle: 'automatic',
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#ffffff'
-  },
-  assetBundlePatterns: ['**/*'],
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: 'com.civicsense.app'
-  },
-  android: {
-    adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#ffffff'
-    },
-    package: 'com.civicsense.app'
-  },
-  web: {
-    favicon: './assets/favicon.png',
-    bundler: 'metro'
-  },
-  plugins: [
-    'expo-router',
-    'expo-secure-store',
-    [
-      'expo-build-properties',
-      {
-        ios: {
-          newArchEnabled: true
-        },
-        android: {
-          newArchEnabled: true
-        }
-      }
-    ]
-  ],
-  experiments: {
-    typedRoutes: true
-  }
-});
-```
-
-### Step 3: Setup Shared Packages Structure
-```bash
-# Create shared packages
-mkdir -p packages/shared/{database,auth,quiz,multiplayer,utils}
-mkdir -p packages/ui-{web,mobile,shared}
-
-# Initialize package.json files for each package
-```
-
-## 🔧 Phase 2: Shared Business Logic (Week 2-3)
-
-### Supabase Mobile Configuration
-```typescript
-// packages/shared/database/client.ts
-import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-import type { Database } from './types';
-
-// Custom storage for Expo SecureStore
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: (key: string, value: string) => {
-    SecureStore.setItemAsync(key, value);
-  },
-  removeItem: (key: string) => {
-    SecureStore.deleteItemAsync(key);
-  },
-};
-
-export const createSupabaseClient = () => {
-  return createClient<Database>(
-    process.env.EXPO_PUBLIC_SUPABASE_URL!,
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        storage: Platform.OS !== 'web' ? ExpoSecureStoreAdapter : undefined,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false, // Disable for mobile
-      },
-    }
-  );
-};
-```
-
-### Shared Authentication Provider
-```typescript
-// packages/shared/auth/auth-provider.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { createSupabaseClient } from '../database/client';
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  signInWithOAuth: (provider: 'google' | 'apple') => Promise<void>;
+// ✅ Database types and queries
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_answer: number;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// ✅ Business logic
+export class QuizEngine {
+  calculateScore(answers: Answer[]): number {
+    // Pure logic, no platform dependencies
+  }
+}
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  const supabase = createSupabaseClient();
+// ✅ API calls
+export async function getQuizQuestions(topicId: string) {
+  // Supabase works on both platforms
+  return supabase.from('questions').select('*');
+}
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+// ✅ Utility functions
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+```
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+### 🟡 CAREFULLY SHARED (packages/ui-primitives/)
+```typescript
+// ✅ Design tokens
+export const colors = {
+  primary: '#3B82F6',
+  secondary: '#10B981',
+  // Platform-agnostic color values
+};
 
-    return () => subscription.unsubscribe();
-  }, []);
+// ✅ Spacing scale
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
+// ❌ NO COMPONENTS - these must be platform-specific
+```
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
+### 🔴 PLATFORM-SPECIFIC
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const signInWithOAuth = async (provider: 'google' | 'apple') => {
-    // Implementation for OAuth with expo-auth-session
-    // This requires additional setup for each provider
-  };
-
+#### Web Only (packages/web-ui/)
+```typescript
+// Web-specific components using DOM APIs
+export function WebQuizComponent() {
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      signIn,
-      signUp,
-      signOut,
-      signInWithOAuth,
-    }}>
-      {children}
-    </AuthContext.Provider>
+    <div className="bg-blue-500 hover:bg-blue-600">
+      {/* DOM elements, CSS classes, web events */}
+    </div>
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-```
-
-### Shared Quiz Engine
-```typescript
-// packages/shared/quiz/quiz-engine.ts
-import { createSupabaseClient } from '../database/client';
-import type { Database } from '../database/types';
-
-export class SharedQuizEngine {
-  private supabase = createSupabaseClient();
-
-  async getQuizQuestions(topicId: string) {
-    const { data, error } = await this.supabase
-      .from('quiz_questions')
-      .select('*')
-      .eq('topic_id', topicId)
-      .limit(10);
-
-    if (error) throw error;
-    return data;
-  }
-
-  async submitQuizAttempt(attempt: {
-    user_id?: string;
-    guest_token?: string;
-    topic_id: string;
-    score: number;
-    answers: any[];
-  }) {
-    const { data, error } = await this.supabase
-      .from('user_quiz_attempts')
-      .insert(attempt)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  }
-
-  // Add other quiz-related methods...
+// Web-specific hooks
+export function useWebNotifications() {
+  // Uses Web Notifications API
 }
 ```
 
-## 📱 Phase 3: Mobile UI Components (Week 3-4)
-
-### React Native Design System
+#### Mobile Only (packages/mobile-ui/)
 ```typescript
-// packages/ui-mobile/src/components/Button.tsx
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+// Mobile-specific components using React Native
+export function MobileQuizComponent() {
+  return (
+    <View style={{ backgroundColor: colors.primary }}>
+      <TouchableOpacity onPress={handlePress}>
+        {/* Native components, StyleSheet, touch events */}
+      </TouchableOpacity>
+    </View>
+  );
+}
 
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+// Mobile-specific hooks
+export function usePushNotifications() {
+  // Uses Expo Notifications
+}
+```
+
+## 🏗️ Implementation Strategy
+
+### Phase 1: Clean Separation (Week 1)
+
+#### 1.1 Restructure Packages
+```bash
+# Move current shared code to core
+mkdir -p packages/core
+mv packages/shared/src/lib packages/core/
+mv packages/shared/src/types packages/core/
+mv packages/shared/src/utils packages/core/
+
+# Create platform-specific UI packages
+mkdir -p packages/web-ui/src
+mkdir -p packages/mobile-ui/src
+mkdir -p packages/ui-primitives/src
+
+# Move platform-specific components
+mv packages/ui-web/* packages/web-ui/
+mv packages/ui-mobile/* packages/mobile-ui/
+```
+
+#### 1.2 Update Package Dependencies
+```json
+// packages/core/package.json
+{
+  "name": "@civicsense/core",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "zod": "^3.24.1"
+    // NO React, NO platform-specific deps
+  },
+  "peerDependencies": {
+    // Let consuming apps provide React
+  }
+}
+
+// packages/web-ui/package.json
+{
+  "name": "@civicsense/web-ui",
+  "dependencies": {
+    "@civicsense/core": "workspace:*",
+    "@civicsense/ui-primitives": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@radix-ui/react-*": "latest"
+    // Web-specific UI libraries
+  }
+}
+
+// packages/mobile-ui/package.json
+{
+  "name": "@civicsense/mobile-ui",
+  "dependencies": {
+    "@civicsense/core": "workspace:*",
+    "@civicsense/ui-primitives": "workspace:*",
+    "react": "^19.1.0",
+    "react-native": "0.79.5"
+    // Mobile-specific libraries
+  }
+}
+```
+
+### Phase 2: Core Business Logic (Week 2)
+
+#### 2.1 Platform-Agnostic Auth
+```typescript
+// packages/core/auth/auth-service.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+export class AuthService {
+  constructor(
+    private supabase: SupabaseClient,
+    private storage: AuthStorage // Injected by platform
+  ) {}
+
+  async signIn(email: string, password: string) {
+    const { data, error } = await this.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (data.session) {
+      await this.storage.setSession(data.session);
+    }
+    
+    return { data, error };
+  }
+
+  async signOut() {
+    await this.storage.clearSession();
+    return this.supabase.auth.signOut();
+  }
+}
+
+// Platform-specific storage interface
+export interface AuthStorage {
+  setSession(session: Session): Promise<void>;
+  getSession(): Promise<Session | null>;
+  clearSession(): Promise<void>;
+}
+```
+
+#### 2.2 Web Auth Implementation
+```typescript
+// packages/web-ui/auth/web-auth-storage.ts
+import { AuthStorage } from '@civicsense/core/auth';
+
+export class WebAuthStorage implements AuthStorage {
+  async setSession(session: Session): Promise<void> {
+    localStorage.setItem('auth-session', JSON.stringify(session));
+  }
+
+  async getSession(): Promise<Session | null> {
+    const stored = localStorage.getItem('auth-session');
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  async clearSession(): Promise<void> {
+    localStorage.removeItem('auth-session');
+  }
+}
+```
+
+#### 2.3 Mobile Auth Implementation
+```typescript
+// packages/mobile-ui/auth/mobile-auth-storage.ts
+import * as SecureStore from 'expo-secure-store';
+import { AuthStorage } from '@civicsense/core/auth';
+
+export class MobileAuthStorage implements AuthStorage {
+  async setSession(session: Session): Promise<void> {
+    await SecureStore.setItemAsync('auth-session', JSON.stringify(session));
+  }
+
+  async getSession(): Promise<Session | null> {
+    const stored = await SecureStore.getItemAsync('auth-session');
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  async clearSession(): Promise<void> {
+    await SecureStore.deleteItemAsync('auth-session');
+  }
+}
+```
+
+### Phase 3: UI Abstraction (Week 3)
+
+#### 3.1 Design Tokens
+```typescript
+// packages/ui-primitives/tokens/colors.ts
+export const colors = {
+  // Semantic colors
+  primary: {
+    50: '#EBF4FF',
+    500: '#3B82F6',
+    900: '#1E3A8A',
+  },
+  semantic: {
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#3B82F6',
+  },
+} as const;
+
+// packages/ui-primitives/tokens/spacing.ts
+export const spacing = {
+  0: 0,
+  1: 4,
+  2: 8,
+  3: 12,
+  4: 16,
+  5: 20,
+  6: 24,
+  8: 32,
+  10: 40,
+  12: 48,
+  16: 64,
+  20: 80,
+  24: 96,
+} as const;
+
+// packages/ui-primitives/tokens/typography.ts
+export const typography = {
+  fontSizes: {
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 30,
+    '4xl': 36,
+  },
+  fontWeights: {
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+  },
+} as const;
+```
+
+#### 3.2 Component Interfaces
+```typescript
+// packages/ui-primitives/interfaces/button.ts
+export interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
-  style?: ViewStyle;
+  children: React.ReactNode;
+  onPress: () => void;
 }
 
-export const Button: React.FC<ButtonProps> = ({
-  title,
-  onPress,
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  style,
-}) => {
+// Shared component logic (no rendering)
+export function useButtonLogic(props: ButtonProps) {
+  const getButtonStyles = () => {
+    return {
+      backgroundColor: props.variant === 'primary' ? colors.primary[500] : 'transparent',
+      padding: spacing[props.size === 'lg' ? 4 : 3],
+      opacity: props.disabled ? 0.5 : 1,
+    };
+  };
+
+  return { getButtonStyles };
+}
+```
+
+#### 3.3 Web Button Implementation
+```typescript
+// packages/web-ui/components/Button.tsx
+import { ButtonProps, useButtonLogic } from '@civicsense/ui-primitives/interfaces/button';
+
+export function Button(props: ButtonProps) {
+  const { getButtonStyles } = useButtonLogic(props);
+  const styles = getButtonStyles();
+
+  return (
+    <button
+      onClick={props.onPress}
+      disabled={props.disabled}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        props.variant === 'primary' && "bg-primary text-primary-foreground hover:bg-primary/90",
+        props.variant === 'outline' && "border border-input bg-background hover:bg-accent",
+        props.size === 'sm' && "h-9 px-3 text-sm",
+        props.size === 'md' && "h-10 px-4 py-2",
+        props.size === 'lg' && "h-11 px-8",
+        props.disabled && "pointer-events-none opacity-50"
+      )}
+    >
+      {props.children}
+    </button>
+  );
+}
+```
+
+#### 3.4 Mobile Button Implementation
+```typescript
+// packages/mobile-ui/components/Button.tsx
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { ButtonProps, useButtonLogic } from '@civicsense/ui-primitives/interfaces/button';
+import { colors, spacing, typography } from '@civicsense/ui-primitives/tokens';
+
+export function Button(props: ButtonProps) {
+  const { getButtonStyles } = useButtonLogic(props);
+  const baseStyles = getButtonStyles();
+
   return (
     <TouchableOpacity
       style={[
         styles.base,
-        styles[variant],
-        styles[size],
-        disabled && styles.disabled,
-        style,
+        styles[props.variant || 'primary'],
+        styles[props.size || 'md'],
+        { opacity: props.disabled ? 0.5 : 1 },
       ]}
-      onPress={onPress}
-      disabled={disabled}
+      onPress={props.onPress}
+      disabled={props.disabled}
       activeOpacity={0.8}
     >
-      <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
+      <Text style={[styles.text, styles[`${props.variant || 'primary'}Text`]]}>
+        {props.children}
+      </Text>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
   base: {
@@ -332,342 +441,198 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   primary: {
-    backgroundColor: '#3B82F6', // CivicSense Authority Blue
-  },
-  secondary: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.primary[500],
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: colors.primary[500],
   },
   sm: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
   },
   md: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   lg: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  disabled: {
-    opacity: 0.5,
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[4],
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: typography.fontSizes.base,
+    fontWeight: typography.fontWeights.medium,
   },
   primaryText: {
     color: '#FFFFFF',
   },
-  secondaryText: {
-    color: '#374151',
-  },
   outlineText: {
-    color: '#3B82F6',
+    color: colors.primary[500],
   },
 });
 ```
 
-### Mobile-Specific Quiz Component
+### Phase 4: App-Specific Implementation (Week 4)
+
+#### 4.1 Web App Structure
 ```typescript
-// packages/ui-mobile/src/components/QuizQuestion.tsx
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+// apps/web/lib/auth.ts
+import { AuthService, createSupabaseClient } from '@civicsense/core/auth';
+import { WebAuthStorage } from '@civicsense/web-ui/auth';
 
-interface QuizQuestionProps {
-  question: string;
-  options: string[];
-  selectedAnswer?: number;
-  onSelectAnswer: (index: number) => void;
-  disabled?: boolean;
-}
+export const authService = new AuthService(
+  createSupabaseClient(),
+  new WebAuthStorage()
+);
 
-export const QuizQuestion: React.FC<QuizQuestionProps> = ({
-  question,
-  options,
-  selectedAnswer,
-  onSelectAnswer,
-  disabled = false,
-}) => {
+// apps/web/components/QuizPage.tsx
+import { QuizEngine } from '@civicsense/core/quiz';
+import { Button } from '@civicsense/web-ui/components/Button';
+
+export function QuizPage() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.question}>{question}</Text>
-      
-      <View style={styles.optionsContainer}>
-        {options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.option,
-              selectedAnswer === index && styles.selectedOption,
-            ]}
-            onPress={() => onSelectAnswer(index)}
-            disabled={disabled}
-            activeOpacity={0.7}
-          >
-            <View style={styles.optionIndicator}>
-              <Text style={styles.optionLetter}>
-                {String.fromCharCode(65 + index)}
-              </Text>
-            </View>
-            <Text style={[
-              styles.optionText,
-              selectedAnswer === index && styles.selectedOptionText,
-            ]}>
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <div className="container mx-auto">
+      <Button variant="primary" onPress={() => console.log('Start Quiz')}>
+        Start Quiz
+      </Button>
+    </div>
+  );
+}
+```
+
+#### 4.2 Mobile App Structure
+```typescript
+// apps/mobile/lib/auth.ts
+import { AuthService, createSupabaseClient } from '@civicsense/core/auth';
+import { MobileAuthStorage } from '@civicsense/mobile-ui/auth';
+
+export const authService = new AuthService(
+  createSupabaseClient(),
+  new MobileAuthStorage()
+);
+
+// apps/mobile/app/quiz.tsx
+import { View } from 'react-native';
+import { QuizEngine } from '@civicsense/core/quiz';
+import { Button } from '@civicsense/mobile-ui/components/Button';
+
+export default function QuizScreen() {
+  return (
+    <View style={{ flex: 1, padding: 20 }}>
+      <Button variant="primary" onPress={() => console.log('Start Quiz')}>
+        Start Quiz
+      </Button>
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 24,
-    lineHeight: 26,
-  },
-  optionsContainer: {
-    gap: 12,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedOption: {
-    backgroundColor: '#EBF4FF',
-    borderColor: '#3B82F6',
-  },
-  optionIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  optionLetter: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 22,
-  },
-  selectedOptionText: {
-    color: '#1F2937',
-    fontWeight: '500',
-  },
-});
-```
-
-## 🔄 Phase 4: App Structure & Navigation (Week 4-5)
-
-### Expo Router Setup
-```typescript
-// apps/mobile/app/_layout.tsx
-import { Stack } from 'expo-router';
-import { AuthProvider } from '@civicsense/shared/auth';
-import { StatusBar } from 'expo-status-bar';
-
-export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#3B82F6',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="quiz/[topicId]" options={{ title: 'Quiz' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </AuthProvider>
-  );
 }
 ```
 
-### Tab Navigation
-```typescript
-// apps/mobile/app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+## 🔧 Build Configuration
 
-export default function TabLayout() {
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#6B7280',
-        headerStyle: {
-          backgroundColor: '#3B82F6',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="quiz"
-        options={{
-          title: 'Quiz',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="multiplayer"
-        options={{
-          title: 'Multiplayer',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
-}
-```
-
-## 🛠 Phase 5: Development Workflow (Week 5-6)
-
-### Package.json Scripts
+### 4.3 Independent Build Systems
 ```json
+// apps/web/package.json
 {
-  "scripts": {
-    "dev:web": "cd apps/web && npm run dev",
-    "dev:mobile": "cd apps/mobile && npx expo start",
-    "build:web": "cd apps/web && npm run build",
-    "build:mobile:ios": "cd apps/mobile && eas build --platform ios",
-    "build:mobile:android": "cd apps/mobile && eas build --platform android",
-    "test": "jest",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "type-check": "tsc --noEmit"
+  "dependencies": {
+    "@civicsense/core": "workspace:*",
+    "@civicsense/web-ui": "workspace:*",
+    "@civicsense/ui-primitives": "workspace:*",
+    "next": "^15.1.3"
+    // NO mobile-specific deps
+  }
+}
+
+// apps/mobile/package.json
+{
+  "dependencies": {
+    "@civicsense/core": "workspace:*",
+    "@civicsense/mobile-ui": "workspace:*",
+    "@civicsense/ui-primitives": "workspace:*",
+    "expo": "~53.0.0"
+    // NO web-specific deps
   }
 }
 ```
 
-### EAS Build Configuration
+### 4.4 TypeScript Configuration
 ```json
-// apps/mobile/eas.json
+// packages/core/tsconfig.json
 {
-  "cli": {
-    "version": ">= 5.2.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {}
-  },
-  "submit": {
-    "production": {}
+  "extends": "../../tools/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2020"], // No DOM, no React Native
+    "types": []
+  }
+}
+
+// packages/web-ui/tsconfig.json
+{
+  "extends": "../../tools/typescript-config/react.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "jsx": "react-jsx"
+  }
+}
+
+// packages/mobile-ui/tsconfig.json
+{
+  "extends": "../../tools/typescript-config/react-native.json",
+  "compilerOptions": {
+    "lib": ["ES2020"],
+    "jsx": "react-jsx",
+    "types": ["react-native"]
   }
 }
 ```
 
-## 🚀 Phase 6: Key Features Implementation (Week 6-8)
+## 📊 Migration Strategy
 
-### Priority Features for Mobile:
-1. **Offline Quiz Capability** - Cache questions locally
-2. **Push Notifications** - Quiz reminders and multiplayer invites
-3. **Biometric Authentication** - Face ID / Fingerprint login
-4. **Dark Mode Support** - Consistent with web app
-5. **Accessibility** - Screen reader support, high contrast
-6. **Deep Linking** - Share quiz results, multiplayer rooms
+### Week 1: Foundation
+- [ ] Restructure packages according to new architecture
+- [ ] Update package.json dependencies
+- [ ] Create build isolation
 
-### Performance Optimizations:
-- Image optimization with `expo-image`
-- Bundle splitting for large features
-- Lazy loading of quiz content
-- Background sync for progress
+### Week 2: Core Logic
+- [ ] Move business logic to `packages/core`
+- [ ] Implement platform-agnostic services
+- [ ] Create storage abstractions
 
-## 📊 Success Metrics & Timeline
+### Week 3: UI System
+- [ ] Extract design tokens
+- [ ] Create component interfaces
+- [ ] Implement platform-specific components
 
-### Week 1-2: Foundation ✅
-- [ ] Expo app initialized
-- [ ] Shared packages structure
-- [ ] Supabase mobile client configured
+### Week 4: Integration
+- [ ] Update web app to use new packages
+- [ ] Update mobile app to use new packages
+- [ ] Test both platforms independently
 
-### Week 3-4: Core Features ✅
-- [ ] Authentication flow
-- [ ] Basic quiz functionality
-- [ ] Mobile UI components
+## ✅ Success Criteria
 
-### Week 5-6: Polish & Testing ✅
-- [ ] Navigation complete
-- [ ] Offline capabilities
-- [ ] Performance optimization
+### Build Independence
+- ✅ Web app builds without mobile dependencies
+- ✅ Mobile app builds without web dependencies
+- ✅ Core packages have no platform dependencies
 
-### Week 7-8: Launch Preparation ✅
-- [ ] App store assets
-- [ ] Beta testing
-- [ ] Production deployment
+### Code Sharing Efficiency
+- ✅ Business logic shared 100%
+- ✅ Design tokens shared 100%
+- ✅ UI components 0% shared (platform-specific)
+- ✅ No build conflicts or import errors
 
-## 🔧 Technical Considerations
+### Developer Experience
+- ✅ Fast builds for each platform
+- ✅ Clear separation of concerns
+- ✅ Type safety across all packages
+- ✅ Independent deployment pipelines
 
-### Code Sharing Strategy:
-- **100% Shared**: Database types, API calls, business logic
-- **Platform-Specific**: UI components, navigation, native features
-- **Adapted**: Authentication (OAuth differences), storage (SecureStore vs localStorage)
+## 🚨 Key Principles
 
-### Build & Deployment:
-- **Web**: Continue with Vercel
-- **Mobile**: Use EAS Build for iOS/Android
-- **CI/CD**: GitHub Actions for both platforms
+1. **Never share UI components** between web and mobile
+2. **Always share business logic** and data models
+3. **Inject platform-specific dependencies** into core services
+4. **Use interfaces** to define contracts between layers
+5. **Keep packages focused** on single responsibilities
 
-This plan leverages your existing robust architecture while adding native mobile capabilities. The shared business logic approach means you'll maintain feature parity between web and mobile with minimal duplication.
-
-Ready to start with Phase 1? I can help you implement any specific part of this plan!
+This revised approach eliminates the build conflicts while maximizing appropriate code sharing. Each platform can evolve independently while sharing the core business logic that makes CivicSense unique.

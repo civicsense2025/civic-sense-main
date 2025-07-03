@@ -1,4 +1,5 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
+import { ExpoConfig } from '@expo/config-types';
+import { ConfigContext } from '@expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,

@@ -2,18 +2,6 @@
 
 import { useState, useEffect, Suspense, lazy } from 'react'
 import { notFound, useRouter, useSearchParams, redirect } from 'next/navigation'
-// Temporary stub for monorepo migration
-const arePodsEnabled = () => true
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
-import { Textarea } from '@civicsense/ui-web'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@civicsense/ui-web'
-import { Tabs, TabsList, TabsTrigger } from '@civicsense/ui-web'
-import { Switch } from '@civicsense/ui-web'
-import { Skeleton } from '@civicsense/ui-web'
 import { 
   Users, 
   BarChart3, 
@@ -49,152 +37,66 @@ import {
   Archive,
   Smile
 } from 'lucide-react'
-import { cn } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
-// Temporary stub for monorepo migration
-const useToast = () => ({
-  toast: ({ title, description, variant }: any) => {
-    console.log('Toast:', title, description, variant)
-  }
-})
-import Link from 'next/link'
-import { GoogleClassroomSyncDialog } from '@civicsense/ui-web/components/integrations/google-classroom-sync-dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@civicsense/ui-web'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@civicsense/ui-web'
-import { EmojiPicker } from '@civicsense/ui-web/components/ui/emoji-picker'
 
-// Atomic components
-import { PodHeader } from '@civicsense/ui-web/components/pods/pod-header'
-import { PodCard } from '@civicsense/ui-web/components/pods/pod-card'
-import { PodCardSkeleton } from '@civicsense/ui-web/components/pods/pod-card-skeleton'
-import { PodTabs, TabsContent } from '@civicsense/ui-web/components/pods/pod-tabs'
+// Import UI components from local app
+import {
+  cn,
+  useToast,
+  Card,
+  Button,
+  Label,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  EmojiPicker
+} from '@/components/ui'
+
+// Import pod-specific components
+import { Header } from '@/components/header'
+import { PodHeader } from '@/components/pods/pod-header'
+import { PodCard } from '@/components/pods/pod-card'
+import { PodCardSkeleton } from '@/components/pods/pod-card-skeleton'
+import { PodTabs, TabsContent } from '@/components/pods/pod-tabs'
+import { GoogleClassroomSyncDialog } from '@/components/integrations/google-classroom-sync-dialog'
+import { PodActivityFeed } from '@/components/pods/pod-activity-feed'
+import { CreatePodWizard } from '@/components/pods/create-pod-wizard'
+
+// Import auth from local app
+import { useAuth } from '@/lib/auth'
+
+// Import types from local app
+import type { 
+  JoinRequest,
+  PodActivity,
+  PodTheme,
+  PodAchievement,
+  LearningPod,
+  Pod,
+  PodStats
+} from '@/types/pods'
 
 // Lazy loaded components
-const LearningPodManager = lazy(() => import('@civicsense/ui-web/components/learning-pods/family-pod-manager').then(module => ({ default: module.LearningPodManager })))
-const AggregatePodAnalytics = lazy(() => import('@civicsense/ui-web/components/learning-pods/aggregate-pod-analytics').then(module => ({ default: module.AggregatePodAnalytics })))
-const LearningPodsErrorBoundary = lazy(() => import('@civicsense/ui-web/components/learning-pods/error-boundary').then(module => ({ default: module.LearningPodsErrorBoundary })))
+const LearningPodManager = lazy(() => import('@/components/pods/family-pod-manager').then(module => ({ default: module.LearningPodManager })))
+const AggregatePodAnalytics = lazy(() => import('@/components/pods/aggregate-pod-analytics').then(module => ({ default: module.AggregatePodAnalytics })))
+const LearningPodsErrorBoundary = lazy(() => import('@/components/pods/error-boundary').then(module => ({ default: module.LearningPodsErrorBoundary })))
 
-// Join Request Interface
-interface JoinRequest {
-  id: string
-  user_name: string
-  user_email: string
-  pod_name: string
-  pod_id: string
-  requested_at: string
-  message?: string
-}
-
-// Activity Interface
-interface PodActivity {
-  id: string
-  pod_id: string
-  pod_name: string
-  activity_type: string
-  user_name: string
-  activity_data: {
-    message?: string
-    achievement_name?: string
-    milestone_name?: string
-    quiz_name?: string
-    score?: number
-    [key: string]: any
-  }
-  created_at: string
-}
-
-// Activity and Join Requests Component
-import { PodActivityFeed } from '@civicsense/ui-web/components/learning-pods/pod-activity-feed'
-import { CreatePodWizard } from '@civicsense/ui-web/components/learning-pods/create-pod-wizard'
-
-import { Header } from '@civicsense/ui-web'
-
-// Interfaces for enhanced features
-interface PodTheme {
-  id: string
-  name: string
-  display_name: string
-  emoji: string
-  primary_color: string
-  secondary_color?: string
-  description: string
-  unlock_condition?: string
-  is_seasonal: boolean
-}
-
-interface PodAchievement {
-  id: string
-  name: string
-  display_name: string
-  description: string
-  emoji: string
-  unlock_condition: Record<string, any>
-  reward_type: 'theme' | 'emoji' | 'badge' | 'feature'
-  reward_data: Record<string, any>
-  rarity: 'common' | 'rare' | 'epic' | 'legendary'
-}
-
-interface LearningPod {
-  id: string
-  pod_name: string
-  pod_type: string
-  custom_type_label?: string
-  family_name?: string
-  join_code: string
-  member_count: number
-  user_role: string
-  is_admin: boolean
-  content_filter_level: string
-  pod_emoji?: string
-  pod_color?: string
-  pod_slug?: string
-  pod_motto?: string
-  banner_image_url?: string
-  created_at: string
-  description?: string
-  last_activity?: string
-  active_members?: number
-  // Enhanced features from migration
-  personality_type?: 'competitive' | 'collaborative' | 'exploratory' | 'structured'
-  theme_id?: string
-  theme?: {
-    name: string
-    display_name: string
-    emoji: string
-    primary_color: string
-    secondary_color?: string
-    description: string
-  }
-  accessibility_mode?: 'standard' | 'high_contrast' | 'sensory_friendly'
-  unlocked_features: string[]
-  milestone_data: Record<string, any>
-  challenge_participation: string[]
-  partnership_status?: 'open' | 'closed' | 'invite_only'
-}
-
-interface Pod {
-  id: string
-  pod_name: string
-  pod_type: string
-  member_count: number
-  user_role: string
-  is_admin: boolean
-  content_filter_level: string
-  recent_activity_count: number
-  last_activity_date: string
-}
-
-interface PodStats {
-  totalPods: number
-  activePods: number
-  totalMembers: number
-  adminPods: number
-  recentActivity: number
-  topPerformingPod?: {
-    name: string
-    activityScore: number
-  }
-}
+// Feature flag check
+const arePodsEnabled = () => true // Temporary stub for monorepo migration
 
 export default function PodsPage() {
   // Check feature flag first
@@ -612,7 +514,7 @@ export default function PodsPage() {
         <div className="max-w-7xl mx-auto">
           <PodHeader 
             onCreatePod={() => setShowCreateForm(true)}
-            onPodCreated={(podId) => {
+            onPodCreated={(podId: string) => {
               loadUserPods()
             }}
           />
@@ -621,7 +523,7 @@ export default function PodsPage() {
           <CreatePodWizard
             isOpen={showCreateForm}
             onClose={() => setShowCreateForm(false)}
-            onSuccess={(podId) => {
+            onSuccess={(podId: string) => {
               loadUserPods()
               // Optionally navigate to the new pod
               // router.push(`/pods/${podId}`)
@@ -675,14 +577,14 @@ export default function PodsPage() {
                           showMembers={true}
                           showRole={true}
                           showJoinCode={false}
-                          onEmojiClick={(podId, emoji) => {
+                          onEmojiClick={(podId: string, emoji: string) => {
                             handleEmojiChange(podId, emoji)
                           }}
-                          onManageClick={(podId) => {
+                          onManageClick={(podId: string) => {
                             window.location.href = `/pods/${podId}`
                           }}
                           onEditTitle={handleEditTitle}
-                          onTransferPod={(podId) => {
+                          onTransferPod={(podId: string) => {
                             const pod = pods.find(p => p.id === podId)
                             if (pod) handleTransferPod(podId, pod.pod_name)
                           }}
@@ -831,7 +733,7 @@ export default function PodsPage() {
       </main>
 
       {/* Edit Title Dialog */}
-      <Dialog open={editTitleDialog.open} onOpenChange={(open) => {
+      <Dialog open={editTitleDialog.open} onOpenChange={(open: boolean) => {
         setEditTitleDialog({ open, podId: '', currentTitle: '' })
         if (!open) setNewTitle('')
       }}>
@@ -848,7 +750,7 @@ export default function PodsPage() {
               <Input
                 id="new-title"
                 value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value)}
                 placeholder="Enter new pod title"
                 className="w-full"
               />
@@ -869,7 +771,7 @@ export default function PodsPage() {
       </Dialog>
 
       {/* Transfer Pod Dialog */}
-      <Dialog open={transferDialog.open} onOpenChange={(open) => {
+      <Dialog open={transferDialog.open} onOpenChange={(open: boolean) => {
         setTransferDialog({ open, podId: '', podName: '' })
         if (!open) setTransferEmail('')
       }}>
@@ -887,7 +789,7 @@ export default function PodsPage() {
                 id="transfer-email"
                 type="email"
                 value={transferEmail}
-                onChange={(e) => setTransferEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransferEmail(e.target.value)}
                 placeholder="Enter email address"
                 className="w-full"
               />

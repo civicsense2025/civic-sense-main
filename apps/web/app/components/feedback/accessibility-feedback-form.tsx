@@ -1,30 +1,31 @@
 "use client"
 
 import { useState } from 'react'
-import { Button } from '@civicsense/ui-web/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web/ui/card'
-import { Textarea } from '@civicsense/ui-web/ui/textarea'
-import { Input } from '@civicsense/ui-web/ui/input'
-import { Label } from '@civicsense/ui-web/ui/label'
-import { RadioGroup, RadioGroupItem } from '@civicsense/ui-web/ui/radio-group'
-import { Checkbox } from '@civicsense/ui-web/ui/checkbox'
-import { Badge } from '@civicsense/ui-web/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@civicsense/ui-web/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@civicsense/ui-web/ui/dialog'
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@civicsense/ui-web/ui/select'
+} from '@/components/ui/select'
 import { 
   Accessibility, 
   Send, 
@@ -34,8 +35,8 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react'
-import { cn } from '@civicsense/ui-web/utils'
-import { useToast } from '@civicsense/ui-web/components/ui/use-toast'
+import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface AccessibilityFeedbackForm {
   assistiveTechnology: string[]
@@ -51,6 +52,10 @@ interface AccessibilityFeedbackForm {
   pageUrl?: string
   browserInfo?: string
 }
+
+type CheckedState = boolean | 'indeterminate'
+type SelectChangeEvent = string
+type FormChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 
 const ASSISTIVE_TECHNOLOGIES = [
   { id: 'screen_reader', label: 'Screen Reader (NVDA, JAWS, VoiceOver, etc.)' },
@@ -139,12 +144,20 @@ export function AccessibilityFeedbackForm({
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
-  const handleAssistiveTechChange = (techId: string, checked: boolean) => {
+  const handleAssistiveTechChange = (techId: string, checked: CheckedState) => {
     if (checked) {
       updateForm('assistiveTechnology', [...form.assistiveTechnology, techId])
     } else {
       updateForm('assistiveTechnology', form.assistiveTechnology.filter(id => id !== techId))
     }
+  }
+
+  const handleSelectChange = (value: string) => {
+    updateForm('component', value)
+  }
+
+  const handleInputChange = (e: FormChangeEvent) => {
+    updateForm(e.target.name as keyof AccessibilityFeedbackForm, e.target.value)
   }
 
   const handleSubmit = async () => {
@@ -283,7 +296,7 @@ export function AccessibilityFeedbackForm({
                         id={tech.id}
                         checked={form.assistiveTechnology.includes(tech.id)}
                         onCheckedChange={(checked) => 
-                          handleAssistiveTechChange(tech.id, checked as boolean)
+                          handleAssistiveTechChange(tech.id, checked as CheckedState)
                         }
                       />
                       <Label htmlFor={tech.id} className="text-sm">
@@ -323,7 +336,7 @@ export function AccessibilityFeedbackForm({
                 <Label className="text-sm font-medium mb-3 block">
                   Which part of CivicSense has the accessibility issue?
                 </Label>
-                <Select value={form.component} onValueChange={(value) => updateForm('component', value)}>
+                <Select value={form.component} onValueChange={handleSelectChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select component" />
                   </SelectTrigger>
@@ -402,7 +415,8 @@ export function AccessibilityFeedbackForm({
                   id="description"
                   placeholder="Please describe what you were trying to do, what happened, and what you expected to happen..."
                   value={form.description}
-                  onChange={(e) => updateForm('description', e.target.value)}
+                  onChange={handleInputChange}
+                  name="description"
                   rows={4}
                   className="w-full"
                 />
@@ -416,7 +430,8 @@ export function AccessibilityFeedbackForm({
                   id="civicImpact"
                   placeholder="How does this barrier impact your ability to learn about government, politics, or participate in democracy?"
                   value={form.civicLearningImpact}
-                  onChange={(e) => updateForm('civicLearningImpact', e.target.value)}
+                  onChange={handleInputChange}
+                  name="civicLearningImpact"
                   rows={3}
                   className="w-full"
                 />
@@ -430,7 +445,8 @@ export function AccessibilityFeedbackForm({
                   id="suggestion"
                   placeholder="If you have ideas about how to fix this issue, please share them..."
                   value={form.suggestedSolution}
-                  onChange={(e) => updateForm('suggestedSolution', e.target.value)}
+                  onChange={handleInputChange}
+                  name="suggestedSolution"
                   rows={2}
                   className="w-full"
                 />
@@ -464,7 +480,8 @@ export function AccessibilityFeedbackForm({
                     type="email"
                     placeholder="your.email@example.com"
                     value={form.contactEmail}
-                    onChange={(e) => updateForm('contactEmail', e.target.value)}
+                    onChange={handleInputChange}
+                    name="contactEmail"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     We'll only contact you about this accessibility issue and testing opportunities.
@@ -479,16 +496,10 @@ export function AccessibilityFeedbackForm({
               Reports are reviewed within 48 hours. Critical issues are addressed immediately.
             </p>
             <Button 
-              onClick={handleSubmit} 
-              disabled={isSubmitting || !form.description.trim()}
-              className="flex items-center gap-2"
+              className="bg-primary text-white hover:bg-primary/90"
+              onClick={handleSubmit}
             >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {isSubmitting ? 'Submitting...' : 'Submit Report'}
+              Submit Feedback
             </Button>
           </div>
         </div>

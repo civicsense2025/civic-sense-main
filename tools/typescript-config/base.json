@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "paths": {
+      "@civicsense/ui-web": ["../../packages/ui-web/src"],
+      "@civicsense/ui-web/*": ["../../packages/ui-web/src/*"],
+      "@civicsense/business-logic": ["../../packages/business-logic/src"],
+      "@civicsense/business-logic/*": ["../../packages/business-logic/src/*"],
+      "@civicsense/types": ["../../packages/types/src"],
+      "@civicsense/types/*": ["../../packages/types/src/*"]
+    }
+  }
+} 

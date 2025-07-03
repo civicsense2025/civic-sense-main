@@ -1,7 +1,9 @@
 "use client"
 
-import { Skeleton } from "@civicsense/ui-web"
-import { Card, CardContent } from "@civicsense/ui-web"
+import { Loader2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Continue Quiz Card Skeleton
 function ContinueQuizCardSkeleton() {
@@ -119,8 +121,12 @@ function FeaturesShowcaseSkeleton() {
 
 export default function Loading() {
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+    <div className="container mx-auto p-4">
+      <Card className="p-6">
+        <div className="flex items-center justify-center min-h-[200px]">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </Card>
     </div>
   )
 } 

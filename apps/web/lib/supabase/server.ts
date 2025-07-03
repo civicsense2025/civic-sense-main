@@ -1,35 +1,25 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { Database } from '@civicsense/types/database'
 
-export function createClient() {
-  const cookieStore = cookies()
+export const createClient = async () => {
+  const cookieStore = await cookies()
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        get: (name: string) => cookieStore.get(name)?.value,
+        set: (name: string, value: string, options: CookieOptions) => {
+          cookieStore.set({ name, value, ...options })
         },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set(name, value, {
-              ...options,
-              sameSite: options.sameSite as 'lax' | 'strict' | 'none' | undefined
-            })
-          } catch (error) {
-            // Handle cookie errors in middleware
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.delete(name)
-          } catch (error) {
-            // Handle cookie errors in middleware
-          }
+        remove: (name: string, options: CookieOptions) => {
+          cookieStore.delete({ name, ...options })
         },
       },
     }
   )
-} 
+}
+
+export const supabase = await createClient() 

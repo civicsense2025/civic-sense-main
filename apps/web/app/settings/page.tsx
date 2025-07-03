@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from '@civicsense/ui-web'
-import { usePremium } from "@civicsense/shared/hooks/usePremium"
-import { useLazyVoices } from "@civicsense/shared/hooks/useLazyVoices"
+import { usePremium } from "@civicsense/business-logic/hooks/usePremium"
+import { useLazyVoices } from "@civicsense/business-logic/hooks/useLazyVoices"
 import { PremiumSubscriptionCard } from "@civicsense/ui-web/components/premium-subscription-card"
 import { UserMenu } from "@civicsense/ui-web/components/auth/user-menu"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
@@ -32,7 +32,7 @@ import Link from "next/link"
 import { GiftCreditsDashboard } from "./gift-credits-dashboard"
 import { LanguageSettings } from "@civicsense/ui-web/components/language-settings"
 import { redirect } from 'next/navigation'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@civicsense/business-logic/database/server'
 import { SignOutButton } from '../protected/sign-out-button'
 
 interface UserPreferences {

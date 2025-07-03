@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { bookmarkOperations } from '@civicsense/shared/src/lib/bookmarks'
+import { bookmarkOperations } from '@civicsense/business-logic/services/bookmark-service'
 import type { CreateBookmarkRequest, BookmarkSearchFilters, ContentType } from '@/lib/types/bookmarks'
 
 export async function GET(request: NextRequest) {

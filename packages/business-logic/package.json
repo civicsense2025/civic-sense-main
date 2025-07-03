@@ -1,0 +1,39 @@
+{
+  "name": "@civicsense/business-logic",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "default": "./dist/database/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@civicsense/types": "workspace:*",
+    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/ssr": "^0.0.10",
+    "next": "^14.2.0",
+    "zod": "^3.22.0",
+    "date-fns": "^4.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0"
+  }
+} 

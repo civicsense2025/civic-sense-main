@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useToast } from '@civicsense/ui-web/src/components/ui/use-toast'
-import { BookmarkList } from '@civicsense/ui-web/src/components/bookmarks/bookmark-list'
-import { BookmarkFilters } from '@civicsense/ui-web/src/components/bookmarks/bookmark-filters'
-import { BookmarkStats } from '@civicsense/ui-web/src/components/bookmarks/bookmark-stats'
-import type { Bookmark, BookmarkSearchFilters, BookmarkStats as BookmarkStatsType } from '@civicsense/shared/src/lib/types/bookmarks'
+import { supabase } from '@/lib/supabase/client'
+import { useToast } from '@/components/ui/use-toast'
+import { BookmarkList } from '@/components/bookmarks/bookmark-list'
+import { BookmarkFilters } from '@/components/bookmarks/bookmark-filters'
+import { BookmarkStats } from '@/components/bookmarks/bookmark-stats'
+import type { Bookmark, BookmarkSearchFilters, BookmarkStats as BookmarkStatsType } from '@civicsense/types/bookmarks'
 
 export default function BookmarksPage() {
   const [loading, setLoading] = useState(true)
@@ -16,7 +16,6 @@ export default function BookmarksPage() {
   const [filters, setFilters] = useState<BookmarkSearchFilters>({})
   const [availableTags, setAvailableTags] = useState<string[]>([])
   const { toast } = useToast()
-  const supabase = createClient()
 
   useEffect(() => {
     loadBookmarks()

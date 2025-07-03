@@ -26,7 +26,28 @@ config.resolver.disableHierarchicalLookup = false;
 config.resolver.unstable_enablePackageExports = true;
 
 // Add source extensions for better module resolution
-config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'cjs'];
+config.resolver.sourceExts = [
+  'js',
+  'jsx',
+  'json',
+  'ts',
+  'tsx',
+  'cjs',
+  'mjs',
+  // Add native extensions
+  'android.js',
+  'android.jsx',
+  'android.ts',
+  'android.tsx',
+  'ios.js',
+  'ios.jsx',
+  'ios.ts',
+  'ios.tsx',
+  'web.js',
+  'web.jsx',
+  'web.ts',
+  'web.tsx'
+];
 
 // Add asset extensions
 config.resolver.assetExts = [...config.resolver.assetExts, 'png', 'jpg', 'jpeg', 'svg', 'gif', 'webp'];
@@ -36,13 +57,25 @@ config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
 // Configure resolver to handle workspace packages and missing web dependencies
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Special handling for expo-router entry
+  if (moduleName === 'expo-router/entry') {
+    try {
+      const routerPath = require.resolve('expo-router/entry');
+      return {
+        filePath: routerPath,
+        type: 'sourceFile',
+      };
+    } catch (error) {
+      console.warn('Failed to resolve expo-router/entry:', error);
+    }
+  }
+
   // Handle workspace packages
   if (moduleName.startsWith('@civicsense/')) {
     const packageName = moduleName.replace('@civicsense/', '');
     const packagePath = path.resolve(workspaceRoot, 'packages', packageName);
     
     try {
-      // Try to resolve from the workspace package
       const packageJson = require(path.join(packagePath, 'package.json'));
       const mainFile = packageJson.main || 'index.js';
       const resolvedPath = path.resolve(packagePath, mainFile);
@@ -103,22 +136,15 @@ config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 config.server = {
   enhanceMiddleware: (middleware) => {
     return (req, res, next) => {
-      // Allow requests from local network IP ranges
-      const allowedOrigins = [
-        /^http:\/\/localhost:\d+$/,
-        /^http:\/\/127\.0\.0\.1:\d+$/,
-        /^http:\/\/192\.168\.1\.\d+:\d+$/,
-        /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,
-        /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:\d+$/,
-      ];
-      
-      const origin = req.headers.origin;
-      if (origin && allowedOrigins.some(pattern => pattern.test(origin))) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      // Set correct MIME types for web platform
+      if (req.url.includes('.bundle') || req.url.includes('.chunk.')) {
+        res.setHeader('Content-Type', 'application/javascript');
       }
+      
+      // Allow requests from all local origins
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       
       // Handle preflight requests
       if (req.method === 'OPTIONS') {
@@ -130,7 +156,7 @@ config.server = {
       middleware(req, res, next);
     };
   },
-  port: process.env.PORT || 8081,
+  port: 8081, // Match the port being used
 };
 
 // Export the config with NativeWind support

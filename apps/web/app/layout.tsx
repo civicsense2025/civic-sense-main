@@ -4,22 +4,14 @@ import { Space_Mono, Inter } from "next/font/google"
 import "./globals.css"
 import "./fonts.css" 
 import "../styles/accessibility.css"
-import { Toaster } from '@civicsense/ui-web'
+import { Toaster } from '@/components/ui/toaster'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-
-// Temporary provider stubs for monorepo migration
-const ThemeProvider = ({ children, ...props }: any) => <div {...props}>{children}</div>
-const AuthProvider = ({ children }: any) => <div>{children}</div>
-const AccessibilityProvider = ({ children }: any) => <div>{children}</div>
-const StatsigProvider = ({ children }: any) => <div>{children}</div>
-const PWAProvider = ({ children }: any) => <div>{children}</div>
-const LanguageProvider = ({ children }: any) => <div>{children}</div>
-const ConnectionProvider = ({ children }: any) => <div>{children}</div>
-const Footer = () => <footer className="border-t p-4 text-center text-sm text-gray-600">© 2025 CivicSense</footer>
-const GlobalAudioWrapper = ({ children }: any) => <div>{children}</div>
+import { AuthProvider } from '@/lib/auth/auth-context'
+import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { headers } from 'next/headers'
 // Temporary stubs for monorepo migration
 const PWAStatus = () => <div className="fixed bottom-4 right-4 text-xs bg-gray-100 px-2 py-1 rounded">PWA: Ready</div>
 const DebugSettingsPanel = () => <div></div>
@@ -49,8 +41,8 @@ const getBaseUrl = () => {
 }
 
 export const metadata: Metadata = {
-  title: 'Next.js App with Supabase Auth',
-  description: 'A Next.js application with Supabase authentication',
+  title: 'CivicSense',
+  description: 'Civic education that politicians don\'t want you to have.',
 }
 
 export const viewport: Viewport = {
@@ -70,7 +62,9 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   return (
     <html lang="en" suppressHydrationWarning className={spaceMono.variable}>
@@ -156,42 +150,54 @@ export default async function RootLayout({
         'overflow-x-hidden w-full min-w-0', // Prevent horizontal overflow
         spaceMono.variable
       )}>
-        <nav className="bg-gray-800">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
-                <Link href="/" className="text-white font-bold text-xl">
-                  My App
-                </Link>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider session={session}>
+            <nav className="bg-gray-800">
+              <div className="container mx-auto px-4">
+                <div className="flex items-center justify-between h-16">
+                  <div className="flex items-center">
+                    <Link href="/" className="text-white font-bold text-xl">
+                      My App
+                    </Link>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    {session ? (
+                      <>
+                        <Link href="/protected" className="text-gray-300 hover:text-white">
+                          Dashboard
+                        </Link>
+                        <Link href="/bookmarks" className="text-gray-300 hover:text-white">
+                          Bookmarks
+                        </Link>
+                        <Link href="/settings" className="text-gray-300 hover:text-white">
+                          Settings
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/login" className="text-gray-300 hover:text-white">
+                          Login
+                        </Link>
+                        <Link href="/signup" className="text-gray-300 hover:text-white">
+                          Sign Up
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-4">
-                {user ? (
-                  <>
-                    <Link href="/protected" className="text-gray-300 hover:text-white">
-                      Dashboard
-                    </Link>
-                    <Link href="/bookmarks" className="text-gray-300 hover:text-white">
-                      Bookmarks
-                    </Link>
-                    <Link href="/settings" className="text-gray-300 hover:text-white">
-                      Settings
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" className="text-gray-300 hover:text-white">
-                      Login
-                    </Link>
-                    <Link href="/signup" className="text-gray-300 hover:text-white">
-                      Sign Up
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </nav>
-        <main className="container mx-auto px-4 py-8">{children}</main>
+            </nav>
+            <main className="container mx-auto px-4 py-8">{children}</main>
+          </AuthProvider>
+          <Toaster />
+        </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

@@ -1,31 +1,26 @@
 {
-  "name": "civicsense-monorepo",
-  "version": "0.1.0",
+  "name": "civic-sense",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "apps/web",
-    "apps/mobile",
+    "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "cd apps/web && npm run dev",
-    "dev:mobile": "cd apps/mobile && npm start",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
     "build:web": "cd apps/web && npm run build",
-    "build:mobile": "cd apps/mobile && npm run build:android",
-    "start:web": "pnpm --filter=@civicsense/web start",
-    "lint:all": "npm run lint --workspaces",
-    "test:all": "npm run test --workspaces",
-    "type-check:all": "npm run type-check --workspaces",
-    "optimize:imports": "node scripts/optimize-imports.js",
-    "optimize:structure": "node scripts/optimize-structure.js",
-    "clean:dist": "find . -name 'dist' -type d -not -path './node_modules/*' -exec rm -rf {} +",
-    "clean:deps": "find . -name 'node_modules' -type d -not -path './node_modules' -exec rm -rf {} +",
-    "fresh:install": "npm run clean:deps && npm install",
-    "install:all": "pnpm install",
-    "dev": "pnpm run dev:web",
-    "build": "pnpm run build:web"
+    "build:mobile": "cd apps/mobile && npm run build",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:mobile": "cd apps/mobile && npm run dev",
+    "test:web": "cd apps/web && npm test",
+    "test:mobile": "cd apps/mobile && npm test"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.6.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "date-fns": "^3.6.0",
@@ -39,8 +34,10 @@
     "@types/stripe": "^8.0.416",
     "canvas": "^3.1.0",
     "eslint": "^9.29.0",
+    "prettier": "^3.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
+    "turbo": "^1.12.4",
     "typescript": "^5"
   },
   "overrides": {
@@ -65,5 +62,8 @@
       "supabase"
     ]
   },
-  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
-} 
+  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

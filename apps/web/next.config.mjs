@@ -16,10 +16,10 @@ const nextConfig = {
   
   // CRITICAL: Transpile workspace packages for Next.js 15
   transpilePackages: [
-    '@civicsense/shared',
-    '@civicsense/ui-shared', 
+    '@civicsense/business-logic',
+    '@civicsense/ui-web', 
     '@civicsense/ui-web',
-    '@civicsense/ui-mobile'
+    ''
   ],
   
   images: {
@@ -84,10 +84,10 @@ const nextConfig = {
     // Add alias for workspace packages to prevent path resolution issues
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@civicsense/shared': path.resolve(workspaceRoot, 'packages/shared/src'),
-      '@civicsense/ui-shared': path.resolve(workspaceRoot, 'packages/ui-shared/src'),
+      '@civicsense/business-logic': path.resolve(workspaceRoot, 'packages/shared/src'),
+      '@civicsense/ui-web': path.resolve(workspaceRoot, 'packages/ui-shared/src'),
       '@civicsense/ui-web': path.resolve(workspaceRoot, 'packages/ui-web/src'),
-      '@civicsense/ui-mobile': path.resolve(workspaceRoot, 'packages/ui-mobile/src'),
+      '': path.resolve(workspaceRoot, 'packages/ui-mobile/src'),
     }
 
     // Suppress warnings for better build output

@@ -1,44 +1,21 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../tools/typescript-config/expo.json",
   "compilerOptions": {
-    "strict": true,
-    "composite": true,
-    "noUncheckedIndexedAccess": false,
-    "isolatedModules": true,
-    "exactOptionalPropertyTypes": false,
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
+    "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ],
-      "@/components/*": [
-        "./components/*"
+      "@civicsense/business-logic/*": [
+        "../../packages/business-logic/src/*"
       ],
-      "@/lib/*": [
-        "./lib/*"
+      "@civicsense/types/*": [
+        "../../packages/types/src/*"
       ],
-      "@/assets/*": [
-        "./assets/*"
-      ],
-      "@civicsense/shared": [
-        "../../packages/shared/src"
-      ],
-      "@civicsense/shared/*": [
-        "../../packages/shared/src/*"
-      ],
-      "@civicsense/ui-shared": [
-        "../../packages/ui-shared/src"
-      ],
-      "@civicsense/ui-shared/*": [
-        "../../packages/ui-shared/src/*"
-      ],
-      "@civicsense/ui-mobile": [
-        "../../packages/ui-mobile/src"
-      ],
-      "@civicsense/ui-mobile/*": [
-        "../../packages/ui-mobile/src/*"
+      "@civicsense/types": [
+        "../../packages/types/src"
       ]
     }
   },
@@ -49,10 +26,5 @@
   ],
   "exclude": [
     "node_modules"
-  ],
-  "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/ui-shared" },
-    { "path": "../../packages/ui-mobile" }
   ]
 }

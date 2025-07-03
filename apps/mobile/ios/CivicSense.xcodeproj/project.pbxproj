@@ -8,35 +8,35 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		27830C61398C42AC8B5A8D03 /* NotificationService.m in Sources */ = {isa = PBXBuildFile; fileRef = 30B389030ABA4AAC9CC1219E /* NotificationService.m */; };
+		3023AAFB811849E7902D132C /* OneSignalNotificationServiceExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = C51C36EE575E4295B2CF19F3 /* OneSignalNotificationServiceExtension.appex */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		3FDDD8BF2858C9F4EEFA8367 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBFD61F698AC510D9DFD2F8 /* ExpoModulesProvider.swift */; };
-		6FEC4BB127EA8A8EF3AB959E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C2089B9DE2D7E1C8E3B2323C /* PrivacyInfo.xcprivacy */; };
-		8C879C55FE8F707EBC951262 /* libPods-CivicSense.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8112ADCE0B746EC41A0BE235 /* libPods-CivicSense.a */; };
-		9FDB3B1F213DBA3C125D4B8B /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 47997ED0A7B7E685617F1796 /* libPods-OneSignalNotificationServiceExtension.a */; };
-		AB1EE0BD7CC245ADA5446E92 /* OneSignalNotificationServiceExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 980C167C77E549EBAB411E2E /* OneSignalNotificationServiceExtension.appex */; };
+		5ED87EA2222B3F1D8E16CE24 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218865F630B2F07CCE1D15CC /* ExpoModulesProvider.swift */; };
+		8873D171183710DCD56E105F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8D2AAB1532F5EBD46C321925 /* PrivacyInfo.xcprivacy */; };
+		918629359B50705532986E6D /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 31C296BEBEF90A66845596DF /* libPods-OneSignalNotificationServiceExtension.a */; };
+		B3A0643C5007C8AD37DCE9BD /* libPods-CivicSense.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FA1F00B25903D9173029B13 /* libPods-CivicSense.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		CFE60CDF8E27464AB38059F2 /* NotificationService.m in Sources */ = {isa = PBXBuildFile; fileRef = CABC3F1871B54931927FB3C5 /* NotificationService.m */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		BA257696918241B199C0BB90 /* PBXContainerItemProxy */ = {
+		1CD58576D4FC43BAAF285FE0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5380F6E6012C4ECBA6300B8A;
+			remoteGlobalIDString = 51034D92DBAF4F0699952687;
 			remoteInfo = OneSignalNotificationServiceExtension;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		91D9EA16E8B742BBB259E649 /* Copy Files */ = {
+		F89BB8616C4C44DAAB365DDD /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				AB1EE0BD7CC245ADA5446E92 /* OneSignalNotificationServiceExtension.appex in Copy Files */,
+				3023AAFB811849E7902D132C /* OneSignalNotificationServiceExtension.appex in Copy Files */,
 			);
 			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -44,27 +44,27 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		073273D3F116452C97E7F042 /* OneSignalNotificationServiceExtension-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "OneSignalNotificationServiceExtension-Info.plist"; path = "OneSignalNotificationServiceExtension-Info.plist"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* CivicSense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CivicSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = CivicSense/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = CivicSense/Info.plist; sourceTree = "<group>"; };
-		30B389030ABA4AAC9CC1219E /* NotificationService.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = NotificationService.m; path = NotificationService.m; sourceTree = "<group>"; };
-		47997ED0A7B7E685617F1796 /* libPods-OneSignalNotificationServiceExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneSignalNotificationServiceExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5CBFD61F698AC510D9DFD2F8 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CivicSense/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		64C5D8404525F490DB5AFA8B /* Pods-CivicSense.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CivicSense.release.xcconfig"; path = "Target Support Files/Pods-CivicSense/Pods-CivicSense.release.xcconfig"; sourceTree = "<group>"; };
-		8112ADCE0B746EC41A0BE235 /* libPods-CivicSense.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CivicSense.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		846E8647132149818A58DE32 /* OneSignalNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = OneSignalNotificationServiceExtension.entitlements; path = OneSignalNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
-		8D6DD56A3CD415EA92228254 /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; sourceTree = "<group>"; };
-		980C167C77E549EBAB411E2E /* OneSignalNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = OneSignalNotificationServiceExtension.appex; path = OneSignalNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		142E3125406889D63CE06BDC /* Pods-CivicSense.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CivicSense.release.xcconfig"; path = "Target Support Files/Pods-CivicSense/Pods-CivicSense.release.xcconfig"; sourceTree = "<group>"; };
+		218865F630B2F07CCE1D15CC /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CivicSense/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		31AFCCC6CCE84AA2B764FC00 /* OneSignalNotificationServiceExtension-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "OneSignalNotificationServiceExtension-Info.plist"; path = "OneSignalNotificationServiceExtension-Info.plist"; sourceTree = "<group>"; };
+		31C296BEBEF90A66845596DF /* libPods-OneSignalNotificationServiceExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneSignalNotificationServiceExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3FA1F00B25903D9173029B13 /* libPods-CivicSense.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CivicSense.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		571E49CCA9393DF6FC2D093A /* Pods-CivicSense.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CivicSense.debug.xcconfig"; path = "Target Support Files/Pods-CivicSense/Pods-CivicSense.debug.xcconfig"; sourceTree = "<group>"; };
+		5962993041EDBD0F25C08C8C /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; sourceTree = "<group>"; };
+		6C8ACF77B27D15626586CAEC /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.release.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.release.xcconfig"; sourceTree = "<group>"; };
+		7216F22510BE431186A56B85 /* OneSignalNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = OneSignalNotificationServiceExtension.entitlements; path = OneSignalNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
+		8D2AAB1532F5EBD46C321925 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = CivicSense/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = CivicSense/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C2089B9DE2D7E1C8E3B2323C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = CivicSense/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		CA06E5A79E8C8BFDBD33DCCF /* Pods-CivicSense.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CivicSense.debug.xcconfig"; path = "Target Support Files/Pods-CivicSense/Pods-CivicSense.debug.xcconfig"; sourceTree = "<group>"; };
+		C51C36EE575E4295B2CF19F3 /* OneSignalNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = OneSignalNotificationServiceExtension.appex; path = OneSignalNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CABC3F1871B54931927FB3C5 /* NotificationService.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = NotificationService.m; path = NotificationService.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = CivicSense/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* CivicSense-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "CivicSense-Bridging-Header.h"; path = "CivicSense/CivicSense-Bridging-Header.h"; sourceTree = "<group>"; };
-		F7D1178553C1E73D5B1C8E79 /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.release.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.release.xcconfig"; sourceTree = "<group>"; };
-		FFCDFA245190401C89AAA9D9 /* NotificationService.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = NotificationService.h; path = NotificationService.h; sourceTree = "<group>"; };
+		F3F6A0EC8A614346A6C3D86D /* NotificationService.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = NotificationService.h; path = NotificationService.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,33 +72,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C879C55FE8F707EBC951262 /* libPods-CivicSense.a in Frameworks */,
+				B3A0643C5007C8AD37DCE9BD /* libPods-CivicSense.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CEE9EBD2A9BB4D609C2E0442 /* Frameworks */ = {
+		AEFD3095136A42D39C177EA9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9FDB3B1F213DBA3C125D4B8B /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */,
+				918629359B50705532986E6D /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0007298DE86568EB5F95CB3E /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				CA06E5A79E8C8BFDBD33DCCF /* Pods-CivicSense.debug.xcconfig */,
-				64C5D8404525F490DB5AFA8B /* Pods-CivicSense.release.xcconfig */,
-				8D6DD56A3CD415EA92228254 /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */,
-				F7D1178553C1E73D5B1C8E79 /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* CivicSense */ = {
 			isa = PBXGroup;
 			children = (
@@ -108,15 +96,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				C2089B9DE2D7E1C8E3B2323C /* PrivacyInfo.xcprivacy */,
-			);
-			name = CivicSense;
-			sourceTree = "<group>";
-		};
-		1D5B9F109F62958C8EE09F79 /* CivicSense */ = {
-			isa = PBXGroup;
-			children = (
-				5CBFD61F698AC510D9DFD2F8 /* ExpoModulesProvider.swift */,
+				8D2AAB1532F5EBD46C321925 /* PrivacyInfo.xcprivacy */,
 			);
 			name = CivicSense;
 			sourceTree = "<group>";
@@ -125,22 +105,26 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				8112ADCE0B746EC41A0BE235 /* libPods-CivicSense.a */,
-				47997ED0A7B7E685617F1796 /* libPods-OneSignalNotificationServiceExtension.a */,
+				3FA1F00B25903D9173029B13 /* libPods-CivicSense.a */,
+				31C296BEBEF90A66845596DF /* libPods-OneSignalNotificationServiceExtension.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		4F50517DE53D4FBE8FE9892A /* OneSignalNotificationServiceExtension */ = {
+		2FF327A0178F51125518712D /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				FFCDFA245190401C89AAA9D9 /* NotificationService.h */,
-				846E8647132149818A58DE32 /* OneSignalNotificationServiceExtension.entitlements */,
-				073273D3F116452C97E7F042 /* OneSignalNotificationServiceExtension-Info.plist */,
-				30B389030ABA4AAC9CC1219E /* NotificationService.m */,
+				74201A45AAC9B96F0025353E /* CivicSense */,
 			);
-			name = OneSignalNotificationServiceExtension;
-			path = OneSignalNotificationServiceExtension;
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		74201A45AAC9B96F0025353E /* CivicSense */ = {
+			isa = PBXGroup;
+			children = (
+				218865F630B2F07CCE1D15CC /* ExpoModulesProvider.swift */,
+			);
+			name = CivicSense;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -157,9 +141,9 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				4F50517DE53D4FBE8FE9892A /* OneSignalNotificationServiceExtension */,
-				0007298DE86568EB5F95CB3E /* Pods */,
-				B7FE77286CEDA619F4CE0851 /* ExpoModulesProviders */,
+				9FB84894FDEF4091B5DB0413 /* OneSignalNotificationServiceExtension */,
+				8B7A9DC45B27210BA5575BFF /* Pods */,
+				2FF327A0178F51125518712D /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -170,17 +154,33 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* CivicSense.app */,
-				980C167C77E549EBAB411E2E /* OneSignalNotificationServiceExtension.appex */,
+				C51C36EE575E4295B2CF19F3 /* OneSignalNotificationServiceExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B7FE77286CEDA619F4CE0851 /* ExpoModulesProviders */ = {
+		8B7A9DC45B27210BA5575BFF /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				1D5B9F109F62958C8EE09F79 /* CivicSense */,
+				571E49CCA9393DF6FC2D093A /* Pods-CivicSense.debug.xcconfig */,
+				142E3125406889D63CE06BDC /* Pods-CivicSense.release.xcconfig */,
+				5962993041EDBD0F25C08C8C /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */,
+				6C8ACF77B27D15626586CAEC /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */,
 			);
-			name = ExpoModulesProviders;
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		9FB84894FDEF4091B5DB0413 /* OneSignalNotificationServiceExtension */ = {
+			isa = PBXGroup;
+			children = (
+				F3F6A0EC8A614346A6C3D86D /* NotificationService.h */,
+				7216F22510BE431186A56B85 /* OneSignalNotificationServiceExtension.entitlements */,
+				31AFCCC6CCE84AA2B764FC00 /* OneSignalNotificationServiceExtension-Info.plist */,
+				CABC3F1871B54931927FB3C5 /* NotificationService.m */,
+			);
+			name = OneSignalNotificationServiceExtension;
+			path = OneSignalNotificationServiceExtension;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -200,33 +200,33 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CivicSense" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				2EB9833A011941CCEC49D6E3 /* [Expo] Configure project */,
+				A47B4B68A90F22035AB16E02 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				91D9EA16E8B742BBB259E649 /* Copy Files */,
-				E46E35AD32D0F8CF3DAB7650 /* [CP] Embed Pods Frameworks */,
+				F89BB8616C4C44DAAB365DDD /* Copy Files */,
+				8B2C0D1D0C765B5A984951E2 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				FE026DD582164B3C926CC248 /* PBXTargetDependency */,
+				6AC44D919B1E4110956ECC2B /* PBXTargetDependency */,
 			);
 			name = CivicSense;
 			productName = CivicSense;
 			productReference = 13B07F961A680F5B00A75B9A /* CivicSense.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5380F6E6012C4ECBA6300B8A /* OneSignalNotificationServiceExtension */ = {
+		51034D92DBAF4F0699952687 /* OneSignalNotificationServiceExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F7CCC0A4B31147AA95994063 /* Build configuration list for PBXNativeTarget "OneSignalNotificationServiceExtension" */;
+			buildConfigurationList = 7979F0D9159A460B90B28C22 /* Build configuration list for PBXNativeTarget "OneSignalNotificationServiceExtension" */;
 			buildPhases = (
-				8FC147D1D865D03082C9541C /* [CP] Check Pods Manifest.lock */,
-				9C7AFB8221EE4DDC821AD5C0 /* Sources */,
-				A48B3C9DAC294BB7B28B4B6A /* Resources */,
-				CEE9EBD2A9BB4D609C2E0442 /* Frameworks */,
+				8CA5258FBF978638165D2C74 /* [CP] Check Pods Manifest.lock */,
+				ED427B9985744E04A8200C84 /* Sources */,
+				72AC06B5E8FD4ACE92F4A7EB /* Resources */,
+				AEFD3095136A42D39C177EA9 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -234,7 +234,7 @@
 			);
 			name = OneSignalNotificationServiceExtension;
 			productName = OneSignalNotificationServiceExtension;
-			productReference = 980C167C77E549EBAB411E2E /* OneSignalNotificationServiceExtension.appex */;
+			productReference = C51C36EE575E4295B2CF19F3 /* OneSignalNotificationServiceExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -249,7 +249,7 @@
 						DevelopmentTeam = undefined;
 						LastSwiftMigration = 1250;
 					};
-					5380F6E6012C4ECBA6300B8A = {
+					51034D92DBAF4F0699952687 = {
 						DevelopmentTeam = undefined;
 					};
 				};
@@ -268,7 +268,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* CivicSense */,
-				5380F6E6012C4ECBA6300B8A /* OneSignalNotificationServiceExtension */,
+				51034D92DBAF4F0699952687 /* OneSignalNotificationServiceExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -281,11 +281,11 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				6FEC4BB127EA8A8EF3AB959E /* PrivacyInfo.xcprivacy in Resources */,
+				8873D171183710DCD56E105F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A48B3C9DAC294BB7B28B4B6A /* Resources */ = {
+		72AC06B5E8FD4ACE92F4A7EB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -332,25 +332,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		2EB9833A011941CCEC49D6E3 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-CivicSense/expo-configure-project.sh\"\n";
-		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -364,6 +345,7 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXNotifications/ExpoNotifications_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoDevice/ExpoDevice_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/RCT-Folly_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
@@ -382,6 +364,7 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoDevice_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCT-Folly_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
@@ -397,7 +380,25 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CivicSense/Pods-CivicSense-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		8FC147D1D865D03082C9541C /* [CP] Check Pods Manifest.lock */ = {
+		8B2C0D1D0C765B5A984951E2 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-CivicSense/Pods-CivicSense-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CivicSense/Pods-CivicSense-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8CA5258FBF978638165D2C74 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -419,23 +420,24 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E46E35AD32D0F8CF3DAB7650 /* [CP] Embed Pods Frameworks */ = {
+		A47B4B68A90F22035AB16E02 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-CivicSense/Pods-CivicSense-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			inputFileListPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CivicSense/Pods-CivicSense-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-CivicSense/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -445,32 +447,32 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				3FDDD8BF2858C9F4EEFA8367 /* ExpoModulesProvider.swift in Sources */,
+				5ED87EA2222B3F1D8E16CE24 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		9C7AFB8221EE4DDC821AD5C0 /* Sources */ = {
+		ED427B9985744E04A8200C84 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27830C61398C42AC8B5A8D03 /* NotificationService.m in Sources */,
+				CFE60CDF8E27464AB38059F2 /* NotificationService.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		FE026DD582164B3C926CC248 /* PBXTargetDependency */ = {
+		6AC44D919B1E4110956ECC2B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5380F6E6012C4ECBA6300B8A /* OneSignalNotificationServiceExtension */;
-			targetProxy = BA257696918241B199C0BB90 /* PBXContainerItemProxy */;
+			target = 51034D92DBAF4F0699952687 /* OneSignalNotificationServiceExtension */;
+			targetProxy = 1CD58576D4FC43BAAF285FE0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CA06E5A79E8C8BFDBD33DCCF /* Pods-CivicSense.debug.xcconfig */;
+			baseConfigurationReference = 571E49CCA9393DF6FC2D093A /* Pods-CivicSense.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -506,7 +508,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 64C5D8404525F490DB5AFA8B /* Pods-CivicSense.release.xcconfig */;
+			baseConfigurationReference = 142E3125406889D63CE06BDC /* Pods-CivicSense.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -658,9 +660,31 @@
 			};
 			name = Release;
 		};
-		C7473B273B9649F88D4B6095 /* Debug */ = {
+		A0E5D878F98042C295EC8FFD /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8D6DD56A3CD415EA92228254 /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */;
+			baseConfigurationReference = 6C8ACF77B27D15626586CAEC /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = undefined;
+				INFOPLIST_FILE = "OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = com.civicsense.app.OneSignalNotificationServiceExtension;
+				PRODUCT_NAME = OneSignalNotificationServiceExtension;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EEAB725E682845D9932D5367 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5962993041EDBD0F25C08C8C /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -684,28 +708,6 @@
 			};
 			name = Debug;
 		};
-		CC925C6F5B01411198A9F97F /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F7D1178553C1E73D5B1C8E79 /* Pods-OneSignalNotificationServiceExtension.release.xcconfig */;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = undefined;
-				INFOPLIST_FILE = "OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.civicsense.app.OneSignalNotificationServiceExtension;
-				PRODUCT_NAME = OneSignalNotificationServiceExtension;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -718,20 +720,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		7979F0D9159A460B90B28C22 /* Build configuration list for PBXNativeTarget "OneSignalNotificationServiceExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EEAB725E682845D9932D5367 /* Debug */,
+				A0E5D878F98042C295EC8FFD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "CivicSense" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		F7CCC0A4B31147AA95994063 /* Build configuration list for PBXNativeTarget "OneSignalNotificationServiceExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C7473B273B9649F88D4B6095 /* Debug */,
-				CC925C6F5B01411198A9F97F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

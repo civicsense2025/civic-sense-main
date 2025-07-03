@@ -1,10 +1,10 @@
-import { Card } from '@civicsense/ui-web/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@civicsense/ui-web/ui/select'
-import { Skeleton } from '@civicsense/ui-web/ui/skeleton'
+import { Card } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Users, BarChart3, Clock, Target } from 'lucide-react'
-import { createClient } from '@civicsense/shared/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { type Json } from '@civicsense/shared/lib/database.types'
+import type { Database, Json } from '@civicsense/types/database'
 
 interface PodStats {
   totalPods: number
@@ -24,6 +24,12 @@ interface PodMembership {
 interface PodActivityLog {
   pod_id: string
   activity_data: Json
+}
+
+interface ActivityStats {
+  questions: number
+  time: number
+  accuracy: number
 }
 
 function hasValidActivityData(data: Json): boolean {
@@ -51,8 +57,6 @@ export function AggregatePodAnalytics() {
   useEffect(() => {
     async function loadPodStats() {
       try {
-        const supabase = createClient()
-        
         // Get user's pods and memberships
         const { data: memberships, error: membershipsError } = await supabase
           .from('pod_memberships')
@@ -65,16 +69,16 @@ export function AggregatePodAnalytics() {
         const { data: activityLogs, error: activityError } = await supabase
           .from('pod_activity_log')
           .select('pod_id, activity_data')
-          .in('pod_id', memberships?.map(m => m.pod_id) || [])
+          .in('pod_id', memberships?.map((m: PodMembership) => m.pod_id) || [])
 
         if (activityError) throw activityError
 
         // Calculate stats
-        const uniquePods = new Set(memberships?.map(m => m.pod_id) || [])
+        const uniquePods = new Set(memberships?.map((m: PodMembership) => m.pod_id) || [])
         const totalPods = uniquePods.size
         const totalMembers = memberships?.length || 0
         
-        const activityStats = activityLogs?.reduce((acc, log) => {
+        const activityStats = activityLogs?.reduce((acc: ActivityStats, log: PodActivityLog) => {
           if (hasValidActivityData(log.activity_data)) {
             const data = log.activity_data as Record<string, number>
             acc.questions += data.questions_answered
@@ -84,7 +88,7 @@ export function AggregatePodAnalytics() {
           return acc
         }, { questions: 0, time: 0, accuracy: 0 })
 
-        const activeMembers = memberships?.filter(m => m.membership_status === 'active').length || 0
+        const activeMembers = memberships?.filter((m: PodMembership) => m.membership_status === 'active').length || 0
 
         setStats({
           totalPods,

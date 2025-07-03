@@ -326,6 +326,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSpeech (13.1.7):
     - ExpoModulesCore
+  - ExpoSystemUI (5.0.10):
+    - ExpoModulesCore
   - ExpoWebBrowser (14.0.2):
     - ExpoModulesCore
   - EXUpdatesInterface (1.0.0):
@@ -2328,6 +2330,7 @@ DEPENDENCIES:
   - "ExpoModulesCore (from `../../../node_modules/.pnpm/expo-modules-core@2.4.2/node_modules/expo-modules-core`)"
   - "ExpoSecureStore (from `../../../node_modules/.pnpm/expo-secure-store@14.0.1_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_reac_f056af74c734753f1d668146e305266b/node_modules/expo-secure-store/ios`)"
   - "ExpoSpeech (from `../../../node_modules/.pnpm/expo-speech@13.1.7_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react-nati_0e0d90bdecba64416afd730e0f2dd9ee/node_modules/expo-speech/ios`)"
+  - "ExpoSystemUI (from `../../../node_modules/.pnpm/expo-system-ui@5.0.10_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react-n_a1d703ba14cf9244b606e6c290ee2d4c/node_modules/expo-system-ui/ios`)"
   - "ExpoWebBrowser (from `../../../node_modules/.pnpm/expo-web-browser@14.0.2_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react_abe0d6fe0b50c2dd72a4832d5db8e872/node_modules/expo-web-browser/ios`)"
   - "EXUpdatesInterface (from `../../../node_modules/.pnpm/expo-updates-interface@1.0.0_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1__fa7fac803399548809932588291d7082/node_modules/expo-updates-interface/ios`)"
   - "fast_float (from `../../../node_modules/.pnpm/react-native@0.79.5_@babel+core@7.28.0_@types+react@19.1.8_react@19.1.0/node_modules/react-native/third-party-podspecs/fast_float.podspec`)"
@@ -2475,6 +2478,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/expo-secure-store@14.0.1_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_reac_f056af74c734753f1d668146e305266b/node_modules/expo-secure-store/ios"
   ExpoSpeech:
     :path: "../../../node_modules/.pnpm/expo-speech@13.1.7_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react-nati_0e0d90bdecba64416afd730e0f2dd9ee/node_modules/expo-speech/ios"
+  ExpoSystemUI:
+    :path: "../../../node_modules/.pnpm/expo-system-ui@5.0.10_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react-n_a1d703ba14cf9244b606e6c290ee2d4c/node_modules/expo-system-ui/ios"
   ExpoWebBrowser:
     :path: "../../../node_modules/.pnpm/expo-web-browser@14.0.2_expo@53.0.16_@babel+core@7.28.0_@expo+metro-runtime@4.0.1_react_abe0d6fe0b50c2dd72a4832d5db8e872/node_modules/expo-web-browser/ios"
   EXUpdatesInterface:
@@ -2659,6 +2664,7 @@ SPEC CHECKSUMS:
   ExpoModulesCore: e0409d8c674a651a183e941be663e1966b49e2a2
   ExpoSecureStore: 9a3665d7161dd1031be386e278bffd623658f316
   ExpoSpeech: 9b3bdf552e69c8015c246dc52b5ad5fcdbec878e
+  ExpoSystemUI: c2724f9d5af6b1bb74e013efadf9c6a8fae547a2
   ExpoWebBrowser: a212e6b480d8857d3e441fba51e0c968333803b3
   EXUpdatesInterface: 7c977640bdd8b85833c19e3959ba46145c5719db
   fast_float: 06eeec4fe712a76acc9376682e4808b05ce978b6
