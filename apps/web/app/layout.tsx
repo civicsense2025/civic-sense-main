@@ -1,10 +1,12 @@
 import React from "react"
 import type { Metadata, Viewport } from "next"
-import { Space_Mono } from "next/font/google"
+import { Space_Mono, Inter } from "next/font/google"
 import "./globals.css"
 import "./fonts.css" 
 import "../styles/accessibility.css"
 import { Toaster } from '@civicsense/ui-web'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
 // Temporary provider stubs for monorepo migration
 const ThemeProvider = ({ children, ...props }: any) => <div {...props}>{children}</div>
@@ -38,6 +40,8 @@ const spaceMono = Space_Mono({
   fallback: ['Monaco', 'Menlo', 'Courier New', 'monospace'],
 })
 
+const inter = Inter({ subsets: ['latin'] })
+
 const getBaseUrl = () => {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
@@ -45,58 +49,8 @@ const getBaseUrl = () => {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getBaseUrl()),
-  title: {
-    default: 'CivicSense | Democracy, Decoded Daily',
-    template: '%s | CivicSense'
-  },
-  description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
-  keywords: ['civic education', 'democracy', 'politics', 'government', 'citizenship', 'voting'],
-  authors: [{ name: 'CivicSense' }],
-  creator: 'CivicSense',
-  publisher: 'CivicSense',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: getBaseUrl(),
-    siteName: 'CivicSense',
-    title: 'CivicSense | Democracy, Decoded Daily',
-    description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
-    images: [
-      {
-        url: '/api/generate-image?template=social-share&title=CivicSense&description=Democracy, Decoded Daily&type=platform',
-        width: 1200,
-        height: 630,
-        alt: 'CivicSense - Democracy, Decoded Daily',
-      }
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'CivicSense | Democracy, Decoded Daily',
-    description: 'Transform yourself from passive observer to confident civic participant. Get the uncomfortable truths about how power really works in America.',
-    creator: '@CivicSenseApp',
-    images: ['/api/generate-image?template=twitter-card&title=CivicSense&description=Democracy, Decoded Daily&type=platform'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  verification: {
-    // Add when available: google: 'your-google-verification-code',
-  },
+  title: 'Next.js App with Supabase Auth',
+  description: 'A Next.js application with Supabase authentication',
 }
 
 export const viewport: Viewport = {
@@ -110,7 +64,14 @@ export const viewport: Viewport = {
   userScalable: true,
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <html lang="en" suppressHydrationWarning className={spaceMono.variable}>
       <head>
@@ -195,54 +156,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         'overflow-x-hidden w-full min-w-0', // Prevent horizontal overflow
         spaceMono.variable
       )}>
-        {/* ✅ Optimized provider hierarchy - most critical first */}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          storageKey="civicsense-theme"
-        >
-          <LanguageProvider>
-            <AuthProvider>
-              <AccessibilityProvider>
-                {/* ✅ Skip link for keyboard navigation (WCAG compliance) */}
-                <a href="#main-content" className="skip-link">
-                  Skip to main content
-                </a>
-                
-                <div className="min-h-screen flex flex-col w-full">
-                  <main id="main-content" className="flex-1 w-full">
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-                
-                {/* ✅ Non-critical providers loaded after main content */}
-                <StatsigProvider>
-                  <PWAProvider>
-                    <ConnectionProvider>
-                      <Toaster />
-                      <GlobalAudioWrapper />
-                      
-                      {/* ✅ Analytics loaded last to not block rendering */}
-                      <Analytics />
-                      <SpeedInsights />
-                      
-                      {/* Development only components */}
-                      {process.env.NODE_ENV === 'development' && (
-                        <>
-                          <PWAStatus />
-                          <DebugSettingsPanel />
-                        </>
-                      )}
-                    </ConnectionProvider>
-                  </PWAProvider>
-                </StatsigProvider>
-              </AccessibilityProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+        <nav className="bg-gray-800">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <Link href="/" className="text-white font-bold text-xl">
+                  My App
+                </Link>
+              </div>
+              <div className="flex items-center space-x-4">
+                {user ? (
+                  <>
+                    <Link href="/protected" className="text-gray-300 hover:text-white">
+                      Dashboard
+                    </Link>
+                    <Link href="/bookmarks" className="text-gray-300 hover:text-white">
+                      Bookmarks
+                    </Link>
+                    <Link href="/settings" className="text-gray-300 hover:text-white">
+                      Settings
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="text-gray-300 hover:text-white">
+                      Login
+                    </Link>
+                    <Link href="/signup" className="text-gray-300 hover:text-white">
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
+        <main className="container mx-auto px-4 py-8">{children}</main>
       </body>
     </html>
   )

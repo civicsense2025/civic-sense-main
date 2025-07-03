@@ -17,6 +17,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   assetBundlePatterns: [
     '**/*'
   ],
+  // Enable new architecture at the root level
+  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.civicsense.app',
@@ -42,6 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#3B82F6',
       monochromeImage: './assets/adaptive-icon-monochrome.png',
     },
+    userInterfaceStyle: 'automatic',
     permissions: [
       'CAMERA',
       'RECORD_AUDIO',
@@ -85,14 +88,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-build-properties',
       {
         ios: {
-          newArchEnabled: true,
           deploymentTarget: '15.1'
         },
         android: {
-          newArchEnabled: true,
           compileSdkVersion: 34,
           targetSdkVersion: 34,
           minSdkVersion: 24,
+        }
+      }
+    ],
+    [
+      'react-native-edge-to-edge',
+      {
+        android: {
+          parentTheme: "Material3.Dynamic",
+          enforceNavigationBarContrast: false
         }
       }
     ],

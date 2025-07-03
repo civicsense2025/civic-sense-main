@@ -25,8 +25,9 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
-          response.cookies.delete({
+          response.cookies.set({
             name,
+            value: '',
             ...options,
           })
         },
@@ -34,22 +35,47 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If user is not signed in and the current path is protected, redirect to /login
+  if (!user && isProtectedRoute(request.nextUrl.pathname)) {
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // If user is signed in and tries to access auth pages, redirect to /protected
+  if (user && isAuthRoute(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/protected', request.url))
+  }
 
   return response
+}
+
+// Protected routes that require authentication
+function isProtectedRoute(pathname: string) {
+  return [
+    '/protected',
+    '/bookmarks',
+    '/settings',
+  ].includes(pathname)
+}
+
+// Auth routes that should not be accessible when signed in
+function isAuthRoute(pathname: string) {
+  return [
+    '/login',
+    '/signup',
+  ].includes(pathname)
 }
 
 // Configure which paths this middleware runs on
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/protected',
+    '/bookmarks',
+    '/settings',
+    '/login',
+    '/signup',
   ],
 } 

@@ -55,13 +55,13 @@ importers:
   apps/mobile:
     dependencies:
       '@civicsense/shared':
-        specifier: file:../../packages/shared
+        specifier: workspace:*
         version: link:../../packages/shared
       '@civicsense/ui-mobile':
-        specifier: file:../../packages/ui-mobile
+        specifier: workspace:*
         version: link:../../packages/ui-mobile
       '@civicsense/ui-shared':
-        specifier: file:../../packages/ui-shared
+        specifier: workspace:*
         version: link:../../packages/ui-shared
       '@expo/vector-icons':
         specifier: ~14.0.4
@@ -141,6 +141,9 @@ importers:
       expo-status-bar:
         specifier: ^2.0.1
         version: 2.2.3(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
+      expo-system-ui:
+        specifier: ^5.0.10
+        version: 5.0.10(expo@53.0.16(@babel/core@7.28.0)(@expo/metro-runtime@4.0.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0))(react-native-web@0.20.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))
       expo-web-browser:
         specifier: ~14.0.0
         version: 14.0.2(expo@53.0.16(@babel/core@7.28.0)(@expo/metro-runtime@4.0.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))
@@ -150,9 +153,18 @@ importers:
       onesignal-expo-plugin:
         specifier: ^2.0.3
         version: 2.0.3
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
       react-native:
         specifier: 0.79.5
         version: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
+      react-native-edge-to-edge:
+        specifier: ^1.6.2
+        version: 1.6.2(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
       react-native-gesture-handler:
         specifier: ^2.20.2
         version: 2.27.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
@@ -190,6 +202,9 @@ importers:
       '@testing-library/react-native':
         specifier: ^12.4.0
         version: 12.9.0(jest@29.7.0(@types/node@22.16.0)(ts-node@10.9.2(@types/node@22.16.0)(typescript@5.8.3)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react-test-renderer@19.1.0(react@19.1.0))(react@19.1.0)
+      '@types/react':
+        specifier: ^19.1.8
+        version: 19.1.8
       '@types/react-native':
         specifier: ^0.73.0
         version: 0.73.0(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
@@ -727,7 +742,7 @@ importers:
         version: 0.454.0(react@18.3.1)
       next:
         specifier: ^14.2.0
-        version: 14.2.30(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5155,6 +5170,16 @@ packages:
       react: '*'
       react-native: '*'
 
+  expo-system-ui@5.0.10:
+    resolution: {integrity: sha512-BTXbSyJr80yuN6VO4XQKZj7BjesZQLHgOYZ0bWyf4VB19GFZq7ZnZOEc/eoKk1B3eIocOMKUfNCrg/Wn8Kfcuw==}
+    peerDependencies:
+      expo: '*'
+      react-native: '*'
+      react-native-web: '*'
+    peerDependenciesMeta:
+      react-native-web:
+        optional: true
+
   expo-updates-interface@1.0.0:
     resolution: {integrity: sha512-93oWtvULJOj+Pp+N/lpTcFfuREX1wNeHtp7Lwn8EbzYYmdn37MvZU3TPW2tYYCZuhzmKEXnUblYcruYoDu7IrQ==}
     peerDependencies:
@@ -7206,6 +7231,12 @@ packages:
 
   react-native-edge-to-edge@1.6.0:
     resolution: {integrity: sha512-2WCNdE3Qd6Fwg9+4BpbATUxCLcouF6YRY7K+J36KJ4l3y+tWN6XCqAC4DuoGblAAbb2sLkhEDp4FOlbOIot2Og==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-edge-to-edge@1.6.2:
+    resolution: {integrity: sha512-koEF6WRAfdGNelXlP7NtHrQhFGtplwciYNWLHOCTCk0Thc7dlxtqxHRYSA5vPJgWOEkVBFqxcoOqKwAtqOmLNw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -9282,6 +9313,7 @@ snapshots:
       input-otp: 1.4.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       lucide-react: 0.454.0(react@19.1.0)
       next: 14.2.30(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next-themes: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-day-picker: 8.10.1(date-fns@4.1.0)(react@19.1.0)
       react-dom: 19.1.0(react@19.1.0)
@@ -14125,7 +14157,7 @@ snapshots:
       eslint: 9.30.1(jiti@1.21.7)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@1.21.7))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.30.1(jiti@1.21.7))
       eslint-plugin-react: 7.37.5(eslint@9.30.1(jiti@1.21.7))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.30.1(jiti@1.21.7))
@@ -14155,7 +14187,7 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.10.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@1.21.7))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7))
     transitivePeerDependencies:
       - supports-color
 
@@ -14233,7 +14265,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.1(jiti@1.21.7)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.30.1(jiti@1.21.7))(typescript@5.8.3))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7)))(eslint@9.30.1(jiti@1.21.7)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -14739,6 +14771,17 @@ snapshots:
       react-native: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
       react-native-edge-to-edge: 1.6.0(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
       react-native-is-edge-to-edge: 1.2.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
+
+  expo-system-ui@5.0.10(expo@53.0.16(@babel/core@7.28.0)(@expo/metro-runtime@4.0.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0))(react-native-web@0.20.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)):
+    dependencies:
+      '@react-native/normalize-colors': 0.79.5
+      debug: 4.4.1
+      expo: 53.0.16(@babel/core@7.28.0)(@expo/metro-runtime@4.0.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)
+      react-native: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
+    optionalDependencies:
+      react-native-web: 0.20.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+    transitivePeerDependencies:
+      - supports-color
 
   expo-updates-interface@1.0.0(expo@53.0.16(@babel/core@7.28.0)(@expo/metro-runtime@4.0.1(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)))(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0)):
     dependencies:
@@ -16740,7 +16783,7 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
-  next@14.2.30(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.30(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.30
       '@swc/helpers': 0.5.5
@@ -16750,7 +16793,7 @@ snapshots:
       postcss: 8.4.31
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      styled-jsx: 5.1.1(@babel/core@7.28.0)(react@18.3.1)
+      styled-jsx: 5.1.1(react@18.3.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.30
       '@next/swc-darwin-x64': 14.2.30
@@ -17381,6 +17424,11 @@ snapshots:
       - supports-color
 
   react-native-edge-to-edge@1.6.0(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
+
+  react-native-edge-to-edge@1.6.2(react-native@0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0)
@@ -18216,12 +18264,10 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.4
 
-  styled-jsx@5.1.1(@babel/core@7.28.0)(react@18.3.1):
+  styled-jsx@5.1.1(react@18.3.1):
     dependencies:
       client-only: 0.0.1
       react: 18.3.1
-    optionalDependencies:
-      '@babel/core': 7.28.0
 
   styled-jsx@5.1.1(react@19.1.0):
     dependencies:

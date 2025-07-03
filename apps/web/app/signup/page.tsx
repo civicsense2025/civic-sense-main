@@ -1,14 +1,15 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,20 +19,23 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setMessage(null)
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirectTo=${redirectTo}`,
+        },
       })
 
       if (error) {
         throw error
       }
 
-      router.push(redirectTo)
-      router.refresh()
+      setMessage('Check your email for the confirmation link.')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -41,10 +45,15 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto p-4 max-w-md">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
+      <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+        </div>
+      )}
+      {message && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {message}
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,13 +88,13 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
-          {loading ? 'Loading...' : 'Sign In'}
+          {loading ? 'Loading...' : 'Sign Up'}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <Link href="/signup" className="text-indigo-600 hover:text-indigo-500">
-          Sign up
+        Already have an account?{' '}
+        <Link href="/login" className="text-indigo-600 hover:text-indigo-500">
+          Log in
         </Link>
       </p>
     </div>

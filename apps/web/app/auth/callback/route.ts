@@ -1,28 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const error = requestUrl.searchParams.get('error')
-  const errorDescription = requestUrl.searchParams.get('error_description')
-  const next = requestUrl.searchParams.get('next') ?? '/'
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/protected'
 
-  // Handle OAuth errors
-  if (error) {
-    console.error('OAuth error:', error, errorDescription)
-    return NextResponse.redirect(
-      `${requestUrl.origin}/auth/auth-error?message=${encodeURIComponent(errorDescription || error)}`
-    )
-  }
-
-  // If we have a code, redirect to home and let the client-side handle the session
   if (code) {
-    // Redirect to home with the code in the URL so the client-side Supabase can handle it
-    const redirectUrl = new URL(requestUrl.origin + next)
-    redirectUrl.searchParams.set('code', code)
-    return NextResponse.redirect(redirectUrl.toString())
+    const supabase = createClient()
+    await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // No code or error, just redirect to home
-  return NextResponse.redirect(`${requestUrl.origin}${next}`)
+  // URL to redirect to after sign in process completes
+  return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`)
 } 

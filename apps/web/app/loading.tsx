@@ -117,69 +117,10 @@ function FeaturesShowcaseSkeleton() {
   )
 }
 
-export default function HomePageLoading() {
+export default function Loading() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Header skeleton */}
-      <div className="w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
-          <Skeleton className="h-8 w-32" />
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-24 rounded-md" />
-            <Skeleton className="h-10 w-32 rounded-md" />
-          </div>
-        </div>
-      </div>
-      
-      {/* Continue quiz section skeleton */}
-      <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-4">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Skeleton className="h-5 w-48 mb-3" />
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            <ContinueQuizCardSkeleton />
-            <ContinueQuizCardSkeleton />
-          </div>
-        </div>
-      </div>
-
-      <main className="w-full py-6">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Daily cards stack skeleton */}
-          <div className="space-y-6">
-            <div className="text-center space-y-4 mb-8">
-              <Skeleton className="h-8 w-64 mx-auto" />
-              <Skeleton className="h-5 w-96 mx-auto" />
-            </div>
-            
-            <div className="grid gap-6">
-              <DailyCardSkeleton />
-              <DailyCardSkeleton />
-              <DailyCardSkeleton />
-            </div>
-          </div>
-
-          {/* Categories section skeleton */}
-          <div className="mt-12">
-            <div className="text-center mb-8">
-              <Skeleton className="h-8 w-48 mx-auto mb-4" />
-              <Skeleton className="h-5 w-64 mx-auto" />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <CategoryItemSkeleton key={i} />
-              ))}
-            </div>
-            
-            <div className="text-center mt-8">
-              <Skeleton className="h-10 w-32 mx-auto rounded-md" />
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Features showcase skeleton */}
-      <FeaturesShowcaseSkeleton />
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
     </div>
   )
 } 
