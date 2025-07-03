@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     ] = await Promise.all([
       import('openai'),
       import('@supabase/supabase-js'),
-      import('@civicsense/shared/lib/media-bias-engine')
+      import('@/lib/media-bias-engine')
     ])
 
     // Initialize OpenAI

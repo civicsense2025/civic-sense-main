@@ -9,7 +9,7 @@ let getPersonalityManager: any
 
 if (!AI_DISABLED) {
   try {
-    const personalityModule = await import('@civicsense/shared/lib/ai/personality-manager')
+    const personalityModule = await import('@/lib/ai/personality-manager')
     getPersonalityManager = personalityModule.getPersonalityManager
   } catch (error) {
     console.warn('Personality AI modules not available:', error)

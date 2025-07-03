@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleClassroomIntegration } from '@civicsense/shared/lib/integrations/google-classroom'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { GoogleClassroomIntegration } from '@/lib/integrations/google-classroom'
+import { createClient } from '@/lib/supabase/server'
 
 // POST /api/integrations/classroom/create-assignment
 // Body: { access_token: string, course_id: string, topic_id: string, title: string, description: string, due_date?: string, max_points?: number }

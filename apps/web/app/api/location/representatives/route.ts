@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { locationCivicService, geocodingService } from '@civicsense/shared/lib/services/location-civic-apis'
+import { createClient } from '@/lib/supabase/server'
+import { locationCivicService, geocodingService } from '@/lib/services/location-civic-apis'
 
 export async function POST(request: NextRequest) {
   try {

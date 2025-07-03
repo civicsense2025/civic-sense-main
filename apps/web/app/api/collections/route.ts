@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { Collection, CollectionFilters, CreateCollectionRequest } from '@civicsense/shared/types/collections'
+import { createClient } from '@/lib/supabase/server'
+import { Collection, CollectionFilters, CreateCollectionRequest } from '@/types/collections'
 
 // GET /api/collections - List collections with filtering and pagination
 export async function GET(request: NextRequest) {

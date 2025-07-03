@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CleverIntegration } from '@civicsense/shared/lib/integrations/clever'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { CleverIntegration } from '@/lib/integrations/clever'
+import { createClient } from '@/lib/supabase/server'
 
 // POST /api/integrations/clever/import
 // Body: { access_token: string, school_id?: string }

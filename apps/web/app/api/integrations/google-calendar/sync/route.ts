@@ -6,13 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { 
   syncTopicsToCalendar, 
   getUserCalendarToken,
   type CalendarSyncOptions 
-} from '@civicsense/shared/lib/integrations/google-calendar'
+} from '@/lib/integrations/google-calendar'
 
 // ============================================================================
 // REQUEST VALIDATION

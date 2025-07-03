@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@civicsense/shared/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 // GET - Get shareable link info (public endpoint)
 export async function GET(request: NextRequest) {

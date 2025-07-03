@@ -9,7 +9,7 @@ let getCivicSenseAssistant: any, askAlex: any, getCivicActions: any, analyzePowe
 
 if (!AI_DISABLED) {
   try {
-    const aiModule = await import('@civicsense/shared/lib/ai/civicsense-assistant')
+    const aiModule = await import('@/lib/ai/civicsense-assistant')
     getCivicSenseAssistant = aiModule.getCivicSenseAssistant
     askAlex = aiModule.askAlex
     getCivicActions = aiModule.getCivicActions

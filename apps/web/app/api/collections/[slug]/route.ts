@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { UpdateCollectionRequest } from '@civicsense/shared/types/collections'
+import { createClient } from '@/lib/supabase/server'
+import { UpdateCollectionRequest } from '@/types/collections'
 import { cookies } from 'next/headers'
-import type { Collection, CollectionItem } from '@civicsense/shared/types/collections'
+import type { Collection, CollectionItem } from '@/types/collections'
 
 interface RouteParams {
   params: { slug: string } | Promise<{ slug: string }>

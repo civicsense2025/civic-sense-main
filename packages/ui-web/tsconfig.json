@@ -21,8 +21,10 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
-      "@civicsense/shared": ["../shared/src"],
-      "@civicsense/ui-shared": ["../ui-shared/src"]
+      "@civicsense/shared": ["../../shared/src"],
+      "@civicsense/shared/*": ["../../shared/src/*"],
+      "@civicsense/ui-shared": ["../../ui-shared/src"],
+      "@civicsense/ui-shared/*": ["../../ui-shared/src/*"]
     }
   },
   "include": [

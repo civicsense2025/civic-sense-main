@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { emailService } from '@civicsense/shared/lib/email/mailerlite-service'
+import { emailService } from '@/lib/email/mailerlite-service'
 
 // Available email types for testing
 const EMAIL_TYPES = [

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { multiplayerOperations } from '@civicsense/shared/lib/multiplayer'
-import { debug } from '@civicsense/shared/lib/debug-config'
-import { envFeatureFlags } from '@civicsense/shared/lib/env-feature-flags'
+import { createClient } from '@/lib/supabase/server'
+import { multiplayerOperations } from '@/lib/multiplayer'
+import { debug } from '@/lib/debug-config'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 
 export async function POST(request: NextRequest) {
   // Feature flag check - disable multiplayer API in production

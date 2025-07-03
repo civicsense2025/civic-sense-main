@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { enhancedNPCService } from '@civicsense/shared/lib/enhanced-npc-service'
+import { enhancedNPCService } from '@/lib/enhanced-npc-service'
 
 export async function GET(request: NextRequest) {
   try {

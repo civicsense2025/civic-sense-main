@@ -4,7 +4,7 @@
 // Handles claiming rewards when users complete surveys with incentives
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { 
   ClaimSurveyRewardsRequest,
@@ -13,7 +13,7 @@ import type {
   RaffleEntry,
   UserCredit,
   RewardFulfillment
-} from '@civicsense/shared/types/incentives'
+} from '@/types/incentives'
 
 // ============================================================================
 // VALIDATION SCHEMAS

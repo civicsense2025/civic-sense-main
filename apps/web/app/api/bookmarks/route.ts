@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { bookmarkOperations } from '@civicsense/shared/lib/bookmarks'
-import type { CreateBookmarkRequest, BookmarkSearchFilters, ContentType } from '@civicsense/shared/lib/types/bookmarks'
+import { createClient } from '@/lib/supabase/server'
+import { bookmarkOperations } from '@civicsense/shared/src/lib/bookmarks'
+import type { CreateBookmarkRequest, BookmarkSearchFilters, ContentType } from '@/lib/types/bookmarks'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,26 +12,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    
-    // Parse filters from query params
+    const searchParams = request.nextUrl.searchParams
     const filters: BookmarkSearchFilters = {
-      collection_id: searchParams.get('collection_id') || undefined,
-      content_types: searchParams.get('content_types')?.split(',') as ContentType[] || undefined,
-      is_favorite: searchParams.get('is_favorite') === 'true' ? true : 
-                   searchParams.get('is_favorite') === 'false' ? false : undefined,
+      query: searchParams.get('query') || undefined,
+      content_types: searchParams.get('content_types')?.split(',') || undefined,
       tags: searchParams.get('tags')?.split(',') || undefined,
-      query: searchParams.get('query') || undefined
+      is_favorite: searchParams.get('is_favorite') === 'true' ? true : undefined
     }
 
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const page = parseInt(searchParams.get('page') || '1')
-
-    const result = await bookmarkOperations.getUserBookmarks(user.id, filters, limit, page)
+    const { bookmarks, total } = await bookmarkOperations.listBookmarks(user.id, filters)
 
     return NextResponse.json({
       success: true,
-      data: result
+      data: {
+        bookmarks,
+        total
+      }
     })
 
   } catch (error) {

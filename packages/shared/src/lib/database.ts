@@ -184,13 +184,13 @@ export const topicOperations = {
   // Convert DB topic to app format
   toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
     return {
-      topic_id: dbTopic.topic_id,
-      topic_title: dbTopic.topic_title,
-      description: dbTopic.description,
-      why_this_matters: dbTopic.why_this_matters,
-      emoji: dbTopic.emoji,
-      date: dbTopic.date || '',
-      dayOfWeek: dbTopic.day_of_week || '',
+      topic_id: dbTopic.topic_id ?? '',
+      topic_title: dbTopic.topic_title ?? '',
+      description: dbTopic.description ?? '',
+      why_this_matters: dbTopic.why_this_matters ?? '',
+      emoji: dbTopic.emoji ?? '',
+      date: dbTopic.date ?? '',
+      dayOfWeek: dbTopic.day_of_week ?? '',
       categories: Array.isArray(dbTopic.categories) ? dbTopic.categories as string[] : [],
     }
   }
@@ -331,11 +331,10 @@ export const questionOperations = {
   // Convert DB question to app format
   toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
     // Process sources with better validation
-    let processedSources: Array<{ name: string; url: string }> = []
+    let processedSources: Array<{ title: string; url: string; type: 'article' }> = []
     
     if (dbQuestion.sources) {
       if (Array.isArray(dbQuestion.sources)) {
-        // Handle array of source objects
         processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
           source !== null &&
           typeof source === 'object' && 
@@ -345,9 +344,12 @@ export const questionOperations = {
           typeof (source as any).url === 'string' &&
           (source as any).name.trim() !== '' &&
           (source as any).url.trim() !== ''
-        ) as Array<{ name: string; url: string }>
+        ).map(source => ({
+          title: (source as any).name ?? '',
+          url: (source as any).url ?? '',
+          type: 'article' as const
+        }))
       } else if (typeof dbQuestion.sources === 'string') {
-        // Handle JSON string
         try {
           const parsed = JSON.parse(dbQuestion.sources)
           if (Array.isArray(parsed)) {
@@ -360,7 +362,11 @@ export const questionOperations = {
               typeof source.url === 'string' &&
               source.name.trim() !== '' &&
               source.url.trim() !== ''
-            )
+            ).map(source => ({
+              title: source.name ?? '',
+              url: source.url ?? '',
+              type: 'article' as const
+            }))
           }
         } catch (error) {
           console.warn('Failed to parse sources JSON:', error)
@@ -368,49 +374,53 @@ export const questionOperations = {
       }
     }
     
-    // Create a base question that matches the MultipleChoiceQuestion structure
-    const baseQuestion = {
-      topic_id: dbQuestion.topic_id,
-      question_number: dbQuestion.question_number ?? 1, // Fix: Handle null/undefined
-      type: (dbQuestion.question_type as QuestionType) || 'multiple_choice',
-      category: dbQuestion.category ?? '',
-      question: dbQuestion.question,
-      correct_answer: dbQuestion.correct_answer,
-      hint: dbQuestion.hint ?? undefined,
-      explanation: dbQuestion.explanation ?? undefined,
-      tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-      sources: processedSources.map(source => ({
-        title: source.name, // Map name to title
-        url: source.url,
-        type: 'article' as const // Default type for Source interface
-      })),
+    // Handle multiple choice questions
+    let qType: string | undefined = dbQuestion.question_type;
+    if (!qType && (dbQuestion as any).type) {
+      qType = (dbQuestion as any).type;
     }
-
-    // Add options for multiple choice questions
-    if (dbQuestion.question_type === 'multiple_choice') {
+    if (qType === 'multiple_choice') {
       return {
-        ...baseQuestion,
-        type: 'multiple_choice' as const,
+        topic_id: dbQuestion.topic_id ?? '',
+        question_number: dbQuestion.question_number ?? 1,
+        type: 'multiple_choice',
+        category: dbQuestion.category ?? '',
+        question: dbQuestion.question ?? '',
+        option_a: dbQuestion.option_a ?? undefined,
+        option_b: dbQuestion.option_b ?? undefined,
+        option_c: dbQuestion.option_c ?? undefined,
+        option_d: dbQuestion.option_d ?? undefined,
+        correct_answer: dbQuestion.correct_answer ?? '',
+        hint: dbQuestion.hint ?? '',
+        explanation: dbQuestion.explanation ?? '',
+        tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
+        sources: processedSources,
         options: [
-          dbQuestion.option_a,
-          dbQuestion.option_b,
-          dbQuestion.option_c,
-          dbQuestion.option_d
+          dbQuestion.option_a ?? '',
+          dbQuestion.option_b ?? '',
+          dbQuestion.option_c ?? '',
+          dbQuestion.option_d ?? ''
         ].filter(Boolean) as string[]
       } as MultipleChoiceQuestion
     }
 
-    // Return as multiple choice by default for backward compatibility
+    // For other types, return the base structure and cast as QuizQuestion
     return {
-      ...baseQuestion,
-      type: 'multiple_choice' as const,
-      options: [
-        dbQuestion.option_a,
-        dbQuestion.option_b,
-        dbQuestion.option_c,
-        dbQuestion.option_d
-      ].filter(Boolean) as string[]
-    } as MultipleChoiceQuestion
+      topic_id: dbQuestion.topic_id ?? '',
+      question_number: dbQuestion.question_number ?? 1,
+      type: qType as QuestionType,
+      category: dbQuestion.category ?? '',
+      question: dbQuestion.question ?? '',
+      option_a: dbQuestion.option_a ?? undefined,
+      option_b: dbQuestion.option_b ?? undefined,
+      option_c: dbQuestion.option_c ?? undefined,
+      option_d: dbQuestion.option_d ?? undefined,
+      correct_answer: dbQuestion.correct_answer ?? '',
+      hint: dbQuestion.hint ?? '',
+      explanation: dbQuestion.explanation ?? '',
+      tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
+      sources: processedSources,
+    } as QuizQuestion
   }
 }
 
@@ -441,7 +451,7 @@ export const quizAttemptOperations = {
         completed_at: new Date().toISOString(),
         score,
         correct_answers: correctAnswers,
-        time_spent_seconds: timeSpentSeconds,
+        time_spent_seconds: typeof timeSpentSeconds === 'number' ? timeSpentSeconds : null,
         is_completed: true
       })
       .eq('id', attemptId)
@@ -535,7 +545,8 @@ export const userProgressOperations = {
     let newStreak = 1
     if (lastActivityDate) {
       const lastDate = new Date(lastActivityDate)
-      const todayDate = new Date(today)
+      // Ensure today is a string before passing to Date constructor
+      const todayDate = today ? new Date(today) : new Date()
       const diffTime = todayDate.getTime() - lastDate.getTime()
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
@@ -554,7 +565,7 @@ export const userProgressOperations = {
       .update({
         current_streak: newStreak,
         longest_streak: Math.max(newStreak, progress.longest_streak ?? 0),
-        last_activity_date: today,
+        last_activity_date: today ?? null,
         total_quizzes_completed: (progress.total_quizzes_completed ?? 0) + 1,
         total_questions_answered: (progress.total_questions_answered ?? 0) + totalQuestions,
         total_correct_answers: (progress.total_correct_answers ?? 0) + correctAnswers
@@ -607,11 +618,11 @@ export const dbUtils = {
       const dbTopic: DbQuestionTopicInsert = {
         topic_id: topicMeta.topic_id,
         topic_title: topicMeta.topic_title,
-        description: topicMeta.description ?? '', // Fix: Handle undefined
+        description: topicMeta.description ?? '',
         why_this_matters: topicMeta.why_this_matters,
-        emoji: topicMeta.emoji ?? '', // Fix: Handle undefined
-        date: topicMeta.date,
-        day_of_week: topicMeta.dayOfWeek,
+        emoji: topicMeta.emoji ?? '',
+        date: topicMeta.date ?? '',
+        day_of_week: topicMeta.dayOfWeek ?? '',
         categories: topicMeta.categories as any, // Cast to Json
         is_active: true
       }
@@ -621,20 +632,20 @@ export const dbUtils = {
       // Create questions
       const questions = questionsData[topicId] || []
       const dbQuestions: DbQuestionInsert[] = questions.map(q => ({
-        topic_id: q.topic_id,
-        question_number: q.question_number,
-        question_type: (q as any).type || q.question_type || 'multiple_choice', // Handle discriminated union
-        category: q.category ?? '', // Fix: Handle undefined
-        question: q.question,
-        option_a: (q as any).option_a ?? (q as any).options?.[0] ?? null,
-        option_b: (q as any).option_b ?? (q as any).options?.[1] ?? null,
-        option_c: (q as any).option_c ?? (q as any).options?.[2] ?? null,
-        option_d: (q as any).option_d ?? (q as any).options?.[3] ?? null,
-        correct_answer: q.correct_answer,
-        hint: q.hint ?? null,
-        explanation: q.explanation ?? null,
+        topic_id: q.topic_id ?? '',
+        question_number: q.question_number ?? 1,
+        question_type: (q as any).type || 'multiple_choice',
+        category: q.category ?? '',
+        question: q.question ?? '',
+        option_a: (q as any).option_a ?? (q as any).options?.[0] ?? '',
+        option_b: (q as any).option_b ?? (q as any).options?.[1] ?? '',
+        option_c: (q as any).option_c ?? (q as any).options?.[2] ?? '',
+        option_d: (q as any).option_d ?? (q as any).options?.[3] ?? '',
+        correct_answer: q.correct_answer ?? '',
+        hint: q.hint ?? '',
+        explanation: q.explanation ?? '',
         tags: q.tags as any, // Cast to Json
-        sources: (q.sources as any) ?? null, // Cast to Json
+        sources: q.sources ? JSON.stringify(q.sources) : null,
         difficulty_level: 2, // Default difficulty
         is_active: true
       }))
@@ -1213,24 +1224,23 @@ export const skillOperations = {
 // Add as a top-level export
 export function toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
   return {
-    topic_id: dbTopic.topic_id,
-    topic_title: dbTopic.topic_title,
-    description: dbTopic.description,
-    why_this_matters: dbTopic.why_this_matters,
-    emoji: dbTopic.emoji,
-    date: dbTopic.date || '',
-    dayOfWeek: dbTopic.day_of_week || '',
+    topic_id: dbTopic.topic_id ?? '',
+    topic_title: dbTopic.topic_title ?? '',
+    description: dbTopic.description ?? '',
+    why_this_matters: dbTopic.why_this_matters ?? '',
+    emoji: dbTopic.emoji ?? '',
+    date: dbTopic.date ?? '',
+    dayOfWeek: dbTopic.day_of_week ?? '',
     categories: Array.isArray(dbTopic.categories) ? dbTopic.categories as string[] : [],
   }
 }
 
 export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
   // Process sources with better validation
-  let processedSources: Array<{ name: string; url: string }> = []
+  let processedSources: Array<{ title: string; url: string; type: 'article' }> = []
   
   if (dbQuestion.sources) {
     if (Array.isArray(dbQuestion.sources)) {
-      // Handle array of source objects
       processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
         source !== null &&
         typeof source === 'object' && 
@@ -1240,9 +1250,12 @@ export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
         typeof (source as any).url === 'string' &&
         (source as any).name.trim() !== '' &&
         (source as any).url.trim() !== ''
-      ) as Array<{ name: string; url: string }>
+      ).map(source => ({
+        title: (source as any).name ?? '',
+        url: (source as any).url ?? '',
+        type: 'article' as const
+      }))
     } else if (typeof dbQuestion.sources === 'string') {
-      // Handle JSON string
       try {
         const parsed = JSON.parse(dbQuestion.sources)
         if (Array.isArray(parsed)) {
@@ -1255,28 +1268,63 @@ export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
             typeof source.url === 'string' &&
             source.name.trim() !== '' &&
             source.url.trim() !== ''
-          )
+          ).map(source => ({
+            title: source.name ?? '',
+            url: source.url ?? '',
+            type: 'article' as const
+          }))
         }
       } catch (error) {
         console.warn('Failed to parse sources JSON:', error)
       }
     }
   }
-  
+
+  // Handle multiple choice questions
+  let qType: string | undefined = dbQuestion.question_type;
+  if (!qType && (dbQuestion as any).type) {
+    qType = (dbQuestion as any).type;
+  }
+  if (qType === 'multiple_choice') {
+    return {
+      topic_id: dbQuestion.topic_id ?? '',
+      question_number: dbQuestion.question_number ?? 1,
+      type: 'multiple_choice',
+      category: dbQuestion.category ?? '',
+      question: dbQuestion.question ?? '',
+      option_a: dbQuestion.option_a ?? undefined,
+      option_b: dbQuestion.option_b ?? undefined,
+      option_c: dbQuestion.option_c ?? undefined,
+      option_d: dbQuestion.option_d ?? undefined,
+      correct_answer: dbQuestion.correct_answer ?? '',
+      hint: dbQuestion.hint ?? '',
+      explanation: dbQuestion.explanation ?? '',
+      tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
+      sources: processedSources,
+      options: [
+        dbQuestion.option_a ?? '',
+        dbQuestion.option_b ?? '',
+        dbQuestion.option_c ?? '',
+        dbQuestion.option_d ?? ''
+      ].filter(Boolean) as string[]
+    } as MultipleChoiceQuestion
+  }
+
+  // For other types, return the base structure and cast as QuizQuestion
   return {
-    topic_id: dbQuestion.topic_id,
-    question_number: dbQuestion.question_number,
-    question_type: dbQuestion.question_type as QuestionType,
-    category: dbQuestion.category,
-    question: dbQuestion.question,
+    topic_id: dbQuestion.topic_id ?? '',
+    question_number: dbQuestion.question_number ?? 1,
+    type: qType as QuestionType,
+    category: dbQuestion.category ?? '',
+    question: dbQuestion.question ?? '',
     option_a: dbQuestion.option_a ?? undefined,
     option_b: dbQuestion.option_b ?? undefined,
     option_c: dbQuestion.option_c ?? undefined,
     option_d: dbQuestion.option_d ?? undefined,
-    correct_answer: dbQuestion.correct_answer,
-    hint: dbQuestion.hint,
-    explanation: dbQuestion.explanation,
+    correct_answer: dbQuestion.correct_answer ?? '',
+    hint: dbQuestion.hint ?? '',
+    explanation: dbQuestion.explanation ?? '',
     tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
     sources: processedSources,
-  }
+  } as QuizQuestion
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { questionStatsService } from '@civicsense/shared/lib/question-stats'
+import { questionStatsService } from '@/lib/question-stats'
 
 export async function GET(
   request: NextRequest,

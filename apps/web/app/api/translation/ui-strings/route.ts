@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { extractTranslatableStrings } from '@civicsense/shared/lib/ui-strings-extractor'
+import { createClient } from '@/lib/supabase/server'
+import { extractTranslatableStrings } from '@/lib/ui-strings-extractor'
 
 export async function GET(request: NextRequest) {
   try {

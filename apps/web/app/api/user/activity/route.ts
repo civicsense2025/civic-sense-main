@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { enhancedQuizDatabase } from '@civicsense/shared/lib/quiz-database'
+import { createClient } from '@/lib/supabase/server'
+import { enhancedQuizDatabase } from '@/lib/quiz-database'
 
 export async function GET(request: Request) {
   try {

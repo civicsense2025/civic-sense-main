@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { quizAttemptOperations } from '@civicsense/shared/lib/database'
+import { createClient } from '@/lib/supabase/server'
+import { quizAttemptOperations } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {

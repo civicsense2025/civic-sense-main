@@ -1,4 +1,4 @@
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { parse } from 'url'

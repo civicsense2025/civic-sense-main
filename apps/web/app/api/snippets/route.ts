@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { bookmarkOperations } from '@civicsense/shared/lib/bookmarks'
-import type { CreateSnippetRequest } from '@civicsense/shared/lib/types/bookmarks'
+import { createClient } from '@/lib/supabase/server'
+import { bookmarkOperations } from '@/lib/bookmarks'
+import type { CreateSnippetRequest } from '@/lib/types/bookmarks'
 
 export async function POST(request: NextRequest) {
   try {

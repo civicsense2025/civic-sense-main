@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerUser } from '@civicsense/shared/lib/auth';
-import { skillOperations } from '@civicsense/shared/lib/skill-operations';
-import { createClient } from '@civicsense/shared/lib/supabase/server';
+import { getServerUser } from '@/lib/auth';
+import { skillOperations } from '@/lib/skill-operations';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {

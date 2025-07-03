@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 interface InviteStudent {
   email: string
@@ -55,7 +55,7 @@ export async function POST(
     for (const student of students as InviteStudent[]) {
       try {
         // Send real email using MailerSend service
-        const { sendLearningPodInvite } = await import('@civicsense/shared/lib/email/mailerlite-service')
+        const { sendLearningPodInvite } = await import('@/lib/email/mailerlite-service')
         const emailResult = await sendLearningPodInvite(
           student.email,
           {

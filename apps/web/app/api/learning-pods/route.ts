@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { arePodsEnabled } from '@civicsense/shared/lib/comprehensive-feature-flags'
+import { createClient } from '@/lib/supabase/server'
+import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
 
 // Helper function to get default emoji for pod type
 function getPodDefaultEmoji(podType: string): string {

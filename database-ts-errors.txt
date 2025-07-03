@@ -1,0 +1,901 @@
+packages/shared/src/hooks/quiz-translation-example.tsx(8,29): error TS2307: Cannot find module '@/components/providers/language-provider' or its corresponding type declarations.
+packages/shared/src/hooks/quiz-translation-example.tsx(9,24): error TS2307: Cannot find module '@/components/ui/button' or its corresponding type declarations.
+packages/shared/src/hooks/quiz-translation-example.tsx(344,23): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(344,35): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(345,26): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(345,38): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(346,19): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(346,31): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(347,23): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(347,35): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(348,23): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(348,35): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(349,23): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(349,35): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/quiz-translation-example.tsx(350,23): error TS2464: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+packages/shared/src/hooks/quiz-translation-example.tsx(350,35): error TS18048: 'translated' is possibly 'undefined'.
+packages/shared/src/hooks/use-quiz-analytics.ts(2,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/hooks/use-quiz-analytics.ts(43,5): error TS2375: Type '{ sessionId: string; topicId: string; quizAttemptId: string | undefined; gameMode: string; startTime: number; questionStartTimes: {}; }' is not assignable to type 'QuizSession' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'quizAttemptId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/hooks/use-survey-incentives.ts(110,5): error TS2322: Type 'SurveyIncentive | null | undefined' is not assignable to type 'SurveyIncentive | null'.
+  Type 'undefined' is not assignable to type 'SurveyIncentive | null'.
+packages/shared/src/hooks/use-text-selection.ts(94,11): error TS2375: Type '{ text: string; start: number; end: number; container: HTMLElement; parentElement: HTMLElement | undefined; contextBefore: string; contextAfter: string; }' is not assignable to type 'HighlightSelection' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'parentElement' are incompatible.
+    Type 'HTMLElement | undefined' is not assignable to type 'HTMLElement'.
+      Type 'undefined' is not assignable to type 'HTMLElement'.
+packages/shared/src/hooks/use-toast.ts(204,45): error TS2345: Argument of type '{ type: "DISMISS_TOAST"; toastId: string | undefined; }' is not assignable to parameter of type 'Action'.
+  Type '{ type: "DISMISS_TOAST"; toastId: string | undefined; }' is not assignable to type '{ type: "DISMISS_TOAST"; toastId?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'toastId' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/hooks/use-topic-access.ts(19,32): error TS2554: Expected 1 arguments, but got 0.
+packages/shared/src/hooks/useEmailAnalytics.ts(178,56): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Record<string, any>'.
+packages/shared/src/hooks/useEmailAnalytics.ts(203,53): error TS2345: Argument of type '{ to: string; userName: string; achievementName: string; score: number; quizName: string; }' is not assignable to parameter of type 'string'.
+packages/shared/src/hooks/useEmailAnalytics.ts(235,45): error TS2345: Argument of type '{ to: string; userName: string; newLevel: number; xpTotal: number; }' is not assignable to parameter of type 'string'.
+packages/shared/src/hooks/useEmailAnalytics.ts(270,50): error TS2345: Argument of type '{ to: string; studentName: string; podName: string; teacherName: string; joinUrl: string; courseName?: string; requireParentConsent?: boolean; }' is not assignable to parameter of type 'string'.
+packages/shared/src/hooks/useEmailAnalytics.ts(298,47): error TS2345: Argument of type '{ to: string; recipientName: string; accessType: "lifetime" | "annual"; claimUrl: string; giftMessage?: string; }' is not assignable to parameter of type '{ to: string; userName: string; giftCode: string; claimUrl: string; }'.
+  Type '{ to: string; recipientName: string; accessType: "lifetime" | "annual"; claimUrl: string; giftMessage?: string; }' is missing the following properties from type '{ to: string; userName: string; giftCode: string; claimUrl: string; }': userName, giftCode
+packages/shared/src/hooks/useEmailAnalytics.ts(320,55): error TS2345: Argument of type '{ to: string; userName: string; institutionDomain: string; }' is not assignable to parameter of type 'string'.
+packages/shared/src/hooks/useEnhancedMultiplayerRoom.ts(2,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/hooks/useEnhancedMultiplayerRoom.ts(9,31): error TS2307: Cannot find module '@/components/providers/connection-provider' or its corresponding type declarations.
+packages/shared/src/hooks/useEnhancedMultiplayerRoom.ts(215,13): error TS2554: Expected 2 arguments, but got 4.
+packages/shared/src/hooks/useGuestAccess.ts(258,74): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/hooks/useGuestAccess.ts(264,15): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+  Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/hooks/useGuestAccess.ts(429,70): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/hooks/useGuestAccess.ts(452,23): error TS2345: Argument of type '(prev: GuestAccessState) => { quizAttemptsToday: number; lastResetDate: string | undefined; serverLimitReached: false; guestToken: string | null; userIP: string | null; completedTopics: string[]; }' is not assignable to parameter of type 'SetStateAction<GuestAccessState>'.
+  Type '(prev: GuestAccessState) => { quizAttemptsToday: number; lastResetDate: string | undefined; serverLimitReached: false; guestToken: string | null; userIP: string | null; completedTopics: string[]; }' is not assignable to type '(prevState: GuestAccessState) => GuestAccessState'.
+    Call signature return types '{ quizAttemptsToday: number; lastResetDate: string | undefined; serverLimitReached: false; guestToken: string | null; userIP: string | null; completedTopics: string[]; }' and 'GuestAccessState' are incompatible.
+      The types of 'lastResetDate' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/hooks/useLearningPods.ts(2,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/hooks/useLearningPods.ts(234,5): error TS2375: Type '{ userId: any; age: undefined; gradeLevel: undefined; parentalControls: undefined; podMemberships: undefined; }' is not assignable to type 'UserContentProfile' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'age' are incompatible.
+    Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/hooks/useQuizAnalytics.ts(4,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/hooks/useQuizAnalytics.ts(71,32): error TS2379: Argument of type '{ question_id: string; question_category: string; answer_correct: boolean; response_time_seconds: number; attempt_number: number | undefined; hint_used: boolean | undefined; boost_active: string | ... 1 more ... | undefined; confidence_level: 1 | ... 4 more ... | undefined; }' is not assignable to parameter of type '{ question_id: string; question_category: string; answer_correct: boolean; response_time_seconds: number; attempt_number?: number; hint_used?: boolean; boost_active?: string | null; confidence_level?: 1 | ... 3 more ... | 4; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'attempt_number' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/hooks/useQuizAnalytics.ts(98,29): error TS2379: Argument of type '{ quiz_id: string; quiz_category: "constitution" | "current_events" | "local_civics" | "government_basics" | "voting_rights" | "political_system"; quiz_difficulty: "beginner" | "intermediate" | "advanced" | undefined; ... 10 more ...; boosts_used: string[] | undefined; }' is not assignable to parameter of type '{ streak_count: number; quiz_id: string; quiz_category: "constitution" | "current_events" | "local_civics" | "government_basics" | "voting_rights" | "political_system"; active_boosts: string[]; ... 5 more ...; score_percentage?: number | undefined; } & { ...; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ quiz_id: string; quiz_category: "constitution" | "current_events" | "local_civics" | "government_basics" | "voting_rights" | "political_system"; quiz_difficulty: "beginner" | "intermediate" | "advanced" | undefined; ... 10 more ...; boosts_used: string[] | undefined; }' is not assignable to type '{ xp_earned?: number; streak_maintained?: boolean; new_level_reached?: boolean; boosts_used?: string[]; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'xp_earned' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/hooks/useQuizAnalytics.ts(149,29): error TS2379: Argument of type '{ quiz_id: string; questions_answered: number; total_questions: number; abandonment_point: "start" | "middle" | "near_end"; time_spent_seconds: number; reason: "timeout" | "user_exit" | "technical_issue" | undefined; }' is not assignable to parameter of type '{ quiz_id: string; questions_answered: number; total_questions: number; abandonment_point: "start" | "middle" | "near_end"; time_spent_seconds: number; reason?: "timeout" | "user_exit" | "technical_issue"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'reason' are incompatible.
+    Type '"timeout" | "user_exit" | "technical_issue" | undefined' is not assignable to type '"timeout" | "user_exit" | "technical_issue"'.
+      Type 'undefined' is not assignable to type '"timeout" | "user_exit" | "technical_issue"'.
+packages/shared/src/hooks/useQuizAnalytics.ts(169,39): error TS2379: Argument of type '{ boost_type: string; activation_context: "mid_quiz" | "specific_question" | "pre_quiz"; user_level: any; remaining_uses: number | undefined; }' is not assignable to parameter of type '{ boost_type: string; user_level?: number | undefined; boost_cost_xp?: number | undefined; user_xp_before?: number | undefined; activation_context?: "quiz_start" | "mid_quiz" | "specific_question" | "pre_quiz" | "browse" | undefined; } & { ...; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ boost_type: string; activation_context: "mid_quiz" | "specific_question" | "pre_quiz"; user_level: any; remaining_uses: number | undefined; }' is not assignable to type '{ remaining_uses?: number; user_performance_before?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'remaining_uses' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/hooks/useQuizNavigation.ts(2,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+packages/shared/src/hooks/useQuizTranslation.ts(3,29): error TS2307: Cannot find module '@/components/providers/language-provider' or its corresponding type declarations.
+packages/shared/src/hooks/useQuizTranslation.ts(140,26): error TS2538: Type 'undefined' cannot be used as an index type.
+packages/shared/src/hooks/useQuizTranslation.ts(201,59): error TS2589: Type instantiation is excessively deep and possibly infinite.
+packages/shared/src/hooks/useQuizTranslation.ts(202,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/hooks/useQuizTranslation.ts(213,44): error TS2339: Property 'translations' does not exist on type 'ResultOne'.
+packages/shared/src/hooks/useQuizTranslation.ts(226,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/hooks/useQuizTranslation.ts(257,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/hooks/useQuizTranslation.ts(268,44): error TS2339: Property 'translations' does not exist on type 'ResultOne'.
+packages/shared/src/hooks/useQuizTranslation.ts(286,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/hooks/useTranslation.ts(281,17): error TS2538: Type 'undefined' cannot be used as an index type.
+packages/shared/src/hooks/useUIStrings.ts(7,29): error TS2307: Cannot find module '@/components/providers/language-provider' or its corresponding type declarations.
+packages/shared/src/lib/admin-access-server.ts(56,5): error TS2375: Type '{ isAdmin: boolean; isSuperAdmin: boolean; role: UserRole; userId: string; email: string | undefined; }' is not assignable to type 'AdminCheck' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'email' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/admin-access.ts(60,5): error TS2375: Type '{ isAdmin: boolean; isSuperAdmin: boolean; role: UserRole; userId: string; email: string | undefined; }' is not assignable to type 'AdminCheck' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'email' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/admin-access.ts(108,5): error TS2375: Type '{ isAdmin: boolean; isSuperAdmin: boolean; role: UserRole; userId: string; email: string | undefined; }' is not assignable to type 'AdminCheck' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'email' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/ai/civicsense-assistant.ts(41,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/ai/personality-manager.ts(113,45): error TS2345: Argument of type 'CivicPersonality | undefined' is not assignable to parameter of type 'CivicPersonality'.
+  Type 'undefined' is not assignable to type 'CivicPersonality'.
+packages/shared/src/lib/apple-iap.ts(88,11): error TS2375: Type '{ 'receipt-data': string; password: string | undefined; 'exclude-old-transactions': true; }' is not assignable to type 'AppleReceiptValidationRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'password' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/bulk-translation-service.ts(95,48): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(105,31): error TS7006: Parameter 'job' implicitly has an 'any' type.
+packages/shared/src/lib/bulk-translation-service.ts(128,48): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(139,31): error TS7006: Parameter 'job' implicitly has an 'any' type.
+packages/shared/src/lib/bulk-translation-service.ts(162,36): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(183,36): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(188,29): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(218,44): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(259,42): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(289,48): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(294,52): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(304,46): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+packages/shared/src/lib/bulk-translation-service.ts(304,51): error TS7006: Parameter 'job' implicitly has an 'any' type.
+packages/shared/src/lib/bulk-translation-service.ts(338,42): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(412,26): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/bulk-translation-service.ts(431,12): error TS2339: Property 'supabase' does not exist on type 'BulkTranslationService'.
+packages/shared/src/lib/content-filtering.ts(152,64): error TS18048: 'filterRules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(155,94): error TS18048: 'filterRules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(162,10): error TS18048: 'filterRules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(190,31): error TS18048: 'filterRules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(306,20): error TS18048: 'rules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(307,22): error TS18048: 'rules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(308,26): error TS18048: 'rules' is possibly 'undefined'.
+packages/shared/src/lib/content-filtering.ts(309,24): error TS18048: 'rules' is possibly 'undefined'.
+packages/shared/src/lib/data-service.ts(388,19): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/database-constants.ts(482,44): error TS2344: Type '"assessment_analytics"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(483,56): error TS2344: Type '"assessment_analytics"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(484,56): error TS2344: Type '"assessment_analytics"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(486,44): error TS2344: Type '"assessment_questions"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(487,56): error TS2344: Type '"assessment_questions"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(488,56): error TS2344: Type '"assessment_questions"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(490,42): error TS2344: Type '"assessment_scoring"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(491,54): error TS2344: Type '"assessment_scoring"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(492,54): error TS2344: Type '"assessment_scoring"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(562,44): error TS2344: Type '"content_preview_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(563,56): error TS2344: Type '"content_preview_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(564,56): error TS2344: Type '"content_preview_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(694,34): error TS2344: Type '"news_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(695,46): error TS2344: Type '"news_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(696,46): error TS2344: Type '"news_cache"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(842,38): error TS2344: Type '"questions_test"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(843,50): error TS2344: Type '"questions_test"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(844,50): error TS2344: Type '"questions_test"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(862,48): error TS2344: Type '"skill_assessment_criteria"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 330 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(863,60): error TS2344: Type '"skill_assessment_criteria"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database-constants.ts(864,60): error TS2344: Type '"skill_assessment_criteria"' does not satisfy the constraint '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 284 more ... | { ...; }'.
+packages/shared/src/lib/database.ts(440,15): error TS2379: Argument of type '{ completed_at: string; score: number; correct_answers: number; time_spent_seconds: number | undefined; is_completed: true; }' is not assignable to parameter of type '{ classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_section_id?: string | null; completed_at?: string | null; correct_answers?: number | null; ... 27 more ...; user_id?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'time_spent_seconds' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number | null'.
+      Type 'undefined' is not assignable to type 'number | null'.
+packages/shared/src/lib/database.ts(538,34): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+packages/shared/src/lib/database.ts(554,15): error TS2379: Argument of type '{ current_streak: number; longest_streak: number; last_activity_date: string | undefined; total_quizzes_completed: number; total_questions_answered: number; total_correct_answers: number; }' is not assignable to parameter of type '{ adaptive_difficulty?: boolean | null; created_at?: string | null; current_level?: number | null; current_streak?: number | null; favorite_categories?: Json; id?: string; last_activity_date?: string | null; ... 12 more ...; xp_to_next_level?: number | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'last_activity_date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/lib/database.ts(623,13): error TS2322: Type '{ topic_id: string; question_number: number; question_type: any; category: string; question: string; option_a: any; option_b: any; option_c: any; option_d: any; correct_answer: string; hint: string | null; ... 4 more ...; is_active: true; }[]' is not assignable to type '{ category: string; correct_answer: string; created_at?: string | null; difficulty_level?: number | null; explanation: string; fact_check_notes?: Json; fact_check_status?: string | null; ... 16 more ...; updated_at?: string | null; }[]'.
+  Type '{ topic_id: string; question_number: number; question_type: any; category: string; question: string; option_a: any; option_b: any; option_c: any; option_d: any; correct_answer: string; hint: string | null; ... 4 more ...; is_active: true; }' is not assignable to type '{ category: string; correct_answer: string; created_at?: string | null; difficulty_level?: number | null; explanation: string; fact_check_notes?: Json; fact_check_status?: string | null; ... 16 more ...; updated_at?: string | null; }'.
+    Types of property 'explanation' are incompatible.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+packages/shared/src/lib/database.ts(626,45): error TS2339: Property 'question_type' does not exist on type 'QuizQuestion'.
+  Property 'question_type' does not exist on type 'MultipleChoiceQuestion'.
+packages/shared/src/lib/database.ts(1268,5): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+packages/shared/src/lib/database.ts(1280,5): error TS2322: Type '{ name: string; url: string; }[]' is not assignable to type 'Source[]'.
+  Type '{ name: string; url: string; }' is missing the following properties from type 'Source': title, type
+packages/shared/src/lib/email/email-triggers.ts(7,30): error TS2307: Cannot find module './supabase/client' or its corresponding type declarations.
+packages/shared/src/lib/email/email-triggers.ts(135,5): error TS2375: Type '{ id: any; email: any; user_metadata: any; civic_level: number; streak_count: number; preferred_categories: never[]; location_state: undefined; engagement_tier: "new"; pod_memberships: PodMembership[]; educator_status: false; last_quiz_date: undefined; major_achievements: any[]; notification_preferences: string[]; }' is not assignable to type 'UserData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'location_state' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/email/email-triggers.ts(167,23): error TS18048: 'primaryPod' is possibly 'undefined'.
+packages/shared/src/lib/email/email-triggers.ts(168,23): error TS18048: 'primaryPod' is possibly 'undefined'.
+packages/shared/src/lib/email/email-triggers.ts(169,20): error TS18048: 'primaryPod' is possibly 'undefined'.
+packages/shared/src/lib/email/email-triggers.ts(513,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/email/triggers.ts(7,39): error TS2307: Cannot find module '../utils/analytics-enhanced' or its corresponding type declarations.
+packages/shared/src/lib/enhanced-gamification.ts(320,7): error TS2322: Type '{ userId: string; boostType: BoostType; quantity: number; lastPurchased: string | undefined; totalPurchased: number; }[]' is not assignable to type 'UserBoostInventory[]'.
+  Type '{ userId: string; boostType: BoostType; quantity: number; lastPurchased: string | undefined; totalPurchased: number; }' is not assignable to type 'UserBoostInventory' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'lastPurchased' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(450,7): error TS2322: Type '{ type: BoostType; startedAt: string; duration: number | undefined; usesRemaining: number | undefined; data: Record<string, any>; }[]' is not assignable to type 'ActiveBoost[]'.
+  Type '{ type: BoostType; startedAt: string; duration: number | undefined; usesRemaining: number | undefined; data: Record<string, any>; }' is not assignable to type 'ActiveBoost' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'duration' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/enhanced-gamification.ts(526,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { category?: string | null; created_at?: string | null; difficulty_level?: number | null; goal_type: string; id?: string; is_active?: boolean | null; target_date?: string | null; target_value: number; updated_at?: string | null; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; goal_type: "category_mastery" | "streak_target" | "weekly_target" | "skill_building"; target_value: number; category: string | undefined; difficulty_level: number | undefined; is_active: boolean; target_date: string | undefined; }' is not assignable to parameter of type '{ category?: string | null; created_at?: string | null; difficulty_level?: number | null; goal_type: string; id?: string; is_active?: boolean | null; target_date?: string | null; target_value: number; updated_at?: string | null; user_id: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'category' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { category?: string | null; created_at?: string | null; difficulty_level?: number | null; goal_type: string; id?: string; is_active?: boolean | null; target_date?: string | null; target_value: number; updated_at?: string | null; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ category?: string | null; created_at?: string | null; difficulty_level?: number | null; goal_type: string; id?: string; is_active?: boolean | null; target_date?: string | null; target_value: number; updated_at?: string | null; user_id: string; }[]'.
+packages/shared/src/lib/enhanced-gamification.ts(552,5): error TS2322: Type '{ id: string; goalType: "category_mastery" | "streak_target" | "weekly_target" | "skill_building"; targetValue: number; category: string | undefined; difficultyLevel: number | undefined; isActive: boolean; targetDate: string | undefined; }[]' is not assignable to type 'LearningGoal[]'.
+  Type '{ id: string; goalType: LearningGoal["goalType"]; targetValue: number; category: string | undefined; difficultyLevel: number | undefined; isActive: boolean; targetDate: string | undefined; }' is not assignable to type 'LearningGoal' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'category' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(586,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { created_at?: string | null; deck_name: string; deck_type?: string; description?: string | null; id?: string; is_active?: boolean | null; preferences?: Json; updated_at?: string | null; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; deck_name: string; description: string | undefined; deck_type: "review" | "challenge" | "adaptive" | "custom"; preferences: { categories?: string[]; difficultyLevels?: number[]; questionTypes?: string[]; maxQuestions?: number; reviewFrequency?: "daily" | "weekly" | "monthly"; }; }' is not assignable to parameter of type '{ created_at?: string | null; deck_name: string; deck_type?: string; description?: string | null; id?: string; is_active?: boolean | null; preferences?: Json; updated_at?: string | null; user_id: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'description' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { created_at?: string | null; deck_name: string; deck_type?: string; description?: string | null; id?: string; is_active?: boolean | null; preferences?: Json; updated_at?: string | null; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ created_at?: string | null; deck_name: string; deck_type?: string; description?: string | null; id?: string; is_active?: boolean | null; preferences?: Json; updated_at?: string | null; user_id: string; }[]'.
+packages/shared/src/lib/enhanced-gamification.ts(613,5): error TS2322: Type '{ id: string; name: string; description: string | undefined; type: "review" | "challenge" | "adaptive" | "custom"; preferences: any; contentCount: number; lastUsed: string | undefined; }[]' is not assignable to type 'CustomDeck[]'.
+  Type '{ id: string; name: string; description: string | undefined; type: CustomDeck["type"]; preferences: any; contentCount: number; lastUsed: string | undefined; }' is not assignable to type 'CustomDeck' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'description' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(627,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { added_at?: string | null; deck_id: string; id?: string; priority_score?: number | null; question_id?: string | null; topic_id?: string | null; }, options?: { count?: "exact" | "planned" | "estimated"; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ deck_id: string; topic_id: string | undefined; question_id: string | undefined; priority_score: number; }' is not assignable to parameter of type '{ added_at?: string | null; deck_id: string; id?: string; priority_score?: number | null; question_id?: string | null; topic_id?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'question_id' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { added_at?: string | null; deck_id: string; id?: string; priority_score?: number | null; question_id?: string | null; topic_id?: string | null; }[], options?: { count?: "exact" | "planned" | "estimated"; defaultToNull?: boolean; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'deck_id' does not exist in type '{ added_at?: string | null; deck_id: string; id?: string; priority_score?: number | null; question_id?: string | null; topic_id?: string | null; }[]'.
+packages/shared/src/lib/enhanced-gamification.ts(794,5): error TS2375: Type '{ category: string; skillLevel: number; questionsAttempted: number; questionsCorrect: number; lastPracticed: string | undefined; masteryLevel: "novice" | "beginner" | "intermediate" | "advanced" | "expert"; accuracyPercentage: number; progressToNextLevel: number; }' is not assignable to type 'CategorySkill' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lastPracticed' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(815,39): error TS18048: 'prevThreshold' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(815,57): error TS18048: 'nextThreshold' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(815,73): error TS18048: 'prevThreshold' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(827,5): error TS2322: Type '{ category: string; skillLevel: number; questionsAttempted: number; questionsCorrect: number; lastPracticed: string | undefined; masteryLevel: "novice" | "beginner" | "intermediate" | "advanced" | "expert"; accuracyPercentage: number; progressToNextLevel: number; }[]' is not assignable to type 'CategorySkill[]'.
+  Type '{ category: string; skillLevel: number; questionsAttempted: number; questionsCorrect: number; lastPracticed: string | undefined; masteryLevel: "novice" | "beginner" | "intermediate" | "advanced" | "expert"; accuracyPercentage: number; progressToNextLevel: number; }' is not assignable to type 'CategorySkill' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'lastPracticed' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1023,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { average_response_time?: number | null; consecutive_correct?: number | null; ease_factor?: number | null; easiness_factor?: number | null; id?: string; interval_days?: number | null; ... 10 more ...; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; question_id: string; easiness_factor: number; repetition_count: number; interval_days: number; next_review_date: string | undefined; last_reviewed_at: string; consecutive_correct: number; total_attempts: number; }' is not assignable to parameter of type '{ average_response_time?: number | null; consecutive_correct?: number | null; ease_factor?: number | null; easiness_factor?: number | null; id?: string; interval_days?: number | null; ... 10 more ...; user_id: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'next_review_date' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { average_response_time?: number | null; consecutive_correct?: number | null; ease_factor?: number | null; easiness_factor?: number | null; id?: string; interval_days?: number | null; ... 10 more ...; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ average_response_time?: number | null; consecutive_correct?: number | null; ease_factor?: number | null; easiness_factor?: number | null; id?: string; interval_days?: number | null; ... 10 more ...; user_id: string; }[]'.
+packages/shared/src/lib/enhanced-gamification.ts(1056,17): error TS2379: Argument of type '{ easiness_factor: number; repetition_count: number; interval_days: number; next_review_date: string | undefined; last_reviewed_at: string; consecutive_correct: number; total_attempts: number; }' is not assignable to parameter of type '{ average_response_time?: number | null; consecutive_correct?: number | null; ease_factor?: number | null; easiness_factor?: number | null; id?: string; interval_days?: number | null; ... 10 more ...; user_id?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'next_review_date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/lib/enhanced-gamification.ts(1156,13): error TS2375: Type '{ currentStreak: number; longestStreak: number; totalQuizzesCompleted: number; totalQuestionsAnswered: number; totalCorrectAnswers: number; totalXp: number; currentLevel: number; xpToNextLevel: number; ... 14 more ...; activeBoosts: never[]; }' is not assignable to type 'EnhancedUserProgress' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weekStartDate' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1183,11): error TS2375: Type '{ currentStreak: number; longestStreak: number; totalQuizzesCompleted: number; totalQuestionsAnswered: number; totalCorrectAnswers: number; totalXp: number; currentLevel: number; xpToNextLevel: number; ... 14 more ...; activeBoosts: never[]; }' is not assignable to type 'EnhancedUserProgress' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weekStartDate' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1212,11): error TS2375: Type '{ currentStreak: number; longestStreak: number; totalQuizzesCompleted: number; totalQuestionsAnswered: number; totalCorrectAnswers: number; totalXp: number; currentLevel: number; xpToNextLevel: number; ... 14 more ...; activeBoosts: never[]; }' is not assignable to type 'EnhancedUserProgress' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weekStartDate' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1240,7): error TS2375: Type '{ currentStreak: number; longestStreak: number; totalQuizzesCompleted: number; totalQuestionsAnswered: number; totalCorrectAnswers: number; totalXp: number; currentLevel: number; xpToNextLevel: number; ... 14 more ...; activeBoosts: never[]; }' is not assignable to type 'EnhancedUserProgress' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weekStartDate' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1269,7): error TS2375: Type '{ currentStreak: number; longestStreak: number; totalQuizzesCompleted: number; totalQuestionsAnswered: number; totalCorrectAnswers: number; totalXp: number; currentLevel: number; xpToNextLevel: number; ... 14 more ...; activeBoosts: never[]; }' is not assignable to type 'EnhancedUserProgress' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weekStartDate' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(1315,17): error TS2379: Argument of type '{ week_start_date: string | undefined; weekly_completed: number; }' is not assignable to parameter of type '{ adaptive_difficulty?: boolean | null; created_at?: string | null; current_level?: number | null; current_streak?: number | null; favorite_categories?: Json; id?: string; last_activity_date?: string | null; ... 12 more ...; xp_to_next_level?: number | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'week_start_date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/lib/enhanced-gamification.ts(1561,5): error TS2375: Type '{ xpGained: number; levelUp: boolean; newLevel: number; newTotalXp: number; completionCount: number; xpMultiplier: number; reason: string; improvementBonus: number | undefined; }' is not assignable to type '{ xpGained: number; levelUp: boolean; newLevel: number; newTotalXp: number; completionCount: number; xpMultiplier: number; reason: string; improvementBonus?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'improvementBonus' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/enhanced-gamification.ts(1986,7): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(1988,9): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(1990,7): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(1996,7): error TS18048: 'perf' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(1996,22): error TS18048: 'perf' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(1996,37): error TS18048: 'perf' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-gamification.ts(2085,30): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-gamification.ts(2117,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(values: { accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }[]'.
+packages/shared/src/lib/enhanced-gamification.ts(2258,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; insight_type: string; insight_category: string | undefined; title: string; description: string; action_items: string[]; confidence_score: number; priority_level: number; valid_until: string | undefined; }' is not assignable to parameter of type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'insight_category' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }[]'.
+packages/shared/src/lib/enhanced-npc-service.ts(133,24): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(134,20): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(135,20): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(136,19): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(143,53): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(143,77): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(144,17): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(246,25): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(304,46): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(314,7): error TS2322: Type '"onJoin"' is not assignable to type '"onGameStart" | "onCorrectAnswer" | "onIncorrectAnswer" | "onWinning" | "onLosing"'.
+packages/shared/src/lib/enhanced-npc-service.ts(315,7): error TS2322: Type '"onCorrect"' is not assignable to type '"onGameStart" | "onCorrectAnswer" | "onIncorrectAnswer" | "onWinning" | "onLosing"'.
+packages/shared/src/lib/enhanced-npc-service.ts(316,7): error TS2322: Type '"onIncorrect"' is not assignable to type '"onGameStart" | "onCorrectAnswer" | "onIncorrectAnswer" | "onWinning" | "onLosing"'.
+packages/shared/src/lib/enhanced-npc-service.ts(318,7): error TS2322: Type '"onGameEnd"' is not assignable to type '"onGameStart" | "onCorrectAnswer" | "onIncorrectAnswer" | "onWinning" | "onLosing"'.
+packages/shared/src/lib/enhanced-npc-service.ts(322,22): error TS7053: Element implicitly has an 'any' type because expression of type '"onGameStart" | "onCorrectAnswer" | "onIncorrectAnswer" | "onWinning" | "onLosing" | "onJoin"' can't be used to index type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+  Property 'onJoin' does not exist on type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(497,39): error TS2339: Property 'onCorrect' does not exist on type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(498,41): error TS2339: Property 'onIncorrect' does not exist on type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(499,33): error TS2339: Property 'onGameEnd' does not exist on type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(500,32): error TS2339: Property 'onGameEnd' does not exist on type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(566,5): error TS2739: Type '{ onJoin: string[]; onCorrect: string[]; onIncorrect: string[]; onGameStart: string[]; onGameEnd: string[]; }' is missing the following properties from type '{ onGameStart: string[]; onCorrectAnswer: string[]; onIncorrectAnswer: string[]; onWinning: string[]; onLosing: string[]; }': onCorrectAnswer, onIncorrectAnswer, onWinning, onLosing
+packages/shared/src/lib/enhanced-npc-service.ts(586,13): error TS18048: 'npc.description' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(712,26): error TS18048: 'npc.description' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(713,25): error TS18048: 'npc.description' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(716,23): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(716,46): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(717,30): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{ easy: { min: number; max: number; }; medium: { min: number; max: number; }; hard: { min: number; max: number; }; }'.
+  Property '0' does not exist on type '{ easy: { min: number; max: number; }; medium: { min: number; max: number; }; hard: { min: number; max: number; }; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(717,57): error TS7053: Element implicitly has an 'any' type because expression of type '1' can't be used to index type '{ easy: { min: number; max: number; }; medium: { min: number; max: number; }; hard: { min: number; max: number; }; }'.
+  Property '1' does not exist on type '{ easy: { min: number; max: number; }; medium: { min: number; max: number; }; hard: { min: number; max: number; }; }'.
+packages/shared/src/lib/enhanced-npc-service.ts(756,32): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(756,55): error TS18048: 'npc.accuracyRange' is possibly 'undefined'.
+packages/shared/src/lib/enhanced-npc-service.ts(757,32): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/enhanced-progress-storage.ts(107,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { answers?: Json; assessment_type?: string | null; category_performance?: Json; classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_assignment_id?: string | null; ... 16 more ...; user_id?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ session_id: string; session_type: "civics_test" | "regular_quiz" | "onboarding_assessment" | "multiplayer_quiz" | "survey"; user_id: string | null; guest_token: string | null | undefined; ... 11 more ...; expires_at: string; }' is not assignable to parameter of type '{ answers?: Json; assessment_type?: string | null; category_performance?: Json; classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_assignment_id?: string | null; ... 16 more ...; user_id?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'assessment_type' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { answers?: Json; assessment_type?: string | null; category_performance?: Json; classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_assignment_id?: string | null; ... 16 more ...; user_id?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ session_id: string; session_type: "civics_test" | "regular_quiz" | "onboarding_assessment" | "multiplayer_quiz" | "survey"; user_id: string | null; guest_token: string | null | undefined; ... 11 more ...; expires_at: string; }' is not assignable to parameter of type '{ answers?: Json; assessment_type?: string | null; category_performance?: Json; classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_assignment_id?: string | null; ... 16 more ...; user_id?: string | null; }[]'.
+      Type '{ session_id: string; session_type: "civics_test" | "regular_quiz" | "onboarding_assessment" | "multiplayer_quiz" | "survey"; user_id: string | null; guest_token: string | null | undefined; ... 11 more ...; expires_at: string; }' is missing the following properties from type '{ answers?: Json; assessment_type?: string | null; category_performance?: Json; classroom_assignment_id?: string | null; classroom_course_id?: string | null; clever_assignment_id?: string | null; ... 16 more ...; user_id?: string | null; }[]': length, pop, push, concat, and 29 more.
+packages/shared/src/lib/enhanced-progress-storage.ts(164,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { answered_at?: string; attempt_number?: number | null; boost_used?: string | null; hint_used?: boolean | null; id?: string; is_correct: boolean; progress_session_id: string; question_id?: string | null; question_index: number; time_spent_seconds?: number | null; user_answer: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ progress_session_id: string; question_id: string; question_index: number; user_answer: string; is_correct: boolean; time_spent_seconds: number | undefined; hint_used: boolean; }' is not assignable to parameter of type '{ answered_at?: string; attempt_number?: number | null; boost_used?: string | null; hint_used?: boolean | null; id?: string; is_correct: boolean; progress_session_id: string; question_id?: string | null; question_index: number; time_spent_seconds?: number | null; user_answer: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'time_spent_seconds' are incompatible.
+        Type 'number | undefined' is not assignable to type 'number | null'.
+          Type 'undefined' is not assignable to type 'number | null'.
+  Overload 2 of 2, '(values: { answered_at?: string; attempt_number?: number | null; boost_used?: string | null; hint_used?: boolean | null; id?: string; is_correct: boolean; progress_session_id: string; question_id?: string | null; question_index: number; time_spent_seconds?: number | null; user_answer: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'progress_session_id' does not exist in type '{ answered_at?: string; attempt_number?: number | null; boost_used?: string | null; hint_used?: boolean | null; id?: string; is_correct: boolean; progress_session_id: string; question_id?: string | null; question_index: number; time_spent_seconds?: number | null; user_answer: string; }[]'.
+packages/shared/src/lib/enhanced-progress-storage.ts(244,13): error TS2375: Type '{ sessionId: string; sessionType: any; topicId: string | undefined; assessmentType: string | undefined; testType: "quick" | "full"; questions: any[]; currentQuestionIndex: number; ... 8 more ...; expiresAt: number; }' is not assignable to type 'EnhancedQuizState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'topicId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(392,80): error TS2379: Argument of type '{ p_user_id: string | undefined; p_guest_token: string | undefined; }' is not assignable to parameter of type '{ p_user_id?: string; p_guest_token?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'p_user_id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(657,33): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; sessionType: string; }' is not assignable to parameter of type 'ProgressSessionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(664,33): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; sessionType: string; topicId: string | undefined; }' is not assignable to parameter of type 'ProgressSessionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(672,33): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; sessionType: string; }' is not assignable to parameter of type 'ProgressSessionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(679,33): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; sessionType: string; topicId: string | undefined; }' is not assignable to parameter of type 'ProgressSessionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-progress-storage.ts(687,33): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; sessionType: string; topicId: string | undefined; }' is not assignable to parameter of type 'ProgressSessionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(181,13): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(204,13): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(235,11): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(254,11): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(289,11): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(316,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(334,13): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(365,9): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(382,9): error TS2353: Object literal may only specify known properties, and 'question_type' does not exist in type 'QuizQuestion'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(401,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/enhanced-quiz-generation.ts(407,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/game-boosts.ts(721,11): error TS2375: Type '{ type: BoostType; startedAt: string; duration: number | undefined; usesRemaining: number | undefined; }' is not assignable to type 'ActiveBoost' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'duration' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/guest-tracking.ts(81,46): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/guest-tracking.ts(159,43): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/hooks/use-learning-analytics.ts(4,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/lib/host-privilege-manager.ts(54,5): error TS2375: Type '{ roomId: string; hostUserId: string | undefined; hostGuestToken: string | undefined; timestamp: number; }' is not assignable to type 'HostPrivilegeData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'hostUserId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/host-privilege-manager.ts(146,11): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type '{ player_name?: string; player_emoji?: string; is_ready?: boolean; is_connected?: boolean; score?: number; }'.
+packages/shared/src/lib/host-privilege-manager.ts(155,9): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type '{ player_name?: string; player_emoji?: string; is_ready?: boolean; is_connected?: boolean; score?: number; }'.
+packages/shared/src/lib/host-privilege-manager.ts(206,9): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type '{ player_name?: string; player_emoji?: string; is_ready?: boolean; is_connected?: boolean; score?: number; }'.
+packages/shared/src/lib/host-privilege-manager.ts(213,9): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type '{ player_name?: string; player_emoji?: string; is_ready?: boolean; is_connected?: boolean; score?: number; }'.
+packages/shared/src/lib/image-generator.ts(226,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(325,27): error TS2379: Argument of type '{ template: "quiz-thumbnail" | "instagram-story" | "instagram-post" | "twitter-card" | "facebook-post" | "linkedin-post"; type: "result"; title: string; score: number; totalQuestions: number; ... 4 more ...; variant: "bold" | ... 2 more ... | undefined; }' is not assignable to parameter of type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userName' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(366,27): error TS2379: Argument of type '{ template: "quiz-thumbnail" | "instagram-story" | "instagram-post" | "twitter-card" | "facebook-post" | "linkedin-post"; type: "achievement"; title: string; badge: string; userName: string | undefined; emoji: string; userId: string | undefined; theme: "default" | ... 4 more ... | undefined; variant: "bold" | ... 2 ...' is not assignable to parameter of type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userName' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(492,27): error TS2379: Argument of type '{ template: string; userId: string | undefined; engagementType: "download"; }' is not assignable to parameter of type '{ template: string; variant?: string; theme?: string; userId?: string; engagementType: "click" | "share" | "view" | "download"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(595,33): error TS2375: Type '{ template: "quiz-thumbnail"; type: "quiz"; title: string; emoji: string; description: string; userId: string | undefined; theme: "default" | "family" | "educator" | "activist" | "professional" | undefined; variant: "bold" | ... 2 more ... | undefined; darkMode: "auto" | ... 1 more ... | "dark"; }' is not assignable to type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'variant' are incompatible.
+    Type '"bold" | "subtle" | "urgent" | undefined' is not assignable to type '"bold" | "subtle" | "urgent"'.
+      Type 'undefined' is not assignable to type '"bold" | "subtle" | "urgent"'.
+packages/shared/src/lib/image-generator.ts(613,33): error TS2375: Type '{ template: "quiz-thumbnail"; type: "result"; title: string; score: number; totalQuestions: number; userName: string | undefined; emoji: string; userId: string | undefined; theme: "default" | ... 4 more ... | undefined; variant: "bold" | ... 2 more ... | undefined; darkMode: "auto" | ... 1 more ... | "dark"; }' is not assignable to type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userName' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(634,33): error TS2375: Type '{ template: "instagram-story"; type: "result" | "quiz"; title: string; score: number | undefined; totalQuestions: number | undefined; emoji: string; userId: string | undefined; theme: "default" | ... 4 more ... | undefined; variant: "bold" | ... 2 more ... | undefined; darkMode: "auto" | ... 1 more ... | "dark"; }' is not assignable to type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'score' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/image-generator.ts(653,33): error TS2375: Type '{ template: "quiz-thumbnail"; type: "achievement"; title: string; badge: string; userName: string | undefined; emoji: string; userId: string | undefined; theme: "default" | "family" | "educator" | "activist" | "professional" | undefined; variant: "bold" | ... 2 more ... | undefined; darkMode: "auto" | ... 1 more ......' is not assignable to type 'ImageGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userName' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/image-generator.ts(676,3): error TS2375: Type '{ template: "quiz-intro" | "result-celebration" | "topic-explainer" | "achievement-unlock"; duration: 30; style: "kinetic-typography"; voiceover: false; music: true; captions: true; ... 6 more ...; variant: "bold" | ... 2 more ... | undefined; }' is not assignable to type 'VideoGenerationParams' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'description' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/google-calendar.ts(8,30): error TS2307: Cannot find module './supabase/client' or its corresponding type declarations.
+packages/shared/src/lib/integrations/google-calendar.ts(235,5): error TS2375: Type '{ date: string | undefined; timeZone: string; }' is not assignable to type '{ date?: string; dateTime?: string; timeZone?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/google-calendar.ts(239,5): error TS2375: Type '{ date: string | undefined; timeZone: string; }' is not assignable to type '{ date?: string; dateTime?: string; timeZone?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/google-calendar.ts(305,31): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+packages/shared/src/lib/integrations/govinfo-api.ts(505,18): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/integrations/govinfo-api.ts(511,5): error TS2375: Type '{ name: string; title: string | undefined; organization: string | undefined; witnessType: "expert" | "other" | "government" | "advocate" | "industry"; credibilityScore: number; }' is not assignable to type 'Witness' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'title' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/govinfo-api.ts(560,5): error TS2322: Type '{ witness: string; organizationRepresented: string | undefined; keyPoints: string[]; uncomfortableTruths: string[]; contradictions: string[]; lobbingConnections: string[]; }[]' is not assignable to type 'Testimony[]'.
+  Type '{ witness: string; organizationRepresented: string | undefined; keyPoints: string[]; uncomfortableTruths: string[]; contradictions: string[]; lobbingConnections: string[]; }' is not assignable to type 'Testimony' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'organizationRepresented' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/govinfo-api.ts(579,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/govinfo-api.ts(580,19): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/integrations/govinfo-api.ts(581,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/govinfo-api.ts(582,19): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/integrations/govinfo-api.ts(583,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/govinfo-api.ts(584,62): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/onesignal.ts(69,7): error TS2375: Type '{ appId: string; restApiKey: string; userAuthKey: string | undefined; }' is not assignable to type 'OneSignalConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userAuthKey' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/onesignal/civic-workflows.ts(14,50): error TS2379: Argument of type '{ appId: string; restApiKey: string; userAuthKey: string | undefined; }' is not assignable to parameter of type 'OneSignalConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userAuthKey' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/integrations/onesignal/civic-workflows.ts(389,56): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/integrations/onesignal/civic-workflows.ts(393,33): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/media-bias-engine.ts(245,82): error TS2379: Argument of type '{ p_domain: string; p_name: string | undefined; }' is not assignable to parameter of type '{ p_domain: string; p_name?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'p_name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/media-bias-engine.ts(290,10): error TS2352: Conversion of type '{ alternate_domains: string[] | null; corrections_policy: string | null; created_at: string | null; credibility_rating: number | null; description: string | null; domain: string | null; ... 18 more ...; credibility: { ...; }[]; }' to type 'MediaOrganizationWithScores' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'credibility' are incompatible.
+    Type '{ created_at: string | null; fabrication_scandals_count: number | null; fact_checking_partnerships: string[] | null; id: string; major_corrections_count: number | null; major_misreporting_incidents: Json; ... 6 more ...; verified_scoops_count: number | null; }[]' is missing the following properties from type 'SourceCredibilityIndicator': id, organization_id
+packages/shared/src/lib/media-bias-engine.ts(321,10): error TS2352: Conversion of type '{ alternate_domains: string[] | null; corrections_policy: string | null; created_at: string | null; credibility_rating: number | null; description: string | null; domain: string | null; ... 18 more ...; credibility: { ...; }[]; }' to type 'MediaOrganizationWithScores' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'credibility' are incompatible.
+    Type '{ created_at: string | null; fabrication_scandals_count: number | null; fact_checking_partnerships: string[] | null; id: string; major_corrections_count: number | null; major_misreporting_incidents: Json; ... 6 more ...; verified_scoops_count: number | null; }[]' is missing the following properties from type 'SourceCredibilityIndicator': id, organization_id
+packages/shared/src/lib/media-bias-engine.ts(384,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { ai_analysis_version?: string | null; ai_confidence?: number | null; ai_reasoning?: string | null; analysis_method?: string | null; analyzed_at?: string | null; analyzer_id?: string | null; ... 16 more ...; source_metadata_id?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ source_metadata_id: string | undefined; organization_id: string; article_url: string; dimension_scores: any; analysis_method: string; ai_analysis_version: string; ai_confidence: number; ai_reasoning: string; }' is not assignable to parameter of type '{ ai_analysis_version?: string | null; ai_confidence?: number | null; ai_reasoning?: string | null; analysis_method?: string | null; analyzed_at?: string | null; analyzer_id?: string | null; ... 16 more ...; source_metadata_id?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'source_metadata_id' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { ai_analysis_version?: string | null; ai_confidence?: number | null; ai_reasoning?: string | null; analysis_method?: string | null; analyzed_at?: string | null; analyzer_id?: string | null; ... 16 more ...; source_metadata_id?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'source_metadata_id' does not exist in type '{ ai_analysis_version?: string | null; ai_confidence?: number | null; ai_reasoning?: string | null; analysis_method?: string | null; analyzed_at?: string | null; analyzer_id?: string | null; ... 16 more ...; source_metadata_id?: string | null; }[]'.
+packages/shared/src/lib/media-bias-engine.ts(425,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { agrees_with_assessment?: boolean | null; article_analysis_id?: string | null; created_at?: string | null; dimension_id?: string | null; evidence_urls?: string[] | null; feedback_text?: string | null; ... 15 more ...; verified_by?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ ip_address: null; user_agent: string; feedback_type: "article" | "organization" | "dimension_score"; article_analysis_id?: string; organization_id?: string; dimension_id?: string; ... 7 more ...; guest_token: string | undefined; }' is not assignable to parameter of type '{ agrees_with_assessment?: boolean | null; article_analysis_id?: string | null; created_at?: string | null; dimension_id?: string | null; evidence_urls?: string[] | null; feedback_text?: string | null; ... 15 more ...; verified_by?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'guest_token' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+  Overload 2 of 2, '(values: { agrees_with_assessment?: boolean | null; article_analysis_id?: string | null; created_at?: string | null; dimension_id?: string | null; evidence_urls?: string[] | null; feedback_text?: string | null; ... 15 more ...; verified_by?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'ip_address' does not exist in type '{ agrees_with_assessment?: boolean | null; article_analysis_id?: string | null; created_at?: string | null; dimension_id?: string | null; evidence_urls?: string[] | null; feedback_text?: string | null; ... 15 more ...; verified_by?: string | null; }[]'.
+packages/shared/src/lib/media-bias-engine.ts(475,40): error TS2345: Argument of type '"increment"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/mock-data.ts(122,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Source'.
+packages/shared/src/lib/mock-data.ts(126,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Source'.
+packages/shared/src/lib/mock-data.ts(144,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Source'.
+packages/shared/src/lib/mock-data.ts(148,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Source'.
+packages/shared/src/lib/mock-data.ts(172,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Source'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(6,34): error TS2307: Cannot find module '@/components/multiplayer/chat-feed' or its corresponding type declarations.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(187,40): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(251,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(339,23): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(375,7): error TS2322: Type '{ speaker: string; message: any; timestamp: any; context: any; }[]' is not assignable to type '{ speaker: "user" | "system" | "npc"; message: string; timestamp: string; context?: string; }[]'.
+  Type '{ speaker: string; message: any; timestamp: any; context: any; }' is not assignable to type '{ speaker: "user" | "system" | "npc"; message: string; timestamp: string; context?: string; }'.
+    Types of property 'speaker' are incompatible.
+      Type 'string' is not assignable to type '"user" | "system" | "npc"'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(376,7): error TS2375: Type '{ topicId: string; currentQuestion: { id: string; category: string; difficulty: number; text: string; } | undefined; userPerformance: { correctAnswers: number; totalAnswered: number; averageTime: number; } | undefined; roomPerformance: { ...; }; }' is not assignable to type '{ topicId: string; currentQuestion?: any; userPerformance?: { correctAnswers: number; totalAnswered: number; averageTime: number; }; roomPerformance?: { averageScore: number; playerCount: number; userRank: number; }; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userPerformance' are incompatible.
+    Type '{ correctAnswers: number; totalAnswered: number; averageTime: number; } | undefined' is not assignable to type '{ correctAnswers: number; totalAnswered: number; averageTime: number; }'.
+      Type 'undefined' is not assignable to type '{ correctAnswers: number; totalAnswered: number; averageTime: number; }'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(388,27): error TS2339: Property 'specialInstructions' does not exist on type 'NPCConversationContext'.
+packages/shared/src/lib/multiplayer-conversation-engine.ts(390,27): error TS2339: Property 'specialInstructions' does not exist on type 'NPCConversationContext'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(111,7): error TS2375: Type '{ answer: string; isCorrect: boolean; responseTime: number; chatMessage: NPCResponse | undefined; }' is not assignable to type '{ answer: string; isCorrect: boolean; responseTime: number; chatMessage?: NPCResponse; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'chatMessage' are incompatible.
+    Type 'NPCResponse | undefined' is not assignable to type 'NPCResponse'.
+      Type 'undefined' is not assignable to type 'NPCResponse'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(223,39): error TS2345: Argument of type '{ correctAnswers: number; totalAnswered: number; averageTime: number; lastAnswerCorrect?: boolean; } | undefined' is not assignable to parameter of type '{ correctAnswers: number; totalAnswered: number; averageTime: number; lastAnswerCorrect?: boolean; }'.
+  Type 'undefined' is not assignable to type '{ correctAnswers: number; totalAnswered: number; averageTime: number; lastAnswerCorrect?: boolean; }'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(236,7): error TS2375: Type '{ topicId: string; currentQuestion: { id: string; category: string; difficulty: number; text: string; } | undefined; userPerformance: { correctAnswers: number; totalAnswered: number; averageTime: number; lastAnswerCorrect?: boolean; } | undefined; roomPerformance: { ...; }; }' is not assignable to type '{ topicId: string; currentQuestion?: any; userPerformance?: { correctAnswers: number; totalAnswered: number; averageTime: number; }; roomPerformance?: { averageScore: number; playerCount: number; userRank: number; }; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userPerformance' are incompatible.
+    Type '{ correctAnswers: number; totalAnswered: number; averageTime: number; lastAnswerCorrect?: boolean; } | undefined' is not assignable to type '{ correctAnswers: number; totalAnswered: number; averageTime: number; }'.
+      Type 'undefined' is not assignable to type '{ correctAnswers: number; totalAnswered: number; averageTime: number; }'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(451,9): error TS18047: 'roomData.current_players' is possibly 'null'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(451,37): error TS18047: 'roomData.max_players' is possibly 'null'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(649,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { ai_behavior_config?: Json; created_at?: string | null; difficulty_level?: number | null; id?: string; is_active?: boolean | null; npc_id: string; personality_type?: string | null; ... 6 more ...; updated_at?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'player_id' does not exist in type '{ ai_behavior_config?: Json; created_at?: string | null; difficulty_level?: number | null; id?: string; is_active?: boolean | null; npc_id: string; personality_type?: string | null; ... 6 more ...; updated_at?: string | null; }'.
+  Overload 2 of 2, '(values: { ai_behavior_config?: Json; created_at?: string | null; difficulty_level?: number | null; id?: string; is_active?: boolean | null; npc_id: string; personality_type?: string | null; ... 6 more ...; updated_at?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'room_id' does not exist in type '{ ai_behavior_config?: Json; created_at?: string | null; difficulty_level?: number | null; id?: string; is_active?: boolean | null; npc_id: string; personality_type?: string | null; ... 6 more ...; updated_at?: string | null; }[]'.
+packages/shared/src/lib/multiplayer-npc-integration.ts(697,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { created_at?: string | null; id?: string; is_from_host?: boolean | null; is_from_npc?: boolean | null; message_text: string; message_type?: string; metadata?: Json; player_id: string; reply_to_message_id?: string | null; room_id: string; timestamp?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'npc_id' does not exist in type '{ created_at?: string | null; id?: string; is_from_host?: boolean | null; is_from_npc?: boolean | null; message_text: string; message_type?: string; metadata?: Json; player_id: string; reply_to_message_id?: string | null; room_id: string; timestamp?: string | null; }'.
+  Overload 2 of 2, '(values: { created_at?: string | null; id?: string; is_from_host?: boolean | null; is_from_npc?: boolean | null; message_text: string; message_type?: string; metadata?: Json; player_id: string; reply_to_message_id?: string | null; room_id: string; timestamp?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'room_id' does not exist in type '{ created_at?: string | null; id?: string; is_from_host?: boolean | null; is_from_npc?: boolean | null; message_text: string; message_type?: string; metadata?: Json; player_id: string; reply_to_message_id?: string | null; room_id: string; timestamp?: string | null; }[]'.
+packages/shared/src/lib/multiplayer-npcs.ts(216,27): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(216,63): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(220,9): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(222,16): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(227,62): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(240,11): error TS2488: Type '{ easy: { min: number; max: number; }; medium: { min: number; max: number; }; hard: { min: number; max: number; }; }' must have a '[Symbol.iterator]()' method that returns an iterator.
+packages/shared/src/lib/multiplayer-npcs.ts(244,22): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(249,23): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(302,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/multiplayer-npcs.ts(312,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/multiplayer-npcs.ts(324,3): error TS2322: Type 'NPCPersonality | undefined' is not assignable to type 'NPCPersonality'.
+  Type 'undefined' is not assignable to type 'NPCPersonality'.
+packages/shared/src/lib/multiplayer-npcs.ts(338,19): error TS2345: Argument of type 'NPCPersonality | undefined' is not assignable to parameter of type 'NPCPersonality'.
+  Type 'undefined' is not assignable to type 'NPCPersonality'.
+packages/shared/src/lib/multiplayer-npcs.ts(360,3): error TS2322: Type 'NPCPersonality | undefined' is not assignable to type 'NPCPersonality'.
+  Type 'undefined' is not assignable to type 'NPCPersonality'.
+packages/shared/src/lib/multiplayer-npcs.ts(374,20): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(374,31): error TS2339: Property 'accuracy' does not exist on type '{ confidenceLevel: number; consistency: number; specialties: string[]; weaknesses: string[]; }'.
+packages/shared/src/lib/multiplayer-npcs.ts(378,19): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(378,30): error TS2339: Property 'responseTime' does not exist on type '{ confidenceLevel: number; consistency: number; specialties: string[]; weaknesses: string[]; }'.
+packages/shared/src/lib/multiplayer-npcs.ts(379,28): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(379,39): error TS2339: Property 'responseTime' does not exist on type '{ confidenceLevel: number; consistency: number; specialties: string[]; weaknesses: string[]; }'.
+packages/shared/src/lib/multiplayer-npcs.ts(384,24): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(384,35): error TS2339: Property 'powerUpUsage' does not exist on type '{ confidenceLevel: number; consistency: number; specialties: string[]; weaknesses: string[]; }'.
+packages/shared/src/lib/multiplayer-npcs.ts(385,31): error TS18048: 'npc.traits' is possibly 'undefined'.
+packages/shared/src/lib/multiplayer-npcs.ts(385,42): error TS2339: Property 'powerUpUsage' does not exist on type '{ confidenceLevel: number; consistency: number; specialties: string[]; weaknesses: string[]; }'.
+packages/shared/src/lib/multiplayer.ts(4,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/lib/multiplayer.ts(10,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerRoom'. Did you mean 'DbMultiplayerRooms'?
+packages/shared/src/lib/multiplayer.ts(11,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerRoomPlayer'. Did you mean 'DbMultiplayerRoomPlayers'?
+packages/shared/src/lib/multiplayer.ts(12,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerQuizAttempt'. Did you mean 'DbMultiplayerQuizAttempts'?
+packages/shared/src/lib/multiplayer.ts(13,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerQuestionResponse'. Did you mean 'DbMultiplayerQuestionResponses'?
+packages/shared/src/lib/multiplayer.ts(14,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerGameEvent'. Did you mean 'DbMultiplayerGameEvents'?
+packages/shared/src/lib/multiplayer.ts(15,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerRoomInsert'. Did you mean 'DbMultiplayerRoomsInsert'?
+packages/shared/src/lib/multiplayer.ts(16,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerRoomPlayerInsert'. Did you mean 'DbMultiplayerRoomPlayersInsert'?
+packages/shared/src/lib/multiplayer.ts(17,3): error TS2724: '"./database.types"' has no exported member named 'DbMultiplayerQuestionResponseInsert'. Did you mean 'DbMultiplayerQuestionResponsesInsert'?
+packages/shared/src/lib/multiplayer.ts(141,14): error TS2345: Argument of type '"join_multiplayer_room_v2"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/multiplayer.ts(182,21): error TS18046: 'joinData' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(196,22): error TS18046: 'joinData' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(213,65): error TS18046: 'joinData' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(220,15): error TS18046: 'joinData' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(221,17): error TS18046: 'joinData' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(263,14): error TS2345: Argument of type '"join_multiplayer_room_v2"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/multiplayer.ts(286,20): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(288,22): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(296,53): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(296,76): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(303,15): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(304,17): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/multiplayer.ts(462,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { boosts_used?: number | null; created_at?: string | null; hints_used?: number | null; id?: string; is_correct?: boolean | null; npc_player_id?: string | null; player_id?: string | null; ... 8 more ...; topic_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ room_id: string; player_id: string; question_id: string; question_number: number; topic_id: string; selected_answer: string | undefined; is_correct: boolean | undefined; response_time_ms: number | undefined; points_earned: number; hints_used: number; response_metadata: {}; submitted_at: string; }' is not assignable to parameter of type '{ boosts_used?: number | null; created_at?: string | null; hints_used?: number | null; id?: string; is_correct?: boolean | null; npc_player_id?: string | null; player_id?: string | null; ... 8 more ...; topic_id: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'is_correct' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean | null'.
+          Type 'undefined' is not assignable to type 'boolean | null'.
+  Overload 2 of 2, '(values: { boosts_used?: number | null; created_at?: string | null; hints_used?: number | null; id?: string; is_correct?: boolean | null; npc_player_id?: string | null; player_id?: string | null; ... 8 more ...; topic_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'room_id' does not exist in type '{ boosts_used?: number | null; created_at?: string | null; hints_used?: number | null; id?: string; is_correct?: boolean | null; npc_player_id?: string | null; player_id?: string | null; ... 8 more ...; topic_id: string; }[]'.
+packages/shared/src/lib/multiplayer.ts(644,7): error TS2375: Type '{ newHostPlayerId: string | undefined; }' is not assignable to type '{ newHostPlayerId?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'newHostPlayerId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/multiplayer.ts(1017,7): error TS2322: Type '{ room: DbMultiplayerRoom; player: DbMultiplayerRoomPlayer; topic: { emoji: string; topic_title: string; } | undefined; }[]' is not assignable to type '{ room: DbMultiplayerRoom; player: DbMultiplayerRoomPlayer; topic?: { emoji: string; topic_title: string; }; }[]'.
+  Type '{ room: MultiplayerRoom; player: DbMultiplayerRoomPlayer; topic: { emoji: string; topic_title: string; } | undefined; }' is not assignable to type '{ room: DbMultiplayerRoom; player: DbMultiplayerRoomPlayer; topic?: { emoji: string; topic_title: string; }; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'topic' are incompatible.
+      Type '{ emoji: string; topic_title: string; } | undefined' is not assignable to type '{ emoji: string; topic_title: string; }'.
+        Type 'undefined' is not assignable to type '{ emoji: string; topic_title: string; }'.
+packages/shared/src/lib/notifications/notification-service.ts(267,39): error TS2379: Argument of type '{ smtp_host: string; api_key: string | undefined; }' is not assignable to parameter of type '{ smtp_host: string; api_key?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'api_key' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/notifications/notification-service.ts(340,13): error TS2375: Type '{ id: string; campaign_name: string; campaign_type: string; title: string; message: string; status: "draft"; civic_urgency_level: number; providers: string[]; target_segments: string[]; civic_action_steps: string[]; ... 8 more ...; conversion_count: number; }' is not assignable to type 'NotificationCampaign' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'scheduled_at' are incompatible.
+    Type 'undefined' is not assignable to type 'Date'.
+packages/shared/src/lib/notifications/notification-service.ts(366,13): error TS2375: Type '{ id: string; title: string; message: string; target_segments: string[]; data: { campaign_id: string; campaign_type: string; }; deep_link: string | undefined; civic_action_steps: string[]; urgency_level: number; }' is not assignable to type 'NotificationRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'deep_link' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pattern-recognition-service.ts(137,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+packages/shared/src/lib/pattern-recognition-service.ts(138,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_pattern_connections"' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_pattern_connections"' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/lib/pattern-recognition-service.ts(144,7): error TS2322: Type 'ResultOne[]' is not assignable to type 'TopicPatternConnection[]'.
+  Type 'ResultOne' is not assignable to type 'TopicPatternConnection'.
+packages/shared/src/lib/pattern-recognition-service.ts(210,50): error TS2345: Argument of type '"update_user_pattern_recognition"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/pattern-recognition-service.ts(220,22): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+  Property '0' does not exist on type '{}'.
+packages/shared/src/lib/pod-quiz-integration.ts(212,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pod-quiz-integration.ts(234,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pod-quiz-integration.ts(235,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pod-quiz-integration.ts(283,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { accuracy_rate?: number | null; achievements_earned?: number | null; average_difficulty?: number | null; correct_answers?: number | null; created_at?: string | null; current_streak?: number | null; ... 15 more ...; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; pod_id: string | undefined; date_recorded: string | undefined; questions_answered: number; quiz_attempts: number; correct_answers: number; accuracy_rate: number; time_spent_minutes: number; current_streak: number; longest_streak: number; achievements_earned: number; sessions_count: number; }' is not assignable to parameter of type '{ accuracy_rate?: number | null; achievements_earned?: number | null; average_difficulty?: number | null; correct_answers?: number | null; created_at?: string | null; current_streak?: number | null; ... 15 more ...; user_id: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'date_recorded' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(values: { accuracy_rate?: number | null; achievements_earned?: number | null; average_difficulty?: number | null; correct_answers?: number | null; created_at?: string | null; current_streak?: number | null; ... 15 more ...; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; pod_id: string | undefined; date_recorded: string | undefined; questions_answered: number; quiz_attempts: number; correct_answers: number; accuracy_rate: number; time_spent_minutes: number; current_streak: number; longest_streak: number; achievements_earned: number; sessions_count: number; }' is not assignable to parameter of type '{ accuracy_rate?: number | null; achievements_earned?: number | null; average_difficulty?: number | null; correct_answers?: number | null; created_at?: string | null; current_streak?: number | null; ... 15 more ...; user_id: string; }[]'.
+      Type '{ user_id: string; pod_id: string | undefined; date_recorded: string | undefined; questions_answered: number; quiz_attempts: number; correct_answers: number; accuracy_rate: number; time_spent_minutes: number; current_streak: number; longest_streak: number; achievements_earned: number; sessions_count: number; }' is missing the following properties from type '{ accuracy_rate?: number | null; achievements_earned?: number | null; average_difficulty?: number | null; correct_answers?: number | null; created_at?: string | null; current_streak?: number | null; ... 15 more ...; user_id: string; }[]': length, pop, push, concat, and 29 more.
+packages/shared/src/lib/pod-quiz-integration.ts(303,23): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pod-quiz-integration.ts(361,30): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/pod-quiz-integration.ts(389,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { active_members_today?: number | null; active_members_week?: number | null; average_accuracy?: number | null; average_session_length_minutes?: number | null; category_performance?: Json; ... 16 more ...; total_time_spent_minutes?: number | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ pod_id: string; date_recorded: string | undefined; total_questions_answered: number; total_quiz_attempts: number; total_time_spent_minutes: number; active_members_count: number; average_accuracy: number; total_correct_answers: number; }' is not assignable to parameter of type '{ active_members_today?: number | null; active_members_week?: number | null; average_accuracy?: number | null; average_session_length_minutes?: number | null; category_performance?: Json; ... 16 more ...; total_time_spent_minutes?: number | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'date_recorded' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(values: { active_members_today?: number | null; active_members_week?: number | null; average_accuracy?: number | null; average_session_length_minutes?: number | null; category_performance?: Json; ... 16 more ...; total_time_spent_minutes?: number | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ pod_id: string; date_recorded: string | undefined; total_questions_answered: number; total_quiz_attempts: number; total_time_spent_minutes: number; active_members_count: number; average_accuracy: number; total_correct_answers: number; }' is not assignable to parameter of type '{ active_members_today?: number | null; active_members_week?: number | null; average_accuracy?: number | null; average_session_length_minutes?: number | null; category_performance?: Json; ... 16 more ...; total_time_spent_minutes?: number | null; }[]'.
+      Type '{ pod_id: string; date_recorded: string | undefined; total_questions_answered: number; total_quiz_attempts: number; total_time_spent_minutes: number; active_members_count: number; average_accuracy: number; total_correct_answers: number; }' is missing the following properties from type '{ active_members_today?: number | null; active_members_week?: number | null; average_accuracy?: number | null; average_session_length_minutes?: number | null; category_performance?: Json; ... 16 more ...; total_time_spent_minutes?: number | null; }[]': length, pop, push, concat, and 29 more.
+packages/shared/src/lib/pod-quiz-integration.ts(450,7): error TS2322: Type '{ accuracy_rate: number | null; achievements_earned: number | null; average_difficulty: number | null; correct_answers: number | null; created_at: string | null; current_streak: number | null; ... 15 more ...; user_id: string; }[]' is not assignable to type 'MemberAnalytics[]'.
+  Type '{ accuracy_rate: number | null; achievements_earned: number | null; average_difficulty: number | null; correct_answers: number | null; created_at: string | null; current_streak: number | null; ... 15 more ...; user_id: string; }' is not assignable to type 'MemberAnalytics'.
+    Types of property 'accuracy_rate' are incompatible.
+      Type 'number | null' is not assignable to type 'number'.
+        Type 'null' is not assignable to type 'number'.
+packages/shared/src/lib/pod-quiz-integration.ts(494,3): error TS2375: Type '{ userId: string; topicId: string; score: number; totalQuestions: number; correctAnswers: number; timeSpentSeconds: number; gameMode: string; sessionId: string; guestToken: string | undefined; podId: string | undefined; difficultyLevel: number; categorySlug: string; }' is not assignable to type 'QuizCompletionData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'podId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/premium.ts(303,7): error TS2375: Type '{ hasAccess: boolean; tier: SubscriptionTier; limits: FeatureLimits | null; usageCount: number | undefined; monthlyLimit: number | null | undefined; resetDate: string | undefined; }' is not assignable to type 'PremiumFeatureAccess' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'usageCount' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/progress-storage.ts(194,5): error TS2375: Type '{ isValid: any; reason: string | undefined; hasProgress: any; isRecent: boolean; hasValidStructure: any; }' is not assignable to type 'ValidationResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'reason' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(433,29): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; quizType: string; topicId: string | undefined; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(436,29): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; quizType: string; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(439,29): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; quizType: string; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(442,29): error TS2379: Argument of type '{ userId: string | undefined; guestToken: string | undefined; quizType: string; topicId: string | undefined; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(449,79): error TS2379: Argument of type '{ quizType: string; topicId: string; sessionId: string; userId: string | undefined; guestToken: string | undefined; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(456,50): error TS2379: Argument of type '{ quizType: string; topicId: string; sessionId: string; userId: string | undefined; guestToken: string | undefined; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(463,52): error TS2379: Argument of type '{ quizType: string; topicId: string; sessionId: string; userId: string | undefined; guestToken: string | undefined; }' is not assignable to parameter of type 'QuizProgressOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/progress-storage.ts(491,3): error TS2375: Type '{ sessionId: string; quizType: string; topicId: undefined; questions: any[]; currentQuestionIndex: number; responses: Record<string, SurveyResponse>; startTime: number; ... 4 more ...; responseTimes: {}; }' is not assignable to type 'BaseSurveyState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'topicId' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/question-stats.ts(78,9): error TS2375: Type '{ questionId: string; totalAttempts: number; correctAttempts: number; wrongAttempts: number; accuracyRate: number; difficultyLevel: "expert" | "easy" | "medium" | "hard"; mostCommonWrongAnswer: string | undefined; averageTimeSpent: number | undefined; socialProofMessage: string; emoji: string; }' is not assignable to type 'QuestionStats' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'mostCommonWrongAnswer' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/question-stats.ts(253,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/question-stats.ts(320,9): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/question-stats.ts(322,11): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(333,30): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/quiz-database.ts(361,19): error TS2379: Argument of type '{ period_quizzes_completed: number; period_questions_answered: number; period_correct_answers: number; period_xp_gained: number; user_id: string; snapshot_date: string | undefined; ... 9 more ...; category_stats: Record<...>; }' is not assignable to parameter of type '{ accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'snapshot_date' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/quiz-database.ts(375,19): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; snapshot_date: string | undefined; snapshot_type: string; total_quizzes_completed: number; total_questions_answered: number; total_correct_answers: number; current_streak: number; ... 8 more ...; period_xp_gained: number; }' is not assignable to parameter of type '{ accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }'.
+      Types of property 'snapshot_date' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(values: { accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; snapshot_date: string | undefined; snapshot_type: string; total_quizzes_completed: number; total_questions_answered: number; total_correct_answers: number; current_streak: number; ... 8 more ...; period_xp_gained: number; }' is not assignable to parameter of type '{ accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }[]'.
+      Type '{ user_id: string; snapshot_date: string | undefined; snapshot_type: string; total_quizzes_completed: number; total_questions_answered: number; total_correct_answers: number; current_streak: number; ... 8 more ...; period_xp_gained: number; }' is missing the following properties from type '{ accuracy_percentage?: number | null; category_stats?: Json; created_at?: string | null; current_level?: number | null; current_streak?: number | null; id?: string; longest_streak?: number | null; ... 10 more ...; user_id: string; }[]': length, pop, push, concat, and 29 more.
+packages/shared/src/lib/quiz-database.ts(438,19): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '({ user_id: string; insight_type: string; insight_category: string; title: string; description: string; confidence_score: number; priority_level: number; valid_until: string | undefined; } | { ...; })[]' is not assignable to parameter of type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }'.
+      Type '({ user_id: string; insight_type: string; insight_category: string; title: string; description: string; confidence_score: number; priority_level: number; valid_until: string | undefined; } | { ...; })[]' is missing the following properties from type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }': description, insight_type, title, user_id
+  Overload 2 of 2, '(values: { action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '({ user_id: string; insight_type: string; insight_category: string; title: string; description: string; confidence_score: number; priority_level: number; valid_until: string | undefined; } | { ...; })[]' is not assignable to parameter of type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }[]'.
+      Type '{ user_id: string; insight_type: string; insight_category: string; title: string; description: string; confidence_score: number; priority_level: number; valid_until: string | undefined; } | { ...; }' is not assignable to type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+        Type '{ user_id: string; insight_type: string; insight_category: string; title: string; description: string; confidence_score: number; priority_level: number; valid_until: string | undefined; }' is not assignable to type '{ action_items?: Json; confidence_score?: number | null; created_at?: string | null; description: string; id?: string; insight_category?: string | null; insight_type: string; is_dismissed?: boolean | null; ... 5 more ...; valid_until?: string | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'valid_until' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string | null'.
+              Type 'undefined' is not assignable to type 'string | null'.
+packages/shared/src/lib/quiz-database.ts(832,13): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(834,15): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(836,13): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(857,9): error TS18048: 'stats' is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(857,25): error TS18048: 'stats' is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(857,81): error TS18048: 'stats' is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(1158,11): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-database.ts(1370,7): error TS2322: Type '({ id: string; title: string; description: string | undefined; category: string | undefined; emoji: string; date: string | undefined; } | { id: string; title: string; description: string; category: string; emoji: string; date?: never; })[]' is not assignable to type '{ id: string; title: string; description?: string; category?: string; emoji?: string; date?: string; }[]'.
+  Type '{ id: string; title: string; description: string | undefined; category: string | undefined; emoji: string; date: string | undefined; } | { id: string; title: string; description: string; category: string; emoji: string; date?: never; }' is not assignable to type '{ id: string; title: string; description?: string; category?: string; emoji?: string; date?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Type '{ id: string; title: string; description: string | undefined; category: string | undefined; emoji: string; date: string | undefined; }' is not assignable to type '{ id: string; title: string; description?: string; category?: string; emoji?: string; date?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'description' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/quiz-save-manager.ts(86,9): error TS2375: Type '{ success: true; attemptId: string | undefined; isBackedUp: true; }' is not assignable to type '{ success: boolean; attemptId?: string; error?: string; isBackedUp: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'attemptId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/quiz-save-manager.ts(95,9): error TS2375: Type '{ success: false; error: string | undefined; isBackedUp: true; }' is not assignable to type '{ success: boolean; attemptId?: string; error?: string; isBackedUp: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'error' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/quiz-save-manager.ts(214,35): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-save-manager.ts(261,5): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+packages/shared/src/lib/quiz-save-manager.ts(340,42): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/quiz-save-manager.ts(363,9): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/lib/services/bill-tracking-service.ts(3,35): error TS2307: Cannot find module '../lib/integrations/congress-api' or its corresponding type declarations.
+packages/shared/src/lib/services/bill-tracking-service.ts(4,79): error TS2307: Cannot find module './utils/congressional' or its corresponding type declarations.
+packages/shared/src/lib/services/congress-sync-service.ts(3,35): error TS2307: Cannot find module '../lib/integrations/congress-api' or its corresponding type declarations.
+packages/shared/src/lib/services/congress-sync-service.ts(4,40): error TS2307: Cannot find module '../lib/ai/bill-analyzer' or its corresponding type declarations.
+packages/shared/src/lib/services/congressional-document-quiz-generator.ts(17,24): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+packages/shared/src/lib/services/congressional-document-quiz-generator.ts(18,28): error TS2307: Cannot find module '../lib/ai/base-ai-tool' or its corresponding type declarations.
+packages/shared/src/lib/services/congressional-photo-service-local.ts(3,19): error TS2307: Cannot find module 'sharp' or its corresponding type declarations.
+packages/shared/src/lib/services/congressional-photo-service.ts(3,19): error TS2307: Cannot find module 'sharp' or its corresponding type declarations.
+packages/shared/src/lib/services/content-generation-service.ts(18,24): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+packages/shared/src/lib/services/content-generation-service.ts(19,28): error TS2307: Cannot find module '../lib/ai/base-ai-tool' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(9,35): error TS2307: Cannot find module '../lib/integrations/congress-api' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(10,30): error TS2307: Cannot find module '../lib/integrations/govinfo-api' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(11,40): error TS2307: Cannot find module '../lib/ai/bill-analyzer' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(14,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(1586,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/services/enhanced-congress-sync-service.ts(1600,20): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+packages/shared/src/lib/services/enhanced-onboarding-service.ts(1,26): error TS2307: Cannot find module '../lib/supabase' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-onboarding-service.ts(2,30): error TS2307: Cannot find module '../utils/analytics' or its corresponding type declarations.
+packages/shared/src/lib/services/enhanced-onboarding-service.ts(258,50): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+packages/shared/src/lib/services/enhanced-onboarding-service.ts(276,45): error TS7006: Parameter 'q' implicitly has an 'any' type.
+packages/shared/src/lib/services/enhanced-onboarding-service.ts(495,38): error TS7006: Parameter 'd' implicitly has an 'any' type.
+packages/shared/src/lib/services/entity-based-congress-sync.ts(3,35): error TS2307: Cannot find module '../lib/integrations/congress-api' or its corresponding type declarations.
+packages/shared/src/lib/services/entity-based-congress-sync.ts(4,34): error TS2307: Cannot find module '../lib/integrations/govinfo-api' or its corresponding type declarations.
+packages/shared/src/lib/services/entity-based-congress-sync.ts(5,40): error TS2307: Cannot find module '../lib/ai/bill-analyzer' or its corresponding type declarations.
+packages/shared/src/lib/services/entity-based-congress-sync.ts(122,21): error TS2551: Property 'mapBillTypeToChamber' does not exist on type 'EntityBasedCongressSync'. Did you mean 'mapBillTypeTochamber'?
+packages/shared/src/lib/services/topic-figures-service.ts(6,30): error TS2307: Cannot find module './supabase/client' or its corresponding type declarations.
+packages/shared/src/lib/services/topic-figures-service.ts(7,31): error TS2307: Cannot find module './database.types' or its corresponding type declarations.
+packages/shared/src/lib/services/topic-figures-service.ts(74,22): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(76,41): error TS7006: Parameter 'id' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(87,47): error TS7006: Parameter 'f' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(89,25): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(92,39): error TS7006: Parameter 'id' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(189,39): error TS7006: Parameter 'f' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(197,31): error TS7006: Parameter 'ft' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(198,28): error TS7006: Parameter 't' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(222,39): error TS7006: Parameter 'id' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(231,45): error TS7006: Parameter 'f' implicitly has an 'any' type.
+packages/shared/src/lib/services/topic-figures-service.ts(236,37): error TS7006: Parameter 'id' implicitly has an 'any' type.
+packages/shared/src/lib/supabase/server.ts(10,36): error TS2307: Cannot find module 'next/headers' or its corresponding type declarations.
+packages/shared/src/lib/supabase/types.ts(4,61): error TS2304: Cannot find name 'createClient'.
+packages/shared/src/lib/survey-progress-demo.ts(9,3): error TS2724: '"./progress-storage"' has no exported member named 'useProgressStorage'. Did you mean 'QuizProgressStorage'?
+packages/shared/src/lib/topic-status.ts(28,35): error TS2589: Type instantiation is excessively deep and possibly infinite.
+packages/shared/src/lib/topic-status.ts(29,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/lib/topic-status.ts(48,35): error TS2589: Type instantiation is excessively deep and possibly infinite.
+packages/shared/src/lib/topic-status.ts(49,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/lib/topic-status.ts(75,12): error TS2345: Argument of type '"update_topic_status"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/topic-status.ts(86,18): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/topic-status.ts(98,12): error TS2345: Argument of type '"end_topic_status"' is not assignable to parameter of type '"is_admin" | "add_content_to_collection" | "add_figure_to_topic" | "add_npc_to_multiplayer_room" | "add_source_to_glossary_term" | "analyze_image_ab_test" | "cache_source_analysis" | ... 191 more ... | "validate_translation_structure"'.
+packages/shared/src/lib/topic-status.ts(107,18): error TS18046: 'data' is of type 'unknown'.
+packages/shared/src/lib/topic-status.ts(119,35): error TS2589: Type instantiation is excessively deep and possibly infinite.
+packages/shared/src/lib/topic-status.ts(120,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | ... 284 more ... | "weekly_recap_configs"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"ai_action_executions" | "ai_command_executions" | "ai_command_analytics" | "ai_research_results" | "ai_research_sessions" | "ai_source_analysis" | "ai_tool_usage" | "analytics_events" | ... 283 more ... | "weekly_recap_configs"'.
+  Overload 2 of 2, '(relation: "question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"topic_status_history"' is not assignable to parameter of type '"question_feedback_stats" | "question_response_stats" | "question_sources_enhanced" | "v_topics_with_questions_and_translations" | "ai_generated_topics" | "question_topics_few_questions" | ... 39 more ... | "user_skill_analytics"'.
+packages/shared/src/lib/topic-status.ts(134,21): error TS2339: Property 'question_topics' does not exist on type 'ResultOne'.
+packages/shared/src/lib/topic-status.ts(135,24): error TS2339: Property 'question_topics' does not exist on type 'ResultOne'.
+packages/shared/src/lib/tracking/admin-tracker.ts(1,30): error TS2307: Cannot find module './supabase/client' or its corresponding type declarations.
+packages/shared/src/lib/ui-strings-translation.ts(78,42): error TS2339: Property 'supabase' does not exist on type 'UIStringTranslationService'.
+packages/shared/src/lib/ui-strings-translation.ts(122,49): error TS2339: Property 'supabase' does not exist on type 'UIStringTranslationService'.
+packages/shared/src/lib/ui-strings-translation.ts(186,36): error TS2339: Property 'supabase' does not exist on type 'UIStringTranslationService'.
+packages/shared/src/lib/ui-strings-translation.ts(228,42): error TS2339: Property 'supabase' does not exist on type 'UIStringTranslationService'.
+packages/shared/src/lib/ui-strings-translation.ts(234,23): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/shared/src/lib/utils.ts(63,6): error TS2322: Type 'T | undefined' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'T | undefined'.
+packages/shared/src/lib/utils.ts(63,19): error TS2322: Type 'T | undefined' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'T | undefined'.
+packages/shared/src/lib/utils.ts(195,21): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/utils.ts(195,24): error TS18048: 'm' is possibly 'undefined'.
+packages/shared/src/lib/utils.ts(225,19): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/utils.ts(225,34): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/utils.ts(225,50): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/utils.ts(228,29): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+packages/shared/src/lib/utils.ts(228,35): error TS18048: 'month' is possibly 'undefined'.
+packages/shared/src/lib/utils/congressional.ts(297,52): error TS2532: Object is possibly 'undefined'.
+packages/shared/src/utils/analytics-enhanced.ts(83,11): error TS2740: Type '{ welcome: string; learning_pod_invitation: string; quiz_achievement: string; level_up: string; gift_claim: string; educational_access: string; weekly_digest: string; streak_encouragement: string; ... 9 more ...; civic_news_alert: string; }' is missing the following properties from type 'Record<EmailType, string>': survey_invitations, "survey-invitation", "survey-completion", "survey-reminder", and 3 more.
+packages/shared/src/utils/analytics-enhanced.ts(151,56): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Record<string, any>'.
+packages/shared/src/utils/analytics-enhanced.ts(165,60): error TS2345: Argument of type '{ to: string; userName: string; institutionDomain: string; }' is not assignable to parameter of type 'string'.
+packages/shared/src/utils/analytics-enhanced.ts(201,64): error TS2345: Argument of type '{ to: string; userName: string; achievementName: string; score: number; quizName: string; }' is not assignable to parameter of type 'string'.
+packages/shared/src/utils/analytics-enhanced.ts(222,54): error TS2345: Argument of type '{ to: string; userName: string; newLevel: number; xpTotal: number; }' is not assignable to parameter of type 'string'.
+packages/shared/src/utils/analytics-enhanced.ts(269,52): error TS2345: Argument of type '{ to: string; studentName: string; podName: string; teacherName: string; joinUrl: string; courseName?: string; requireParentConsent?: boolean; }' is not assignable to parameter of type 'string'.
+packages/shared/src/utils/analytics.ts(4,28): error TS2307: Cannot find module '@/components/providers/statsig-provider' or its corresponding type declarations.
+packages/shared/src/utils/analytics.ts(5,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+packages/shared/src/utils/source-maintenance.ts(466,32): error TS2379: Argument of type '{ url: string; questionId: string; sourceName: string; error: string; statusCode: number | undefined; }' is not assignable to parameter of type 'BrokenSource' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'statusCode' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.

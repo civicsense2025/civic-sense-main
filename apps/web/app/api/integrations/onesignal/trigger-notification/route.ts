@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { oneSignal } from '@civicsense/shared/lib/integrations/onesignal'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { oneSignal } from '@/lib/integrations/onesignal'
+import { createClient } from '@/lib/supabase/server'
 
 // Validation schema for notification triggers
 const TriggerNotificationSchema = z.object({

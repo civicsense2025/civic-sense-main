@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { AppleIAPService, APPLE_IAP_PRODUCTS } from '@civicsense/shared/lib/apple-iap'
-import { debug } from '@civicsense/shared/lib/debug-config'
+import { createClient } from '@/lib/supabase/server'
+import { AppleIAPService, APPLE_IAP_PRODUCTS } from '@/lib/apple-iap'
+import { debug } from '@/lib/debug-config'
 
 // Apple IAP validation endpoint
 export async function POST(request: NextRequest) {

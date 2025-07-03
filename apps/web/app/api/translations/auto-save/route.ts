@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // Server-side analytics function since useAnalytics is for client-side only
 const trackServerAnalytics = async (eventName: string, metadata: Record<string, any>) => {

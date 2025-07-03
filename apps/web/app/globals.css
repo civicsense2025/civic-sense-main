@@ -1,0 +1,1158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Line clamp utilities for text truncation */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Enhanced header animations and gradients */
+  .header-gradient-text {
+    background: linear-gradient(135deg, #1e293b, #475569);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .dark .header-gradient-text {
+    background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .mobile-menu-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-menu-item:hover {
+    transform: translateY(-1px);
+  }
+
+  .mobile-menu-icon {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-menu-item:hover .mobile-menu-icon {
+    transform: scale(1.1);
+  }
+
+  /* Enhanced backdrop blur for mobile menu */
+  .mobile-menu-backdrop {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  /* Enhanced button hover effects */
+  .enhanced-button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .enhanced-button:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .enhanced-button:active {
+    transform: translateY(0) scale(0.98);
+  }
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  overflow-x: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* WCAG 2.2 AA Compliant Color System */
+:root {
+  /* Light mode - CivicSense brand palette */
+  --background: 35 43% 98%; /* #FDFCF9 - Truth white */
+  --foreground: 210 30% 15%; /* Dark text for high contrast */
+  --foreground-secondary: 215 20% 65%;
+  --foreground-tertiary: 215 16% 47%;
+  --foreground-muted: 50 100% 95%; /* #FFF5D9 - Warm surface muted */
+  
+  --card: 0 0% 100%;
+  --card-foreground: 210 30% 15%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 30% 15%;
+  
+  /* Primary - CivicSense Gold #E0A63E */
+  --primary: 43 75% 56%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary - Authority Blue #2E4057 */
+  --secondary: 210 30% 27%;
+  --secondary-foreground: 0 0% 100%;
+  
+  /* Accent - Civic Blue #6096BA */
+  --accent: 205 34% 55%;
+  --accent-foreground: 0 0% 100%;
+  
+  /* Muted - Warm surface #FFF5D9 */
+  --muted: 50 100% 93%;
+  --muted-foreground: 210 30% 27%;
+  
+  /* Status colors */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+  
+  /* Warning uses CivicSense gold for consistency */
+  --warning: 43 75% 56%;
+  --warning-foreground: 0 0% 100%;
+  
+  /* Interactive elements */
+  --border: 210 30% 85%;
+  --input: 210 30% 85%;
+  --ring: 43 75% 56%; /* CivicSense gold focus ring */
+  --radius: 0.5rem;
+
+  /* CivicSense 8px Grid System - Replaces Apple spacing */
+  --space-xs: 4px;    /* 0.5 units */
+  --space-sm: 8px;    /* 1 unit */
+  --space-md: 16px;   /* 2 units */
+  --space-lg: 24px;   /* 3 units */
+  --space-xl: 32px;   /* 4 units */
+  --space-2xl: 48px;  /* 6 units */
+  --space-3xl: 64px;  /* 8 units */
+  --space-4xl: 96px;  /* 12 units */
+  
+  /* Legacy Apple spacing for compatibility */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Typography scale - Base (Mobile) */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  --text-6xl: 3.75rem;   /* 60px */
+  
+  /* Button Heights (44px minimum touch target) */
+  --btn-height-sm: 36px;
+  --btn-height-md: 44px;
+  --btn-height-lg: 52px;
+  
+  /* Component Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Enhanced header variables */
+  --header-height: 80px;
+  --header-backdrop: rgba(255, 255, 255, 0.95);
+  --header-border: rgba(148, 163, 184, 0.3);
+  --mobile-menu-backdrop: rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY SCALING
+   ============================================================================ */
+
+/* Tablet and up (768px+) - Scale up typography by ~12% */
+@media (min-width: 768px) {
+  :root {
+    --text-xs: 0.84rem;    /* 13.4px */
+    --text-sm: 0.98rem;    /* 15.7px */
+    --text-base: 1.12rem;  /* 17.9px */
+    --text-lg: 1.26rem;    /* 20.2px */
+    --text-xl: 1.4rem;     /* 22.4px */
+    --text-2xl: 1.68rem;   /* 26.9px */
+    --text-3xl: 2.1rem;    /* 33.6px */
+    --text-4xl: 2.52rem;   /* 40.3px */
+    --text-5xl: 3.36rem;   /* 53.8px */
+    --text-6xl: 4.2rem;    /* 67.2px */
+  }
+}
+
+/* Desktop and up (1024px+) - Scale up typography by ~20% from base */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 0.9rem;     /* 14.4px */
+    --text-sm: 1.05rem;    /* 16.8px */
+    --text-base: 1.2rem;   /* 19.2px */
+    --text-lg: 1.35rem;    /* 21.6px */
+    --text-xl: 1.5rem;     /* 24px */
+    --text-2xl: 1.8rem;    /* 28.8px */
+    --text-3xl: 2.25rem;   /* 36px */
+    --text-4xl: 2.7rem;    /* 43.2px */
+    --text-5xl: 3.6rem;    /* 57.6px */
+    --text-6xl: 4.5rem;    /* 72px */
+  }
+}
+
+/* Large desktop and up (1280px+) - Scale up typography by ~30% from base */
+@media (min-width: 1280px) {
+  :root {
+    --text-xs: 0.98rem;    /* 15.7px */
+    --text-sm: 1.14rem;    /* 18.2px */
+    --text-base: 1.3rem;   /* 20.8px */
+    --text-lg: 1.46rem;    /* 23.4px */
+    --text-xl: 1.63rem;    /* 26px */
+    --text-2xl: 1.95rem;   /* 31.2px */
+    --text-3xl: 2.44rem;   /* 39px */
+    --text-4xl: 2.93rem;   /* 46.8px */
+    --text-5xl: 3.9rem;    /* 62.4px */
+    --text-6xl: 4.88rem;   /* 78px */
+  }
+}
+
+/* ============================================================================
+   BASE THEME VARIABLES
+   ============================================================================ */
+:root {
+  /* Enhanced multiplayer theme variables - CivicSense brand */
+  --multiplayer-bg: 50 100% 98%; /* Warm surface background */
+  --multiplayer-card: 0 0% 100%;
+  --multiplayer-card-hover: 50 100% 93%; /* Warm surface on hover */
+  --multiplayer-border: 210 30% 85%;
+  --multiplayer-text: 210 30% 15%;
+  --multiplayer-text-muted: 215 16% 47%;
+  --multiplayer-accent: 43 75% 56%; /* CivicSense gold */
+  --multiplayer-accent-light: 43 75% 95%;
+  --multiplayer-success: 142 76% 36%;
+  --multiplayer-success-light: 142 76% 95%;
+  --multiplayer-warning: 43 75% 56%; /* CivicSense gold for warnings */
+  --multiplayer-warning-light: 43 75% 95%;
+}
+
+.dark {
+  /* Dark mode - CivicSense brand palette adapted for dark theme */
+  --background: 210 30% 8%; /* Dark authority blue background */
+  --foreground: 50 100% 95%; /* Warm light text */
+  --foreground-secondary: 215 20% 65%;
+  --foreground-tertiary: 215 16% 65%;
+  --foreground-muted: 210 30% 15%;
+  
+  --card: 210 30% 12%;
+  --card-foreground: 50 100% 95%;
+  
+  --popover: 210 30% 12%;
+  --popover-foreground: 50 100% 95%;
+  
+  /* Primary - CivicSense Gold (slightly brighter for dark mode) */
+  --primary: 43 80% 65%;
+  --primary-foreground: 210 30% 8%;
+  
+  /* Secondary - Lighter authority blue */
+  --secondary: 210 30% 20%;
+  --secondary-foreground: 50 100% 95%;
+  
+  /* Accent - Brighter civic blue for dark mode */
+  --accent: 205 40% 65%;
+  --accent-foreground: 210 30% 8%;
+  
+  /* Muted - Dark surface */
+  --muted: 210 30% 15%;
+  --muted-foreground: 215 20% 65%;
+  
+  /* Status colors adjusted for dark mode */
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 50 100% 95%;
+  
+  --success: 142 76% 46%;
+  --success-foreground: 50 100% 95%;
+  
+  /* Warning uses CivicSense gold for consistency in dark mode */
+  --warning: 43 80% 65%;
+  --warning-foreground: 210 30% 8%;
+  
+  /* Interactive elements */
+  --border: 210 30% 20%;
+  --input: 210 30% 20%;
+  --ring: 43 80% 65%; /* CivicSense gold focus ring for dark mode */
+
+  /* Enhanced dark mode multiplayer variables - CivicSense brand */
+  --multiplayer-bg: 210 30% 8%; /* Dark authority blue background */
+  --multiplayer-card: 210 30% 12%;
+  --multiplayer-card-hover: 210 30% 16%;
+  --multiplayer-border: 210 30% 20%;
+  --multiplayer-text: 50 100% 95%; /* Warm light text */
+  --multiplayer-text-muted: 215 20% 60%;
+  --multiplayer-accent: 43 80% 65%; /* CivicSense gold for dark mode */
+  --multiplayer-accent-light: 43 80% 15%;
+  --multiplayer-success: 142 76% 46%;
+  --multiplayer-success-light: 142 76% 12%;
+  --multiplayer-warning: 43 80% 65%; /* CivicSense gold for warnings in dark mode */
+  --multiplayer-warning-light: 43 80% 12%;
+
+  /* Enhanced dark mode header variables */
+  --header-backdrop: rgba(2, 8, 23, 0.95);
+  --header-border: rgba(51, 65, 85, 0.3);
+}
+
+/* Clean base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+/* Prevent horizontal overflow */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+
+/* Apple-inspired typography classes with WCAG compliance */
+.apple-title-large {
+  font-size: var(--text-6xl);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: hsl(var(--foreground));
+}
+
+.apple-title {
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: hsl(var(--foreground));
+}
+
+.apple-headline {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: hsl(var(--foreground));
+}
+
+.apple-subheadline {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground-secondary));
+}
+
+.apple-body {
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  color: hsl(var(--foreground));
+}
+
+.apple-caption {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  color: hsl(var(--foreground-secondary));
+}
+
+.apple-footnote {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.4;
+  color: hsl(var(--foreground-secondary));
+}
+
+/* Enhanced Apple-inspired component styles */
+.apple-card {
+  background: hsla(var(--card), 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px hsla(var(--foreground), 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px hsla(var(--foreground), 0.15);
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted) / 0.5);
+}
+
+.apple-button-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-6);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px hsla(var(--primary), 0.3);
+}
+
+.apple-button-primary:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 8px 24px hsla(var(--primary), 0.4);
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7));
+}
+
+.apple-button-secondary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-6);
+  font-weight: 500;
+  font-size: var(--text-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.apple-button-secondary:hover {
+  transform: translateY(-1px);
+  background: hsl(var(--secondary) / 0.8);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px hsla(var(--foreground), 0.1);
+}
+
+/* Layout utilities */
+.apple-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.apple-section {
+  padding: var(--space-20) 0;
+}
+
+.apple-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-8);
+  align-items: start;
+}
+
+/* Enhanced prose styling with WCAG compliance */
+.prose {
+  color: hsl(var(--foreground));
+}
+
+.prose ul {
+  list-style-type: none;
+  padding-left: 1.5rem;
+  space-y: 0.5rem;
+  color: hsl(var(--foreground-secondary));
+}
+
+.prose ul li {
+  position: relative;
+  line-height: 1.75;
+  margin-bottom: 0.5rem;
+}
+
+.prose ul li::before {
+  content: "•";
+  color: hsl(var(--primary));
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  list-style-position: inside;
+  space-y: 0.5rem;
+  color: hsl(var(--foreground-secondary));
+}
+
+.prose ol li {
+  line-height: 1.75;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.prose ol li::before {
+  color: hsl(var(--primary));
+  font-weight: bold;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+/* Enhanced animations with better easing */
+.apple-animate-in {
+  animation: apple-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-slide-up {
+  animation: apple-slide-up 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-scale-in {
+  animation: apple-scale-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes apple-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes apple-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes apple-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Enhanced shimmer animation for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Accordion animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.3s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.3s ease-out;
+}
+
+/* Accordion content styling */
+.accordion-content {
+  overflow: hidden;
+  transition: height 0.3s ease-out, opacity 0.2s ease-out;
+}
+
+/* WCAG compliant focus states */
+.apple-focus:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Remove default focus styles and apply accessible ones */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Apply custom focus to interactive elements */
+button,
+a,
+input,
+textarea,
+select {
+  @apply apple-focus;
+}
+
+/* Apple-like smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove default animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .text-balance {
+    text-wrap: auto;
+  }
+}
+
+/* Subtle hover effects for cards and interactive elements - NO TRANSFORM */
+.hover\\:bg-muted:hover,
+[class*="hover:bg-"]:hover:not(.hover\\:bg-primary):not(.hover\\:bg-destructive):not(.hover\\:bg-accent) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+/* Override specific problematic hover colors - but exclude search components */
+.hover\\:bg-blue-50:hover:not(.enhanced-global-search *),
+.hover\\:bg-blue-100:hover:not(.enhanced-global-search *) {
+  background-color: hsl(var(--muted) / 0.3) !important;
+}
+
+/* Subtle hover for buttons and links - NO TRANSFORM - but exclude search component */
+button:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent):not(.enhanced-global-search *),
+a:hover:not(.bg-primary):not(.bg-destructive):not(.bg-accent):not(.enhanced-global-search *) {
+  background-color: hsl(var(--muted) / 0.4);
+  transition: background-color 0.2s ease;
+}
+
+/* Ensure dialogs and modals have proper stacking context and prevent jumping */
+[data-radix-portal] {
+  z-index: 50;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Hide scrollbars while maintaining functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* ============================================================================
+     HYPERLINK UNDERLINE CONTROL - FIXED
+     ============================================================================ */
+  
+  /* Remove default underlines from most links */
+  a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+  
+  /* Only add underlines to specific content areas where they make sense */
+  .prose a,
+  .content a,
+  .article a,
+  .markdown a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    color: hsl(var(--primary));
+  }
+  
+  .prose a:hover,
+  .content a:hover,
+  .article a:hover,
+  .markdown a:hover {
+    text-decoration-thickness: 2px;
+  }
+  
+  /* Navigation, buttons, and UI elements - NO underlines */
+  nav a,
+  .navigation a,
+  .nav-link,
+  .btn,
+  button,
+  [role="button"],
+  .button-link,
+  .sidebar a,
+  .header a,
+  .footer a,
+  .menu a,
+  .toolbar a,
+  .admin-nav a,
+  .card a,
+  .topic-card a {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* Admin panel links - clean styling */
+  .admin-content a:not(.prose a):not(.content a) {
+    text-decoration: none !important;
+  }
+  
+  /* Hover states for UI links - subtle color change, no underline */
+  nav a:hover,
+  .navigation a:hover,
+  .sidebar a:hover,
+  .header a:hover,
+  .footer a:hover,
+  .menu a:hover,
+  .admin-nav a:hover {
+    color: hsl(var(--primary));
+    text-decoration: none !important;
+  }
+  
+  /* ============================================================================
+     ADMIN INTERFACE SPECIFIC STYLES
+     ============================================================================ */
+  
+  /* Admin sidebar and navigation links */
+  .admin-sidebar a,
+  .admin-nav-item {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* Admin table links - use subtle primary color */
+  .admin-table a {
+    text-decoration: none;
+    color: hsl(var(--primary));
+    transition: color 0.2s ease;
+  }
+  
+  .admin-table a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
+  
+  /* Admin action buttons */
+  .admin-action-btn {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  /* ============================================================================
+     QUIZ AND INTERACTIVE CONTENT
+     ============================================================================ */
+  
+  /* Quiz interface links - inherit colors */
+  .quiz a,
+  .quiz-interface a {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  /* Learning content links - subtle primary color */
+  .learning-content a {
+    text-decoration: none;
+    color: hsl(var(--primary));
+    transition: color 0.2s ease;
+  }
+  
+  .learning-content a:hover {
+    color: hsl(var(--primary) / 0.8);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES FOR LINK STYLING
+   ============================================================================ */
+
+@layer utilities {
+  /* Utility classes for different link styles */
+  .link-none {
+    text-decoration: none !important;
+    color: inherit;
+  }
+  
+  .link-hover {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+  
+  .link-hover:hover {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  
+  .link-underline {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    color: hsl(var(--primary));
+  }
+  
+  .link-subtle {
+    text-decoration: none;
+    color: hsl(var(--foreground-secondary));
+    transition: color 0.2s ease;
+  }
+  
+  .link-subtle:hover {
+    color: hsl(var(--foreground));
+  }
+  
+  .link-button {
+    text-decoration: none !important;
+    color: inherit;
+    @apply inline-flex items-center justify-center;
+  }
+}
+
+/* UI Element Fixes - Ensure proper aspect ratios and sizing */
+/* Fix for circular and square elements being squished - but exclude badges and buttons */
+[data-radix-radio-group-item],
+[data-radix-checkbox-root],
+.aspect-square {
+  aspect-ratio: 1 / 1 !important;
+}
+
+/* Apply circular aspect ratio only to avatars and specific circular elements */
+.avatar.rounded-full,
+.notification-badge {
+  aspect-ratio: 1 / 1 !important;
+}
+
+/* Specific exclusion for any element with badge-related classes (except notification badges) */
+*[class*="badge"]:not(.notification-badge),
+*[class*="inline-flex"][class*="rounded-full"]:not(.notification-badge) {
+  aspect-ratio: auto !important;
+}
+
+/* Ensure progress bars stay thin */
+[data-radix-progress-root] {
+  height: 0.25rem !important; /* 4px - thin progress bars */
+}
+
+/* Override any thick progress bars */
+.progress-thin {
+  height: 0.25rem !important;
+}
+
+.progress-medium {
+  height: 0.5rem !important;
+}
+
+/* Fix for any buttons or elements that should be circular */
+.w-5.h-5,
+.w-6.h-6,
+.w-8.h-8,
+.w-10.h-10,
+.w-12.h-12 {
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+
+/* Ensure separators are thin */
+[data-radix-separator-root] {
+  height: 1px !important;
+}
+
+.separator-thin {
+  height: 1px !important;
+}
+
+/* Fix any distorted icons or avatars - but NOT badges */
+.lucide,
+.avatar {
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+
+/* Badges should be pill-shaped, not circular */
+.badge,
+[class*="badge"],
+.badge-pill,
+div[class*="inline-flex"][class*="rounded-full"][class*="border"] {
+  aspect-ratio: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Specific override for badge components */
+.badge-pill {
+  aspect-ratio: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+}
+
+/* Notification badges should stay circular */
+.notification-badge {
+  aspect-ratio: 1 / 1 !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  border-radius: 50% !important;
+  min-width: 1.25rem !important;
+  max-width: 1.25rem !important;
+}
+
+/* Ensure badges and pill-shaped elements are not forced into circles */
+.badge,
+[class*="badge"],
+div[class*="inline-flex"][class*="items-center"][class*="rounded-full"][class*="border"] {
+  aspect-ratio: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure proper sizing for form elements */
+input[type="radio"],
+input[type="checkbox"] {
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+
+/* Fix for any circular progress indicators */
+.circular-progress svg {
+  aspect-ratio: 1 / 1;
+}
+
+/* Timer component override to prevent global rounded-full issues */
+.timer-component {
+  padding: 0.375rem 0.75rem !important; /* py-1.5 px-3 */
+}
+
+.timer-component.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+.badge-breaking {
+  @apply bg-gradient-to-r from-red-500 to-rose-600 text-white text-xs font-bold font-['Space_Mono'] uppercase tracking-wider rounded-full animate-pulse;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================================================
+   ADDITIONAL LINK OVERRIDES
+   ============================================================================ */
+
+/* Prevent any blue backgrounds on links */
+a:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Override any Tailwind blue text classes on links */
+a.text-blue-600,
+a.text-blue-500, 
+a.text-blue-700,
+a.text-blue-800 {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Ensure hover states don't create blue backgrounds */
+a:hover:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Dark mode specific overrides */
+.dark a:not(.btn):not(.button):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
+
+/* Remove underlines from specific component links */
+.header a,
+.footer a,
+.sidebar a,
+.menu a,
+.toolbar a {
+  text-decoration: none !important;
+  color: inherit;
+}
+
+/* ============================================================================
+   ICON BUTTON OVERRIDES - PREVENT BLUE BACKGROUNDS
+   ============================================================================ */
+
+/* Theme toggle and language switcher - clean neutral hover states */
+button[aria-label*="Toggle theme"],
+button[aria-label*="language"],
+.language-switcher button,
+.theme-toggle button,
+button:has(svg) {
+  background-color: transparent !important;
+}
+
+button[aria-label*="Toggle theme"]:hover,
+button[aria-label*="language"]:hover,
+.language-switcher button:hover,
+.theme-toggle button:hover,
+button:has(svg):hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Dark mode specific overrides for icon buttons */
+.dark button[aria-label*="Toggle theme"]:hover,
+.dark button[aria-label*="language"]:hover,
+.dark .language-switcher button:hover,
+.dark .theme-toggle button:hover,
+.dark button:has(svg):hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Override any ghost button variants that might have blue backgrounds */
+.btn-ghost:hover,
+button[class*="ghost"]:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* ============================================================================
+   ENHANCED GLOBAL SEARCH COMPONENT OVERRIDES
+   ============================================================================ */
+
+/* Preserve search component styling - override global button rules */
+.enhanced-global-search button {
+  /* Reset any global button overrides for search component */
+  background-color: revert !important;
+  color: revert !important;
+}
+
+.enhanced-global-search button:hover {
+  /* Let search component handle its own hover states */
+  background-color: revert !important;
+  color: revert !important;
+}
+
+/* Preserve search component pill and filter button styling */
+.enhanced-global-search button[class*="bg-slate"],
+.enhanced-global-search div[class*="hover:bg-slate"] {
+  background-color: revert !important;
+}
+
+.enhanced-global-search button[class*="bg-slate"]:hover,
+.enhanced-global-search div[class*="hover:bg-slate"]:hover {
+  background-color: revert !important;
+}
+
+/* Preserve search result item hover states */
+.enhanced-global-search [class*="hover:bg-slate"]:hover {
+  background-color: revert !important;
+}
+
+/* Override global button rules specifically for search component */
+.enhanced-global-search * {
+  /* Reset any inherited button overrides */
+  background-color: revert;
+  color: revert;
+}
+
+/* Ensure search component Tailwind classes work normally */
+.enhanced-global-search .bg-slate-100 { background-color: rgb(241 245 249) !important; }
+.enhanced-global-search .bg-slate-800 { background-color: rgb(30 41 59) !important; }
+.enhanced-global-search .bg-slate-50 { background-color: rgb(248 250 252) !important; }
+.enhanced-global-search .bg-slate-900 { background-color: rgb(15 23 42) !important; }
+
+.enhanced-global-search .hover\\:bg-slate-50:hover { background-color: rgb(248 250 252) !important; }
+.enhanced-global-search .hover\\:bg-slate-100:hover { background-color: rgb(241 245 249) !important; }
+.enhanced-global-search .hover\\:bg-slate-200:hover { background-color: rgb(226 232 240) !important; }
+.enhanced-global-search .hover\\:bg-slate-700:hover { background-color: rgb(51 65 85) !important; }
+.enhanced-global-search .hover\\:bg-slate-800:hover { background-color: rgb(30 41 59) !important; }

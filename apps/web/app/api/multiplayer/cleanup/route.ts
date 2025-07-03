@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { multiplayerOperations } from '@civicsense/shared/lib/multiplayer'
-import { envFeatureFlags } from '@civicsense/shared/lib/env-feature-flags'
+import { multiplayerOperations } from '@/lib/multiplayer'
+import { envFeatureFlags } from '@/lib/env-feature-flags'
 
 /**
  * Clean up expired multiplayer rooms

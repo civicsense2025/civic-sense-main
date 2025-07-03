@@ -3,7 +3,7 @@ import {
   runSourceMaintenance, 
   scanForBrokenSources, 
   removeBrokenSourcesOnly 
-} from '@civicsense/shared/utils/source-maintenance'
+} from '@/utils/source-maintenance'
 
 export async function POST(request: NextRequest) {
   try {

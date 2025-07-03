@@ -2,7 +2,7 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "noEmit": true,
+    "composite": true,
     "noUncheckedIndexedAccess": false,
     "isolatedModules": true,
     "exactOptionalPropertyTypes": false,

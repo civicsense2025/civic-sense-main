@@ -1,4 +1,4 @@
-import { enhancedQuizDatabase } from "@civicsense/shared/lib/quiz-database"
+import { enhancedQuizDatabase } from "@/lib/quiz-database"
 import { NextResponse } from "next/server"
 
 export async function GET(

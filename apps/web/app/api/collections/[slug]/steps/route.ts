@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { LessonStep, LessonStepsResponse } from '@civicsense/shared/types/lesson-steps'
+import { createClient } from '@/lib/supabase/server'
+import { LessonStep, LessonStepsResponse } from '@/types/lesson-steps'
 
 // GET /api/collections/[slug]/steps - Get lesson steps for a collection
 export async function GET(

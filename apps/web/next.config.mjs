@@ -81,27 +81,14 @@ const nextConfig = {
       'node_modules'
     ]
     
-    // Ensure workspace packages are transpiled
-    config.module = config.module || { rules: [] }
-    config.module.rules = config.module.rules || []
-    
-    // Add rule to transpile workspace packages
-    config.module.rules.push({
-      test: /\.(ts|tsx|js|jsx)$/,
-      include: [
-        path.resolve(workspaceRoot, 'packages/shared'),
-        path.resolve(workspaceRoot, 'packages/ui-shared'),
-        path.resolve(workspaceRoot, 'packages/ui-web'),
-        path.resolve(workspaceRoot, 'packages/ui-mobile'),
-      ],
-      use: {
-        loader: 'next/dist/build/webpack/loaders/next-swc-loader.js',
-        options: {
-          isServer,
-          hasReactRefresh: dev && !isServer,
-        },
-      },
-    })
+    // Add alias for workspace packages to prevent path resolution issues
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@civicsense/shared': path.resolve(workspaceRoot, 'packages/shared/src'),
+      '@civicsense/ui-shared': path.resolve(workspaceRoot, 'packages/ui-shared/src'),
+      '@civicsense/ui-web': path.resolve(workspaceRoot, 'packages/ui-web/src'),
+      '@civicsense/ui-mobile': path.resolve(workspaceRoot, 'packages/ui-mobile/src'),
+    }
 
     // Suppress warnings for better build output
     config.ignoreWarnings = [

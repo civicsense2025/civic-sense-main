@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleClassroomIntegration } from '@civicsense/shared/lib/integrations/google-classroom'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { GoogleClassroomIntegration } from '@/lib/integrations/google-classroom'
+import { createClient } from '@/lib/supabase/server'
 
 // POST /api/integrations/classroom/process-grades
 // Body: { access_token: string, pod_id: string }

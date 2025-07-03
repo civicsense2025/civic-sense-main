@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dataService } from '@civicsense/shared/lib/data-service'
-import { enhancedQuizDatabase } from '@civicsense/shared/lib/quiz-database'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { dataService } from '@/lib/data-service'
+import { enhancedQuizDatabase } from '@/lib/quiz-database'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {

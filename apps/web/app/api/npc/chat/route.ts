@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { enhancedNPCService, type NPCConversationContext } from '@civicsense/shared/lib/enhanced-npc-service'
+import { enhancedNPCService, type NPCConversationContext } from '@/lib/enhanced-npc-service'
 
 export async function POST(request: NextRequest) {
   try {

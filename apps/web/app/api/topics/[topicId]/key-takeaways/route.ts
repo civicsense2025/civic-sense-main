@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { KeyTakeaways, validateKeyTakeaways } from '@civicsense/shared/lib/types/key-takeaways'
+import { createClient } from '@/lib/supabase/server'
+import { KeyTakeaways, validateKeyTakeaways } from '@/lib/types/key-takeaways'
 
 export async function GET(
   request: NextRequest,

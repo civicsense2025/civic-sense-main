@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@civicsense/shared/lib/supabase'
-import { updateEnhancedProgress } from '@civicsense/shared/lib/enhanced-gamification'
-import type { PendingQuizResult } from '@civicsense/shared/lib/pending-user-attribution'
+import { supabase } from '@/lib/supabase'
+import { updateEnhancedProgress } from '@/lib/enhanced-gamification'
+import type { PendingQuizResult } from '@/lib/pending-user-attribution'
 
 export async function POST(request: NextRequest) {
   try {

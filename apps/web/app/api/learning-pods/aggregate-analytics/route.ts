@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { arePodsEnabled } from '@civicsense/shared/lib/comprehensive-feature-flags'
+import { createClient } from '@/lib/supabase/server'
+import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
 
 // GET /api/learning-pods/aggregate-analytics - Get aggregate analytics for user's pods
 export async function GET(request: NextRequest) {

@@ -8,23 +8,30 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "pnpm --filter=@civicsense/web dev",
-    "dev:mobile": "pnpm --filter=@civicsense/mobile start",
-    "build:web": "pnpm --filter=@civicsense/web build",
-    "build:mobile": "pnpm --filter=@civicsense/mobile build:android",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:mobile": "cd apps/mobile && npm start",
+    "build:web": "cd apps/web && npm run build",
+    "build:mobile": "cd apps/mobile && npm run build:android",
     "start:web": "pnpm --filter=@civicsense/web start",
-    "lint:all": "pnpm --filter='apps/*' lint",
-    "test:all": "pnpm --filter='apps/*' test",
-    "type-check:all": "pnpm --filter='apps/*' type-check",
-    "clean": "pnpm --filter='apps/*' clean && pnpm --filter='packages/*' clean && rm -rf node_modules",
+    "lint:all": "npm run lint --workspaces",
+    "test:all": "npm run test --workspaces",
+    "type-check:all": "npm run type-check --workspaces",
+    "optimize:imports": "node scripts/optimize-imports.js",
+    "optimize:structure": "node scripts/optimize-structure.js",
+    "clean:dist": "find . -name 'dist' -type d -not -path './node_modules/*' -exec rm -rf {} +",
+    "clean:deps": "find . -name 'node_modules' -type d -not -path './node_modules' -exec rm -rf {} +",
+    "fresh:install": "npm run clean:deps && npm install",
     "install:all": "pnpm install",
     "dev": "pnpm run dev:web",
     "build": "pnpm run build:web"
   },
   "dependencies": {
     "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.0",
-    "date-fns": "^3.6.0"
+    "@types/react-dom": "^19.1.6",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.525.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -39,8 +46,7 @@
   "overrides": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.0"
+    "@types/react": "^19.1.8"
   },
   "pnpm": {
     "peerDependencyRules": {
@@ -60,4 +66,4 @@
     ]
   },
   "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
-}
+} 

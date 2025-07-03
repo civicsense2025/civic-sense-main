@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/learning-pods/[podId]/invite - Get invite links for a pod
 export async function GET(

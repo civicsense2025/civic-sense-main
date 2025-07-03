@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
-import { UpdateLessonStepProgressRequest } from '@civicsense/shared/types/lesson-steps'
+import { createClient } from '@/lib/supabase/server'
+import { UpdateLessonStepProgressRequest } from '@/types/lesson-steps'
 
 // POST /api/collections/[slug]/steps/progress - Update lesson step progress
 export async function POST(

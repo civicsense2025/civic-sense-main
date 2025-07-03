@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { 
   getMediaOrganizationByDomain, 
   getBiasDimensions,
   type BiasDimension,
   type MediaOrganizationWithScores 
-} from '@civicsense/shared/lib/media-bias-engine'
+} from '@/lib/media-bias-engine'
 
 interface SourceAnalysis {
   url: string

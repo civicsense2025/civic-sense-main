@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/pod-achievements - Get available achievements for pods
 export async function GET(request: NextRequest) {

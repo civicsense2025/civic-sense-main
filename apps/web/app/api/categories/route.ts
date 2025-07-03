@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@civicsense/shared/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 // Simple in-memory cache for categories
 let categoriesCache: {

@@ -1,7 +1,7 @@
 
 // app/api/guest/reset-usage/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { resetGuestUsage } from '@civicsense/shared/lib/guest-tracking'
+import { resetGuestUsage } from '@/lib/guest-tracking'
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 // app/api/guest/record-usage/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { recordGuestUsage, getGuestUsage } from '@civicsense/shared/lib/guest-tracking'
+import { recordGuestUsage, getGuestUsage } from '@/lib/guest-tracking'
 
 export async function POST(request: NextRequest) {
   try {

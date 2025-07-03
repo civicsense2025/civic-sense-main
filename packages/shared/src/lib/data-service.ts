@@ -6,6 +6,12 @@ import { allCategories } from './quiz-data'
 import { cleanObjectContent } from './utils'
 import { supabase } from './supabase/client'
 
+// Check if Supabase is available
+if (!supabase) {
+  console.warn('⚠️ Supabase client not initialized in data-service. Database operations will be limited.')
+  console.warn('Please ensure environment variables NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.')
+}
+
 // Cache for database availability check
 let isDatabaseAvailable: boolean | null = null
 let lastDbCheck = 0
@@ -609,6 +615,10 @@ const getCachedTopic = async (topicId: string): Promise<TopicMetadata | null> =>
 
   try {
     console.log('📊 dataService.getTopicById - Querying database for topic:', topicId)
+    
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
     
     const { data: dbTopic, error } = await supabase
       .from('question_topics')

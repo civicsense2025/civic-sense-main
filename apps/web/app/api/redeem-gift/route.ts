@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@civicsense/shared/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 // POST - Redeem a gift code
 export async function POST(request: NextRequest) {

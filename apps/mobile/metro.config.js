@@ -22,6 +22,9 @@ config.resolver.nodeModulesPaths = [
 // Configure disableHierarchicalLookup for better performance in monorepo
 config.resolver.disableHierarchicalLookup = false;
 
+// Enable package.json exports (default in SDK 53)
+config.resolver.unstable_enablePackageExports = true;
+
 // Add source extensions for better module resolution
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'cjs'];
 
@@ -68,7 +71,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-// Configure transformer with HMR error handling and monorepo support
+// Configure transformer with React 19 support and monorepo compatibility
 config.transformer = {
   ...config.transformer,
   assetRegistryPath: 'react-native/Libraries/Image/AssetRegistry',
@@ -77,21 +80,23 @@ config.transformer = {
       keep_fnames: true,
     },
   },
-  // Add HMR options to prevent errors
+  // Enable experimental features for React 19
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
       inlineRequires: true,
+      // Enable import.meta transform for React 19
+      unstable_transformImportMeta: true,
     },
   }),
   // Enable unstable_allowRequireContext for workspace compatibility
   unstable_allowRequireContext: true,
 };
 
-// Configure Metro cache - disable for monorepo development
-config.resetCache = true;
+// Configure Metro cache - use workspace root for better caching
+config.projectRoot = projectRoot;
 
-// Add HMR configuration to prevent undefined property errors
+// Add resolver main fields for better package resolution
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
 // Configure server for monorepo development

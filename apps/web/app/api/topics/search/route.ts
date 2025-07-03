@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@civicsense/shared/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
-import type { DbQuestionTopic, DbQuestion, DbCategory } from '@civicsense/shared/lib/database.types'
+import type { DbQuestionTopic, DbQuestion, DbCategory } from '@/lib/database.types'
 
 // Search parameters schema for validation
 const searchSchema = z.object({

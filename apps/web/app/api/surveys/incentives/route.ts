@@ -4,13 +4,13 @@
 // Handles CRUD operations for survey incentives configuration
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@civicsense/shared/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { 
   SurveyIncentive, 
   CreateSurveyIncentiveRequest,
   IncentiveType 
-} from '@civicsense/shared/types/incentives'
+} from '@/types/incentives'
 
 // ============================================================================
 // VALIDATION SCHEMAS
