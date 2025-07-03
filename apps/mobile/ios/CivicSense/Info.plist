@@ -60,7 +60,7 @@
     <key>NSCameraUsageDescription</key>
     <string>CivicSense needs camera access for profile photos</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <string>Allow $(PRODUCT_NAME) to use Face ID</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>CivicSense needs microphone access for voice features</string>
     <key>NSRemindersUsageDescription</key>
@@ -72,6 +72,7 @@
     <key>UIBackgroundModes</key>
     <array>
       <string>remote-notification</string>
+      <string>background-fetch</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
