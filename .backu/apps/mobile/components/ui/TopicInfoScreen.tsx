@@ -28,8 +28,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../lib/theme-context';
 import { useAuth } from '../../lib/auth-context';
 import { Text } from '../atoms/Text';
-import { Card } from '../ui/Card';
-import { AnimatedCard } from '../ui/AnimatedCard';
+import { Card } from './Card';
+import { AnimatedCard } from './AnimatedCard';
 import { LoadingSpinner } from '../molecules/LoadingSpinner';
 import { Button } from '../Button';
 import { 

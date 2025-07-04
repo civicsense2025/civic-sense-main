@@ -42,7 +42,7 @@ async function loadModules() {
     const require = createRequire(import.meta.url);
     
     // Try to import from the lib directory
-    const UGCContentGenerator = require('./lib/ai/ugc-content-generator.ts');
+    const UGCContentGenerator = require('./lib/ai/ugc-content-generator.js');
     return { UGCContentGenerator };
   } catch (error) {
     console.error('❌ Failed to load modules:', error.message);

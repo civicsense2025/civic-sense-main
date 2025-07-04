@@ -54,7 +54,7 @@ export default function OnboardingFlow() {
       }
       
       // Navigate to main app
-      router.replace('/(tabs)/')
+      router.replace('/(tabs)')
     }
 
     redirectToMainApp()

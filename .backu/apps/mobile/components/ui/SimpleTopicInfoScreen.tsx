@@ -23,9 +23,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../lib/theme-context';
 import { useAuth } from '../../lib/auth-context';
 import { Text } from '../atoms/Text';
-import { Card } from '../ui/Card';
+import { Card } from './Card';
 import { LoadingSpinner } from '../molecules/LoadingSpinner';
-import { BookmarkButton } from '../ui/BookmarkButton';
+import { BookmarkButton } from './BookmarkButton';
 import { 
   spacing, 
   borderRadius, 
