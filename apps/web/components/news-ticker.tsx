@@ -5,7 +5,7 @@ import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Skeleton } from './ui/skeleton'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 import { 
   Play, 
@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Globe
 } from 'lucide-react'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import {
   Tooltip,
   TooltipContent,

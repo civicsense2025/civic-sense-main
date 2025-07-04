@@ -1,21 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from "@civicsense/business-logic/hooks/usePremium"
 import { useLazyVoices } from "@civicsense/business-logic/hooks/useLazyVoices"
-import { PremiumSubscriptionCard } from "@civicsense/ui-web/components/premium-subscription-card"
-import { UserMenu } from "@civicsense/ui-web/components/auth/user-menu"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@civicsense/ui-web/components/ui/tabs"
-import { Badge } from '@civicsense/ui-web'
-import { Separator } from "@civicsense/ui-web/components/ui/separator"
-import { Switch } from "@civicsense/ui-web/components/ui/switch"
-import { Slider } from "@civicsense/ui-web/components/ui/slider"
-import { Alert, AlertDescription } from "@civicsense/ui-web/components/ui/alert"
+import { PremiumSubscriptionCard } from "@/components/premium-subscription-card"
+import { UserMenu } from "@/components/auth/user-menu"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Label } from "../../components/ui"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "../../components/ui"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Slider } from "@/components/ui/slider"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   User, Settings, Crown, Bell, Shield, Download,
   Mail, Calendar, CreditCard, Key, Trash2,
@@ -24,13 +24,13 @@ import {
   Accessibility, Volume2, Eye, Type, Headphones,
   RefreshCw, Play
 } from "lucide-react"
-import { EducationalAccessChecker } from "@civicsense/ui-web/components/educational-access-checker"
-import { LanguageSwitcher } from "@civicsense/ui-web/components/language-switcher"
-import { cn } from '@civicsense/ui-web'
+import { EducationalAccessChecker } from "@/components/educational-access-checker"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { cn } from "../../components/ui"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { GiftCreditsDashboard } from "./gift-credits-dashboard"
-import { LanguageSettings } from "@civicsense/ui-web/components/language-settings"
+import { LanguageSettings } from "@/components/language-settings"
 import { redirect } from 'next/navigation'
 import { createClient } from '@civicsense/business-logic/database/server'
 import { SignOutButton } from '../protected/sign-out-button'

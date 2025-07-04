@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 // Temporary stub for monorepo migration
 const usePremium = () => ({
   subscription: {
@@ -63,9 +63,9 @@ type EnhancedUserProgress = any
 type Achievement = any
 
 import { useRouter } from "next/navigation"
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Progress } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Progress } from "../../components/ui"
 import { 
   Crown, BarChart3, BookOpen, Settings, 
   TrendingUp, Target, Calendar, Users,
@@ -74,7 +74,7 @@ import {
   Brain, Award, Flame, Activity, Plus,
   Filter, Search, Shuffle, Play, Info, X
 } from "lucide-react"
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 import Link from "next/link"
 // Temporary stub for monorepo migration
 const useAnalytics = () => ({
@@ -82,18 +82,18 @@ const useAnalytics = () => ({
     pageView: (page: string) => console.log('Analytics disabled - page view:', page)
   }
 })
-import { DailyCardStack } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { DailyCardStack } from "../../components/ui"
+import { Header } from "../../components/ui"
 // Temporary stubs for monorepo migration
 const ContinueLearning = () => <div>Continue Learning Component (Stub)</div>
 const RecommendedTopics = () => <div>Recommended Topics Component (Stub)</div>
 const SurveysDashboard = () => <div>Surveys Dashboard Component (Stub)</div>
-import { AuthDialog } from '@civicsense/ui-web'
-import { Skeleton } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader } from '@civicsense/ui-web'
+import { AuthDialog } from "../../components/ui"
+import { Skeleton } from "../../components/ui"
+import { Card, CardContent, CardHeader } from "../../components/ui"
 // Temporary stub for monorepo migration
 const LearningTrackingDashboard = () => <div>Learning Tracking Dashboard Component (Stub)</div>
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@civicsense/ui-web'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui"
 
 // Temporary toast stub
 const toast = ({ title, description, variant }: any) => {

@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
 import { useRouter } from "next/navigation"
 import { SkillDetailModal } from "@/components/skill-detail-modal"
 import { SkillRelationshipMap } from "@/components/skill-relationship-map"
-import { Card, CardContent } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Card, CardContent } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -23,8 +23,8 @@ import {
   ArrowDownRight
 } from "lucide-react"
 import Link from "next/link"
-import { Header } from '@civicsense/ui-web'
-import { Skeleton } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { Skeleton } from "../../components/ui"
 
 // Category data with emojis
 const CIVIC_CATEGORIES = [

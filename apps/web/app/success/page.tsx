@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
-import { Button } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
 import { ArrowRight, Home, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import confetti from "canvas-confetti"

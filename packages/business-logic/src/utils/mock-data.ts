@@ -1,4 +1,4 @@
-import type { TopicMetadata, QuizQuestion } from './quiz-data'
+import type { TopicMetadata, QuizQuestion } from '@civicsense/types'
 
 // Mock topic data - used as fallback when database is unavailable
 export const mockTopicsData: Record<string, TopicMetadata> = {
@@ -10,7 +10,7 @@ export const mockTopicsData: Record<string, TopicMetadata> = {
     why_this_matters:
       "<ul><li><strong>Personal Impact:</strong> Supreme Court decisions directly affect your rights, from healthcare access to privacy protections.</li><li><strong>Civic Voice:</strong> Understanding the nomination process helps you advocate effectively to your senators who vote on confirmation.</li><li><strong>Generational Influence:</strong> Justices serve for life, meaning this appointment could shape laws for decades to come.</li><li><strong>Constitutional Role:</strong> This process demonstrates how our government's checks and balances work in real time.</li></ul>",
     emoji: "⚖️",
-    date: "June 9, 2025",
+    date: "2025-06-09",
     dayOfWeek: "Monday",
     categories: ["Government", "Justice", "Constitutional Law"],
   },
@@ -22,7 +22,7 @@ export const mockTopicsData: Record<string, TopicMetadata> = {
     why_this_matters:
       "<ul><li><strong>Household Budget:</strong> The Act directly affects prices you pay for healthcare, energy, and everyday goods.</li><li><strong>Tax Benefits:</strong> You may qualify for new tax credits for electric vehicles or home energy improvements.</li><li><strong>Job Opportunities:</strong> New investments in manufacturing and clean energy are creating jobs across the country.</li><li><strong>Climate Action:</strong> These policies will determine the air quality and environmental conditions in your community.</li></ul>",
     emoji: "📊",
-    date: "June 10, 2025",
+    date: "2025-06-10",
     dayOfWeek: "Tuesday",
     categories: ["Economy", "Environment", "Government"],
   },
@@ -105,58 +105,88 @@ export const mockQuestionsData: Record<string, QuizQuestion[]> = {
     {
       topic_id: "supreme_court_nomination_2025",
       question_number: 1,
-      question_type: "multiple_choice",
+      type: "multiple_choice",
       category: "Constitutional Powers",
       question: "Who has the constitutional authority to nominate Supreme Court justices?",
       option_a: "The President",
       option_b: "The Senate",
       option_c: "The Chief Justice",
       option_d: "The Attorney General",
-      correct_answer: "option_a",
+      correct_answer: "The President",
       hint: "Think about Article II of the Constitution.",
       explanation:
         "The President has the power to nominate Supreme Court justices under Article II, Section 2 of the Constitution. This is part of the system of checks and balances, as the Senate must then confirm the nomination.",
       tags: ["separation of powers", "constitutional powers", "judicial branch"],
       sources: [
         {
-          name: "U.S. Constitution, Article II",
+          title: "U.S. Constitution, Article II",
           url: "https://constitution.congress.gov/constitution/article-2/",
+          type: "article"
         },
         {
-          name: "Supreme Court of the United States",
+          title: "Supreme Court of the United States",
           url: "https://www.supremecourt.gov/about/constitutional.aspx",
-        },
-      ],
+          type: "article"
+        }
+      ]
     },
     {
       topic_id: "supreme_court_nomination_2025",
       question_number: 2,
-      question_type: "true_false",
+      type: "true_false",
       category: "Confirmation Process",
       question: "A simple majority vote in the Senate is required to confirm a Supreme Court nominee.",
-      correct_answer: "true",
+      option_a: "True",
+      option_b: "False",
+      correct_answer: "True",
       hint: "This rule changed in recent years.",
       explanation:
         "Since 2017, Supreme Court nominations require only a simple majority (51 votes if all senators vote) for confirmation, after the Senate eliminated the 60-vote threshold previously required to overcome a filibuster for Supreme Court nominees.",
       tags: ["senate procedures", "judicial nominations", "filibuster"],
       sources: [
         {
-          name: "United States Senate",
+          title: "United States Senate",
           url: "https://www.senate.gov/about/powers-procedures/nominations/nominations-process.htm",
+          type: "article"
         },
         {
-          name: "Congressional Research Service",
+          title: "Congressional Research Service",
           url: "https://crsreports.congress.gov/product/pdf/R/R44819",
-        },
-      ],
+          type: "article"
+        }
+      ]
     },
+  ],
+  economic_policy_2025: [
+    {
+      topic_id: "economic_policy_2025",
+      question_number: 1,
+      type: "multiple_choice",
+      category: "Economy",
+      question: "What is a key goal of the Inflation Reduction Act?",
+      option_a: "Increase international trade",
+      option_b: "Combat inflation while investing in domestic energy",
+      option_c: "Reduce government spending",
+      option_d: "Raise interest rates",
+      correct_answer: "Combat inflation while investing in domestic energy",
+      hint: "Think about the name and main provisions of the Act.",
+      explanation: "The Inflation Reduction Act aims to combat inflation through various measures while making significant investments in domestic energy production and manufacturing.",
+      tags: ["economy", "legislation", "energy policy"],
+      sources: [
+        {
+          title: "Overview of the Inflation Reduction Act",
+          url: "https://www.congress.gov/bill/117th-congress/house-bill/5376",
+          type: "article"
+        }
+      ]
+    }
   ],
   // Add a placeholder for the real TikTok questions (these would be fetched from database)
   tiktok_regulation_2024: [
     {
       topic_id: "tiktok_regulation_2024",
       question_number: 1,
-      question_type: "multiple_choice",
+      type: "multiple_choice",
       category: "Government",
       question: "Which federal body passed legislation in 2024 requiring TikTok's parent company to divest or face a ban in the U.S.?",
       option_a: "The Supreme Court",
@@ -175,4 +205,73 @@ export const mockQuestionsData: Record<string, QuizQuestion[]> = {
       ],
     },
   ],
-} 
+}
+
+// Mock data for testing
+export const mockTopics: TopicMetadata[] = [
+  {
+    topic_id: 'mock-topic-1',
+    topic_title: 'Mock Topic 1',
+    description: 'This is a mock topic for testing',
+    why_this_matters: 'Understanding mock data is important for testing',
+    emoji: '🧪',
+    date: '2024-01-01',
+    dayOfWeek: 'Monday',
+    categories: ['Testing', 'Mock Data']
+  },
+  {
+    topic_id: 'mock-topic-2',
+    topic_title: 'Mock Topic 2',
+    description: 'Another mock topic for testing',
+    why_this_matters: 'Multiple test cases help ensure robustness',
+    emoji: '🔬',
+    date: '2024-01-02',
+    dayOfWeek: 'Tuesday',
+    categories: ['Testing', 'Mock Data']
+  }
+];
+
+export const mockQuestions: QuizQuestion[] = [
+  {
+    topic_id: 'mock-topic-1',
+    question_number: 1,
+    type: 'multiple_choice',
+    category: 'Testing',
+    question: 'What is the purpose of mock data?',
+    option_a: 'To make the code look pretty',
+    option_b: 'To test functionality without real data',
+    option_c: 'To confuse developers',
+    option_d: 'To slow down tests',
+    correct_answer: 'To test functionality without real data',
+    hint: 'Think about what we need during development',
+    explanation: 'Mock data allows us to test functionality without depending on real data sources',
+    tags: ['testing', 'development'],
+    sources: [
+      {
+        title: 'Testing Best Practices',
+        url: 'https://example.com/testing',
+        type: 'article'
+      }
+    ]
+  },
+  {
+    topic_id: 'mock-topic-1',
+    question_number: 2,
+    type: 'true_false',
+    category: 'Testing',
+    question: 'Mock data should be as complex as possible.',
+    option_a: 'True',
+    option_b: 'False',
+    correct_answer: 'False',
+    hint: 'Think about maintainability',
+    explanation: 'Mock data should be simple and focused on testing specific functionality',
+    tags: ['testing', 'best-practices'],
+    sources: [
+      {
+        title: 'Mock Data Guidelines',
+        url: 'https://example.com/mock-data',
+        type: 'article'
+      }
+    ]
+  }
+]; 

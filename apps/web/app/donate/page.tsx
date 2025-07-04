@@ -12,21 +12,21 @@ const DonateForm = ({ donationPriceId }: any) => (
     <button className="bg-blue-600 text-white px-6 py-2 rounded">Donate</button>
   </div>
 )
-import { AutoReadPage } from '@civicsense/ui-web'
+import { AutoReadPage } from "../../components/ui"
 // Temporary stub for monorepo migration
 const FeedbackButton = ({ label, contextType, contextId, variant }: any) => (
   <button className="border border-gray-300 px-4 py-2 rounded text-sm">
     {label}
   </button>
 )
-import { Header } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 // Temporary stub for monorepo migration
 const useGuestAccess = () => ({
   resetGuestState: () => console.log('Guest state reset (stub)')
 })
-import { Alert, AlertTitle, AlertDescription } from '@civicsense/ui-web'
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui"
 import { Info } from 'lucide-react'
 
 // Client component that uses useSearchParams

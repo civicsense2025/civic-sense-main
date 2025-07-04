@@ -1,0 +1,58 @@
+export type SupportedLanguage = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko';
+
+export type UIStringPath = 
+  | 'common.ok'
+  | 'common.cancel'
+  | 'common.save'
+  | 'common.delete'
+  | 'common.edit'
+  | 'common.loading'
+  | 'common.error'
+  | 'common.success'
+  | 'common.retry'
+  | 'common.next'
+  | 'common.back'
+  | 'common.done'
+  | 'common.skip'
+  | 'common.continue'
+  | 'common.start'
+  | 'common.finish'
+  | 'common.submit'
+  | 'common.search'
+  | 'common.filter'
+  | 'common.sort'
+  | 'common.settings'
+  | 'common.profile'
+  | 'common.help'
+  | 'common.about'
+  | 'common.logout'
+  | 'common.login'
+  | 'common.signup'
+  | 'common.forgotPassword'
+  | 'common.resetPassword'
+  | 'common.changePassword'
+  | 'common.emailAddress'
+  | 'common.password'
+  | 'common.confirmPassword'
+  | 'common.username'
+  | 'common.firstName'
+  | 'common.lastName'
+  | 'common.fullName'
+  | 'common.phoneNumber'
+  | 'common.address'
+  | 'common.city'
+  | 'common.state'
+  | 'common.country'
+  | 'common.zipCode'
+  | 'common.dateOfBirth'
+  | 'common.gender'
+  | 'common.male'
+  | 'common.female'
+  | 'common.other'
+  | 'common.preferNotToSay';
+
+export interface TranslationStrings {
+  [key: string]: {
+    [key in UIStringPath]: string;
+  };
+} 

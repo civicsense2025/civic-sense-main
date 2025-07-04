@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { Badge } from '@civicsense/ui-web'
+import { Badge } from "../../components/ui"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Button } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
 import { Loader2, ArrowLeft, Calendar, Info, Link as LinkIcon, ExternalLink, Briefcase, Award, MessageSquare, AlertTriangle, FileText, Users } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
-import { Skeleton } from '@civicsense/ui-web'
+import { Skeleton } from "../../components/ui"
 
 // Define types for public figures data
 interface PublicFigure {

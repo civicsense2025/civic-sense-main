@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Separator } from './ui/separator'
 import { ShoppingCart, Zap, Clock, Shield, Target, Users, BookOpen, Star } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { useAnalytics } from '../lib/analytics/analytics'
 import { 
   BoostManager, 
@@ -19,7 +19,7 @@ import {
   type BoostEffects,
   calculateBoostEffects,
   BOOST_DEFINITIONS
-} from '@civicsense/shared/game-boosts'
+} from '@civicsense/business-logic/services/boosts'
 
 interface BoostCommandBarProps {
   userXP: number

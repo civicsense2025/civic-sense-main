@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AuthDialog } from '@civicsense/ui-web'
+import { AuthDialog } from "../../components/ui"
 
 export default function QuizLayout({
   children,

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { Header } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
 import { Shield, ArrowRight } from "lucide-react"
 
 export default function SignInPage() {

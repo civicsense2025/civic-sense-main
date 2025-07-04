@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { CinematicScenarioEngine } from "@/components/scenarios/cinematic-scenario-engine"
-import { Card, CardContent, CardHeader } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Card, CardContent, CardHeader } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { 
   Play, 
   Clock, 
@@ -19,7 +19,7 @@ import {
   Sparkles,
   Zap
 } from "lucide-react"
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 import type { ScenarioProgress } from "@/components/scenarios/types"
 
 // =============================================================================

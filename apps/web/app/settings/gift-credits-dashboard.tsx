@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Card, CardContent } from "../../components/ui"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { supabase } from "@/lib/supabase"
 
 interface DonationStatus {

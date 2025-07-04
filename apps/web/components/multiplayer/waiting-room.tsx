@@ -30,7 +30,7 @@ import {
   Circle
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { 
@@ -41,9 +41,9 @@ import {
   type MultiplayerPlayer 
 } from '../lib/multiplayer/operations'
 import { addNPCToRoom } from '../lib/multiplayer/operations-npc-integration'
-import { enhancedNPCService } from '@civicsense/shared/enhanced-npc-service'
+import { enhancedNPCService } from '@civicsense/business-logic/services/npc'
 import { type NPCPersonality } from '../lib/multiplayer/operations-npcs'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface WaitingRoomProps {
   roomId: string

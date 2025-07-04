@@ -42,8 +42,8 @@ import {
   Palette
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { useToast } from "../../components/ui"
 import { EnhancedPodAnalytics } from './enhanced-pod-analytics'
 import { GoogleClassroomSyncDialog } from '@/components/integrations/google-classroom-sync-dialog'
 import Link from 'next/link'

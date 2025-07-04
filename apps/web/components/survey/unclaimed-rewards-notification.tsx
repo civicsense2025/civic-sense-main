@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
-import { useGuestAccess } from '@civicsense/shared/use-guest-access'
+import { useAuth } from "../../components/ui"
+import { useGuestAccess } from '@civicsense/business-logic/hooks/use-guest-access'
 import type { SurveyIncentive, RewardFulfillment } from '@civicsense/types/incentives'
 
 // ============================================================================

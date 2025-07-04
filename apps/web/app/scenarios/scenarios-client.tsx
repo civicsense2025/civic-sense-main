@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from '@/hooks/usePremium'
 import { areScenariosEnabled } from '@/lib/comprehensive-feature-flags'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Skeleton } from '@civicsense/ui-web'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@civicsense/ui-web'
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Skeleton } from "../../components/ui"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui"
 import { 
   Users, 
   Clock, 
@@ -26,7 +26,7 @@ import {
   BookOpen,
   Star
 } from 'lucide-react'
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 import Link from 'next/link'
 
 // =============================================================================

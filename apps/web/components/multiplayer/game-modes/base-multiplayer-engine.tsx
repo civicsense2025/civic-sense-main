@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { QuestionTimer, useQuestionTimer } from "@/components/quiz/question-timer"
 import { PlayerPanel } from "@/components/multiplayer/player-panel"
 import { HostSettingsMenu } from "@/components/multiplayer/host-settings-menu"
@@ -11,7 +11,7 @@ import { Progress } from './ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Trophy, MessageCircle, Crown, Settings } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Import our modular components
 import { WaitingPhase } from "../game-phases/waiting-phase"

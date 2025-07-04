@@ -8,9 +8,9 @@ import { QuizEngineV2 } from "@/components/quiz/v2/engine/quiz-engine-v2"
 import { QuizResultsSimple } from "@/components/quiz/v2/quiz-results-simple"
 
 // Components
-import { Header } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { useAuth } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
@@ -18,7 +18,7 @@ import { dataService } from "@/lib/data-service"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
 import { ClassroomShareButton } from "@/components/integrations/google-classroom-share-button"
 import { toast } from "@/components/ui/use-toast"
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 
 // Types
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"

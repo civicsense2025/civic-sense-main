@@ -5,7 +5,7 @@ import { Badge } from './ui/badge'
 import { Switch } from './ui/switch'
 import { X, Crown, Settings, Users, Zap, MessageCircle, Timer, Trophy, Lock } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Temporary static strings for build fix
 const uiStrings = {

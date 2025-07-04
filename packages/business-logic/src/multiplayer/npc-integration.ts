@@ -1,6 +1,6 @@
 import { enhancedNPCService, type NPCConversationContext, type NPCResponse } from './enhanced-npc-service'
-import { multiplayerOperations, type MultiplayerRoom, type MultiplayerPlayer } from './multiplayer'
-import { supabase } from './supabase'
+import { multiplayerOperations, type MultiplayerRoom, type MultiplayerPlayer } from '../database/supabase-client'
+import { supabase } from '../database/supabase-client'
 
 // =============================================================================
 // MULTIPLAYER NPC INTEGRATION WITH OPENAI
@@ -220,7 +220,10 @@ export class MultiplayerNPCIntegration {
     // Analyze user mood if targeting specific user
     let userMood: NPCConversationContext['userMood'] = 'neutral'
     if (trigger.targetUserId && context.userPerformance[trigger.targetUserId]) {
-      userMood = this.analyzeUserMood(context.userPerformance[trigger.targetUserId])
+      const userPerf = context.userPerformance[trigger.targetUserId]
+      if (userPerf) {
+        userMood = this.analyzeUserMood(userPerf)
+      }
     }
 
     // Calculate room performance for context

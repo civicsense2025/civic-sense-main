@@ -12,7 +12,7 @@ import {
   Activity
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import Link from 'next/link'
 import { envFeatureFlags } from '@civicsense/business-logic/utils/feature-flags'
 

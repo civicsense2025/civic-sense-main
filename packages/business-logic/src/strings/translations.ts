@@ -1,60 +1,66 @@
-import { type Translations } from '@civicsense/types/translations'
+import { SupportedLanguage, TranslationService } from '@civicsense/types';
+import { UIStrings } from '@civicsense/types';
 
-export const translations: Translations = {
+// Default translations object
+export const translations = {
   en: {
     // English translations
     common: {
-      loading: 'Loading...',
-      error: 'An error occurred',
-      retry: 'Retry',
+      ok: 'OK',
       cancel: 'Cancel',
       save: 'Save',
-      delete: 'Delete',
-      edit: 'Edit',
-      submit: 'Submit'
-    },
-    auth: {
-      signIn: 'Sign In',
-      signUp: 'Sign Up',
-      signOut: 'Sign Out',
-      email: 'Email',
-      password: 'Password'
-    },
-    quiz: {
-      start: 'Start Quiz',
-      next: 'Next Question',
-      previous: 'Previous Question',
-      submit: 'Submit Answers',
-      correct: 'Correct!',
-      incorrect: 'Incorrect'
+      // ... add other common strings
     }
   },
   es: {
     // Spanish translations
     common: {
-      loading: 'Cargando...',
-      error: 'Se produjo un error',
-      retry: 'Reintentar',
+      ok: 'Aceptar',
       cancel: 'Cancelar',
       save: 'Guardar',
-      delete: 'Eliminar',
-      edit: 'Editar',
-      submit: 'Enviar'
-    },
-    auth: {
-      signIn: 'Iniciar Sesión',
-      signUp: 'Registrarse',
-      signOut: 'Cerrar Sesión',
-      email: 'Correo',
-      password: 'Contraseña'
-    },
-    quiz: {
-      start: 'Comenzar Cuestionario',
-      next: 'Siguiente Pregunta',
-      previous: 'Pregunta Anterior',
-      submit: 'Enviar Respuestas',
-      correct: '¡Correcto!',
-      incorrect: 'Incorrecto'
+      // ... add other common strings
     }
   }
-} 
+};
+
+export class TranslationsServiceImpl implements TranslationService {
+  private locale: SupportedLanguage = 'en';
+  private strings: Record<string, string> = {};
+
+  constructor() {
+    // Load initial strings
+    this.loadStrings('en');
+  }
+
+  getLocale(): SupportedLanguage {
+    return this.locale;
+  }
+
+  async setLocale(locale: SupportedLanguage): Promise<void> {
+    this.locale = locale;
+    await this.loadStrings(locale);
+  }
+
+  translate(key: string, params?: Record<string, any>): string {
+    const value = this.strings[key] || key;
+    if (!params) return value;
+
+    return value.replace(/\{(\w+)\}/g, (_, key) => {
+      return params[key]?.toString() || `{${key}}`;
+    });
+  }
+
+  private async loadStrings(locale: SupportedLanguage): Promise<void> {
+    try {
+      this.strings = translations[locale]?.common || translations.en.common;
+    } catch (error) {
+      console.error(`Failed to load strings for locale ${locale}:`, error);
+      // Fallback to English
+      if (locale !== 'en') {
+        await this.loadStrings('en');
+      }
+    }
+  }
+}
+
+export const translationsService = new TranslationsServiceImpl(); 

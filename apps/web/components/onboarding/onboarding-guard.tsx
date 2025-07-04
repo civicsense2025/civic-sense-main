@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from "../lib/supabase/client"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { OnboardingFlow } from './onboarding-flow'
 import { LoadingSpinner } from './ui/loading-spinner'
 import { Button } from './ui/button'

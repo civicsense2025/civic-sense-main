@@ -10,6 +10,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MobileAudioControls } from './MobileAudioControls';
 import { useAudio } from './AudioProvider';
+import type { CivicAudioSettings } from '../../lib/audio/audio-service';
+
+// Define interfaces for type safety
+interface AudioSettings {
+  autoPlayEnabled: boolean
+  loopEnabled: boolean
+  soundEffectsEnabled: boolean
+  backgroundMusicEnabled: boolean
+  volume: number
+}
+
+interface TTSCallbacks {
+  onStart?: () => void
+  onDone?: () => void
+  onError?: (error: Error) => void
+}
 
 /**
  * Example screen demonstrating CivicSense mobile audio integration
@@ -32,56 +48,94 @@ export function AudioControlsScreen() {
     // Sound effects
     playQuizCorrectSound,
     playQuizIncorrectSound,
-    playCivicAchievementSound,
-    playButtonTapSound,
+    playNotificationSound: playCivicAchievementSound,
+    playNotificationSound: playButtonTapSound,
     
     // Background music
-    startQuizBackgroundMusic,
+    startBackgroundMusic: startQuizBackgroundMusic,
     stopBackgroundMusic,
-    celebrateCompletion,
+    speakCivicAchievement: celebrateCompletion,
     
     // Settings
-    setAutoPlay,
-    setLoop,
-    setVolume,
-    setSoundEffectsEnabled,
-    setBackgroundMusicEnabled,
+    updateSettings,
     
     // UI controls
-    showAudioControls,
-    setShowAudioControls,
-    isAudioMinimized,
-    setIsAudioMinimized,
+    isControlsVisible: showAudioControls,
+    isControlsMinimized: isAudioMinimized,
+    showControls: setShowAudioControls,
+    toggleControlsMinimized: setIsAudioMinimized,
   } = useAudio();
 
-  const [demoText] = useState("Welcome to CivicSense! This is your mobile civic education platform. Learn about democracy, voting rights, and how power really works in America.");
+  const [demoText] = useState<string>("Welcome to CivicSense! This is your mobile civic education platform. Learn about democracy, voting rights, and how power really works in America.");
 
-  const handleTestTTS = () => {
+  const handleTestTTS = (): void => {
     speakText(demoText, {
-      onStart: () => console.log('🗣️ TTS Started'),
-      onDone: () => Alert.alert('TTS Complete', 'Speech finished successfully!'),
-      onError: (error) => Alert.alert('TTS Error', error.message),
+      language: 'en-US',
+      rate: 1.0,
+      pitch: 1.0,
+      skipTranslation: true
     });
+    console.log('🗣️ TTS Started');
   };
 
-  const handleTestQuizAudio = async () => {
+  const handleTestQuizAudio = async (): Promise<void> => {
     // Simulate a quiz interaction
     await playButtonTapSound(); // Button press sound
     
     setTimeout(async () => {
-      await speakText("Which amendment guarantees freedom of speech?");
+      await speakText("Which amendment guarantees freedom of speech?", {
+        language: 'en-US',
+        skipTranslation: true
+      });
     }, 300);
     
     // Simulate correct answer after 3 seconds
     setTimeout(async () => {
       await playQuizCorrectSound();
-      await speakText("Correct! The First Amendment protects freedom of speech, religion, press, assembly, and petition.");
+      await speakText("Correct! The First Amendment protects freedom of speech, religion, press, assembly, and petition.", {
+        language: 'en-US',
+        skipTranslation: true
+      });
     }, 3000);
   };
 
-  const handleCelebration = async () => {
-    await celebrateCompletion();
+  const handleCelebration = async (): Promise<void> => {
+    await celebrateCompletion("Achievement unlocked!");
     Alert.alert('🎉 Celebration!', 'Quiz completed with audio celebration!');
+  };
+
+  // Helper functions for settings updates
+  const setAutoPlay = (enabled: boolean) => {
+    updateSettings({ autoPlayEnabled: enabled });
+  };
+
+  const setLoop = (enabled: boolean) => {
+    updateSettings({ loopEnabled: enabled });
+  };
+
+  const setVolume = (volume: number) => {
+    updateSettings({ volume });
+  };
+
+  const setSoundEffectsEnabled = (enabled: boolean) => {
+    updateSettings({ soundEffectsEnabled: enabled });
+  };
+
+  const setBackgroundMusicEnabled = (enabled: boolean) => {
+    updateSettings({ backgroundMusicEnabled: enabled });
+  };
+
+  // Wrapper functions for event handlers
+  const handleStartQuizMusic = () => {
+    startQuizBackgroundMusic();
+  };
+
+  const handleToggleControls = () => {
+    setShowAudioControls();
+  };
+
+  const handleToggleMinimized = () => {
+    setIsAudioMinimized();
   };
 
   return (
@@ -173,7 +227,7 @@ export function AudioControlsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🎵 Background Music</Text>
           
-          <TouchableOpacity style={styles.button} onPress={startQuizBackgroundMusic}>
+          <TouchableOpacity style={styles.button} onPress={handleStartQuizMusic}>
             <Text style={styles.buttonText}>Start Quiz Music</Text>
           </TouchableOpacity>
           
@@ -201,7 +255,7 @@ export function AudioControlsScreen() {
           
           <TouchableOpacity 
             style={styles.button} 
-            onPress={() => setShowAudioControls(!showAudioControls)}
+            onPress={handleToggleControls}
           >
             <Text style={styles.buttonText}>
               {showAudioControls ? 'Hide' : 'Show'} Audio Controls
@@ -211,7 +265,7 @@ export function AudioControlsScreen() {
           {showAudioControls && (
             <TouchableOpacity 
               style={styles.button} 
-              onPress={() => setIsAudioMinimized(!isAudioMinimized)}
+              onPress={handleToggleMinimized}
             >
               <Text style={styles.buttonText}>
                 {isAudioMinimized ? 'Expand' : 'Minimize'} Controls
@@ -287,7 +341,7 @@ export function AudioControlsScreen() {
           soundEffectsEnabled={settings.soundEffectsEnabled}
           backgroundMusicEnabled={settings.backgroundMusicEnabled}
           
-          onPlay={(text) => speakText(text || demoText)}
+          onPlay={(text?: string) => speakText(text || demoText, { language: 'en-US', skipTranslation: true })}
           onPause={pauseResumeSpeech}
           onStop={stopSpeech}
           onVolumeChange={setVolume}
@@ -298,8 +352,8 @@ export function AudioControlsScreen() {
           onReadCurrentPage={readCurrentPageContent}
           
           isMinimized={isAudioMinimized}
-          onToggleMinimized={() => setIsAudioMinimized(!isAudioMinimized)}
-          onClose={() => setShowAudioControls(false)}
+          onToggleMinimized={handleToggleMinimized}
+          onClose={handleToggleControls}
         />
       )}
     </SafeAreaView>

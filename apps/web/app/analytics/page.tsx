@@ -6,14 +6,23 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@civicsense/ui-web'
-import { Progress } from '@civicsense/ui-web'
-import { Alert, AlertDescription } from '@civicsense/ui-web'
-import { Separator } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Progress,
+  Alert,
+  AlertDescription,
+  Separator,
+} from "@/components/ui"
+import { useAuth } from "@/components/auth/auth-provider"
 import { 
   BarChart3, 
   Brain, 

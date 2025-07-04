@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { AutoReadPage } from '@civicsense/ui-web'
-import { ServerHeader } from '@civicsense/ui-web'
+import { AutoReadPage } from "../../components/ui"
+import { ServerHeader } from "../../components/ui"
 import { TableOfContents } from '@/components/ui/table-of-contents'
 
 export const metadata: Metadata = {

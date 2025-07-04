@@ -1,6 +1,13 @@
 // CivicSense Utility Functions
 // Platform-agnostic utilities and configuration
 
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 // Export feature flags from a single source
 export { envFeatureFlags } from "./feature-flags";
 

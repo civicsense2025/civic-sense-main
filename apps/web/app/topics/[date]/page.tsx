@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Header } from '@civicsense/ui-web'
-import { Container, Stack, Text } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { Container, Stack, Text } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { TopicSubmissionForm } from '@/components/topic-submission-form'
 import Link from 'next/link'
 

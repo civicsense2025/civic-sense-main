@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label'
 import { ThumbsUp, ThumbsDown, Flag, MessageSquare, AlertTriangle } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from "@civicsense/ui-web"
-import { questionFeedbackOperations } from '@civicsense/shared/database'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "@/lib/auth"
+import { questionFeedbackOperations } from '@civicsense/business-logic/database'
+import { useToast } from "../../components/ui"
 
 interface QuestionFeedbackProps {
   questionId: string // This will be the question number as string

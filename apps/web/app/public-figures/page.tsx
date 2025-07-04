@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Input } from "../../components/ui"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { UserMenu } from "@/components/auth/user-menu"
-import { Skeleton } from '@civicsense/ui-web'
+import { Skeleton } from "../../components/ui"
 import { SimpleBookmarkButton } from '@/components/bookmarks/simple-bookmark-button'
 
 // Define types for public figures data

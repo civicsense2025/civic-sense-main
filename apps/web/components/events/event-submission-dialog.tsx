@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { format } from 'date-fns'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface EventSubmissionDialogProps {
   isOpen: boolean

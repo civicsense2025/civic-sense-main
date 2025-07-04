@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { dataService } from '@civicsense/business-logic/services'
 import type { TopicMetadata } from '@civicsense/types/quiz'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
@@ -26,7 +26,7 @@ import {
   type CategorySkill,
   type Achievement,
   type LearningGoal
-} from '@civicsense/shared/lib/enhanced-gamification'
+} from '@civicsense/business-logic/services/gamification'
 
 interface LearningProgressModalProps {
   isOpen: boolean

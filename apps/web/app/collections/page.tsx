@@ -24,18 +24,18 @@ type CollectionFilters = {
   categories?: string[]
   tags?: string[]
 }
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@civicsense/ui-web'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Progress } from '@civicsense/ui-web'
+} from "../../components/ui"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui"
+import { Progress } from "../../components/ui"
 // Temporary stub for monorepo migration
 const CollectionBookmarkButton = ({ collection, variant, className }: any) => (
   <button className={className}>⭐</button>

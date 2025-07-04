@@ -1,8 +1,9 @@
 import { supabase } from "./supabase"
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import type { QuizQuestion } from "./quiz-data"
+import type { QuizQuestion } from "@civicsense/types"
 import { skillOperations, type Skill } from '../lib/skill-operations'
 import { toQuestionAppFormat, toTopicAppFormat } from './database'
+import { questionOperations } from './quiz-operations'
 
 // Create service role client ONLY on the server (service key must never leak to the browser)
 // In the browser we fall back to the public Supabase client, which is already initialised.
@@ -1399,5 +1400,34 @@ export const enhancedQuizDatabase = {
       // Return empty array instead of throwing to prevent breaking the UI
       return []
     }
-  }
+  },
+
+  // Get questions for a topic
+  async getQuestions(topicId: string): Promise<QuizQuestion[]> {
+    const dbQuestions = await questionOperations.getByTopic(topicId);
+    return dbQuestions.map(question => questionOperations.toQuestionAppFormat(question));
+  },
+
+  // Get question by ID
+  async getQuestionById(questionId: string): Promise<QuizQuestion | null> {
+    try {
+      const dbQuestion = await questionOperations.getById(questionId);
+      return questionOperations.toQuestionAppFormat(dbQuestion);
+    } catch (error) {
+      console.error(`Failed to fetch question ${questionId}:`, error);
+      return null;
+    }
+  },
+
+  // Get questions by category
+  async getQuestionsByCategory(category: string): Promise<QuizQuestion[]> {
+    const dbQuestions = await questionOperations.getByCategory(category);
+    return dbQuestions.map(question => questionOperations.toQuestionAppFormat(question));
+  },
+
+  // Get questions by difficulty level
+  async getQuestionsByDifficulty(level: number): Promise<QuizQuestion[]> {
+    const dbQuestions = await questionOperations.getByDifficulty(level);
+    return dbQuestions.map(question => questionOperations.toQuestionAppFormat(question));
+  },
 }

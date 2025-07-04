@@ -1,8 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
+import { Button } from "../../components/ui"
 import { Calendar, Home, Crown, ArrowLeft } from "lucide-react"
 
 export default function CancelPage() {

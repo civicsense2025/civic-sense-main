@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 import { Calendar, Clock, Eye, BarChart3, TrendingUp, CheckCircle2, FileText } from "lucide-react"
 import Link from "next/link"

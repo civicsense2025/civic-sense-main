@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { BookmarkService } from '@civicsense/business-logic/services/bookmark-service'
+import { bookmarkOperations } from '@civicsense/business-logic/services/bookmark-service'
 
 export async function POST(
   request: NextRequest,
@@ -15,8 +15,7 @@ export async function POST(
     }
 
     const bookmarkId = params.id
-    const bookmarkService = new BookmarkService()
-    const bookmark = await bookmarkService.toggleBookmarkFavorite(bookmarkId, user.id)
+    const bookmark = await bookmarkOperations.toggleBookmarkFavorite(bookmarkId, user.id)
 
     return NextResponse.json({
       success: true,

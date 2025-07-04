@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import type { QuizResults, QuizTopic, QuizQuestion, QuizGameMode, MultipleChoiceQuestion, TrueFalseQuestion, ShortAnswerQuestion } from '@civicsense/types/quiz'
 import type { Question } from '@civicsense/types/key-takeaways'
 import { DEFAULT_MODE_CONFIGS, type QuizModeConfig } from '@civicsense/shared/quiz-mode-config'
@@ -20,7 +20,7 @@ import { QuizResults as QuizResultsComponent } from "./quiz-results"
 import { GlossaryLinkText } from "@/components/glossary/glossary-link-text"
 import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from '@civicsense/business-logic/utils/keyboard-shortcuts'
 import { AdminEditPanel } from "./admin-edit-panel"
-import { useAdmin } from '@civicsense/shared/admin-access'
+import { useAdmin } from '@civicsense/business-logic/services/admin'
 
 import { Button } from './ui/button'
 import { Progress } from './ui/progress'
@@ -29,14 +29,14 @@ import { Card, CardContent } from './ui/card'
 import { Clock, Lightbulb, SkipForward, ArrowRight, Flame, Snowflake, RotateCcw, Eye, Minimize2, Maximize2, Edit2 } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
 import { enhancedQuizDatabase } from '@civicsense/types/quizbase'
-import { quizAttemptOperations } from '@civicsense/shared/database'
+import { quizAttemptOperations } from '@civicsense/business-logic/database'
 import { useGlobalAudio } from "@/components/global-audio-controls"
 import { useGamification } from '@civicsense/shared/useGamification'
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
-import type { BoostEffects } from '@civicsense/shared/game-boosts'
-import { useFeatureFlag } from '@civicsense/shared/useFeatureFlags'
-import { BoostManager } from '@civicsense/shared/game-boosts'
-import { enhancedProgressOperations, updateEnhancedProgress } from '@civicsense/shared/lib/enhanced-gamification'
+import type { BoostEffects } from '@civicsense/business-logic/services/boosts'
+import { useFeatureFlag } from '@civicsense/business-logic/utils/feature-flags'
+import { BoostManager } from '@civicsense/business-logic/services/boosts'
+import { enhancedProgressOperations, updateEnhancedProgress } from '@civicsense/business-logic/services/gamification'
 // TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
 // import { useAnalytics, mapCategoryToAnalytics } from '../lib/analytics/analytics'
 
@@ -49,12 +49,12 @@ const useAnalytics = () => ({
 const mapCategoryToAnalytics = (category: string) => category
 import { supabase } from "../lib/supabase/client"
 import { SocialProofBubble } from "@/components/social-proof-bubble"
-import { createRegularQuizProgress, type BaseQuizState } from '@civicsense/shared/progress-storage'
+import { createRegularQuizProgress, type BaseQuizState } from '@civicsense/business-logic/services/progress'
 import { debug } from '@civicsense/business-logic/utils/debug-config'
 import { QuizLoadingScreen } from "./quiz-loading-screen"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"
 import { dataService } from '@civicsense/business-logic/services'
-import { PodQuizIntegration, createQuizCompletionData, extractPodIdFromQuizContext } from '@civicsense/shared/pod-quiz-integration'
+import { PodQuizIntegration, createQuizCompletionData, extractPodIdFromQuizContext } from '@civicsense/business-logic/services/pod-quiz'
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 
 // Helper function to safely get question options

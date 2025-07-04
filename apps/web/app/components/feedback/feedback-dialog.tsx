@@ -14,10 +14,10 @@ import {
 import { Textarea } from "@civicsense/ui-web"
 import { Input } from "@civicsense/ui-web"
 import { Label } from "@civicsense/ui-web"
-import { useToast } from "@civicsense/ui-web"
+import { useToast } from "@/lib/hooks/use-toast"
 // TEMPORARILY DISABLED: Analytics and auth during monorepo migration
-// import { useAnalytics } from '@civicsense/ui-web'
-// import { useAuth } from '@civicsense/ui-web'
+// import { useAnalytics } from "../../components/ui"
+// import { useAuth } from "../../components/ui"
 
 // Temporary stubs
 const useAnalytics = () => ({

@@ -26,7 +26,7 @@ import {
   getBiasColor,
   formatBiasScore,
   getCredibilityLevel
-} from '@civicsense/shared/media-bias-engine'
+} from '@civicsense/business-logic/services/media-bias'
 
 interface BiasAnalysisCardProps {
   analysis: ArticleBiasAnalysis

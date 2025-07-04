@@ -5,8 +5,9 @@
  * across different news organizations and articles.
  */
 
-import { supabase } from './supabase/client'
-import { Tables } from './database.types'
+import { supabase } from '../database/supabase-client'
+import type { Database } from '@civicsense/types'
+import type { QuizQuestion } from '@civicsense/types'
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -161,7 +162,7 @@ export interface ArticleWithBiasAnalysis {
   title: string
   organization: MediaOrganization
   analysis?: ArticleBiasAnalysis
-  source_metadata?: Tables<'source_metadata'>
+  source_metadata?: unknown
 }
 
 export interface BiasFeedbackRequest {
@@ -676,4 +677,175 @@ export function getOrganizationTypeLabel(type: string): string {
   }
   
   return labels[type] || type
+}
+
+interface BiasAnalysisResult {
+  score: number;
+  issues: string[];
+  suggestions: string[];
+}
+
+export class BiasAnalyzer {
+  // Analyze a question for potential bias
+  analyzeQuestion(question: QuizQuestion): BiasAnalysisResult {
+    const issues: string[] = [];
+    const suggestions: string[] = [];
+    let score = 100;
+
+    // Check for loaded language in question text
+    if (this.hasLoadedLanguage(question.question)) {
+      issues.push('Question contains potentially loaded or biased language');
+      suggestions.push('Consider rephrasing the question using more neutral language');
+      score -= 20;
+    }
+
+    // Check for balanced options in multiple choice questions
+    if (question.type === 'multiple_choice') {
+      if (!this.hasBalancedOptions(question)) {
+        issues.push('Multiple choice options may not be balanced');
+        suggestions.push('Ensure options are of similar length and complexity');
+        score -= 15;
+      }
+    }
+
+    // Check for cultural assumptions
+    if (this.hasCulturalAssumptions(question)) {
+      issues.push('Question may contain cultural assumptions');
+      suggestions.push('Consider making the question more culturally inclusive');
+      score -= 15;
+    }
+
+    // Check for political bias
+    if (this.hasPoliticalBias(question)) {
+      issues.push('Question may contain political bias');
+      suggestions.push('Consider rephrasing to be more politically neutral');
+      score -= 25;
+    }
+
+    // Check for gender bias
+    if (this.hasGenderBias(question)) {
+      issues.push('Question may contain gender bias');
+      suggestions.push('Consider using gender-neutral language');
+      score -= 15;
+    }
+
+    return {
+      score: Math.max(0, score),
+      issues,
+      suggestions
+    };
+  }
+
+  private hasLoadedLanguage(text: string): boolean {
+    const loadedTerms = [
+      'obviously',
+      'clearly',
+      'everyone knows',
+      'naturally',
+      'of course',
+      'undoubtedly',
+      'certainly',
+      'always',
+      'never',
+      'all',
+      'none'
+    ];
+
+    return loadedTerms.some(term => text.toLowerCase().includes(term.toLowerCase()));
+  }
+
+  private hasBalancedOptions(question: QuizQuestion): boolean {
+    if (!question.option_a || !question.option_b) return false;
+
+    const options = [
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((opt): opt is string => typeof opt === 'string');
+
+    // Check option lengths are roughly similar
+    const lengths = options.map(opt => opt.length);
+    const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const maxDeviation = avgLength * 0.5; // Allow 50% deviation
+
+    return lengths.every(len => Math.abs(len - avgLength) <= maxDeviation);
+  }
+
+  private hasCulturalAssumptions(question: QuizQuestion): boolean {
+    const culturalAssumptions = [
+      'western',
+      'eastern',
+      'traditional',
+      'modern',
+      'developed',
+      'developing',
+      'third world',
+      'first world'
+    ];
+
+    const text = [
+      question.question,
+      question.explanation,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((text): text is string => typeof text === 'string').join(' ').toLowerCase();
+
+    return culturalAssumptions.some(term => text.includes(term.toLowerCase()));
+  }
+
+  private hasPoliticalBias(question: QuizQuestion): boolean {
+    const politicalTerms = [
+      'liberal',
+      'conservative',
+      'left-wing',
+      'right-wing',
+      'democrat',
+      'republican',
+      'socialist',
+      'capitalist'
+    ];
+
+    const text = [
+      question.question,
+      question.explanation,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((text): text is string => typeof text === 'string').join(' ').toLowerCase();
+
+    return politicalTerms.some(term => text.includes(term.toLowerCase()));
+  }
+
+  private hasGenderBias(question: QuizQuestion): boolean {
+    const genderTerms = [
+      'he',
+      'she',
+      'his',
+      'her',
+      'man',
+      'woman',
+      'male',
+      'female',
+      'boy',
+      'girl'
+    ];
+
+    const text = [
+      question.question,
+      question.explanation,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((text): text is string => typeof text === 'string').join(' ').toLowerCase();
+
+    return genderTerms.some(term => {
+      const regex = new RegExp(`\\b${term}\\b`, 'i');
+      return regex.test(text);
+    });
+  }
 } 

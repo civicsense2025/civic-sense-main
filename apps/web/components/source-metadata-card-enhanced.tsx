@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
 import { FeedbackButton } from "@/components/feedback/feedback-button"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import {
   getMediaOrganizationByDomain,
@@ -40,7 +40,7 @@ import {
   type BiasDimension,
   type ArticleBiasAnalysis,
   BIAS_DIMENSIONS
-} from '@civicsense/shared/media-bias-engine'
+} from '@civicsense/business-logic/services/media-bias'
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +57,7 @@ import {
 } from './ui/dialog'
 import { Slider } from './ui/slider'
 import { Textarea } from './ui/textarea'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface SourceMetadata {
   title: string

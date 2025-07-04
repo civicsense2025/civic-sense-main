@@ -4,8 +4,8 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
-import { useToast } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 import { Share2, Download, Eye, TrendingUp, Settings, Zap, Copy, X } from 'lucide-react'
 import { 
   generateImageUrl, 
@@ -19,7 +19,7 @@ import {
   abTestManager,
   type ImageGenerationParams,
   type PerformanceMetrics
-} from '@civicsense/shared/image-generator'
+} from '@civicsense/business-logic/services/image'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 

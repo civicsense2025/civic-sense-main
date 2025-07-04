@@ -35,7 +35,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface AccessibilityFeedbackForm {
   assistiveTechnology: string[]

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useStatsig } from '@/components/providers/statsig-provider'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'

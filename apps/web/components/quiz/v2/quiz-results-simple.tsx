@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, RotateCcw, Share2, TrendingUp, Clock, Star, Target } from "lucide-react"
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 import type { QuizResults } from '@civicsense/types/quiz'
 import type { TopicMetadata } from '@civicsense/types/quiz'

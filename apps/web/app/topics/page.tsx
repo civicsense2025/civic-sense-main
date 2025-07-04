@@ -1,16 +1,16 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { Header } from '@civicsense/ui-web'
-import { Container } from '@civicsense/ui-web'
-import { Calendar } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
+import { ServerHeader } from "@/components/server-header"
+import { Container } from "@/components/ui/container"
+import { Calendar } from "@/components/calendar"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { CalendarDays, List, Clock, ArrowRight } from "lucide-react"
-import { cn } from '@civicsense/ui-web'
-import Link from "next/link"
-import type { TopicMetadata } from '@/lib/quiz-data'
+import { cn } from "@/lib/utils"
+import Link from "next/link"  
+import type { TopicMetadata } from '@/lib/quiz/quiz-data'
 
 interface TopicStats {
   totalTopics: number
@@ -133,7 +133,7 @@ export default function TopicsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ServerHeader />
         <main className="w-full">
           <Container className="max-w-7xl py-12">
             <div className="flex items-center justify-center py-24">
@@ -148,7 +148,7 @@ export default function TopicsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ServerHeader />
         <main className="w-full">
           <Container className="max-w-7xl py-12">
             <div className="text-center py-24">
@@ -163,7 +163,7 @@ export default function TopicsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ServerHeader />
       <main className="w-full">
         <Container className="max-w-7xl py-12 sm:py-16 lg:py-24">
           {/* Hero Section */}
@@ -290,7 +290,7 @@ export default function TopicsPage() {
                                           Featured
                                         </Badge>
                                       )}
-                                      {topic.categories.slice(0, 3).map(category => (
+                                      {topic.categories.slice(0, 3).map((category: string) => (
                                         <Badge key={category} variant="outline" className="text-xs">
                                           {category}
                                         </Badge>

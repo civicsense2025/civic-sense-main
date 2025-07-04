@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { realtimeManager } from "../lib/supabase/realtime"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface ConnectionState {
   status: 'online' | 'offline' | 'connecting' | 'reconnecting'

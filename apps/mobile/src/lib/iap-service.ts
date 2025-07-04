@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
-import { subscriptionOperations, type UserSubscription } from './premium'
+import { type UserSubscription, type PaymentProvider } from '@civicsense/types'
+import { subscriptionOperations } from '@civicsense/business-logic/subscriptions'
 import { debug } from './debug-config'
 
 // Apple IAP Product IDs (configure these in App Store Connect)
@@ -87,7 +88,7 @@ export class AppleIAPService {
 
     const requestBody: AppleReceiptValidationRequest = {
       'receipt-data': receiptData,
-      password: process.env.APPLE_SHARED_SECRET, // Set in App Store Connect
+      password: process.env.APPLE_SHARED_SECRET,
       'exclude-old-transactions': true
     }
 
@@ -100,8 +101,16 @@ export class AppleIAPService {
         body: JSON.stringify(requestBody)
       })
 
-      const data: AppleReceiptValidationResponse = await response.json()
+      if (!response.ok) {
+        throw new Error(`Apple validation failed: ${response.status}`)
+      }
+
+      const data = await response.json()
       
+      if (!this.isValidReceiptResponse(data)) {
+        throw new Error('Invalid receipt response format')
+      }
+
       // If production validation fails with sandbox receipt, try sandbox
       if (data.status === 21007 && isProduction) {
         debug.log('apple-iap', 'Production validation failed, trying sandbox')
@@ -113,6 +122,13 @@ export class AppleIAPService {
       debug.error('apple-iap', 'Receipt validation failed:', error)
       throw new Error('Failed to validate receipt with Apple')
     }
+  }
+
+  private static isValidReceiptResponse(data: unknown): data is AppleReceiptValidationResponse {
+    if (!data || typeof data !== 'object') return false
+    const response = data as Partial<AppleReceiptValidationResponse>
+    return typeof response.status === 'number' && 
+           (response.environment === 'Sandbox' || response.environment === 'Production')
   }
 
   /**
@@ -233,14 +249,14 @@ export class AppleIAPService {
     userId: string,
     transaction: AppleTransaction
   ): Promise<UserSubscription | null> {
-    const subscription = {
+    const subscription: Omit<UserSubscription, 'id'> = {
       user_id: userId,
-      subscription_tier: 'premium' as const,
-      subscription_status: 'active' as const,
+      subscription_tier: 'premium',
+      subscription_status: 'active',
       subscription_start_date: new Date(parseInt(transaction.purchase_date_ms)).toISOString(),
       subscription_end_date: null, // Lifetime = no end date
       trial_end_date: null,
-      payment_provider: 'apple_iap',
+      payment_provider: 'apple_iap' as PaymentProvider,
       external_subscription_id: transaction.original_transaction_id,
       last_payment_date: new Date(parseInt(transaction.purchase_date_ms)).toISOString(),
       next_billing_date: null, // Lifetime = no next billing

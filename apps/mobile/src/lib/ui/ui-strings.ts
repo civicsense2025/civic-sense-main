@@ -5,7 +5,8 @@ import { I18n } from 'i18n-js';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { translations } from '@civicsense/business-logic/strings/translations';
-import type { SupportedLanguage, TranslationStrings, UIStringPath } from '@civicsense/types';
+import type { UIStringPath } from '@civicsense/types';
+import type { SupportedLanguage } from '@civicsense/types';
 
 // Initialize i18n instance
 const i18n = new I18n(translations);
@@ -34,7 +35,7 @@ export function getLocale(): string {
   return i18n.locale;
 }
 
-export function loadTranslations(locale: string, strings: TranslationStrings): void {
+export function loadTranslations(locale: string, strings: Record<string, any>): void {
   i18n.store(strings);
   i18n.locale = locale;
 }

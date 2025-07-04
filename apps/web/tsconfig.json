@@ -5,9 +5,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@civicsense/business-logic/*": ["../../packages/business-logic/src/*"],
-      "@civicsense/types/*": ["../../packages/types/src/*"],
-      "@civicsense/types": ["../../packages/types/src"]
+      "@civicsense/*": ["../../packages/*/src"]
     },
     "plugins": [
       {

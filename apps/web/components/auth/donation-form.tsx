@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Heart, Coffee, Sparkles } from "lucide-react"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface DonationFormProps {
   onSuccess: () => void

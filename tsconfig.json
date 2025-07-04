@@ -16,10 +16,21 @@
   },
   "include": [],
   "references": [
-    { "path": "./apps/web" },
-    { "path": "./apps/mobile" },
-    { "path": "./packages/business-logic" },
-    { "path": "./packages/design-tokens" },
-    { "path": "./packages/types" }
-  ]
-} 
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/mobile"
+    },
+    {
+      "path": "./packages/business-logic"
+    },
+    {
+      "path": "./packages/design-tokens"
+    },
+    {
+      "path": "./packages/types"
+    }
+  ],
+  "extends": "expo/tsconfig.base"
+}

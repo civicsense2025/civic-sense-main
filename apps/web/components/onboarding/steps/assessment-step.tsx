@@ -8,10 +8,10 @@ import { Check, X, ArrowRight, Loader2, Flame } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { supabase } from '@civicsense/business-logic/database'
 import { useStatsig } from '@/components/providers/statsig-provider'
-import { pendingUserAttribution } from '@civicsense/shared/pending-user-attribution'
-import { updateEnhancedProgress } from '@civicsense/shared/lib/enhanced-gamification'
+import { pendingUserAttribution } from '@civicsense/business-logic/services/user'
+import { updateEnhancedProgress } from '@civicsense/business-logic/services/gamification'
 import { SocialProofBubble } from '@/components/social-proof-bubble'
-import { createOnboardingAssessmentProgress, type BaseQuizState } from '@civicsense/shared/progress-storage'
+import { createOnboardingAssessmentProgress, type BaseQuizState } from '@civicsense/business-logic/services/progress'
 import { useKeyboardShortcuts, type KeyboardShortcutGroup } from '@civicsense/business-logic/utils/keyboard-shortcuts'
 
 interface AssessmentQuestion {

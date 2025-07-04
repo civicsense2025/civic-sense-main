@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import { toast } from '@civicsense/ui-web'
+import { toast } from "../../components/ui"
 
 export function PWARegister() {
   const [isInstallable, setIsInstallable] = useState(false)

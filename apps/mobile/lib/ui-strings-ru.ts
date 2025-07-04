@@ -3,18 +3,20 @@
 
 import type { UIStrings } from './ui-strings';
 
-export const uiStringsRU: UIStrings = {
+export const uiStringsRU: Partial<UIStrings> = {
   navigation: {
     back: 'Назад',
     close: 'Закрыть',
     menu: 'Меню',
     home: 'Главная',
     topics: 'Темы',
-    quiz: 'Тест',
+    learn: 'Учиться',
     profile: 'Профиль',
     settings: 'Настройки',
     bookmarks: 'Закладки',
     history: 'История',
+    signInToPlay: 'Войдите, чтобы играть',
+    signInToSaveProgress: 'Войдите, чтобы сохранить прогресс'
   },
 
   topic: {
@@ -45,6 +47,59 @@ export const uiStringsRU: UIStrings = {
     howRatingsDetermined: 'Как определяются эти рейтинги?',
     areRatingsPermanent: 'Эти рейтинги постоянны?',
     sourceAnalysisImportance: 'Почему это важно?',
+    levelLabel: 'Уровень',
+    difficultyLabel: 'Сложность',
+    questionsCount: 'Количество вопросов',
+    estimatedTime: 'Примерное время',
+    level: 'Уровень',
+    difficulty: 'Сложность',
+    easy: 'Легкий',
+    medium: 'Средний',
+    hard: 'Сложный',
+    beginner: 'Начинающий',
+    intermediate: 'Средний',
+    advanced: 'Продвинутый',
+    ratingsAndReviews: 'Оценки и отзывы',
+    communityFeedback: 'Отзывы сообщества',
+    communityReviews: 'Отзывы сообщества',
+    rateThisTopic: 'Оценить эту тему',
+    howHelpfulWasThis: 'Насколько это было полезно?',
+    noRatingsYet: 'Пока нет оценок',
+    recentReviews: 'Недавние отзывы',
+    noReviewsYet: 'Пока нет отзывов',
+    noReviewsDescription: 'Будьте первым, кто оставит отзыв',
+    writeFirstReview: 'Написать первый отзыв',
+    viewAllReviews: 'Посмотреть все отзывы',
+    editRating: 'Изменить оценку',
+    ratingBreakdown: 'Распределение оценок',
+    shareYourThoughts: 'Поделитесь своими мыслями',
+    completeQuizToReview: 'Пройдите тест, чтобы оставить отзыв',
+    takeQuizToShare: 'Пройдите тест, чтобы поделиться мнением',
+    wasThisHelpful: 'Было ли это полезно?',
+    writeAReview: 'Написать отзыв',
+    rateAndReview: 'Оценить и оставить отзыв',
+    selectRating: 'Выберите оценку',
+    submitReview: 'Отправить отзыв',
+    shareYourThoughtsDesc: 'Поделитесь своими мыслями об этой теме',
+    yourReview: 'Ваш отзыв',
+    recently: 'Недавно',
+    excellent: 'Отлично',
+    veryGood: 'Очень хорошо',
+    good: 'Хорошо',
+    fair: 'Удовлетворительно',
+    poor: 'Плохо',
+    checkingProgress: 'Проверка прогресса',
+    loadingReviews: 'Загрузка отзывов',
+    submittingReview: 'Отправка отзыва',
+    reviewSubmitted: 'Отзыв отправлен',
+    thankYouForReview: 'Спасибо за отзыв',
+    helpful: 'Полезно',
+    notHelpful: 'Не полезно',
+    markAsHelpful: 'Отметить как полезное',
+    markAsNotHelpful: 'Отметить как бесполезное',
+    completeToReview: 'Завершите, чтобы оставить отзыв',
+    takeQuizFirst: 'Сначала пройдите тест',
+    finishTopicToReview: 'Завершите тему, чтобы оставить отзыв'
   },
 
   translation: {
@@ -70,6 +125,23 @@ export const uiStringsRU: UIStrings = {
     translationTestResult: 'Результат теста перевода',
     translationTestFailed: 'Тест перевода не пройден',
     initializingTranslationService: 'Инициализация службы перевода...',
+    translated: 'Переведено',
+    original: 'Оригинал',
+    availableTranslations: 'Доступные переводы',
+    fullyTranslated: 'Полностью переведено',
+    helpTranslateDescription: 'Помогите перевести контент',
+    contributeTranslation: 'Внести вклад в перевод',
+    contributeTitle: 'Помочь с переводом',
+    contributeMessage: 'Помогите сделать контент доступным для всех',
+    getStarted: 'Начать',
+    thankYou: 'Спасибо',
+    contactInstructions: 'Инструкции по связи',
+    dontSeeLanguage: 'Не видите ваш язык?',
+    requestLanguage: 'Запросить новый язык или стать волонтёром для помощи с переводами',
+    analyzingContent: 'Анализ контента...',
+    translatingToLanguage: 'Перевод на {language}...',
+    optimizingLayout: 'Оптимизация макета...',
+    elementsTranslated: 'Переведено {count} элементов'
   },
 
   sources: {
@@ -87,7 +159,7 @@ export const uiStringsRU: UIStrings = {
     readFullArticle: 'Читать полную статью',
     loadingAnalysis: 'Загрузка анализа...',
     analyzed: 'ПРОАНАЛИЗИРОВАНО',
-    credibility: 'Достоверность',
+    credibility: 'Достоверность'
   },
 
   languages: {
@@ -103,7 +175,7 @@ export const uiStringsRU: UIStrings = {
     russian: 'Русский',
     japanese: '日本語',
     korean: '한국어',
-    italian: 'Italiano',
+    italian: 'Italiano'
   },
 
   actions: {
@@ -127,7 +199,7 @@ export const uiStringsRU: UIStrings = {
     yes: 'Да',
     no: 'Нет',
     ok: 'OK',
-    dismiss: 'Отклонить',
+    dismiss: 'Отклонить'
   },
 
   status: {
@@ -146,7 +218,7 @@ export const uiStringsRU: UIStrings = {
     offline: 'Оффлайн',
     online: 'Онлайн',
     syncing: 'Синхронизация...',
-    synced: 'Синхронизировано',
+    synced: 'Синхронизировано'
   },
 
   errors: {
@@ -163,7 +235,7 @@ export const uiStringsRU: UIStrings = {
     loadingFailed: 'Не удалось загрузить контент.',
     savingFailed: 'Не удалось сохранить изменения.',
     uploadFailed: 'Загрузка не удалась.',
-    downloadFailed: 'Скачивание не удалось.',
+    downloadFailed: 'Скачивание не удалось.'
   },
 
   time: {
@@ -179,7 +251,7 @@ export const uiStringsRU: UIStrings = {
     hoursAgo: 'часов назад',
     daysAgo: 'дней назад',
     weeksAgo: 'недель назад',
-    monthsAgo: 'месяцев назад',
+    monthsAgo: 'месяцев назад'
   },
 
   quiz: {
@@ -205,6 +277,63 @@ export const uiStringsRU: UIStrings = {
     correctAnswers: 'Правильные ответы',
     incorrectAnswers: 'Неправильные ответы',
     finalScore: 'Финальный счет',
+    complete: 'Завершено',
+    of: 'из',
+    title: 'Название',
+    loadingQuestion: 'Загрузка вопроса...',
+    unsupportedQuestionType: 'Неподдерживаемый тип вопроса',
+    questionsComplete: 'Вопросы завершены',
+    timeUp: 'Время вышло',
+    pauseQuiz: 'Приостановить тест',
+    resumeQuiz: 'Продолжить тест',
+    exitQuiz: 'Выйти из теста',
+    saveProgress: 'Сохранить прогресс',
+    restoreProgress: 'Восстановить прогресс',
+    quizMode: 'Режим теста',
+    practiceMode: 'Режим практики',
+    testMode: 'Режим экзамена',
+    selectAnswer: 'Выберите ответ',
+    submitAnswer: 'Отправить ответ',
+    showExplanation: 'Показать объяснение',
+    hideExplanation: 'Скрыть объяснение',
+    yourAnswer: 'Ваш ответ',
+    correctAnswer: 'Правильный ответ',
+    continueToNext: 'Продолжить',
+    questionTypes: {
+      multipleChoice: 'Множественный выбор',
+      trueFalse: 'Верно/Неверно',
+      shortAnswer: 'Короткий ответ',
+      fillInBlank: 'Заполните пропуск',
+      matching: 'Сопоставление',
+      ordering: 'Упорядочивание',
+      crossword: 'Кроссворд'
+    },
+    multipleChoice: 'Множественный выбор',
+    trueFalse: 'Верно/Неверно',
+    shortAnswer: 'Короткий ответ',
+    fillInBlank: 'Заполните пропуск',
+    matching: 'Сопоставление',
+    ordering: 'Упорядочивание',
+    crossword: 'Кроссворд',
+    accuracy: 'Точность',
+    timeSpent: 'Затраченное время',
+    averageTime: 'Среднее время',
+    breakdown: 'Разбор',
+    recommendations: 'Рекомендации',
+    questionsAnswered: 'Отвечено вопросов',
+    questionsSkipped: 'Пропущено вопросов',
+    percentageScore: 'Процент правильных',
+    passingScore: 'Проходной балл',
+    passed: 'Пройдено',
+    failed: 'Не пройдено',
+    tryAgain: 'Попробовать снова',
+    viewReview: 'Просмотреть разбор',
+    backToTopics: 'Вернуться к темам',
+    difficulty: {
+      easy: 'Легкий',
+      medium: 'Средний',
+      hard: 'Сложный'
+    }
   },
 
   accessibility: {
@@ -227,15 +356,8 @@ export const uiStringsRU: UIStrings = {
     goBack: 'Вернуться',
     openLink: 'Открыть ссылку',
     bookmark: 'Добавить эту тему в закладки',
-    removeBookmark: 'Удалить закладку',
-    dontSeeLanguage: 'Не видите ваш язык?',
-    requestLanguage: 'Запросить новый язык или стать волонтёром для помощи с переводами',
-    // Scanner animation strings
-    analyzingContent: 'Анализ контента...',
-    translatingToLanguage: 'Перевод на {language}...',
-    optimizingLayout: 'Оптимизация макета...',
-    elementsTranslated: 'Переведено {count} элементов',
-  },
-};
+    removeBookmark: 'Удалить закладку'
+  }
+} as const;
 
 export default uiStringsRU; 

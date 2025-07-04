@@ -15,7 +15,7 @@ import { headers } from 'next/headers'
 // Temporary stubs for monorepo migration
 const PWAStatus = () => <div className="fixed bottom-4 right-4 text-xs bg-gray-100 px-2 py-1 rounded">PWA: Ready</div>
 const DebugSettingsPanel = () => <div></div>
-import { cn } from '@civicsense/ui-web'
+import { cn } from '@/lib/utils'
 
 // Cache debugging temporarily disabled during monorepo migration
 if (process.env.NODE_ENV === 'development') {
@@ -61,7 +61,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -156,7 +156,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider session={session}>
+          <AuthProvider>
             <nav className="bg-gray-800">
               <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">

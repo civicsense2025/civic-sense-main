@@ -1,115 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { multiplayerOperations } from '@/lib/multiplayer'
-import { debug } from '@/lib/debug-config'
-import { envFeatureFlags } from '@/lib/env-feature-flags'
+import { isMultiplayerEnabled } from '@civicsense/business-logic'
 
+// POST /api/multiplayer/heartbeat - Update room activity timestamp
 export async function POST(request: NextRequest) {
-  // Feature flag check - disable multiplayer API in production
-  if (!envFeatureFlags.getFlag('multiplayer')) {
+  // Feature flag check
+  if (!isMultiplayerEnabled()) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    const body = await request.json()
-    const { action, roomId, userId, connectionLatency, connectionQuality } = body
-    
-    switch (action) {
-      case 'heartbeat':
-        if (!roomId || !userId) {
-          return NextResponse.json({ error: 'Missing roomId or userId' }, { status: 400 })
-        }
-        
-        await multiplayerOperations.updatePlayerHeartbeat(roomId, userId)
-        
-        return NextResponse.json({ 
-          success: true,
-          message: 'Heartbeat updated'
-        })
-      
-      case 'check_host_migration':
-        if (!roomId) {
-          return NextResponse.json({ error: 'Missing roomId' }, { status: 400 })
-        }
-        
-        const migrationResult = await multiplayerOperations.checkAndMigrateHost(roomId)
-        
-        return NextResponse.json({
-          success: true,
-          migrated: migrationResult.migrated,
-          newHostId: migrationResult.newHostId,
-          message: migrationResult.migrated ? 'Host migrated' : 'No migration needed'
-        })
-      
-      case 'cleanup_inactive':
-        // This can be called by cron jobs to clean up inactive players across all rooms
-        const inactiveThresholdMinutes = body.inactiveThresholdMinutes || 60
-        const dryRun = body.dryRun || false
-        
-        const { data: cleanupResults, error: cleanupError } = await supabase
-          .rpc('cleanup_inactive_players', {
-            inactive_threshold_minutes: inactiveThresholdMinutes,
-            dry_run: dryRun
-          })
-        
-        if (cleanupError) {
-          debug.log('multiplayer', 'Cleanup failed', cleanupError)
-          return NextResponse.json({ error: 'Cleanup failed', details: cleanupError.message }, { status: 500 })
-        }
-        
-        return NextResponse.json({
-          success: true,
-          cleanupResults,
-          message: `${dryRun ? 'Preview:' : 'Cleaned up'} ${cleanupResults?.length || 0} rooms`
-        })
-      
-      case 'bulk_host_check':
-        // Check all active rooms for host migration needs
-        const { data: activeRooms, error: roomsError } = await supabase
-          .from('multiplayer_rooms')
-          .select('id')
-          .in('room_status', ['waiting', 'starting', 'in_progress'])
-        
-        if (roomsError) {
-          return NextResponse.json({ error: 'Failed to fetch active rooms' }, { status: 500 })
-        }
-        
-        const migrationResults = []
-        for (const room of activeRooms || []) {
-          try {
-            const result = await multiplayerOperations.checkAndMigrateHost(room.id)
-            if (result.migrated) {
-              migrationResults.push({
-                roomId: room.id,
-                newHostId: result.newHostId,
-                migrated: result.migrated
-              })
-            }
-          } catch (error) {
-            debug.log('multiplayer', `Failed to check host migration for room ${room.id}`, error)
-          }
-        }
-        
-        return NextResponse.json({
-          success: true,
-          migrationsPerformed: migrationResults.length,
-          migrations: migrationResults,
-          message: `Checked ${activeRooms?.length || 0} rooms, performed ${migrationResults.length} migrations`
-        })
-      
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
+    const { roomId } = await request.json()
+    if (!roomId) {
+      return NextResponse.json({ error: 'Room ID required' }, { status: 400 })
+    }
+
+    // Update room activity timestamp
+    const { error: updateError } = await supabase
+      .from('multiplayer_rooms')
+      .update({ last_activity: new Date().toISOString() })
+      .eq('id', roomId)
+      .eq('status', 'active')
+
+    if (updateError) {
+      console.error('Error updating room activity:', updateError)
+      return NextResponse.json({ error: 'Failed to update room' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    debug.log('multiplayer', 'Heartbeat API error', error)
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error in heartbeat:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

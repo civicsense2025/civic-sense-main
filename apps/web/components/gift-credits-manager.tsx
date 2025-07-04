@@ -10,8 +10,8 @@ import { Textarea } from './ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { useToast } from "../../components/ui"
 import { GiftCreditsAnalytics } from '@/components/gift-credits-analytics'
 
 interface GiftCredits {

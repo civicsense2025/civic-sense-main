@@ -53,7 +53,7 @@ const DEEPL_LANGUAGE_MAP: Record<string, string> = {
   'uk': 'UK',
   'id': 'ID',
   'vi': 'VI'
-};
+} as const;
 
 // DeepL API currently supports a limited set of target languages. If we attempt
 // to translate into a language that is not (yet) supported the API will return
@@ -82,6 +82,21 @@ interface CivicTranslationOptions {
   context?: string;
 }
 
+type CivicTermsGlossary = {
+  [key: string]: {
+    [lang: string]: string;
+  };
+};
+
+interface DeepLTranslation {
+  text: string;
+  detected_source_language?: string;
+}
+
+interface DeepLResponse {
+  translations: DeepLTranslation[];
+}
+
 class MobileTranslationService {
   private static instance: MobileTranslationService;
   private cache: TranslationCache = {};
@@ -91,7 +106,7 @@ class MobileTranslationService {
   private readonly DEEPL_API_KEY = process.env.EXPO_PUBLIC_DEEPL_API_KEY;
 
   // Civic-specific terms that should be preserved or handled specially
-  private readonly CIVIC_TERMS_GLOSSARY = {
+  private readonly CIVIC_TERMS_GLOSSARY: CivicTermsGlossary = {
     'Constitution': {
       es: 'Constitución',
       it: 'Costituzione',
@@ -239,6 +254,10 @@ class MobileTranslationService {
       MobileTranslationService.instance = new MobileTranslationService();
     }
     return MobileTranslationService.instance;
+  }
+
+  private constructor() {
+    // Private constructor to enforce singleton
   }
 
   async initialize(): Promise<void> {
@@ -395,7 +414,7 @@ class MobileTranslationService {
       throw new Error(`DeepL API error: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as DeepLResponse;
     
     if (!result.translations || !Array.isArray(result.translations) || result.translations.length === 0) {
       throw new Error('Invalid response from DeepL API');
@@ -415,7 +434,7 @@ class MobileTranslationService {
     
     // Replace civic terms with their translations
     for (const [englishTerm, translations] of Object.entries(this.CIVIC_TERMS_GLOSSARY)) {
-      const targetTranslation = translations[targetLanguage as keyof typeof translations];
+      const targetTranslation = translations[targetLanguage];
       if (targetTranslation) {
         const regex = new RegExp(`\\b${englishTerm}\\b`, 'gi');
         const beforeReplace = translatedText;
@@ -550,5 +569,5 @@ class MobileTranslationService {
   }
 }
 
-// Export singleton instance (keeping same interface as before)
+// Export singleton instance
 export const deepLTranslationService = MobileTranslationService.getInstance(); 

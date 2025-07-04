@@ -2,10 +2,10 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Button } from '@civicsense/ui-web'
-import { AutoReadPage } from '@civicsense/ui-web'
-import { FeedbackButton } from '@/components/feedback'
-import { ServerHeader } from '@civicsense/ui-web'
+import { Button } from '@/components/ui/button'
+import { AutoReadPage } from '@/app/components/auto-read/auto-read-page'
+import { FeedbackButton } from '@/components/feedback/feedback-button'
+import { ServerHeader } from '@/components/server-header'
 import { useEffect, useRef } from 'react'
 
 export default function AboutPage() {

@@ -2530,4 +2530,4 @@ export const strings = {
 };
 
 // Default export for convenience
-export default uiStrings; 
+export default strings; 

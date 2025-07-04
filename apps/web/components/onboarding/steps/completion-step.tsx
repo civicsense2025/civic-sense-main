@@ -6,7 +6,7 @@ import { Badge } from './ui/badge'
 import { ArrowRight, Sparkles, Check, Rocket } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 interface CompletionStepProps {
   onComplete: (data: any) => void

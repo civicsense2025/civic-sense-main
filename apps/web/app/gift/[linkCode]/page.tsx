@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Gift, Mail, ArrowRight, CheckCircle, AlertCircle, Clock, Users } from 'lucide-react'
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Label } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 // Temporary toast stub for monorepo migration
 const useToast = () => ({
   toast: ({ title, description, variant }: any) => {

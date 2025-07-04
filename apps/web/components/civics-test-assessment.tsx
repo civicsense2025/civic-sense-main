@@ -8,10 +8,10 @@ import { Check, X, ArrowRight, Loader2, Flame, RotateCcw, Clock } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from "../lib/supabase/client"
 import { Card, CardContent } from './ui/card'
-import { pendingUserAttribution } from '@civicsense/shared/pending-user-attribution'
-import { updateEnhancedProgress } from '@civicsense/shared/lib/enhanced-gamification'
+import { pendingUserAttribution } from '@civicsense/business-logic/services/user'
+import { updateEnhancedProgress } from '@civicsense/business-logic/services/gamification'
 import { SocialProofBubble } from '@/components/social-proof-bubble'
-import { createCivicsTestProgress, type BaseQuizState } from '@civicsense/shared/progress-storage'
+import { createCivicsTestProgress, type BaseQuizState } from '@civicsense/business-logic/services/progress'
 import { 
   createEnhancedCivicsTestProgress, 
   type EnhancedQuizState, 

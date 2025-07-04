@@ -73,6 +73,21 @@ interface OGData {
   url?: string;
 }
 
+// Add type safety for OpenAI API response
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
+interface OpenAIErrorResponse {
+  error?: {
+    message?: string;
+  };
+}
+
 // ============================================================================
 // SOURCE ANALYSIS SERVICE CLASS
 // ============================================================================
@@ -1132,25 +1147,21 @@ Format your response as JSON:
         throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as OpenAIResponse;
       
-      // Log the full response for debugging
+      // Log the full response for debugging with type safety
       console.log(`🔍 OpenAI Response structure for ${domain}:`, {
-        hasChoices: !!data.choices,
-        keys: Object.keys(data),
+        hasChoices: !!data?.choices,
+        keys: Object.keys(data || {}),
         sampleContent: JSON.stringify(data).slice(0, 200) + '...'
       });
       
-      // Extract the analysis from the response - handle standard chat completions format
-      let analysisText: string = '';
+      // Extract the analysis from the response with type safety
+      let analysisText = '';
       
-      if (data.choices && data.choices[0]?.message?.content) {
+      if (data?.choices?.[0]?.message?.content) {
         const content = data.choices[0].message.content;
-        if (typeof content === 'string') {
-          analysisText = content;
-        } else {
-          analysisText = '';
-        }
+        analysisText = typeof content === 'string' ? content : '';
       } else {
         console.error(`❌ Unexpected response format for ${domain}:`, data);
         throw new Error('Invalid response format from OpenAI API');

@@ -23,8 +23,8 @@ import {
   Settings
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { useToast } from "../../components/ui"
 
 interface GoogleClassroomCourse {
   id: string

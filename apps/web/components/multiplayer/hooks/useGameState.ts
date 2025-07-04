@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { createMultiplayerQuizProgress, type BaseQuizState } from '../lib/progress-storage'
 import { multiplayerOperations, type GameState as ServerGameState, useMultiplayerRoom } from '../lib/multiplayer'
 import type { GameState, GameModeConfig } from '../types/game-types'

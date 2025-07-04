@@ -17,7 +17,7 @@ import { SourceMetadataCard } from "@/components/source-metadata-card"
 import { EnhancedSocialShare } from "@/components/enhanced-social-share"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { dataService } from '@civicsense/business-logic/services'
-import { questionOperations } from '@civicsense/shared/database'
+import { questionOperations } from '@civicsense/business-logic/database'
 import { cn } from '@civicsense/business-logic/utils'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { QuizGameMode, QuizModeConfig, FULL_MODE_CONFIGS } from '@civicsense/types/quiz'

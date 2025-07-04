@@ -31,8 +31,8 @@ import {
   Star
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { useToast } from "../../components/ui"
 
 interface InstitutionalPod {
   pod_id: string

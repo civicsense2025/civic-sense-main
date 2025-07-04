@@ -1,14 +1,14 @@
 "use client"
 
-import { Header } from '@civicsense/ui-web'
-import { Container, Stack, Text } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { Container, Stack, Text } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
 import Link from "next/link"
 import { CheckCircle, Shield, Users, BookOpen, Database, Cog, Mail, ExternalLink } from "lucide-react"
 import { isDocumentationSectionEnabled } from "@/lib/comprehensive-feature-flags"
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 
 interface FeatureSection {
   title: string

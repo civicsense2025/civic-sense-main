@@ -2,22 +2,22 @@
 
 import { useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Card, CardContent } from './ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from './ui/select'
-import { cn } from '@civicsense/business-logic/utils'
-import { QuizGameMode } from '@civicsense/types/quiz'
-import { PremiumFeature } from '@civicsense/business-logic/services/premium-service'
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { QuizGameMode } from '@/lib/quiz/quiz-data'
+import { PremiumFeature } from '@/lib/premium/premium-service'
 import { Play, Target, Users, Zap, LogIn } from "lucide-react"
-import { useAuth } from "@civicsense/ui-web"
-import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
+import { useAuth } from "@/components/ui"
+import { useGuestAccess } from '@/lib/hooks/use-guest-access'
 
 interface ModeInfo {
   emoji: string

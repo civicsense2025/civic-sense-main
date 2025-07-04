@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { SurveyForm, Survey, SurveyResponse } from "@/components/survey/survey-form"
-import { Header } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 import { useGuestAccess } from "@/hooks/use-guest-access"
 import { useToast } from "@/components/ui/use-toast"
 import { Clock, Users, Shield, Play, CheckCircle2 } from "lucide-react"

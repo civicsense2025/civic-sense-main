@@ -12,7 +12,7 @@ import { Button } from './button'
 import { Textarea } from './textarea'
 import { Label } from './label'
 import { Input } from './input'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { Badge } from './badge'
 import { Languages, Heart, CheckCircle, Sparkles, RefreshCw } from 'lucide-react'
 

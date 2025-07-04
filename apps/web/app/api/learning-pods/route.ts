@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
+import { isLearningPodsEnabled } from '@civicsense/business-logic'
 
 // Helper function to get default emoji for pod type
 function getPodDefaultEmoji(podType: string): string {
@@ -21,7 +21,7 @@ function getPodDefaultEmoji(podType: string): string {
 // GET /api/learning-pods - Get user's learning pods
 export async function GET(request: NextRequest) {
   // Feature flag check - disable pods API in production
-  if (!arePodsEnabled()) {
+  if (!isLearningPodsEnabled()) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
 // POST /api/learning-pods - Create new learning pod
 export async function POST(request: NextRequest) {
   // Feature flag check - disable pods API in production
-  if (!arePodsEnabled()) {
+  if (!isLearningPodsEnabled()) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 

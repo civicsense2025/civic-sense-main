@@ -1,31 +1,59 @@
 "use client"
 
-import React, { useCallback } from 'react'
-import { AuthProvider as SharedAuthProvider } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
-import { supabase, authHelpers } from '../../lib/supabase/client'
-import { pendingUserAttribution } from '@civicsense/shared/pending-user-attribution'
+import React, { createContext, useContext, useCallback, useState, useEffect } from 'react'
+import { useToast } from "@/components/ui"
+import { supabase } from '@/lib/supabase/client'
+import { pendingUserAttribution } from '@civicsense/business-logic'
+import type { User } from '@supabase/supabase-js'
 
-// Re-export the auth hook from shared
-export { useAuth } from '@civicsense/ui-web'
-export type { AuthContextType } from '@civicsense/ui-web'
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  signOut: () => Promise<void>
+}
 
-// Temporary stub component
-const DonationThankYouPopover = ({ children, ...props }: any) => null
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-interface WebAuthProviderProps {
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+
+interface AuthProviderProps {
   children: React.ReactNode
 }
 
-export function AuthProvider({ children }: WebAuthProviderProps) {
+export function AuthProvider({ children }: AuthProviderProps) {
   const { toast } = useToast()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Helper function to transfer pending data when user authenticates
-  const handleUserChange = useCallback(async (user: any) => {
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUser = session?.user ?? null
+      setUser(newUser)
+      handleUserChange(newUser)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleUserChange = useCallback(async (user: User | null) => {
     if (!user) return
 
     try {
-      // Check if there's any pending data to transfer
       if (!pendingUserAttribution.hasPendingData()) {
         return
       }
@@ -33,11 +61,9 @@ export function AuthProvider({ children }: WebAuthProviderProps) {
       const pendingSummary = pendingUserAttribution.getPendingSummary()
       console.log('🔄 Found pending data to transfer:', pendingSummary)
 
-      // Transfer the data
       const transferResult = await pendingUserAttribution.transferPendingDataToUser(user.id)
       
       if (transferResult.success && transferResult.totalXPAwarded > 0) {
-        // Show success toast
         toast({
           title: "Progress Saved! 🎉",
           description: `Your recent activity has been saved to your account. You earned ${transferResult.totalXPAwarded} XP!`,
@@ -53,7 +79,8 @@ export function AuthProvider({ children }: WebAuthProviderProps) {
     }
   }, [toast])
 
-  const handleSignOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut()
     toast({
       title: "Signed out successfully! 👋",
       description: "You've been signed out of CivicSense. Come back soon!",
@@ -62,12 +89,8 @@ export function AuthProvider({ children }: WebAuthProviderProps) {
   }, [toast])
 
   return (
-    <SharedAuthProvider
-      supabaseClient={supabase}
-      onUserChange={handleUserChange}
-      onSignOut={handleSignOut}
-    >
+    <AuthContext.Provider value={{ user, loading, signOut }}>
       {children}
-    </SharedAuthProvider>
+    </AuthContext.Provider>
   )
 }

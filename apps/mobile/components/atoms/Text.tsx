@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Text as RNText, TextStyle, StyleSheet } from 'react-native';
 import { useTheme } from '../../lib/theme-context';
 import { typography, fontFamily, TypographyKey } from '../../lib/theme';
@@ -25,7 +25,7 @@ interface TextProps {
   accessibilityRole?: 'text' | 'header';
 }
 
-export const Text: React.FC<TextProps> = ({
+export function Text({
   children,
   variant = 'body',
   color = 'inherit',
@@ -40,7 +40,7 @@ export const Text: React.FC<TextProps> = ({
   accessibilityLabel,
   accessibilityHint,
   accessibilityRole = 'text',
-}) => {
+}: TextProps) {
   const { theme } = useTheme();
 
   const getVariantStyles = (): TextStyle => {
@@ -97,36 +97,36 @@ export const Text: React.FC<TextProps> = ({
       {children}
     </RNText>
   );
-};
+}
 
 // Pre-configured text variants for common use cases
-export const TitleLarge: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="titleLarge" accessibilityRole="header" />
-);
+export function TitleLarge(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="titleLarge" accessibilityRole="header" />;
+}
 
-export const Title: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="title" accessibilityRole="header" />
-);
+export function Title(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="title" accessibilityRole="header" />;
+}
 
-export const Headline: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="headline" accessibilityRole="header" />
-);
+export function Headline(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="headline" accessibilityRole="header" />;
+}
 
-export const Subheadline: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="subheadline" />
-);
+export function Subheadline(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="subheadline" />;
+}
 
-export const Body: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="body" />
-);
+export function Body(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="body" />;
+}
 
-export const Caption: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="caption" />
-);
+export function Caption(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="caption" />;
+}
 
-export const Footnote: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text {...props} variant="footnote" />
-);
+export function Footnote(props: Omit<TextProps, 'variant'>) {
+  return <Text {...props} variant="footnote" />;
+}
 
 const styles = StyleSheet.create({
   base: {

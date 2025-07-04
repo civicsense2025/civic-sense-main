@@ -58,9 +58,12 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => (
+      tabBar={(props: any) => (
         <CustomBottomTabBar 
-          {...props} 
+          {...props}
+          state={props.state}
+          descriptors={props.descriptors}
+          navigation={props.navigation}
         />
       )}
       screenOptions={{
@@ -81,7 +84,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: uiStrings.navigation.home,
-          tabBarIcon: ({ color, focused }) => <TabBarIcon name="🏠" focused={focused} color={color} />,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <TabBarIcon name="🏠" focused={focused} color={color} />,
         }}
       />
       
@@ -89,7 +92,7 @@ export default function TabLayout() {
         name="quiz"
         options={{
           title: uiStrings.navigation.learn,
-          tabBarIcon: ({ color, focused }) => <TabBarIcon name="🧠" focused={focused} color={color} />,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <TabBarIcon name="🧠" focused={focused} color={color} />,
         }}
       />
       
@@ -97,7 +100,7 @@ export default function TabLayout() {
         name="saved"
         options={{
           title: uiStrings.navigation.bookmarks,
-          tabBarIcon: ({ color, focused }) => <TabBarIcon name="📚" focused={focused} color={color} />,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <TabBarIcon name="📚" focused={focused} color={color} />,
         }}
       />
       
@@ -105,7 +108,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: uiStrings.navigation.profile,
-          tabBarIcon: ({ color, focused }) => <TabBarIcon name="👤" focused={focused} color={color} />,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <TabBarIcon name="👤" focused={focused} color={color} />,
         }}
       />
     </Tabs>

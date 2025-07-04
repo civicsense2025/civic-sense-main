@@ -13,9 +13,9 @@ import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
 import { Separator } from './ui/separator'
 import { SurveyIncentiveDisplay } from './survey-incentive-display'
-import { useAuth } from '@civicsense/ui-web'
-import { useGuestAccess } from '@civicsense/shared/use-guest-access'
-import { useSurveyIncentive } from '@civicsense/shared/use-survey-incentives'
+import { useAuth } from "../../components/ui"
+import { useGuestAccess } from '@civicsense/business-logic/hooks/use-guest-access'
+import { useSurveyIncentive } from '@civicsense/business-logic/hooks/use-survey-incentives'
 import { cn } from '@civicsense/business-logic/utils'
 import type { 
   SurveyIncentive, 

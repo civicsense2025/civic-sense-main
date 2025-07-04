@@ -3,7 +3,7 @@
 import { Suspense } from "react"
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button, Alert, AlertDescription } from '@civicsense/ui-web'
+import { Button, Alert, AlertDescription } from "../../components/ui"
 import { AlertCircle, Home, RefreshCw } from "lucide-react"
 
 function AuthErrorContent() {

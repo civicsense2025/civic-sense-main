@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CollectionCard } from '@/components/collections/collection-card'
 import { CollectionStats } from '@/components/collections/collection-stats'
 import { CollectionFilters } from '@/components/collections/collection-filters'
-import type { Collection, CollectionItem, CollectionFilter } from '@civicsense/types/collections'
+import type { Collection, CollectionStep } from '@/types/collections'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface CollectionPageProps {
@@ -24,34 +24,54 @@ interface CollectionPageProps {
 export default async function CollectionPage({ params }: CollectionPageProps) {
   const { slug } = params
 
+  // Sample collection step
+  const sampleStep: CollectionStep = {
+    id: '1',
+    type: 'lesson',
+    title: 'Introduction',
+    description: 'Learn the basics',
+    content: null,
+    duration: 15,
+    order: 1,
+    isRequired: true
+  }
+
   // Fetch collection data
   const collection: Collection = {
-    id: slug,
+    id: '1',  // Use a UUID or other unique identifier
     title: 'Sample Collection',
-    description: 'This is a sample collection'
+    description: 'This is a sample collection',
+    topics: ['civics', 'democracy'],
+    difficulty: 'beginner',
+    estimatedTime: 30,
+    author: 'CivicSense',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    category: 'civics',
+    isPublic: true,
+    objectives: ['Learn about civic engagement'],
+    steps: [sampleStep],
+    tags: ['civics', 'beginner']
   }
 
-  // Sample items and filters
-  const items: CollectionItem[] = []
-  const filters: CollectionFilter[] = []
-
-  const handleFilterChange = (filter: CollectionFilter) => {
-    // Handle filter change
-  }
-
-  const handleItemSelect = (item: CollectionItem) => {
-    // Handle item selection
-  }
+  const filters = [
+    { id: 'all', label: 'All' },
+    { id: 'beginner', label: 'Beginner' },
+    { id: 'intermediate', label: 'Intermediate' },
+    { id: 'advanced', label: 'Advanced' }
+  ]
 
   return (
     <div className="container mx-auto p-4">
       <Card className="p-6">
         <CollectionStats collection={collection} />
-        <CollectionFilters filters={filters} onFilterChange={handleFilterChange} />
+        <CollectionFilters 
+          filters={filters} 
+          activeFilter="all"
+          onFilterChange={(filter: { id: string; label: string }) => console.log('Filter:', filter)} 
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <CollectionCard key={item.id} item={item} onSelect={handleItemSelect} />
-          ))}
+          <CollectionCard collection={collection} onSelect={(c: Collection) => console.log('Selected:', c)} />
         </div>
       </Card>
     </div>
@@ -64,28 +84,27 @@ function getCollection(slug: string): Collection | null {
     id: '1',
     title: 'Example Collection',
     description: 'This is an example collection.',
-    slug,
-    itemCount: 5,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    categories: ['Category 1', 'Category 2'],
-    estimated_minutes: 60,
-    items: [
+    topics: ['civics', 'democracy'],
+    difficulty: 'beginner',
+    estimatedTime: 60,
+    author: 'CivicSense',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    tags: ['civics', 'beginner'],
+    category: 'civics',
+    isPublic: true,
+    objectives: ['Learn about civic engagement'],
+    steps: [
       {
         id: '1',
         title: 'Item 1',
         description: 'Description 1',
         type: 'quiz',
-        status: 'published',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        content: null,
+        duration: 15,
+        order: 1,
+        isRequired: true
       }
-    ],
-    progress: {
-      completed_items: 2,
-      total_items: 5,
-      last_activity: new Date().toISOString(),
-      progress_percentage: 40
-    }
+    ]
   }
 } 

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@civicsense/ui-web"
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily removed
+import { useAuth } from "@/lib/auth"
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily removed
 import type { QuizResults, QuizTopic, QuizQuestion, QuizGameMode, MultipleChoiceQuestion, TrueFalseQuestion, ShortAnswerQuestion } from '@civicsense/types/quiz'
 import { MultipleChoiceQuestion as MultipleChoiceQuestionComponent } from "../../question-types/multiple-choice"
 import { TrueFalseQuestion as TrueFalseQuestionComponent } from "../../question-types/true-false"
@@ -18,7 +18,7 @@ import { QuizResults as QuizResultsComponent } from "../../quiz-results"
 // TEMPORARILY DISABLED: Keyboard shortcuts have web dependencies
 // import { useKeyboardShortcuts, createQuizShortcuts, KeyboardShortcutsHelp } from '@civicsense/business-logic/utils/keyboard-shortcuts'
 import { AdminEditPanel } from "../../admin-edit-panel"
-import { useAdmin } from '@civicsense/shared/admin-access'
+import { useAdmin } from '@civicsense/business-logic/services/admin'
 
 import { Button } from './ui/button'
 import { Progress } from './ui/progress'

@@ -1,10 +1,9 @@
 // lib/data-service.ts - Fixed with proper question-topic relationships and source handling
 
-import { topicOperations, questionOperations, categoryOperations } from './database'
-import type { TopicMetadata, QuizQuestion } from './quiz-data'
-import { allCategories } from './quiz-data'
-import { cleanObjectContent } from './utils'
-import { supabase } from './supabase/client'
+import type { TopicMetadata, QuizQuestion } from '@civicsense/types'
+import { supabase, categoryOperations } from '../database'
+import { allCategories } from '../quiz/data-service'
+import { mockTopicsData, mockQuestionsData } from '../utils/mock-data'
 
 // Check if Supabase is available
 if (!supabase) {
@@ -25,6 +24,17 @@ const MAX_CACHE_SIZE = 100 // Maximum number of cached topics
 // Cache for categories data
 let categoriesGlobalCache: { data: any[] | null; timestamp: number } | null = null
 const CATEGORIES_CACHE_DURATION = 3600000 // 1 hour cache for categories
+
+// Extend the shared QuizQuestion type with optional fields used only on the client side
+type QuizQuestionExtended = QuizQuestion & {
+  options?: string[]
+  difficulty?: 'easy' | 'medium' | 'hard'
+}
+
+// Local helper: deep-clone and remove undefined properties to ensure serializable clean objects
+function cleanObjectContent<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj)) as T
+}
 
 /**
  * Check if the database is available with timeout
@@ -155,7 +165,7 @@ function dbTopicToAppFormat(dbTopic: any): TopicMetadata {
 /**
  * Transform database question to app format with enhanced source handling
  */
-function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
+function dbQuestionToAppFormat(dbQuestion: any): QuizQuestionExtended {
   let tags: string[] = []
   let sources: any[] = []
 
@@ -222,7 +232,7 @@ function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
   }
 
   // Create the specific question type based on question_type
-  let question: QuizQuestion
+  let question: QuizQuestionExtended
   switch (dbQuestion.question_type) {
     case 'multiple_choice':
       const options = [
@@ -247,7 +257,7 @@ function dbQuestionToAppFormat(dbQuestion: any): QuizQuestion {
       question = {
         ...baseQuestion,
         type: 'true_false' as const,
-        options: ['True', 'False']
+        options: ['True', 'False'] as const
       }
       break
     default:
@@ -312,7 +322,7 @@ async function getTopicsInDateRange(startDate: Date, endDate: Date): Promise<any
     }
     
     // Additional filtering to ensure valid dates
-    return data.filter(topic => {
+    return data.filter((topic: any) => {
       if (!topic.date || typeof topic.date !== 'string' || topic.date.trim() === '') return false;
       try {
         const date = new Date(topic.date);
@@ -356,7 +366,7 @@ async function getAllTopicsWithValidDates() {
     }
     
     // Additional filtering to ensure valid dates
-    return data.filter(topic => {
+    return data.filter((topic: any) => {
       if (!topic.date || typeof topic.date !== 'string' || topic.date.trim() === '') return false;
       try {
         const date = new Date(topic.date);
@@ -809,7 +819,7 @@ export const dataService = {
   /**
    * Get questions for a topic with proper foreign key relationship
    */
-  async getQuestionsByTopic(topicId: string): Promise<QuizQuestion[]> {
+  async getQuestionsByTopic(topicId: string): Promise<QuizQuestionExtended[]> {
     console.log('📊 dataService.getQuestionsByTopic - Called with:', topicId)
     
     const isDbAvailable = await checkDatabaseAvailability()
@@ -850,7 +860,7 @@ export const dataService = {
       }
       
       // Transform questions with better error handling and source parsing
-      const questions: QuizQuestion[] = []
+      const questions: QuizQuestionExtended[] = []
       
       for (const dbQuestion of dbQuestions) {
         try {
@@ -903,7 +913,7 @@ export const dataService = {
    */
   async getTopicWithQuestions(topicId: string): Promise<{
     topic: TopicMetadata | null
-    questions: QuizQuestion[]
+    questions: QuizQuestionExtended[]
   }> {
     const [topic, questions] = await Promise.all([
       this.getTopicById(topicId),
@@ -938,7 +948,7 @@ export const dataService = {
       try {
         const categoriesFromTable = await categoryOperations.getAll()
         if (categoriesFromTable) {
-          return categoriesFromTable.map(cat => ({
+          return categoriesFromTable.map((cat: any) => ({
             name: cat.name,
             emoji: cat.emoji,
             description: cat.description || ''
@@ -950,7 +960,7 @@ export const dataService = {
     }
     
     // Fallback to hardcoded categories (this is acceptable as it's configuration data)
-    return allCategories.map(cat => ({
+    return allCategories.map((cat: any) => ({
       name: cat.name,
       emoji: cat.emoji,
       description: ''

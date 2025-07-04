@@ -1,19 +1,19 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Card, CardContent } from "../../components/ui"
 import { 
   ChevronDown,
   Play,
   ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
-import { CivicsTestAssessment } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
+import { CivicsTestAssessment } from "../../components/ui"
+import { Header } from "../../components/ui"
 
 // Temporary stubs for monorepo migration
 const useGuestAccess = () => ({
@@ -27,7 +27,7 @@ const supabase = {
     getUser: async () => ({ data: { user: null } })
   }
 }
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 
 // Custom hook for intersection observer
 const useScrollAnimation = () => {

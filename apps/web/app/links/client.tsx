@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Header } from '@civicsense/ui-web'
-import { Container } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { Container } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Card, CardContent } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { 
   Heart, 
   BookOpen, 
@@ -32,7 +32,7 @@ import {
   ChevronDown,
   AlertTriangle
 } from 'lucide-react'
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 import { Collection } from '@/types/collections'
 
 interface LinkItem {

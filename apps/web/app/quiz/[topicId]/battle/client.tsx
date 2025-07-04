@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { NPCBattleEngine } from "@/components/multiplayer/game-modes/npc-battle-engine"
-import { Header } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { useGuestAccess } from "@/hooks/useGuestAccess"

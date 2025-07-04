@@ -14,13 +14,13 @@
     "sourceMap": true,
     "noEmit": false,
     "outDir": "dist",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@civicsense/ui-web": ["../../packages/ui-web/src"],
-      "@civicsense/ui-web/*": ["../../packages/ui-web/src/*"],
-      "@civicsense/business-logic": ["../../packages/business-logic/src"],
-      "@civicsense/business-logic/*": ["../../packages/business-logic/src/*"],
       "@civicsense/types": ["../../packages/types/src"],
-      "@civicsense/types/*": ["../../packages/types/src/*"]
+      "@civicsense/types/*": ["../../packages/types/src/*"],
+      "@civicsense/business-logic": ["../../packages/business-logic/src"],
+      "@civicsense/business-logic/*": ["../../packages/business-logic/src/*"]
     }
   }
 } 

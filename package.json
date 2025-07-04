@@ -17,45 +17,47 @@
     "dev:web": "cd apps/web && npm run dev",
     "dev:mobile": "cd apps/mobile && npm run dev",
     "test:web": "cd apps/web && npm test",
-    "test:mobile": "cd apps/mobile && npm test"
+    "test:mobile": "cd apps/mobile && npm test",
+    "generate-takeaways": "tsx scripts/generate-ai-takeaways.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
+    "@types/react": "18.2.14",
+    "class-variance-authority": "^0.7.1",
     "date-fns": "^3.6.0",
+    "expo-localization": "~16.1.6",
     "lucide-react": "^0.525.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-native-edge-to-edge": "1.6.0",
+    "react-native-safe-area-context": "5.5.1",
+    "react-native-screens": "~4.0.0"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.50.3",
     "@types/node": "^22",
     "@types/pg": "^8.15.4",
+    "@types/react": "18.2.14",
     "@types/stripe": "^8.0.416",
     "canvas": "^3.1.0",
     "eslint": "^9.29.0",
+    "openai": "^5.8.2",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "turbo": "^1.12.4",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   },
   "overrides": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "@types/react": "^19.1.8"
+    "react": "18.2.0",
+    "@types/react": "18.2.14"
   },
   "pnpm": {
     "peerDependencyRules": {
       "ignoreMissing": [
-        "react",
         "react-dom"
       ],
       "allowedVersions": {
-        "react": "19",
-        "react-dom": "19",
-        "@types/react": "19",
-        "@types/react-dom": "19"
+        "react-dom": "18.2.0",
+        "@types/react-dom": "18.2.14"
       }
     },
     "ignoredBuiltDependencies": [

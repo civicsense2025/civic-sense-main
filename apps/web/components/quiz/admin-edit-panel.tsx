@@ -9,7 +9,7 @@ import { Badge } from './ui/badge'
 import { Edit2, Save, X, Plus, Trash2, Pencil, Eye } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
 import { supabase } from "../lib/supabase/client"
-import { toast } from '@civicsense/ui-web'
+import { toast } from "../../components/ui"
 import type { QuizQuestion, BaseQuestion } from '@civicsense/types/quiz'
 
 interface AdminEditPanelProps {

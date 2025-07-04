@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge'
 import { X, Download, Smartphone, Monitor, Zap, Star, ArrowUp } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>

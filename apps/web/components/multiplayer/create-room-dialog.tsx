@@ -11,12 +11,12 @@ import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Checkbox } from './ui/checkbox'
 import { Users, Gamepad2, Zap, Clock, Target, Shield, Bot, Brain, Puzzle } from 'lucide-react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { multiplayerOperations, getPlayerEmojiOptions } from '../lib/multiplayer/operations'
 import { createBalancedNPCMix, NPCBehaviorEngine } from '../lib/multiplayer/operations-npcs'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 
 interface CreateRoomDialogProps {

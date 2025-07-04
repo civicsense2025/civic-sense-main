@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Header } from '@civicsense/ui-web'
-import { Card } from '@civicsense/ui-web'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { Card } from "../../components/ui"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui"
 import { Users, BarChart3, Star, School, Activity, Settings, Shield, Calendar, Target, Trophy, BookOpen, Brain } from 'lucide-react'
 // Temporary stub for monorepo migration
 const arePodsEnabled = () => true
@@ -17,7 +17,7 @@ const createClient = () => ({
     })
   })
 })
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 
 // Import all the comprehensive pod components
 const EnhancedPodAnalytics = ({ podId }: any) => <div>Enhanced Pod Analytics (Stub)</div>

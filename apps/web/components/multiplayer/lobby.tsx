@@ -28,9 +28,9 @@ import {
   ChevronDown
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { multiplayerOperations, type CreateRoomOptions } from '../lib/multiplayer/operations'
 import { dataService } from '@civicsense/business-logic/services'

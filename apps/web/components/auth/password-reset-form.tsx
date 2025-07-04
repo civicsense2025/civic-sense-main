@@ -6,7 +6,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Alert, AlertDescription } from './ui/alert'
 import { AlertCircle, ArrowLeft, Mail } from "lucide-react"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { authHelpers } from "../lib/supabase/client"
 
 interface PasswordResetFormProps {

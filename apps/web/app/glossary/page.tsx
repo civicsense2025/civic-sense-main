@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { Input } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
-import { AutoReadPage } from '@civicsense/ui-web'
-import { Skeleton } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { Input } from "../../components/ui"
+import { Card, CardContent } from "../../components/ui"
+import { AutoReadPage } from "../../components/ui"
+import { Skeleton } from "../../components/ui"
+import { Header } from "../../components/ui"
 // Temporary stub for monorepo migration
 const SimpleBookmarkButton = ({ contentType, contentId, title, description, tags, variant }: any) => (
   <button className="p-1 hover:bg-gray-100 rounded">⭐</button>

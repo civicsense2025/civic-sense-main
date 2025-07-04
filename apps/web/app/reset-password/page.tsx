@@ -2,14 +2,14 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Label } from "../../components/ui"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 
 // Client component that uses useSearchParams
 function ResetPasswordForm() {

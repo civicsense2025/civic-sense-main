@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { QuizEngine } from "@/components/quiz/quiz-engine"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
-import { Header } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
+import { Header } from "../../components/ui"
+import { useAuth } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
 import { PremiumGate } from "@/components/premium-gate"
 import { QuizErrorBoundary } from "@/components/analytics-error-boundary"

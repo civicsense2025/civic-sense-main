@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from './ui/tooltip'
 import { cn } from '@civicsense/business-logic/utils'
-import { topicStatusOperations, type TopicStatus, type TopicStatusType } from '@civicsense/shared/topic-status'
+import { topicStatusOperations, type TopicStatus, type TopicStatusType } from '@civicsense/business-logic/services/topics'
 
 interface TopicStatusHistoryProps {
   topicId: string

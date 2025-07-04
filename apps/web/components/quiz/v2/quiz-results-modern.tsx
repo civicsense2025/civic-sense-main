@@ -9,7 +9,7 @@ import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 import type { QuizResults } from '@civicsense/types/quiz'
 import type { TopicMetadata } from '@civicsense/types/quiz'

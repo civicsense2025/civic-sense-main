@@ -3,7 +3,7 @@
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
-import { useQuizStrings, useAuthStrings, useCommonActionStrings, ui } from '@civicsense/shared/useUIStrings'
+import { useQuizStrings, useAuthStrings, useCommonActionStrings, ui } from '@civicsense/business-logic/strings'
 
 /**
  * Demo component showing different UI strings integration patterns

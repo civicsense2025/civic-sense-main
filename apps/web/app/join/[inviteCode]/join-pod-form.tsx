@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
-import { Textarea } from '@civicsense/ui-web'
-import { Alert, AlertDescription } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Label } from "../../components/ui"
+import { Textarea } from "../../components/ui"
+import { Alert, AlertDescription } from "../../components/ui"
 import { 
   Users, 
   Shield, 
@@ -19,7 +19,7 @@ import {
   Calendar,
   UserCheck
 } from 'lucide-react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 // Temporary toast stub for monorepo migration
 const useToast = () => ({
   toast: ({ title, description, variant }: any) => {

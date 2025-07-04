@@ -1,7 +1,7 @@
 "use client"
 
-import { Skeleton } from '@civicsense/ui-web'
-import { Card, CardContent } from '@civicsense/ui-web'
+import { Skeleton } from "../../components/ui"
+import { Card, CardContent } from "../../components/ui"
 
 // Glossary Term Card Skeleton
 function GlossaryTermSkeleton() {

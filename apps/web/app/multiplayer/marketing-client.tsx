@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Button } from '@civicsense/ui-web'
-import { Card } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Card } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { Crown, Users, Trophy, Zap, Play, Clock, Target, GamepadIcon } from "lucide-react"
 import Link from "next/link"
 import { motion, useInView } from "framer-motion"
 import { useRef } from 'react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 
 const AnimatedSection = ({ 
   children, 

@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase/client"
 import { Alert, AlertDescription } from './ui/alert'
 import { AlertCircle, Lock, Mail } from "lucide-react"
 import { Checkbox } from './ui/checkbox'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { GoogleOAuthButton } from "./google-oauth-button"
 
 interface SignInFormProps {

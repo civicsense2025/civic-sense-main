@@ -251,17 +251,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   backButtonText: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '500',
   },
   title: {
-    ...typography['2xl'],
+    ...typography.title1,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    ...typography.base,
+    ...typography.body,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   label: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '500',
   },
   input: {
@@ -283,13 +283,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    ...typography.base,
+    ...typography.body,
   },
   resetButton: {
     marginTop: spacing.md,
   },
   helpText: {
-    ...typography.sm,
+    ...typography.caption,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -309,11 +309,11 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   securityTitle: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
   },
   securityText: {
-    ...typography.sm,
+    ...typography.caption,
     lineHeight: 20,
   },
   // Success state styles
@@ -339,24 +339,24 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   successTitle: {
-    ...typography['2xl'],
+    ...typography.title1,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
   },
   successSubtitle: {
-    ...typography.base,
+    ...typography.body,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   emailText: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
   },
   instructionsCard: {
     marginBottom: spacing['3xl'],
   },
   instructionsTitle: {
-    ...typography.lg,
+    ...typography.title3,
     fontWeight: '600',
     marginBottom: spacing.md,
   },
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   instructionNumber: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
     color: '#FFFFFF',
     backgroundColor: '#3B82F6',
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   instructionText: {
-    ...typography.base,
+    ...typography.body,
     flex: 1,
     lineHeight: 22,
   },

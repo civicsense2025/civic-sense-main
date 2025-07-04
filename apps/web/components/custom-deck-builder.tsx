@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Checkbox } from './ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { PremiumGate } from "@/components/premium-gate"
-import { aiDeckBuilder, type AIEnhancedDeck } from '@civicsense/shared/ai-deck-builder'
+import { aiDeckBuilder, type AIEnhancedDeck } from '@civicsense/business-logic/services/ai-deck'
 import { 
   BookOpen, Plus, Search, Filter, Tag, 
   Calendar, Users, Settings, Save, 

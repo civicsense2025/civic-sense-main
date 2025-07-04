@@ -5,7 +5,7 @@
  * Separated from client-side code to avoid build issues.
  */
 
-import { createClient } from './supabase/server'
+import { createClient } from './database-server'
 
 // Simple role definitions (keeping consistent with client)
 export const ROLES = {

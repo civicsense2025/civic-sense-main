@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { useTopicAccess } from '@civicsense/shared/use-topic-access'
 import { supabase } from "../lib/supabase/client"

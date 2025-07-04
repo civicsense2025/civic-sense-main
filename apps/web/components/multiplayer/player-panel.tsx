@@ -4,7 +4,7 @@ import { Badge } from './ui/badge'
 import { cn } from '@civicsense/business-logic/utils'
 import { Check, Clock, Crown, Zap, Timer, Bot, User } from 'lucide-react'
 import type { MultiplayerPlayer, MultiplayerQuestionResponse } from '../lib/multiplayer/operations'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 interface PlayerPanelProps {
   players: MultiplayerPlayer[]

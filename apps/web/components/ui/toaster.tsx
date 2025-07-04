@@ -1,7 +1,7 @@
 "use client"
 
-import { useToast } from '@civicsense/ui-web'
-import { registerToastDispatch } from '@civicsense/shared'
+import { useToast } from '@/components/ui/use-toast'
+import { registerToastDispatch } from '@/components/ui/toast-utils'
 import {
   Toast,
   ToastClose,

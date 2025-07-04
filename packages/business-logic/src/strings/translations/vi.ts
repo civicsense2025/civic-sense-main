@@ -1,6 +1,4 @@
-import type { UIStrings } from './ui-strings';
-
-export const strings: UIStrings = {
+export const uiStringsVI = {
   "navigation": {
     "back": "Quay lại",
     "close": "Đóng",

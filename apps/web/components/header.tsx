@@ -10,12 +10,12 @@ import { useAuth } from "./auth/auth-provider"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
-import { enhancedProgressOperations, type EnhancedUserProgress } from '@civicsense/shared/lib/enhanced-gamification'
+import { enhancedProgressOperations, type EnhancedUserProgress } from '@civicsense/business-logic/services/gamification'
 import { LearningPodsStats } from "./learning-pods-stats"
-import { useAdmin } from '@civicsense/shared/admin-access'
-import { useComprehensiveFeatureFlags } from '@civicsense/shared/useComprehensiveFeatureFlags'
+import { useAdmin } from '@civicsense/business-logic/services/admin'
+import { useComprehensiveFeatureFlags } from '@civicsense/business-logic/utils/feature-flags'
 import { envFeatureFlags } from '@civicsense/business-logic/utils/feature-flags'
-import { useFeatureFlag } from '@civicsense/shared/useFeatureFlags-statsig'
+import { useFeatureFlag } from '@civicsense/business-logic/utils/feature-flags-statsig'
 import { UnclaimedRewardsNotification } from "@/components/survey/unclaimed-rewards-notification"
 
 interface HeaderProps {

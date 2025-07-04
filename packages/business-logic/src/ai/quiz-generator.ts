@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Database } from './database.types'
-import type { QuizQuestion, QuestionType } from './quiz-data'
+import type { QuizQuestion, QuestionType } from '@civicsense/types'
+import { questionOperations } from '../quiz/quiz-operations'
 
 type Tables = Database['public']['Tables']
 type PublicFigure = Tables['public_figures']['Row']

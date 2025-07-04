@@ -8,10 +8,10 @@ import { Label } from './ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Badge } from './ui/badge'
 import { Users, UserPlus, AlertCircle } from 'lucide-react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { multiplayerOperations, getPlayerEmojiOptions } from '../lib/multiplayer/operations'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { cn } from '@civicsense/business-logic/utils'
 
 interface JoinRoomDialogProps {

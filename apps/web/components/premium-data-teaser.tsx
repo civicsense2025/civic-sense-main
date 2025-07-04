@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'

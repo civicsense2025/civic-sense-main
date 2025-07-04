@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 
 const DONATION_IMPACTS = [
   { amount: 5, description: "Covers server costs for 1 day" },

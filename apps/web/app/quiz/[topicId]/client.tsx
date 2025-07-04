@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { Button } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Header } from "../../components/ui"
 import { QuizLoadingScreen } from "@/components/quiz/quiz-loading-screen"
 import { TopicInfo } from "@/components/quiz/topic-info"
-import { useAuth } from '@civicsense/ui-web'
-import { AuthDialog } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { AuthDialog } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
 import { dataService } from "@/lib/data-service"
 import { useGuestAccess } from "@/hooks/useGuestAccess"
@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/useIsMobile"
 import type { TopicMetadata, QuizQuestion } from "@/lib/quiz-data"
 import type { QuizGameMode, QuizModeConfig } from '@/lib/types/quiz'
 import { FULL_MODE_CONFIGS } from '@/lib/types/quiz'
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 import { toast } from '@/components/ui/use-toast'
 import { useAnalytics } from "@/utils/analytics"
 import { useGlobalAudio } from "@/components/global-audio-controls"

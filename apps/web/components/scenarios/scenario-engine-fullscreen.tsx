@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 
 // UI Components

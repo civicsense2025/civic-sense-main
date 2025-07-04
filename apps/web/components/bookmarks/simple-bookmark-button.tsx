@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../auth/auth-provider'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { Button, type ButtonProps } from './ui/button'
 import { cn } from '@civicsense/business-logic/utils'
 import type { ContentType, CreateBookmarkRequest } from '@civicsense/types/bookmarks'

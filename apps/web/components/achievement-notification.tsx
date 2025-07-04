@@ -8,7 +8,7 @@ import { Badge } from './ui/badge'
 import { Card, CardContent } from './ui/card'
 import confetti from "canvas-confetti"
 import { cn } from '@civicsense/business-logic/utils'
-import type { Achievement } from '@civicsense/shared/lib/enhanced-gamification'
+import type { Achievement } from '@civicsense/business-logic/services/gamification'
 
 // Type augmentation to fix framer-motion className issue
 declare module "framer-motion" {

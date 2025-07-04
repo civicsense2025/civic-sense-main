@@ -4,11 +4,11 @@ import { useState, useEffect } from "react"
 import { supabase } from "../lib/supabase/client"
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button" 
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { useGuestAccess } from '@civicsense/business-logic/hooks/useGuestAccess'
 import { multiplayerOperations } from '../lib/multiplayer/operations'
 import { Share2, Copy, Home } from "lucide-react"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import type { QuizQuestion } from '../lib/quiz/types'
 
 interface PvPGameEngineProps {

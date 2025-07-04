@@ -70,6 +70,18 @@ export default function TestGoogleAuthScreen() {
     }
   };
 
+  const renderProfile = () => {
+    if (!profile) return null;
+    return (
+      <View>
+        <Text>Profile:</Text>
+        <Text>ID: {profile.id}</Text>
+        <Text>Name: {profile.full_name || 'Not set'}</Text>
+        <Text>Email: {profile.email || 'Not set'}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
@@ -134,16 +146,7 @@ export default function TestGoogleAuthScreen() {
                 </Text>
               </>
             )}
-            {profile && (
-              <>
-                <Text style={[styles.label, { color: theme.foreground }]}>
-                  Full Name: <Text style={{ fontWeight: 'normal' }}>{profile.full_name || 'N/A'}</Text>
-                </Text>
-                <Text style={[styles.label, { color: theme.foreground }]}>
-                  Username: <Text style={{ fontWeight: 'normal' }}>{profile.username || 'N/A'}</Text>
-                </Text>
-              </>
-            )}
+            {renderProfile()}
           </View>
         </Card>
 
@@ -209,12 +212,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   title: {
-    ...typography['2xl'],
+    ...typography.titleLarge,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    ...typography.base,
+    ...typography.body,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -225,12 +228,12 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   cardTitle: {
-    ...typography.xl,
+    ...typography.title2,
     fontWeight: 'bold',
     marginBottom: spacing.md,
   },
   cardDescription: {
-    ...typography.base,
+    ...typography.body,
     marginBottom: spacing.lg,
   },
   button: {
@@ -242,21 +245,21 @@ const styles = StyleSheet.create({
     height: 50,
   },
   buttonText: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
     color: 'white',
   },
   label: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
     marginBottom: spacing.sm,
   },
   message: {
-    ...typography.base,
+    ...typography.body,
     marginBottom: spacing.sm,
   },
   timestamp: {
-    ...typography.sm,
+    ...typography.caption,
     marginBottom: spacing.md,
   },
   detailsContainer: {
@@ -266,12 +269,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   detailsTitle: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '600',
     marginBottom: spacing.sm,
   },
   details: {
-    ...typography.sm,
+    ...typography.body,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   backButton: {
@@ -283,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
   },
   backButtonText: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '500',
   },
 }); 

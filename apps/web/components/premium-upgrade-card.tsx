@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
 import { Crown, Zap, Check, ArrowRight, Sparkles } from "lucide-react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { stripeOperations, STRIPE_CONFIG } from '@civicsense/business-logic/services/premium-service'
 import { cn } from '@civicsense/business-logic/utils'

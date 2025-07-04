@@ -3,9 +3,9 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { assessmentFrameworkService } from '@/lib/assessment-framework/service'
 import { RelatedTopics } from '@/components/assessment/related-topics'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { ArrowLeft, AlertTriangle, CheckCircle, Clock, BookOpen, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 

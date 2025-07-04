@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { dataService } from '@civicsense/business-logic/services'
 import type { TopicMetadata } from '@civicsense/types/quiz'
 import { Button } from './ui/button'

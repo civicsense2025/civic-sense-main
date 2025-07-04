@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from './ui/separator'
 import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { supabase } from "../lib/supabase/client"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { 
   Globe, 
   Check, 

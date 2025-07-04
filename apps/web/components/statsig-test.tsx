@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
-import { useCommonActionStrings, ui } from '@civicsense/shared/useUIStrings'
+import { useCommonActionStrings, ui } from '@/lib/ui/ui-strings'
 import { UIStringsDemo } from './ui-strings-demo'
 
 export function StatsigTest() {
@@ -32,7 +32,7 @@ export function StatsigTest() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Statsig Configuration Test</span>
-            <Badge variant="secondary">With UI Strings</Badge>
+            <Badge>With UI Strings</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

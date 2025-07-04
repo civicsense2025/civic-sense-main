@@ -8,7 +8,7 @@ import { Checkbox } from './ui/checkbox'
 import { supabase } from "../lib/supabase/client"
 import { Alert, AlertDescription } from './ui/alert'
 import { AlertCircle, UserPlus, Check, X } from "lucide-react"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { GoogleOAuthButton } from "./google-oauth-button"
 import { cn } from '@civicsense/business-logic/utils'
 

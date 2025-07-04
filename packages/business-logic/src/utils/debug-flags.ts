@@ -3,7 +3,7 @@
  * Use this to diagnose issues with feature flags
  */
 
-import { envFeatureFlags } from './env-feature-flags'
+import { envFeatureFlags } from '../feature-flags'
 
 export function debugFeatureFlags() {
   console.group('[FLAGS] Feature Flags Debug')
@@ -30,7 +30,7 @@ export function debugFeatureFlags() {
       value,
       envKey,
       envValue,
-      source: envValue !== undefined ? 'env' : 'default'
+      source: envFeatureFlags.getEnvironmentSource(key as keyof typeof allFlags)
     })
   })
   console.groupEnd()
@@ -45,7 +45,7 @@ export function debugFeatureFlags() {
       value,
       envKey,
       envValue,
-      source: envValue !== undefined ? 'env' : 'default'
+      source: envFeatureFlags.getEnvironmentSource(key as keyof typeof allFlags)
     })
   })
   console.groupEnd()
@@ -60,7 +60,7 @@ export function debugFeatureFlags() {
       value,
       envKey,
       envValue,
-      source: envValue !== undefined ? 'env' : 'default'
+      source: envFeatureFlags.getEnvironmentSource(key as keyof typeof allFlags)
     })
   })
   console.groupEnd()
@@ -68,8 +68,12 @@ export function debugFeatureFlags() {
   // Development overrides
   if (process.env.NODE_ENV === 'development') {
     console.group('[DEV] Development Overrides')
-    const overrides = envFeatureFlags.getOverrides()
-    console.log('Active overrides:', overrides)
+    Object.entries(allFlags).forEach(([key, value]) => {
+      const source = envFeatureFlags.getEnvironmentSource(key as keyof typeof allFlags)
+      if (source === 'override') {
+        console.log(`${key}:`, { value, source })
+      }
+    })
     console.groupEnd()
   }
   

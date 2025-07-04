@@ -13,7 +13,7 @@ import { Checkbox } from './ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Slider } from './ui/slider'
 import { Badge } from './ui/badge'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 import { cn } from '@civicsense/business-logic/utils'
 import { ChevronLeft, ChevronRight, Save, Send, Star, Upload, Calendar, Phone, Mail, Keyboard } from "lucide-react"
@@ -22,7 +22,7 @@ import {
   convertSurveyStateToBaseSurvey, 
   convertBaseSurveyStateToSurvey,
   type SurveyResponse as StorageSurveyResponse 
-} from '@civicsense/shared/progress-storage'
+} from '@civicsense/business-logic/services/progress'
 import { MultipleChoice, MultipleSelect, ScaleRating, StarRating, MatrixGrid, TextInput, SliderInput, Ranking, DynamicContent } from "./questions"
 import { PostCompletionContent } from "./post-completion-content"
 

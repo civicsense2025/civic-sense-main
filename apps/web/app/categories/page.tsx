@@ -1,10 +1,10 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Header } from "../../components/ui"
 import { SkillsCarousel } from "@/components/categories/skills-carousel"
 import { BookOpen, Target, CheckCircle, Search } from "lucide-react"
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
@@ -10,7 +10,7 @@ import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 import { Badge } from './ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { aiDeckBuilder, type AIEnhancedDeck } from '@civicsense/shared/ai-deck-builder'
+import { aiDeckBuilder, type AIEnhancedDeck } from '@civicsense/business-logic/services/ai-deck'
 import { 
   Wand2, Lightbulb, Clock, CheckCircle, 
   Target, Brain, Sparkles, ArrowRight,

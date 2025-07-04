@@ -14,7 +14,7 @@ import { User, LogOut, BarChart3, Settings, Crown, ChevronDown, FileText, Users,
 import { useTheme } from "next-themes"
 import { useState, useEffect, useMemo } from "react"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
-import { enhancedProgressOperations, type EnhancedUserProgress } from '@civicsense/shared/lib/enhanced-gamification'
+import { enhancedProgressOperations, type EnhancedUserProgress } from '@civicsense/business-logic/services/gamification'
 import { envFeatureFlags } from '@civicsense/business-logic/utils/feature-flags'
 import Link from "next/link"
 // TEMPORARILY DISABLED: Web app specific icons during monorepo migration
@@ -33,7 +33,7 @@ const Icons = {
   moon: Target,
   logOut: LogOut
 }
-import { useFeatureFlag } from '@civicsense/shared/useFeatureFlags-statsig'
+import { useFeatureFlag } from '@civicsense/business-logic/utils/feature-flags-statsig'
 
 interface UserMenuProps {
   onSignInClick?: () => void

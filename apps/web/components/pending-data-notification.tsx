@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Card, CardContent } from './ui/card'
 import { Star, Clock, ArrowRight, X } from 'lucide-react'
-import { pendingUserAttribution } from '@civicsense/shared/pending-user-attribution'
+import { pendingUserAttribution } from '@civicsense/business-logic/services/user'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface PendingDataNotificationProps {

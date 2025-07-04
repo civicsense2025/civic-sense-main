@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { useTranslation } from '@civicsense/shared/useTranslation'
+import { useTranslation } from '@civicsense/business-logic/strings'
 
 // Comprehensive language list with proper codes, names, and emojis
 const SUPPORTED_LANGUAGES = [

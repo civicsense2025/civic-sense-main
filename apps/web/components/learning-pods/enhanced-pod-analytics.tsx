@@ -26,8 +26,8 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useToast } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
+import { useAuth } from "../../components/ui"
 
 interface PodAnalytics {
   pod: {

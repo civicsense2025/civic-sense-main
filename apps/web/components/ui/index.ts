@@ -16,7 +16,7 @@ export { Text, textVariants } from "./text"
 // Visual components
 export { Icon, iconVariants } from "./icon"
 export { Avatar } from "./avatar"
-export { Badge } from "./badge"
+export { Badge, badgeVariants } from "./badge"
 export { Progress } from "./progress"
 export { Separator } from "./separator"
 export { Skeleton } from "./skeleton"
@@ -52,6 +52,11 @@ export { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 export { Footer } from "./footer"
 export { TableOfContents } from "./table-of-contents"
 export { EmojiPicker } from "./emoji-picker"
+
+// Auth
+export { AuthProvider } from "./auth-provider"
+export { useAuth } from "./auth-provider"
+export type { AuthContextType } from "./auth-provider"
 
 // Utils
 export { cn } from "./utils" 

@@ -17,10 +17,59 @@ import {
   StyleSheet,
   Alert
 } from 'react-native'
-import MobileAnalyticsService, { 
-  type LearningInsights, 
-  type RealTimeLearningUpdate 
-} from '../../lib/analytics-service'
+import MobileAnalyticsService from '../../lib/analytics-service'
+
+// Define the interfaces needed for the component
+interface CognitivePatterns {
+  processingSpeed: {
+    speedTrend: 'improving' | 'declining' | 'stable'
+    fastQuestions: { length: number }
+    slowQuestions: { length: number }
+  }
+  confidenceMetrics: {
+    quickCorrect: number
+    hintUsagePattern: string
+    hesitationIndex: number
+  }
+  learningStyle: {
+    preferredQuestionTypes: string[]
+    visualVsTextual: string
+  }
+}
+
+interface LearningTrajectory {
+  currentLevel: string
+  projectedGrowth: string
+  timeToNextLevel: string
+  recommendedFocus: string[]
+}
+
+interface Recommendation {
+  title: string
+  description: string
+  type: 'strength' | 'improvement' | 'strategy' | 'warning'
+  priority: 'high' | 'medium' | 'low'
+  timeframe: 'immediate' | 'short-term' | 'long-term'
+  expectedImpact: string
+  actionItems: string[]
+  confidence: number
+}
+
+interface LearningInsights {
+  cognitivePatterns: CognitivePatterns
+  learningTrajectory: LearningTrajectory
+  personalizedRecommendations: Recommendation[]
+}
+
+interface RealTimeLearningUpdate {
+  newResponses: any[]
+  quickInsights: {
+    recentAccuracy: number
+    avgResponseTime: number
+    improvementSuggestion: string
+  }
+  lastUpdateId?: string
+}
 
 interface AdvancedLearningInsightsProps {
   userId: string
@@ -96,7 +145,7 @@ export function AdvancedLearningInsights({
     return () => clearInterval(interval)
   }, [getRealTimeUpdates])
 
-  const getRecommendationIcon = (type: string) => {
+  const getRecommendationIcon = (type: 'strength' | 'improvement' | 'strategy' | 'warning') => {
     switch (type) {
       case 'strength': return '💪'
       case 'improvement': return '📈'
@@ -106,7 +155,7 @@ export function AdvancedLearningInsights({
     }
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high': return '#dc2626'
       case 'medium': return '#f59e0b'
@@ -115,7 +164,7 @@ export function AdvancedLearningInsights({
     }
   }
 
-  const formatTimeframe = (timeframe: string) => {
+  const formatTimeframe = (timeframe: 'immediate' | 'short-term' | 'long-term') => {
     switch (timeframe) {
       case 'immediate': return 'Act now'
       case 'short-term': return '1-2 weeks'
@@ -235,7 +284,7 @@ export function AdvancedLearningInsights({
           <View style={styles.metricRow}>
             <Text style={styles.metricLabel}>Preferred question types:</Text>
           </View>
-          {insights.cognitivePatterns.learningStyle.preferredQuestionTypes.map((type, index) => (
+          {insights.cognitivePatterns.learningStyle.preferredQuestionTypes.map((type: string, index: number) => (
             <Text key={index} style={styles.cardDetail}>• {type}</Text>
           ))}
           <View style={styles.metricRow}>
@@ -269,7 +318,7 @@ export function AdvancedLearningInsights({
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🎯 Recommended Focus Areas</Text>
           {insights.learningTrajectory.recommendedFocus.length > 0 ? (
-            insights.learningTrajectory.recommendedFocus.map((area, index) => (
+            insights.learningTrajectory.recommendedFocus.map((area: string, index: number) => (
               <Text key={index} style={styles.cardDetail}>• {area}</Text>
             ))
           ) : (
@@ -283,7 +332,7 @@ export function AdvancedLearningInsights({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💡 Personalized Recommendations</Text>
           
-          {insights.personalizedRecommendations.map((rec, index) => (
+          {insights.personalizedRecommendations.map((rec: Recommendation, index: number) => (
             <View 
               key={index} 
               style={[
@@ -318,7 +367,7 @@ export function AdvancedLearningInsights({
               
               <View style={styles.actionSteps}>
                 <Text style={styles.actionStepsTitle}>Action Steps:</Text>
-                {rec.actionItems.map((action, actionIndex) => (
+                {rec.actionItems.map((action: string, actionIndex: number) => (
                   <Text key={actionIndex} style={styles.actionStep}>
                     • {action}
                   </Text>

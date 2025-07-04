@@ -11,7 +11,7 @@ import { Badge } from './ui/badge'
 import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { 
   Users, 
   UserPlus, 
@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { supabase } from "../lib/supabase/client"
 import { cn } from '@civicsense/business-logic/utils'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 
 // ============================================================================
 // TYPES AND INTERFACES

@@ -4,16 +4,16 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Filter, ChevronRight, Clock, BarChart, BookOpen, Calendar, X, Loader2 } from 'lucide-react'
-import { Button } from '@civicsense/ui-web'
-import { Input } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@civicsense/ui-web'
-import { Checkbox } from '@civicsense/ui-web'
-import { Label } from '@civicsense/ui-web'
-import { Separator } from '@civicsense/ui-web'
-import { useAuth } from '@civicsense/ui-web'
-import { cn } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Input } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui"
+import { Checkbox } from "../../components/ui"
+import { Label } from "../../components/ui"
+import { Separator } from "../../components/ui"
+import { useAuth } from "../../components/ui"
+import { cn } from "../../components/ui"
 
 interface TopicSearchResult {
   topic_id: string

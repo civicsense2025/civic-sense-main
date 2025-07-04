@@ -87,4 +87,38 @@ export interface TeamScore {
   name: string;
   score: number;
   players: string[];
-} 
+}
+
+export interface MultiplayerRoom {
+  id: string;
+  room_code: string;
+  room_status: 'waiting' | 'in_progress' | 'completed';
+  current_players: number;
+  max_players: number;
+  created_at: string;
+  updated_at: string;
+  current_question_index?: number;
+  total_questions?: number;
+  quiz_config?: any;
+}
+
+export interface MultiplayerPlayer {
+  id: string;
+  room_id: string;
+  user_id?: string;
+  guest_token?: string;
+  player_name: string;
+  player_emoji?: string;
+  join_order: number;
+  is_host: boolean;
+  is_ready: boolean;
+  is_connected: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const multiplayerOperations = {
+  async leaveRoom(roomId: string, playerId: string): Promise<void> {
+    // Implementation will be in the business logic package
+  }
+}; 

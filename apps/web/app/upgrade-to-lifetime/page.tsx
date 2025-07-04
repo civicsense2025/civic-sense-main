@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from "@/hooks/usePremium"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Crown, Zap, Check, ArrowLeft, Sparkles, Shield, X } from "lucide-react"
 import { stripeOperations } from "@/lib/premium"

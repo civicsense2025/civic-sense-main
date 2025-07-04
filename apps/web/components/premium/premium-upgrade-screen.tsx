@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Platform } from 'react-native'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { STRIPE_CONFIG } from '@civicsense/business-logic/services/premium-service'
 import { appleIAPMobile } from '@/apps/mobile/lib/apple-iap-mobile'

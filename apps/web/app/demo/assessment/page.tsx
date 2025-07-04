@@ -55,10 +55,10 @@ const FrameworkOverview = ({ framework }: any) => (
     </div>
   </div>
 )
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui"
+import { Button } from "../../components/ui"
 import { Grid2X2, LayoutList } from 'lucide-react'
-import { cn } from '@civicsense/ui-web'
+import { cn } from "../../components/ui"
 // Temporary types for monorepo migration
 type AssessmentFramework = {
   id: string

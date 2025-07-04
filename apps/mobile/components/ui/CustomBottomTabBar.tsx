@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../../lib/theme-context';
 import { useAuth } from '../../lib/auth-context';
 import { Text } from '../atoms/Text';
@@ -46,9 +46,13 @@ function TabBarIcon({ name, focused, color }: { name: string; focused: boolean; 
 
 interface CustomBottomTabBarProps extends BottomTabBarProps {
   primaryAction?: React.ReactNode;
+  state: BottomTabBarProps['state'];
+  descriptors: BottomTabBarProps['descriptors'];
+  navigation: BottomTabBarProps['navigation'];
 }
 
-export function CustomBottomTabBar({ state, descriptors, navigation, primaryAction }: CustomBottomTabBarProps) {
+export function CustomBottomTabBar(props: CustomBottomTabBarProps) {
+  const { state, descriptors, navigation, primaryAction } = props;
   const { theme } = useTheme();
   const { user } = useAuth();
   const { uiStrings } = useUIStrings();
@@ -63,7 +67,7 @@ export function CustomBottomTabBar({ state, descriptors, navigation, primaryActi
 
   // Filter routes based on authentication status
   const getVisibleRoutes = () => {
-    return state.routes.filter(route => {
+    return state.routes.filter((route: any) => {
       // Always show home and quiz
       if (route.name === 'index' || route.name === 'quiz') {
         return true;
@@ -151,15 +155,15 @@ export function CustomBottomTabBar({ state, descriptors, navigation, primaryActi
           alignItems: 'center',
           flex: 1,
         }}>
-          {visibleRoutes.map((route, index) => {
+          {visibleRoutes.map((route: any, index: number) => {
             const descriptor = descriptors[route.key];
             if (!descriptor) return null;
             
             const { options } = descriptor;
             const label = getTabLabel(route.name);
-            
+
             // Find the correct index in the original state for focus detection
-            const originalIndex = state.routes.findIndex(r => r.key === route.key);
+            const originalIndex = state.routes.findIndex((r: any) => r.key === route.key);
             const isFocused = state.index === originalIndex;
             
             // Skip hidden routes (check if tab is displayed)

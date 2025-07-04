@@ -10,7 +10,7 @@ import { Progress } from './ui/progress'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Label } from './ui/label'
 import { Checkbox } from './ui/checkbox'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily removed
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily removed
 import { 
   CheckCircle, 
   XCircle, 

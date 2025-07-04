@@ -2,9 +2,9 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { BookOpen, Clock, Target, X, Star, TrendingUp, ArrowUpRight, Bookmark as BookmarkIcon, Trash2 } from "lucide-react"
 import { enhancedQuizDatabase } from '@civicsense/types/quizbase'
-import { bookmarkOperations } from '@civicsense/shared/bookmarks'
-import { useAuth } from "@civicsense/ui-web"
-import { useToast } from '@civicsense/ui-web'
+import { bookmarkOperations } from '@civicsense/business-logic/services/bookmarks'
+import { useAuth } from "@/lib/auth"
+import { useToast } from "../../components/ui"
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'

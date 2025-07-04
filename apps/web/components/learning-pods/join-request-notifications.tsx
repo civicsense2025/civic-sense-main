@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { Button } from './ui/button'
-import { Card, CardContent } from './ui/card'
-import { Badge } from './ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { 
   Bell, 
   Check, 
@@ -12,9 +12,9 @@ import {
   Clock,
   MessageSquare
 } from 'lucide-react'
-import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth/auth-context'
+import { useToast } from '@/components/ui/use-toast'
 
 interface JoinRequest {
   id: string
@@ -202,7 +202,7 @@ export function JoinRequestNotifications({ className }: JoinRequestNotifications
                           </div>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300 border-0">
+                      <Badge className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300 border-0">
                         Pending
                       </Badge>
                     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { Button } from './ui/button'
 import { Progress } from './ui/progress'
 import { Card, CardContent } from './ui/card'

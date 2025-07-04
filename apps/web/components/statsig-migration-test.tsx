@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useFeatureFlag, useFeatureFlagDebug } from '@civicsense/shared/useFeatureFlags-statsig'
+import { useFeatureFlag, useFeatureFlagDebug } from '@civicsense/business-logic/utils/feature-flags-statsig'
 import { useStatsig } from '@/components/providers/statsig-provider'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'

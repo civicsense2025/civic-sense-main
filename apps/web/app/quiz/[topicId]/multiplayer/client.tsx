@@ -8,7 +8,7 @@ import { useMultiplayerRoom } from "@/lib/multiplayer"
 import { dataService } from "@/lib/data-service"
 import type { QuizQuestion, TopicMetadata } from "@/lib/quiz-data"
 import { debug } from "@/lib/debug-config"
-import { Button } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
 import { Home } from "lucide-react"
 import React from "react"
 import { ErrorBoundary } from "react-error-boundary"

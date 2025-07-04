@@ -8,7 +8,7 @@ import { Progress } from './ui/progress'
 import { Badge } from './ui/badge'
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import { supabase } from "../lib/supabase/client"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { Header } from '@/components/header'
 
 // Import step components

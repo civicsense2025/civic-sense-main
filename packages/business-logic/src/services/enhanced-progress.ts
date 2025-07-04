@@ -14,8 +14,8 @@
  * - Cross-device synchronization
  */
 
-import { supabase } from './supabase/client'
-import { debug } from '../lib/debug-config'
+import { supabase } from './database'
+import { debug } from '../utils/debug'
 
 // Enhanced interfaces for progress storage
 export interface EnhancedQuizState {

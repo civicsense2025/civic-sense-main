@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useAnalytics } from '@civicsense/ui-web'
+import { useAnalytics } from "../../components/ui"
 
 interface ErrorBoundaryState {
   hasError: boolean

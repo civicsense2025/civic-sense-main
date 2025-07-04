@@ -2,9 +2,9 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import { assessmentFrameworkService } from '@/lib/assessment-framework/service'
 import { FrameworkOverview } from '@/components/assessment/framework-overview'
-import { Button } from '@civicsense/ui-web'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
 import { AlertTriangle, TrendingUp, Clock } from 'lucide-react'
 import Link from 'next/link'
 

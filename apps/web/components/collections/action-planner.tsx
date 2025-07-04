@@ -7,7 +7,7 @@ import { Checkbox } from './ui/checkbox'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
 import { Target, CheckCircle, Calendar, Users, ExternalLink } from 'lucide-react'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Temporary static strings for build fix
 const uiStrings = {

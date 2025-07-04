@@ -3,6 +3,8 @@
 // Includes A/B testing, user customization, performance monitoring, and video preparation
 // Updated with enhanced safe zone support following social media best practices
 
+import type { QuizQuestion } from '@civicsense/types';
+
 // CivicSense Brand Colors - Exact brand specification from guidelines
 export const BRAND_COLORS = {
   // Primary palette
@@ -697,4 +699,84 @@ export function generateVideoUrl(params: VideoGenerationParams): string {
     : process.env.NEXT_PUBLIC_SITE_URL || 'https://civicsense.one'
   
   return `${baseUrl}/api/generate-video?${new URLSearchParams(params as any).toString()}`
+}
+
+interface ImageGenerationConfig {
+  prompt: string;
+  style?: string;
+  size?: '256x256' | '512x512' | '1024x1024';
+  quality?: 'standard' | 'hd';
+  n?: number;
+}
+
+interface ImageGenerationResult {
+  success: boolean;
+  url?: string;
+  error?: string;
+}
+
+export class ImageService {
+  // Generate an image for a quiz question
+  async generateQuestionImage(question: QuizQuestion): Promise<ImageGenerationResult> {
+    try {
+      // Extract key concepts from the question
+      const concepts = this.extractConcepts(question);
+      
+      // Generate a prompt for the image
+      const prompt = this.generatePrompt(concepts);
+      
+      // Generate the image
+      const config: ImageGenerationConfig = {
+        prompt,
+        style: 'natural',
+        size: '512x512',
+        quality: 'standard',
+        n: 1
+      };
+
+      // TODO: Implement actual image generation using an AI service
+      // For now, return a placeholder
+      return {
+        success: true,
+        url: 'https://placeholder.com/512x512'
+      };
+    } catch (error) {
+      console.error('Error generating question image:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  private extractConcepts(question: QuizQuestion): string[] {
+    const concepts: string[] = [];
+    
+    // Extract nouns and key phrases from the question text
+    const text = [
+      question.question,
+      question.explanation,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d
+    ].filter((text): text is string => typeof text === 'string').join(' ');
+
+    // TODO: Implement proper NLP for concept extraction
+    // For now, just split on spaces and filter common words
+    const words = text.split(/\s+/).filter(word => word.length > 3);
+    concepts.push(...words);
+
+    // Add category and tags
+    concepts.push(question.category);
+    concepts.push(...question.tags);
+
+    return [...new Set(concepts)]; // Remove duplicates
+  }
+
+  private generatePrompt(concepts: string[]): string {
+    // TODO: Implement proper prompt engineering
+    // For now, just join concepts with commas
+    return concepts.join(', ');
+  }
 }

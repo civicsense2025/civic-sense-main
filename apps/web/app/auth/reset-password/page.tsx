@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { Button, Input, Label, Alert, AlertDescription, useToast } from '@civicsense/ui-web'
+import { Button, Input, Label, Alert, AlertDescription, useToast } from "../../components/ui"
 import { AlertCircle, CheckCircle, Lock } from "lucide-react"
 
 // Replace stub with proper toast implementation

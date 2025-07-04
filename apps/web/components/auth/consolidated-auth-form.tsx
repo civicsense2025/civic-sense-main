@@ -7,7 +7,7 @@ import { Label } from './ui/label'
 import { supabase } from "../lib/supabase/client"
 import { Alert, AlertDescription } from './ui/alert'
 import { AlertCircle } from "lucide-react"
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 // TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
 // import { useAnalytics } from '../lib/analytics/analytics'
 

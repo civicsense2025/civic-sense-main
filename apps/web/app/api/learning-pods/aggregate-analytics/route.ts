@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { arePodsEnabled } from '@/lib/comprehensive-feature-flags'
+import { isLearningPodsEnabled } from '@civicsense/business-logic'
+
+interface PodMembership {
+  pod_id: string;
+  role: string;
+  learning_pods: {
+    id: string;
+    pod_name: string;
+    pod_type: string;
+    created_at: string;
+  };
+}
+
+interface PodMemberCount {
+  pod_id: string;
+}
 
 // GET /api/learning-pods/aggregate-analytics - Get aggregate analytics for user's pods
 export async function GET(request: NextRequest) {
   // Feature flag check
-  if (!arePodsEnabled()) {
+  if (!isLearningPodsEnabled()) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
@@ -43,7 +58,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch pods' }, { status: 500 })
     }
 
-    const podIds = userPods?.map((p: any) => p.learning_pods.id) || []
+    const podIds = (userPods as PodMembership[] | null)?.map(p => p.learning_pods.id) || []
     
     if (podIds.length === 0) {
       return NextResponse.json({
@@ -64,14 +79,16 @@ export async function GET(request: NextRequest) {
       .in('pod_id', podIds)
       .eq('membership_status', 'active')
 
-    const memberCountMap = memberCounts?.reduce((acc: Record<string, number>, m: { pod_id: string }) => {
+    const memberCountMap = (memberCounts as PodMemberCount[] | null)?.reduce((acc: Record<string, number>, m) => {
       acc[m.pod_id] = (acc[m.pod_id] || 0) + 1
       return acc
-    }, {} as Record<string, number>) || {}
+    }, {}) || {}
 
     // Calculate basic stats
-    const totalMembers = Object.values(memberCountMap).reduce((sum: number, count: number) => sum + count, 0)
-    const adminPods = userPods?.filter((p: any) => ['admin', 'parent', 'organizer', 'teacher'].includes(p.role)).length || 0
+    const totalMembers = Object.values(memberCountMap).reduce((sum, count) => sum + count, 0)
+    const adminPods = (userPods as PodMembership[] | null)?.filter(p => 
+      ['admin', 'parent', 'organizer', 'teacher'].includes(p.role)
+    ).length || 0
     
     // Get recent activity (last 7 days)
     const sevenDaysAgo = new Date()
@@ -90,7 +107,7 @@ export async function GET(request: NextRequest) {
       adminPods,
       recentActivity: recentActivity?.length || 0,
       topPerformingPod: userPods && userPods.length > 0 ? {
-        name: (userPods[0] as any).learning_pods.pod_name,
+        name: (userPods[0] as PodMembership).learning_pods.pod_name,
         activityScore: 85 // Mock score for now
       } : undefined
     }

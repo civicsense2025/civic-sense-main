@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { Trophy, ArrowRight, RotateCw, Share2 } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Temporary static strings for build fix  
 const uiStrings = {

@@ -121,10 +121,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       projectId: "866a036f-3dab-44e3-9bbd-e4e72f8cab0a"
     },
   },
-  experiments: {
-    // Enable React 19 features
-    reactCanary: true,
-    // Enable React Server Functions for better performance
-    reactServerFunctions: true,
-  },
+  // Experiments disabled to align with React 18 / Expo SDK 53
+  // experiments: {},
 }); 

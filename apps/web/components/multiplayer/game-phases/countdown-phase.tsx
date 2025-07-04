@@ -5,7 +5,7 @@ import { NPCPersonality } from '../lib/multiplayer/operations-npcs'
 import { Card } from './ui/card'
 import { BattlePlayerPanel } from "@/components/multiplayer/battle-player-panel"
 import { QuizQuestion } from '@civicsense/types/quiz'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Temporary static strings for build fix
 const uiStrings = {

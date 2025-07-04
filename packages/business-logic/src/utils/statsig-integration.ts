@@ -1,4 +1,6 @@
-import { envFeatureFlags, type AllFeatureFlags } from './comprehensive-feature-flags'
+import type { AllFeatureFlags } from '@civicsense/types';
+import { envFeatureFlags } from './feature-flags';
+export { envFeatureFlags } from './feature-flags';
 
 // Import Statsig hooks from our provider
 let globalStatsigClient: any = null
@@ -22,68 +24,33 @@ if (typeof window !== 'undefined') {
  * falls back to environment-based flags, with compatibility for existing API
  */
 class StatsigFeatureFlags {
-  private readonly STATSIG_GATE_PREFIX = 'civicsense_'
+  private readonly isDevelopment = process.env.NODE_ENV === 'development'
   
-  /**
-   * Check if a feature flag is enabled, using Statsig first, then env fallback
-   */
-  private checkFlag(flag: keyof AllFeatureFlags): boolean {
-    // Try Statsig first
-    if (this.isStatsigAvailable()) {
-      try {
-        const gateKey = this.getStatsigGateKey(flag)
-        const statsigResult = globalStatsigClient.checkGate(gateKey)
-        
-        // Log for debugging in development
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[FeatureFlags] ${flag}: Statsig(${statsigResult}) | Env(${envFeatureFlags.getFlag(flag)})`)
-        }
-        
-        return statsigResult
-      } catch (error) {
-        console.warn(`[FeatureFlags] Statsig error for ${flag}, falling back to env:`, error)
-      }
+  public getFlag(flag: keyof AllFeatureFlags): boolean {
+    // In development, use environment flags
+    if (this.isDevelopment) {
+      return envFeatureFlags.getFlag(flag)
     }
     
-    // Fallback to environment-based flags
+    // In production, use Statsig
+    try {
+      const statsigResult = this.getStatsigValue(flag)
+      console.log(`[FeatureFlags] ${flag}: Statsig(${statsigResult}) | Env(${envFeatureFlags.getFlag(flag)})`)
+      return statsigResult
+    } catch (error) {
+      // Fallback to environment flags on error
+      console.warn('[FeatureFlags] Statsig error:', error)
+      return envFeatureFlags.getFlag(flag)
+    }
+  }
+  
+  private getStatsigValue(flag: keyof AllFeatureFlags): boolean {
+    // TODO: Implement Statsig integration
     return envFeatureFlags.getFlag(flag)
   }
   
-  /**
-   * Check if Statsig client is available and ready
-   */
-  private isStatsigAvailable(): boolean {
-    return globalStatsigClient && typeof globalStatsigClient.checkGate === 'function'
-  }
-  
-  /**
-   * Convert our flag names to Statsig gate keys
-   */
-  private getStatsigGateKey(flag: keyof AllFeatureFlags): string {
-    return `${this.STATSIG_GATE_PREFIX}${flag}`
-  }
-  
-  /**
-   * Get a specific feature flag value
-   */
-  public getFlag(flag: keyof AllFeatureFlags): boolean {
-    return this.checkFlag(flag)
-  }
-  
-  /**
-   * Get all feature flags (maintains compatibility with existing API)
-   */
   public getAllFlags(): AllFeatureFlags {
-    const flags = {} as AllFeatureFlags
-    
-    // Get all flag keys from the original defaults
-    const flagKeys = Object.keys(envFeatureFlags.getAllFlags()) as (keyof AllFeatureFlags)[]
-    
-    for (const flag of flagKeys) {
-      flags[flag] = this.checkFlag(flag)
-    }
-    
-    return flags
+    return envFeatureFlags.getAllFlags()
   }
   
   /**
@@ -162,17 +129,13 @@ class StatsigFeatureFlags {
    * Log feature flag usage to Statsig for analytics
    */
   public logFeatureUsage(flag: keyof AllFeatureFlags, action: string = 'accessed') {
-    if (this.isStatsigAvailable()) {
-      try {
-        globalStatsigClient.logEvent('feature_flag_usage', 1, {
-          flag_name: flag,
-          action,
-          source: 'civicsense_app',
-          enabled: this.getFlag(flag)
-        })
-      } catch (error) {
-        console.warn(`[FeatureFlags] Failed to log usage for ${flag}:`, error)
-      }
+    if (typeof globalStatsigClient === 'object' && typeof globalStatsigClient.logEvent === 'function') {
+      globalStatsigClient.logEvent('feature_flag_usage', 1, {
+        flag_name: flag,
+        action,
+        source: 'civicsense_app',
+        enabled: this.getFlag(flag)
+      })
     }
   }
   
@@ -180,9 +143,9 @@ class StatsigFeatureFlags {
    * Get information about which system provided a flag value
    */
   public getSource(flag: keyof AllFeatureFlags): 'statsig' | 'env' | 'unknown' {
-    if (this.isStatsigAvailable()) {
+    if (typeof globalStatsigClient === 'object' && typeof globalStatsigClient.checkGate === 'function') {
       try {
-        globalStatsigClient.checkGate(this.getStatsigGateKey(flag))
+        globalStatsigClient.checkGate(flag)
         return 'statsig'
       } catch {
         return 'env'
@@ -200,56 +163,23 @@ class StatsigFeatureFlags {
     }
     
     const flagKeys = Object.keys(envFeatureFlags.getAllFlags()) as (keyof AllFeatureFlags)[]
-    return flagKeys.map(flag => this.getStatsigGateKey(flag))
+    return flagKeys.map(flag => flag)
   }
 }
 
 // Export singleton instance
 export const statsigFeatureFlags = new StatsigFeatureFlags()
 
-// Maintain compatibility with existing convenience functions
-export function arePodsEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('learningPods')
-  statsigFeatureFlags.logFeatureUsage('learningPods', 'checked')
-  return result
-}
+// Helper functions for common flags
+export const isLearningPodsEnabled = () => statsigFeatureFlags.getFlag('learningPods')
+export const isMultiplayerEnabled = () => statsigFeatureFlags.getFlag('multiplayer')
+export const isScenariosEnabled = () => statsigFeatureFlags.getFlag('scenarios')
+export const isCivicsTestEnabled = () => statsigFeatureFlags.getFlag('civicsTest')
+export const isQuizzesEnabled = () => statsigFeatureFlags.getFlag('quizzes')
+export const isBetaFeaturesEnabled = () => statsigFeatureFlags.getFlag('betaFeatures')
 
-export function isMultiplayerEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('multiplayer')
-  statsigFeatureFlags.logFeatureUsage('multiplayer', 'checked')
-  return result
-}
-
-export function areScenariosEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('scenarios')
-  statsigFeatureFlags.logFeatureUsage('scenarios', 'checked')
-  return result
-}
-
-export function isCivicsTestEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('civicsTest')
-  statsigFeatureFlags.logFeatureUsage('civicsTest', 'checked')
-  return result
-}
-
-export function areQuizzesEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('quizzes')
-  statsigFeatureFlags.logFeatureUsage('quizzes', 'checked')
-  return result
-}
-
-export function isDocumentationSectionEnabled(): boolean {
-  const result = statsigFeatureFlags.getFlag('betaFeatures')
-  statsigFeatureFlags.logFeatureUsage('betaFeatures', 'documentation_check')
-  return result
-}
-
-// Export the instance methods for component usage
+// Export main function for getting flags
 export const getFlag = (flag: keyof AllFeatureFlags) => statsigFeatureFlags.getFlag(flag)
-export const getAllFlags = () => statsigFeatureFlags.getAllFlags()
-export const getNavigationFlags = () => statsigFeatureFlags.getNavigationFlags()
-export const getPremiumFlags = () => statsigFeatureFlags.getPremiumFlags()
-export const getCoreFlags = () => statsigFeatureFlags.getCoreFlags()
 
 // Development helper to see what gates need to be created in Statsig
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {

@@ -9,7 +9,7 @@ import { Card } from './ui/card'
 import { Shield, Sword, Brain, Lightbulb } from "lucide-react"
 import { cn } from '@civicsense/business-logic/utils'
 import { QuizQuestion, getQuestionOptions } from '@civicsense/types/quiz'
-// import useUIStrings from '@civicsense/shared/useUIStrings' // Temporarily use static strings
+// import useUIStrings from '@civicsense/business-logic/strings' // Temporarily use static strings
 
 // Temporary static strings for build fix
 const uiStrings = {

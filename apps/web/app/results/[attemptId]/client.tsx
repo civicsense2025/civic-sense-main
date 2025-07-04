@@ -8,9 +8,9 @@ import { Loader2, BookmarkPlus, Check } from "lucide-react"
 import Link from "next/link"
 import { bookmarkOperations } from "@/lib/bookmarks"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Button } from "../../components/ui"
 import type { ContentType } from "@/lib/types/bookmarks"
 import type { QuizQuestion } from "@/lib/quiz-data"
 import type { KeyTakeaways } from "@/lib/types/key-takeaways"

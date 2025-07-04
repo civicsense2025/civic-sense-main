@@ -8,6 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { DeviceLocaleInfo } from '../device-locale-detection'
 import { useCallback, useState, useEffect } from 'react'
+import { uiStrings } from '../ui-strings'
 
 export interface LanguageSwitchOptions {
   targetLanguage: string
@@ -40,6 +41,11 @@ export interface LanguageSwitchResult {
   errors?: string[]
 }
 
+interface UIStringPair {
+  key: string;
+  value: string;
+}
+
 // Translation cache management
 class TranslationCache {
   private static readonly CACHE_KEY = 'civicsense-translation-cache'
@@ -48,6 +54,7 @@ class TranslationCache {
   
   private cache = new Map<string, CachedTranslation>()
   private loaded = false
+  private persistTimeout: ReturnType<typeof setTimeout> | undefined
 
   async initialize(): Promise<void> {
     if (this.loaded) return
@@ -55,11 +62,11 @@ class TranslationCache {
     try {
       const cached = await AsyncStorage.getItem(TranslationCache.CACHE_KEY)
       if (cached) {
-        const data = JSON.parse(cached)
+        const data = JSON.parse(cached) as Record<string, CachedTranslation>
         
         // Filter expired entries
         const now = Date.now()
-        Object.entries(data).forEach(([key, value]: [string, any]) => {
+        Object.entries(data).forEach(([key, value]) => {
           if (now - value.timestamp < TranslationCache.CACHE_TTL) {
             this.cache.set(key, value)
           }
@@ -121,7 +128,6 @@ class TranslationCache {
     this.debouncedPersist()
   }
 
-  private persistTimeout?: NodeJS.Timeout
   private debouncedPersist = () => {
     if (this.persistTimeout) {
       clearTimeout(this.persistTimeout)
@@ -357,11 +363,12 @@ export class EnhancedLanguageSwitcher {
     }
 
     try {
-      const uiStrings = await this.getUIStringsForTranslation(languageCode)
-      const cacheKeys = uiStrings.map(([key]) => this.getCacheKey(key, languageCode))
+      const strings = await import('../ui-strings')
+      const flatStrings = this.flattenStrings(strings.uiStrings)
+      const cacheKeys = flatStrings.map(([key]) => this.getCacheKey(key, languageCode))
       const cachedTranslations = await this.cache.batchGet(cacheKeys)
       
-      const uncachedStrings = uiStrings.filter(([key]) => 
+      const uncachedStrings = flatStrings.filter(([key]) => 
         !cachedTranslations.has(this.getCacheKey(key, languageCode))
       )
 
@@ -409,6 +416,25 @@ export class EnhancedLanguageSwitcher {
   }
 
   /**
+   * Flatten UI strings object into key-value pairs
+   */
+  private flattenStrings(obj: any, prefix = ''): Array<[string, string]> {
+    const result: Array<[string, string]> = []
+    
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key
+      
+      if (typeof value === 'string') {
+        result.push([fullKey, value])
+      } else if (typeof value === 'object' && value !== null) {
+        result.push(...this.flattenStrings(value, fullKey))
+      }
+    }
+    
+    return result
+  }
+
+  /**
    * Cancel current language switch
    */
   cancelCurrentSwitch(): void {
@@ -428,32 +454,6 @@ export class EnhancedLanguageSwitcher {
   async clearCache(): Promise<void> {
     await this.cache.clear()
     this.preloadedLanguages.clear()
-  }
-
-  // Private helper methods
-  private async getUIStringsForTranslation(languageCode: string): Promise<Array<[string, string]>> {
-    // TODO: Extract all UI strings that need translation
-    // This would integrate with the existing UI strings system
-    const uiStrings = await import('../../ui-strings')
-    
-    // Flatten the UI strings object into key-value pairs
-    const flattenStrings = (obj: any, prefix = ''): Array<[string, string]> => {
-      const result: Array<[string, string]> = []
-      
-      for (const [key, value] of Object.entries(obj)) {
-        const fullKey = prefix ? `${prefix}.${key}` : key
-        
-        if (typeof value === 'string') {
-          result.push([fullKey, value])
-        } else if (typeof value === 'object' && value !== null) {
-          result.push(...flattenStrings(value, fullKey))
-        }
-      }
-      
-      return result
-    }
-    
-    return flattenStrings(uiStrings.uiStrings)
   }
 
   private getCacheKey(stringKey: string, languageCode: string): string {
@@ -479,7 +479,7 @@ export class EnhancedLanguageSwitcher {
         throw new Error(`Translation API error: ${response.status}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as { translations: string[] }
       return data.translations || texts // Fallback to original
     } catch (error) {
       console.warn('Translation batch failed:', error)
@@ -497,11 +497,6 @@ export class EnhancedLanguageSwitcher {
     // TODO: Apply translations to the UI strings system
     // This would update the current language state and trigger re-renders
     console.log(`Applied ${translations.cached.size + translations.new.size} translations for ${languageCode}`)
-  }
-
-  private async preloadContentForLanguage(languageCode: string): Promise<void> {
-    // TODO: Preload quiz content, news articles, etc. for the language
-    console.log(`Preloading content for ${languageCode}`)
   }
 }
 
@@ -539,4 +534,4 @@ export function useEnhancedLanguageSwitcher() {
     getCacheStats: enhancedLanguageSwitcher.getCacheStats.bind(enhancedLanguageSwitcher),
     clearCache: enhancedLanguageSwitcher.clearCache.bind(enhancedLanguageSwitcher)
   }
-} 
+}

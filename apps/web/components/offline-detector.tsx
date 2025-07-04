@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Wifi, WifiOff } from 'lucide-react'
-import { toast } from '@civicsense/ui-web'
+import { toast } from "../../components/ui"
 
 export function OfflineDetector() {
   const [isOnline, setIsOnline] = useState(true)

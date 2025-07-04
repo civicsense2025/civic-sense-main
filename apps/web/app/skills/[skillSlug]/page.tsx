@@ -2,10 +2,10 @@ import { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent, CardHeader, CardTitle } from '@civicsense/ui-web'
-import { Badge } from '@civicsense/ui-web'
-import { Button } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui"
+import { Badge } from "../../components/ui"
+import { Button } from "../../components/ui"
+import { Header } from "../../components/ui"
 import { BookOpen, Target, Clock, CheckCircle, ArrowLeft, Play, Users } from "lucide-react"
 
 interface SkillPageProps {

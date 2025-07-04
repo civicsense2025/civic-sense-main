@@ -1,56 +1,102 @@
-import { supabase } from "./supabase"
-import type { TopicMetadata, QuizQuestion, QuestionType, MultipleChoiceQuestion } from "./quiz-data"
-import type { 
-  Database,
-  Tables,
-  TablesInsert,
-  TablesUpdate
-} from "./database.types"
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@civicsense/types'
+import type { TopicMetadata, QuizQuestion, QuestionType, MultipleChoiceQuestion } from '@civicsense/types'
+import { MultiplayerRoom, MultiplayerPlayer } from '@civicsense/types'
+
+// Define Tables types from Database type
+type Tables = Database['public']['Tables']
+type TableRow<T extends keyof Tables> = Tables[T]['Row']
+type TableInsert<T extends keyof Tables> = Tables[T]['Insert']
+type TableUpdate<T extends keyof Tables> = Tables[T]['Update']
+
+// Re-export database types for convenience
+export type { Database }
+export type { Tables }
+export type { TableRow, TableInsert, TableUpdate }
 
 // Database types using the correct structure
-export type DbQuestionTopic = Tables<'question_topics'>
-export type DbQuestion = Tables<'questions'>
-export type DbUserQuizAttempt = Tables<'user_quiz_attempts'>
-export type DbUserProgress = Tables<'user_progress'>
-export type DbQuestionFeedback = Tables<'question_feedback'>
+export type DbQuestionTopic = TableRow<'question_topics'>
+export type DbQuestion = TableRow<'questions'>
+export type DbUserQuizAttempt = TableRow<'user_quiz_attempts'>
+export type DbUserProgress = TableRow<'user_progress'>
+export type DbQuestionFeedback = TableRow<'question_feedback'>
 
-export type DbQuestionTopicInsert = TablesInsert<'question_topics'>
-export type DbQuestionInsert = TablesInsert<'questions'>
-export type DbUserQuizAttemptInsert = TablesInsert<'user_quiz_attempts'>
-export type DbUserProgressInsert = TablesInsert<'user_progress'>
-export type DbQuestionFeedbackInsert = TablesInsert<'question_feedback'>
+export type DbQuestionTopicInsert = TableInsert<'question_topics'>
+export type DbQuestionInsert = TableInsert<'questions'>
+export type DbUserQuizAttemptInsert = TableInsert<'user_quiz_attempts'>
+export type DbUserProgressInsert = TableInsert<'user_progress'>
+export type DbQuestionFeedbackInsert = TableInsert<'question_feedback'>
 
-export type DbQuestionTopicUpdate = TablesUpdate<'question_topics'>
-export type DbQuestionUpdate = TablesUpdate<'questions'>
-export type DbUserQuizAttemptUpdate = TablesUpdate<'user_quiz_attempts'>
-export type DbUserProgressUpdate = TablesUpdate<'user_progress'>
-export type DbQuestionFeedbackUpdate = TablesUpdate<'question_feedback'>
+export type DbQuestionTopicUpdate = TableUpdate<'question_topics'>
+export type DbQuestionUpdate = TableUpdate<'questions'>
+export type DbUserQuizAttemptUpdate = TableUpdate<'user_quiz_attempts'>
+export type DbUserProgressUpdate = TableUpdate<'user_progress'>
+export type DbQuestionFeedbackUpdate = TableUpdate<'question_feedback'>
 
 // Additional types for enhanced gamification
-export type DbUserCategorySkill = Tables<'user_category_skills'>
-export type DbUserCategorySkillInsert = TablesInsert<'user_category_skills'>
-export type DbUserCategorySkillUpdate = TablesUpdate<'user_category_skills'>
+export type DbUserCategorySkill = TableRow<'user_category_skills'>
+export type DbUserCategorySkillInsert = TableInsert<'user_category_skills'>
+export type DbUserCategorySkillUpdate = TableUpdate<'user_category_skills'>
 
-export type DbUserAchievement = Tables<'user_achievements'>
-export type DbUserAchievementInsert = TablesInsert<'user_achievements'>
+export type DbUserAchievement = TableRow<'user_achievements'>
+export type DbUserAchievementInsert = TableInsert<'user_achievements'>
 
-export type DbUserCustomDeck = Tables<'user_custom_decks'>
-export type DbUserCustomDeckInsert = TablesInsert<'user_custom_decks'>
-export type DbUserCustomDeckUpdate = TablesUpdate<'user_custom_decks'>
+export type DbUserCustomDeck = TableRow<'user_custom_decks'>
+export type DbUserCustomDeckInsert = TableInsert<'user_custom_decks'>
+export type DbUserCustomDeckUpdate = TableUpdate<'user_custom_decks'>
 
-export type DbUserDeckContent = Tables<'user_deck_content'>
-export type DbUserDeckContentInsert = TablesInsert<'user_deck_content'>
+export type DbUserDeckContent = TableRow<'user_deck_content'>
+export type DbUserDeckContentInsert = TableInsert<'user_deck_content'>
 
-export type DbUserQuestionMemory = Tables<'user_question_memory'>
-export type DbUserQuestionMemoryInsert = TablesInsert<'user_question_memory'>
-export type DbUserQuestionMemoryUpdate = TablesUpdate<'user_question_memory'>
+export type DbUserQuestionMemory = TableRow<'user_question_memory'>
+export type DbUserQuestionMemoryInsert = TableInsert<'user_question_memory'>
+export type DbUserQuestionMemoryUpdate = TableUpdate<'user_question_memory'>
 
-export type DbUserStreakHistory = Tables<'user_streak_history'>
-export type DbUserStreakHistoryInsert = TablesInsert<'user_streak_history'>
+export type DbUserStreakHistory = TableRow<'user_streak_history'>
+export type DbUserStreakHistoryInsert = TableInsert<'user_streak_history'>
 
-export type DbUserLearningGoal = Tables<'user_learning_goals'>
-export type DbUserLearningGoalInsert = TablesInsert<'user_learning_goals'>
-export type DbUserLearningGoalUpdate = TablesUpdate<'user_learning_goals'>
+export type DbUserLearningGoal = TableRow<'user_learning_goals'>
+export type DbUserLearningGoalInsert = TableInsert<'user_learning_goals'>
+export type DbUserLearningGoalUpdate = TableUpdate<'user_learning_goals'>
+
+export type DbSourceMetadata = TableRow<'source_metadata'>
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+/**
+ * Singleton Supabase client instance
+ * Use this instead of creating multiple clients
+ */
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+})
+
+/**
+ * Helper function to create a new client with custom auth
+ * Use this for server-side operations that need custom auth
+ */
+export function createCustomClient(customToken?: string) {
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+      ...(customToken && { global: { headers: { Authorization: `Bearer ${customToken}` } } })
+    }
+  })
+}
 
 // Topic operations
 export const topicOperations = {
@@ -330,43 +376,17 @@ export const questionOperations = {
 
   // Convert DB question to app format
   toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
-    // Process sources with better validation
-    let processedSources: Array<{ title: string; url: string; type: 'article' }> = []
+    // Process sources with proper type assertions
+    let processedSources: ProcessedSource[] = []
     
     if (dbQuestion.sources) {
       if (Array.isArray(dbQuestion.sources)) {
-        processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
-          source !== null &&
-          typeof source === 'object' && 
-          'name' in source &&
-          'url' in source &&
-          typeof (source as any).name === 'string' && 
-          typeof (source as any).url === 'string' &&
-          (source as any).name.trim() !== '' &&
-          (source as any).url.trim() !== ''
-        ).map(source => ({
-          title: (source as any).name ?? '',
-          url: (source as any).url ?? '',
-          type: 'article' as const
-        }))
+        processedSources = processSourceArray(dbQuestion.sources)
       } else if (typeof dbQuestion.sources === 'string') {
         try {
           const parsed = JSON.parse(dbQuestion.sources)
           if (Array.isArray(parsed)) {
-            processedSources = parsed.filter((source): source is { name: string; url: string } => 
-              source !== null &&
-              typeof source === 'object' && 
-              'name' in source &&
-              'url' in source &&
-              typeof source.name === 'string' && 
-              typeof source.url === 'string' &&
-              source.name.trim() !== '' &&
-              source.url.trim() !== ''
-            ).map(source => ({
-              title: source.name ?? '',
-              url: source.url ?? '',
-              type: 'article' as const
-            }))
+            processedSources = processSourceArray(parsed)
           }
         } catch (error) {
           console.warn('Failed to parse sources JSON:', error)
@@ -1221,110 +1241,75 @@ export const skillOperations = {
   }
 }
 
-// Add as a top-level export
-export function toTopicAppFormat(dbTopic: DbQuestionTopic): TopicMetadata {
+// Define source types
+interface SourceData {
+  name: string
+  url: string
+}
+
+interface ProcessedSource {
+  title: string
+  url: string
+  type: 'article'
+}
+
+// Update source processing functions
+function processSource(source: unknown): source is SourceData {
+  return (
+    source !== null &&
+    typeof source === 'object' && 
+    'name' in source &&
+    'url' in source &&
+    typeof (source as SourceData).name === 'string' && 
+    typeof (source as SourceData).url === 'string' &&
+    (source as SourceData).name.trim() !== '' &&
+    (source as SourceData).url.trim() !== ''
+  )
+}
+
+function convertToProcessedSource(source: SourceData): ProcessedSource {
   return {
-    topic_id: dbTopic.topic_id ?? '',
-    topic_title: dbTopic.topic_title ?? '',
-    description: dbTopic.description ?? '',
-    why_this_matters: dbTopic.why_this_matters ?? '',
-    emoji: dbTopic.emoji ?? '',
-    date: dbTopic.date ?? '',
-    dayOfWeek: dbTopic.day_of_week ?? '',
-    categories: Array.isArray(dbTopic.categories) ? dbTopic.categories as string[] : [],
+    title: source.name,
+    url: source.url,
+    type: 'article' as const
   }
 }
 
-export function toQuestionAppFormat(dbQuestion: DbQuestion): QuizQuestion {
-  // Process sources with better validation
-  let processedSources: Array<{ title: string; url: string; type: 'article' }> = []
-  
-  if (dbQuestion.sources) {
-    if (Array.isArray(dbQuestion.sources)) {
-      processedSources = dbQuestion.sources.filter((source): source is { name: string; url: string } => 
-        source !== null &&
-        typeof source === 'object' && 
-        'name' in source &&
-        'url' in source &&
-        typeof (source as any).name === 'string' && 
-        typeof (source as any).url === 'string' &&
-        (source as any).name.trim() !== '' &&
-        (source as any).url.trim() !== ''
-      ).map(source => ({
-        title: (source as any).name ?? '',
-        url: (source as any).url ?? '',
-        type: 'article' as const
-      }))
-    } else if (typeof dbQuestion.sources === 'string') {
-      try {
-        const parsed = JSON.parse(dbQuestion.sources)
-        if (Array.isArray(parsed)) {
-          processedSources = parsed.filter((source): source is { name: string; url: string } => 
-            source !== null &&
-            typeof source === 'object' && 
-            'name' in source &&
-            'url' in source &&
-            typeof source.name === 'string' && 
-            typeof source.url === 'string' &&
-            source.name.trim() !== '' &&
-            source.url.trim() !== ''
-          ).map(source => ({
-            title: source.name ?? '',
-            url: source.url ?? '',
-            type: 'article' as const
-          }))
-        }
-      } catch (error) {
-        console.warn('Failed to parse sources JSON:', error)
+// Process sources with proper type assertions
+function processSourceArray(sources: unknown[]): ProcessedSource[] {
+  return sources
+    .filter(processSource)
+    .map(source => convertToProcessedSource(source))
+}
+
+export const multiplayerOperations = {
+  async leaveRoom(roomId: string, playerId: string): Promise<void> {
+    try {
+      // Remove player from room
+      await supabase
+        .from('multiplayer_room_players')
+        .delete()
+        .eq('id', playerId)
+        .eq('room_id', roomId)
+
+      // Update room player count
+      const { data: room } = await supabase
+        .from('multiplayer_rooms')
+        .select('current_players')
+        .eq('id', roomId)
+        .single()
+
+      if (room) {
+        await supabase
+          .from('multiplayer_rooms')
+          .update({ current_players: Math.max(0, room.current_players - 1) })
+          .eq('id', roomId)
       }
+    } catch (error) {
+      console.error('Error leaving room:', error)
+      throw error
     }
   }
-
-  // Handle multiple choice questions
-  let qType: string | undefined = dbQuestion.question_type;
-  if (!qType && (dbQuestion as any).type) {
-    qType = (dbQuestion as any).type;
-  }
-  if (qType === 'multiple_choice') {
-    return {
-      topic_id: dbQuestion.topic_id ?? '',
-      question_number: dbQuestion.question_number ?? 1,
-      type: 'multiple_choice',
-      category: dbQuestion.category ?? '',
-      question: dbQuestion.question ?? '',
-      option_a: dbQuestion.option_a ?? undefined,
-      option_b: dbQuestion.option_b ?? undefined,
-      option_c: dbQuestion.option_c ?? undefined,
-      option_d: dbQuestion.option_d ?? undefined,
-      correct_answer: dbQuestion.correct_answer ?? '',
-      hint: dbQuestion.hint ?? '',
-      explanation: dbQuestion.explanation ?? '',
-      tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-      sources: processedSources,
-      options: [
-        dbQuestion.option_a ?? '',
-        dbQuestion.option_b ?? '',
-        dbQuestion.option_c ?? '',
-        dbQuestion.option_d ?? ''
-      ].filter(Boolean) as string[]
-    } as MultipleChoiceQuestion
-  }
-
-  // For other types, return the base structure and cast as QuizQuestion
-  return {
-    topic_id: dbQuestion.topic_id ?? '',
-    question_number: dbQuestion.question_number ?? 1,
-    type: qType as QuestionType,
-    category: dbQuestion.category ?? '',
-    question: dbQuestion.question ?? '',
-    option_a: dbQuestion.option_a ?? undefined,
-    option_b: dbQuestion.option_b ?? undefined,
-    option_c: dbQuestion.option_c ?? undefined,
-    option_d: dbQuestion.option_d ?? undefined,
-    correct_answer: dbQuestion.correct_answer ?? '',
-    hint: dbQuestion.hint ?? '',
-    explanation: dbQuestion.explanation ?? '',
-    tags: Array.isArray(dbQuestion.tags) ? dbQuestion.tags as string[] : [],
-    sources: processedSources,
-  } as QuizQuestion
 }
+
+export type { MultiplayerRoom, MultiplayerPlayer }

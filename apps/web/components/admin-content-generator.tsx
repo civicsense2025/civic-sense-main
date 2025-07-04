@@ -38,7 +38,7 @@ import {
   FileText,
   BarChart3
 } from 'lucide-react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 
 // =============================================================================
 // INTERFACES

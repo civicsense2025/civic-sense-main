@@ -4,12 +4,12 @@
 
 import React, { useState, useRef, useCallback } from 'react'
 import { useAuth } from '../auth/auth-provider'
-import { useTextSelection } from '@civicsense/shared/use-text-selection'
+import { useTextSelection } from '@civicsense/business-logic/hooks/use-text-selection'
 import { HighlightColorPicker } from './highlight-color-picker'
-import { bookmarkOperations } from '@civicsense/shared/bookmarks'
+import { bookmarkOperations } from '@civicsense/business-logic/services/bookmarks'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Button } from './ui/button'
-import { useToast } from '@civicsense/ui-web'
+import { useToast } from "../../components/ui"
 import { Highlighter, X } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
 import type { HighlightSelection, ContentType } from '@civicsense/types/bookmarks'

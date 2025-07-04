@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useLanguage } from './providers/language-provider'
-import { useUIString } from '@civicsense/shared/useUIStrings'
+import { useUIString } from '@civicsense/business-logic/strings'
 import { Button } from './ui/button'
 import { 
   DropdownMenu, 

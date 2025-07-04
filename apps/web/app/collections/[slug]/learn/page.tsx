@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { LessonStepViewer } from '@/components/collections/lesson-step-viewer'
 import { LessonStepsResponse } from '@/types/lesson-steps'
 import { Collection } from '@/types/collections'
-import { Button } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
 import { ArrowLeft, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 

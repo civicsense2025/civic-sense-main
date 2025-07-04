@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { cn } from '@civicsense/business-logic/utils'
 
 interface GuestBannerProps {

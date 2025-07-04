@@ -1,6 +1,6 @@
-import { Skeleton } from '@civicsense/ui-web'
-import { Card, CardContent, CardHeader } from '@civicsense/ui-web'
-import { Header } from '@civicsense/ui-web'
+import { Skeleton } from "../../components/ui"
+import { Card, CardContent, CardHeader } from "../../components/ui"
+import { Header } from "../../components/ui"
 
 // Category Card Skeleton
 function CategoryCardSkeleton() {

@@ -3,8 +3,8 @@
 // =============================================================================
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@civicsense/ui-web'
-import { useToast } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
+import { useToast } from "../../components/ui"
 import { Button } from './ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 import { Bookmark, BookmarkCheck, Heart, HeartOff } from 'lucide-react'

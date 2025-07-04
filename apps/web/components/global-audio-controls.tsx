@@ -26,7 +26,7 @@ import { Switch } from './ui/switch'
 import { Crown } from "lucide-react"
 // TEMPORARILY DISABLED: Next.js navigation has web dependencies during monorepo migration
 // import { useRouter } from "next/navigation"
-// import { useAuth } from "@civicsense/ui-web"
+// import { useAuth } from "@/lib/auth"
 // import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 // TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
 // import { useAnalytics } from '../lib/analytics/analytics'
@@ -51,7 +51,7 @@ const useAnalytics = () => ({
     audioContentPlayed: (params: any) => console.log('Analytics disabled - audio content played:', params)
   }
 })
-import { uiStrings } from "@civicsense/ui-web"
+import { uiStrings } from "@/lib/ui/ui-strings"
 
 interface VoiceOption {
   voice: SpeechSynthesisVoice

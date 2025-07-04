@@ -13,21 +13,21 @@ import { cn } from '@civicsense/business-logic/utils'
 import { Progress } from './ui/progress'
 import { QuestionFeedback } from "./question-feedback"
 import { AchievementNotification } from "@/components/achievement-notification"
-import { useAuth } from "@civicsense/ui-web"
-import { updateEnhancedProgress, type Achievement } from '@civicsense/shared/lib/enhanced-gamification'
+import { useAuth } from "@/lib/auth"
+import { updateEnhancedProgress, type Achievement } from '@civicsense/business-logic/services/gamification'
 import { enhancedQuizDatabase, type EnhancedQuizAttemptData } from '@civicsense/types/quizbase'
 import { useGamification } from '@civicsense/shared/useGamification'
-import { progressiveXpOperations } from '@civicsense/shared/lib/enhanced-gamification'
+import { progressiveXpOperations } from '@civicsense/business-logic/services/gamification'
 import { PremiumDataTeaser } from "@/components/premium-data-teaser"
 import { SourceMetadataCard } from "@/components/source-metadata-card"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 // TEMPORARILY DISABLED: Analytics has web dependencies during monorepo migration
 // import { useAnalytics } from '../lib/analytics/analytics'
 import { useTopicTitle } from '@civicsense/shared/useTopicTitle'
-import { skillOperations } from '@civicsense/shared/skill-operations'
+import { skillOperations } from '@civicsense/business-logic/services/skills'
 import { Badge } from './ui/badge'
-import { bookmarkOperations } from '@civicsense/shared/bookmarks'
-import { useToast } from '@civicsense/ui-web'
+import { bookmarkOperations } from '@civicsense/business-logic/services/bookmarks'
+import { useToast } from "../../components/ui"
 import type { ContentType } from '@civicsense/types/bookmarks'
 
 interface UserAnswer {

@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { StatsigProvider as BaseStatsigProvider, useClientAsyncInit } from '@statsig/react-bindings'
 import { debug } from '@civicsense/business-logic/utils/debug-config'
 

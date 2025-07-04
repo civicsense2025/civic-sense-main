@@ -48,6 +48,42 @@ export const typography = {
     wider: '0.025em',
   },
   
+  // Size variants
+  size: {
+    xs: {
+      fontSize: 12,
+      lineHeight: 1.4,
+    },
+    sm: {
+      fontSize: 14,
+      lineHeight: 1.5,
+    },
+    base: {
+      fontSize: 16,
+      lineHeight: 1.6,
+    },
+    lg: {
+      fontSize: 18,
+      lineHeight: 1.6,
+    },
+    xl: {
+      fontSize: 20,
+      lineHeight: 1.4,
+    },
+    '2xl': {
+      fontSize: 24,
+      lineHeight: 1.3,
+    },
+    '3xl': {
+      fontSize: 32,
+      lineHeight: 1.2,
+    },
+    '4xl': {
+      fontSize: 48,
+      lineHeight: 1.1,
+    },
+  },
+  
   // Civic-specific typography styles
   civic: {
     hero: {
@@ -145,4 +181,5 @@ export type FontFamily = keyof typeof typography.fontFamily;
 export type FontSize = keyof typeof typography.fontSize;
 export type FontWeight = keyof typeof typography.fontWeight;
 export type LineHeight = keyof typeof typography.lineHeight;
-export type LetterSpacing = keyof typeof typography.letterSpacing; 
+export type LetterSpacing = keyof typeof typography.letterSpacing;
+export type SizeVariant = keyof typeof typography.size; 

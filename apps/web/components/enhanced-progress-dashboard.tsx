@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { usePremium } from '@civicsense/business-logic/hooks/usePremium'
 import { PremiumGate } from "@/components/premium-gate"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
@@ -23,8 +23,8 @@ import type {
   Achievement, 
   CustomDeck, 
   LearningGoal 
-} from '@civicsense/shared/lib/enhanced-gamification'
-import { enhancedProgressOperations, skillTrackingOperations, achievementOperations, learningGoalOperations } from '@civicsense/shared/lib/enhanced-gamification'
+} from '@civicsense/business-logic/services/gamification'
+import { enhancedProgressOperations, skillTrackingOperations, achievementOperations, learningGoalOperations } from '@civicsense/business-logic/services/gamification'
 
 interface EnhancedProgressDashboardProps {
   isOpen: boolean

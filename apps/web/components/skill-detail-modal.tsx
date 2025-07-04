@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from "@civicsense/ui-web"
+import { useAuth } from "@/lib/auth"
 import { 
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ import {
   ArrowUpRight,
   Brain
 } from "lucide-react"
-import { skillOperations } from '@civicsense/shared/skill-operations'
+import { skillOperations } from '@civicsense/business-logic/services/skills'
 import Link from "next/link"
 
 // Extended skill interface for detailed view

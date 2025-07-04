@@ -24,7 +24,7 @@ import {
   Zap
 } from 'lucide-react'
 import { cn } from '@civicsense/business-logic/utils'
-import { useAuth } from '@civicsense/ui-web'
+import { useAuth } from "../../components/ui"
 import { toast } from 'sonner'
 
 // ============================================================================

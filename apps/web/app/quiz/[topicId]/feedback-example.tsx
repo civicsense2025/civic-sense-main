@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { FeedbackDialog, FeedbackButton } from "@/components/feedback"
-import { Button } from '@civicsense/ui-web'
+import { Button } from "../../components/ui"
 import { MessageSquareText } from "lucide-react"
 
 interface QuizFeedbackProps {

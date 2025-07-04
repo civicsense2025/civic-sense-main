@@ -1,0 +1,71 @@
+{
+  "name": "@civicsense/business-logic",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./auth": {
+      "development": "./src/auth/index.ts",
+      "types": "./src/auth/index.ts", 
+      "default": "./src/auth/index.ts"
+    },
+    "./database": {
+      "development": "./src/database/index.ts",
+      "types": "./src/database/index.ts",
+      "default": "./src/database/index.ts"
+    },
+    "./services": {
+      "development": "./src/services/index.ts",
+      "types": "./src/services/index.ts",
+      "default": "./src/services/index.ts"
+    },
+    "./quiz": {
+      "development": "./src/quiz/index.ts",
+      "types": "./src/quiz/index.ts",
+      "default": "./src/quiz/index.ts"
+    },
+    "./multiplayer": {
+      "development": "./src/multiplayer/index.ts",
+      "types": "./src/multiplayer/index.ts",
+      "default": "./src/multiplayer/index.ts"
+    },
+    "./ai": {
+      "development": "./src/ai/index.ts",
+      "types": "./src/ai/index.ts",
+      "default": "./src/ai/index.ts"
+    },
+    "./*": {
+      "development": "./src/*",
+      "types": "./src/*",
+      "default": "./src/*"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@civicsense/types": "workspace:*",
+    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/ssr": "^0.0.10",
+    "next": "^14.2.0",
+    "zod": "^3.22.0",
+    "date-fns": "^4.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0"
+  }
+}

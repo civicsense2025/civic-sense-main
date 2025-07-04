@@ -272,17 +272,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   logo: {
-    ...typography['3xl'],
+    ...typography.titleLarge,
     fontWeight: 'bold',
     marginBottom: spacing.xs,
   },
   title: {
-    ...typography.xl,
+    ...typography.title1,
     fontWeight: 'bold',
     marginBottom: spacing.xs,
   },
   subtitle: {
-    ...typography.sm,
+    ...typography.body,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    ...typography.sm,
+    ...typography.body,
     fontWeight: '500',
   },
   input: {
@@ -304,14 +304,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 0.5,
-    ...typography.base,
+    ...typography.body,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
     marginTop: -spacing.xs,
   },
   forgotPasswordText: {
-    ...typography.sm,
+    ...typography.caption,
     fontWeight: '500',
   },
   signInButton: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     height: 0.5,
   },
   dividerText: {
-    ...typography.xs,
+    ...typography.caption1,
     paddingHorizontal: spacing.sm,
   },
   googleButton: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   googleText: {
-    ...typography.sm,
+    ...typography.body,
     fontWeight: '500',
   },
   signUpContainer: {
@@ -356,10 +356,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   signUpText: {
-    ...typography.sm,
+    ...typography.body,
   },
   signUpLink: {
-    ...typography.sm,
+    ...typography.body,
     fontWeight: '700',
   },
   backButton: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   backButtonText: {
-    ...typography.base,
+    ...typography.body,
     fontWeight: '500',
   },
   devToolsContainer: {
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   devToolsTitle: {
-    ...typography.sm,
+    ...typography.caption,
     marginBottom: spacing.sm,
     fontWeight: '500',
   },
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   devButtonText: {
-    ...typography.sm,
+    ...typography.caption,
     fontWeight: '500',
   },
 }); 

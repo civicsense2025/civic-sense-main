@@ -3,7 +3,7 @@
 import { Button } from './ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { Share2, Twitter, Facebook, Linkedin, Link } from "lucide-react"
-import { toast } from '@civicsense/ui-web'
+import { toast } from "../../components/ui"
 import { useEffect, useState } from "react"
 
 interface SocialShareProps {
