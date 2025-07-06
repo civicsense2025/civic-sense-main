@@ -1,6 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-ALWAYS ALWAYS ALWAYS CHECK [database.types.ts](mdc:lib/database.types.ts) FOR EXISTING SCHEMA/DB STRUCTURE TO BUILD OFF OF BEFORE SUGGESTING / CREATING NEW SCHEMA.

@@ -1,39 +1,46 @@
-# CivicSense Monorepo .gitignore
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # Dependencies
 node_modules/
-.pnp/
-.pnp.js
-.npm
-.yarn-integrity
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.pnpm-debug.log*
 
-# Build outputs
+# Expo
+.expo/
 dist/
-build/
-out/
-.next/
-.turbo/
-.vercel/
+web-build/
+expo-env.d.ts
 
-# Environment files (app-specific ones go in their respective apps)
+# Native builds
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+android/app/build/
+ios/build/
+*.ipa
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+
+# Environment variables and secrets
 .env
-.env.local
-.env.*.local
+.env.*
+.env*.local
+*.pem
+*.crt
+*.csr
+config.json
+secrets.json
 
-# Logs
-*.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Cache directories
-.cache/
-.parcel-cache/
-.pnpm-cache/
-
-# OS generated files
+# Operating System
 .DS_Store
 .DS_Store?
 ._*
@@ -41,52 +48,127 @@ pnpm-debug.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# IDE and editor files
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.settings/
+.classpath
 
 # TypeScript
 *.tsbuildinfo
+*.d.ts.map
 
-# Testing
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
 coverage/
+*.lcov
 .nyc_output/
 
-# Temporary files
+# Temporary folders
 tmp/
 temp/
-*.tmp
-*.temp
+.tmp/
+.cache/
 
-# Supabase
-.branches
-.temp
+# Optional npm cache directory
+.npm
 
-# Database backups
-lib/database.types.ts.backup.*
+# Optional eslint cache
+.eslintcache
 
-# Development temp files
-localhost_*.json
-/docs/*
-/scripts/*
-/sql/*
-/debug/*
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# Docker
-.docker/
+# Optional REPL history
+.node_repl_history
 
-# Vercel temp exclusions
-.vercel-temp-excluded/
+# Output of 'npm pack'
+*.tgz
 
-# Mobile development
-.expo/
+# Yarn Integrity file
+.yarn-integrity
 
-# Monorepo specific
-# Note: Individual apps have their own .gitignore files for app-specific exclusions
+# CivicSense project files
+docs/
+scripts/
+migrations/
+backups/
+exports/
+uploads/
+user-data/
+.cursor/
+migrations/*
+# Test files and coverage
+test-results/
+playwright-report/
+test-results.xml
+coverage.xml
 
-# Migration backups
-backup/ 
+# Build artifacts
+build/
+out/
+.next/
+.nuxt/
+.output/
+.vercel/
+docs/
+test*
+*.sql
+*.sql.gz
+*.sql.bz2
+*.sql.xz
+*.sql.tar
+*.sql.tar.gz
+*.sql.tar.bz2
+/sql/
+/public/*
+/generated/*
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.json
+database/*
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Example and template files
+app-example/
+*-example/
+*.example
+template-*
+*-demo/
+demo-*

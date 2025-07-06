@@ -1,6 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-When we make large structural / functional changes to our system, update the respective .cursor/rules .mdc file - or create a new one if it needs to exist. 

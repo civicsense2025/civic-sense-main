@@ -7,3487 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  admin_panel: {
-    Tables: {
-      activity_logs: {
-        Row: {
-          action_category: string
-          action_details: Json
-          action_type: string
-          admin_user_id: string
-          created_at: string
-          duration_ms: number | null
-          error_details: Json | null
-          error_message: string | null
-          id: string
-          ip_address: unknown | null
-          resource_id: string | null
-          resource_type: string | null
-          status: string
-          user_agent: string | null
-        }
-        Insert: {
-          action_category: string
-          action_details?: Json
-          action_type: string
-          admin_user_id: string
-          created_at?: string
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          status?: string
-          user_agent?: string | null
-        }
-        Update: {
-          action_category?: string
-          action_details?: Json
-          action_type?: string
-          admin_user_id?: string
-          created_at?: string
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          status?: string
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
-      bulk_operations: {
-        Row: {
-          admin_user_id: string
-          completed_at: string | null
-          created_at: string
-          error_summary: Json | null
-          failed_items: number | null
-          id: string
-          operation_type: string
-          processed_items: number | null
-          started_at: string | null
-          status: string
-          successful_items: number | null
-          total_items: number
-        }
-        Insert: {
-          admin_user_id: string
-          completed_at?: string | null
-          created_at?: string
-          error_summary?: Json | null
-          failed_items?: number | null
-          id?: string
-          operation_type: string
-          processed_items?: number | null
-          started_at?: string | null
-          status?: string
-          successful_items?: number | null
-          total_items: number
-        }
-        Update: {
-          admin_user_id?: string
-          completed_at?: string | null
-          created_at?: string
-          error_summary?: Json | null
-          failed_items?: number | null
-          id?: string
-          operation_type?: string
-          processed_items?: number | null
-          started_at?: string | null
-          status?: string
-          successful_items?: number | null
-          total_items?: number
-        }
-        Relationships: []
-      }
-      performance_metrics: {
-        Row: {
-          admin_user_id: string | null
-          created_at: string
-          id: string
-          metadata: Json | null
-          metric_name: string
-          metric_type: string
-          unit: string
-          value: number
-        }
-        Insert: {
-          admin_user_id?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_name: string
-          metric_type: string
-          unit: string
-          value: number
-        }
-        Update: {
-          admin_user_id?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_name?: string
-          metric_type?: string
-          unit?: string
-          value?: number
-        }
-        Relationships: []
-      }
-      system_alerts: {
-        Row: {
-          alert_category: string
-          alert_type: string
-          created_at: string
-          details: Json | null
-          id: string
-          is_resolved: boolean | null
-          message: string
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: number
-          title: string
-        }
-        Insert: {
-          alert_category: string
-          alert_type: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          is_resolved?: boolean | null
-          message: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: number
-          title: string
-        }
-        Update: {
-          alert_category?: string
-          alert_type?: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          is_resolved?: boolean | null
-          message?: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: number
-          title?: string
-        }
-        Relationships: []
-      }
-      user_preferences: {
-        Row: {
-          admin_user_id: string
-          created_at: string
-          dashboard_layout: Json | null
-          last_viewed_items: Json | null
-          notification_settings: Json | null
-          preferences: Json
-          updated_at: string
-        }
-        Insert: {
-          admin_user_id: string
-          created_at?: string
-          dashboard_layout?: Json | null
-          last_viewed_items?: Json | null
-          notification_settings?: Json | null
-          preferences?: Json
-          updated_at?: string
-        }
-        Update: {
-          admin_user_id?: string
-          created_at?: string
-          dashboard_layout?: Json | null
-          last_viewed_items?: Json | null
-          notification_settings?: Json | null
-          preferences?: Json
-          updated_at?: string
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      log_activity: {
-        Args: {
-          p_action_type: string
-          p_action_category: string
-          p_resource_type?: string
-          p_resource_id?: string
-          p_action_details?: Json
-          p_status?: string
-          p_error_message?: string
-          p_duration_ms?: number
-        }
-        Returns: string
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  ai_agent: {
-    Tables: {
-      ai_action_executions: {
-        Row: {
-          action_id: string
-          ai_tokens_used: number | null
-          command_execution_id: string
-          completed_at: string | null
-          created_at: string | null
-          error_details: Json | null
-          error_message: string | null
-          execution_order: number
-          execution_time_ms: number | null
-          id: string
-          inputs: Json | null
-          outputs: Json | null
-          parallel_group: number | null
-          progress: number | null
-          retry_count: number | null
-          side_effects_log: string[] | null
-          started_at: string | null
-          status: string
-        }
-        Insert: {
-          action_id: string
-          ai_tokens_used?: number | null
-          command_execution_id: string
-          completed_at?: string | null
-          created_at?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          execution_order: number
-          execution_time_ms?: number | null
-          id?: string
-          inputs?: Json | null
-          outputs?: Json | null
-          parallel_group?: number | null
-          progress?: number | null
-          retry_count?: number | null
-          side_effects_log?: string[] | null
-          started_at?: string | null
-          status?: string
-        }
-        Update: {
-          action_id?: string
-          ai_tokens_used?: number | null
-          command_execution_id?: string
-          completed_at?: string | null
-          created_at?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          execution_order?: number
-          execution_time_ms?: number | null
-          id?: string
-          inputs?: Json | null
-          outputs?: Json | null
-          parallel_group?: number | null
-          progress?: number | null
-          retry_count?: number | null
-          side_effects_log?: string[] | null
-          started_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_action_executions_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_action_executions_command_execution_id_fkey"
-            columns: ["command_execution_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_executions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_action_prompts: {
-        Row: {
-          action_id: string
-          condition_logic: Json | null
-          created_at: string | null
-          fallback_order: number | null
-          id: string
-          is_active: boolean | null
-          parameter_mapping: Json | null
-          prompt_id: string
-          usage_context: string
-        }
-        Insert: {
-          action_id: string
-          condition_logic?: Json | null
-          created_at?: string | null
-          fallback_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          parameter_mapping?: Json | null
-          prompt_id: string
-          usage_context: string
-        }
-        Update: {
-          action_id?: string
-          condition_logic?: Json | null
-          created_at?: string | null
-          fallback_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          parameter_mapping?: Json | null
-          prompt_id?: string
-          usage_context?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_action_prompts_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_action_prompts_prompt_id_fkey"
-            columns: ["prompt_id"]
-            isOneToOne: false
-            referencedRelation: "ai_prompts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_actions: {
-        Row: {
-          action_name: string
-          action_type: string
-          avg_execution_time_ms: number | null
-          complexity_score: number | null
-          configuration: Json | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          display_name: string
-          estimated_cost_usd: number | null
-          executor_class: string
-          executor_method: string | null
-          fallback_action_id: string | null
-          id: string
-          input_schema: Json | null
-          is_active: boolean | null
-          is_async: boolean | null
-          is_idempotent: boolean | null
-          max_concurrent_executions: number | null
-          output_schema: Json | null
-          quality_gates: string[] | null
-          required_integrations: string[] | null
-          resource_requirements: Json | null
-          retry_backoff_ms: number | null
-          retry_count: number | null
-          side_effects: string[] | null
-          success_rate: number | null
-          tags: string[] | null
-          timeout_seconds: number | null
-          updated_at: string | null
-          version: number | null
-        }
-        Insert: {
-          action_name: string
-          action_type: string
-          avg_execution_time_ms?: number | null
-          complexity_score?: number | null
-          configuration?: Json | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name: string
-          estimated_cost_usd?: number | null
-          executor_class: string
-          executor_method?: string | null
-          fallback_action_id?: string | null
-          id?: string
-          input_schema?: Json | null
-          is_active?: boolean | null
-          is_async?: boolean | null
-          is_idempotent?: boolean | null
-          max_concurrent_executions?: number | null
-          output_schema?: Json | null
-          quality_gates?: string[] | null
-          required_integrations?: string[] | null
-          resource_requirements?: Json | null
-          retry_backoff_ms?: number | null
-          retry_count?: number | null
-          side_effects?: string[] | null
-          success_rate?: number | null
-          tags?: string[] | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Update: {
-          action_name?: string
-          action_type?: string
-          avg_execution_time_ms?: number | null
-          complexity_score?: number | null
-          configuration?: Json | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name?: string
-          estimated_cost_usd?: number | null
-          executor_class?: string
-          executor_method?: string | null
-          fallback_action_id?: string | null
-          id?: string
-          input_schema?: Json | null
-          is_active?: boolean | null
-          is_async?: boolean | null
-          is_idempotent?: boolean | null
-          max_concurrent_executions?: number | null
-          output_schema?: Json | null
-          quality_gates?: string[] | null
-          required_integrations?: string[] | null
-          resource_requirements?: Json | null
-          retry_backoff_ms?: number | null
-          retry_count?: number | null
-          side_effects?: string[] | null
-          success_rate?: number | null
-          tags?: string[] | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_actions_fallback_action_id_fkey"
-            columns: ["fallback_action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_agent_memory: {
-        Row: {
-          access_count: number | null
-          agent_type: string
-          confidence_score: number | null
-          context_data: Json | null
-          created_at: string | null
-          expires_at: string | null
-          global_memory: boolean | null
-          id: string
-          last_accessed_at: string | null
-          memory_key: string
-          memory_type: string
-          memory_value: Json
-          relevance_score: number | null
-          session_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          access_count?: number | null
-          agent_type: string
-          confidence_score?: number | null
-          context_data?: Json | null
-          created_at?: string | null
-          expires_at?: string | null
-          global_memory?: boolean | null
-          id?: string
-          last_accessed_at?: string | null
-          memory_key: string
-          memory_type: string
-          memory_value: Json
-          relevance_score?: number | null
-          session_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          access_count?: number | null
-          agent_type?: string
-          confidence_score?: number | null
-          context_data?: Json | null
-          created_at?: string | null
-          expires_at?: string | null
-          global_memory?: boolean | null
-          id?: string
-          last_accessed_at?: string | null
-          memory_key?: string
-          memory_type?: string
-          memory_value?: Json
-          relevance_score?: number | null
-          session_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      ai_command_actions: {
-        Row: {
-          action_id: string
-          command_id: string
-          condition_logic: Json | null
-          created_at: string | null
-          depends_on_actions: string[] | null
-          execution_order: number
-          id: string
-          input_mapping: Json | null
-          is_active: boolean | null
-          output_mapping: Json | null
-          parallel_group: number | null
-          parameter_overrides: Json | null
-          required_for_success: boolean | null
-          skip_on_failure: boolean | null
-        }
-        Insert: {
-          action_id: string
-          command_id: string
-          condition_logic?: Json | null
-          created_at?: string | null
-          depends_on_actions?: string[] | null
-          execution_order: number
-          id?: string
-          input_mapping?: Json | null
-          is_active?: boolean | null
-          output_mapping?: Json | null
-          parallel_group?: number | null
-          parameter_overrides?: Json | null
-          required_for_success?: boolean | null
-          skip_on_failure?: boolean | null
-        }
-        Update: {
-          action_id?: string
-          command_id?: string
-          condition_logic?: Json | null
-          created_at?: string | null
-          depends_on_actions?: string[] | null
-          execution_order?: number
-          id?: string
-          input_mapping?: Json | null
-          is_active?: boolean | null
-          output_mapping?: Json | null
-          parallel_group?: number | null
-          parameter_overrides?: Json | null
-          required_for_success?: boolean | null
-          skip_on_failure?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_command_actions_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_command_actions_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_command_analytics: {
-        Row: {
-          action_id: string | null
-          avg_execution_time_ms: number | null
-          command_id: string | null
-          created_at: string | null
-          date: string
-          execution_count: number | null
-          failure_count: number | null
-          id: string
-          p95_execution_time_ms: number | null
-          repeat_usage_rate: number | null
-          success_count: number | null
-          total_ai_cost_usd: number | null
-          total_ai_tokens_used: number | null
-          unique_users: number | null
-        }
-        Insert: {
-          action_id?: string | null
-          avg_execution_time_ms?: number | null
-          command_id?: string | null
-          created_at?: string | null
-          date: string
-          execution_count?: number | null
-          failure_count?: number | null
-          id?: string
-          p95_execution_time_ms?: number | null
-          repeat_usage_rate?: number | null
-          success_count?: number | null
-          total_ai_cost_usd?: number | null
-          total_ai_tokens_used?: number | null
-          unique_users?: number | null
-        }
-        Update: {
-          action_id?: string | null
-          avg_execution_time_ms?: number | null
-          command_id?: string | null
-          created_at?: string | null
-          date?: string
-          execution_count?: number | null
-          failure_count?: number | null
-          id?: string
-          p95_execution_time_ms?: number | null
-          repeat_usage_rate?: number | null
-          success_count?: number | null
-          total_ai_cost_usd?: number | null
-          total_ai_tokens_used?: number | null
-          unique_users?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_command_analytics_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_command_analytics_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_command_executions: {
-        Row: {
-          admin_context: Json | null
-          ai_cost_usd: number | null
-          ai_tokens_used: number | null
-          batch_execution_id: string | null
-          command_id: string
-          completed_at: string | null
-          created_at: string | null
-          current_action_id: string | null
-          current_step_description: string | null
-          device_context: Json | null
-          error_details: Json | null
-          error_message: string | null
-          estimated_duration_seconds: number | null
-          execution_plan: Json | null
-          execution_time_ms: number | null
-          extracted_parameters: Json | null
-          failed_action_id: string | null
-          fallback_used: boolean | null
-          id: string
-          intermediate_results: Json | null
-          original_input: string
-          parsed_intent: Json | null
-          progress: number | null
-          quality_score: number | null
-          results: Json | null
-          retry_count: number | null
-          session_id: string | null
-          started_at: string | null
-          status: string
-          stream_id: string | null
-          success_metrics: Json | null
-          user_id: string | null
-          user_location: Json | null
-          user_satisfaction: number | null
-        }
-        Insert: {
-          admin_context?: Json | null
-          ai_cost_usd?: number | null
-          ai_tokens_used?: number | null
-          batch_execution_id?: string | null
-          command_id: string
-          completed_at?: string | null
-          created_at?: string | null
-          current_action_id?: string | null
-          current_step_description?: string | null
-          device_context?: Json | null
-          error_details?: Json | null
-          error_message?: string | null
-          estimated_duration_seconds?: number | null
-          execution_plan?: Json | null
-          execution_time_ms?: number | null
-          extracted_parameters?: Json | null
-          failed_action_id?: string | null
-          fallback_used?: boolean | null
-          id?: string
-          intermediate_results?: Json | null
-          original_input: string
-          parsed_intent?: Json | null
-          progress?: number | null
-          quality_score?: number | null
-          results?: Json | null
-          retry_count?: number | null
-          session_id?: string | null
-          started_at?: string | null
-          status?: string
-          stream_id?: string | null
-          success_metrics?: Json | null
-          user_id?: string | null
-          user_location?: Json | null
-          user_satisfaction?: number | null
-        }
-        Update: {
-          admin_context?: Json | null
-          ai_cost_usd?: number | null
-          ai_tokens_used?: number | null
-          batch_execution_id?: string | null
-          command_id?: string
-          completed_at?: string | null
-          created_at?: string | null
-          current_action_id?: string | null
-          current_step_description?: string | null
-          device_context?: Json | null
-          error_details?: Json | null
-          error_message?: string | null
-          estimated_duration_seconds?: number | null
-          execution_plan?: Json | null
-          execution_time_ms?: number | null
-          extracted_parameters?: Json | null
-          failed_action_id?: string | null
-          fallback_used?: boolean | null
-          id?: string
-          intermediate_results?: Json | null
-          original_input?: string
-          parsed_intent?: Json | null
-          progress?: number | null
-          quality_score?: number | null
-          results?: Json | null
-          retry_count?: number | null
-          session_id?: string | null
-          started_at?: string | null
-          status?: string
-          stream_id?: string | null
-          success_metrics?: Json | null
-          user_id?: string | null
-          user_location?: Json | null
-          user_satisfaction?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_command_executions_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_command_executions_current_action_id_fkey"
-            columns: ["current_action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_command_executions_failed_action_id_fkey"
-            columns: ["failed_action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_command_executions_stream_id_fkey"
-            columns: ["stream_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_streams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_command_permissions: {
-        Row: {
-          allowed_hours_utc: number[] | null
-          allowed_locations: Json | null
-          can_execute: boolean | null
-          can_modify_parameters: boolean | null
-          can_schedule: boolean | null
-          can_view_results: boolean | null
-          command_id: string | null
-          expires_at: string | null
-          granted_at: string | null
-          granted_by: string
-          id: string
-          max_executions_per_day: number | null
-          max_executions_per_hour: number | null
-          permission_target: string
-          permission_type: string
-          required_conditions: Json | null
-        }
-        Insert: {
-          allowed_hours_utc?: number[] | null
-          allowed_locations?: Json | null
-          can_execute?: boolean | null
-          can_modify_parameters?: boolean | null
-          can_schedule?: boolean | null
-          can_view_results?: boolean | null
-          command_id?: string | null
-          expires_at?: string | null
-          granted_at?: string | null
-          granted_by: string
-          id?: string
-          max_executions_per_day?: number | null
-          max_executions_per_hour?: number | null
-          permission_target: string
-          permission_type: string
-          required_conditions?: Json | null
-        }
-        Update: {
-          allowed_hours_utc?: number[] | null
-          allowed_locations?: Json | null
-          can_execute?: boolean | null
-          can_modify_parameters?: boolean | null
-          can_schedule?: boolean | null
-          can_view_results?: boolean | null
-          command_id?: string | null
-          expires_at?: string | null
-          granted_at?: string | null
-          granted_by?: string
-          id?: string
-          max_executions_per_day?: number | null
-          max_executions_per_hour?: number | null
-          permission_target?: string
-          permission_type?: string
-          required_conditions?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_command_permissions_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_command_streams: {
-        Row: {
-          client_connections: number | null
-          command_execution_id: string
-          completed_steps: number | null
-          connection_timeout_seconds: number | null
-          current_step_name: string | null
-          id: string
-          is_active: boolean | null
-          last_message_at: string | null
-          max_connections: number | null
-          progress_percentage: number | null
-          stream_ended_at: string | null
-          stream_messages: Json[] | null
-          stream_started_at: string | null
-          stream_type: string
-          supports_sse: boolean | null
-          supports_websocket: boolean | null
-          total_steps: number | null
-        }
-        Insert: {
-          client_connections?: number | null
-          command_execution_id: string
-          completed_steps?: number | null
-          connection_timeout_seconds?: number | null
-          current_step_name?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_message_at?: string | null
-          max_connections?: number | null
-          progress_percentage?: number | null
-          stream_ended_at?: string | null
-          stream_messages?: Json[] | null
-          stream_started_at?: string | null
-          stream_type?: string
-          supports_sse?: boolean | null
-          supports_websocket?: boolean | null
-          total_steps?: number | null
-        }
-        Update: {
-          client_connections?: number | null
-          command_execution_id?: string
-          completed_steps?: number | null
-          connection_timeout_seconds?: number | null
-          current_step_name?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_message_at?: string | null
-          max_connections?: number | null
-          progress_percentage?: number | null
-          stream_ended_at?: string | null
-          stream_messages?: Json[] | null
-          stream_started_at?: string | null
-          stream_type?: string
-          supports_sse?: boolean | null
-          supports_websocket?: boolean | null
-          total_steps?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_command_streams_command_execution_id_fkey"
-            columns: ["command_execution_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_executions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_commands: {
-        Row: {
-          allows_batch_processing: boolean | null
-          category: string
-          command_name: string
-          complexity_score: number | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          display_name: string
-          estimated_cost_usd: number | null
-          example_inputs: string[] | null
-          fallback_command_id: string | null
-          id: string
-          intent_keywords: string[] | null
-          is_active: boolean | null
-          max_batch_size: number | null
-          max_parallel_executions: number | null
-          natural_language_patterns: string[] | null
-          parameters_schema: Json | null
-          required_integrations: string[] | null
-          requires_admin: boolean | null
-          requires_streaming: boolean | null
-          tags: string[] | null
-          timeout_seconds: number | null
-          updated_at: string | null
-          version: number | null
-        }
-        Insert: {
-          allows_batch_processing?: boolean | null
-          category: string
-          command_name: string
-          complexity_score?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name: string
-          estimated_cost_usd?: number | null
-          example_inputs?: string[] | null
-          fallback_command_id?: string | null
-          id?: string
-          intent_keywords?: string[] | null
-          is_active?: boolean | null
-          max_batch_size?: number | null
-          max_parallel_executions?: number | null
-          natural_language_patterns?: string[] | null
-          parameters_schema?: Json | null
-          required_integrations?: string[] | null
-          requires_admin?: boolean | null
-          requires_streaming?: boolean | null
-          tags?: string[] | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Update: {
-          allows_batch_processing?: boolean | null
-          category?: string
-          command_name?: string
-          complexity_score?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name?: string
-          estimated_cost_usd?: number | null
-          example_inputs?: string[] | null
-          fallback_command_id?: string | null
-          id?: string
-          intent_keywords?: string[] | null
-          is_active?: boolean | null
-          max_batch_size?: number | null
-          max_parallel_executions?: number | null
-          natural_language_patterns?: string[] | null
-          parameters_schema?: Json | null
-          required_integrations?: string[] | null
-          requires_admin?: boolean | null
-          requires_streaming?: boolean | null
-          tags?: string[] | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_commands_fallback_command_id_fkey"
-            columns: ["fallback_command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_content_sources: {
-        Row: {
-          connection_config: Json
-          consecutive_failures: number | null
-          content_types: string[] | null
-          created_at: string | null
-          created_by: string | null
-          display_name: string
-          health_check_interval_hours: number | null
-          id: string
-          is_active: boolean | null
-          is_healthy: boolean | null
-          items_failed_last_run: number | null
-          items_synced_last_run: number | null
-          last_sync_at: string | null
-          last_sync_error: string | null
-          last_sync_status: string | null
-          max_items_per_sync: number | null
-          processing_pipeline: Json | null
-          quality_filters: Json | null
-          source_name: string
-          source_type: string
-          sync_frequency_hours: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          connection_config: Json
-          consecutive_failures?: number | null
-          content_types?: string[] | null
-          created_at?: string | null
-          created_by?: string | null
-          display_name: string
-          health_check_interval_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_healthy?: boolean | null
-          items_failed_last_run?: number | null
-          items_synced_last_run?: number | null
-          last_sync_at?: string | null
-          last_sync_error?: string | null
-          last_sync_status?: string | null
-          max_items_per_sync?: number | null
-          processing_pipeline?: Json | null
-          quality_filters?: Json | null
-          source_name: string
-          source_type: string
-          sync_frequency_hours?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          connection_config?: Json
-          consecutive_failures?: number | null
-          content_types?: string[] | null
-          created_at?: string | null
-          created_by?: string | null
-          display_name?: string
-          health_check_interval_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_healthy?: boolean | null
-          items_failed_last_run?: number | null
-          items_synced_last_run?: number | null
-          last_sync_at?: string | null
-          last_sync_error?: string | null
-          last_sync_status?: string | null
-          max_items_per_sync?: number | null
-          processing_pipeline?: Json | null
-          quality_filters?: Json | null
-          source_name?: string
-          source_type?: string
-          sync_frequency_hours?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ai_content_sync_logs: {
-        Row: {
-          api_calls_made: number | null
-          completed_at: string | null
-          data_transferred_bytes: number | null
-          duration_ms: number | null
-          error_details: Json | null
-          error_message: string | null
-          failed_items: Json | null
-          id: string
-          items_failed: number | null
-          items_processed: number | null
-          items_skipped: number | null
-          items_succeeded: number | null
-          source_id: string
-          started_at: string | null
-          status: string
-          sync_type: string
-        }
-        Insert: {
-          api_calls_made?: number | null
-          completed_at?: string | null
-          data_transferred_bytes?: number | null
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          failed_items?: Json | null
-          id?: string
-          items_failed?: number | null
-          items_processed?: number | null
-          items_skipped?: number | null
-          items_succeeded?: number | null
-          source_id: string
-          started_at?: string | null
-          status: string
-          sync_type?: string
-        }
-        Update: {
-          api_calls_made?: number | null
-          completed_at?: string | null
-          data_transferred_bytes?: number | null
-          duration_ms?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          failed_items?: Json | null
-          id?: string
-          items_failed?: number | null
-          items_processed?: number | null
-          items_skipped?: number | null
-          items_succeeded?: number | null
-          source_id?: string
-          started_at?: string | null
-          status?: string
-          sync_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_content_sync_logs_source_id_fkey"
-            columns: ["source_id"]
-            isOneToOne: false
-            referencedRelation: "ai_content_sources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_integration_logs: {
-        Row: {
-          command_execution_id: string | null
-          created_at: string | null
-          error_code: string | null
-          error_message: string | null
-          id: string
-          integration_id: string
-          operation_type: string
-          request_method: string | null
-          request_payload: Json | null
-          request_url: string | null
-          response_body: Json | null
-          response_status: number | null
-          response_time_ms: number | null
-          success: boolean
-          triggered_by: string | null
-        }
-        Insert: {
-          command_execution_id?: string | null
-          created_at?: string | null
-          error_code?: string | null
-          error_message?: string | null
-          id?: string
-          integration_id: string
-          operation_type: string
-          request_method?: string | null
-          request_payload?: Json | null
-          request_url?: string | null
-          response_body?: Json | null
-          response_status?: number | null
-          response_time_ms?: number | null
-          success: boolean
-          triggered_by?: string | null
-        }
-        Update: {
-          command_execution_id?: string | null
-          created_at?: string | null
-          error_code?: string | null
-          error_message?: string | null
-          id?: string
-          integration_id?: string
-          operation_type?: string
-          request_method?: string | null
-          request_payload?: Json | null
-          request_url?: string | null
-          response_body?: Json | null
-          response_status?: number | null
-          response_time_ms?: number | null
-          success?: boolean
-          triggered_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_integration_logs_command_execution_id_fkey"
-            columns: ["command_execution_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_executions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_integration_logs_integration_id_fkey"
-            columns: ["integration_id"]
-            isOneToOne: false
-            referencedRelation: "ai_integrations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_integrations: {
-        Row: {
-          auth_config: Json | null
-          auth_type: string | null
-          avg_response_time_ms: number | null
-          connection_config: Json | null
-          consecutive_failures: number | null
-          created_at: string | null
-          data_types: string[] | null
-          display_name: string
-          endpoint_url: string | null
-          health_check_interval_minutes: number | null
-          health_check_url: string | null
-          health_status: string | null
-          id: string
-          integration_name: string
-          integration_type: string
-          is_active: boolean | null
-          is_critical: boolean | null
-          last_health_check: string | null
-          last_used_at: string | null
-          rate_limits: Json | null
-          supported_operations: string[] | null
-          total_failures: number | null
-          total_requests: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          auth_config?: Json | null
-          auth_type?: string | null
-          avg_response_time_ms?: number | null
-          connection_config?: Json | null
-          consecutive_failures?: number | null
-          created_at?: string | null
-          data_types?: string[] | null
-          display_name: string
-          endpoint_url?: string | null
-          health_check_interval_minutes?: number | null
-          health_check_url?: string | null
-          health_status?: string | null
-          id?: string
-          integration_name: string
-          integration_type: string
-          is_active?: boolean | null
-          is_critical?: boolean | null
-          last_health_check?: string | null
-          last_used_at?: string | null
-          rate_limits?: Json | null
-          supported_operations?: string[] | null
-          total_failures?: number | null
-          total_requests?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          auth_config?: Json | null
-          auth_type?: string | null
-          avg_response_time_ms?: number | null
-          connection_config?: Json | null
-          consecutive_failures?: number | null
-          created_at?: string | null
-          data_types?: string[] | null
-          display_name?: string
-          endpoint_url?: string | null
-          health_check_interval_minutes?: number | null
-          health_check_url?: string | null
-          health_status?: string | null
-          id?: string
-          integration_name?: string
-          integration_type?: string
-          is_active?: boolean | null
-          is_critical?: boolean | null
-          last_health_check?: string | null
-          last_used_at?: string | null
-          rate_limits?: Json | null
-          supported_operations?: string[] | null
-          total_failures?: number | null
-          total_requests?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ai_learned_patterns: {
-        Row: {
-          confidence_score: number
-          created_at: string | null
-          evidence_count: number | null
-          id: string
-          is_active: boolean | null
-          last_evidence_date: string | null
-          learned_from_source: string | null
-          pattern_category: string
-          pattern_data: Json
-          pattern_description: string
-          pattern_type: string
-          success_rate: number | null
-          supporting_executions: string[] | null
-          times_applied: number | null
-          times_successful: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          confidence_score: number
-          created_at?: string | null
-          evidence_count?: number | null
-          id?: string
-          is_active?: boolean | null
-          last_evidence_date?: string | null
-          learned_from_source?: string | null
-          pattern_category: string
-          pattern_data: Json
-          pattern_description: string
-          pattern_type: string
-          success_rate?: number | null
-          supporting_executions?: string[] | null
-          times_applied?: number | null
-          times_successful?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          confidence_score?: number
-          created_at?: string | null
-          evidence_count?: number | null
-          id?: string
-          is_active?: boolean | null
-          last_evidence_date?: string | null
-          learned_from_source?: string | null
-          pattern_category?: string
-          pattern_data?: Json
-          pattern_description?: string
-          pattern_type?: string
-          success_rate?: number | null
-          supporting_executions?: string[] | null
-          times_applied?: number | null
-          times_successful?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ai_models: {
-        Row: {
-          avg_response_time_ms: number | null
-          context_length: number | null
-          created_at: string | null
-          deprecation_date: string | null
-          description: string | null
-          display_name: string | null
-          id: string
-          input_cost_per_1k_tokens: number | null
-          is_active: boolean | null
-          is_deprecated: boolean | null
-          max_tokens: number | null
-          model_name: string
-          model_type: string
-          output_cost_per_1k_tokens: number | null
-          provider_id: string
-          quality_score: number | null
-          reliability_score: number | null
-          supports_json_mode: boolean | null
-          supports_tools: boolean | null
-          total_cost_usd: number | null
-          total_requests: number | null
-          total_tokens_processed: number | null
-          training_cutoff_date: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avg_response_time_ms?: number | null
-          context_length?: number | null
-          created_at?: string | null
-          deprecation_date?: string | null
-          description?: string | null
-          display_name?: string | null
-          id?: string
-          input_cost_per_1k_tokens?: number | null
-          is_active?: boolean | null
-          is_deprecated?: boolean | null
-          max_tokens?: number | null
-          model_name: string
-          model_type: string
-          output_cost_per_1k_tokens?: number | null
-          provider_id: string
-          quality_score?: number | null
-          reliability_score?: number | null
-          supports_json_mode?: boolean | null
-          supports_tools?: boolean | null
-          total_cost_usd?: number | null
-          total_requests?: number | null
-          total_tokens_processed?: number | null
-          training_cutoff_date?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avg_response_time_ms?: number | null
-          context_length?: number | null
-          created_at?: string | null
-          deprecation_date?: string | null
-          description?: string | null
-          display_name?: string | null
-          id?: string
-          input_cost_per_1k_tokens?: number | null
-          is_active?: boolean | null
-          is_deprecated?: boolean | null
-          max_tokens?: number | null
-          model_name?: string
-          model_type?: string
-          output_cost_per_1k_tokens?: number | null
-          provider_id?: string
-          quality_score?: number | null
-          reliability_score?: number | null
-          supports_json_mode?: boolean | null
-          supports_tools?: boolean | null
-          total_cost_usd?: number | null
-          total_requests?: number | null
-          total_tokens_processed?: number | null
-          training_cutoff_date?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_models_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "ai_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_performance_metrics: {
-        Row: {
-          aggregation_type: string | null
-          command_id: string | null
-          component: string | null
-          id: string
-          measured_at: string | null
-          metric_category: string
-          metric_name: string
-          metric_unit: string | null
-          metric_value: number
-          provider_id: string | null
-          sample_count: number | null
-          time_window_minutes: number | null
-        }
-        Insert: {
-          aggregation_type?: string | null
-          command_id?: string | null
-          component?: string | null
-          id?: string
-          measured_at?: string | null
-          metric_category: string
-          metric_name: string
-          metric_unit?: string | null
-          metric_value: number
-          provider_id?: string | null
-          sample_count?: number | null
-          time_window_minutes?: number | null
-        }
-        Update: {
-          aggregation_type?: string | null
-          command_id?: string | null
-          component?: string | null
-          id?: string
-          measured_at?: string | null
-          metric_category?: string
-          metric_name?: string
-          metric_unit?: string | null
-          metric_value?: number
-          provider_id?: string | null
-          sample_count?: number | null
-          time_window_minutes?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_performance_metrics_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_performance_metrics_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "ai_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_prompts: {
-        Row: {
-          avg_execution_time_ms: number | null
-          bad_examples: Json | null
-          cost_per_execution: number | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          display_name: string | null
-          fallback_prompt_id: string | null
-          good_examples: Json | null
-          id: string
-          is_active: boolean | null
-          max_tokens: number | null
-          model_config: Json | null
-          parameters: string[] | null
-          parameters_schema: Json | null
-          prompt_name: string
-          prompt_template: string
-          prompt_type: string
-          provider: string | null
-          required_model_capabilities: string[] | null
-          response_format: string | null
-          success_rate: number | null
-          system_message: string | null
-          tags: string[] | null
-          temperature: number | null
-          updated_at: string | null
-          version: number | null
-        }
-        Insert: {
-          avg_execution_time_ms?: number | null
-          bad_examples?: Json | null
-          cost_per_execution?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name?: string | null
-          fallback_prompt_id?: string | null
-          good_examples?: Json | null
-          id?: string
-          is_active?: boolean | null
-          max_tokens?: number | null
-          model_config?: Json | null
-          parameters?: string[] | null
-          parameters_schema?: Json | null
-          prompt_name: string
-          prompt_template: string
-          prompt_type: string
-          provider?: string | null
-          required_model_capabilities?: string[] | null
-          response_format?: string | null
-          success_rate?: number | null
-          system_message?: string | null
-          tags?: string[] | null
-          temperature?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Update: {
-          avg_execution_time_ms?: number | null
-          bad_examples?: Json | null
-          cost_per_execution?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          display_name?: string | null
-          fallback_prompt_id?: string | null
-          good_examples?: Json | null
-          id?: string
-          is_active?: boolean | null
-          max_tokens?: number | null
-          model_config?: Json | null
-          parameters?: string[] | null
-          parameters_schema?: Json | null
-          prompt_name?: string
-          prompt_template?: string
-          prompt_type?: string
-          provider?: string | null
-          required_model_capabilities?: string[] | null
-          response_format?: string | null
-          success_rate?: number | null
-          system_message?: string | null
-          tags?: string[] | null
-          temperature?: number | null
-          updated_at?: string | null
-          version?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_prompts_fallback_prompt_id_fkey"
-            columns: ["fallback_prompt_id"]
-            isOneToOne: false
-            referencedRelation: "ai_prompts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_providers: {
-        Row: {
-          auth_config: Json | null
-          auth_type: string
-          base_url: string | null
-          created_at: string | null
-          description: string | null
-          display_name: string
-          health_status: string | null
-          id: string
-          is_active: boolean | null
-          last_health_check: string | null
-          max_context_length: number | null
-          max_output_tokens: number | null
-          provider_name: string
-          requests_per_day: number | null
-          requests_per_minute: number | null
-          supports_embeddings: boolean | null
-          supports_function_calling: boolean | null
-          supports_streaming: boolean | null
-          supports_vision: boolean | null
-          tokens_per_minute: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          auth_config?: Json | null
-          auth_type?: string
-          base_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          display_name: string
-          health_status?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_health_check?: string | null
-          max_context_length?: number | null
-          max_output_tokens?: number | null
-          provider_name: string
-          requests_per_day?: number | null
-          requests_per_minute?: number | null
-          supports_embeddings?: boolean | null
-          supports_function_calling?: boolean | null
-          supports_streaming?: boolean | null
-          supports_vision?: boolean | null
-          tokens_per_minute?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          auth_config?: Json | null
-          auth_type?: string
-          base_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          display_name?: string
-          health_status?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_health_check?: string | null
-          max_context_length?: number | null
-          max_output_tokens?: number | null
-          provider_name?: string
-          requests_per_day?: number | null
-          requests_per_minute?: number | null
-          supports_embeddings?: boolean | null
-          supports_function_calling?: boolean | null
-          supports_streaming?: boolean | null
-          supports_vision?: boolean | null
-          tokens_per_minute?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ai_quality_gates: {
-        Row: {
-          auto_retry: boolean | null
-          cache_duration_hours: number | null
-          cache_results: boolean | null
-          content_types: string[]
-          created_at: string | null
-          description: string | null
-          display_name: string
-          execution_order: number | null
-          external_validators: string[] | null
-          gate_name: string
-          id: string
-          is_active: boolean | null
-          is_blocking: boolean | null
-          max_retries: number | null
-          threshold_config: Json | null
-          timeout_seconds: number | null
-          updated_at: string | null
-          validation_rules: Json
-          validator_class: string | null
-        }
-        Insert: {
-          auto_retry?: boolean | null
-          cache_duration_hours?: number | null
-          cache_results?: boolean | null
-          content_types: string[]
-          created_at?: string | null
-          description?: string | null
-          display_name: string
-          execution_order?: number | null
-          external_validators?: string[] | null
-          gate_name: string
-          id?: string
-          is_active?: boolean | null
-          is_blocking?: boolean | null
-          max_retries?: number | null
-          threshold_config?: Json | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          validation_rules: Json
-          validator_class?: string | null
-        }
-        Update: {
-          auto_retry?: boolean | null
-          cache_duration_hours?: number | null
-          cache_results?: boolean | null
-          content_types?: string[]
-          created_at?: string | null
-          description?: string | null
-          display_name?: string
-          execution_order?: number | null
-          external_validators?: string[] | null
-          gate_name?: string
-          id?: string
-          is_active?: boolean | null
-          is_blocking?: boolean | null
-          max_retries?: number | null
-          threshold_config?: Json | null
-          timeout_seconds?: number | null
-          updated_at?: string | null
-          validation_rules?: Json
-          validator_class?: string | null
-        }
-        Relationships: []
-      }
-      ai_quality_validations: {
-        Row: {
-          auto_fixes_applied: string[] | null
-          brand_voice_score: number | null
-          civic_engagement_score: number | null
-          content_id: string
-          content_type: string
-          created_at: string | null
-          external_calls_made: number | null
-          factual_accuracy_score: number | null
-          gate_id: string
-          id: string
-          issues_found: string[] | null
-          overall_score: number | null
-          passed: boolean
-          readability_score: number | null
-          recommendations: string[] | null
-          validation_input: Json | null
-          validation_result: Json
-          validation_time_ms: number | null
-        }
-        Insert: {
-          auto_fixes_applied?: string[] | null
-          brand_voice_score?: number | null
-          civic_engagement_score?: number | null
-          content_id: string
-          content_type: string
-          created_at?: string | null
-          external_calls_made?: number | null
-          factual_accuracy_score?: number | null
-          gate_id: string
-          id?: string
-          issues_found?: string[] | null
-          overall_score?: number | null
-          passed: boolean
-          readability_score?: number | null
-          recommendations?: string[] | null
-          validation_input?: Json | null
-          validation_result: Json
-          validation_time_ms?: number | null
-        }
-        Update: {
-          auto_fixes_applied?: string[] | null
-          brand_voice_score?: number | null
-          civic_engagement_score?: number | null
-          content_id?: string
-          content_type?: string
-          created_at?: string | null
-          external_calls_made?: number | null
-          factual_accuracy_score?: number | null
-          gate_id?: string
-          id?: string
-          issues_found?: string[] | null
-          overall_score?: number | null
-          passed?: boolean
-          readability_score?: number | null
-          recommendations?: string[] | null
-          validation_input?: Json | null
-          validation_result?: Json
-          validation_time_ms?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_quality_validations_gate_id_fkey"
-            columns: ["gate_id"]
-            isOneToOne: false
-            referencedRelation: "ai_quality_gates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_security_audit_log: {
-        Row: {
-          automated_response: string | null
-          command_id: string | null
-          created_at: string | null
-          event_data: Json | null
-          event_description: string
-          event_type: string
-          id: string
-          ip_address: unknown | null
-          review_notes: string | null
-          reviewed: boolean | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          risk_score: number | null
-          session_id: string | null
-          severity: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          automated_response?: string | null
-          command_id?: string | null
-          created_at?: string | null
-          event_data?: Json | null
-          event_description: string
-          event_type: string
-          id?: string
-          ip_address?: unknown | null
-          review_notes?: string | null
-          reviewed?: boolean | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          risk_score?: number | null
-          session_id?: string | null
-          severity: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          automated_response?: string | null
-          command_id?: string | null
-          created_at?: string | null
-          event_data?: Json | null
-          event_description?: string
-          event_type?: string
-          id?: string
-          ip_address?: unknown | null
-          review_notes?: string | null
-          reviewed?: boolean | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          risk_score?: number | null
-          session_id?: string | null
-          severity?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_security_audit_log_command_id_fkey"
-            columns: ["command_id"]
-            isOneToOne: false
-            referencedRelation: "ai_commands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_stream_messages: {
-        Row: {
-          action_id: string | null
-          created_at: string | null
-          id: string
-          message_content: Json
-          message_type: string
-          processing_time_ms: number | null
-          sequence_number: number
-          step_name: string | null
-          stream_id: string
-        }
-        Insert: {
-          action_id?: string | null
-          created_at?: string | null
-          id?: string
-          message_content: Json
-          message_type: string
-          processing_time_ms?: number | null
-          sequence_number: number
-          step_name?: string | null
-          stream_id: string
-        }
-        Update: {
-          action_id?: string | null
-          created_at?: string | null
-          id?: string
-          message_content?: Json
-          message_type?: string
-          processing_time_ms?: number | null
-          sequence_number?: number
-          step_name?: string | null
-          stream_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_stream_messages_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "ai_actions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_stream_messages_stream_id_fkey"
-            columns: ["stream_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_streams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_system_alerts: {
-        Row: {
-          alert_level: string
-          alert_type: string
-          assigned_to: string | null
-          component: string | null
-          description: string
-          escalation_level: number | null
-          first_detected_at: string | null
-          id: string
-          last_occurrence_at: string | null
-          metric_name: string | null
-          metric_value: number | null
-          notification_channels: string[] | null
-          notification_sent: boolean | null
-          resolution_notes: string | null
-          resolved_at: string | null
-          status: string | null
-          threshold_value: number | null
-          title: string
-        }
-        Insert: {
-          alert_level: string
-          alert_type: string
-          assigned_to?: string | null
-          component?: string | null
-          description: string
-          escalation_level?: number | null
-          first_detected_at?: string | null
-          id?: string
-          last_occurrence_at?: string | null
-          metric_name?: string | null
-          metric_value?: number | null
-          notification_channels?: string[] | null
-          notification_sent?: boolean | null
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          status?: string | null
-          threshold_value?: number | null
-          title: string
-        }
-        Update: {
-          alert_level?: string
-          alert_type?: string
-          assigned_to?: string | null
-          component?: string | null
-          description?: string
-          escalation_level?: number | null
-          first_detected_at?: string | null
-          id?: string
-          last_occurrence_at?: string | null
-          metric_name?: string | null
-          metric_value?: number | null
-          notification_channels?: string[] | null
-          notification_sent?: boolean | null
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          status?: string | null
-          threshold_value?: number | null
-          title?: string
-        }
-        Relationships: []
-      }
-      ai_user_command_history: {
-        Row: {
-          command_category: string | null
-          command_execution_id: string | null
-          command_intent: string | null
-          created_at: string | null
-          device_context: Json | null
-          followed_up: boolean | null
-          id: string
-          original_input: string | null
-          session_context: Json | null
-          shared_result: boolean | null
-          time_to_execute_ms: number | null
-          user_feedback: string | null
-          user_id: string
-          user_location_at_time: Json | null
-          user_modified_output: boolean | null
-          user_satisfaction_score: number | null
-        }
-        Insert: {
-          command_category?: string | null
-          command_execution_id?: string | null
-          command_intent?: string | null
-          created_at?: string | null
-          device_context?: Json | null
-          followed_up?: boolean | null
-          id?: string
-          original_input?: string | null
-          session_context?: Json | null
-          shared_result?: boolean | null
-          time_to_execute_ms?: number | null
-          user_feedback?: string | null
-          user_id: string
-          user_location_at_time?: Json | null
-          user_modified_output?: boolean | null
-          user_satisfaction_score?: number | null
-        }
-        Update: {
-          command_category?: string | null
-          command_execution_id?: string | null
-          command_intent?: string | null
-          created_at?: string | null
-          device_context?: Json | null
-          followed_up?: boolean | null
-          id?: string
-          original_input?: string | null
-          session_context?: Json | null
-          shared_result?: boolean | null
-          time_to_execute_ms?: number | null
-          user_feedback?: string | null
-          user_id?: string
-          user_location_at_time?: Json | null
-          user_modified_output?: boolean | null
-          user_satisfaction_score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_user_command_history_command_execution_id_fkey"
-            columns: ["command_execution_id"]
-            isOneToOne: false
-            referencedRelation: "ai_command_executions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_user_preferences: {
-        Row: {
-          allow_data_collection: boolean | null
-          allow_personalization: boolean | null
-          allow_usage_analytics: boolean | null
-          city: string | null
-          congressional_district: string | null
-          content_difficulty_preference: string | null
-          created_at: string | null
-          enable_streaming: boolean | null
-          id: string
-          language_preference: string | null
-          learning_style: string | null
-          max_response_time_seconds: number | null
-          pace_preference: string | null
-          preferred_ai_provider: string | null
-          preferred_content_types: string[] | null
-          preferred_response_style: string | null
-          state: string | null
-          updated_at: string | null
-          user_id: string
-          zip_code: string | null
-        }
-        Insert: {
-          allow_data_collection?: boolean | null
-          allow_personalization?: boolean | null
-          allow_usage_analytics?: boolean | null
-          city?: string | null
-          congressional_district?: string | null
-          content_difficulty_preference?: string | null
-          created_at?: string | null
-          enable_streaming?: boolean | null
-          id?: string
-          language_preference?: string | null
-          learning_style?: string | null
-          max_response_time_seconds?: number | null
-          pace_preference?: string | null
-          preferred_ai_provider?: string | null
-          preferred_content_types?: string[] | null
-          preferred_response_style?: string | null
-          state?: string | null
-          updated_at?: string | null
-          user_id: string
-          zip_code?: string | null
-        }
-        Update: {
-          allow_data_collection?: boolean | null
-          allow_personalization?: boolean | null
-          allow_usage_analytics?: boolean | null
-          city?: string | null
-          congressional_district?: string | null
-          content_difficulty_preference?: string | null
-          created_at?: string | null
-          enable_streaming?: boolean | null
-          id?: string
-          language_preference?: string | null
-          learning_style?: string | null
-          max_response_time_seconds?: number | null
-          pace_preference?: string | null
-          preferred_ai_provider?: string | null
-          preferred_content_types?: string[] | null
-          preferred_response_style?: string | null
-          state?: string | null
-          updated_at?: string | null
-          user_id?: string
-          zip_code?: string | null
-        }
-        Relationships: []
-      }
-      ai_workflow_instances: {
-        Row: {
-          created_at: string | null
-          custom_config: Json | null
-          id: string
-          instance_name: string | null
-          last_execution_id: string | null
-          last_run_at: string | null
-          last_run_status: string | null
-          next_run_at: string | null
-          owner_id: string
-          parameters: Json | null
-          schedule_expression: string | null
-          schedule_timezone: string | null
-          shared_with_users: string[] | null
-          status: string | null
-          template_id: string | null
-          updated_at: string | null
-          visibility: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          custom_config?: Json | null
-          id?: string
-          instance_name?: string | null
-          last_execution_id?: string | null
-          last_run_at?: string | null
-          last_run_status?: string | null
-          next_run_at?: string | null
-          owner_id: string
-          parameters?: Json | null
-          schedule_expression?: string | null
-          schedule_timezone?: string | null
-          shared_with_users?: string[] | null
-          status?: string | null
-          template_id?: string | null
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          custom_config?: Json | null
-          id?: string
-          instance_name?: string | null
-          last_execution_id?: string | null
-          last_run_at?: string | null
-          last_run_status?: string | null
-          next_run_at?: string | null
-          owner_id?: string
-          parameters?: Json | null
-          schedule_expression?: string | null
-          schedule_timezone?: string | null
-          shared_with_users?: string[] | null
-          status?: string | null
-          template_id?: string | null
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_workflow_instances_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "ai_workflow_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_workflow_templates: {
-        Row: {
-          author_id: string | null
-          avg_execution_time_ms: number | null
-          avg_success_rate: number | null
-          category: string
-          created_at: string | null
-          description: string | null
-          display_name: string
-          estimated_duration_seconds: number | null
-          id: string
-          is_active: boolean | null
-          is_featured: boolean | null
-          is_template: boolean | null
-          output_schema: Json | null
-          parameter_schema: Json | null
-          required_integrations: string[] | null
-          required_permissions: string[] | null
-          resource_requirements: Json | null
-          tags: string[] | null
-          template_config: Json
-          template_name: string
-          updated_at: string | null
-          usage_count: number | null
-          version: string | null
-        }
-        Insert: {
-          author_id?: string | null
-          avg_execution_time_ms?: number | null
-          avg_success_rate?: number | null
-          category: string
-          created_at?: string | null
-          description?: string | null
-          display_name: string
-          estimated_duration_seconds?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_featured?: boolean | null
-          is_template?: boolean | null
-          output_schema?: Json | null
-          parameter_schema?: Json | null
-          required_integrations?: string[] | null
-          required_permissions?: string[] | null
-          resource_requirements?: Json | null
-          tags?: string[] | null
-          template_config: Json
-          template_name: string
-          updated_at?: string | null
-          usage_count?: number | null
-          version?: string | null
-        }
-        Update: {
-          author_id?: string | null
-          avg_execution_time_ms?: number | null
-          avg_success_rate?: number | null
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          display_name?: string
-          estimated_duration_seconds?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_featured?: boolean | null
-          is_template?: boolean | null
-          output_schema?: Json | null
-          parameter_schema?: Json | null
-          required_integrations?: string[] | null
-          required_permissions?: string[] | null
-          resource_requirements?: Json | null
-          tags?: string[] | null
-          template_config?: Json
-          template_name?: string
-          updated_at?: string | null
-          usage_count?: number | null
-          version?: string | null
-        }
-        Relationships: []
-      }
-      content_analysis_cache: {
-        Row: {
-          analysis_result: Json
-          analysis_type: string
-          confidence_score: number | null
-          content_id: string
-          content_type: string
-          created_at: string
-          expires_at: string | null
-          id: string
-          model_version: string | null
-        }
-        Insert: {
-          analysis_result: Json
-          analysis_type: string
-          confidence_score?: number | null
-          content_id: string
-          content_type: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          model_version?: string | null
-        }
-        Update: {
-          analysis_result?: Json
-          analysis_type?: string
-          confidence_score?: number | null
-          content_id?: string
-          content_type?: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          model_version?: string | null
-        }
-        Relationships: []
-      }
-      conversation_analysis: {
-        Row: {
-          analysis_results: Json
-          analysis_timestamp: string | null
-          analysis_type: string
-          applied_improvements: boolean | null
-          confidence_score: number | null
-          conversation_id: string
-          created_at: string | null
-          id: string
-          improvement_suggestions: string[] | null
-          insights_generated: string[] | null
-          metadata: Json | null
-        }
-        Insert: {
-          analysis_results?: Json
-          analysis_timestamp?: string | null
-          analysis_type: string
-          applied_improvements?: boolean | null
-          confidence_score?: number | null
-          conversation_id: string
-          created_at?: string | null
-          id?: string
-          improvement_suggestions?: string[] | null
-          insights_generated?: string[] | null
-          metadata?: Json | null
-        }
-        Update: {
-          analysis_results?: Json
-          analysis_timestamp?: string | null
-          analysis_type?: string
-          applied_improvements?: boolean | null
-          confidence_score?: number | null
-          conversation_id?: string
-          created_at?: string | null
-          id?: string
-          improvement_suggestions?: string[] | null
-          insights_generated?: string[] | null
-          metadata?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_analysis_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_analytics: {
-        Row: {
-          agent_type: string
-          conversation_duration_seconds: number | null
-          conversation_id: string
-          conversation_outcome: string | null
-          created_at: string | null
-          id: string
-          resolution_status: string | null
-          topics_covered: string[] | null
-          total_messages: number | null
-          total_tokens_used: number | null
-          user_satisfaction_score: number | null
-        }
-        Insert: {
-          agent_type: string
-          conversation_duration_seconds?: number | null
-          conversation_id: string
-          conversation_outcome?: string | null
-          created_at?: string | null
-          id?: string
-          resolution_status?: string | null
-          topics_covered?: string[] | null
-          total_messages?: number | null
-          total_tokens_used?: number | null
-          user_satisfaction_score?: number | null
-        }
-        Update: {
-          agent_type?: string
-          conversation_duration_seconds?: number | null
-          conversation_id?: string
-          conversation_outcome?: string | null
-          created_at?: string | null
-          id?: string
-          resolution_status?: string | null
-          topics_covered?: string[] | null
-          total_messages?: number | null
-          total_tokens_used?: number | null
-          user_satisfaction_score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_analytics_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_context: {
-        Row: {
-          context_key: string
-          context_value: Json
-          conversation_id: string
-          created_at: string
-          expires_at: string | null
-          id: string
-          priority: number | null
-          updated_at: string
-        }
-        Insert: {
-          context_key: string
-          context_value: Json
-          conversation_id: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          priority?: number | null
-          updated_at?: string
-        }
-        Update: {
-          context_key?: string
-          context_value?: Json
-          conversation_id?: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          priority?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_context_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_flow_instances: {
-        Row: {
-          completed_at: string | null
-          conversation_id: string
-          current_step: number | null
-          flow_id: string
-          flow_state: string | null
-          id: string
-          satisfaction_score: number | null
-          started_at: string
-          step_data: Json | null
-        }
-        Insert: {
-          completed_at?: string | null
-          conversation_id: string
-          current_step?: number | null
-          flow_id: string
-          flow_state?: string | null
-          id?: string
-          satisfaction_score?: number | null
-          started_at?: string
-          step_data?: Json | null
-        }
-        Update: {
-          completed_at?: string | null
-          conversation_id?: string
-          current_step?: number | null
-          flow_id?: string
-          flow_state?: string | null
-          id?: string
-          satisfaction_score?: number | null
-          started_at?: string
-          step_data?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_flow_instances_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversation_flow_instances_flow_id_fkey"
-            columns: ["flow_id"]
-            isOneToOne: false
-            referencedRelation: "conversation_flows"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conversation_flows: {
-        Row: {
-          created_at: string
-          expected_outcomes: Json | null
-          flow_description: string | null
-          flow_name: string
-          flow_steps: Json
-          id: string
-          is_active: boolean | null
-          success_criteria: Json | null
-          success_rate: number | null
-          trigger_conditions: Json
-          typical_duration_minutes: number | null
-          updated_at: string
-          usage_count: number | null
-        }
-        Insert: {
-          created_at?: string
-          expected_outcomes?: Json | null
-          flow_description?: string | null
-          flow_name: string
-          flow_steps: Json
-          id?: string
-          is_active?: boolean | null
-          success_criteria?: Json | null
-          success_rate?: number | null
-          trigger_conditions: Json
-          typical_duration_minutes?: number | null
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Update: {
-          created_at?: string
-          expected_outcomes?: Json | null
-          flow_description?: string | null
-          flow_name?: string
-          flow_steps?: Json
-          id?: string
-          is_active?: boolean | null
-          success_criteria?: Json | null
-          success_rate?: number | null
-          trigger_conditions?: Json
-          typical_duration_minutes?: number | null
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      conversations: {
-        Row: {
-          agent_model: string | null
-          agent_type: string
-          conversation_context: Json
-          conversation_mode: string | null
-          conversation_state: string | null
-          conversation_summary: string | null
-          created_at: string
-          current_topic: string | null
-          ended_at: string | null
-          id: string
-          next_suggested_actions: Json | null
-          session_id: string
-          started_at: string
-          total_messages: number | null
-          total_tokens_used: number | null
-          user_id: string | null
-          user_satisfaction_score: number | null
-        }
-        Insert: {
-          agent_model?: string | null
-          agent_type: string
-          conversation_context?: Json
-          conversation_mode?: string | null
-          conversation_state?: string | null
-          conversation_summary?: string | null
-          created_at?: string
-          current_topic?: string | null
-          ended_at?: string | null
-          id?: string
-          next_suggested_actions?: Json | null
-          session_id: string
-          started_at?: string
-          total_messages?: number | null
-          total_tokens_used?: number | null
-          user_id?: string | null
-          user_satisfaction_score?: number | null
-        }
-        Update: {
-          agent_model?: string | null
-          agent_type?: string
-          conversation_context?: Json
-          conversation_mode?: string | null
-          conversation_state?: string | null
-          conversation_summary?: string | null
-          created_at?: string
-          current_topic?: string | null
-          ended_at?: string | null
-          id?: string
-          next_suggested_actions?: Json | null
-          session_id?: string
-          started_at?: string
-          total_messages?: number | null
-          total_tokens_used?: number | null
-          user_id?: string | null
-          user_satisfaction_score?: number | null
-        }
-        Relationships: []
-      }
-      database_context: {
-        Row: {
-          analysis_summary: string | null
-          context_data: Json
-          context_type: string
-          created_at: string
-          id: string
-          insights: Json | null
-          is_current: boolean | null
-          version: number
-        }
-        Insert: {
-          analysis_summary?: string | null
-          context_data: Json
-          context_type: string
-          created_at?: string
-          id?: string
-          insights?: Json | null
-          is_current?: boolean | null
-          version?: number
-        }
-        Update: {
-          analysis_summary?: string | null
-          context_data?: Json
-          context_type?: string
-          created_at?: string
-          id?: string
-          insights?: Json | null
-          is_current?: boolean | null
-          version?: number
-        }
-        Relationships: []
-      }
-      fallback_responses: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean | null
-          last_used: string | null
-          response_data: Json | null
-          response_template: string
-          response_type: string
-          trigger_pattern: string
-          usage_count: number | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_used?: string | null
-          response_data?: Json | null
-          response_template: string
-          response_type: string
-          trigger_pattern: string
-          usage_count?: number | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_used?: string | null
-          response_data?: Json | null
-          response_template?: string
-          response_type?: string
-          trigger_pattern?: string
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      generated_content: {
-        Row: {
-          approval_status: string | null
-          content_category: string | null
-          created_at: string
-          created_by: string | null
-          generated_content: Json
-          generation_parameters: Json | null
-          generation_time_ms: number | null
-          generation_type: string
-          human_feedback: string | null
-          human_review_status: string | null
-          id: string
-          model_used: string | null
-          prompt_template: string | null
-          published: boolean | null
-          published_id: string | null
-          quality_scores: Json | null
-          source_reference: string | null
-        }
-        Insert: {
-          approval_status?: string | null
-          content_category?: string | null
-          created_at?: string
-          created_by?: string | null
-          generated_content: Json
-          generation_parameters?: Json | null
-          generation_time_ms?: number | null
-          generation_type: string
-          human_feedback?: string | null
-          human_review_status?: string | null
-          id?: string
-          model_used?: string | null
-          prompt_template?: string | null
-          published?: boolean | null
-          published_id?: string | null
-          quality_scores?: Json | null
-          source_reference?: string | null
-        }
-        Update: {
-          approval_status?: string | null
-          content_category?: string | null
-          created_at?: string
-          created_by?: string | null
-          generated_content?: Json
-          generation_parameters?: Json | null
-          generation_time_ms?: number | null
-          generation_type?: string
-          human_feedback?: string | null
-          human_review_status?: string | null
-          id?: string
-          model_used?: string | null
-          prompt_template?: string | null
-          published?: boolean | null
-          published_id?: string | null
-          quality_scores?: Json | null
-          source_reference?: string | null
-        }
-        Relationships: []
-      }
-      intent_patterns: {
-        Row: {
-          confidence_threshold: number | null
-          created_at: string
-          id: string
-          intent_name: string
-          is_active: boolean | null
-          pattern_text: string
-          pattern_type: string
-          required_context: Json | null
-          success_rate: number | null
-          suggested_actions: Json | null
-          typical_responses: Json | null
-          updated_at: string
-          usage_count: number | null
-        }
-        Insert: {
-          confidence_threshold?: number | null
-          created_at?: string
-          id?: string
-          intent_name: string
-          is_active?: boolean | null
-          pattern_text: string
-          pattern_type: string
-          required_context?: Json | null
-          success_rate?: number | null
-          suggested_actions?: Json | null
-          typical_responses?: Json | null
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Update: {
-          confidence_threshold?: number | null
-          created_at?: string
-          id?: string
-          intent_name?: string
-          is_active?: boolean | null
-          pattern_text?: string
-          pattern_type?: string
-          required_context?: Json | null
-          success_rate?: number | null
-          suggested_actions?: Json | null
-          typical_responses?: Json | null
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      knowledge_graph: {
-        Row: {
-          created_at: string
-          discovered_by: string | null
-          id: string
-          metadata: Json | null
-          relationship_strength: number | null
-          relationship_type: string
-          source_id: string
-          source_type: string
-          target_id: string
-          target_type: string
-          verified: boolean | null
-        }
-        Insert: {
-          created_at?: string
-          discovered_by?: string | null
-          id?: string
-          metadata?: Json | null
-          relationship_strength?: number | null
-          relationship_type: string
-          source_id: string
-          source_type: string
-          target_id: string
-          target_type: string
-          verified?: boolean | null
-        }
-        Update: {
-          created_at?: string
-          discovered_by?: string | null
-          id?: string
-          metadata?: Json | null
-          relationship_strength?: number | null
-          relationship_type?: string
-          source_id?: string
-          source_type?: string
-          target_id?: string
-          target_type?: string
-          verified?: boolean | null
-        }
-        Relationships: []
-      }
-      learned_patterns: {
-        Row: {
-          confidence_score: number
-          created_at: string
-          id: string
-          is_active: boolean | null
-          last_applied: string | null
-          learned_from_source: string | null
-          pattern_category: string
-          pattern_description: string
-          pattern_type: string
-          supporting_evidence: Json
-          updated_at: string
-          usage_count: number | null
-        }
-        Insert: {
-          confidence_score: number
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_applied?: string | null
-          learned_from_source?: string | null
-          pattern_category: string
-          pattern_description: string
-          pattern_type: string
-          supporting_evidence?: Json
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Update: {
-          confidence_score?: number
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_applied?: string | null
-          learned_from_source?: string | null
-          pattern_category?: string
-          pattern_description?: string
-          pattern_type?: string
-          supporting_evidence?: Json
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      memory_clusters: {
-        Row: {
-          cluster_name: string
-          cluster_type: string
-          confidence_score: number | null
-          created_at: string | null
-          description: string
-          id: string
-          is_active: boolean | null
-          knowledge_items: Json
-          last_accessed: string | null
-          metadata: Json | null
-          related_patterns: string[] | null
-          updated_at: string | null
-          usage_count: number | null
-        }
-        Insert: {
-          cluster_name: string
-          cluster_type: string
-          confidence_score?: number | null
-          created_at?: string | null
-          description: string
-          id?: string
-          is_active?: boolean | null
-          knowledge_items?: Json
-          last_accessed?: string | null
-          metadata?: Json | null
-          related_patterns?: string[] | null
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Update: {
-          cluster_name?: string
-          cluster_type?: string
-          confidence_score?: number | null
-          created_at?: string | null
-          description?: string
-          id?: string
-          is_active?: boolean | null
-          knowledge_items?: Json
-          last_accessed?: string | null
-          metadata?: Json | null
-          related_patterns?: string[] | null
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      memory_consolidation: {
-        Row: {
-          cleanup_actions_taken: Json | null
-          completed_at: string | null
-          consolidation_date: string
-          consolidation_type: string
-          created_at: string
-          id: string
-          insights_generated: Json | null
-          items_processed: number | null
-          patterns_discovered: number | null
-          processing_time_ms: number | null
-          status: string | null
-        }
-        Insert: {
-          cleanup_actions_taken?: Json | null
-          completed_at?: string | null
-          consolidation_date: string
-          consolidation_type: string
-          created_at?: string
-          id?: string
-          insights_generated?: Json | null
-          items_processed?: number | null
-          patterns_discovered?: number | null
-          processing_time_ms?: number | null
-          status?: string | null
-        }
-        Update: {
-          cleanup_actions_taken?: Json | null
-          completed_at?: string | null
-          consolidation_date?: string
-          consolidation_type?: string
-          created_at?: string
-          id?: string
-          insights_generated?: Json | null
-          items_processed?: number | null
-          patterns_discovered?: number | null
-          processing_time_ms?: number | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      messages: {
-        Row: {
-          action_completed: boolean | null
-          confidence_score: number | null
-          content: string
-          conversation_id: string
-          created_at: string
-          error_details: Json | null
-          id: string
-          intent_detected: string | null
-          message_type: string | null
-          metadata: Json | null
-          parent_message_id: string | null
-          processing_time_ms: number | null
-          related_messages: string[] | null
-          requires_action: boolean | null
-          role: string
-          tokens_used: number | null
-          tool_calls: Json | null
-          tool_results: Json | null
-        }
-        Insert: {
-          action_completed?: boolean | null
-          confidence_score?: number | null
-          content: string
-          conversation_id: string
-          created_at?: string
-          error_details?: Json | null
-          id?: string
-          intent_detected?: string | null
-          message_type?: string | null
-          metadata?: Json | null
-          parent_message_id?: string | null
-          processing_time_ms?: number | null
-          related_messages?: string[] | null
-          requires_action?: boolean | null
-          role: string
-          tokens_used?: number | null
-          tool_calls?: Json | null
-          tool_results?: Json | null
-        }
-        Update: {
-          action_completed?: boolean | null
-          confidence_score?: number | null
-          content?: string
-          conversation_id?: string
-          created_at?: string
-          error_details?: Json | null
-          id?: string
-          intent_detected?: string | null
-          message_type?: string | null
-          metadata?: Json | null
-          parent_message_id?: string | null
-          processing_time_ms?: number | null
-          related_messages?: string[] | null
-          requires_action?: boolean | null
-          role?: string
-          tokens_used?: number | null
-          tool_calls?: Json | null
-          tool_results?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_parent_message_id_fkey"
-            columns: ["parent_message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      patterns: {
-        Row: {
-          confidence: number | null
-          created_at: string | null
-          description: string
-          evidence: Json | null
-          id: string
-          is_active: boolean | null
-          metadata: Json | null
-          model_version: string
-          outcomes: Json | null
-          pattern_category: string
-          pattern_type: string
-          source: string
-          success_rate: number | null
-          triggers: Json | null
-          updated_at: string | null
-          usage_count: number | null
-        }
-        Insert: {
-          confidence?: number | null
-          created_at?: string | null
-          description: string
-          evidence?: Json | null
-          id?: string
-          is_active?: boolean | null
-          metadata?: Json | null
-          model_version: string
-          outcomes?: Json | null
-          pattern_category: string
-          pattern_type: string
-          source: string
-          success_rate?: number | null
-          triggers?: Json | null
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Update: {
-          confidence?: number | null
-          created_at?: string | null
-          description?: string
-          evidence?: Json | null
-          id?: string
-          is_active?: boolean | null
-          metadata?: Json | null
-          model_version?: string
-          outcomes?: Json | null
-          pattern_category?: string
-          pattern_type?: string
-          source?: string
-          success_rate?: number | null
-          triggers?: Json | null
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      performance_metrics: {
-        Row: {
-          agent_type: string
-          avg_response_time_ms: number | null
-          failed_requests: number | null
-          fallback_requests: number | null
-          id: string
-          metric_date: string
-          quality_metrics: Json | null
-          successful_requests: number | null
-          total_cost_usd: number | null
-          total_requests: number | null
-          total_tokens_used: number | null
-        }
-        Insert: {
-          agent_type: string
-          avg_response_time_ms?: number | null
-          failed_requests?: number | null
-          fallback_requests?: number | null
-          id?: string
-          metric_date: string
-          quality_metrics?: Json | null
-          successful_requests?: number | null
-          total_cost_usd?: number | null
-          total_requests?: number | null
-          total_tokens_used?: number | null
-        }
-        Update: {
-          agent_type?: string
-          avg_response_time_ms?: number | null
-          failed_requests?: number | null
-          fallback_requests?: number | null
-          id?: string
-          metric_date?: string
-          quality_metrics?: Json | null
-          successful_requests?: number | null
-          total_cost_usd?: number | null
-          total_requests?: number | null
-          total_tokens_used?: number | null
-        }
-        Relationships: []
-      }
-      response_templates: {
-        Row: {
-          agent_type: string | null
-          complexity_level: number | null
-          created_at: string
-          effectiveness_score: number | null
-          id: string
-          is_active: boolean | null
-          template_category: string
-          template_content: string
-          template_name: string
-          template_variables: Json | null
-          tone: string | null
-          trigger_conditions: Json
-          updated_at: string
-          usage_count: number | null
-        }
-        Insert: {
-          agent_type?: string | null
-          complexity_level?: number | null
-          created_at?: string
-          effectiveness_score?: number | null
-          id?: string
-          is_active?: boolean | null
-          template_category: string
-          template_content: string
-          template_name: string
-          template_variables?: Json | null
-          tone?: string | null
-          trigger_conditions?: Json
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Update: {
-          agent_type?: string | null
-          complexity_level?: number | null
-          created_at?: string
-          effectiveness_score?: number | null
-          id?: string
-          is_active?: boolean | null
-          template_category?: string
-          template_content?: string
-          template_name?: string
-          template_variables?: Json | null
-          tone?: string | null
-          trigger_conditions?: Json
-          updated_at?: string
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
-      system_health: {
-        Row: {
-          checked_at: string | null
-          component: string
-          id: string
-          metadata: Json | null
-          metric_name: string
-          metric_unit: string | null
-          metric_value: number
-          status: string | null
-        }
-        Insert: {
-          checked_at?: string | null
-          component: string
-          id?: string
-          metadata?: Json | null
-          metric_name: string
-          metric_unit?: string | null
-          metric_value: number
-          status?: string | null
-        }
-        Update: {
-          checked_at?: string | null
-          component?: string
-          id?: string
-          metadata?: Json | null
-          metric_name?: string
-          metric_unit?: string | null
-          metric_value?: number
-          status?: string | null
-        }
-        Relationships: []
-      }
-      system_metrics: {
-        Row: {
-          component: string
-          created_at: string | null
-          id: string
-          metadata: Json | null
-          metric_name: string
-          metric_timestamp: string | null
-          metric_unit: string | null
-          metric_value: number
-        }
-        Insert: {
-          component: string
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          metric_name: string
-          metric_timestamp?: string | null
-          metric_unit?: string | null
-          metric_value: number
-        }
-        Update: {
-          component?: string
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          metric_name?: string
-          metric_timestamp?: string | null
-          metric_unit?: string | null
-          metric_value?: number
-        }
-        Relationships: []
-      }
-      tool_usage_patterns: {
-        Row: {
-          created_at: string
-          execution_time_avg_ms: number | null
-          id: string
-          is_recommended: boolean | null
-          last_used: string | null
-          learned_optimizations: Json | null
-          success_indicators: Json | null
-          success_rate: number | null
-          tool_name: string
-          typical_parameters: Json | null
-          updated_at: string
-          usage_context: Json
-          usage_count: number | null
-          user_satisfaction_avg: number | null
-        }
-        Insert: {
-          created_at?: string
-          execution_time_avg_ms?: number | null
-          id?: string
-          is_recommended?: boolean | null
-          last_used?: string | null
-          learned_optimizations?: Json | null
-          success_indicators?: Json | null
-          success_rate?: number | null
-          tool_name: string
-          typical_parameters?: Json | null
-          updated_at?: string
-          usage_context: Json
-          usage_count?: number | null
-          user_satisfaction_avg?: number | null
-        }
-        Update: {
-          created_at?: string
-          execution_time_avg_ms?: number | null
-          id?: string
-          is_recommended?: boolean | null
-          last_used?: string | null
-          learned_optimizations?: Json | null
-          success_indicators?: Json | null
-          success_rate?: number | null
-          tool_name?: string
-          typical_parameters?: Json | null
-          updated_at?: string
-          usage_context?: Json
-          usage_count?: number | null
-          user_satisfaction_avg?: number | null
-        }
-        Relationships: []
-      }
-      user_preferences: {
-        Row: {
-          confidence_score: number | null
-          created_at: string
-          id: string
-          last_confirmed_at: string | null
-          learned_from_interactions: number | null
-          preference_type: string
-          preference_value: Json
-          session_id: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          confidence_score?: number | null
-          created_at?: string
-          id?: string
-          last_confirmed_at?: string | null
-          learned_from_interactions?: number | null
-          preference_type: string
-          preference_value: Json
-          session_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          confidence_score?: number | null
-          created_at?: string
-          id?: string
-          last_confirmed_at?: string | null
-          learned_from_interactions?: number | null
-          preference_type?: string
-          preference_value?: Json
-          session_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      auto_resolve_issues: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          issue_resolved: string
-          resolution_details: string
-          confidence_score: number
-        }[]
-      }
-      check_system_health: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          component: string
-          status: string
-          details: Json
-        }[]
-      }
-      cleanup_expired_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      detect_intent: {
-        Args: { p_message_content: string; p_context?: Json }
-        Returns: {
-          intent_name: string
-          confidence_score: number
-          suggested_actions: Json
-        }[]
-      }
-      get_conversation_context: {
-        Args: { p_conversation_id: string; p_context_keys?: string[] }
-        Returns: Json
-      }
-      get_proactive_suggestions: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          suggestion: string
-          reasoning: string
-          action_command: string
-          priority: number
-        }[]
-      }
-      get_relevant_patterns: {
-        Args: { p_context_type: string; p_context_data: Json; p_limit?: number }
-        Returns: {
-          pattern_id: string
-          pattern_description: string
-          confidence_score: number
-          usage_count: number
-        }[]
-      }
-      get_response_template: {
-        Args: {
-          p_category: string
-          p_agent_type: string
-          p_context?: Json
-          p_user_preferences?: Json
-        }
-        Returns: {
-          template_content: string
-          template_variables: Json
-          tone: string
-        }[]
-      }
-      learn_user_preference: {
-        Args: {
-          p_user_id: string
-          p_session_id: string
-          p_preference_type: string
-          p_preference_value: Json
-          p_confidence?: number
-        }
-        Returns: undefined
-      }
-      record_learning: {
-        Args: {
-          p_pattern_type: string
-          p_pattern_category: string
-          p_description: string
-          p_confidence: number
-          p_evidence: Json
-          p_source: string
-        }
-        Returns: string
-      }
-      record_tool_usage: {
-        Args: {
-          p_tool_name: string
-          p_context: Json
-          p_parameters: Json
-          p_execution_time_ms: number
-          p_success: boolean
-          p_user_satisfaction?: number
-        }
-        Returns: undefined
-      }
-      update_conversation_context: {
-        Args: {
-          p_conversation_id: string
-          p_context_key: string
-          p_context_value: Json
-          p_priority?: number
-          p_expires_at?: string
-        }
-        Returns: undefined
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       ai_action_executions: {
@@ -4121,6 +640,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "analytics_events_question_id_fkey"
             columns: ["question_id"]
@@ -5085,7 +1611,7 @@ export type Database = {
           {
             foreignKeyName: "bill_content_analysis_bill_id_fkey"
             columns: ["bill_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "congressional_bills"
             referencedColumns: ["id"]
           },
@@ -5122,6 +1648,13 @@ export type Database = {
             columns: ["bill_id"]
             isOneToOne: false
             referencedRelation: "congressional_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_cosponsors_cosponsor_id_fkey"
+            columns: ["cosponsor_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
             referencedColumns: ["id"]
           },
           {
@@ -5166,79 +1699,6 @@ export type Database = {
           {
             foreignKeyName: "bill_relationships_related_bill_id_fkey"
             columns: ["related_bill_id"]
-            isOneToOne: false
-            referencedRelation: "congressional_bills"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bill_subjects: {
-        Row: {
-          bill_id: string
-          created_at: string | null
-          id: string
-          is_primary_subject: boolean | null
-          subject_name: string
-        }
-        Insert: {
-          bill_id: string
-          created_at?: string | null
-          id?: string
-          is_primary_subject?: boolean | null
-          subject_name: string
-        }
-        Update: {
-          bill_id?: string
-          created_at?: string | null
-          id?: string
-          is_primary_subject?: boolean | null
-          subject_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bill_subjects_bill_id_fkey"
-            columns: ["bill_id"]
-            isOneToOne: false
-            referencedRelation: "congressional_bills"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bill_summaries: {
-        Row: {
-          action_date: string
-          action_description: string
-          bill_id: string
-          congress_api_last_update: string | null
-          created_at: string | null
-          id: string
-          summary_text: string
-          version_code: string
-        }
-        Insert: {
-          action_date: string
-          action_description: string
-          bill_id: string
-          congress_api_last_update?: string | null
-          created_at?: string | null
-          id?: string
-          summary_text: string
-          version_code: string
-        }
-        Update: {
-          action_date?: string
-          action_description?: string
-          bill_id?: string
-          congress_api_last_update?: string | null
-          created_at?: string | null
-          id?: string
-          summary_text?: string
-          version_code?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bill_summaries_bill_id_fkey"
-            columns: ["bill_id"]
             isOneToOne: false
             referencedRelation: "congressional_bills"
             referencedColumns: ["id"]
@@ -6813,6 +3273,74 @@ export type Database = {
             foreignKeyName: "committee_memberships_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_memberships_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congressional_advocacy_records: {
+        Row: {
+          advocacy_content: string
+          advocacy_date: string
+          advocacy_stance: string
+          advocacy_type: string
+          bill_id: string
+          created_at: string | null
+          id: string
+          media_source: string | null
+          member_id: string
+          source_url: string | null
+        }
+        Insert: {
+          advocacy_content: string
+          advocacy_date: string
+          advocacy_stance: string
+          advocacy_type: string
+          bill_id: string
+          created_at?: string | null
+          id?: string
+          media_source?: string | null
+          member_id: string
+          source_url?: string | null
+        }
+        Update: {
+          advocacy_content?: string
+          advocacy_date?: string
+          advocacy_stance?: string
+          advocacy_type?: string
+          bill_id?: string
+          created_at?: string | null
+          id?: string
+          media_source?: string | null
+          member_id?: string
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congressional_advocacy_records_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_advocacy_records_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_advocacy_records_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -6899,6 +3427,13 @@ export type Database = {
             foreignKeyName: "congressional_bills_primary_sponsor_id_fkey"
             columns: ["primary_sponsor_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_bills_primary_sponsor_id_fkey"
+            columns: ["primary_sponsor_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -6950,6 +3485,119 @@ export type Database = {
             columns: ["parent_committee_id"]
             isOneToOne: false
             referencedRelation: "congressional_committees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congressional_member_positions: {
+        Row: {
+          bill_id: string
+          confidence_level: number | null
+          created_at: string | null
+          id: string
+          member_id: string
+          position_date: string
+          position_source: string
+          position_text: string | null
+          position_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          bill_id: string
+          confidence_level?: number | null
+          created_at?: string | null
+          id?: string
+          member_id: string
+          position_date: string
+          position_source: string
+          position_text?: string | null
+          position_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          bill_id?: string
+          confidence_level?: number | null
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          position_date?: string
+          position_source?: string
+          position_text?: string | null
+          position_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congressional_member_positions_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_member_positions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_member_positions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congressional_member_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          member_id: string
+          party_affiliation: string | null
+          state: string | null
+          vote_id: string
+          vote_position: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          member_id: string
+          party_affiliation?: string | null
+          state?: string | null
+          vote_id: string
+          vote_position: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          party_affiliation?: string | null
+          state?: string | null
+          vote_id?: string
+          vote_position?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congressional_member_votes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_member_votes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_member_votes_vote_id_fkey"
+            columns: ["vote_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_votes"
             referencedColumns: ["id"]
           },
         ]
@@ -7028,6 +3676,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "congressional_photos_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "congressional_photos_member_id_fkey"
             columns: ["member_id"]
@@ -7202,6 +3857,13 @@ export type Database = {
             foreignKeyName: "congressional_terms_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_terms_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -7209,80 +3871,441 @@ export type Database = {
       }
       congressional_votes: {
         Row: {
+          bill_id: string | null
           chamber: string
           congress_api_id: string
           congress_number: number
-          controversy_score: number | null
           created_at: string | null
-          description: string | null
           id: string
-          party_line_vote: boolean | null
-          question: string
-          related_amendment_id: string | null
-          related_bill_id: string | null
-          result: string
-          session_number: number
+          session: number
+          total_no: number | null
+          total_not_voting: number | null
+          total_present: number | null
+          total_yes: number | null
           updated_at: string | null
-          vote_count_no: number | null
-          vote_count_not_voting: number | null
-          vote_count_present: number | null
-          vote_count_yes: number | null
           vote_date: string
           vote_number: number
+          vote_question: string
+          vote_result: string
           vote_type: string
         }
         Insert: {
+          bill_id?: string | null
           chamber: string
           congress_api_id: string
           congress_number: number
-          controversy_score?: number | null
           created_at?: string | null
-          description?: string | null
           id?: string
-          party_line_vote?: boolean | null
-          question: string
-          related_amendment_id?: string | null
-          related_bill_id?: string | null
-          result: string
-          session_number: number
+          session: number
+          total_no?: number | null
+          total_not_voting?: number | null
+          total_present?: number | null
+          total_yes?: number | null
           updated_at?: string | null
-          vote_count_no?: number | null
-          vote_count_not_voting?: number | null
-          vote_count_present?: number | null
-          vote_count_yes?: number | null
           vote_date: string
           vote_number: number
+          vote_question: string
+          vote_result: string
           vote_type: string
         }
         Update: {
+          bill_id?: string | null
           chamber?: string
           congress_api_id?: string
           congress_number?: number
-          controversy_score?: number | null
           created_at?: string | null
-          description?: string | null
           id?: string
-          party_line_vote?: boolean | null
-          question?: string
-          related_amendment_id?: string | null
-          related_bill_id?: string | null
-          result?: string
-          session_number?: number
+          session?: number
+          total_no?: number | null
+          total_not_voting?: number | null
+          total_present?: number | null
+          total_yes?: number | null
           updated_at?: string | null
-          vote_count_no?: number | null
-          vote_count_not_voting?: number | null
-          vote_count_present?: number | null
-          vote_count_yes?: number | null
           vote_date?: string
           vote_number?: number
+          vote_question?: string
+          vote_result?: string
           vote_type?: string
         }
         Relationships: [
           {
-            foreignKeyName: "congressional_votes_related_bill_id_fkey"
-            columns: ["related_bill_id"]
+            foreignKeyName: "congressional_votes_bill_id_fkey"
+            columns: ["bill_id"]
             isOneToOne: false
             referencedRelation: "congressional_bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congressional_voting_patterns: {
+        Row: {
+          alignment_with_leadership: number | null
+          alignment_with_party: number | null
+          bill_category: string | null
+          congress_number: number
+          created_at: string | null
+          id: string
+          last_calculated: string | null
+          maverick_score: number | null
+          member_id: string
+          missed_votes: number | null
+          no_votes: number | null
+          present_votes: number | null
+          total_votes: number | null
+          updated_at: string | null
+          yes_votes: number | null
+        }
+        Insert: {
+          alignment_with_leadership?: number | null
+          alignment_with_party?: number | null
+          bill_category?: string | null
+          congress_number: number
+          created_at?: string | null
+          id?: string
+          last_calculated?: string | null
+          maverick_score?: number | null
+          member_id: string
+          missed_votes?: number | null
+          no_votes?: number | null
+          present_votes?: number | null
+          total_votes?: number | null
+          updated_at?: string | null
+          yes_votes?: number | null
+        }
+        Update: {
+          alignment_with_leadership?: number | null
+          alignment_with_party?: number | null
+          bill_category?: string | null
+          congress_number?: number
+          created_at?: string | null
+          id?: string
+          last_calculated?: string | null
+          maverick_score?: number | null
+          member_id?: string
+          missed_votes?: number | null
+          no_votes?: number | null
+          present_votes?: number | null
+          total_votes?: number | null
+          updated_at?: string | null
+          yes_votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congressional_voting_patterns_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_voting_patterns_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congressional_voting_scorecards: {
+        Row: {
+          congress_number: number
+          created_at: string | null
+          criteria_used: Json | null
+          generated_date: string | null
+          id: string
+          issue_scores: Json | null
+          key_votes: Json | null
+          maverick_moments: Json | null
+          member_id: string
+          overall_score: number | null
+          scorecard_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          congress_number: number
+          created_at?: string | null
+          criteria_used?: Json | null
+          generated_date?: string | null
+          id?: string
+          issue_scores?: Json | null
+          key_votes?: Json | null
+          maverick_moments?: Json | null
+          member_id: string
+          overall_score?: number | null
+          scorecard_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          congress_number?: number
+          created_at?: string | null
+          criteria_used?: Json | null
+          generated_date?: string | null
+          id?: string
+          issue_scores?: Json | null
+          key_votes?: Json | null
+          maverick_moments?: Json | null
+          member_id?: string
+          overall_score?: number | null
+          scorecard_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congressional_voting_scorecards_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "congressional_voting_scorecards_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      constituent_relationships: {
+        Row: {
+          constituent_a_id: string
+          constituent_b_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_bidirectional: boolean | null
+          relationship_description: string | null
+          relationship_strength: string | null
+          relationship_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          constituent_a_id: string
+          constituent_b_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_bidirectional?: boolean | null
+          relationship_description?: string | null
+          relationship_strength?: string | null
+          relationship_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          constituent_a_id?: string
+          constituent_b_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_bidirectional?: boolean | null
+          relationship_description?: string | null
+          relationship_strength?: string | null
+          relationship_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "constituent_relationships_constituent_a_id_fkey"
+            columns: ["constituent_a_id"]
+            isOneToOne: false
+            referencedRelation: "constituents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "constituent_relationships_constituent_b_id_fkey"
+            columns: ["constituent_b_id"]
+            isOneToOne: false
+            referencedRelation: "constituents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      constituents: {
+        Row: {
+          aliases: string[] | null
+          category: string | null
+          characteristics: Json | null
+          constituent_type: string
+          created_at: string | null
+          created_by: string | null
+          data_quality_score: number | null
+          description: string | null
+          display_color: string | null
+          economic_influence_score: number | null
+          emoji: string | null
+          estimated_size: number | null
+          geographic_scope: string | null
+          geographic_specificity: Json | null
+          hierarchy_level: number | null
+          id: string
+          is_active: boolean | null
+          is_politically_active: boolean | null
+          is_vulnerable_population: boolean | null
+          keywords: string[] | null
+          last_reviewed_at: string | null
+          name: string
+          parent_constituent_id: string | null
+          political_influence_score: number | null
+          priority_level: number | null
+          short_description: string | null
+          size_source: string | null
+          slug: string
+          sources: Json | null
+          translations: Json | null
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          category?: string | null
+          characteristics?: Json | null
+          constituent_type: string
+          created_at?: string | null
+          created_by?: string | null
+          data_quality_score?: number | null
+          description?: string | null
+          display_color?: string | null
+          economic_influence_score?: number | null
+          emoji?: string | null
+          estimated_size?: number | null
+          geographic_scope?: string | null
+          geographic_specificity?: Json | null
+          hierarchy_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_politically_active?: boolean | null
+          is_vulnerable_population?: boolean | null
+          keywords?: string[] | null
+          last_reviewed_at?: string | null
+          name: string
+          parent_constituent_id?: string | null
+          political_influence_score?: number | null
+          priority_level?: number | null
+          short_description?: string | null
+          size_source?: string | null
+          slug: string
+          sources?: Json | null
+          translations?: Json | null
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          category?: string | null
+          characteristics?: Json | null
+          constituent_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          data_quality_score?: number | null
+          description?: string | null
+          display_color?: string | null
+          economic_influence_score?: number | null
+          emoji?: string | null
+          estimated_size?: number | null
+          geographic_scope?: string | null
+          geographic_specificity?: Json | null
+          hierarchy_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_politically_active?: boolean | null
+          is_vulnerable_population?: boolean | null
+          keywords?: string[] | null
+          last_reviewed_at?: string | null
+          name?: string
+          parent_constituent_id?: string | null
+          political_influence_score?: number | null
+          priority_level?: number | null
+          short_description?: string | null
+          size_source?: string | null
+          slug?: string
+          sources?: Json | null
+          translations?: Json | null
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "constituents_parent_constituent_id_fkey"
+            columns: ["parent_constituent_id"]
+            isOneToOne: false
+            referencedRelation: "constituents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_constituents: {
+        Row: {
+          confidence_level: number | null
+          constituent_id: string
+          content_id: string
+          content_type: string
+          created_at: string | null
+          created_by: string | null
+          economic_impact_amount: number | null
+          economic_impact_currency: string | null
+          end_date: string | null
+          estimated_people_affected: number | null
+          id: string
+          impact_areas: string[] | null
+          impact_description: string | null
+          impact_severity: string | null
+          impact_source: string | null
+          impact_timeframe: string | null
+          impact_type: string | null
+          is_active: boolean | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_level?: number | null
+          constituent_id: string
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          created_by?: string | null
+          economic_impact_amount?: number | null
+          economic_impact_currency?: string | null
+          end_date?: string | null
+          estimated_people_affected?: number | null
+          id?: string
+          impact_areas?: string[] | null
+          impact_description?: string | null
+          impact_severity?: string | null
+          impact_source?: string | null
+          impact_timeframe?: string | null
+          impact_type?: string | null
+          is_active?: boolean | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_level?: number | null
+          constituent_id?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          economic_impact_amount?: number | null
+          economic_impact_currency?: string | null
+          end_date?: string | null
+          estimated_people_affected?: number | null
+          id?: string
+          impact_areas?: string[] | null
+          impact_description?: string | null
+          impact_severity?: string | null
+          impact_source?: string | null
+          impact_timeframe?: string | null
+          impact_type?: string | null
+          is_active?: boolean | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_constituents_constituent_id_fkey"
+            columns: ["constituent_id"]
+            isOneToOne: false
+            referencedRelation: "constituents"
             referencedColumns: ["id"]
           },
         ]
@@ -7954,6 +4977,13 @@ export type Database = {
             columns: ["collection_id"]
             isOneToOne: false
             referencedRelation: "public_collections_with_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_collection_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
             referencedColumns: ["id"]
           },
           {
@@ -8977,6 +6007,13 @@ export type Database = {
             foreignKeyName: "extracted_entities_linked_public_figure_id_fkey"
             columns: ["linked_public_figure_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extracted_entities_linked_public_figure_id_fkey"
+            columns: ["linked_public_figure_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -9081,6 +6118,13 @@ export type Database = {
             foreignKeyName: "fact_check_logs_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_check_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -9123,12 +6167,14 @@ export type Database = {
           event_type: string
           figure_id: string | null
           id: string
+          is_active: boolean | null
           media_coverage_scale: string | null
           policy_areas: string[] | null
           quiz_potential: number | null
           related_figures: string[] | null
           significance_level: number | null
           sources: Json | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -9138,12 +6184,14 @@ export type Database = {
           event_type: string
           figure_id?: string | null
           id?: string
+          is_active?: boolean | null
           media_coverage_scale?: string | null
           policy_areas?: string[] | null
           quiz_potential?: number | null
           related_figures?: string[] | null
           significance_level?: number | null
           sources?: Json | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -9153,14 +6201,23 @@ export type Database = {
           event_type?: string
           figure_id?: string | null
           id?: string
+          is_active?: boolean | null
           media_coverage_scale?: string | null
           policy_areas?: string[] | null
           quiz_potential?: number | null
           related_figures?: string[] | null
           significance_level?: number | null
           sources?: Json | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "figure_events_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "figure_events_figure_id_fkey"
             columns: ["figure_id"]
@@ -9230,6 +6287,13 @@ export type Database = {
             foreignKeyName: "figure_organizations_figure_id_fkey"
             columns: ["figure_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_organizations_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -9293,6 +6357,13 @@ export type Database = {
             foreignKeyName: "figure_policy_positions_figure_id_fkey"
             columns: ["figure_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_policy_positions_figure_id_fkey"
+            columns: ["figure_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -9310,6 +6381,7 @@ export type Database = {
           performance_metrics: Json | null
           primary_figure_id: string | null
           topic_id: string | null
+          updated_at: string | null
         }
         Insert: {
           content_themes?: string[] | null
@@ -9322,6 +6394,7 @@ export type Database = {
           performance_metrics?: Json | null
           primary_figure_id?: string | null
           topic_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           content_themes?: string[] | null
@@ -9334,8 +6407,16 @@ export type Database = {
           performance_metrics?: Json | null
           primary_figure_id?: string | null
           topic_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "figure_quiz_topics_primary_figure_id_fkey"
+            columns: ["primary_figure_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "figure_quiz_topics_primary_figure_id_fkey"
             columns: ["primary_figure_id"]
@@ -9411,7 +6492,21 @@ export type Database = {
             foreignKeyName: "figure_relationships_figure_a_id_fkey"
             columns: ["figure_a_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_relationships_figure_a_id_fkey"
+            columns: ["figure_a_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "figure_relationships_figure_b_id_fkey"
+            columns: ["figure_b_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
             referencedColumns: ["id"]
           },
           {
@@ -10724,7 +7819,7 @@ export type Database = {
           is_private: boolean | null
           is_public: boolean | null
           join_code: string | null
-          lms_platform: Database["school"]["Enums"]["lms_platform"] | null
+          lms_platform: "google_classroom" | "clever" | null
           max_difficulty_level: number | null
           max_members: number | null
           milestone_data: Json | null
@@ -10791,7 +7886,7 @@ export type Database = {
           is_private?: boolean | null
           is_public?: boolean | null
           join_code?: string | null
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
+          lms_platform?: "google_classroom" | "clever" | null
           max_difficulty_level?: number | null
           max_members?: number | null
           milestone_data?: Json | null
@@ -10858,7 +7953,7 @@ export type Database = {
           is_private?: boolean | null
           is_public?: boolean | null
           join_code?: string | null
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
+          lms_platform?: "google_classroom" | "clever" | null
           max_difficulty_level?: number | null
           max_members?: number | null
           milestone_data?: Json | null
@@ -10970,6 +8065,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "legislative_documents_primary_sponsor_id_fkey"
+            columns: ["primary_sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "legislative_documents_primary_sponsor_id_fkey"
             columns: ["primary_sponsor_id"]
@@ -11348,14 +8450,14 @@ export type Database = {
             foreignKeyName: "member_votes_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
-            referencedRelation: "public_figures"
+            referencedRelation: "congressional_photo_status"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "member_votes_vote_id_fkey"
-            columns: ["vote_id"]
+            foreignKeyName: "member_votes_member_id_fkey"
+            columns: ["member_id"]
             isOneToOne: false
-            referencedRelation: "congressional_votes"
+            referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
         ]
@@ -14383,6 +11485,13 @@ export type Database = {
             foreignKeyName: "proceeding_participants_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proceeding_participants_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
             referencedRelation: "public_figures"
             referencedColumns: ["id"]
           },
@@ -14522,6 +11631,13 @@ export type Database = {
             foreignKeyName: "progress_question_responses_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -14642,22 +11758,26 @@ export type Database = {
           birth_year: number | null
           book_publications: string[] | null
           career_highlights: string[] | null
+          city: string | null
           civicsense_priority: number | null
           committee_memberships: string[] | null
           congress_api_last_sync: string | null
           congress_member_type: string | null
           congressional_tenure_end: string | null
           congressional_tenure_start: string | null
+          contact_info: Json | null
           content_difficulty_level: number | null
           content_review_status: string | null
           created_at: string | null
           current_district: number | null
           current_positions: string[] | null
           current_residence_state: string | null
+          current_role: string | null
           current_state: string | null
           date_of_birth: string | null
           description: string | null
           display_name: string | null
+          display_order: number | null
           education_background: string | null
           fact_check_status: string | null
           financial_interests: string[] | null
@@ -14682,8 +11802,10 @@ export type Database = {
           party_affiliation: string | null
           photo_last_updated: string | null
           photo_source: string | null
+          photo_url: string | null
           policy_flip_flops: Json | null
           primary_role_category: string | null
+          profile_markdown: string | null
           quotable_statements: string[] | null
           region: string | null
           scandals_timeline: Json | null
@@ -14691,6 +11813,7 @@ export type Database = {
           social_media: Json | null
           social_media_handles: Json | null
           sources: Json | null
+          thumbnail_url: string | null
           trump_relationship_type: string | null
           updated_at: string | null
           voting_record_url: string | null
@@ -14703,22 +11826,26 @@ export type Database = {
           birth_year?: number | null
           book_publications?: string[] | null
           career_highlights?: string[] | null
+          city?: string | null
           civicsense_priority?: number | null
           committee_memberships?: string[] | null
           congress_api_last_sync?: string | null
           congress_member_type?: string | null
           congressional_tenure_end?: string | null
           congressional_tenure_start?: string | null
+          contact_info?: Json | null
           content_difficulty_level?: number | null
           content_review_status?: string | null
           created_at?: string | null
           current_district?: number | null
           current_positions?: string[] | null
           current_residence_state?: string | null
+          current_role?: string | null
           current_state?: string | null
           date_of_birth?: string | null
           description?: string | null
           display_name?: string | null
+          display_order?: number | null
           education_background?: string | null
           fact_check_status?: string | null
           financial_interests?: string[] | null
@@ -14743,8 +11870,10 @@ export type Database = {
           party_affiliation?: string | null
           photo_last_updated?: string | null
           photo_source?: string | null
+          photo_url?: string | null
           policy_flip_flops?: Json | null
           primary_role_category?: string | null
+          profile_markdown?: string | null
           quotable_statements?: string[] | null
           region?: string | null
           scandals_timeline?: Json | null
@@ -14752,6 +11881,7 @@ export type Database = {
           social_media?: Json | null
           social_media_handles?: Json | null
           sources?: Json | null
+          thumbnail_url?: string | null
           trump_relationship_type?: string | null
           updated_at?: string | null
           voting_record_url?: string | null
@@ -14764,22 +11894,26 @@ export type Database = {
           birth_year?: number | null
           book_publications?: string[] | null
           career_highlights?: string[] | null
+          city?: string | null
           civicsense_priority?: number | null
           committee_memberships?: string[] | null
           congress_api_last_sync?: string | null
           congress_member_type?: string | null
           congressional_tenure_end?: string | null
           congressional_tenure_start?: string | null
+          contact_info?: Json | null
           content_difficulty_level?: number | null
           content_review_status?: string | null
           created_at?: string | null
           current_district?: number | null
           current_positions?: string[] | null
           current_residence_state?: string | null
+          current_role?: string | null
           current_state?: string | null
           date_of_birth?: string | null
           description?: string | null
           display_name?: string | null
+          display_order?: number | null
           education_background?: string | null
           fact_check_status?: string | null
           financial_interests?: string[] | null
@@ -14804,8 +11938,10 @@ export type Database = {
           party_affiliation?: string | null
           photo_last_updated?: string | null
           photo_source?: string | null
+          photo_url?: string | null
           policy_flip_flops?: Json | null
           primary_role_category?: string | null
+          profile_markdown?: string | null
           quotable_statements?: string[] | null
           region?: string | null
           scandals_timeline?: Json | null
@@ -14813,6 +11949,7 @@ export type Database = {
           social_media?: Json | null
           social_media_handles?: Json | null
           sources?: Json | null
+          thumbnail_url?: string | null
           trump_relationship_type?: string | null
           updated_at?: string | null
           voting_record_url?: string | null
@@ -14921,6 +12058,13 @@ export type Database = {
             foreignKeyName: "question_feedback_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -14980,6 +12124,13 @@ export type Database = {
           skill_weight?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "question_skills_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "question_skills_question_id_fkey"
             columns: ["question_id"]
@@ -15065,6 +12216,13 @@ export type Database = {
           source_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "question_source_links_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "question_source_links_question_id_fkey"
             columns: ["question_id"]
@@ -15277,6 +12435,7 @@ export type Database = {
           fact_check_status: string | null
           hint: string
           id: string
+          interactive_data: Json | null
           is_active: boolean | null
           last_fact_check: string | null
           option_a: string | null
@@ -15303,6 +12462,7 @@ export type Database = {
           fact_check_status?: string | null
           hint: string
           id?: string
+          interactive_data?: Json | null
           is_active?: boolean | null
           last_fact_check?: string | null
           option_a?: string | null
@@ -15329,6 +12489,7 @@ export type Database = {
           fact_check_status?: string | null
           hint?: string
           id?: string
+          interactive_data?: Json | null
           is_active?: boolean | null
           last_fact_check?: string | null
           option_a?: string | null
@@ -15945,6 +13106,13 @@ export type Database = {
           victory_conditions?: string[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scenario_characters_inspired_by_figure_id_fkey"
+            columns: ["inspired_by_figure_id"]
+            isOneToOne: false
+            referencedRelation: "congressional_photo_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scenario_characters_inspired_by_figure_id_fkey"
             columns: ["inspired_by_figure_id"]
@@ -17776,6 +14944,13 @@ export type Database = {
             foreignKeyName: "fk_question"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_question"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -18865,6 +16040,13 @@ export type Database = {
             columns: ["deck_id"]
             isOneToOne: false
             referencedRelation: "user_custom_decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_deck_content_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
             referencedColumns: ["id"]
           },
           {
@@ -19970,6 +17152,13 @@ export type Database = {
             foreignKeyName: "user_question_memory_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_question_memory_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -20064,6 +17253,13 @@ export type Database = {
             columns: ["attempt_id"]
             isOneToOne: false
             referencedRelation: "user_quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interactive_questions"
             referencedColumns: ["id"]
           },
           {
@@ -21546,6 +18742,27 @@ export type Database = {
         }
         Relationships: []
       }
+      congressional_photo_status: {
+        Row: {
+          bioguide_id: string | null
+          congress_member_type: string | null
+          current_district: number | null
+          current_state: string | null
+          display_name: string | null
+          full_name: string | null
+          id: string | null
+          local_path: string | null
+          official_photo_url: string | null
+          optimization_complete: boolean | null
+          party_affiliation: string | null
+          photo_last_updated: string | null
+          photo_record_created: string | null
+          photo_source: string | null
+          photo_status: string | null
+          thumbnail_url: string | null
+        }
+        Relationships: []
+      }
       content_performance: {
         Row: {
           average_rating: number | null
@@ -21848,6 +19065,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      interactive_questions: {
+        Row: {
+          category: string | null
+          correct_answer: string | null
+          created_at: string | null
+          difficulty_level: number | null
+          explanation: string | null
+          hint: string | null
+          id: string | null
+          interactive_data: Json | null
+          is_active: boolean | null
+          question: string | null
+          question_number: number | null
+          question_type: string | null
+          sources: Json | null
+          tags: Json | null
+          topic_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          explanation?: string | null
+          hint?: string | null
+          id?: string | null
+          interactive_data?: Json | null
+          is_active?: boolean | null
+          question?: string | null
+          question_number?: number | null
+          question_type?: string | null
+          sources?: Json | null
+          tags?: Json | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          explanation?: string | null
+          hint?: string | null
+          id?: string | null
+          interactive_data?: Json | null
+          is_active?: boolean | null
+          question?: string | null
+          question_number?: number | null
+          question_type?: string | null
+          sources?: Json | null
+          tags?: Json | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       lesson_structure: {
         Row: {
@@ -22540,6 +19814,13 @@ export type Database = {
             foreignKeyName: "analytics_events_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "interactive_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "question_feedback_stats"
             referencedColumns: ["question_id"]
           },
@@ -23145,6 +20426,10 @@ export type Database = {
         Args: { target_user_id: string; step_name: string; step_data?: Json }
         Returns: boolean
       }
+      congressional_photo_exists: {
+        Args: { bioguide_id: string; congress_number?: number; size?: string }
+        Returns: boolean
+      }
       convert_guest_civics_results: {
         Args: { p_guest_token: string; p_user_id: string }
         Returns: number
@@ -23411,6 +20696,10 @@ export type Database = {
           collection_id: string
         }[]
       }
+      get_congressional_photo_url: {
+        Args: { bioguide_id: string; congress_number?: number; size?: string }
+        Returns: string
+      }
       get_content_relationships: {
         Args: { p_content_type: string; p_content_id: string; p_limit?: number }
         Returns: {
@@ -23518,6 +20807,36 @@ export type Database = {
           latest_level: string
           has_converted: boolean
           converted_user_id: string
+        }[]
+      }
+      get_interactive_questions_by_type: {
+        Args: { interactive_type: string }
+        Returns: {
+          category: string
+          correct_answer: string
+          created_at: string | null
+          difficulty_level: number | null
+          explanation: string
+          fact_check_notes: Json | null
+          fact_check_status: string | null
+          hint: string
+          id: string
+          interactive_data: Json | null
+          is_active: boolean | null
+          last_fact_check: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question: string
+          question_number: number | null
+          question_type: string
+          sources: Json | null
+          tags: Json | null
+          text: string | null
+          topic_id: string
+          translations: Json | null
+          updated_at: string | null
         }[]
       }
       get_jobs_ready_for_execution: {
@@ -24659,6 +21978,10 @@ export type Database = {
           severity: string
         }[]
       }
+      validate_drag_and_drop_data: {
+        Args: { data: Json }
+        Returns: boolean
+      }
       validate_function_table_types: {
         Args: { function_name_param: string; table_name_param: string }
         Returns: {
@@ -24670,6 +21993,10 @@ export type Database = {
           types_match: boolean
           mismatch_details: string
         }[]
+      }
+      validate_matching_data: {
+        Args: { data: Json }
+        Returns: boolean
       }
       validate_migration_safety: {
         Args: Record<PropertyKey, never>
@@ -24740,568 +22067,6 @@ export type Database = {
         | "grade_export"
         | "assignment_create"
         | "enrollment_sync"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  school: {
-    Tables: {
-      assignments: {
-        Row: {
-          clever_assignment_id: string | null
-          course_id: string
-          created_at: string
-          created_by: string
-          description: string | null
-          due_date: string | null
-          external_url: string | null
-          google_classroom_assignment_id: string | null
-          id: string
-          lms_platform: Database["school"]["Enums"]["lms_platform"] | null
-          max_points: number
-          quiz_type: string | null
-          section_id: string | null
-          title: string
-          topic_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          clever_assignment_id?: string | null
-          course_id: string
-          created_at?: string
-          created_by: string
-          description?: string | null
-          due_date?: string | null
-          external_url?: string | null
-          google_classroom_assignment_id?: string | null
-          id?: string
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          max_points?: number
-          quiz_type?: string | null
-          section_id?: string | null
-          title: string
-          topic_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          clever_assignment_id?: string | null
-          course_id?: string
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          due_date?: string | null
-          external_url?: string | null
-          google_classroom_assignment_id?: string | null
-          id?: string
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          max_points?: number
-          quiz_type?: string | null
-          section_id?: string | null
-          title?: string
-          topic_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assignments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      course_pod_links: {
-        Row: {
-          course_id: string
-          created_at: string
-          created_by: string
-          grade_passback_enabled: boolean
-          id: string
-          pod_id: string
-          sync_enabled: boolean
-          updated_at: string
-        }
-        Insert: {
-          course_id: string
-          created_at?: string
-          created_by: string
-          grade_passback_enabled?: boolean
-          id?: string
-          pod_id: string
-          sync_enabled?: boolean
-          updated_at?: string
-        }
-        Update: {
-          course_id?: string
-          created_at?: string
-          created_by?: string
-          grade_passback_enabled?: boolean
-          id?: string
-          pod_id?: string
-          sync_enabled?: boolean
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_pod_links_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      courses: {
-        Row: {
-          academic_year: string
-          clever_section_id: string | null
-          created_at: string
-          description: string | null
-          external_course_id: string | null
-          google_classroom_id: string | null
-          grade: string | null
-          grade_level: string | null
-          id: string
-          is_active: boolean
-          lms_platform: Database["school"]["Enums"]["lms_platform"] | null
-          name: string
-          school_id: string
-          section: string | null
-          semester: string | null
-          settings: Json | null
-          subject: string | null
-          teacher_id: string
-          updated_at: string
-        }
-        Insert: {
-          academic_year: string
-          clever_section_id?: string | null
-          created_at?: string
-          description?: string | null
-          external_course_id?: string | null
-          google_classroom_id?: string | null
-          grade?: string | null
-          grade_level?: string | null
-          id?: string
-          is_active?: boolean
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          name: string
-          school_id: string
-          section?: string | null
-          semester?: string | null
-          settings?: Json | null
-          subject?: string | null
-          teacher_id: string
-          updated_at?: string
-        }
-        Update: {
-          academic_year?: string
-          clever_section_id?: string | null
-          created_at?: string
-          description?: string | null
-          external_course_id?: string | null
-          google_classroom_id?: string | null
-          grade?: string | null
-          grade_level?: string | null
-          id?: string
-          is_active?: boolean
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          name?: string
-          school_id?: string
-          section?: string | null
-          semester?: string | null
-          settings?: Json | null
-          subject?: string | null
-          teacher_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "courses_school_id_fkey"
-            columns: ["school_id"]
-            isOneToOne: false
-            referencedRelation: "schools"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      districts: {
-        Row: {
-          code: string
-          contact_email: string | null
-          created_at: string
-          domain: string | null
-          id: string
-          name: string
-          settings: Json | null
-          state: string
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          contact_email?: string | null
-          created_at?: string
-          domain?: string | null
-          id?: string
-          name: string
-          settings?: Json | null
-          state: string
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          contact_email?: string | null
-          created_at?: string
-          domain?: string | null
-          id?: string
-          name?: string
-          settings?: Json | null
-          state?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      enrollments: {
-        Row: {
-          clever_user_id: string | null
-          course_id: string
-          created_at: string
-          email: string | null
-          enrollment_date: string
-          first_name: string | null
-          grade_override: string | null
-          id: string
-          last_name: string | null
-          lms_platform: Database["school"]["Enums"]["lms_platform"] | null
-          role: Database["public"]["Enums"]["course_role"]
-          status: Database["public"]["Enums"]["enrollment_status"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          clever_user_id?: string | null
-          course_id: string
-          created_at?: string
-          email?: string | null
-          enrollment_date?: string
-          first_name?: string | null
-          grade_override?: string | null
-          id?: string
-          last_name?: string | null
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          role?: Database["public"]["Enums"]["course_role"]
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          clever_user_id?: string | null
-          course_id?: string
-          created_at?: string
-          email?: string | null
-          enrollment_date?: string
-          first_name?: string | null
-          grade_override?: string | null
-          id?: string
-          last_name?: string | null
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          role?: Database["public"]["Enums"]["course_role"]
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      schools: {
-        Row: {
-          address: Json | null
-          code: string
-          created_at: string
-          district_id: string
-          id: string
-          name: string
-          principal_email: string | null
-          settings: Json | null
-          updated_at: string
-        }
-        Insert: {
-          address?: Json | null
-          code: string
-          created_at?: string
-          district_id: string
-          id?: string
-          name: string
-          principal_email?: string | null
-          settings?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          address?: Json | null
-          code?: string
-          created_at?: string
-          district_id?: string
-          id?: string
-          name?: string
-          principal_email?: string | null
-          settings?: Json | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "schools_district_id_fkey"
-            columns: ["district_id"]
-            isOneToOne: false
-            referencedRelation: "districts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_grades: {
-        Row: {
-          assignment_id: string
-          created_at: string
-          grade: number
-          id: string
-          lms_platform: Database["school"]["Enums"]["lms_platform"]
-          max_points: number
-          recorded_at: string
-          section_id: string
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          assignment_id: string
-          created_at?: string
-          grade: number
-          id?: string
-          lms_platform: Database["school"]["Enums"]["lms_platform"]
-          max_points?: number
-          recorded_at?: string
-          section_id: string
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          assignment_id?: string
-          created_at?: string
-          grade?: number
-          id?: string
-          lms_platform?: Database["school"]["Enums"]["lms_platform"]
-          max_points?: number
-          recorded_at?: string
-          section_id?: string
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      submissions: {
-        Row: {
-          assignment_id: string
-          created_at: string
-          feedback: string | null
-          grade_synced_at: string | null
-          graded_at: string | null
-          id: string
-          max_score: number | null
-          quiz_attempt_id: string | null
-          score: number | null
-          student_id: string
-          submitted_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          assignment_id: string
-          created_at?: string
-          feedback?: string | null
-          grade_synced_at?: string | null
-          graded_at?: string | null
-          id?: string
-          max_score?: number | null
-          quiz_attempt_id?: string | null
-          score?: number | null
-          student_id: string
-          submitted_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          assignment_id?: string
-          created_at?: string
-          feedback?: string | null
-          grade_synced_at?: string | null
-          graded_at?: string | null
-          id?: string
-          max_score?: number | null
-          quiz_attempt_id?: string | null
-          score?: number | null
-          student_id?: string
-          submitted_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "submissions_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "assignments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sync_logs: {
-        Row: {
-          completed_at: string | null
-          course_id: string | null
-          error_details: Json | null
-          id: string
-          lms_platform: Database["school"]["Enums"]["lms_platform"] | null
-          pod_id: string | null
-          records_failed: number | null
-          records_processed: number | null
-          records_successful: number | null
-          started_at: string
-          started_by: string | null
-          sync_status: Database["public"]["Enums"]["sync_status"]
-          sync_type: Database["public"]["Enums"]["sync_type"]
-        }
-        Insert: {
-          completed_at?: string | null
-          course_id?: string | null
-          error_details?: Json | null
-          id?: string
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          pod_id?: string | null
-          records_failed?: number | null
-          records_processed?: number | null
-          records_successful?: number | null
-          started_at?: string
-          started_by?: string | null
-          sync_status?: Database["public"]["Enums"]["sync_status"]
-          sync_type: Database["public"]["Enums"]["sync_type"]
-        }
-        Update: {
-          completed_at?: string | null
-          course_id?: string | null
-          error_details?: Json | null
-          id?: string
-          lms_platform?: Database["school"]["Enums"]["lms_platform"] | null
-          pod_id?: string | null
-          records_failed?: number | null
-          records_processed?: number | null
-          records_successful?: number | null
-          started_at?: string
-          started_by?: string | null
-          sync_status?: Database["public"]["Enums"]["sync_status"]
-          sync_type?: Database["public"]["Enums"]["sync_type"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sync_logs_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_profiles: {
-        Row: {
-          created_at: string
-          emergency_contact: Json | null
-          employee_id: string | null
-          grade_level: string | null
-          graduation_year: number | null
-          id: string
-          parent_email: string | null
-          role: Database["public"]["Enums"]["school_user_role"]
-          school_district_id: string | null
-          student_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emergency_contact?: Json | null
-          employee_id?: string | null
-          grade_level?: string | null
-          graduation_year?: number | null
-          id?: string
-          parent_email?: string | null
-          role?: Database["public"]["Enums"]["school_user_role"]
-          school_district_id?: string | null
-          student_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emergency_contact?: Json | null
-          employee_id?: string | null
-          grade_level?: string | null
-          graduation_year?: number | null
-          id?: string
-          parent_email?: string | null
-          role?: Database["public"]["Enums"]["school_user_role"]
-          school_district_id?: string | null
-          student_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_profiles_school_district_id_fkey"
-            columns: ["school_district_id"]
-            isOneToOne: false
-            referencedRelation: "districts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      get_lms_integration_status: {
-        Args: { p_pod_id: string }
-        Returns: Json
-      }
-      get_user_school_context: {
-        Args: { user_id?: string }
-        Returns: Json
-      }
-      log_sync_activity: {
-        Args: {
-          p_course_id?: string
-          p_pod_id?: string
-          p_sync_type?: Database["public"]["Enums"]["sync_type"]
-          p_records_processed?: number
-          p_records_successful?: number
-          p_error_details?: Json
-        }
-        Returns: string
-      }
-      switch_pod_lms_platform: {
-        Args: {
-          p_pod_id: string
-          p_new_platform: Database["school"]["Enums"]["lms_platform"]
-          p_external_id: string
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      lms_platform: "google_classroom" | "clever"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -25415,12 +22180,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  admin_panel: {
-    Enums: {},
-  },
-  ai_agent: {
-    Enums: {},
-  },
   public: {
     Enums: {
       course_role: ["student", "teacher", "teaching_assistant", "observer"],
@@ -25456,1858 +22215,4 @@ export const Constants = {
       ],
     },
   },
-  school: {
-    Enums: {
-      lms_platform: ["google_classroom", "clever"],
-    },
-  },
 } as const
-
-// =============================================================================
-// CONVENIENT TYPE EXPORTS FOR EASIER USAGE
-// =============================================================================
-
-// =============================================================================
-// PUBLIC SCHEMA TYPES
-// =============================================================================
-
-// public Tables
-export type DbAiActionExecutions = Database['public']['Tables']['ai_action_executions']['Row']
-export type DbAiCommandAnalytics = Database['public']['Tables']['ai_command_analytics']['Row']
-export type DbAiCommandExecutions = Database['public']['Tables']['ai_command_executions']['Row']
-export type DbAiResearchResults = Database['public']['Tables']['ai_research_results']['Row']
-export type DbAiResearchSessions = Database['public']['Tables']['ai_research_sessions']['Row']
-export type DbAiSourceAnalysis = Database['public']['Tables']['ai_source_analysis']['Row']
-export type DbAiToolUsage = Database['public']['Tables']['ai_tool_usage']['Row']
-export type DbAnalyticsEvents = Database['public']['Tables']['analytics_events']['Row']
-export type DbAppleIapTransactions = Database['public']['Tables']['apple_iap_transactions']['Row']
-export type DbArticleBiasAnalysis = Database['public']['Tables']['article_bias_analysis']['Row']
-export type DbAssessedEntities = Database['public']['Tables']['assessed_entities']['Row']
-export type DbAssessmentEvidence = Database['public']['Tables']['assessment_evidence']['Row']
-export type DbAssessmentFrameworks = Database['public']['Tables']['assessment_frameworks']['Row']
-export type DbAssessmentSummaries = Database['public']['Tables']['assessment_summaries']['Row']
-export type DbAssessments = Database['public']['Tables']['assessments']['Row']
-export type DbAutoGeneratedEvents = Database['public']['Tables']['auto_generated_events']['Row']
-export type DbBadgeRequirements = Database['public']['Tables']['badge_requirements']['Row']
-export type DbBiasDetectionPatterns = Database['public']['Tables']['bias_detection_patterns']['Row']
-export type DbBiasDimensions = Database['public']['Tables']['bias_dimensions']['Row']
-export type DbBiasFeedback = Database['public']['Tables']['bias_feedback']['Row']
-export type DbBiasLearningEvents = Database['public']['Tables']['bias_learning_events']['Row']
-export type DbBillActions = Database['public']['Tables']['bill_actions']['Row']
-export type DbBillContentAnalysis = Database['public']['Tables']['bill_content_analysis']['Row']
-export type DbBillCosponsors = Database['public']['Tables']['bill_cosponsors']['Row']
-export type DbBillRelationships = Database['public']['Tables']['bill_relationships']['Row']
-export type DbBillSubjects = Database['public']['Tables']['bill_subjects']['Row']
-export type DbBillSummaries = Database['public']['Tables']['bill_summaries']['Row']
-export type DbBookmarkAnalytics = Database['public']['Tables']['bookmark_analytics']['Row']
-export type DbBookmarkCollectionItems = Database['public']['Tables']['bookmark_collection_items']['Row']
-export type DbBookmarkCollections = Database['public']['Tables']['bookmark_collections']['Row']
-export type DbBookmarkSnippets = Database['public']['Tables']['bookmark_snippets']['Row']
-export type DbBookmarkTags = Database['public']['Tables']['bookmark_tags']['Row']
-export type DbBookmarks = Database['public']['Tables']['bookmarks']['Row']
-export type DbBoostDefinitions = Database['public']['Tables']['boost_definitions']['Row']
-export type DbCalendarSyncLogs = Database['public']['Tables']['calendar_sync_logs']['Row']
-export type DbCategories = Database['public']['Tables']['categories']['Row']
-export type DbCategorySynonyms = Database['public']['Tables']['category_synonyms']['Row']
-export type DbCivicContentAnalysis = Database['public']['Tables']['civic_content_analysis']['Row']
-export type DbCivicEngagementEvents = Database['public']['Tables']['civic_engagement_events']['Row']
-export type DbCivicsTestAnalytics = Database['public']['Tables']['civics_test_analytics']['Row']
-export type DbCleverUserMapping = Database['public']['Tables']['clever_user_mapping']['Row']
-export type DbCollectionAnalytics = Database['public']['Tables']['collection_analytics']['Row']
-export type DbCollectionAnalyticsDaily = Database['public']['Tables']['collection_analytics_daily']['Row']
-export type DbCollectionAnalyticsEvents = Database['public']['Tables']['collection_analytics_events']['Row']
-export type DbCollectionCollaborators = Database['public']['Tables']['collection_collaborators']['Row']
-export type DbCollectionEngagement = Database['public']['Tables']['collection_engagement']['Row']
-export type DbCollectionItems = Database['public']['Tables']['collection_items']['Row']
-export type DbCollectionPlaySessions = Database['public']['Tables']['collection_play_sessions']['Row']
-export type DbCollectionReviews = Database['public']['Tables']['collection_reviews']['Row']
-export type DbCollectionShares = Database['public']['Tables']['collection_shares']['Row']
-export type DbCollectionSkillProgress = Database['public']['Tables']['collection_skill_progress']['Row']
-export type DbCollections = Database['public']['Tables']['collections']['Row']
-export type DbCommitteeMemberships = Database['public']['Tables']['committee_memberships']['Row']
-export type DbCongressionalBills = Database['public']['Tables']['congressional_bills']['Row']
-export type DbCongressionalCommittees = Database['public']['Tables']['congressional_committees']['Row']
-export type DbCongressionalPhotos = Database['public']['Tables']['congressional_photos']['Row']
-export type DbCongressionalProceedings = Database['public']['Tables']['congressional_proceedings']['Row']
-export type DbCongressionalSessions = Database['public']['Tables']['congressional_sessions']['Row']
-export type DbCongressionalTerms = Database['public']['Tables']['congressional_terms']['Row']
-export type DbCongressionalVotes = Database['public']['Tables']['congressional_votes']['Row']
-export type DbContentDuplicationWarnings = Database['public']['Tables']['content_duplication_warnings']['Row']
-export type DbContentFilteringRules = Database['public']['Tables']['content_filtering_rules']['Row']
-export type DbContentGapsAnalysis = Database['public']['Tables']['content_gaps_analysis']['Row']
-export type DbContentGenerationQueue = Database['public']['Tables']['content_generation_queue']['Row']
-export type DbContentItemSkills = Database['public']['Tables']['content_item_skills']['Row']
-export type DbContentPackages = Database['public']['Tables']['content_packages']['Row']
-export type DbContentPublicationLog = Database['public']['Tables']['content_publication_log']['Row']
-export type DbContentRecommendations = Database['public']['Tables']['content_recommendations']['Row']
-export type DbContentRelationships = Database['public']['Tables']['content_relationships']['Row']
-export type DbContentReviews = Database['public']['Tables']['content_reviews']['Row']
-export type DbCustomCollectionItems = Database['public']['Tables']['custom_collection_items']['Row']
-export type DbCustomContentCollections = Database['public']['Tables']['custom_content_collections']['Row']
-export type DbCustomContentGenerations = Database['public']['Tables']['custom_content_generations']['Row']
-export type DbCustomContentQuestions = Database['public']['Tables']['custom_content_questions']['Row']
-export type DbCustomContentTopics = Database['public']['Tables']['custom_content_topics']['Row']
-export type DbDiscountCodes = Database['public']['Tables']['discount_codes']['Row']
-export type DbDocumentActions = Database['public']['Tables']['document_actions']['Row']
-export type DbDocumentRelationships = Database['public']['Tables']['document_relationships']['Row']
-export type DbDocumentSources = Database['public']['Tables']['document_sources']['Row']
-export type DbDocumentSubjects = Database['public']['Tables']['document_subjects']['Row']
-export type DbElectionInfo = Database['public']['Tables']['election_info']['Row']
-export type DbEventResearchSuggestions = Database['public']['Tables']['event_research_suggestions']['Row']
-export type DbEventTimelineConnections = Database['public']['Tables']['event_timeline_connections']['Row']
-export type DbEvents = Database['public']['Tables']['events']['Row']
-export type DbExtractedEntities = Database['public']['Tables']['extracted_entities']['Row']
-export type DbExtractedRelationships = Database['public']['Tables']['extracted_relationships']['Row']
-export type DbFactCheckLogs = Database['public']['Tables']['fact_check_logs']['Row']
-export type DbFigureEvents = Database['public']['Tables']['figure_events']['Row']
-export type DbFigureOrganizations = Database['public']['Tables']['figure_organizations']['Row']
-export type DbFigurePolicyPositions = Database['public']['Tables']['figure_policy_positions']['Row']
-export type DbFigureQuizTopics = Database['public']['Tables']['figure_quiz_topics']['Row']
-export type DbFigureRelationships = Database['public']['Tables']['figure_relationships']['Row']
-export type DbFriendRequests = Database['public']['Tables']['friend_requests']['Row']
-export type DbGiftCredits = Database['public']['Tables']['gift_credits']['Row']
-export type DbGiftRedemptions = Database['public']['Tables']['gift_redemptions']['Row']
-export type DbGlossaryContentReferences = Database['public']['Tables']['glossary_content_references']['Row']
-export type DbGlossaryGameSessions = Database['public']['Tables']['glossary_game_sessions']['Row']
-export type DbGlossaryGames = Database['public']['Tables']['glossary_games']['Row']
-export type DbGlossaryTermCategories = Database['public']['Tables']['glossary_term_categories']['Row']
-export type DbGlossaryTermRelationships = Database['public']['Tables']['glossary_term_relationships']['Row']
-export type DbGlossaryTerms = Database['public']['Tables']['glossary_terms']['Row']
-export type DbGlossaryUsageAnalytics = Database['public']['Tables']['glossary_usage_analytics']['Row']
-export type DbGuestCivicsTestResults = Database['public']['Tables']['guest_civics_test_results']['Row']
-export type DbGuestUsageAnalytics = Database['public']['Tables']['guest_usage_analytics']['Row']
-export type DbGuestUsageTracking = Database['public']['Tables']['guest_usage_tracking']['Row']
-export type DbImageAbTestResults = Database['public']['Tables']['image_ab_test_results']['Row']
-export type DbImageGenerationAnalytics = Database['public']['Tables']['image_generation_analytics']['Row']
-export type DbIndicatorActions = Database['public']['Tables']['indicator_actions']['Row']
-export type DbIndicatorAssessments = Database['public']['Tables']['indicator_assessments']['Row']
-export type DbIndicatorCategories = Database['public']['Tables']['indicator_categories']['Row']
-export type DbIndicatorContentLinks = Database['public']['Tables']['indicator_content_links']['Row']
-export type DbIndicators = Database['public']['Tables']['indicators']['Row']
-export type DbJobExecutionLogs = Database['public']['Tables']['job_execution_logs']['Row']
-export type DbKeyPolicyPositions = Database['public']['Tables']['key_policy_positions']['Row']
-export type DbKnowledgeConnections = Database['public']['Tables']['knowledge_connections']['Row']
-export type DbLearningObjectives = Database['public']['Tables']['learning_objectives']['Row']
-export type DbLearningPods = Database['public']['Tables']['learning_pods']['Row']
-export type DbLegislativeDocuments = Database['public']['Tables']['legislative_documents']['Row']
-export type DbLessonSteps = Database['public']['Tables']['lesson_steps']['Row']
-export type DbLocationCoverage = Database['public']['Tables']['location_coverage']['Row']
-export type DbMediaOrganizations = Database['public']['Tables']['media_organizations']['Row']
-export type DbMemberIndividualSettings = Database['public']['Tables']['member_individual_settings']['Row']
-export type DbMemberVotes = Database['public']['Tables']['member_votes']['Row']
-export type DbMultiplayerChatMessages = Database['public']['Tables']['multiplayer_chat_messages']['Row']
-export type DbMultiplayerConversationContext = Database['public']['Tables']['multiplayer_conversation_context']['Row']
-export type DbMultiplayerGameEvents = Database['public']['Tables']['multiplayer_game_events']['Row']
-export type DbMultiplayerGameSessions = Database['public']['Tables']['multiplayer_game_sessions']['Row']
-export type DbMultiplayerNpcPlayers = Database['public']['Tables']['multiplayer_npc_players']['Row']
-export type DbMultiplayerQuestionResponses = Database['public']['Tables']['multiplayer_question_responses']['Row']
-export type DbMultiplayerQuizAttempts = Database['public']['Tables']['multiplayer_quiz_attempts']['Row']
-export type DbMultiplayerRoomEvents = Database['public']['Tables']['multiplayer_room_events']['Row']
-export type DbMultiplayerRoomPlayers = Database['public']['Tables']['multiplayer_room_players']['Row']
-export type DbMultiplayerRooms = Database['public']['Tables']['multiplayer_rooms']['Row']
-export type DbNewsAgentConfig = Database['public']['Tables']['news_agent_config']['Row']
-export type DbNewsAgentLogs = Database['public']['Tables']['news_agent_logs']['Row']
-export type DbNewsEvents = Database['public']['Tables']['news_events']['Row']
-export type DbNotificationCampaigns = Database['public']['Tables']['notification_campaigns']['Row']
-export type DbNotificationEvents = Database['public']['Tables']['notification_events']['Row']
-export type DbNotificationProviders = Database['public']['Tables']['notification_providers']['Row']
-export type DbNotificationSegments = Database['public']['Tables']['notification_segments']['Row']
-export type DbNotificationTemplates = Database['public']['Tables']['notification_templates']['Row']
-export type DbNpcCategorySpecializations = Database['public']['Tables']['npc_category_specializations']['Row']
-export type DbNpcChatTemplates = Database['public']['Tables']['npc_chat_templates']['Row']
-export type DbNpcConversationHistory = Database['public']['Tables']['npc_conversation_history']['Row']
-export type DbNpcLearningProgression = Database['public']['Tables']['npc_learning_progression']['Row']
-export type DbNpcPersonalities = Database['public']['Tables']['npc_personalities']['Row']
-export type DbNpcQuestionResponses = Database['public']['Tables']['npc_question_responses']['Row']
-export type DbNpcQuizAttempts = Database['public']['Tables']['npc_quiz_attempts']['Row']
-export type DbOgDataCache = Database['public']['Tables']['og_data_cache']['Row']
-export type DbOnboardingInvites = Database['public']['Tables']['onboarding_invites']['Row']
-export type DbOrganizationBiasScores = Database['public']['Tables']['organization_bias_scores']['Row']
-export type DbOrganizations = Database['public']['Tables']['organizations']['Row']
-export type DbParentalControls = Database['public']['Tables']['parental_controls']['Row']
-export type DbPathwaySkills = Database['public']['Tables']['pathway_skills']['Row']
-export type DbPodAchievements = Database['public']['Tables']['pod_achievements']['Row']
-export type DbPodActivities = Database['public']['Tables']['pod_activities']['Row']
-export type DbPodActivityLog = Database['public']['Tables']['pod_activity_log']['Row']
-export type DbPodAnalytics = Database['public']['Tables']['pod_analytics']['Row']
-export type DbPodAnalyticsLog = Database['public']['Tables']['pod_analytics_log']['Row']
-export type DbPodChallengeParticipants = Database['public']['Tables']['pod_challenge_participants']['Row']
-export type DbPodChallenges = Database['public']['Tables']['pod_challenges']['Row']
-export type DbPodInviteLinks = Database['public']['Tables']['pod_invite_links']['Row']
-export type DbPodJoinRequests = Database['public']['Tables']['pod_join_requests']['Row']
-export type DbPodMemberAnalytics = Database['public']['Tables']['pod_member_analytics']['Row']
-export type DbPodMemberSettings = Database['public']['Tables']['pod_member_settings']['Row']
-export type DbPodMemberships = Database['public']['Tables']['pod_memberships']['Row']
-export type DbPodPartnerships = Database['public']['Tables']['pod_partnerships']['Row']
-export type DbPodRatings = Database['public']['Tables']['pod_ratings']['Row']
-export type DbPodSettings = Database['public']['Tables']['pod_settings']['Row']
-export type DbPodThemes = Database['public']['Tables']['pod_themes']['Row']
-export type DbProceedingExchanges = Database['public']['Tables']['proceeding_exchanges']['Row']
-export type DbProceedingParticipants = Database['public']['Tables']['proceeding_participants']['Row']
-export type DbProfiles = Database['public']['Tables']['profiles']['Row']
-export type DbProgressQuestionResponses = Database['public']['Tables']['progress_question_responses']['Row']
-export type DbProgressSessions = Database['public']['Tables']['progress_sessions']['Row']
-export type DbPublicFigures = Database['public']['Tables']['public_figures']['Row']
-export type DbQuestionAnalytics = Database['public']['Tables']['question_analytics']['Row']
-export type DbQuestionEventConnections = Database['public']['Tables']['question_event_connections']['Row']
-export type DbQuestionFeedback = Database['public']['Tables']['question_feedback']['Row']
-export type DbQuestionSkills = Database['public']['Tables']['question_skills']['Row']
-export type DbQuestionSourceLinks = Database['public']['Tables']['question_source_links']['Row']
-export type DbQuestionTopicCategories = Database['public']['Tables']['question_topic_categories']['Row']
-export type DbQuestionTopics = Database['public']['Tables']['question_topics']['Row']
-export type DbQuestions = Database['public']['Tables']['questions']['Row']
-export type DbQuizAttempts = Database['public']['Tables']['quiz_attempts']['Row']
-export type DbRaffleEntries = Database['public']['Tables']['raffle_entries']['Row']
-export type DbRepresentativeContentMapping = Database['public']['Tables']['representative_content_mapping']['Row']
-export type DbResearchValidation = Database['public']['Tables']['research_validation']['Row']
-export type DbReviewAnalytics = Database['public']['Tables']['review_analytics']['Row']
-export type DbReviewFlags = Database['public']['Tables']['review_flags']['Row']
-export type DbReviewHelpfulnessVotes = Database['public']['Tables']['review_helpfulness_votes']['Row']
-export type DbReviewSummaries = Database['public']['Tables']['review_summaries']['Row']
-export type DbReviewerProfiles = Database['public']['Tables']['reviewer_profiles']['Row']
-export type DbRewardFulfillments = Database['public']['Tables']['reward_fulfillments']['Row']
-export type DbScenarioCharacters = Database['public']['Tables']['scenario_characters']['Row']
-export type DbScenarioDecisions = Database['public']['Tables']['scenario_decisions']['Row']
-export type DbScenarioOutcomes = Database['public']['Tables']['scenario_outcomes']['Row']
-export type DbScenarioResources = Database['public']['Tables']['scenario_resources']['Row']
-export type DbScenarioSituations = Database['public']['Tables']['scenario_situations']['Row']
-export type DbScenarios = Database['public']['Tables']['scenarios']['Row']
-export type DbScheduledContentJobs = Database['public']['Tables']['scheduled_content_jobs']['Row']
-export type DbSearchAnalyticsDaily = Database['public']['Tables']['search_analytics_daily']['Row']
-export type DbShareableGiftLinks = Database['public']['Tables']['shareable_gift_links']['Row']
-export type DbShareableLinkClaims = Database['public']['Tables']['shareable_link_claims']['Row']
-export type DbSharedCollectionAccess = Database['public']['Tables']['shared_collection_access']['Row']
-export type DbSkillBadges = Database['public']['Tables']['skill_badges']['Row']
-export type DbSkillCategories = Database['public']['Tables']['skill_categories']['Row']
-export type DbSkillLearningObjectives = Database['public']['Tables']['skill_learning_objectives']['Row']
-export type DbSkillMasteryTracking = Database['public']['Tables']['skill_mastery_tracking']['Row']
-export type DbSkillPracticeRecommendations = Database['public']['Tables']['skill_practice_recommendations']['Row']
-export type DbSkillPrerequisites = Database['public']['Tables']['skill_prerequisites']['Row']
-export type DbSkillProgressionPathways = Database['public']['Tables']['skill_progression_pathways']['Row']
-export type DbSkillRelationships = Database['public']['Tables']['skill_relationships']['Row']
-export type DbSkills = Database['public']['Tables']['skills']['Row']
-export type DbSourceAnalysisCache = Database['public']['Tables']['source_analysis_cache']['Row']
-export type DbSourceCredibilityIndicators = Database['public']['Tables']['source_credibility_indicators']['Row']
-export type DbSourceFetchQueue = Database['public']['Tables']['source_fetch_queue']['Row']
-export type DbSourceMetadata = Database['public']['Tables']['source_metadata']['Row']
-export type DbSpacedRepetitionSchedule = Database['public']['Tables']['spaced_repetition_schedule']['Row']
-export type DbStepAnalytics = Database['public']['Tables']['step_analytics']['Row']
-export type DbStepTemplates = Database['public']['Tables']['step_templates']['Row']
-export type DbSubscriptionTierLimits = Database['public']['Tables']['subscription_tier_limits']['Row']
-export type DbSurveyAnswers = Database['public']['Tables']['survey_answers']['Row']
-export type DbSurveyIncentives = Database['public']['Tables']['survey_incentives']['Row']
-export type DbSurveyLearningGoals = Database['public']['Tables']['survey_learning_goals']['Row']
-export type DbSurveyQuestions = Database['public']['Tables']['survey_questions']['Row']
-export type DbSurveyRecommendations = Database['public']['Tables']['survey_recommendations']['Row']
-export type DbSurveyResponses = Database['public']['Tables']['survey_responses']['Row']
-export type DbSurveys = Database['public']['Tables']['surveys']['Row']
-export type DbSystemAlerts = Database['public']['Tables']['system_alerts']['Row']
-export type DbTags = Database['public']['Tables']['tags']['Row']
-export type DbTopicEventConnections = Database['public']['Tables']['topic_event_connections']['Row']
-export type DbTranslationJobs = Database['public']['Tables']['translation_jobs']['Row']
-export type DbTrendingSearches = Database['public']['Tables']['trending_searches']['Row']
-export type DbUrlHealthStatus = Database['public']['Tables']['url_health_status']['Row']
-export type DbUrlValidationCache = Database['public']['Tables']['url_validation_cache']['Row']
-export type DbUserAchievements = Database['public']['Tables']['user_achievements']['Row']
-export type DbUserActiveBoosts = Database['public']['Tables']['user_active_boosts']['Row']
-export type DbUserAssessmentAnalytics = Database['public']['Tables']['user_assessment_analytics']['Row']
-export type DbUserAssessmentAttempts = Database['public']['Tables']['user_assessment_attempts']['Row']
-export type DbUserAssessmentEngagement = Database['public']['Tables']['user_assessment_engagement']['Row']
-export type DbUserAssessmentQuestions = Database['public']['Tables']['user_assessment_questions']['Row']
-export type DbUserAssessmentScoring = Database['public']['Tables']['user_assessment_scoring']['Row']
-export type DbUserAssessments = Database['public']['Tables']['user_assessments']['Row']
-export type DbUserBadges = Database['public']['Tables']['user_badges']['Row']
-export type DbUserBoostInventory = Database['public']['Tables']['user_boost_inventory']['Row']
-export type DbUserCategoryPreferences = Database['public']['Tables']['user_category_preferences']['Row']
-export type DbUserCategorySkills = Database['public']['Tables']['user_category_skills']['Row']
-export type DbUserCollectionProgress = Database['public']['Tables']['user_collection_progress']['Row']
-export type DbUserContentAnnotations = Database['public']['Tables']['user_content_annotations']['Row']
-export type DbUserContentConnections = Database['public']['Tables']['user_content_connections']['Row']
-export type DbUserContentViews = Database['public']['Tables']['user_content_views']['Row']
-export type DbUserCredits = Database['public']['Tables']['user_credits']['Row']
-export type DbUserCustomDecks = Database['public']['Tables']['user_custom_decks']['Row']
-export type DbUserDeckContent = Database['public']['Tables']['user_deck_content']['Row']
-export type DbUserDiscountUsage = Database['public']['Tables']['user_discount_usage']['Row']
-export type DbUserElectionTracking = Database['public']['Tables']['user_election_tracking']['Row']
-export type DbUserEmailPreferences = Database['public']['Tables']['user_email_preferences']['Row']
-export type DbUserEvents = Database['public']['Tables']['user_events']['Row']
-export type DbUserFeatureUsage = Database['public']['Tables']['user_feature_usage']['Row']
-export type DbUserFeedback = Database['public']['Tables']['user_feedback']['Row']
-export type DbUserGenerationUsage = Database['public']['Tables']['user_generation_usage']['Row']
-export type DbUserIntegrations = Database['public']['Tables']['user_integrations']['Row']
-export type DbUserLearningGoals = Database['public']['Tables']['user_learning_goals']['Row']
-export type DbUserLearningInsights = Database['public']['Tables']['user_learning_insights']['Row']
-export type DbUserLearningPatterns = Database['public']['Tables']['user_learning_patterns']['Row']
-export type DbUserLocations = Database['public']['Tables']['user_locations']['Row']
-export type DbUserNotificationSubscriptions = Database['public']['Tables']['user_notification_subscriptions']['Row']
-export type DbUserOnboardingState = Database['public']['Tables']['user_onboarding_state']['Row']
-export type DbUserPlatformPreferences = Database['public']['Tables']['user_platform_preferences']['Row']
-export type DbUserProgress = Database['public']['Tables']['user_progress']['Row']
-export type DbUserProgressHistory = Database['public']['Tables']['user_progress_history']['Row']
-export type DbUserQuestionMemory = Database['public']['Tables']['user_question_memory']['Row']
-export type DbUserQuestionResponses = Database['public']['Tables']['user_question_responses']['Row']
-export type DbUserQuizAnalytics = Database['public']['Tables']['user_quiz_analytics']['Row']
-export type DbUserQuizAttempts = Database['public']['Tables']['user_quiz_attempts']['Row']
-export type DbUserRepresentatives = Database['public']['Tables']['user_representatives']['Row']
-export type DbUserRoles = Database['public']['Tables']['user_roles']['Row']
-export type DbUserScenarioAttempts = Database['public']['Tables']['user_scenario_attempts']['Row']
-export type DbUserScenarioDecisions = Database['public']['Tables']['user_scenario_decisions']['Row']
-export type DbUserSearchAnalytics = Database['public']['Tables']['user_search_analytics']['Row']
-export type DbUserSearchHistory = Database['public']['Tables']['user_search_history']['Row']
-export type DbUserSkillAssessmentCriteria = Database['public']['Tables']['user_skill_assessment_criteria']['Row']
-export type DbUserSkillPreferences = Database['public']['Tables']['user_skill_preferences']['Row']
-export type DbUserSkillProgress = Database['public']['Tables']['user_skill_progress']['Row']
-export type DbUserStepProgress = Database['public']['Tables']['user_step_progress']['Row']
-export type DbUserStreakHistory = Database['public']['Tables']['user_streak_history']['Row']
-export type DbUserSubscriptions = Database['public']['Tables']['user_subscriptions']['Row']
-export type DbUserSurveyCompletions = Database['public']['Tables']['user_survey_completions']['Row']
-export type DbWeeklyContentMetrics = Database['public']['Tables']['weekly_content_metrics']['Row']
-export type DbWeeklyRecapCollections = Database['public']['Tables']['weekly_recap_collections']['Row']
-export type DbWeeklyRecapConfigs = Database['public']['Tables']['weekly_recap_configs']['Row']
-
-// public Insert Types
-export type DbAiActionExecutionsInsert = Database['public']['Tables']['ai_action_executions']['Insert']
-export type DbAiCommandAnalyticsInsert = Database['public']['Tables']['ai_command_analytics']['Insert']
-export type DbAiCommandExecutionsInsert = Database['public']['Tables']['ai_command_executions']['Insert']
-export type DbAiResearchResultsInsert = Database['public']['Tables']['ai_research_results']['Insert']
-export type DbAiResearchSessionsInsert = Database['public']['Tables']['ai_research_sessions']['Insert']
-export type DbAiSourceAnalysisInsert = Database['public']['Tables']['ai_source_analysis']['Insert']
-export type DbAiToolUsageInsert = Database['public']['Tables']['ai_tool_usage']['Insert']
-export type DbAnalyticsEventsInsert = Database['public']['Tables']['analytics_events']['Insert']
-export type DbAppleIapTransactionsInsert = Database['public']['Tables']['apple_iap_transactions']['Insert']
-export type DbArticleBiasAnalysisInsert = Database['public']['Tables']['article_bias_analysis']['Insert']
-export type DbAssessedEntitiesInsert = Database['public']['Tables']['assessed_entities']['Insert']
-export type DbAssessmentEvidenceInsert = Database['public']['Tables']['assessment_evidence']['Insert']
-export type DbAssessmentFrameworksInsert = Database['public']['Tables']['assessment_frameworks']['Insert']
-export type DbAssessmentSummariesInsert = Database['public']['Tables']['assessment_summaries']['Insert']
-export type DbAssessmentsInsert = Database['public']['Tables']['assessments']['Insert']
-export type DbAutoGeneratedEventsInsert = Database['public']['Tables']['auto_generated_events']['Insert']
-export type DbBadgeRequirementsInsert = Database['public']['Tables']['badge_requirements']['Insert']
-export type DbBiasDetectionPatternsInsert = Database['public']['Tables']['bias_detection_patterns']['Insert']
-export type DbBiasDimensionsInsert = Database['public']['Tables']['bias_dimensions']['Insert']
-export type DbBiasFeedbackInsert = Database['public']['Tables']['bias_feedback']['Insert']
-export type DbBiasLearningEventsInsert = Database['public']['Tables']['bias_learning_events']['Insert']
-export type DbBillActionsInsert = Database['public']['Tables']['bill_actions']['Insert']
-export type DbBillContentAnalysisInsert = Database['public']['Tables']['bill_content_analysis']['Insert']
-export type DbBillCosponsorsInsert = Database['public']['Tables']['bill_cosponsors']['Insert']
-export type DbBillRelationshipsInsert = Database['public']['Tables']['bill_relationships']['Insert']
-export type DbBillSubjectsInsert = Database['public']['Tables']['bill_subjects']['Insert']
-export type DbBillSummariesInsert = Database['public']['Tables']['bill_summaries']['Insert']
-export type DbBookmarkAnalyticsInsert = Database['public']['Tables']['bookmark_analytics']['Insert']
-export type DbBookmarkCollectionItemsInsert = Database['public']['Tables']['bookmark_collection_items']['Insert']
-export type DbBookmarkCollectionsInsert = Database['public']['Tables']['bookmark_collections']['Insert']
-export type DbBookmarkSnippetsInsert = Database['public']['Tables']['bookmark_snippets']['Insert']
-export type DbBookmarkTagsInsert = Database['public']['Tables']['bookmark_tags']['Insert']
-export type DbBookmarksInsert = Database['public']['Tables']['bookmarks']['Insert']
-export type DbBoostDefinitionsInsert = Database['public']['Tables']['boost_definitions']['Insert']
-export type DbCalendarSyncLogsInsert = Database['public']['Tables']['calendar_sync_logs']['Insert']
-export type DbCategoriesInsert = Database['public']['Tables']['categories']['Insert']
-export type DbCategorySynonymsInsert = Database['public']['Tables']['category_synonyms']['Insert']
-export type DbCivicContentAnalysisInsert = Database['public']['Tables']['civic_content_analysis']['Insert']
-export type DbCivicEngagementEventsInsert = Database['public']['Tables']['civic_engagement_events']['Insert']
-export type DbCivicsTestAnalyticsInsert = Database['public']['Tables']['civics_test_analytics']['Insert']
-export type DbCleverUserMappingInsert = Database['public']['Tables']['clever_user_mapping']['Insert']
-export type DbCollectionAnalyticsInsert = Database['public']['Tables']['collection_analytics']['Insert']
-export type DbCollectionAnalyticsDailyInsert = Database['public']['Tables']['collection_analytics_daily']['Insert']
-export type DbCollectionAnalyticsEventsInsert = Database['public']['Tables']['collection_analytics_events']['Insert']
-export type DbCollectionCollaboratorsInsert = Database['public']['Tables']['collection_collaborators']['Insert']
-export type DbCollectionEngagementInsert = Database['public']['Tables']['collection_engagement']['Insert']
-export type DbCollectionItemsInsert = Database['public']['Tables']['collection_items']['Insert']
-export type DbCollectionPlaySessionsInsert = Database['public']['Tables']['collection_play_sessions']['Insert']
-export type DbCollectionReviewsInsert = Database['public']['Tables']['collection_reviews']['Insert']
-export type DbCollectionSharesInsert = Database['public']['Tables']['collection_shares']['Insert']
-export type DbCollectionSkillProgressInsert = Database['public']['Tables']['collection_skill_progress']['Insert']
-export type DbCollectionsInsert = Database['public']['Tables']['collections']['Insert']
-export type DbCommitteeMembershipsInsert = Database['public']['Tables']['committee_memberships']['Insert']
-export type DbCongressionalBillsInsert = Database['public']['Tables']['congressional_bills']['Insert']
-export type DbCongressionalCommitteesInsert = Database['public']['Tables']['congressional_committees']['Insert']
-export type DbCongressionalPhotosInsert = Database['public']['Tables']['congressional_photos']['Insert']
-export type DbCongressionalProceedingsInsert = Database['public']['Tables']['congressional_proceedings']['Insert']
-export type DbCongressionalSessionsInsert = Database['public']['Tables']['congressional_sessions']['Insert']
-export type DbCongressionalTermsInsert = Database['public']['Tables']['congressional_terms']['Insert']
-export type DbCongressionalVotesInsert = Database['public']['Tables']['congressional_votes']['Insert']
-export type DbContentDuplicationWarningsInsert = Database['public']['Tables']['content_duplication_warnings']['Insert']
-export type DbContentFilteringRulesInsert = Database['public']['Tables']['content_filtering_rules']['Insert']
-export type DbContentGapsAnalysisInsert = Database['public']['Tables']['content_gaps_analysis']['Insert']
-export type DbContentGenerationQueueInsert = Database['public']['Tables']['content_generation_queue']['Insert']
-export type DbContentItemSkillsInsert = Database['public']['Tables']['content_item_skills']['Insert']
-export type DbContentPackagesInsert = Database['public']['Tables']['content_packages']['Insert']
-export type DbContentPublicationLogInsert = Database['public']['Tables']['content_publication_log']['Insert']
-export type DbContentRecommendationsInsert = Database['public']['Tables']['content_recommendations']['Insert']
-export type DbContentRelationshipsInsert = Database['public']['Tables']['content_relationships']['Insert']
-export type DbContentReviewsInsert = Database['public']['Tables']['content_reviews']['Insert']
-export type DbCustomCollectionItemsInsert = Database['public']['Tables']['custom_collection_items']['Insert']
-export type DbCustomContentCollectionsInsert = Database['public']['Tables']['custom_content_collections']['Insert']
-export type DbCustomContentGenerationsInsert = Database['public']['Tables']['custom_content_generations']['Insert']
-export type DbCustomContentQuestionsInsert = Database['public']['Tables']['custom_content_questions']['Insert']
-export type DbCustomContentTopicsInsert = Database['public']['Tables']['custom_content_topics']['Insert']
-export type DbDiscountCodesInsert = Database['public']['Tables']['discount_codes']['Insert']
-export type DbDocumentActionsInsert = Database['public']['Tables']['document_actions']['Insert']
-export type DbDocumentRelationshipsInsert = Database['public']['Tables']['document_relationships']['Insert']
-export type DbDocumentSourcesInsert = Database['public']['Tables']['document_sources']['Insert']
-export type DbDocumentSubjectsInsert = Database['public']['Tables']['document_subjects']['Insert']
-export type DbElectionInfoInsert = Database['public']['Tables']['election_info']['Insert']
-export type DbEventResearchSuggestionsInsert = Database['public']['Tables']['event_research_suggestions']['Insert']
-export type DbEventTimelineConnectionsInsert = Database['public']['Tables']['event_timeline_connections']['Insert']
-export type DbEventsInsert = Database['public']['Tables']['events']['Insert']
-export type DbExtractedEntitiesInsert = Database['public']['Tables']['extracted_entities']['Insert']
-export type DbExtractedRelationshipsInsert = Database['public']['Tables']['extracted_relationships']['Insert']
-export type DbFactCheckLogsInsert = Database['public']['Tables']['fact_check_logs']['Insert']
-export type DbFigureEventsInsert = Database['public']['Tables']['figure_events']['Insert']
-export type DbFigureOrganizationsInsert = Database['public']['Tables']['figure_organizations']['Insert']
-export type DbFigurePolicyPositionsInsert = Database['public']['Tables']['figure_policy_positions']['Insert']
-export type DbFigureQuizTopicsInsert = Database['public']['Tables']['figure_quiz_topics']['Insert']
-export type DbFigureRelationshipsInsert = Database['public']['Tables']['figure_relationships']['Insert']
-export type DbFriendRequestsInsert = Database['public']['Tables']['friend_requests']['Insert']
-export type DbGiftCreditsInsert = Database['public']['Tables']['gift_credits']['Insert']
-export type DbGiftRedemptionsInsert = Database['public']['Tables']['gift_redemptions']['Insert']
-export type DbGlossaryContentReferencesInsert = Database['public']['Tables']['glossary_content_references']['Insert']
-export type DbGlossaryGameSessionsInsert = Database['public']['Tables']['glossary_game_sessions']['Insert']
-export type DbGlossaryGamesInsert = Database['public']['Tables']['glossary_games']['Insert']
-export type DbGlossaryTermCategoriesInsert = Database['public']['Tables']['glossary_term_categories']['Insert']
-export type DbGlossaryTermRelationshipsInsert = Database['public']['Tables']['glossary_term_relationships']['Insert']
-export type DbGlossaryTermsInsert = Database['public']['Tables']['glossary_terms']['Insert']
-export type DbGlossaryUsageAnalyticsInsert = Database['public']['Tables']['glossary_usage_analytics']['Insert']
-export type DbGuestCivicsTestResultsInsert = Database['public']['Tables']['guest_civics_test_results']['Insert']
-export type DbGuestUsageAnalyticsInsert = Database['public']['Tables']['guest_usage_analytics']['Insert']
-export type DbGuestUsageTrackingInsert = Database['public']['Tables']['guest_usage_tracking']['Insert']
-export type DbImageAbTestResultsInsert = Database['public']['Tables']['image_ab_test_results']['Insert']
-export type DbImageGenerationAnalyticsInsert = Database['public']['Tables']['image_generation_analytics']['Insert']
-export type DbIndicatorActionsInsert = Database['public']['Tables']['indicator_actions']['Insert']
-export type DbIndicatorAssessmentsInsert = Database['public']['Tables']['indicator_assessments']['Insert']
-export type DbIndicatorCategoriesInsert = Database['public']['Tables']['indicator_categories']['Insert']
-export type DbIndicatorContentLinksInsert = Database['public']['Tables']['indicator_content_links']['Insert']
-export type DbIndicatorsInsert = Database['public']['Tables']['indicators']['Insert']
-export type DbJobExecutionLogsInsert = Database['public']['Tables']['job_execution_logs']['Insert']
-export type DbKeyPolicyPositionsInsert = Database['public']['Tables']['key_policy_positions']['Insert']
-export type DbKnowledgeConnectionsInsert = Database['public']['Tables']['knowledge_connections']['Insert']
-export type DbLearningObjectivesInsert = Database['public']['Tables']['learning_objectives']['Insert']
-export type DbLearningPodsInsert = Database['public']['Tables']['learning_pods']['Insert']
-export type DbLegislativeDocumentsInsert = Database['public']['Tables']['legislative_documents']['Insert']
-export type DbLessonStepsInsert = Database['public']['Tables']['lesson_steps']['Insert']
-export type DbLocationCoverageInsert = Database['public']['Tables']['location_coverage']['Insert']
-export type DbMediaOrganizationsInsert = Database['public']['Tables']['media_organizations']['Insert']
-export type DbMemberIndividualSettingsInsert = Database['public']['Tables']['member_individual_settings']['Insert']
-export type DbMemberVotesInsert = Database['public']['Tables']['member_votes']['Insert']
-export type DbMultiplayerChatMessagesInsert = Database['public']['Tables']['multiplayer_chat_messages']['Insert']
-export type DbMultiplayerConversationContextInsert = Database['public']['Tables']['multiplayer_conversation_context']['Insert']
-export type DbMultiplayerGameEventsInsert = Database['public']['Tables']['multiplayer_game_events']['Insert']
-export type DbMultiplayerGameSessionsInsert = Database['public']['Tables']['multiplayer_game_sessions']['Insert']
-export type DbMultiplayerNpcPlayersInsert = Database['public']['Tables']['multiplayer_npc_players']['Insert']
-export type DbMultiplayerQuestionResponsesInsert = Database['public']['Tables']['multiplayer_question_responses']['Insert']
-export type DbMultiplayerQuizAttemptsInsert = Database['public']['Tables']['multiplayer_quiz_attempts']['Insert']
-export type DbMultiplayerRoomEventsInsert = Database['public']['Tables']['multiplayer_room_events']['Insert']
-export type DbMultiplayerRoomPlayersInsert = Database['public']['Tables']['multiplayer_room_players']['Insert']
-export type DbMultiplayerRoomsInsert = Database['public']['Tables']['multiplayer_rooms']['Insert']
-export type DbNewsAgentConfigInsert = Database['public']['Tables']['news_agent_config']['Insert']
-export type DbNewsAgentLogsInsert = Database['public']['Tables']['news_agent_logs']['Insert']
-export type DbNewsEventsInsert = Database['public']['Tables']['news_events']['Insert']
-export type DbNotificationCampaignsInsert = Database['public']['Tables']['notification_campaigns']['Insert']
-export type DbNotificationEventsInsert = Database['public']['Tables']['notification_events']['Insert']
-export type DbNotificationProvidersInsert = Database['public']['Tables']['notification_providers']['Insert']
-export type DbNotificationSegmentsInsert = Database['public']['Tables']['notification_segments']['Insert']
-export type DbNotificationTemplatesInsert = Database['public']['Tables']['notification_templates']['Insert']
-export type DbNpcCategorySpecializationsInsert = Database['public']['Tables']['npc_category_specializations']['Insert']
-export type DbNpcChatTemplatesInsert = Database['public']['Tables']['npc_chat_templates']['Insert']
-export type DbNpcConversationHistoryInsert = Database['public']['Tables']['npc_conversation_history']['Insert']
-export type DbNpcLearningProgressionInsert = Database['public']['Tables']['npc_learning_progression']['Insert']
-export type DbNpcPersonalitiesInsert = Database['public']['Tables']['npc_personalities']['Insert']
-export type DbNpcQuestionResponsesInsert = Database['public']['Tables']['npc_question_responses']['Insert']
-export type DbNpcQuizAttemptsInsert = Database['public']['Tables']['npc_quiz_attempts']['Insert']
-export type DbOgDataCacheInsert = Database['public']['Tables']['og_data_cache']['Insert']
-export type DbOnboardingInvitesInsert = Database['public']['Tables']['onboarding_invites']['Insert']
-export type DbOrganizationBiasScoresInsert = Database['public']['Tables']['organization_bias_scores']['Insert']
-export type DbOrganizationsInsert = Database['public']['Tables']['organizations']['Insert']
-export type DbParentalControlsInsert = Database['public']['Tables']['parental_controls']['Insert']
-export type DbPathwaySkillsInsert = Database['public']['Tables']['pathway_skills']['Insert']
-export type DbPodAchievementsInsert = Database['public']['Tables']['pod_achievements']['Insert']
-export type DbPodActivitiesInsert = Database['public']['Tables']['pod_activities']['Insert']
-export type DbPodActivityLogInsert = Database['public']['Tables']['pod_activity_log']['Insert']
-export type DbPodAnalyticsInsert = Database['public']['Tables']['pod_analytics']['Insert']
-export type DbPodAnalyticsLogInsert = Database['public']['Tables']['pod_analytics_log']['Insert']
-export type DbPodChallengeParticipantsInsert = Database['public']['Tables']['pod_challenge_participants']['Insert']
-export type DbPodChallengesInsert = Database['public']['Tables']['pod_challenges']['Insert']
-export type DbPodInviteLinksInsert = Database['public']['Tables']['pod_invite_links']['Insert']
-export type DbPodJoinRequestsInsert = Database['public']['Tables']['pod_join_requests']['Insert']
-export type DbPodMemberAnalyticsInsert = Database['public']['Tables']['pod_member_analytics']['Insert']
-export type DbPodMemberSettingsInsert = Database['public']['Tables']['pod_member_settings']['Insert']
-export type DbPodMembershipsInsert = Database['public']['Tables']['pod_memberships']['Insert']
-export type DbPodPartnershipsInsert = Database['public']['Tables']['pod_partnerships']['Insert']
-export type DbPodRatingsInsert = Database['public']['Tables']['pod_ratings']['Insert']
-export type DbPodSettingsInsert = Database['public']['Tables']['pod_settings']['Insert']
-export type DbPodThemesInsert = Database['public']['Tables']['pod_themes']['Insert']
-export type DbProceedingExchangesInsert = Database['public']['Tables']['proceeding_exchanges']['Insert']
-export type DbProceedingParticipantsInsert = Database['public']['Tables']['proceeding_participants']['Insert']
-export type DbProfilesInsert = Database['public']['Tables']['profiles']['Insert']
-export type DbProgressQuestionResponsesInsert = Database['public']['Tables']['progress_question_responses']['Insert']
-export type DbProgressSessionsInsert = Database['public']['Tables']['progress_sessions']['Insert']
-export type DbPublicFiguresInsert = Database['public']['Tables']['public_figures']['Insert']
-export type DbQuestionAnalyticsInsert = Database['public']['Tables']['question_analytics']['Insert']
-export type DbQuestionEventConnectionsInsert = Database['public']['Tables']['question_event_connections']['Insert']
-export type DbQuestionFeedbackInsert = Database['public']['Tables']['question_feedback']['Insert']
-export type DbQuestionSkillsInsert = Database['public']['Tables']['question_skills']['Insert']
-export type DbQuestionSourceLinksInsert = Database['public']['Tables']['question_source_links']['Insert']
-export type DbQuestionTopicCategoriesInsert = Database['public']['Tables']['question_topic_categories']['Insert']
-export type DbQuestionTopicsInsert = Database['public']['Tables']['question_topics']['Insert']
-export type DbQuestionsInsert = Database['public']['Tables']['questions']['Insert']
-export type DbQuizAttemptsInsert = Database['public']['Tables']['quiz_attempts']['Insert']
-export type DbRaffleEntriesInsert = Database['public']['Tables']['raffle_entries']['Insert']
-export type DbRepresentativeContentMappingInsert = Database['public']['Tables']['representative_content_mapping']['Insert']
-export type DbResearchValidationInsert = Database['public']['Tables']['research_validation']['Insert']
-export type DbReviewAnalyticsInsert = Database['public']['Tables']['review_analytics']['Insert']
-export type DbReviewFlagsInsert = Database['public']['Tables']['review_flags']['Insert']
-export type DbReviewHelpfulnessVotesInsert = Database['public']['Tables']['review_helpfulness_votes']['Insert']
-export type DbReviewSummariesInsert = Database['public']['Tables']['review_summaries']['Insert']
-export type DbReviewerProfilesInsert = Database['public']['Tables']['reviewer_profiles']['Insert']
-export type DbRewardFulfillmentsInsert = Database['public']['Tables']['reward_fulfillments']['Insert']
-export type DbScenarioCharactersInsert = Database['public']['Tables']['scenario_characters']['Insert']
-export type DbScenarioDecisionsInsert = Database['public']['Tables']['scenario_decisions']['Insert']
-export type DbScenarioOutcomesInsert = Database['public']['Tables']['scenario_outcomes']['Insert']
-export type DbScenarioResourcesInsert = Database['public']['Tables']['scenario_resources']['Insert']
-export type DbScenarioSituationsInsert = Database['public']['Tables']['scenario_situations']['Insert']
-export type DbScenariosInsert = Database['public']['Tables']['scenarios']['Insert']
-export type DbScheduledContentJobsInsert = Database['public']['Tables']['scheduled_content_jobs']['Insert']
-export type DbSearchAnalyticsDailyInsert = Database['public']['Tables']['search_analytics_daily']['Insert']
-export type DbShareableGiftLinksInsert = Database['public']['Tables']['shareable_gift_links']['Insert']
-export type DbShareableLinkClaimsInsert = Database['public']['Tables']['shareable_link_claims']['Insert']
-export type DbSharedCollectionAccessInsert = Database['public']['Tables']['shared_collection_access']['Insert']
-export type DbSkillBadgesInsert = Database['public']['Tables']['skill_badges']['Insert']
-export type DbSkillCategoriesInsert = Database['public']['Tables']['skill_categories']['Insert']
-export type DbSkillLearningObjectivesInsert = Database['public']['Tables']['skill_learning_objectives']['Insert']
-export type DbSkillMasteryTrackingInsert = Database['public']['Tables']['skill_mastery_tracking']['Insert']
-export type DbSkillPracticeRecommendationsInsert = Database['public']['Tables']['skill_practice_recommendations']['Insert']
-export type DbSkillPrerequisitesInsert = Database['public']['Tables']['skill_prerequisites']['Insert']
-export type DbSkillProgressionPathwaysInsert = Database['public']['Tables']['skill_progression_pathways']['Insert']
-export type DbSkillRelationshipsInsert = Database['public']['Tables']['skill_relationships']['Insert']
-export type DbSkillsInsert = Database['public']['Tables']['skills']['Insert']
-export type DbSourceAnalysisCacheInsert = Database['public']['Tables']['source_analysis_cache']['Insert']
-export type DbSourceCredibilityIndicatorsInsert = Database['public']['Tables']['source_credibility_indicators']['Insert']
-export type DbSourceFetchQueueInsert = Database['public']['Tables']['source_fetch_queue']['Insert']
-export type DbSourceMetadataInsert = Database['public']['Tables']['source_metadata']['Insert']
-export type DbSpacedRepetitionScheduleInsert = Database['public']['Tables']['spaced_repetition_schedule']['Insert']
-export type DbStepAnalyticsInsert = Database['public']['Tables']['step_analytics']['Insert']
-export type DbStepTemplatesInsert = Database['public']['Tables']['step_templates']['Insert']
-export type DbSubscriptionTierLimitsInsert = Database['public']['Tables']['subscription_tier_limits']['Insert']
-export type DbSurveyAnswersInsert = Database['public']['Tables']['survey_answers']['Insert']
-export type DbSurveyIncentivesInsert = Database['public']['Tables']['survey_incentives']['Insert']
-export type DbSurveyLearningGoalsInsert = Database['public']['Tables']['survey_learning_goals']['Insert']
-export type DbSurveyQuestionsInsert = Database['public']['Tables']['survey_questions']['Insert']
-export type DbSurveyRecommendationsInsert = Database['public']['Tables']['survey_recommendations']['Insert']
-export type DbSurveyResponsesInsert = Database['public']['Tables']['survey_responses']['Insert']
-export type DbSurveysInsert = Database['public']['Tables']['surveys']['Insert']
-export type DbSystemAlertsInsert = Database['public']['Tables']['system_alerts']['Insert']
-export type DbTagsInsert = Database['public']['Tables']['tags']['Insert']
-export type DbTopicEventConnectionsInsert = Database['public']['Tables']['topic_event_connections']['Insert']
-export type DbTranslationJobsInsert = Database['public']['Tables']['translation_jobs']['Insert']
-export type DbTrendingSearchesInsert = Database['public']['Tables']['trending_searches']['Insert']
-export type DbUrlHealthStatusInsert = Database['public']['Tables']['url_health_status']['Insert']
-export type DbUrlValidationCacheInsert = Database['public']['Tables']['url_validation_cache']['Insert']
-export type DbUserAchievementsInsert = Database['public']['Tables']['user_achievements']['Insert']
-export type DbUserActiveBoostsInsert = Database['public']['Tables']['user_active_boosts']['Insert']
-export type DbUserAssessmentAnalyticsInsert = Database['public']['Tables']['user_assessment_analytics']['Insert']
-export type DbUserAssessmentAttemptsInsert = Database['public']['Tables']['user_assessment_attempts']['Insert']
-export type DbUserAssessmentEngagementInsert = Database['public']['Tables']['user_assessment_engagement']['Insert']
-export type DbUserAssessmentQuestionsInsert = Database['public']['Tables']['user_assessment_questions']['Insert']
-export type DbUserAssessmentScoringInsert = Database['public']['Tables']['user_assessment_scoring']['Insert']
-export type DbUserAssessmentsInsert = Database['public']['Tables']['user_assessments']['Insert']
-export type DbUserBadgesInsert = Database['public']['Tables']['user_badges']['Insert']
-export type DbUserBoostInventoryInsert = Database['public']['Tables']['user_boost_inventory']['Insert']
-export type DbUserCategoryPreferencesInsert = Database['public']['Tables']['user_category_preferences']['Insert']
-export type DbUserCategorySkillsInsert = Database['public']['Tables']['user_category_skills']['Insert']
-export type DbUserCollectionProgressInsert = Database['public']['Tables']['user_collection_progress']['Insert']
-export type DbUserContentAnnotationsInsert = Database['public']['Tables']['user_content_annotations']['Insert']
-export type DbUserContentConnectionsInsert = Database['public']['Tables']['user_content_connections']['Insert']
-export type DbUserContentViewsInsert = Database['public']['Tables']['user_content_views']['Insert']
-export type DbUserCreditsInsert = Database['public']['Tables']['user_credits']['Insert']
-export type DbUserCustomDecksInsert = Database['public']['Tables']['user_custom_decks']['Insert']
-export type DbUserDeckContentInsert = Database['public']['Tables']['user_deck_content']['Insert']
-export type DbUserDiscountUsageInsert = Database['public']['Tables']['user_discount_usage']['Insert']
-export type DbUserElectionTrackingInsert = Database['public']['Tables']['user_election_tracking']['Insert']
-export type DbUserEmailPreferencesInsert = Database['public']['Tables']['user_email_preferences']['Insert']
-export type DbUserEventsInsert = Database['public']['Tables']['user_events']['Insert']
-export type DbUserFeatureUsageInsert = Database['public']['Tables']['user_feature_usage']['Insert']
-export type DbUserFeedbackInsert = Database['public']['Tables']['user_feedback']['Insert']
-export type DbUserGenerationUsageInsert = Database['public']['Tables']['user_generation_usage']['Insert']
-export type DbUserIntegrationsInsert = Database['public']['Tables']['user_integrations']['Insert']
-export type DbUserLearningGoalsInsert = Database['public']['Tables']['user_learning_goals']['Insert']
-export type DbUserLearningInsightsInsert = Database['public']['Tables']['user_learning_insights']['Insert']
-export type DbUserLearningPatternsInsert = Database['public']['Tables']['user_learning_patterns']['Insert']
-export type DbUserLocationsInsert = Database['public']['Tables']['user_locations']['Insert']
-export type DbUserNotificationSubscriptionsInsert = Database['public']['Tables']['user_notification_subscriptions']['Insert']
-export type DbUserOnboardingStateInsert = Database['public']['Tables']['user_onboarding_state']['Insert']
-export type DbUserPlatformPreferencesInsert = Database['public']['Tables']['user_platform_preferences']['Insert']
-export type DbUserProgressInsert = Database['public']['Tables']['user_progress']['Insert']
-export type DbUserProgressHistoryInsert = Database['public']['Tables']['user_progress_history']['Insert']
-export type DbUserQuestionMemoryInsert = Database['public']['Tables']['user_question_memory']['Insert']
-export type DbUserQuestionResponsesInsert = Database['public']['Tables']['user_question_responses']['Insert']
-export type DbUserQuizAnalyticsInsert = Database['public']['Tables']['user_quiz_analytics']['Insert']
-export type DbUserQuizAttemptsInsert = Database['public']['Tables']['user_quiz_attempts']['Insert']
-export type DbUserRepresentativesInsert = Database['public']['Tables']['user_representatives']['Insert']
-export type DbUserRolesInsert = Database['public']['Tables']['user_roles']['Insert']
-export type DbUserScenarioAttemptsInsert = Database['public']['Tables']['user_scenario_attempts']['Insert']
-export type DbUserScenarioDecisionsInsert = Database['public']['Tables']['user_scenario_decisions']['Insert']
-export type DbUserSearchAnalyticsInsert = Database['public']['Tables']['user_search_analytics']['Insert']
-export type DbUserSearchHistoryInsert = Database['public']['Tables']['user_search_history']['Insert']
-export type DbUserSkillAssessmentCriteriaInsert = Database['public']['Tables']['user_skill_assessment_criteria']['Insert']
-export type DbUserSkillPreferencesInsert = Database['public']['Tables']['user_skill_preferences']['Insert']
-export type DbUserSkillProgressInsert = Database['public']['Tables']['user_skill_progress']['Insert']
-export type DbUserStepProgressInsert = Database['public']['Tables']['user_step_progress']['Insert']
-export type DbUserStreakHistoryInsert = Database['public']['Tables']['user_streak_history']['Insert']
-export type DbUserSubscriptionsInsert = Database['public']['Tables']['user_subscriptions']['Insert']
-export type DbUserSurveyCompletionsInsert = Database['public']['Tables']['user_survey_completions']['Insert']
-export type DbWeeklyContentMetricsInsert = Database['public']['Tables']['weekly_content_metrics']['Insert']
-export type DbWeeklyRecapCollectionsInsert = Database['public']['Tables']['weekly_recap_collections']['Insert']
-export type DbWeeklyRecapConfigsInsert = Database['public']['Tables']['weekly_recap_configs']['Insert']
-
-// public Update Types
-export type DbAiActionExecutionsUpdate = Database['public']['Tables']['ai_action_executions']['Update']
-export type DbAiCommandAnalyticsUpdate = Database['public']['Tables']['ai_command_analytics']['Update']
-export type DbAiCommandExecutionsUpdate = Database['public']['Tables']['ai_command_executions']['Update']
-export type DbAiResearchResultsUpdate = Database['public']['Tables']['ai_research_results']['Update']
-export type DbAiResearchSessionsUpdate = Database['public']['Tables']['ai_research_sessions']['Update']
-export type DbAiSourceAnalysisUpdate = Database['public']['Tables']['ai_source_analysis']['Update']
-export type DbAiToolUsageUpdate = Database['public']['Tables']['ai_tool_usage']['Update']
-export type DbAnalyticsEventsUpdate = Database['public']['Tables']['analytics_events']['Update']
-export type DbAppleIapTransactionsUpdate = Database['public']['Tables']['apple_iap_transactions']['Update']
-export type DbArticleBiasAnalysisUpdate = Database['public']['Tables']['article_bias_analysis']['Update']
-export type DbAssessedEntitiesUpdate = Database['public']['Tables']['assessed_entities']['Update']
-export type DbAssessmentEvidenceUpdate = Database['public']['Tables']['assessment_evidence']['Update']
-export type DbAssessmentFrameworksUpdate = Database['public']['Tables']['assessment_frameworks']['Update']
-export type DbAssessmentSummariesUpdate = Database['public']['Tables']['assessment_summaries']['Update']
-export type DbAssessmentsUpdate = Database['public']['Tables']['assessments']['Update']
-export type DbAutoGeneratedEventsUpdate = Database['public']['Tables']['auto_generated_events']['Update']
-export type DbBadgeRequirementsUpdate = Database['public']['Tables']['badge_requirements']['Update']
-export type DbBiasDetectionPatternsUpdate = Database['public']['Tables']['bias_detection_patterns']['Update']
-export type DbBiasDimensionsUpdate = Database['public']['Tables']['bias_dimensions']['Update']
-export type DbBiasFeedbackUpdate = Database['public']['Tables']['bias_feedback']['Update']
-export type DbBiasLearningEventsUpdate = Database['public']['Tables']['bias_learning_events']['Update']
-export type DbBillActionsUpdate = Database['public']['Tables']['bill_actions']['Update']
-export type DbBillContentAnalysisUpdate = Database['public']['Tables']['bill_content_analysis']['Update']
-export type DbBillCosponsorsUpdate = Database['public']['Tables']['bill_cosponsors']['Update']
-export type DbBillRelationshipsUpdate = Database['public']['Tables']['bill_relationships']['Update']
-export type DbBillSubjectsUpdate = Database['public']['Tables']['bill_subjects']['Update']
-export type DbBillSummariesUpdate = Database['public']['Tables']['bill_summaries']['Update']
-export type DbBookmarkAnalyticsUpdate = Database['public']['Tables']['bookmark_analytics']['Update']
-export type DbBookmarkCollectionItemsUpdate = Database['public']['Tables']['bookmark_collection_items']['Update']
-export type DbBookmarkCollectionsUpdate = Database['public']['Tables']['bookmark_collections']['Update']
-export type DbBookmarkSnippetsUpdate = Database['public']['Tables']['bookmark_snippets']['Update']
-export type DbBookmarkTagsUpdate = Database['public']['Tables']['bookmark_tags']['Update']
-export type DbBookmarksUpdate = Database['public']['Tables']['bookmarks']['Update']
-export type DbBoostDefinitionsUpdate = Database['public']['Tables']['boost_definitions']['Update']
-export type DbCalendarSyncLogsUpdate = Database['public']['Tables']['calendar_sync_logs']['Update']
-export type DbCategoriesUpdate = Database['public']['Tables']['categories']['Update']
-export type DbCategorySynonymsUpdate = Database['public']['Tables']['category_synonyms']['Update']
-export type DbCivicContentAnalysisUpdate = Database['public']['Tables']['civic_content_analysis']['Update']
-export type DbCivicEngagementEventsUpdate = Database['public']['Tables']['civic_engagement_events']['Update']
-export type DbCivicsTestAnalyticsUpdate = Database['public']['Tables']['civics_test_analytics']['Update']
-export type DbCleverUserMappingUpdate = Database['public']['Tables']['clever_user_mapping']['Update']
-export type DbCollectionAnalyticsUpdate = Database['public']['Tables']['collection_analytics']['Update']
-export type DbCollectionAnalyticsDailyUpdate = Database['public']['Tables']['collection_analytics_daily']['Update']
-export type DbCollectionAnalyticsEventsUpdate = Database['public']['Tables']['collection_analytics_events']['Update']
-export type DbCollectionCollaboratorsUpdate = Database['public']['Tables']['collection_collaborators']['Update']
-export type DbCollectionEngagementUpdate = Database['public']['Tables']['collection_engagement']['Update']
-export type DbCollectionItemsUpdate = Database['public']['Tables']['collection_items']['Update']
-export type DbCollectionPlaySessionsUpdate = Database['public']['Tables']['collection_play_sessions']['Update']
-export type DbCollectionReviewsUpdate = Database['public']['Tables']['collection_reviews']['Update']
-export type DbCollectionSharesUpdate = Database['public']['Tables']['collection_shares']['Update']
-export type DbCollectionSkillProgressUpdate = Database['public']['Tables']['collection_skill_progress']['Update']
-export type DbCollectionsUpdate = Database['public']['Tables']['collections']['Update']
-export type DbCommitteeMembershipsUpdate = Database['public']['Tables']['committee_memberships']['Update']
-export type DbCongressionalBillsUpdate = Database['public']['Tables']['congressional_bills']['Update']
-export type DbCongressionalCommitteesUpdate = Database['public']['Tables']['congressional_committees']['Update']
-export type DbCongressionalPhotosUpdate = Database['public']['Tables']['congressional_photos']['Update']
-export type DbCongressionalProceedingsUpdate = Database['public']['Tables']['congressional_proceedings']['Update']
-export type DbCongressionalSessionsUpdate = Database['public']['Tables']['congressional_sessions']['Update']
-export type DbCongressionalTermsUpdate = Database['public']['Tables']['congressional_terms']['Update']
-export type DbCongressionalVotesUpdate = Database['public']['Tables']['congressional_votes']['Update']
-export type DbContentDuplicationWarningsUpdate = Database['public']['Tables']['content_duplication_warnings']['Update']
-export type DbContentFilteringRulesUpdate = Database['public']['Tables']['content_filtering_rules']['Update']
-export type DbContentGapsAnalysisUpdate = Database['public']['Tables']['content_gaps_analysis']['Update']
-export type DbContentGenerationQueueUpdate = Database['public']['Tables']['content_generation_queue']['Update']
-export type DbContentItemSkillsUpdate = Database['public']['Tables']['content_item_skills']['Update']
-export type DbContentPackagesUpdate = Database['public']['Tables']['content_packages']['Update']
-export type DbContentPublicationLogUpdate = Database['public']['Tables']['content_publication_log']['Update']
-export type DbContentRecommendationsUpdate = Database['public']['Tables']['content_recommendations']['Update']
-export type DbContentRelationshipsUpdate = Database['public']['Tables']['content_relationships']['Update']
-export type DbContentReviewsUpdate = Database['public']['Tables']['content_reviews']['Update']
-export type DbCustomCollectionItemsUpdate = Database['public']['Tables']['custom_collection_items']['Update']
-export type DbCustomContentCollectionsUpdate = Database['public']['Tables']['custom_content_collections']['Update']
-export type DbCustomContentGenerationsUpdate = Database['public']['Tables']['custom_content_generations']['Update']
-export type DbCustomContentQuestionsUpdate = Database['public']['Tables']['custom_content_questions']['Update']
-export type DbCustomContentTopicsUpdate = Database['public']['Tables']['custom_content_topics']['Update']
-export type DbDiscountCodesUpdate = Database['public']['Tables']['discount_codes']['Update']
-export type DbDocumentActionsUpdate = Database['public']['Tables']['document_actions']['Update']
-export type DbDocumentRelationshipsUpdate = Database['public']['Tables']['document_relationships']['Update']
-export type DbDocumentSourcesUpdate = Database['public']['Tables']['document_sources']['Update']
-export type DbDocumentSubjectsUpdate = Database['public']['Tables']['document_subjects']['Update']
-export type DbElectionInfoUpdate = Database['public']['Tables']['election_info']['Update']
-export type DbEventResearchSuggestionsUpdate = Database['public']['Tables']['event_research_suggestions']['Update']
-export type DbEventTimelineConnectionsUpdate = Database['public']['Tables']['event_timeline_connections']['Update']
-export type DbEventsUpdate = Database['public']['Tables']['events']['Update']
-export type DbExtractedEntitiesUpdate = Database['public']['Tables']['extracted_entities']['Update']
-export type DbExtractedRelationshipsUpdate = Database['public']['Tables']['extracted_relationships']['Update']
-export type DbFactCheckLogsUpdate = Database['public']['Tables']['fact_check_logs']['Update']
-export type DbFigureEventsUpdate = Database['public']['Tables']['figure_events']['Update']
-export type DbFigureOrganizationsUpdate = Database['public']['Tables']['figure_organizations']['Update']
-export type DbFigurePolicyPositionsUpdate = Database['public']['Tables']['figure_policy_positions']['Update']
-export type DbFigureQuizTopicsUpdate = Database['public']['Tables']['figure_quiz_topics']['Update']
-export type DbFigureRelationshipsUpdate = Database['public']['Tables']['figure_relationships']['Update']
-export type DbFriendRequestsUpdate = Database['public']['Tables']['friend_requests']['Update']
-export type DbGiftCreditsUpdate = Database['public']['Tables']['gift_credits']['Update']
-export type DbGiftRedemptionsUpdate = Database['public']['Tables']['gift_redemptions']['Update']
-export type DbGlossaryContentReferencesUpdate = Database['public']['Tables']['glossary_content_references']['Update']
-export type DbGlossaryGameSessionsUpdate = Database['public']['Tables']['glossary_game_sessions']['Update']
-export type DbGlossaryGamesUpdate = Database['public']['Tables']['glossary_games']['Update']
-export type DbGlossaryTermCategoriesUpdate = Database['public']['Tables']['glossary_term_categories']['Update']
-export type DbGlossaryTermRelationshipsUpdate = Database['public']['Tables']['glossary_term_relationships']['Update']
-export type DbGlossaryTermsUpdate = Database['public']['Tables']['glossary_terms']['Update']
-export type DbGlossaryUsageAnalyticsUpdate = Database['public']['Tables']['glossary_usage_analytics']['Update']
-export type DbGuestCivicsTestResultsUpdate = Database['public']['Tables']['guest_civics_test_results']['Update']
-export type DbGuestUsageAnalyticsUpdate = Database['public']['Tables']['guest_usage_analytics']['Update']
-export type DbGuestUsageTrackingUpdate = Database['public']['Tables']['guest_usage_tracking']['Update']
-export type DbImageAbTestResultsUpdate = Database['public']['Tables']['image_ab_test_results']['Update']
-export type DbImageGenerationAnalyticsUpdate = Database['public']['Tables']['image_generation_analytics']['Update']
-export type DbIndicatorActionsUpdate = Database['public']['Tables']['indicator_actions']['Update']
-export type DbIndicatorAssessmentsUpdate = Database['public']['Tables']['indicator_assessments']['Update']
-export type DbIndicatorCategoriesUpdate = Database['public']['Tables']['indicator_categories']['Update']
-export type DbIndicatorContentLinksUpdate = Database['public']['Tables']['indicator_content_links']['Update']
-export type DbIndicatorsUpdate = Database['public']['Tables']['indicators']['Update']
-export type DbJobExecutionLogsUpdate = Database['public']['Tables']['job_execution_logs']['Update']
-export type DbKeyPolicyPositionsUpdate = Database['public']['Tables']['key_policy_positions']['Update']
-export type DbKnowledgeConnectionsUpdate = Database['public']['Tables']['knowledge_connections']['Update']
-export type DbLearningObjectivesUpdate = Database['public']['Tables']['learning_objectives']['Update']
-export type DbLearningPodsUpdate = Database['public']['Tables']['learning_pods']['Update']
-export type DbLegislativeDocumentsUpdate = Database['public']['Tables']['legislative_documents']['Update']
-export type DbLessonStepsUpdate = Database['public']['Tables']['lesson_steps']['Update']
-export type DbLocationCoverageUpdate = Database['public']['Tables']['location_coverage']['Update']
-export type DbMediaOrganizationsUpdate = Database['public']['Tables']['media_organizations']['Update']
-export type DbMemberIndividualSettingsUpdate = Database['public']['Tables']['member_individual_settings']['Update']
-export type DbMemberVotesUpdate = Database['public']['Tables']['member_votes']['Update']
-export type DbMultiplayerChatMessagesUpdate = Database['public']['Tables']['multiplayer_chat_messages']['Update']
-export type DbMultiplayerConversationContextUpdate = Database['public']['Tables']['multiplayer_conversation_context']['Update']
-export type DbMultiplayerGameEventsUpdate = Database['public']['Tables']['multiplayer_game_events']['Update']
-export type DbMultiplayerGameSessionsUpdate = Database['public']['Tables']['multiplayer_game_sessions']['Update']
-export type DbMultiplayerNpcPlayersUpdate = Database['public']['Tables']['multiplayer_npc_players']['Update']
-export type DbMultiplayerQuestionResponsesUpdate = Database['public']['Tables']['multiplayer_question_responses']['Update']
-export type DbMultiplayerQuizAttemptsUpdate = Database['public']['Tables']['multiplayer_quiz_attempts']['Update']
-export type DbMultiplayerRoomEventsUpdate = Database['public']['Tables']['multiplayer_room_events']['Update']
-export type DbMultiplayerRoomPlayersUpdate = Database['public']['Tables']['multiplayer_room_players']['Update']
-export type DbMultiplayerRoomsUpdate = Database['public']['Tables']['multiplayer_rooms']['Update']
-export type DbNewsAgentConfigUpdate = Database['public']['Tables']['news_agent_config']['Update']
-export type DbNewsAgentLogsUpdate = Database['public']['Tables']['news_agent_logs']['Update']
-export type DbNewsEventsUpdate = Database['public']['Tables']['news_events']['Update']
-export type DbNotificationCampaignsUpdate = Database['public']['Tables']['notification_campaigns']['Update']
-export type DbNotificationEventsUpdate = Database['public']['Tables']['notification_events']['Update']
-export type DbNotificationProvidersUpdate = Database['public']['Tables']['notification_providers']['Update']
-export type DbNotificationSegmentsUpdate = Database['public']['Tables']['notification_segments']['Update']
-export type DbNotificationTemplatesUpdate = Database['public']['Tables']['notification_templates']['Update']
-export type DbNpcCategorySpecializationsUpdate = Database['public']['Tables']['npc_category_specializations']['Update']
-export type DbNpcChatTemplatesUpdate = Database['public']['Tables']['npc_chat_templates']['Update']
-export type DbNpcConversationHistoryUpdate = Database['public']['Tables']['npc_conversation_history']['Update']
-export type DbNpcLearningProgressionUpdate = Database['public']['Tables']['npc_learning_progression']['Update']
-export type DbNpcPersonalitiesUpdate = Database['public']['Tables']['npc_personalities']['Update']
-export type DbNpcQuestionResponsesUpdate = Database['public']['Tables']['npc_question_responses']['Update']
-export type DbNpcQuizAttemptsUpdate = Database['public']['Tables']['npc_quiz_attempts']['Update']
-export type DbOgDataCacheUpdate = Database['public']['Tables']['og_data_cache']['Update']
-export type DbOnboardingInvitesUpdate = Database['public']['Tables']['onboarding_invites']['Update']
-export type DbOrganizationBiasScoresUpdate = Database['public']['Tables']['organization_bias_scores']['Update']
-export type DbOrganizationsUpdate = Database['public']['Tables']['organizations']['Update']
-export type DbParentalControlsUpdate = Database['public']['Tables']['parental_controls']['Update']
-export type DbPathwaySkillsUpdate = Database['public']['Tables']['pathway_skills']['Update']
-export type DbPodAchievementsUpdate = Database['public']['Tables']['pod_achievements']['Update']
-export type DbPodActivitiesUpdate = Database['public']['Tables']['pod_activities']['Update']
-export type DbPodActivityLogUpdate = Database['public']['Tables']['pod_activity_log']['Update']
-export type DbPodAnalyticsUpdate = Database['public']['Tables']['pod_analytics']['Update']
-export type DbPodAnalyticsLogUpdate = Database['public']['Tables']['pod_analytics_log']['Update']
-export type DbPodChallengeParticipantsUpdate = Database['public']['Tables']['pod_challenge_participants']['Update']
-export type DbPodChallengesUpdate = Database['public']['Tables']['pod_challenges']['Update']
-export type DbPodInviteLinksUpdate = Database['public']['Tables']['pod_invite_links']['Update']
-export type DbPodJoinRequestsUpdate = Database['public']['Tables']['pod_join_requests']['Update']
-export type DbPodMemberAnalyticsUpdate = Database['public']['Tables']['pod_member_analytics']['Update']
-export type DbPodMemberSettingsUpdate = Database['public']['Tables']['pod_member_settings']['Update']
-export type DbPodMembershipsUpdate = Database['public']['Tables']['pod_memberships']['Update']
-export type DbPodPartnershipsUpdate = Database['public']['Tables']['pod_partnerships']['Update']
-export type DbPodRatingsUpdate = Database['public']['Tables']['pod_ratings']['Update']
-export type DbPodSettingsUpdate = Database['public']['Tables']['pod_settings']['Update']
-export type DbPodThemesUpdate = Database['public']['Tables']['pod_themes']['Update']
-export type DbProceedingExchangesUpdate = Database['public']['Tables']['proceeding_exchanges']['Update']
-export type DbProceedingParticipantsUpdate = Database['public']['Tables']['proceeding_participants']['Update']
-export type DbProfilesUpdate = Database['public']['Tables']['profiles']['Update']
-export type DbProgressQuestionResponsesUpdate = Database['public']['Tables']['progress_question_responses']['Update']
-export type DbProgressSessionsUpdate = Database['public']['Tables']['progress_sessions']['Update']
-export type DbPublicFiguresUpdate = Database['public']['Tables']['public_figures']['Update']
-export type DbQuestionAnalyticsUpdate = Database['public']['Tables']['question_analytics']['Update']
-export type DbQuestionEventConnectionsUpdate = Database['public']['Tables']['question_event_connections']['Update']
-export type DbQuestionFeedbackUpdate = Database['public']['Tables']['question_feedback']['Update']
-export type DbQuestionSkillsUpdate = Database['public']['Tables']['question_skills']['Update']
-export type DbQuestionSourceLinksUpdate = Database['public']['Tables']['question_source_links']['Update']
-export type DbQuestionTopicCategoriesUpdate = Database['public']['Tables']['question_topic_categories']['Update']
-export type DbQuestionTopicsUpdate = Database['public']['Tables']['question_topics']['Update']
-export type DbQuestionsUpdate = Database['public']['Tables']['questions']['Update']
-export type DbQuizAttemptsUpdate = Database['public']['Tables']['quiz_attempts']['Update']
-export type DbRaffleEntriesUpdate = Database['public']['Tables']['raffle_entries']['Update']
-export type DbRepresentativeContentMappingUpdate = Database['public']['Tables']['representative_content_mapping']['Update']
-export type DbResearchValidationUpdate = Database['public']['Tables']['research_validation']['Update']
-export type DbReviewAnalyticsUpdate = Database['public']['Tables']['review_analytics']['Update']
-export type DbReviewFlagsUpdate = Database['public']['Tables']['review_flags']['Update']
-export type DbReviewHelpfulnessVotesUpdate = Database['public']['Tables']['review_helpfulness_votes']['Update']
-export type DbReviewSummariesUpdate = Database['public']['Tables']['review_summaries']['Update']
-export type DbReviewerProfilesUpdate = Database['public']['Tables']['reviewer_profiles']['Update']
-export type DbRewardFulfillmentsUpdate = Database['public']['Tables']['reward_fulfillments']['Update']
-export type DbScenarioCharactersUpdate = Database['public']['Tables']['scenario_characters']['Update']
-export type DbScenarioDecisionsUpdate = Database['public']['Tables']['scenario_decisions']['Update']
-export type DbScenarioOutcomesUpdate = Database['public']['Tables']['scenario_outcomes']['Update']
-export type DbScenarioResourcesUpdate = Database['public']['Tables']['scenario_resources']['Update']
-export type DbScenarioSituationsUpdate = Database['public']['Tables']['scenario_situations']['Update']
-export type DbScenariosUpdate = Database['public']['Tables']['scenarios']['Update']
-export type DbScheduledContentJobsUpdate = Database['public']['Tables']['scheduled_content_jobs']['Update']
-export type DbSearchAnalyticsDailyUpdate = Database['public']['Tables']['search_analytics_daily']['Update']
-export type DbShareableGiftLinksUpdate = Database['public']['Tables']['shareable_gift_links']['Update']
-export type DbShareableLinkClaimsUpdate = Database['public']['Tables']['shareable_link_claims']['Update']
-export type DbSharedCollectionAccessUpdate = Database['public']['Tables']['shared_collection_access']['Update']
-export type DbSkillBadgesUpdate = Database['public']['Tables']['skill_badges']['Update']
-export type DbSkillCategoriesUpdate = Database['public']['Tables']['skill_categories']['Update']
-export type DbSkillLearningObjectivesUpdate = Database['public']['Tables']['skill_learning_objectives']['Update']
-export type DbSkillMasteryTrackingUpdate = Database['public']['Tables']['skill_mastery_tracking']['Update']
-export type DbSkillPracticeRecommendationsUpdate = Database['public']['Tables']['skill_practice_recommendations']['Update']
-export type DbSkillPrerequisitesUpdate = Database['public']['Tables']['skill_prerequisites']['Update']
-export type DbSkillProgressionPathwaysUpdate = Database['public']['Tables']['skill_progression_pathways']['Update']
-export type DbSkillRelationshipsUpdate = Database['public']['Tables']['skill_relationships']['Update']
-export type DbSkillsUpdate = Database['public']['Tables']['skills']['Update']
-export type DbSourceAnalysisCacheUpdate = Database['public']['Tables']['source_analysis_cache']['Update']
-export type DbSourceCredibilityIndicatorsUpdate = Database['public']['Tables']['source_credibility_indicators']['Update']
-export type DbSourceFetchQueueUpdate = Database['public']['Tables']['source_fetch_queue']['Update']
-export type DbSourceMetadataUpdate = Database['public']['Tables']['source_metadata']['Update']
-export type DbSpacedRepetitionScheduleUpdate = Database['public']['Tables']['spaced_repetition_schedule']['Update']
-export type DbStepAnalyticsUpdate = Database['public']['Tables']['step_analytics']['Update']
-export type DbStepTemplatesUpdate = Database['public']['Tables']['step_templates']['Update']
-export type DbSubscriptionTierLimitsUpdate = Database['public']['Tables']['subscription_tier_limits']['Update']
-export type DbSurveyAnswersUpdate = Database['public']['Tables']['survey_answers']['Update']
-export type DbSurveyIncentivesUpdate = Database['public']['Tables']['survey_incentives']['Update']
-export type DbSurveyLearningGoalsUpdate = Database['public']['Tables']['survey_learning_goals']['Update']
-export type DbSurveyQuestionsUpdate = Database['public']['Tables']['survey_questions']['Update']
-export type DbSurveyRecommendationsUpdate = Database['public']['Tables']['survey_recommendations']['Update']
-export type DbSurveyResponsesUpdate = Database['public']['Tables']['survey_responses']['Update']
-export type DbSurveysUpdate = Database['public']['Tables']['surveys']['Update']
-export type DbSystemAlertsUpdate = Database['public']['Tables']['system_alerts']['Update']
-export type DbTagsUpdate = Database['public']['Tables']['tags']['Update']
-export type DbTopicEventConnectionsUpdate = Database['public']['Tables']['topic_event_connections']['Update']
-export type DbTranslationJobsUpdate = Database['public']['Tables']['translation_jobs']['Update']
-export type DbTrendingSearchesUpdate = Database['public']['Tables']['trending_searches']['Update']
-export type DbUrlHealthStatusUpdate = Database['public']['Tables']['url_health_status']['Update']
-export type DbUrlValidationCacheUpdate = Database['public']['Tables']['url_validation_cache']['Update']
-export type DbUserAchievementsUpdate = Database['public']['Tables']['user_achievements']['Update']
-export type DbUserActiveBoostsUpdate = Database['public']['Tables']['user_active_boosts']['Update']
-export type DbUserAssessmentAnalyticsUpdate = Database['public']['Tables']['user_assessment_analytics']['Update']
-export type DbUserAssessmentAttemptsUpdate = Database['public']['Tables']['user_assessment_attempts']['Update']
-export type DbUserAssessmentEngagementUpdate = Database['public']['Tables']['user_assessment_engagement']['Update']
-export type DbUserAssessmentQuestionsUpdate = Database['public']['Tables']['user_assessment_questions']['Update']
-export type DbUserAssessmentScoringUpdate = Database['public']['Tables']['user_assessment_scoring']['Update']
-export type DbUserAssessmentsUpdate = Database['public']['Tables']['user_assessments']['Update']
-export type DbUserBadgesUpdate = Database['public']['Tables']['user_badges']['Update']
-export type DbUserBoostInventoryUpdate = Database['public']['Tables']['user_boost_inventory']['Update']
-export type DbUserCategoryPreferencesUpdate = Database['public']['Tables']['user_category_preferences']['Update']
-export type DbUserCategorySkillsUpdate = Database['public']['Tables']['user_category_skills']['Update']
-export type DbUserCollectionProgressUpdate = Database['public']['Tables']['user_collection_progress']['Update']
-export type DbUserContentAnnotationsUpdate = Database['public']['Tables']['user_content_annotations']['Update']
-export type DbUserContentConnectionsUpdate = Database['public']['Tables']['user_content_connections']['Update']
-export type DbUserContentViewsUpdate = Database['public']['Tables']['user_content_views']['Update']
-export type DbUserCreditsUpdate = Database['public']['Tables']['user_credits']['Update']
-export type DbUserCustomDecksUpdate = Database['public']['Tables']['user_custom_decks']['Update']
-export type DbUserDeckContentUpdate = Database['public']['Tables']['user_deck_content']['Update']
-export type DbUserDiscountUsageUpdate = Database['public']['Tables']['user_discount_usage']['Update']
-export type DbUserElectionTrackingUpdate = Database['public']['Tables']['user_election_tracking']['Update']
-export type DbUserEmailPreferencesUpdate = Database['public']['Tables']['user_email_preferences']['Update']
-export type DbUserEventsUpdate = Database['public']['Tables']['user_events']['Update']
-export type DbUserFeatureUsageUpdate = Database['public']['Tables']['user_feature_usage']['Update']
-export type DbUserFeedbackUpdate = Database['public']['Tables']['user_feedback']['Update']
-export type DbUserGenerationUsageUpdate = Database['public']['Tables']['user_generation_usage']['Update']
-export type DbUserIntegrationsUpdate = Database['public']['Tables']['user_integrations']['Update']
-export type DbUserLearningGoalsUpdate = Database['public']['Tables']['user_learning_goals']['Update']
-export type DbUserLearningInsightsUpdate = Database['public']['Tables']['user_learning_insights']['Update']
-export type DbUserLearningPatternsUpdate = Database['public']['Tables']['user_learning_patterns']['Update']
-export type DbUserLocationsUpdate = Database['public']['Tables']['user_locations']['Update']
-export type DbUserNotificationSubscriptionsUpdate = Database['public']['Tables']['user_notification_subscriptions']['Update']
-export type DbUserOnboardingStateUpdate = Database['public']['Tables']['user_onboarding_state']['Update']
-export type DbUserPlatformPreferencesUpdate = Database['public']['Tables']['user_platform_preferences']['Update']
-export type DbUserProgressUpdate = Database['public']['Tables']['user_progress']['Update']
-export type DbUserProgressHistoryUpdate = Database['public']['Tables']['user_progress_history']['Update']
-export type DbUserQuestionMemoryUpdate = Database['public']['Tables']['user_question_memory']['Update']
-export type DbUserQuestionResponsesUpdate = Database['public']['Tables']['user_question_responses']['Update']
-export type DbUserQuizAnalyticsUpdate = Database['public']['Tables']['user_quiz_analytics']['Update']
-export type DbUserQuizAttemptsUpdate = Database['public']['Tables']['user_quiz_attempts']['Update']
-export type DbUserRepresentativesUpdate = Database['public']['Tables']['user_representatives']['Update']
-export type DbUserRolesUpdate = Database['public']['Tables']['user_roles']['Update']
-export type DbUserScenarioAttemptsUpdate = Database['public']['Tables']['user_scenario_attempts']['Update']
-export type DbUserScenarioDecisionsUpdate = Database['public']['Tables']['user_scenario_decisions']['Update']
-export type DbUserSearchAnalyticsUpdate = Database['public']['Tables']['user_search_analytics']['Update']
-export type DbUserSearchHistoryUpdate = Database['public']['Tables']['user_search_history']['Update']
-export type DbUserSkillAssessmentCriteriaUpdate = Database['public']['Tables']['user_skill_assessment_criteria']['Update']
-export type DbUserSkillPreferencesUpdate = Database['public']['Tables']['user_skill_preferences']['Update']
-export type DbUserSkillProgressUpdate = Database['public']['Tables']['user_skill_progress']['Update']
-export type DbUserStepProgressUpdate = Database['public']['Tables']['user_step_progress']['Update']
-export type DbUserStreakHistoryUpdate = Database['public']['Tables']['user_streak_history']['Update']
-export type DbUserSubscriptionsUpdate = Database['public']['Tables']['user_subscriptions']['Update']
-export type DbUserSurveyCompletionsUpdate = Database['public']['Tables']['user_survey_completions']['Update']
-export type DbWeeklyContentMetricsUpdate = Database['public']['Tables']['weekly_content_metrics']['Update']
-export type DbWeeklyRecapCollectionsUpdate = Database['public']['Tables']['weekly_recap_collections']['Update']
-export type DbWeeklyRecapConfigsUpdate = Database['public']['Tables']['weekly_recap_configs']['Update']
-
-// public Views
-export type DbAiGeneratedTopicsView = Database['public']['Views']['ai_generated_topics']['Row']
-export type DbAssessmentQuestionStatsView = Database['public']['Views']['assessment_question_stats']['Row']
-export type DbCampaignPerformanceView = Database['public']['Views']['campaign_performance']['Row']
-export type DbCivicEngagementImpactView = Database['public']['Views']['civic_engagement_impact']['Row']
-export type DbCivicLearningImpactView = Database['public']['Views']['civic_learning_impact']['Row']
-export type DbCivicsTestAttemptsView = Database['public']['Views']['civics_test_attempts']['Row']
-export type DbCivicsTestMetricsView = Database['public']['Views']['civics_test_metrics']['Row']
-export type DbContentPerformanceView = Database['public']['Views']['content_performance']['Row']
-export type DbContentRelationshipAnalysisView = Database['public']['Views']['content_relationship_analysis']['Row']
-export type DbCourseStructureView = Database['public']['Views']['course_structure']['Row']
-export type DbCurrentAssessmentStatusView = Database['public']['Views']['current_assessment_status']['Row']
-export type DbDiscoverableCollectionsView = Database['public']['Views']['discoverable_collections']['Row']
-export type DbDomainReliabilityReportView = Database['public']['Views']['domain_reliability_report']['Row']
-export type DbEnhancedSourceAnalysisView = Database['public']['Views']['enhanced_source_analysis']['Row']
-export type DbFunctionTypeValidationView = Database['public']['Views']['function_type_validation']['Row']
-export type DbFunctionValidationSummaryView = Database['public']['Views']['function_validation_summary']['Row']
-export type DbIndicatorTrendsView = Database['public']['Views']['indicator_trends']['Row']
-export type DbLessonStructureView = Database['public']['Views']['lesson_structure']['Row']
-export type DbMultiplayerAttemptsView = Database['public']['Views']['multiplayer_attempts']['Row']
-export type DbMultiplayerRoomFunctionValidationView = Database['public']['Views']['multiplayer_room_function_validation']['Row']
-export type DbMultiplayerRoomsViewView = Database['public']['Views']['multiplayer_rooms_view']['Row']
-export type DbNewsAgentPerformanceView = Database['public']['Views']['news_agent_performance']['Row']
-export type DbNpcVsHumanAnalyticsView = Database['public']['Views']['npc_vs_human_analytics']['Row']
-export type DbPodActivityView = Database['public']['Views']['pod_activity']['Row']
-export type DbPodActivityDetailsView = Database['public']['Views']['pod_activity_details']['Row']
-export type DbPodDiscoveryView = Database['public']['Views']['pod_discovery']['Row']
-export type DbPodMemberDetailsView = Database['public']['Views']['pod_member_details']['Row']
-export type DbPracticeAttemptsView = Database['public']['Views']['practice_attempts']['Row']
-export type DbProviderPerformanceView = Database['public']['Views']['provider_performance']['Row']
-export type DbPublicCollectionsWithAuthorsView = Database['public']['Views']['public_collections_with_authors']['Row']
-export type DbPublishedCollectionsView = Database['public']['Views']['published_collections']['Row']
-export type DbQuestionFeedbackStatsView = Database['public']['Views']['question_feedback_stats']['Row']
-export type DbQuestionResponseStatsView = Database['public']['Views']['question_response_stats']['Row']
-export type DbQuestionSourcesEnhancedView = Database['public']['Views']['question_sources_enhanced']['Row']
-export type DbQuestionTopicsFewQuestionsView = Database['public']['Views']['question_topics_few_questions']['Row']
-export type DbRecentUrlFailuresView = Database['public']['Views']['recent_url_failures']['Row']
-export type DbResponseTimeAnalyticsView = Database['public']['Views']['response_time_analytics']['Row']
-export type DbReviewsWithReviewerView = Database['public']['Views']['reviews_with_reviewer']['Row']
-export type DbSurveySummaryView = Database['public']['Views']['survey_summary']['Row']
-export type DbTranslationJobStatsView = Database['public']['Views']['translation_job_stats']['Row']
-export type DbUserComprehensiveStatsView = Database['public']['Views']['user_comprehensive_stats']['Row']
-export type DbUserComprehensiveStatsPremiumView = Database['public']['Views']['user_comprehensive_stats_premium']['Row']
-export type DbUserSkillAnalyticsView = Database['public']['Views']['user_skill_analytics']['Row']
-export type DbVTopicsWithQuestionsAndTranslationsView = Database['public']['Views']['v_topics_with_questions_and_translations']['Row']
-export type DbVTopicsWithoutQuestionsView = Database['public']['Views']['v_topics_without_questions']['Row']
-export type DbVTranslationCoverageSummaryView = Database['public']['Views']['v_translation_coverage_summary']['Row']
-
-// public Enums
-export type DbCourseRoleEnum = Database['public']['Enums']['course_role']
-export type DbEnrollmentStatusEnum = Database['public']['Enums']['enrollment_status']
-export type DbQuizGameModeEnum = Database['public']['Enums']['quiz_game_mode']
-export type DbSchoolUserRoleEnum = Database['public']['Enums']['school_user_role']
-export type DbSyncStatusEnum = Database['public']['Enums']['sync_status']
-export type DbSyncTypeEnum = Database['public']['Enums']['sync_type']
-
-// public Functions
-export type DbAddContentToCollectionFunction = Database['public']['Functions']['add_content_to_collection']
-export type DbAddContentToCollectionArgs = Database['public']['Functions']['add_content_to_collection']['Args']
-export type DbAddContentToCollectionReturns = Database['public']['Functions']['add_content_to_collection']['Returns']
-export type DbAddFigureToTopicFunction = Database['public']['Functions']['add_figure_to_topic']
-export type DbAddFigureToTopicArgs = Database['public']['Functions']['add_figure_to_topic']['Args']
-export type DbAddFigureToTopicReturns = Database['public']['Functions']['add_figure_to_topic']['Returns']
-export type DbAddNpcToMultiplayerRoomFunction = Database['public']['Functions']['add_npc_to_multiplayer_room']
-export type DbAddNpcToMultiplayerRoomArgs = Database['public']['Functions']['add_npc_to_multiplayer_room']['Args']
-export type DbAddNpcToMultiplayerRoomReturns = Database['public']['Functions']['add_npc_to_multiplayer_room']['Returns']
-export type DbAddSourceToGlossaryTermFunction = Database['public']['Functions']['add_source_to_glossary_term']
-export type DbAddSourceToGlossaryTermArgs = Database['public']['Functions']['add_source_to_glossary_term']['Args']
-export type DbAddSourceToGlossaryTermReturns = Database['public']['Functions']['add_source_to_glossary_term']['Returns']
-export type DbAnalyzeImageAbTestFunction = Database['public']['Functions']['analyze_image_ab_test']
-export type DbAnalyzeImageAbTestArgs = Database['public']['Functions']['analyze_image_ab_test']['Args']
-export type DbAnalyzeImageAbTestReturns = Database['public']['Functions']['analyze_image_ab_test']['Returns']
-export type DbCacheSourceAnalysisFunction = Database['public']['Functions']['cache_source_analysis']
-export type DbCacheSourceAnalysisArgs = Database['public']['Functions']['cache_source_analysis']['Args']
-export type DbCacheSourceAnalysisReturns = Database['public']['Functions']['cache_source_analysis']['Returns']
-export type DbCalculateAssessmentScoreFunction = Database['public']['Functions']['calculate_assessment_score']
-export type DbCalculateAssessmentScoreArgs = Database['public']['Functions']['calculate_assessment_score']['Args']
-export type DbCalculateAssessmentScoreReturns = Database['public']['Functions']['calculate_assessment_score']['Returns']
-export type DbCalculateBiasConsensusFunction = Database['public']['Functions']['calculate_bias_consensus']
-export type DbCalculateBiasConsensusArgs = Database['public']['Functions']['calculate_bias_consensus']['Args']
-export type DbCalculateBiasConsensusReturns = Database['public']['Functions']['calculate_bias_consensus']['Returns']
-export type DbCalculateEngagementScoreFunction = Database['public']['Functions']['calculate_engagement_score']
-export type DbCalculateEngagementScoreArgs = Database['public']['Functions']['calculate_engagement_score']['Args']
-export type DbCalculateEngagementScoreReturns = Database['public']['Functions']['calculate_engagement_score']['Returns']
-export type DbCalculateGiftCreditsFunction = Database['public']['Functions']['calculate_gift_credits']
-export type DbCalculateGiftCreditsArgs = Database['public']['Functions']['calculate_gift_credits']['Args']
-export type DbCalculateGiftCreditsReturns = Database['public']['Functions']['calculate_gift_credits']['Returns']
-export type DbCalculateNextRunTimeFunction = Database['public']['Functions']['calculate_next_run_time']
-export type DbCalculateNextRunTimeArgs = Database['public']['Functions']['calculate_next_run_time']['Args']
-export type DbCalculateNextRunTimeReturns = Database['public']['Functions']['calculate_next_run_time']['Returns']
-export type DbCalculatePodAnalyticsFunction = Database['public']['Functions']['calculate_pod_analytics']
-export type DbCalculatePodAnalyticsArgs = Database['public']['Functions']['calculate_pod_analytics']['Args']
-export type DbCalculatePodAnalyticsReturns = Database['public']['Functions']['calculate_pod_analytics']['Returns']
-export type DbCalculateScenarioCompletionFunction = Database['public']['Functions']['calculate_scenario_completion']
-export type DbCalculateScenarioCompletionArgs = Database['public']['Functions']['calculate_scenario_completion']['Args']
-export type DbCalculateScenarioCompletionReturns = Database['public']['Functions']['calculate_scenario_completion']['Returns']
-export type DbCalculateWeeklyContentScoreFunction = Database['public']['Functions']['calculate_weekly_content_score']
-export type DbCalculateWeeklyContentScoreArgs = Database['public']['Functions']['calculate_weekly_content_score']['Args']
-export type DbCalculateWeeklyContentScoreReturns = Database['public']['Functions']['calculate_weekly_content_score']['Returns']
-export type DbCanAccessRoomFunction = Database['public']['Functions']['can_access_room']
-export type DbCanAccessRoomArgs = Database['public']['Functions']['can_access_room']['Args']
-export type DbCanAccessRoomReturns = Database['public']['Functions']['can_access_room']['Returns']
-export type DbCanJoinPodViaInviteFunction = Database['public']['Functions']['can_join_pod_via_invite']
-export type DbCanJoinPodViaInviteArgs = Database['public']['Functions']['can_join_pod_via_invite']['Args']
-export type DbCanJoinPodViaInviteReturns = Database['public']['Functions']['can_join_pod_via_invite']['Returns']
-export type DbCanUserGenerateContentFunction = Database['public']['Functions']['can_user_generate_content']
-export type DbCanUserGenerateContentArgs = Database['public']['Functions']['can_user_generate_content']['Args']
-export type DbCanUserGenerateContentReturns = Database['public']['Functions']['can_user_generate_content']['Returns']
-export type DbCheckAllPlayersReadyFunction = Database['public']['Functions']['check_all_players_ready']
-export type DbCheckAllPlayersReadyArgs = Database['public']['Functions']['check_all_players_ready']['Args']
-export type DbCheckAllPlayersReadyReturns = Database['public']['Functions']['check_all_players_ready']['Returns']
-export type DbCheckAndAwardAchievementsFunction = Database['public']['Functions']['check_and_award_achievements']
-export type DbCheckAndAwardAchievementsArgs = Database['public']['Functions']['check_and_award_achievements']['Args']
-export type DbCheckAndAwardAchievementsReturns = Database['public']['Functions']['check_and_award_achievements']['Returns']
-export type DbCheckAppleIapAccessFunction = Database['public']['Functions']['check_apple_iap_access']
-export type DbCheckAppleIapAccessArgs = Database['public']['Functions']['check_apple_iap_access']['Args']
-export type DbCheckAppleIapAccessReturns = Database['public']['Functions']['check_apple_iap_access']['Returns']
-export type DbCheckBoostCooldownFunction = Database['public']['Functions']['check_boost_cooldown']
-export type DbCheckBoostCooldownArgs = Database['public']['Functions']['check_boost_cooldown']['Args']
-export type DbCheckBoostCooldownReturns = Database['public']['Functions']['check_boost_cooldown']['Returns']
-export type DbCheckImageGenerationPerformanceFunction = Database['public']['Functions']['check_image_generation_performance']
-export type DbCheckImageGenerationPerformanceArgs = Database['public']['Functions']['check_image_generation_performance']['Args']
-export type DbCheckImageGenerationPerformanceReturns = Database['public']['Functions']['check_image_generation_performance']['Returns']
-export type DbCheckIncentiveEligibilityFunction = Database['public']['Functions']['check_incentive_eligibility']
-export type DbCheckIncentiveEligibilityArgs = Database['public']['Functions']['check_incentive_eligibility']['Args']
-export type DbCheckIncentiveEligibilityReturns = Database['public']['Functions']['check_incentive_eligibility']['Returns']
-export type DbCheckPremiumFeatureAccessFunction = Database['public']['Functions']['check_premium_feature_access']
-export type DbCheckPremiumFeatureAccessArgs = Database['public']['Functions']['check_premium_feature_access']['Args']
-export type DbCheckPremiumFeatureAccessReturns = Database['public']['Functions']['check_premium_feature_access']['Returns']
-export type DbCheckSilenceInterventionFunction = Database['public']['Functions']['check_silence_intervention']
-export type DbCheckSilenceInterventionArgs = Database['public']['Functions']['check_silence_intervention']['Args']
-export type DbCheckSilenceInterventionReturns = Database['public']['Functions']['check_silence_intervention']['Returns']
-export type DbClaimShareableGiftLinkFunction = Database['public']['Functions']['claim_shareable_gift_link']
-export type DbClaimShareableGiftLinkArgs = Database['public']['Functions']['claim_shareable_gift_link']['Args']
-export type DbClaimShareableGiftLinkReturns = Database['public']['Functions']['claim_shareable_gift_link']['Returns']
-export type DbCleanupExpiredAgentMemoryFunction = Database['public']['Functions']['cleanup_expired_agent_memory']
-export type DbCleanupExpiredAgentMemoryArgs = Database['public']['Functions']['cleanup_expired_agent_memory']['Args']
-export type DbCleanupExpiredAgentMemoryReturns = Database['public']['Functions']['cleanup_expired_agent_memory']['Returns']
-export type DbCleanupExpiredAiAnalysesFunction = Database['public']['Functions']['cleanup_expired_ai_analyses']
-export type DbCleanupExpiredAiAnalysesArgs = Database['public']['Functions']['cleanup_expired_ai_analyses']['Args']
-export type DbCleanupExpiredAiAnalysesReturns = Database['public']['Functions']['cleanup_expired_ai_analyses']['Returns']
-export type DbCleanupExpiredBoostsFunction = Database['public']['Functions']['cleanup_expired_boosts']
-export type DbCleanupExpiredBoostsArgs = Database['public']['Functions']['cleanup_expired_boosts']['Args']
-export type DbCleanupExpiredBoostsReturns = Database['public']['Functions']['cleanup_expired_boosts']['Returns']
-export type DbCleanupExpiredOgCacheFunction = Database['public']['Functions']['cleanup_expired_og_cache']
-export type DbCleanupExpiredOgCacheArgs = Database['public']['Functions']['cleanup_expired_og_cache']['Args']
-export type DbCleanupExpiredOgCacheReturns = Database['public']['Functions']['cleanup_expired_og_cache']['Returns']
-export type DbCleanupExpiredProgressSessionsFunction = Database['public']['Functions']['cleanup_expired_progress_sessions']
-export type DbCleanupExpiredProgressSessionsArgs = Database['public']['Functions']['cleanup_expired_progress_sessions']['Args']
-export type DbCleanupExpiredProgressSessionsReturns = Database['public']['Functions']['cleanup_expired_progress_sessions']['Returns']
-export type DbCleanupExpiredRoomsFunction = Database['public']['Functions']['cleanup_expired_rooms']
-export type DbCleanupExpiredRoomsArgs = Database['public']['Functions']['cleanup_expired_rooms']['Args']
-export type DbCleanupExpiredRoomsReturns = Database['public']['Functions']['cleanup_expired_rooms']['Returns']
-export type DbCleanupExpiredSourceAnalysisFunction = Database['public']['Functions']['cleanup_expired_source_analysis']
-export type DbCleanupExpiredSourceAnalysisArgs = Database['public']['Functions']['cleanup_expired_source_analysis']['Args']
-export type DbCleanupExpiredSourceAnalysisReturns = Database['public']['Functions']['cleanup_expired_source_analysis']['Returns']
-export type DbCleanupInactivePlayersFunction = Database['public']['Functions']['cleanup_inactive_players']
-export type DbCleanupInactivePlayersArgs = Database['public']['Functions']['cleanup_inactive_players']['Args']
-export type DbCleanupInactivePlayersReturns = Database['public']['Functions']['cleanup_inactive_players']['Returns']
-export type DbCleanupOldJobDataFunction = Database['public']['Functions']['cleanup_old_job_data']
-export type DbCleanupOldJobDataArgs = Database['public']['Functions']['cleanup_old_job_data']['Args']
-export type DbCleanupOldJobDataReturns = Database['public']['Functions']['cleanup_old_job_data']['Returns']
-export type DbCleanupOldTranslationJobsFunction = Database['public']['Functions']['cleanup_old_translation_jobs']
-export type DbCleanupOldTranslationJobsArgs = Database['public']['Functions']['cleanup_old_translation_jobs']['Args']
-export type DbCleanupOldTranslationJobsReturns = Database['public']['Functions']['cleanup_old_translation_jobs']['Returns']
-export type DbCleanupOldTrendingSearchesFunction = Database['public']['Functions']['cleanup_old_trending_searches']
-export type DbCleanupOldTrendingSearchesArgs = Database['public']['Functions']['cleanup_old_trending_searches']['Args']
-export type DbCleanupOldTrendingSearchesReturns = Database['public']['Functions']['cleanup_old_trending_searches']['Returns']
-export type DbCleanupOldUrlValidationsFunction = Database['public']['Functions']['cleanup_old_url_validations']
-export type DbCleanupOldUrlValidationsArgs = Database['public']['Functions']['cleanup_old_url_validations']['Args']
-export type DbCleanupOldUrlValidationsReturns = Database['public']['Functions']['cleanup_old_url_validations']['Returns']
-export type DbCompleteOnboardingStepFunction = Database['public']['Functions']['complete_onboarding_step']
-export type DbCompleteOnboardingStepArgs = Database['public']['Functions']['complete_onboarding_step']['Args']
-export type DbCompleteOnboardingStepReturns = Database['public']['Functions']['complete_onboarding_step']['Returns']
-export type DbConvertGuestCivicsResultsFunction = Database['public']['Functions']['convert_guest_civics_results']
-export type DbConvertGuestCivicsResultsArgs = Database['public']['Functions']['convert_guest_civics_results']['Args']
-export type DbConvertGuestCivicsResultsReturns = Database['public']['Functions']['convert_guest_civics_results']['Returns']
-export type DbConvertPreviewToTopicFunction = Database['public']['Functions']['convert_preview_to_topic']
-export type DbConvertPreviewToTopicArgs = Database['public']['Functions']['convert_preview_to_topic']['Args']
-export type DbConvertPreviewToTopicReturns = Database['public']['Functions']['convert_preview_to_topic']['Returns']
-export type DbCreateGiftRedemptionFunction = Database['public']['Functions']['create_gift_redemption']
-export type DbCreateGiftRedemptionArgs = Database['public']['Functions']['create_gift_redemption']['Args']
-export type DbCreateGiftRedemptionReturns = Database['public']['Functions']['create_gift_redemption']['Returns']
-export type DbCreateLearningPodFunction = Database['public']['Functions']['create_learning_pod']
-export type DbCreateLearningPodArgs = Database['public']['Functions']['create_learning_pod']['Args']
-export type DbCreateLearningPodReturns = Database['public']['Functions']['create_learning_pod']['Returns']
-export type DbCreateMultiplayerRoomFunction = Database['public']['Functions']['create_multiplayer_room']
-export type DbCreateMultiplayerRoomArgs = Database['public']['Functions']['create_multiplayer_room']['Args']
-export type DbCreateMultiplayerRoomReturns = Database['public']['Functions']['create_multiplayer_room']['Returns']
-export type DbCreatePodInviteLinkFunction = Database['public']['Functions']['create_pod_invite_link']
-export type DbCreatePodInviteLinkArgs = Database['public']['Functions']['create_pod_invite_link']['Args']
-export type DbCreatePodInviteLinkReturns = Database['public']['Functions']['create_pod_invite_link']['Returns']
-export type DbCreateScenarioRoomFunction = Database['public']['Functions']['create_scenario_room']
-export type DbCreateScenarioRoomArgs = Database['public']['Functions']['create_scenario_room']['Args']
-export type DbCreateScenarioRoomReturns = Database['public']['Functions']['create_scenario_room']['Returns']
-export type DbCreateShareableGiftLinkFunction = Database['public']['Functions']['create_shareable_gift_link']
-export type DbCreateShareableGiftLinkArgs = Database['public']['Functions']['create_shareable_gift_link']['Args']
-export type DbCreateShareableGiftLinkReturns = Database['public']['Functions']['create_shareable_gift_link']['Returns']
-export type DbDetectAllTypeMismatchesFunction = Database['public']['Functions']['detect_all_type_mismatches']
-export type DbDetectAllTypeMismatchesArgs = Database['public']['Functions']['detect_all_type_mismatches']['Args']
-export type DbDetectAllTypeMismatchesReturns = Database['public']['Functions']['detect_all_type_mismatches']['Returns']
-export type DbFindDuplicatePublicFiguresFunction = Database['public']['Functions']['find_duplicate_public_figures']
-export type DbFindDuplicatePublicFiguresArgs = Database['public']['Functions']['find_duplicate_public_figures']['Args']
-export type DbFindDuplicatePublicFiguresReturns = Database['public']['Functions']['find_duplicate_public_figures']['Returns']
-export type DbFindPotentialFriendsFunction = Database['public']['Functions']['find_potential_friends']
-export type DbFindPotentialFriendsArgs = Database['public']['Functions']['find_potential_friends']['Args']
-export type DbFindPotentialFriendsReturns = Database['public']['Functions']['find_potential_friends']['Returns']
-export type DbGenerateCollectionSlugFunction = Database['public']['Functions']['generate_collection_slug']
-export type DbGenerateCollectionSlugArgs = Database['public']['Functions']['generate_collection_slug']['Args']
-export type DbGenerateCollectionSlugReturns = Database['public']['Functions']['generate_collection_slug']['Returns']
-export type DbGenerateInviteCodeFunction = Database['public']['Functions']['generate_invite_code']
-export type DbGenerateInviteCodeArgs = Database['public']['Functions']['generate_invite_code']['Args']
-export type DbGenerateInviteCodeReturns = Database['public']['Functions']['generate_invite_code']['Returns']
-export type DbGeneratePodSlugFunction = Database['public']['Functions']['generate_pod_slug']
-export type DbGeneratePodSlugArgs = Database['public']['Functions']['generate_pod_slug']['Args']
-export type DbGeneratePodSlugReturns = Database['public']['Functions']['generate_pod_slug']['Returns']
-export type DbGenerateRoomCodeFunction = Database['public']['Functions']['generate_room_code']
-export type DbGenerateRoomCodeArgs = Database['public']['Functions']['generate_room_code']['Args']
-export type DbGenerateRoomCodeReturns = Database['public']['Functions']['generate_room_code']['Returns']
-export type DbGenerateRoomSlugFunction = Database['public']['Functions']['generate_room_slug']
-export type DbGenerateRoomSlugArgs = Database['public']['Functions']['generate_room_slug']['Args']
-export type DbGenerateRoomSlugReturns = Database['public']['Functions']['generate_room_slug']['Returns']
-export type DbGenerateSlugFunction = Database['public']['Functions']['generate_slug']
-export type DbGenerateSlugArgs = Database['public']['Functions']['generate_slug']['Args']
-export type DbGenerateSlugReturns = Database['public']['Functions']['generate_slug']['Returns']
-export type DbGenerateTicketCodeFunction = Database['public']['Functions']['generate_ticket_code']
-export type DbGenerateTicketCodeArgs = Database['public']['Functions']['generate_ticket_code']['Args']
-export type DbGenerateTicketCodeReturns = Database['public']['Functions']['generate_ticket_code']['Returns']
-export type DbGetActiveGameSessionFunction = Database['public']['Functions']['get_active_game_session']
-export type DbGetActiveGameSessionArgs = Database['public']['Functions']['get_active_game_session']['Args']
-export type DbGetActiveGameSessionReturns = Database['public']['Functions']['get_active_game_session']['Returns']
-export type DbGetActiveMultiplayerRoomsFunction = Database['public']['Functions']['get_active_multiplayer_rooms']
-export type DbGetActiveMultiplayerRoomsArgs = Database['public']['Functions']['get_active_multiplayer_rooms']['Args']
-export type DbGetActiveMultiplayerRoomsReturns = Database['public']['Functions']['get_active_multiplayer_rooms']['Returns']
-export type DbGetAssessmentQuestionSocialProofStatsFunction = Database['public']['Functions']['get_assessment_question_social_proof_stats']
-export type DbGetAssessmentQuestionSocialProofStatsArgs = Database['public']['Functions']['get_assessment_question_social_proof_stats']['Args']
-export type DbGetAssessmentQuestionSocialProofStatsReturns = Database['public']['Functions']['get_assessment_question_social_proof_stats']['Returns']
-export type DbGetAvailableBoostsForUserFunction = Database['public']['Functions']['get_available_boosts_for_user']
-export type DbGetAvailableBoostsForUserArgs = Database['public']['Functions']['get_available_boosts_for_user']['Args']
-export type DbGetAvailableBoostsForUserReturns = Database['public']['Functions']['get_available_boosts_for_user']['Returns']
-export type DbGetCategoryStatsBatchFunction = Database['public']['Functions']['get_category_stats_batch']
-export type DbGetCategoryStatsBatchArgs = Database['public']['Functions']['get_category_stats_batch']['Args']
-export type DbGetCategoryStatsBatchReturns = Database['public']['Functions']['get_category_stats_batch']['Returns']
-export type DbGetCollectionContentsFunction = Database['public']['Functions']['get_collection_contents']
-export type DbGetCollectionContentsArgs = Database['public']['Functions']['get_collection_contents']['Args']
-export type DbGetCollectionContentsReturns = Database['public']['Functions']['get_collection_contents']['Returns']
-export type DbGetCollectionSkillsFunction = Database['public']['Functions']['get_collection_skills']
-export type DbGetCollectionSkillsArgs = Database['public']['Functions']['get_collection_skills']['Args']
-export type DbGetCollectionSkillsReturns = Database['public']['Functions']['get_collection_skills']['Returns']
-export type DbGetCollectionStatsFunction = Database['public']['Functions']['get_collection_stats']
-export type DbGetCollectionStatsArgs = Database['public']['Functions']['get_collection_stats']['Args']
-export type DbGetCollectionStatsReturns = Database['public']['Functions']['get_collection_stats']['Returns']
-export type DbGetCollectionsWithSkillCategoriesFunction = Database['public']['Functions']['get_collections_with_skill_categories']
-export type DbGetCollectionsWithSkillCategoriesArgs = Database['public']['Functions']['get_collections_with_skill_categories']['Args']
-export type DbGetCollectionsWithSkillCategoriesReturns = Database['public']['Functions']['get_collections_with_skill_categories']['Returns']
-export type DbGetCollectionsWithSkillsFunction = Database['public']['Functions']['get_collections_with_skills']
-export type DbGetCollectionsWithSkillsArgs = Database['public']['Functions']['get_collections_with_skills']['Args']
-export type DbGetCollectionsWithSkillsReturns = Database['public']['Functions']['get_collections_with_skills']['Returns']
-export type DbGetContentRelationshipsFunction = Database['public']['Functions']['get_content_relationships']
-export type DbGetContentRelationshipsArgs = Database['public']['Functions']['get_content_relationships']['Args']
-export type DbGetContentRelationshipsReturns = Database['public']['Functions']['get_content_relationships']['Returns']
-export type DbGetContentTranslationStatsFunction = Database['public']['Functions']['get_content_translation_stats']
-export type DbGetContentTranslationStatsArgs = Database['public']['Functions']['get_content_translation_stats']['Args']
-export type DbGetContentTranslationStatsReturns = Database['public']['Functions']['get_content_translation_stats']['Returns']
-export type DbGetCourseStructureFunction = Database['public']['Functions']['get_course_structure']
-export type DbGetCourseStructureArgs = Database['public']['Functions']['get_course_structure']['Args']
-export type DbGetCourseStructureReturns = Database['public']['Functions']['get_course_structure']['Returns']
-export type DbGetDetailedGiftCreditsFunction = Database['public']['Functions']['get_detailed_gift_credits']
-export type DbGetDetailedGiftCreditsArgs = Database['public']['Functions']['get_detailed_gift_credits']['Args']
-export type DbGetDetailedGiftCreditsReturns = Database['public']['Functions']['get_detailed_gift_credits']['Returns']
-export type DbGetEffectiveMemberSettingsFunction = Database['public']['Functions']['get_effective_member_settings']
-export type DbGetEffectiveMemberSettingsArgs = Database['public']['Functions']['get_effective_member_settings']['Args']
-export type DbGetEffectiveMemberSettingsReturns = Database['public']['Functions']['get_effective_member_settings']['Returns']
-export type DbGetEnhancedSourceAnalysisFunction = Database['public']['Functions']['get_enhanced_source_analysis']
-export type DbGetEnhancedSourceAnalysisArgs = Database['public']['Functions']['get_enhanced_source_analysis']['Args']
-export type DbGetEnhancedSourceAnalysisReturns = Database['public']['Functions']['get_enhanced_source_analysis']['Returns']
-export type DbGetEventTimelineFunction = Database['public']['Functions']['get_event_timeline']
-export type DbGetEventTimelineArgs = Database['public']['Functions']['get_event_timeline']['Args']
-export type DbGetEventTimelineReturns = Database['public']['Functions']['get_event_timeline']['Returns']
-export type DbGetFunctionReturnInfoFunction = Database['public']['Functions']['get_function_return_info']
-export type DbGetFunctionReturnInfoArgs = Database['public']['Functions']['get_function_return_info']['Args']
-export type DbGetFunctionReturnInfoReturns = Database['public']['Functions']['get_function_return_info']['Returns']
-export type DbGetGiftAnalyticsSummaryFunction = Database['public']['Functions']['get_gift_analytics_summary']
-export type DbGetGiftAnalyticsSummaryArgs = Database['public']['Functions']['get_gift_analytics_summary']['Args']
-export type DbGetGiftAnalyticsSummaryReturns = Database['public']['Functions']['get_gift_analytics_summary']['Returns']
-export type DbGetGlossaryTermWithSourcesFunction = Database['public']['Functions']['get_glossary_term_with_sources']
-export type DbGetGlossaryTermWithSourcesArgs = Database['public']['Functions']['get_glossary_term_with_sources']['Args']
-export type DbGetGlossaryTermWithSourcesReturns = Database['public']['Functions']['get_glossary_term_with_sources']['Returns']
-export type DbGetGuestTestSummaryFunction = Database['public']['Functions']['get_guest_test_summary']
-export type DbGetGuestTestSummaryArgs = Database['public']['Functions']['get_guest_test_summary']['Args']
-export type DbGetGuestTestSummaryReturns = Database['public']['Functions']['get_guest_test_summary']['Returns']
-export type DbGetJobsReadyForExecutionFunction = Database['public']['Functions']['get_jobs_ready_for_execution']
-export type DbGetJobsReadyForExecutionArgs = Database['public']['Functions']['get_jobs_ready_for_execution']['Args']
-export type DbGetJobsReadyForExecutionReturns = Database['public']['Functions']['get_jobs_ready_for_execution']['Returns']
-export type DbGetLessonProgressStatsFunction = Database['public']['Functions']['get_lesson_progress_stats']
-export type DbGetLessonProgressStatsArgs = Database['public']['Functions']['get_lesson_progress_stats']['Args']
-export type DbGetLessonProgressStatsReturns = Database['public']['Functions']['get_lesson_progress_stats']['Returns']
-export type DbGetMemberPhotoUrlsFunction = Database['public']['Functions']['get_member_photo_urls']
-export type DbGetMemberPhotoUrlsArgs = Database['public']['Functions']['get_member_photo_urls']['Args']
-export type DbGetMemberPhotoUrlsReturns = Database['public']['Functions']['get_member_photo_urls']['Returns']
-export type DbGetNpcCategoryPerformanceFunction = Database['public']['Functions']['get_npc_category_performance']
-export type DbGetNpcCategoryPerformanceArgs = Database['public']['Functions']['get_npc_category_performance']['Args']
-export type DbGetNpcCategoryPerformanceReturns = Database['public']['Functions']['get_npc_category_performance']['Returns']
-export type DbGetOnboardingCategoriesFunction = Database['public']['Functions']['get_onboarding_categories']
-export type DbGetOnboardingCategoriesArgs = Database['public']['Functions']['get_onboarding_categories']['Args']
-export type DbGetOnboardingCategoriesReturns = Database['public']['Functions']['get_onboarding_categories']['Returns']
-export type DbGetOnboardingSkillsFunction = Database['public']['Functions']['get_onboarding_skills']
-export type DbGetOnboardingSkillsArgs = Database['public']['Functions']['get_onboarding_skills']['Args']
-export type DbGetOnboardingSkillsReturns = Database['public']['Functions']['get_onboarding_skills']['Returns']
-export type DbGetOrCreateMediaOrganizationFunction = Database['public']['Functions']['get_or_create_media_organization']
-export type DbGetOrCreateMediaOrganizationArgs = Database['public']['Functions']['get_or_create_media_organization']['Args']
-export type DbGetOrCreateMediaOrganizationReturns = Database['public']['Functions']['get_or_create_media_organization']['Returns']
-export type DbGetOrCreatePodAnalyticsTodayFunction = Database['public']['Functions']['get_or_create_pod_analytics_today']
-export type DbGetOrCreatePodAnalyticsTodayArgs = Database['public']['Functions']['get_or_create_pod_analytics_today']['Args']
-export type DbGetOrCreatePodAnalyticsTodayReturns = Database['public']['Functions']['get_or_create_pod_analytics_today']['Returns']
-export type DbGetOrCreateSourceAnalysisFunction = Database['public']['Functions']['get_or_create_source_analysis']
-export type DbGetOrCreateSourceAnalysisArgs = Database['public']['Functions']['get_or_create_source_analysis']['Args']
-export type DbGetOrCreateSourceAnalysisReturns = Database['public']['Functions']['get_or_create_source_analysis']['Returns']
-export type DbGetOrCreateSourceMetadataFunction = Database['public']['Functions']['get_or_create_source_metadata']
-export type DbGetOrCreateSourceMetadataArgs = Database['public']['Functions']['get_or_create_source_metadata']['Args']
-export type DbGetOrCreateSourceMetadataReturns = Database['public']['Functions']['get_or_create_source_metadata']['Returns']
-export type DbGetOrCreateTagFunction = Database['public']['Functions']['get_or_create_tag']
-export type DbGetOrCreateTagArgs = Database['public']['Functions']['get_or_create_tag']['Args']
-export type DbGetOrCreateTagReturns = Database['public']['Functions']['get_or_create_tag']['Returns']
-export type DbGetPeopleHelpedByDonorFunction = Database['public']['Functions']['get_people_helped_by_donor']
-export type DbGetPeopleHelpedByDonorArgs = Database['public']['Functions']['get_people_helped_by_donor']['Args']
-export type DbGetPeopleHelpedByDonorReturns = Database['public']['Functions']['get_people_helped_by_donor']['Returns']
-export type DbGetPersonalizedQuizzesFunction = Database['public']['Functions']['get_personalized_quizzes']
-export type DbGetPersonalizedQuizzesArgs = Database['public']['Functions']['get_personalized_quizzes']['Args']
-export type DbGetPersonalizedQuizzesReturns = Database['public']['Functions']['get_personalized_quizzes']['Returns']
-export type DbGetPodAnalyticsFunction = Database['public']['Functions']['get_pod_analytics']
-export type DbGetPodAnalyticsArgs = Database['public']['Functions']['get_pod_analytics']['Args']
-export type DbGetPodAnalyticsReturns = Database['public']['Functions']['get_pod_analytics']['Returns']
-export type DbGetQuestionSocialProofStatsFunction = Database['public']['Functions']['get_question_social_proof_stats']
-export type DbGetQuestionSocialProofStatsArgs = Database['public']['Functions']['get_question_social_proof_stats']['Args']
-export type DbGetQuestionSocialProofStatsReturns = Database['public']['Functions']['get_question_social_proof_stats']['Returns']
-export type DbGetQuestionsBatchFunction = Database['public']['Functions']['get_questions_batch']
-export type DbGetQuestionsBatchArgs = Database['public']['Functions']['get_questions_batch']['Args']
-export type DbGetQuestionsBatchReturns = Database['public']['Functions']['get_questions_batch']['Returns']
-export type DbGetRecommendedSkillsForUserFunction = Database['public']['Functions']['get_recommended_skills_for_user']
-export type DbGetRecommendedSkillsForUserArgs = Database['public']['Functions']['get_recommended_skills_for_user']['Args']
-export type DbGetRecommendedSkillsForUserReturns = Database['public']['Functions']['get_recommended_skills_for_user']['Returns']
-export type DbGetRoomMembersFunction = Database['public']['Functions']['get_room_members']
-export type DbGetRoomMembersArgs = Database['public']['Functions']['get_room_members']['Args']
-export type DbGetRoomMembersReturns = Database['public']['Functions']['get_room_members']['Returns']
-export type DbGetScenarioCharactersFunction = Database['public']['Functions']['get_scenario_characters']
-export type DbGetScenarioCharactersArgs = Database['public']['Functions']['get_scenario_characters']['Args']
-export type DbGetScenarioCharactersReturns = Database['public']['Functions']['get_scenario_characters']['Returns']
-export type DbGetScenarioRoomStatusFunction = Database['public']['Functions']['get_scenario_room_status']
-export type DbGetScenarioRoomStatusArgs = Database['public']['Functions']['get_scenario_room_status']['Args']
-export type DbGetScenarioRoomStatusReturns = Database['public']['Functions']['get_scenario_room_status']['Returns']
-export type DbGetShareableLinkInfoFunction = Database['public']['Functions']['get_shareable_link_info']
-export type DbGetShareableLinkInfoArgs = Database['public']['Functions']['get_shareable_link_info']['Args']
-export type DbGetShareableLinkInfoReturns = Database['public']['Functions']['get_shareable_link_info']['Returns']
-export type DbGetSkillsNeedingReviewFunction = Database['public']['Functions']['get_skills_needing_review']
-export type DbGetSkillsNeedingReviewArgs = Database['public']['Functions']['get_skills_needing_review']['Args']
-export type DbGetSkillsNeedingReviewReturns = Database['public']['Functions']['get_skills_needing_review']['Returns']
-export type DbGetSocialProofMessageFunction = Database['public']['Functions']['get_social_proof_message']
-export type DbGetSocialProofMessageArgs = Database['public']['Functions']['get_social_proof_message']['Args']
-export type DbGetSocialProofMessageReturns = Database['public']['Functions']['get_social_proof_message']['Returns']
-export type DbGetSourceAnalysisByUrlFunction = Database['public']['Functions']['get_source_analysis_by_url']
-export type DbGetSourceAnalysisByUrlArgs = Database['public']['Functions']['get_source_analysis_by_url']['Args']
-export type DbGetSourceAnalysisByUrlReturns = Database['public']['Functions']['get_source_analysis_by_url']['Returns']
-export type DbGetSourceAnalysisStatsFunction = Database['public']['Functions']['get_source_analysis_stats']
-export type DbGetSourceAnalysisStatsArgs = Database['public']['Functions']['get_source_analysis_stats']['Args']
-export type DbGetSourceAnalysisStatsReturns = Database['public']['Functions']['get_source_analysis_stats']['Returns']
-export type DbGetTableColumnInfoFunction = Database['public']['Functions']['get_table_column_info']
-export type DbGetTableColumnInfoArgs = Database['public']['Functions']['get_table_column_info']['Args']
-export type DbGetTableColumnInfoReturns = Database['public']['Functions']['get_table_column_info']['Returns']
-export type DbGetTableSchemasFunction = Database['public']['Functions']['get_table_schemas']
-export type DbGetTableSchemasArgs = Database['public']['Functions']['get_table_schemas']['Args']
-export type DbGetTableSchemasReturns = Database['public']['Functions']['get_table_schemas']['Returns']
-export type DbGetTermTranslationFunction = Database['public']['Functions']['get_term_translation']
-export type DbGetTermTranslationArgs = Database['public']['Functions']['get_term_translation']['Args']
-export type DbGetTermTranslationReturns = Database['public']['Functions']['get_term_translation']['Returns']
-export type DbGetTermTranslationLanguagesFunction = Database['public']['Functions']['get_term_translation_languages']
-export type DbGetTermTranslationLanguagesArgs = Database['public']['Functions']['get_term_translation_languages']['Args']
-export type DbGetTermTranslationLanguagesReturns = Database['public']['Functions']['get_term_translation_languages']['Returns']
-export type DbGetTermsByCategoryFunction = Database['public']['Functions']['get_terms_by_category']
-export type DbGetTermsByCategoryArgs = Database['public']['Functions']['get_terms_by_category']['Args']
-export type DbGetTermsByCategoryReturns = Database['public']['Functions']['get_terms_by_category']['Returns']
-export type DbGetTermsBySourceCredibilityFunction = Database['public']['Functions']['get_terms_by_source_credibility']
-export type DbGetTermsBySourceCredibilityArgs = Database['public']['Functions']['get_terms_by_source_credibility']['Args']
-export type DbGetTermsBySourceCredibilityReturns = Database['public']['Functions']['get_terms_by_source_credibility']['Returns']
-export type DbGetTermsWithCategoriesFunction = Database['public']['Functions']['get_terms_with_categories']
-export type DbGetTermsWithCategoriesArgs = Database['public']['Functions']['get_terms_with_categories']['Args']
-export type DbGetTermsWithCategoriesReturns = Database['public']['Functions']['get_terms_with_categories']['Returns']
-export type DbGetTopicRelatedEventsFunction = Database['public']['Functions']['get_topic_related_events']
-export type DbGetTopicRelatedEventsArgs = Database['public']['Functions']['get_topic_related_events']['Args']
-export type DbGetTopicRelatedEventsReturns = Database['public']['Functions']['get_topic_related_events']['Returns']
-export type DbGetTopicTranslationFunction = Database['public']['Functions']['get_topic_translation']
-export type DbGetTopicTranslationArgs = Database['public']['Functions']['get_topic_translation']['Args']
-export type DbGetTopicTranslationReturns = Database['public']['Functions']['get_topic_translation']['Returns']
-export type DbGetTopicsWithStatsBatchFunction = Database['public']['Functions']['get_topics_with_stats_batch']
-export type DbGetTopicsWithStatsBatchArgs = Database['public']['Functions']['get_topics_with_stats_batch']['Args']
-export type DbGetTopicsWithStatsBatchReturns = Database['public']['Functions']['get_topics_with_stats_batch']['Returns']
-export type DbGetTranslatableContentSummaryFunction = Database['public']['Functions']['get_translatable_content_summary']
-export type DbGetTranslatableContentSummaryArgs = Database['public']['Functions']['get_translatable_content_summary']['Args']
-export type DbGetTranslatableContentSummaryReturns = Database['public']['Functions']['get_translatable_content_summary']['Returns']
-export type DbGetTranslationFunction = Database['public']['Functions']['get_translation']
-export type DbGetTranslationArgs = Database['public']['Functions']['get_translation']['Args']
-export type DbGetTranslationReturns = Database['public']['Functions']['get_translation']['Returns']
-export type DbGetTrendingSearchesFunction = Database['public']['Functions']['get_trending_searches']
-export type DbGetTrendingSearchesArgs = Database['public']['Functions']['get_trending_searches']['Args']
-export type DbGetTrendingSearchesReturns = Database['public']['Functions']['get_trending_searches']['Returns']
-export type DbGetUserBoostSummaryFunction = Database['public']['Functions']['get_user_boost_summary']
-export type DbGetUserBoostSummaryArgs = Database['public']['Functions']['get_user_boost_summary']['Args']
-export type DbGetUserBoostSummaryReturns = Database['public']['Functions']['get_user_boost_summary']['Returns']
-export type DbGetUserConnectedContentFunction = Database['public']['Functions']['get_user_connected_content']
-export type DbGetUserConnectedContentArgs = Database['public']['Functions']['get_user_connected_content']['Args']
-export type DbGetUserConnectedContentReturns = Database['public']['Functions']['get_user_connected_content']['Returns']
-export type DbGetUserContentAnnotationFunction = Database['public']['Functions']['get_user_content_annotation']
-export type DbGetUserContentAnnotationArgs = Database['public']['Functions']['get_user_content_annotation']['Args']
-export type DbGetUserContentAnnotationReturns = Database['public']['Functions']['get_user_content_annotation']['Returns']
-export type DbGetUserCreditsBalanceFunction = Database['public']['Functions']['get_user_credits_balance']
-export type DbGetUserCreditsBalanceArgs = Database['public']['Functions']['get_user_credits_balance']['Args']
-export type DbGetUserCreditsBalanceReturns = Database['public']['Functions']['get_user_credits_balance']['Returns']
-export type DbGetUserEmailPreferencesFunction = Database['public']['Functions']['get_user_email_preferences']
-export type DbGetUserEmailPreferencesArgs = Database['public']['Functions']['get_user_email_preferences']['Args']
-export type DbGetUserEmailPreferencesReturns = Database['public']['Functions']['get_user_email_preferences']['Returns']
-export type DbGetUserFeatureLimitsFunction = Database['public']['Functions']['get_user_feature_limits']
-export type DbGetUserFeatureLimitsArgs = Database['public']['Functions']['get_user_feature_limits']['Args']
-export type DbGetUserFeatureLimitsReturns = Database['public']['Functions']['get_user_feature_limits']['Returns']
-export type DbGetUserGiftCreditsFunction = Database['public']['Functions']['get_user_gift_credits']
-export type DbGetUserGiftCreditsArgs = Database['public']['Functions']['get_user_gift_credits']['Args']
-export type DbGetUserGiftCreditsReturns = Database['public']['Functions']['get_user_gift_credits']['Returns']
-export type DbGetUserOnboardingProgressFunction = Database['public']['Functions']['get_user_onboarding_progress']
-export type DbGetUserOnboardingProgressArgs = Database['public']['Functions']['get_user_onboarding_progress']['Args']
-export type DbGetUserOnboardingProgressReturns = Database['public']['Functions']['get_user_onboarding_progress']['Returns']
-export type DbGetUserPodMembershipsFunction = Database['public']['Functions']['get_user_pod_memberships']
-export type DbGetUserPodMembershipsArgs = Database['public']['Functions']['get_user_pod_memberships']['Args']
-export type DbGetUserPodMembershipsReturns = Database['public']['Functions']['get_user_pod_memberships']['Returns']
-export type DbGetUserProgressSessionsFunction = Database['public']['Functions']['get_user_progress_sessions']
-export type DbGetUserProgressSessionsArgs = Database['public']['Functions']['get_user_progress_sessions']['Args']
-export type DbGetUserProgressSessionsReturns = Database['public']['Functions']['get_user_progress_sessions']['Returns']
-export type DbGetUserProgressSummaryFunction = Database['public']['Functions']['get_user_progress_summary']
-export type DbGetUserProgressSummaryArgs = Database['public']['Functions']['get_user_progress_summary']['Args']
-export type DbGetUserProgressSummaryReturns = Database['public']['Functions']['get_user_progress_summary']['Returns']
-export type DbGetUserRoomsFunction = Database['public']['Functions']['get_user_rooms']
-export type DbGetUserRoomsArgs = Database['public']['Functions']['get_user_rooms']['Args']
-export type DbGetUserRoomsReturns = Database['public']['Functions']['get_user_rooms']['Returns']
-export type DbGetUserScenarioProgressFunction = Database['public']['Functions']['get_user_scenario_progress']
-export type DbGetUserScenarioProgressArgs = Database['public']['Functions']['get_user_scenario_progress']['Args']
-export type DbGetUserScenarioProgressReturns = Database['public']['Functions']['get_user_scenario_progress']['Returns']
-export type DbGetUserShareableLinksFunction = Database['public']['Functions']['get_user_shareable_links']
-export type DbGetUserShareableLinksArgs = Database['public']['Functions']['get_user_shareable_links']['Args']
-export type DbGetUserShareableLinksReturns = Database['public']['Functions']['get_user_shareable_links']['Returns']
-export type DbGetWeeklyTopThemesFunction = Database['public']['Functions']['get_weekly_top_themes']
-export type DbGetWeeklyTopThemesArgs = Database['public']['Functions']['get_weekly_top_themes']['Args']
-export type DbGetWeeklyTopThemesReturns = Database['public']['Functions']['get_weekly_top_themes']['Returns']
-export type DbGtrgmCompressFunction = Database['public']['Functions']['gtrgm_compress']
-export type DbGtrgmCompressArgs = Database['public']['Functions']['gtrgm_compress']['Args']
-export type DbGtrgmCompressReturns = Database['public']['Functions']['gtrgm_compress']['Returns']
-export type DbGtrgmDecompressFunction = Database['public']['Functions']['gtrgm_decompress']
-export type DbGtrgmDecompressArgs = Database['public']['Functions']['gtrgm_decompress']['Args']
-export type DbGtrgmDecompressReturns = Database['public']['Functions']['gtrgm_decompress']['Returns']
-export type DbGtrgmInFunction = Database['public']['Functions']['gtrgm_in']
-export type DbGtrgmInArgs = Database['public']['Functions']['gtrgm_in']['Args']
-export type DbGtrgmInReturns = Database['public']['Functions']['gtrgm_in']['Returns']
-export type DbGtrgmOptionsFunction = Database['public']['Functions']['gtrgm_options']
-export type DbGtrgmOptionsArgs = Database['public']['Functions']['gtrgm_options']['Args']
-export type DbGtrgmOptionsReturns = Database['public']['Functions']['gtrgm_options']['Returns']
-export type DbGtrgmOutFunction = Database['public']['Functions']['gtrgm_out']
-export type DbGtrgmOutArgs = Database['public']['Functions']['gtrgm_out']['Args']
-export type DbGtrgmOutReturns = Database['public']['Functions']['gtrgm_out']['Returns']
-export type DbHasTranslationFunction = Database['public']['Functions']['has_translation']
-export type DbHasTranslationArgs = Database['public']['Functions']['has_translation']['Args']
-export type DbHasTranslationReturns = Database['public']['Functions']['has_translation']['Returns']
-export type DbIdentifyContentGapsFunction = Database['public']['Functions']['identify_content_gaps']
-export type DbIdentifyContentGapsArgs = Database['public']['Functions']['identify_content_gaps']['Args']
-export type DbIdentifyContentGapsReturns = Database['public']['Functions']['identify_content_gaps']['Returns']
-export type DbIncrementGenerationUsageFunction = Database['public']['Functions']['increment_generation_usage']
-export type DbIncrementGenerationUsageArgs = Database['public']['Functions']['increment_generation_usage']['Args']
-export type DbIncrementGenerationUsageReturns = Database['public']['Functions']['increment_generation_usage']['Returns']
-export type DbIncrementTrendingQueryFunction = Database['public']['Functions']['increment_trending_query']
-export type DbIncrementTrendingQueryArgs = Database['public']['Functions']['increment_trending_query']['Args']
-export type DbIncrementTrendingQueryReturns = Database['public']['Functions']['increment_trending_query']['Returns']
-export type DbIsAdminFunction = Database['public']['Functions']['is_admin']
-export type DbIsAdminArgs = Database['public']['Functions']['is_admin']['Args']
-export type DbIsAdminReturns = Database['public']['Functions']['is_admin']['Returns']
-export type DbIsAdminUserFunction = Database['public']['Functions']['is_admin_user']
-export type DbIsAdminUserArgs = Database['public']['Functions']['is_admin_user']['Args']
-export type DbIsAdminUserReturns = Database['public']['Functions']['is_admin_user']['Returns']
-export type DbIsContentAppropriateForUserFunction = Database['public']['Functions']['is_content_appropriate_for_user']
-export type DbIsContentAppropriateForUserArgs = Database['public']['Functions']['is_content_appropriate_for_user']['Args']
-export type DbIsContentAppropriateForUserReturns = Database['public']['Functions']['is_content_appropriate_for_user']['Returns']
-export type DbIsEducationalEmailFunction = Database['public']['Functions']['is_educational_email']
-export type DbIsEducationalEmailArgs = Database['public']['Functions']['is_educational_email']['Args']
-export type DbIsEducationalEmailReturns = Database['public']['Functions']['is_educational_email']['Returns']
-export type DbJoinMultiplayerRoomFunction = Database['public']['Functions']['join_multiplayer_room']
-export type DbJoinMultiplayerRoomArgs = Database['public']['Functions']['join_multiplayer_room']['Args']
-export type DbJoinMultiplayerRoomReturns = Database['public']['Functions']['join_multiplayer_room']['Returns']
-export type DbJoinPodViaInviteFunction = Database['public']['Functions']['join_pod_via_invite']
-export type DbJoinPodViaInviteArgs = Database['public']['Functions']['join_pod_via_invite']['Args']
-export type DbJoinPodViaInviteReturns = Database['public']['Functions']['join_pod_via_invite']['Returns']
-export type DbJoinScenarioRoomFunction = Database['public']['Functions']['join_scenario_room']
-export type DbJoinScenarioRoomArgs = Database['public']['Functions']['join_scenario_room']['Args']
-export type DbJoinScenarioRoomReturns = Database['public']['Functions']['join_scenario_room']['Returns']
-export type DbLeaveMultiplayerRoomFunction = Database['public']['Functions']['leave_multiplayer_room']
-export type DbLeaveMultiplayerRoomArgs = Database['public']['Functions']['leave_multiplayer_room']['Args']
-export type DbLeaveMultiplayerRoomReturns = Database['public']['Functions']['leave_multiplayer_room']['Returns']
-export type DbLinkQuestionToSourceFunction = Database['public']['Functions']['link_question_to_source']
-export type DbLinkQuestionToSourceArgs = Database['public']['Functions']['link_question_to_source']['Args']
-export type DbLinkQuestionToSourceReturns = Database['public']['Functions']['link_question_to_source']['Returns']
-export type DbLogPodActivityFunction = Database['public']['Functions']['log_pod_activity']
-export type DbLogPodActivityArgs = Database['public']['Functions']['log_pod_activity']['Args']
-export type DbLogPodActivityReturns = Database['public']['Functions']['log_pod_activity']['Returns']
-export type DbLogQuizEventFunction = Database['public']['Functions']['log_quiz_event']
-export type DbLogQuizEventArgs = Database['public']['Functions']['log_quiz_event']['Args']
-export type DbLogQuizEventReturns = Database['public']['Functions']['log_quiz_event']['Returns']
-export type DbLogResearchSessionResultFunction = Database['public']['Functions']['log_research_session_result']
-export type DbLogResearchSessionResultArgs = Database['public']['Functions']['log_research_session_result']['Args']
-export type DbLogResearchSessionResultReturns = Database['public']['Functions']['log_research_session_result']['Returns']
-export type DbMigrateProgressSessionToCompletionFunction = Database['public']['Functions']['migrate_progress_session_to_completion']
-export type DbMigrateProgressSessionToCompletionArgs = Database['public']['Functions']['migrate_progress_session_to_completion']['Args']
-export type DbMigrateProgressSessionToCompletionReturns = Database['public']['Functions']['migrate_progress_session_to_completion']['Returns']
-export type DbPopulateHistoricalAnalyticsFunction = Database['public']['Functions']['populate_historical_analytics']
-export type DbPopulateHistoricalAnalyticsArgs = Database['public']['Functions']['populate_historical_analytics']['Args']
-export type DbPopulateHistoricalAnalyticsReturns = Database['public']['Functions']['populate_historical_analytics']['Returns']
-export type DbProcessDonationGiftCreditsFunction = Database['public']['Functions']['process_donation_gift_credits']
-export type DbProcessDonationGiftCreditsArgs = Database['public']['Functions']['process_donation_gift_credits']['Args']
-export type DbProcessDonationGiftCreditsReturns = Database['public']['Functions']['process_donation_gift_credits']['Returns']
-export type DbProcessInviteCodeFunction = Database['public']['Functions']['process_invite_code']
-export type DbProcessInviteCodeArgs = Database['public']['Functions']['process_invite_code']['Args']
-export type DbProcessInviteCodeReturns = Database['public']['Functions']['process_invite_code']['Returns']
-export type DbRecordGameEventFunction = Database['public']['Functions']['record_game_event']
-export type DbRecordGameEventArgs = Database['public']['Functions']['record_game_event']['Args']
-export type DbRecordGameEventReturns = Database['public']['Functions']['record_game_event']['Returns']
-export type DbRecordRoomEventFunction = Database['public']['Functions']['record_room_event']
-export type DbRecordRoomEventArgs = Database['public']['Functions']['record_room_event']['Args']
-export type DbRecordRoomEventReturns = Database['public']['Functions']['record_room_event']['Returns']
-export type DbRedeemGiftCodeFunction = Database['public']['Functions']['redeem_gift_code']
-export type DbRedeemGiftCodeArgs = Database['public']['Functions']['redeem_gift_code']['Args']
-export type DbRedeemGiftCodeReturns = Database['public']['Functions']['redeem_gift_code']['Returns']
-export type DbRemoveContentFromCollectionFunction = Database['public']['Functions']['remove_content_from_collection']
-export type DbRemoveContentFromCollectionArgs = Database['public']['Functions']['remove_content_from_collection']['Args']
-export type DbRemoveContentFromCollectionReturns = Database['public']['Functions']['remove_content_from_collection']['Returns']
-export type DbRemoveFigureFromTopicFunction = Database['public']['Functions']['remove_figure_from_topic']
-export type DbRemoveFigureFromTopicArgs = Database['public']['Functions']['remove_figure_from_topic']['Args']
-export type DbRemoveFigureFromTopicReturns = Database['public']['Functions']['remove_figure_from_topic']['Returns']
-export type DbReorderCollectionItemsFunction = Database['public']['Functions']['reorder_collection_items']
-export type DbReorderCollectionItemsArgs = Database['public']['Functions']['reorder_collection_items']['Args']
-export type DbReorderCollectionItemsReturns = Database['public']['Functions']['reorder_collection_items']['Returns']
-export type DbRepairRoomsWithoutHostsFunction = Database['public']['Functions']['repair_rooms_without_hosts']
-export type DbRepairRoomsWithoutHostsArgs = Database['public']['Functions']['repair_rooms_without_hosts']['Args']
-export type DbRepairRoomsWithoutHostsReturns = Database['public']['Functions']['repair_rooms_without_hosts']['Returns']
-export type DbResetIsBreakingStatusFunction = Database['public']['Functions']['reset_is_breaking_status']
-export type DbResetIsBreakingStatusArgs = Database['public']['Functions']['reset_is_breaking_status']['Args']
-export type DbResetIsBreakingStatusReturns = Database['public']['Functions']['reset_is_breaking_status']['Returns']
-export type DbSearchBookmarksFunction = Database['public']['Functions']['search_bookmarks']
-export type DbSearchBookmarksArgs = Database['public']['Functions']['search_bookmarks']['Args']
-export type DbSearchBookmarksReturns = Database['public']['Functions']['search_bookmarks']['Returns']
-export type DbSearchHistoricalEventsFunction = Database['public']['Functions']['search_historical_events']
-export type DbSearchHistoricalEventsArgs = Database['public']['Functions']['search_historical_events']['Args']
-export type DbSearchHistoricalEventsReturns = Database['public']['Functions']['search_historical_events']['Returns']
-export type DbSendNpcMessageFunction = Database['public']['Functions']['send_npc_message']
-export type DbSendNpcMessageArgs = Database['public']['Functions']['send_npc_message']['Args']
-export type DbSendNpcMessageReturns = Database['public']['Functions']['send_npc_message']['Returns']
-export type DbSetLimitFunction = Database['public']['Functions']['set_limit']
-export type DbSetLimitArgs = Database['public']['Functions']['set_limit']['Args']
-export type DbSetLimitReturns = Database['public']['Functions']['set_limit']['Returns']
-export type DbSetTranslationFunction = Database['public']['Functions']['set_translation']
-export type DbSetTranslationArgs = Database['public']['Functions']['set_translation']['Args']
-export type DbSetTranslationReturns = Database['public']['Functions']['set_translation']['Returns']
-export type DbShowLimitFunction = Database['public']['Functions']['show_limit']
-export type DbShowLimitArgs = Database['public']['Functions']['show_limit']['Args']
-export type DbShowLimitReturns = Database['public']['Functions']['show_limit']['Returns']
-export type DbShowTrgmFunction = Database['public']['Functions']['show_trgm']
-export type DbShowTrgmArgs = Database['public']['Functions']['show_trgm']['Args']
-export type DbShowTrgmReturns = Database['public']['Functions']['show_trgm']['Returns']
-export type DbStartMultiplayerGameFunction = Database['public']['Functions']['start_multiplayer_game']
-export type DbStartMultiplayerGameArgs = Database['public']['Functions']['start_multiplayer_game']['Args']
-export type DbStartMultiplayerGameReturns = Database['public']['Functions']['start_multiplayer_game']['Returns']
-export type DbTestMultiplayerOperationsFunction = Database['public']['Functions']['test_multiplayer_operations']
-export type DbTestMultiplayerOperationsArgs = Database['public']['Functions']['test_multiplayer_operations']['Args']
-export type DbTestMultiplayerOperationsReturns = Database['public']['Functions']['test_multiplayer_operations']['Returns']
-export type DbTrackFeatureUsageFunction = Database['public']['Functions']['track_feature_usage']
-export type DbTrackFeatureUsageArgs = Database['public']['Functions']['track_feature_usage']['Args']
-export type DbTrackFeatureUsageReturns = Database['public']['Functions']['track_feature_usage']['Returns']
-export type DbUpdateBookmarkAccessFunction = Database['public']['Functions']['update_bookmark_access']
-export type DbUpdateBookmarkAccessArgs = Database['public']['Functions']['update_bookmark_access']['Args']
-export type DbUpdateBookmarkAccessReturns = Database['public']['Functions']['update_bookmark_access']['Returns']
-export type DbUpdateConversationContextFunction = Database['public']['Functions']['update_conversation_context']
-export type DbUpdateConversationContextArgs = Database['public']['Functions']['update_conversation_context']['Args']
-export type DbUpdateConversationContextReturns = Database['public']['Functions']['update_conversation_context']['Returns']
-export type DbUpdateDomainReliabilityScoreFunction = Database['public']['Functions']['update_domain_reliability_score']
-export type DbUpdateDomainReliabilityScoreArgs = Database['public']['Functions']['update_domain_reliability_score']['Args']
-export type DbUpdateDomainReliabilityScoreReturns = Database['public']['Functions']['update_domain_reliability_score']['Returns']
-export type DbUpdateJobAfterExecutionFunction = Database['public']['Functions']['update_job_after_execution']
-export type DbUpdateJobAfterExecutionArgs = Database['public']['Functions']['update_job_after_execution']['Args']
-export type DbUpdateJobAfterExecutionReturns = Database['public']['Functions']['update_job_after_execution']['Returns']
-export type DbUpdateMemberAnalyticsFunction = Database['public']['Functions']['update_member_analytics']
-export type DbUpdateMemberAnalyticsArgs = Database['public']['Functions']['update_member_analytics']['Args']
-export type DbUpdateMemberAnalyticsReturns = Database['public']['Functions']['update_member_analytics']['Returns']
-export type DbUpdateNpcLearningFunction = Database['public']['Functions']['update_npc_learning']
-export type DbUpdateNpcLearningArgs = Database['public']['Functions']['update_npc_learning']['Args']
-export type DbUpdateNpcLearningReturns = Database['public']['Functions']['update_npc_learning']['Returns']
-export type DbUpdateOnboardingProgressFunction = Database['public']['Functions']['update_onboarding_progress']
-export type DbUpdateOnboardingProgressArgs = Database['public']['Functions']['update_onboarding_progress']['Args']
-export type DbUpdateOnboardingProgressReturns = Database['public']['Functions']['update_onboarding_progress']['Returns']
-export type DbUpdateOrganizationBiasFromArticlesFunction = Database['public']['Functions']['update_organization_bias_from_articles']
-export type DbUpdateOrganizationBiasFromArticlesArgs = Database['public']['Functions']['update_organization_bias_from_articles']['Args']
-export type DbUpdateOrganizationBiasFromArticlesReturns = Database['public']['Functions']['update_organization_bias_from_articles']['Returns']
-export type DbUpdatePlayerCharacterFunction = Database['public']['Functions']['update_player_character']
-export type DbUpdatePlayerCharacterArgs = Database['public']['Functions']['update_player_character']['Args']
-export type DbUpdatePlayerCharacterReturns = Database['public']['Functions']['update_player_character']['Returns']
-export type DbUpdatePlayerReadyStatusFunction = Database['public']['Functions']['update_player_ready_status']
-export type DbUpdatePlayerReadyStatusArgs = Database['public']['Functions']['update_player_ready_status']['Args']
-export type DbUpdatePlayerReadyStatusReturns = Database['public']['Functions']['update_player_ready_status']['Returns']
-export type DbUpdatePodAnalyticsFunction = Database['public']['Functions']['update_pod_analytics']
-export type DbUpdatePodAnalyticsArgs = Database['public']['Functions']['update_pod_analytics']['Args']
-export type DbUpdatePodAnalyticsReturns = Database['public']['Functions']['update_pod_analytics']['Returns']
-export type DbUpdateUserSkillProgressFunction = Database['public']['Functions']['update_user_skill_progress']
-export type DbUpdateUserSkillProgressArgs = Database['public']['Functions']['update_user_skill_progress']['Args']
-export type DbUpdateUserSkillProgressReturns = Database['public']['Functions']['update_user_skill_progress']['Returns']
-export type DbUpdateWeeklyContentMetricsFunction = Database['public']['Functions']['update_weekly_content_metrics']
-export type DbUpdateWeeklyContentMetricsArgs = Database['public']['Functions']['update_weekly_content_metrics']['Args']
-export type DbUpdateWeeklyContentMetricsReturns = Database['public']['Functions']['update_weekly_content_metrics']['Returns']
-export type DbUpsertCongressionalMemberFunction = Database['public']['Functions']['upsert_congressional_member']
-export type DbUpsertCongressionalMemberArgs = Database['public']['Functions']['upsert_congressional_member']['Args']
-export type DbUpsertCongressionalMemberReturns = Database['public']['Functions']['upsert_congressional_member']['Returns']
-export type DbUpsertUserEmailPreferencesFunction = Database['public']['Functions']['upsert_user_email_preferences']
-export type DbUpsertUserEmailPreferencesArgs = Database['public']['Functions']['upsert_user_email_preferences']['Args']
-export type DbUpsertUserEmailPreferencesReturns = Database['public']['Functions']['upsert_user_email_preferences']['Returns']
-export type DbUpsertUserQuestionMemoryFunction = Database['public']['Functions']['upsert_user_question_memory']
-export type DbUpsertUserQuestionMemoryArgs = Database['public']['Functions']['upsert_user_question_memory']['Args']
-export type DbUpsertUserQuestionMemoryReturns = Database['public']['Functions']['upsert_user_question_memory']['Returns']
-export type DbUpsertUserQuestionResponseFunction = Database['public']['Functions']['upsert_user_question_response']
-export type DbUpsertUserQuestionResponseArgs = Database['public']['Functions']['upsert_user_question_response']['Args']
-export type DbUpsertUserQuestionResponseReturns = Database['public']['Functions']['upsert_user_question_response']['Returns']
-export type DbUserIsInRoomFunction = Database['public']['Functions']['user_is_in_room']
-export type DbUserIsInRoomArgs = Database['public']['Functions']['user_is_in_room']['Args']
-export type DbUserIsInRoomReturns = Database['public']['Functions']['user_is_in_room']['Returns']
-export type DbValidateCollectionIntegrityFunction = Database['public']['Functions']['validate_collection_integrity']
-export type DbValidateCollectionIntegrityArgs = Database['public']['Functions']['validate_collection_integrity']['Args']
-export type DbValidateCollectionIntegrityReturns = Database['public']['Functions']['validate_collection_integrity']['Returns']
-export type DbValidateFunctionTableTypesFunction = Database['public']['Functions']['validate_function_table_types']
-export type DbValidateFunctionTableTypesArgs = Database['public']['Functions']['validate_function_table_types']['Args']
-export type DbValidateFunctionTableTypesReturns = Database['public']['Functions']['validate_function_table_types']['Returns']
-export type DbValidateMigrationSafetyFunction = Database['public']['Functions']['validate_migration_safety']
-export type DbValidateMigrationSafetyArgs = Database['public']['Functions']['validate_migration_safety']['Args']
-export type DbValidateMigrationSafetyReturns = Database['public']['Functions']['validate_migration_safety']['Returns']
-export type DbValidateMultiplayerHostAssignmentsFunction = Database['public']['Functions']['validate_multiplayer_host_assignments']
-export type DbValidateMultiplayerHostAssignmentsArgs = Database['public']['Functions']['validate_multiplayer_host_assignments']['Args']
-export type DbValidateMultiplayerHostAssignmentsReturns = Database['public']['Functions']['validate_multiplayer_host_assignments']['Returns']
-export type DbValidateMultiplayerSchemaFunction = Database['public']['Functions']['validate_multiplayer_schema']
-export type DbValidateMultiplayerSchemaArgs = Database['public']['Functions']['validate_multiplayer_schema']['Args']
-export type DbValidateMultiplayerSchemaReturns = Database['public']['Functions']['validate_multiplayer_schema']['Returns']
-export type DbValidateMultiplayerSchemaAlignmentFunction = Database['public']['Functions']['validate_multiplayer_schema_alignment']
-export type DbValidateMultiplayerSchemaAlignmentArgs = Database['public']['Functions']['validate_multiplayer_schema_alignment']['Args']
-export type DbValidateMultiplayerSchemaAlignmentReturns = Database['public']['Functions']['validate_multiplayer_schema_alignment']['Returns']
-export type DbValidateTranslationStructureFunction = Database['public']['Functions']['validate_translation_structure']
-export type DbValidateTranslationStructureArgs = Database['public']['Functions']['validate_translation_structure']['Args']
-export type DbValidateTranslationStructureReturns = Database['public']['Functions']['validate_translation_structure']['Returns']
-
-// =============================================================================
-// AI AGENT SCHEMA TYPES
-// =============================================================================
-
-// ai_agent Tables
-export type DbAiAgentAiActionExecutions = Database['ai_agent']['Tables']['ai_action_executions']['Row']
-export type DbAiAgentAiActionPrompts = Database['ai_agent']['Tables']['ai_action_prompts']['Row']
-export type DbAiAgentAiActions = Database['ai_agent']['Tables']['ai_actions']['Row']
-export type DbAiAgentAiAgentMemory = Database['ai_agent']['Tables']['ai_agent_memory']['Row']
-export type DbAiAgentAiCommandActions = Database['ai_agent']['Tables']['ai_command_actions']['Row']
-export type DbAiAgentAiCommandAnalytics = Database['ai_agent']['Tables']['ai_command_analytics']['Row']
-export type DbAiAgentAiCommandExecutions = Database['ai_agent']['Tables']['ai_command_executions']['Row']
-export type DbAiAgentAiCommandPermissions = Database['ai_agent']['Tables']['ai_command_permissions']['Row']
-export type DbAiAgentAiCommandStreams = Database['ai_agent']['Tables']['ai_command_streams']['Row']
-export type DbAiAgentAiCommands = Database['ai_agent']['Tables']['ai_commands']['Row']
-export type DbAiAgentAiContentSources = Database['ai_agent']['Tables']['ai_content_sources']['Row']
-export type DbAiAgentAiContentSyncLogs = Database['ai_agent']['Tables']['ai_content_sync_logs']['Row']
-export type DbAiAgentAiIntegrationLogs = Database['ai_agent']['Tables']['ai_integration_logs']['Row']
-export type DbAiAgentAiIntegrations = Database['ai_agent']['Tables']['ai_integrations']['Row']
-export type DbAiAgentAiLearnedPatterns = Database['ai_agent']['Tables']['ai_learned_patterns']['Row']
-export type DbAiAgentAiModels = Database['ai_agent']['Tables']['ai_models']['Row']
-export type DbAiAgentAiPerformanceMetrics = Database['ai_agent']['Tables']['ai_performance_metrics']['Row']
-export type DbAiAgentAiPrompts = Database['ai_agent']['Tables']['ai_prompts']['Row']
-export type DbAiAgentAiProviders = Database['ai_agent']['Tables']['ai_providers']['Row']
-export type DbAiAgentAiQualityGates = Database['ai_agent']['Tables']['ai_quality_gates']['Row']
-export type DbAiAgentAiQualityValidations = Database['ai_agent']['Tables']['ai_quality_validations']['Row']
-export type DbAiAgentAiSecurityAuditLog = Database['ai_agent']['Tables']['ai_security_audit_log']['Row']
-export type DbAiAgentAiStreamMessages = Database['ai_agent']['Tables']['ai_stream_messages']['Row']
-export type DbAiAgentAiSystemAlerts = Database['ai_agent']['Tables']['ai_system_alerts']['Row']
-export type DbAiAgentAiUserCommandHistory = Database['ai_agent']['Tables']['ai_user_command_history']['Row']
-export type DbAiAgentAiUserPreferences = Database['ai_agent']['Tables']['ai_user_preferences']['Row']
-export type DbAiAgentAiWorkflowInstances = Database['ai_agent']['Tables']['ai_workflow_instances']['Row']
-export type DbAiAgentAiWorkflowTemplates = Database['ai_agent']['Tables']['ai_workflow_templates']['Row']
-export type DbAiAgentContentAnalysisCache = Database['ai_agent']['Tables']['content_analysis_cache']['Row']
-export type DbAiAgentConversationAnalysis = Database['ai_agent']['Tables']['conversation_analysis']['Row']
-export type DbAiAgentConversationAnalytics = Database['ai_agent']['Tables']['conversation_analytics']['Row']
-export type DbAiAgentConversationContext = Database['ai_agent']['Tables']['conversation_context']['Row']
-export type DbAiAgentConversationFlowInstances = Database['ai_agent']['Tables']['conversation_flow_instances']['Row']
-export type DbAiAgentConversationFlows = Database['ai_agent']['Tables']['conversation_flows']['Row']
-export type DbAiAgentConversations = Database['ai_agent']['Tables']['conversations']['Row']
-export type DbAiAgentDatabaseContext = Database['ai_agent']['Tables']['database_context']['Row']
-export type DbAiAgentFallbackResponses = Database['ai_agent']['Tables']['fallback_responses']['Row']
-export type DbAiAgentGeneratedContent = Database['ai_agent']['Tables']['generated_content']['Row']
-export type DbAiAgentIntentPatterns = Database['ai_agent']['Tables']['intent_patterns']['Row']
-export type DbAiAgentKnowledgeGraph = Database['ai_agent']['Tables']['knowledge_graph']['Row']
-export type DbAiAgentLearnedPatterns = Database['ai_agent']['Tables']['learned_patterns']['Row']
-export type DbAiAgentMemoryClusters = Database['ai_agent']['Tables']['memory_clusters']['Row']
-export type DbAiAgentMemoryConsolidation = Database['ai_agent']['Tables']['memory_consolidation']['Row']
-export type DbAiAgentMessages = Database['ai_agent']['Tables']['messages']['Row']
-export type DbAiAgentPatterns = Database['ai_agent']['Tables']['patterns']['Row']
-export type DbAiAgentPerformanceMetrics = Database['ai_agent']['Tables']['performance_metrics']['Row']
-export type DbAiAgentResponseTemplates = Database['ai_agent']['Tables']['response_templates']['Row']
-export type DbAiAgentSystemHealth = Database['ai_agent']['Tables']['system_health']['Row']
-export type DbAiAgentSystemMetrics = Database['ai_agent']['Tables']['system_metrics']['Row']
-export type DbAiAgentToolUsagePatterns = Database['ai_agent']['Tables']['tool_usage_patterns']['Row']
-export type DbAiAgentUserPreferences = Database['ai_agent']['Tables']['user_preferences']['Row']
-
-// ai_agent Insert Types
-export type DbAiAgentAiActionExecutionsInsert = Database['ai_agent']['Tables']['ai_action_executions']['Insert']
-export type DbAiAgentAiActionPromptsInsert = Database['ai_agent']['Tables']['ai_action_prompts']['Insert']
-export type DbAiAgentAiActionsInsert = Database['ai_agent']['Tables']['ai_actions']['Insert']
-export type DbAiAgentAiAgentMemoryInsert = Database['ai_agent']['Tables']['ai_agent_memory']['Insert']
-export type DbAiAgentAiCommandActionsInsert = Database['ai_agent']['Tables']['ai_command_actions']['Insert']
-export type DbAiAgentAiCommandAnalyticsInsert = Database['ai_agent']['Tables']['ai_command_analytics']['Insert']
-export type DbAiAgentAiCommandExecutionsInsert = Database['ai_agent']['Tables']['ai_command_executions']['Insert']
-export type DbAiAgentAiCommandPermissionsInsert = Database['ai_agent']['Tables']['ai_command_permissions']['Insert']
-export type DbAiAgentAiCommandStreamsInsert = Database['ai_agent']['Tables']['ai_command_streams']['Insert']
-export type DbAiAgentAiCommandsInsert = Database['ai_agent']['Tables']['ai_commands']['Insert']
-export type DbAiAgentAiContentSourcesInsert = Database['ai_agent']['Tables']['ai_content_sources']['Insert']
-export type DbAiAgentAiContentSyncLogsInsert = Database['ai_agent']['Tables']['ai_content_sync_logs']['Insert']
-export type DbAiAgentAiIntegrationLogsInsert = Database['ai_agent']['Tables']['ai_integration_logs']['Insert']
-export type DbAiAgentAiIntegrationsInsert = Database['ai_agent']['Tables']['ai_integrations']['Insert']
-export type DbAiAgentAiLearnedPatternsInsert = Database['ai_agent']['Tables']['ai_learned_patterns']['Insert']
-export type DbAiAgentAiModelsInsert = Database['ai_agent']['Tables']['ai_models']['Insert']
-export type DbAiAgentAiPerformanceMetricsInsert = Database['ai_agent']['Tables']['ai_performance_metrics']['Insert']
-export type DbAiAgentAiPromptsInsert = Database['ai_agent']['Tables']['ai_prompts']['Insert']
-export type DbAiAgentAiProvidersInsert = Database['ai_agent']['Tables']['ai_providers']['Insert']
-export type DbAiAgentAiQualityGatesInsert = Database['ai_agent']['Tables']['ai_quality_gates']['Insert']
-export type DbAiAgentAiQualityValidationsInsert = Database['ai_agent']['Tables']['ai_quality_validations']['Insert']
-export type DbAiAgentAiSecurityAuditLogInsert = Database['ai_agent']['Tables']['ai_security_audit_log']['Insert']
-export type DbAiAgentAiStreamMessagesInsert = Database['ai_agent']['Tables']['ai_stream_messages']['Insert']
-export type DbAiAgentAiSystemAlertsInsert = Database['ai_agent']['Tables']['ai_system_alerts']['Insert']
-export type DbAiAgentAiUserCommandHistoryInsert = Database['ai_agent']['Tables']['ai_user_command_history']['Insert']
-export type DbAiAgentAiUserPreferencesInsert = Database['ai_agent']['Tables']['ai_user_preferences']['Insert']
-export type DbAiAgentAiWorkflowInstancesInsert = Database['ai_agent']['Tables']['ai_workflow_instances']['Insert']
-export type DbAiAgentAiWorkflowTemplatesInsert = Database['ai_agent']['Tables']['ai_workflow_templates']['Insert']
-export type DbAiAgentContentAnalysisCacheInsert = Database['ai_agent']['Tables']['content_analysis_cache']['Insert']
-export type DbAiAgentConversationAnalysisInsert = Database['ai_agent']['Tables']['conversation_analysis']['Insert']
-export type DbAiAgentConversationAnalyticsInsert = Database['ai_agent']['Tables']['conversation_analytics']['Insert']
-export type DbAiAgentConversationContextInsert = Database['ai_agent']['Tables']['conversation_context']['Insert']
-export type DbAiAgentConversationFlowInstancesInsert = Database['ai_agent']['Tables']['conversation_flow_instances']['Insert']
-export type DbAiAgentConversationFlowsInsert = Database['ai_agent']['Tables']['conversation_flows']['Insert']
-export type DbAiAgentConversationsInsert = Database['ai_agent']['Tables']['conversations']['Insert']
-export type DbAiAgentDatabaseContextInsert = Database['ai_agent']['Tables']['database_context']['Insert']
-export type DbAiAgentFallbackResponsesInsert = Database['ai_agent']['Tables']['fallback_responses']['Insert']
-export type DbAiAgentGeneratedContentInsert = Database['ai_agent']['Tables']['generated_content']['Insert']
-export type DbAiAgentIntentPatternsInsert = Database['ai_agent']['Tables']['intent_patterns']['Insert']
-export type DbAiAgentKnowledgeGraphInsert = Database['ai_agent']['Tables']['knowledge_graph']['Insert']
-export type DbAiAgentLearnedPatternsInsert = Database['ai_agent']['Tables']['learned_patterns']['Insert']
-export type DbAiAgentMemoryClustersInsert = Database['ai_agent']['Tables']['memory_clusters']['Insert']
-export type DbAiAgentMemoryConsolidationInsert = Database['ai_agent']['Tables']['memory_consolidation']['Insert']
-export type DbAiAgentMessagesInsert = Database['ai_agent']['Tables']['messages']['Insert']
-export type DbAiAgentPatternsInsert = Database['ai_agent']['Tables']['patterns']['Insert']
-export type DbAiAgentPerformanceMetricsInsert = Database['ai_agent']['Tables']['performance_metrics']['Insert']
-export type DbAiAgentResponseTemplatesInsert = Database['ai_agent']['Tables']['response_templates']['Insert']
-export type DbAiAgentSystemHealthInsert = Database['ai_agent']['Tables']['system_health']['Insert']
-export type DbAiAgentSystemMetricsInsert = Database['ai_agent']['Tables']['system_metrics']['Insert']
-export type DbAiAgentToolUsagePatternsInsert = Database['ai_agent']['Tables']['tool_usage_patterns']['Insert']
-export type DbAiAgentUserPreferencesInsert = Database['ai_agent']['Tables']['user_preferences']['Insert']
-
-// ai_agent Update Types
-export type DbAiAgentAiActionExecutionsUpdate = Database['ai_agent']['Tables']['ai_action_executions']['Update']
-export type DbAiAgentAiActionPromptsUpdate = Database['ai_agent']['Tables']['ai_action_prompts']['Update']
-export type DbAiAgentAiActionsUpdate = Database['ai_agent']['Tables']['ai_actions']['Update']
-export type DbAiAgentAiAgentMemoryUpdate = Database['ai_agent']['Tables']['ai_agent_memory']['Update']
-export type DbAiAgentAiCommandActionsUpdate = Database['ai_agent']['Tables']['ai_command_actions']['Update']
-export type DbAiAgentAiCommandAnalyticsUpdate = Database['ai_agent']['Tables']['ai_command_analytics']['Update']
-export type DbAiAgentAiCommandExecutionsUpdate = Database['ai_agent']['Tables']['ai_command_executions']['Update']
-export type DbAiAgentAiCommandPermissionsUpdate = Database['ai_agent']['Tables']['ai_command_permissions']['Update']
-export type DbAiAgentAiCommandStreamsUpdate = Database['ai_agent']['Tables']['ai_command_streams']['Update']
-export type DbAiAgentAiCommandsUpdate = Database['ai_agent']['Tables']['ai_commands']['Update']
-export type DbAiAgentAiContentSourcesUpdate = Database['ai_agent']['Tables']['ai_content_sources']['Update']
-export type DbAiAgentAiContentSyncLogsUpdate = Database['ai_agent']['Tables']['ai_content_sync_logs']['Update']
-export type DbAiAgentAiIntegrationLogsUpdate = Database['ai_agent']['Tables']['ai_integration_logs']['Update']
-export type DbAiAgentAiIntegrationsUpdate = Database['ai_agent']['Tables']['ai_integrations']['Update']
-export type DbAiAgentAiLearnedPatternsUpdate = Database['ai_agent']['Tables']['ai_learned_patterns']['Update']
-export type DbAiAgentAiModelsUpdate = Database['ai_agent']['Tables']['ai_models']['Update']
-export type DbAiAgentAiPerformanceMetricsUpdate = Database['ai_agent']['Tables']['ai_performance_metrics']['Update']
-export type DbAiAgentAiPromptsUpdate = Database['ai_agent']['Tables']['ai_prompts']['Update']
-export type DbAiAgentAiProvidersUpdate = Database['ai_agent']['Tables']['ai_providers']['Update']
-export type DbAiAgentAiQualityGatesUpdate = Database['ai_agent']['Tables']['ai_quality_gates']['Update']
-export type DbAiAgentAiQualityValidationsUpdate = Database['ai_agent']['Tables']['ai_quality_validations']['Update']
-export type DbAiAgentAiSecurityAuditLogUpdate = Database['ai_agent']['Tables']['ai_security_audit_log']['Update']
-export type DbAiAgentAiStreamMessagesUpdate = Database['ai_agent']['Tables']['ai_stream_messages']['Update']
-export type DbAiAgentAiSystemAlertsUpdate = Database['ai_agent']['Tables']['ai_system_alerts']['Update']
-export type DbAiAgentAiUserCommandHistoryUpdate = Database['ai_agent']['Tables']['ai_user_command_history']['Update']
-export type DbAiAgentAiUserPreferencesUpdate = Database['ai_agent']['Tables']['ai_user_preferences']['Update']
-export type DbAiAgentAiWorkflowInstancesUpdate = Database['ai_agent']['Tables']['ai_workflow_instances']['Update']
-export type DbAiAgentAiWorkflowTemplatesUpdate = Database['ai_agent']['Tables']['ai_workflow_templates']['Update']
-export type DbAiAgentContentAnalysisCacheUpdate = Database['ai_agent']['Tables']['content_analysis_cache']['Update']
-export type DbAiAgentConversationAnalysisUpdate = Database['ai_agent']['Tables']['conversation_analysis']['Update']
-export type DbAiAgentConversationAnalyticsUpdate = Database['ai_agent']['Tables']['conversation_analytics']['Update']
-export type DbAiAgentConversationContextUpdate = Database['ai_agent']['Tables']['conversation_context']['Update']
-export type DbAiAgentConversationFlowInstancesUpdate = Database['ai_agent']['Tables']['conversation_flow_instances']['Update']
-export type DbAiAgentConversationFlowsUpdate = Database['ai_agent']['Tables']['conversation_flows']['Update']
-export type DbAiAgentConversationsUpdate = Database['ai_agent']['Tables']['conversations']['Update']
-export type DbAiAgentDatabaseContextUpdate = Database['ai_agent']['Tables']['database_context']['Update']
-export type DbAiAgentFallbackResponsesUpdate = Database['ai_agent']['Tables']['fallback_responses']['Update']
-export type DbAiAgentGeneratedContentUpdate = Database['ai_agent']['Tables']['generated_content']['Update']
-export type DbAiAgentIntentPatternsUpdate = Database['ai_agent']['Tables']['intent_patterns']['Update']
-export type DbAiAgentKnowledgeGraphUpdate = Database['ai_agent']['Tables']['knowledge_graph']['Update']
-export type DbAiAgentLearnedPatternsUpdate = Database['ai_agent']['Tables']['learned_patterns']['Update']
-export type DbAiAgentMemoryClustersUpdate = Database['ai_agent']['Tables']['memory_clusters']['Update']
-export type DbAiAgentMemoryConsolidationUpdate = Database['ai_agent']['Tables']['memory_consolidation']['Update']
-export type DbAiAgentMessagesUpdate = Database['ai_agent']['Tables']['messages']['Update']
-export type DbAiAgentPatternsUpdate = Database['ai_agent']['Tables']['patterns']['Update']
-export type DbAiAgentPerformanceMetricsUpdate = Database['ai_agent']['Tables']['performance_metrics']['Update']
-export type DbAiAgentResponseTemplatesUpdate = Database['ai_agent']['Tables']['response_templates']['Update']
-export type DbAiAgentSystemHealthUpdate = Database['ai_agent']['Tables']['system_health']['Update']
-export type DbAiAgentSystemMetricsUpdate = Database['ai_agent']['Tables']['system_metrics']['Update']
-export type DbAiAgentToolUsagePatternsUpdate = Database['ai_agent']['Tables']['tool_usage_patterns']['Update']
-export type DbAiAgentUserPreferencesUpdate = Database['ai_agent']['Tables']['user_preferences']['Update']
-
-// ai_agent Functions
-export type DbAiAgentAutoResolveIssuesFunction = Database['ai_agent']['Functions']['auto_resolve_issues']
-export type DbAiAgentAutoResolveIssuesArgs = Database['ai_agent']['Functions']['auto_resolve_issues']['Args']
-export type DbAiAgentAutoResolveIssuesReturns = Database['ai_agent']['Functions']['auto_resolve_issues']['Returns']
-export type DbAiAgentCheckSystemHealthFunction = Database['ai_agent']['Functions']['check_system_health']
-export type DbAiAgentCheckSystemHealthArgs = Database['ai_agent']['Functions']['check_system_health']['Args']
-export type DbAiAgentCheckSystemHealthReturns = Database['ai_agent']['Functions']['check_system_health']['Returns']
-export type DbAiAgentCleanupExpiredCacheFunction = Database['ai_agent']['Functions']['cleanup_expired_cache']
-export type DbAiAgentCleanupExpiredCacheArgs = Database['ai_agent']['Functions']['cleanup_expired_cache']['Args']
-export type DbAiAgentCleanupExpiredCacheReturns = Database['ai_agent']['Functions']['cleanup_expired_cache']['Returns']
-export type DbAiAgentDetectIntentFunction = Database['ai_agent']['Functions']['detect_intent']
-export type DbAiAgentDetectIntentArgs = Database['ai_agent']['Functions']['detect_intent']['Args']
-export type DbAiAgentDetectIntentReturns = Database['ai_agent']['Functions']['detect_intent']['Returns']
-export type DbAiAgentGetConversationContextFunction = Database['ai_agent']['Functions']['get_conversation_context']
-export type DbAiAgentGetConversationContextArgs = Database['ai_agent']['Functions']['get_conversation_context']['Args']
-export type DbAiAgentGetConversationContextReturns = Database['ai_agent']['Functions']['get_conversation_context']['Returns']
-export type DbAiAgentGetProactiveSuggestionsFunction = Database['ai_agent']['Functions']['get_proactive_suggestions']
-export type DbAiAgentGetProactiveSuggestionsArgs = Database['ai_agent']['Functions']['get_proactive_suggestions']['Args']
-export type DbAiAgentGetProactiveSuggestionsReturns = Database['ai_agent']['Functions']['get_proactive_suggestions']['Returns']
-export type DbAiAgentGetRelevantPatternsFunction = Database['ai_agent']['Functions']['get_relevant_patterns']
-export type DbAiAgentGetRelevantPatternsArgs = Database['ai_agent']['Functions']['get_relevant_patterns']['Args']
-export type DbAiAgentGetRelevantPatternsReturns = Database['ai_agent']['Functions']['get_relevant_patterns']['Returns']
-export type DbAiAgentGetResponseTemplateFunction = Database['ai_agent']['Functions']['get_response_template']
-export type DbAiAgentGetResponseTemplateArgs = Database['ai_agent']['Functions']['get_response_template']['Args']
-export type DbAiAgentGetResponseTemplateReturns = Database['ai_agent']['Functions']['get_response_template']['Returns']
-export type DbAiAgentLearnUserPreferenceFunction = Database['ai_agent']['Functions']['learn_user_preference']
-export type DbAiAgentLearnUserPreferenceArgs = Database['ai_agent']['Functions']['learn_user_preference']['Args']
-export type DbAiAgentLearnUserPreferenceReturns = Database['ai_agent']['Functions']['learn_user_preference']['Returns']
-export type DbAiAgentRecordLearningFunction = Database['ai_agent']['Functions']['record_learning']
-export type DbAiAgentRecordLearningArgs = Database['ai_agent']['Functions']['record_learning']['Args']
-export type DbAiAgentRecordLearningReturns = Database['ai_agent']['Functions']['record_learning']['Returns']
-export type DbAiAgentRecordToolUsageFunction = Database['ai_agent']['Functions']['record_tool_usage']
-export type DbAiAgentRecordToolUsageArgs = Database['ai_agent']['Functions']['record_tool_usage']['Args']
-export type DbAiAgentRecordToolUsageReturns = Database['ai_agent']['Functions']['record_tool_usage']['Returns']
-export type DbAiAgentUpdateConversationContextFunction = Database['ai_agent']['Functions']['update_conversation_context']
-export type DbAiAgentUpdateConversationContextArgs = Database['ai_agent']['Functions']['update_conversation_context']['Args']
-export type DbAiAgentUpdateConversationContextReturns = Database['ai_agent']['Functions']['update_conversation_context']['Returns']
-
-// =============================================================================
-// SCHOOL SCHEMA TYPES
-// =============================================================================
-
-// school Tables
-export type DbSchoolAssignments = Database['school']['Tables']['assignments']['Row']
-export type DbSchoolCoursePodLinks = Database['school']['Tables']['course_pod_links']['Row']
-export type DbSchoolCourses = Database['school']['Tables']['courses']['Row']
-export type DbSchoolDistricts = Database['school']['Tables']['districts']['Row']
-export type DbSchoolEnrollments = Database['school']['Tables']['enrollments']['Row']
-export type DbSchoolSchools = Database['school']['Tables']['schools']['Row']
-export type DbSchoolStudentGrades = Database['school']['Tables']['student_grades']['Row']
-export type DbSchoolSubmissions = Database['school']['Tables']['submissions']['Row']
-export type DbSchoolSyncLogs = Database['school']['Tables']['sync_logs']['Row']
-export type DbSchoolUserProfiles = Database['school']['Tables']['user_profiles']['Row']
-
-// school Insert Types
-export type DbSchoolAssignmentsInsert = Database['school']['Tables']['assignments']['Insert']
-export type DbSchoolCoursePodLinksInsert = Database['school']['Tables']['course_pod_links']['Insert']
-export type DbSchoolCoursesInsert = Database['school']['Tables']['courses']['Insert']
-export type DbSchoolDistrictsInsert = Database['school']['Tables']['districts']['Insert']
-export type DbSchoolEnrollmentsInsert = Database['school']['Tables']['enrollments']['Insert']
-export type DbSchoolSchoolsInsert = Database['school']['Tables']['schools']['Insert']
-export type DbSchoolStudentGradesInsert = Database['school']['Tables']['student_grades']['Insert']
-export type DbSchoolSubmissionsInsert = Database['school']['Tables']['submissions']['Insert']
-export type DbSchoolSyncLogsInsert = Database['school']['Tables']['sync_logs']['Insert']
-export type DbSchoolUserProfilesInsert = Database['school']['Tables']['user_profiles']['Insert']
-
-// school Update Types
-export type DbSchoolAssignmentsUpdate = Database['school']['Tables']['assignments']['Update']
-export type DbSchoolCoursePodLinksUpdate = Database['school']['Tables']['course_pod_links']['Update']
-export type DbSchoolCoursesUpdate = Database['school']['Tables']['courses']['Update']
-export type DbSchoolDistrictsUpdate = Database['school']['Tables']['districts']['Update']
-export type DbSchoolEnrollmentsUpdate = Database['school']['Tables']['enrollments']['Update']
-export type DbSchoolSchoolsUpdate = Database['school']['Tables']['schools']['Update']
-export type DbSchoolStudentGradesUpdate = Database['school']['Tables']['student_grades']['Update']
-export type DbSchoolSubmissionsUpdate = Database['school']['Tables']['submissions']['Update']
-export type DbSchoolSyncLogsUpdate = Database['school']['Tables']['sync_logs']['Update']
-export type DbSchoolUserProfilesUpdate = Database['school']['Tables']['user_profiles']['Update']
-
-// school Enums
-export type DbSchoolLmsPlatformEnum = Database['school']['Enums']['lms_platform']
-
-// school Functions
-export type DbSchoolGetLmsIntegrationStatusFunction = Database['school']['Functions']['get_lms_integration_status']
-export type DbSchoolGetLmsIntegrationStatusArgs = Database['school']['Functions']['get_lms_integration_status']['Args']
-export type DbSchoolGetLmsIntegrationStatusReturns = Database['school']['Functions']['get_lms_integration_status']['Returns']
-export type DbSchoolGetUserSchoolContextFunction = Database['school']['Functions']['get_user_school_context']
-export type DbSchoolGetUserSchoolContextArgs = Database['school']['Functions']['get_user_school_context']['Args']
-export type DbSchoolGetUserSchoolContextReturns = Database['school']['Functions']['get_user_school_context']['Returns']
-export type DbSchoolLogSyncActivityFunction = Database['school']['Functions']['log_sync_activity']
-export type DbSchoolLogSyncActivityArgs = Database['school']['Functions']['log_sync_activity']['Args']
-export type DbSchoolLogSyncActivityReturns = Database['school']['Functions']['log_sync_activity']['Returns']
-export type DbSchoolSwitchPodLmsPlatformFunction = Database['school']['Functions']['switch_pod_lms_platform']
-export type DbSchoolSwitchPodLmsPlatformArgs = Database['school']['Functions']['switch_pod_lms_platform']['Args']
-export type DbSchoolSwitchPodLmsPlatformReturns = Database['school']['Functions']['switch_pod_lms_platform']['Returns']
-
-// =============================================================================
-// ADMIN PANEL SCHEMA TYPES
-// =============================================================================
-
-// admin_panel Tables
-export type DbAdminPanelActivityLogs = Database['admin_panel']['Tables']['activity_logs']['Row']
-export type DbAdminPanelBulkOperations = Database['admin_panel']['Tables']['bulk_operations']['Row']
-export type DbAdminPanelPerformanceMetrics = Database['admin_panel']['Tables']['performance_metrics']['Row']
-export type DbAdminPanelSystemAlerts = Database['admin_panel']['Tables']['system_alerts']['Row']
-export type DbAdminPanelUserPreferences = Database['admin_panel']['Tables']['user_preferences']['Row']
-
-// admin_panel Insert Types
-export type DbAdminPanelActivityLogsInsert = Database['admin_panel']['Tables']['activity_logs']['Insert']
-export type DbAdminPanelBulkOperationsInsert = Database['admin_panel']['Tables']['bulk_operations']['Insert']
-export type DbAdminPanelPerformanceMetricsInsert = Database['admin_panel']['Tables']['performance_metrics']['Insert']
-export type DbAdminPanelSystemAlertsInsert = Database['admin_panel']['Tables']['system_alerts']['Insert']
-export type DbAdminPanelUserPreferencesInsert = Database['admin_panel']['Tables']['user_preferences']['Insert']
-
-// admin_panel Update Types
-export type DbAdminPanelActivityLogsUpdate = Database['admin_panel']['Tables']['activity_logs']['Update']
-export type DbAdminPanelBulkOperationsUpdate = Database['admin_panel']['Tables']['bulk_operations']['Update']
-export type DbAdminPanelPerformanceMetricsUpdate = Database['admin_panel']['Tables']['performance_metrics']['Update']
-export type DbAdminPanelSystemAlertsUpdate = Database['admin_panel']['Tables']['system_alerts']['Update']
-export type DbAdminPanelUserPreferencesUpdate = Database['admin_panel']['Tables']['user_preferences']['Update']
-
-// admin_panel Functions
-export type DbAdminPanelLogActivityFunction = Database['admin_panel']['Functions']['log_activity']
-export type DbAdminPanelLogActivityArgs = Database['admin_panel']['Functions']['log_activity']['Args']
-export type DbAdminPanelLogActivityReturns = Database['admin_panel']['Functions']['log_activity']['Returns']
-
-// =============================================================================
-// SCHEMA-SPECIFIC TYPE HELPERS
-// =============================================================================
-
-// Helper types for working with specific schemas
-export type PublicSchema = Database['public']
-export type AiAgentSchema = Database['ai_agent']
-export type SchoolSchema = Database['school']
-export type AdminPanelSchema = Database['admin_panel']
-
-// Helper for getting all tables from a schema
-export type PublicTables = Database['public']['Tables']
-export type AiAgentTables = Database['ai_agent']['Tables']
-export type SchoolTables = Database['school']['Tables']
-export type AdminPanelTables = Database['admin_panel']['Tables']
